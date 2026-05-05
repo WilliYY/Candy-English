@@ -1,0 +1,6 @@
+<svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Candy English">
+  <rect width="72" height="72" rx="16" fill="#C13B61"/>
+  <path d="M20 46.5C20 33.6 29.1 23 42.2 23H52V32.2H42.6C35.3 32.2 30.5 37.9 30.5 44.9C30.5 51.6 35 57.4 42.8 57.4C47 57.4 50.7 56 53.6 53.3V42.9H42.8V34.7H63V57.7C57.9 63.1 50.8 66 42.3 66C29.1 66 20 57 20 46.5Z" fill="#FFFDF8"/>
+  <path d="M11 18.5C11 11.9 16 7 22.8 7H50V16.2H23.9C22.2 16.2 21 17.4 21 19.1V29H11V18.5Z" fill="#F8D66D"/>
+  <circle cx="53" cy="18" r="5" fill="#1F9D8A"/>
+</svg>
