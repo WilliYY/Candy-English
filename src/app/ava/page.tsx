@@ -1,11 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { getDefaultAvaPath } from "@/lib/roles";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "AVA",
 };
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const areas = [
   {
@@ -25,17 +32,25 @@ const areas = [
   },
 ];
 
-export default function AvaHomePage() {
+export default async function AvaHomePage() {
+  const session = await auth();
+
+  if (session?.user?.role) {
+    redirect(getDefaultAvaPath(session.user.role));
+  }
+
   return (
     <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 lg:px-8">
       <div className="max-w-3xl">
         <h1 className="text-3xl font-semibold tracking-normal md:text-4xl">
-          Base inicial do AVA
+          AVA Candy English
         </h1>
         <p className="mt-4 text-lg leading-8 text-muted-foreground">
-          Estrutura inicial para separar as áreas admin, teacher e student. Login,
-          permissões e fluxos completos serão implementados nas próximas fases.
+          Entre com seu email e senha para acessar sua area no AVA.
         </p>
+        <Button asChild className="mt-6">
+          <Link href="/ava/login">Entrar no AVA</Link>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">

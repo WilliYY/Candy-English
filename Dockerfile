@@ -13,6 +13,15 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
+FROM deps AS tools
+WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY . .
+
+CMD ["npm", "run", "prisma:deploy"]
+
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
 

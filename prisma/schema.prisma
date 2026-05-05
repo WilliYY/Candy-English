@@ -7,18 +7,36 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole {
+enum Role {
   ADMIN
   TEACHER
   STUDENT
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String?
-  email        String   @unique
-  passwordHash String?
-  role         UserRole @default(STUDENT)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  passwordHash   String
+  role           Role            @default(STUDENT)
+  studentProfile StudentProfile?
+  teacherProfile TeacherProfile?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model StudentProfile {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level     String?
+  birthDate DateTime?
+  notes     String?
+}
+
+model TeacherProfile {
+  id     String  @id @default(cuid())
+  userId String  @unique
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio    String?
 }

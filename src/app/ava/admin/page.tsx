@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
-import { AvaPlaceholder } from "@/components/ava/ava-placeholder";
+import { requireAvaRole } from "@/lib/authorization";
+import { AvaDashboard } from "@/components/ava/ava-dashboard";
 
 export const metadata: Metadata = {
   title: "Admin AVA",
 };
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+export default async function AdminPage() {
+  const session = await requireAvaRole(["ADMIN"], "/ava/admin");
+
   return (
-    <AvaPlaceholder
+    <AvaDashboard
       title="Admin"
-      description="Página inicial vazia para a área administrativa do AVA."
+      description="Area administrativa inicial do AVA Candy English."
       items={["Gestão de usuários", "Cadastro de alunos", "Configurações do AVA"]}
+      user={session.user}
     />
   );
 }

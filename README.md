@@ -4,19 +4,22 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 1 concluida: base inicial em Next.js 15 com App Router, TypeScript, Tailwind CSS 4, Shadcn/ui, Prisma 7 e Docker Compose com PostgreSQL 17.
+FASE 2 concluida: login real do AVA com Auth.js / NextAuth v5, sessao JWT, roles, protecao das areas `/ava/admin`, `/ava/teacher` e `/ava/student`, Prisma 7 com perfis iniciais e seed do primeiro ADMIN.
 
-## Decisao Arquitetural
+## Decisoes Arquiteturais
 
 - O projeto nao usa WordPress.
 - O projeto nao depende da HostGator.
-- O dominio `candyenglish.com.br` apontara para um servidor Oracle Ubuntu.
-- O site institucional ficara em `candyenglish.com.br`.
-- O AVA ficara em `candyenglish.com.br/ava`.
+- O dominio `candyenglish.com.br` aponta para um servidor Oracle Ubuntu.
+- O site institucional fica em `candyenglish.com.br`.
+- O AVA fica em `candyenglish.com.br/ava`.
 - O PostgreSQL roda apenas na rede interna do Docker Compose, sem publicacao da porta `5432`.
-- Credenciais reais devem ficar em `.env`, que nao deve ser versionado.
+- Credenciais reais ficam em `.env`, que nao deve ser versionado.
+- A autenticacao do AVA usa Credentials Provider com email e senha.
+- As senhas sao armazenadas somente como hash `bcryptjs`.
+- A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 
-## Rotas Iniciais
+## Rotas
 
 ### Site institucional
 
@@ -29,9 +32,10 @@ FASE 1 concluida: base inicial em Next.js 15 com App Router, TypeScript, Tailwin
 ### AVA
 
 - `/ava`
-- `/ava/admin`
-- `/ava/teacher`
-- `/ava/student`
+- `/ava/login`
+- `/ava/admin` exige `ADMIN`
+- `/ava/teacher` exige `ADMIN` ou `TEACHER`
+- `/ava/student` exige `ADMIN`, `TEACHER` ou `STUDENT`
 
 ## Stack
 
@@ -48,35 +52,51 @@ FASE 1 concluida: base inicial em Next.js 15 com App Router, TypeScript, Tailwin
 - Docker
 - Docker Compose
 
-## Estrutura Inicial
+## Estrutura Principal
 
 ```txt
 src/
   app/
     (site)/
-      page.tsx
-      sobre/page.tsx
-      metodologia/page.tsx
-      planos/page.tsx
-      contato/page.tsx
+    api/auth/[...nextauth]/route.ts
     ava/
-      page.tsx
+      login/page.tsx
       admin/page.tsx
       teacher/page.tsx
       student/page.tsx
-    globals.css
-    layout.tsx
-    providers.tsx
   components/
     ava/
     site/
     ui/
   lib/
+    auth.ts
+    authorization.ts
+    prisma.ts
+    roles.ts
+    validations/
+  types/
+    next-auth.d.ts
 prisma/
+  migrations/
   schema.prisma
-docs/
-  arquitetura.md
+  seed.ts
 ```
+
+## Variaveis de Ambiente
+
+Crie `.env` a partir de `.env.example` e ajuste os valores:
+
+```env
+DATABASE_URL="postgresql://candy_user:senha@postgres:5432/candy_english?schema=public"
+AUTH_SECRET="use-um-valor-seguro"
+NEXTAUTH_URL="http://localhost:3000"
+AUTH_URL="http://localhost:3000"
+ADMIN_NAME="Candy Admin"
+ADMIN_EMAIL="admin@example.com"
+ADMIN_PASSWORD="troque-esta-senha"
+```
+
+Nunca versione `.env`.
 
 ## Como Rodar Localmente
 
@@ -86,48 +106,96 @@ docs/
 npm install
 ```
 
-2. Crie o arquivo `.env` a partir de `.env.example` e troque os exemplos por valores locais seguros.
+2. Configure `.env`.
 
-3. Rode em modo desenvolvimento:
-
-```bash
-npm run dev
-```
-
-4. Acesse:
-
-```txt
-http://localhost:3000
-http://localhost:3000/ava
-```
-
-## Como Rodar com Docker
-
-1. Crie o arquivo `.env` a partir de `.env.example`.
-
-2. Suba os containers:
-
-```bash
-docker compose up --build
-```
-
-O app ficara em `http://localhost:3000`. O PostgreSQL nao expoe porta publica; o app acessa o banco pela rede interna usando o host `postgres`.
-
-## Prisma
-
-O schema inicial fica em `prisma/schema.prisma` e define:
-
-- datasource PostgreSQL
-- Prisma Client gerado em `src/generated/prisma`
-- enum `UserRole`
-- model inicial `User`
-
-Com `.env` configurado, use:
+3. Valide e gere o Prisma Client:
 
 ```bash
 npm run prisma:validate
 npm run prisma:generate
 ```
+
+4. Rode migrations e seed quando o PostgreSQL local estiver disponivel:
+
+```bash
+npm run prisma:migrate
+npm run prisma:seed
+```
+
+5. Rode o app:
+
+```bash
+npm run dev
+```
+
+6. Acesse:
+
+```txt
+http://localhost:3000
+http://localhost:3000/ava/login
+```
+
+## Como Rodar com Docker
+
+1. Configure `.env`.
+
+2. Suba o PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
+3. Rode migrations e seed:
+
+```bash
+docker compose run --rm migrate
+docker compose run --rm seed
+```
+
+4. Suba o app:
+
+```bash
+docker compose up -d --build app
+```
+
+O app fica em `http://localhost:3000`. O PostgreSQL nao expoe porta publica; o app acessa o banco pela rede interna usando o host `postgres`.
+
+## Deploy no Servidor Oracle Ubuntu
+
+Exemplo de rotina apos atualizar o repositorio:
+
+```bash
+cd /home/ubuntu/projetos/candy-english
+git pull
+docker compose build app migrate seed
+docker compose run --rm migrate
+docker compose run --rm seed
+docker compose up -d app
+```
+
+Se for a primeira execucao, revise o `.env` antes de rodar `seed`, principalmente `ADMIN_EMAIL` e `ADMIN_PASSWORD`.
+
+## Scripts
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+npm run prisma:validate
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:deploy
+npm run prisma:seed
+```
+
+## Banco / Prisma
+
+O schema atual define:
+
+- enum `Role`: `ADMIN`, `TEACHER`, `STUDENT`
+- `User`
+- `StudentProfile`
+- `TeacherProfile`
 
 ## O Que Ainda Nao Foi Criado
 
