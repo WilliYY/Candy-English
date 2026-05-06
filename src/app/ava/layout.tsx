@@ -1,14 +1,20 @@
 import Link from "next/link";
 import {
   BookOpen,
+  ClipboardCheck,
   FileText,
   GraduationCap,
   Home,
   LayoutDashboard,
+  Link2,
   LockKeyhole,
+  MessageSquareText,
+  PencilLine,
   Radio,
   Settings,
+  UserPlus,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { canAccessRole, isRole, ROLE_LABELS } from "@/lib/roles";
@@ -36,10 +42,97 @@ const avaLinks = [
   },
 ];
 
-const utilityLinks = [
-  { href: "/ava/teacher", icon: Radio, label: "Aula ao vivo" },
-  { href: "/ava/student", icon: FileText, label: "Contratos" },
-  { href: "/ava/student", icon: BookOpen, label: "Homeworks" },
+const taskLinks = [
+  {
+    allowedRoles: ["ADMIN"] as const,
+    href: "/ava/admin#conteudo-site",
+    icon: PencilLine,
+    label: "Editar site",
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    href: "/ava/admin#cadastrar-acesso",
+    icon: UserPlus,
+    label: "Criar admin",
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    href: "/ava/admin#cadastrar-acesso",
+    icon: GraduationCap,
+    label: "Criar teacher",
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    href: "/ava/admin#cadastrar-acesso",
+    icon: UserRound,
+    label: "Criar aluno",
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    href: "/ava/admin#vincular-teacher",
+    icon: Link2,
+    label: "Vincular aluno",
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    href: "/ava/admin#usuarios",
+    icon: UsersRound,
+    label: "Usuarios",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    href: "/ava/teacher#aula-ao-vivo",
+    icon: Radio,
+    label: "Aula ao vivo",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    href: "/ava/teacher#criar-aula",
+    icon: BookOpen,
+    label: "Criar aula",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    href: "/ava/teacher#criar-homework",
+    icon: ClipboardCheck,
+    label: "Criar homework",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    href: "/ava/teacher#corrigir-homeworks",
+    icon: MessageSquareText,
+    label: "Corrigir respostas",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    href: "/ava/teacher#contratos",
+    icon: FileText,
+    label: "Contratos PDF",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
+    href: "/ava/student#aulas",
+    icon: BookOpen,
+    label: "Aulas e materiais",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
+    href: "/ava/student#homeworks",
+    icon: ClipboardCheck,
+    label: "Responder homework",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
+    href: "/ava/student#contratos",
+    icon: FileText,
+    label: "Meus contratos",
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
+    href: "/ava/student#perfil",
+    icon: UserRound,
+    label: "Meu perfil",
+  },
 ];
 
 export default async function AvaLayout({
@@ -52,11 +145,14 @@ export default async function AvaLayout({
   const visibleLinks = role
     ? avaLinks.filter((link) => canAccessRole(role, link.allowedRoles))
     : [];
+  const visibleTaskLinks = role
+    ? taskLinks.filter((link) => canAccessRole(role, link.allowedRoles))
+    : [];
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-b bg-card/95 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
+        <aside className="border-b bg-card/95 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col gap-6 px-5 py-5">
             <div className="flex items-center justify-between gap-3">
               <BrandLogo
@@ -112,10 +208,13 @@ export default async function AvaLayout({
             </nav>
 
             {role ? (
-              <div className="mt-auto hidden flex-col gap-2 rounded-lg border p-3 text-sm text-muted-foreground lg:flex">
-                {utilityLinks.map((link) => (
+              <div className="flex max-h-72 flex-col gap-3 overflow-y-auto rounded-lg border p-3 text-sm text-muted-foreground lg:max-h-none">
+                <p className="px-2 text-xs font-semibold uppercase tracking-[0.16em]">
+                  Atalhos
+                </p>
+                {visibleTaskLinks.map((link) => (
                   <Link
-                    key={link.label}
+                    key={`${link.href}-${link.label}`}
                     href={link.href}
                     className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-muted hover:text-foreground"
                   >

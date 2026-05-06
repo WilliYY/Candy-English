@@ -137,7 +137,10 @@ export function StudentWorkspace({
   ];
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
+    <section
+      id="student-overview"
+      className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8"
+    >
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
@@ -162,7 +165,10 @@ export function StudentWorkspace({
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div
+        id="student-resumo"
+        className="grid scroll-mt-8 gap-4 md:grid-cols-3"
+      >
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="flex items-center justify-between gap-4">
@@ -180,7 +186,10 @@ export function StudentWorkspace({
         ))}
       </div>
 
-      <Card className="border-primary/20 bg-primary text-primary-foreground">
+      <Card
+        id="aula-ao-vivo"
+        className="scroll-mt-8 border-primary/20 bg-primary text-primary-foreground"
+      >
         <CardHeader>
           <CardTitle>Aula ao vivo</CardTitle>
         </CardHeader>
@@ -224,7 +233,7 @@ export function StudentWorkspace({
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card>
+        <Card id="perfil" className="scroll-mt-8">
           <CardHeader>
             <CardTitle>Meu perfil</CardTitle>
           </CardHeader>
@@ -242,7 +251,7 @@ export function StudentWorkspace({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card id="contratos" className="scroll-mt-8">
           <CardHeader>
             <CardTitle>Contratos</CardTitle>
           </CardHeader>
@@ -276,18 +285,20 @@ export function StudentWorkspace({
         </Card>
       </div>
 
-      {lessons.length === 0 ? (
-        <Card>
-          <CardContent>
-            <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
-              Nenhuma aula foi vinculada ao seu perfil ainda.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6">
-          {lessons.map((lesson) => (
-            <Card key={lesson.id}>
+      <div id="aulas" className="scroll-mt-8">
+        <div id="homeworks" className="scroll-mt-8" />
+        {lessons.length === 0 ? (
+          <Card>
+            <CardContent>
+              <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+                Nenhuma aula foi vinculada ao seu perfil ainda.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {lessons.map((lesson) => (
+              <Card key={lesson.id}>
               <CardHeader>
                 <CardTitle>{lesson.title}</CardTitle>
               </CardHeader>
@@ -413,10 +424,11 @@ export function StudentWorkspace({
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
     </section>
   );
 }

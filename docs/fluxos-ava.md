@@ -136,6 +136,25 @@ Regras:
 - Catty aparece no site institucional e no login, mas fica oculto nos paineis logados para nao cobrir a operacao do AVA.
 - As animacoes decorativas com video, balas e GIFs foram removidas para reduzir distracao e consumo de recursos.
 
+## Sidebar Operacional
+
+```mermaid
+flowchart LR
+  A["Usuario logado"] --> B["Sidebar por role"]
+  B --> C["ADMIN: editar site, criar acessos, vincular aluno, usuarios"]
+  B --> D["TEACHER: aula ao vivo, criar aula, criar homework, corrigir, contratos"]
+  B --> E["STUDENT: aulas, homeworks, contratos, perfil"]
+  C --> F["Clique leva direto ao bloco da pagina"]
+  D --> F
+  E --> F
+```
+
+Regras:
+
+- A sidebar deve ser o indice principal de operacao do AVA.
+- Os atalhos usam ancoras internas, como `#cadastrar-acesso`, `#criar-aula` e `#homeworks`.
+- Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
+
 ## Deploy Quando Ha Migration
 
 Use quando `prisma/schema.prisma` ou `prisma/migrations/` mudarem:

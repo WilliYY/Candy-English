@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 14 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito do site/login. O AVA tambem possui sidebar por role, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
+FASE 14 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito do site/login. O AVA tambem possui sidebar por role com atalhos diretos para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -379,6 +379,7 @@ Ainda nao implementado:
 Implementado:
 
 - layout do AVA com sidebar por role;
+- sidebar do AVA com atalhos diretos para editar site, criar usuarios, vincular aluno-teacher, criar aulas, criar homeworks, corrigir respostas, contratos e perfil;
 - perfil com nome, telefone, endereco e foto;
 - upload seguro de foto PNG/JPG/WebP ate 2 MB;
 - upload seguro de contratos PDF ate 8 MB;

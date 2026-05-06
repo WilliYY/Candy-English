@@ -153,7 +153,10 @@ export function AdminUsersPanel({
   ];
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
+    <section
+      id="admin-overview"
+      className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8"
+    >
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
@@ -179,7 +182,7 @@ export function AdminUsersPanel({
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div id="admin-resumo" className="grid scroll-mt-8 gap-4 md:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="flex items-center justify-between gap-4">
@@ -197,7 +200,7 @@ export function AdminUsersPanel({
         ))}
       </div>
 
-      <Card>
+      <Card id="conteudo-site" className="scroll-mt-8">
         <CardHeader>
           <CardTitle>Conteudo do site</CardTitle>
         </CardHeader>
@@ -208,7 +211,7 @@ export function AdminUsersPanel({
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
         <div className="flex flex-col gap-6">
-          <Card>
+          <Card id="cadastrar-acesso" className="scroll-mt-8">
             <CardHeader>
               <CardTitle>Cadastrar acesso</CardTitle>
             </CardHeader>
@@ -217,7 +220,7 @@ export function AdminUsersPanel({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card id="vincular-teacher" className="scroll-mt-8">
             <CardHeader>
               <CardTitle>Vincular aluno a teacher</CardTitle>
             </CardHeader>
@@ -227,7 +230,7 @@ export function AdminUsersPanel({
           </Card>
         </div>
 
-        <Card>
+        <Card id="usuarios" className="scroll-mt-8">
           <CardHeader>
             <CardTitle>Usuarios do AVA</CardTitle>
           </CardHeader>
@@ -318,7 +321,7 @@ export function AdminUsersPanel({
         </Card>
       </div>
 
-      <Card>
+      <Card id="vinculos" className="scroll-mt-8">
         <CardHeader>
           <CardTitle>Vinculos teacher/aluno</CardTitle>
         </CardHeader>
