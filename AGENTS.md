@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 13 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, nuvem em loop, Catty e sprites animados.
+FASE 13 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, nuvem em loop global, Catty e sprites animados.
 
 ## Fases implementadas
 
@@ -154,9 +154,9 @@ Operacao escolar:
 Experiencia visual:
 
 - bala sem fundo como favicon e sprite;
-- hero com `nuvem-fundo.mp4` em loop;
+- `nuvem-fundo.mp4` em loop suave no site inteiro;
 - Catty no canto inferior direito;
-- sprites animados fugindo do mouse.
+- balas pequenas e GIFs maiores zanzando de forma aleatoria e fugindo suavemente do mouse.
 
 ## MVP inicial
 

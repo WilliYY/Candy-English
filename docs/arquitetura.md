@@ -260,9 +260,9 @@ A decima segunda fase adiciona recursos escolares de base:
 A decima terceira fase adiciona movimento e experiencia visual:
 
 - bala sem fundo vira favicon e sprite;
-- `nuvem-fundo.mp4` roda em loop no hero;
+- `nuvem-fundo.mp4` roda em loop suave no site inteiro como camada visual global;
 - Catty fica no canto inferior direito como chatbot visual;
-- 25 balas e 2 sprites de cada GIF informado fogem do mouse;
+- 25 balas e 2 sprites de cada GIF informado zanzam aleatoriamente e fogem suavemente do mouse;
 - animacoes respeitam `prefers-reduced-motion`.
 
 ## Decisao Sobre Aula Ao Vivo

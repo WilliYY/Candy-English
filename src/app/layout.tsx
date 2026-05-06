@@ -36,6 +36,11 @@ export default function RootLayout({
     <html lang="pt-BR" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="min-h-screen antialiased">
         <Providers>
+          <div className="candy-cloud-backdrop" aria-hidden="true">
+            <video autoPlay loop muted playsInline preload="metadata">
+              <source src="/media/nuvem-fundo.mp4" type="video/mp4" />
+            </video>
+          </div>
           {children}
           <CandyField />
           <CattyWidget />

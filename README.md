@@ -398,13 +398,38 @@ Instalado neste Windows:
 
 - Visual Studio Code;
 - extensoes VS Code: Docker, Prisma, ESLint, Tailwind CSS IntelliSense, GitLens;
-- DBeaver Community.
+- DBeaver Community;
+- Docker Desktop;
+- GitHub Desktop e GitHub CLI (`gh`);
+- PowerToys;
+- ShareX e ScreenToGif;
+- Figma;
+- Inkscape e GIMP;
+- Bruno e Postman;
+- Google Chrome;
+- Everything.
 
-Docker Desktop tentou instalar, mas exige PowerShell como administrador. Rode manualmente:
+Comando base para repetir a instalacao em outro Windows:
 
 ```powershell
 winget install --id Docker.DockerDesktop --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id GitHub.GitHubDesktop --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id GitHub.cli --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id Microsoft.PowerToys --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id ShareX.ShareX --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id NickeManarin.ScreenToGif --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id Figma.Figma --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id Inkscape.Inkscape --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id GIMP.GIMP --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id Bruno.Bruno --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id Postman.Postman --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id Google.Chrome --exact --source winget --accept-source-agreements --accept-package-agreements
+winget install --id voidtools.Everything --exact --source winget --accept-source-agreements --accept-package-agreements
 ```
+
+O React Developer Tools e uma extensao do navegador e deve ser instalado pela Chrome Web Store.
+
+Se `docker version` nao responder logo apos a instalacao, abra o Docker Desktop pelo menu Iniciar e reinicie o Windows. O Docker usa WSL2 no Windows; quando `wsl --status` pedir `Plataforma da Maquina Virtual` ou virtualizacao, a sessao atual ainda precisa do reboot ou da virtualizacao habilitada na BIOS/UEFI.
 
 Limite WSL2/Docker criado em `C:\Users\casas bahia\.wslconfig`:
 

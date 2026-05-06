@@ -28,17 +28,6 @@ type HomeHeroProps = {
 export function HomeHero({ content }: HomeHeroProps) {
   return (
     <section className="candy-deep relative isolate min-h-[calc(100svh-5rem)] overflow-hidden text-white">
-      <video
-        className="absolute inset-0 size-full object-cover opacity-35"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-        aria-hidden="true"
-      >
-        <source src="/media/nuvem-fundo.mp4" type="video/mp4" />
-      </video>
       <div className="absolute inset-0 bg-[#2c1338]/72" />
       <div className="candy-kinetic-grid absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fefbfa] to-transparent" />

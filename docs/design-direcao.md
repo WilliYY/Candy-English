@@ -41,8 +41,8 @@ Movimentos permitidos nesta fase:
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
-- nuvem em video loop no hero;
-- balas e sprites pequenos fugindo do mouse;
+- nuvem em video loop suave no site inteiro;
+- balas pequenas e sprites GIF maiores fugindo suavemente do mouse;
 - Catty fixo no canto inferior direito.
 
 Cuidados:

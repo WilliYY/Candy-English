@@ -64,6 +64,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
 a {
@@ -75,6 +76,30 @@ a {
     linear-gradient(135deg, rgb(44 19 56) 0%, rgb(65 42 76) 54%, rgb(44 19 56) 100%),
     linear-gradient(90deg, rgb(229 124 216 / 0.18), transparent 55%),
     #2c1338;
+}
+
+.candy-cloud-backdrop {
+  inset: 0;
+  opacity: 0.18;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 1;
+}
+
+.candy-cloud-backdrop::after {
+  background:
+    radial-gradient(circle at 20% 18%, rgb(229 124 216 / 0.28), transparent 34%),
+    linear-gradient(180deg, rgb(254 251 250 / 0.36), rgb(254 251 250 / 0.08));
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.candy-cloud-backdrop video {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
 }
 
 .candy-kinetic-grid {
@@ -139,6 +164,10 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .candy-cloud-backdrop {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {
