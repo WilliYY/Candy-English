@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   BookOpen,
+  ChevronDown,
   ClipboardCheck,
   FileText,
   GraduationCap,
@@ -21,117 +22,110 @@ import { canAccessRole, isRole, ROLE_LABELS } from "@/lib/roles";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
 
-const avaLinks = [
+const navGroups = [
   {
     allowedRoles: ["ADMIN"] as const,
     href: "/ava/admin",
     icon: Settings,
     label: "Admin",
+    links: [
+      {
+        href: "/ava/admin#conteudo-site",
+        icon: PencilLine,
+        label: "Editar site",
+      },
+      {
+        href: "/ava/admin#cadastrar-acesso",
+        icon: UserPlus,
+        label: "Criar admin",
+      },
+      {
+        href: "/ava/admin#cadastrar-acesso",
+        icon: GraduationCap,
+        label: "Criar teacher",
+      },
+      {
+        href: "/ava/admin#cadastrar-acesso",
+        icon: UserRound,
+        label: "Criar aluno",
+      },
+      {
+        href: "/ava/admin#vincular-teacher",
+        icon: Link2,
+        label: "Vincular aluno",
+      },
+      {
+        href: "/ava/admin#usuarios",
+        icon: UsersRound,
+        label: "Usuarios",
+      },
+    ],
   },
   {
     allowedRoles: ["ADMIN", "TEACHER"] as const,
     href: "/ava/teacher",
     icon: GraduationCap,
     label: "Teacher",
+    links: [
+      {
+        href: "/ava/teacher#aula-ao-vivo",
+        icon: Radio,
+        label: "Aula ao vivo",
+      },
+      {
+        href: "/ava/teacher#criar-aula",
+        icon: BookOpen,
+        label: "Criar aula",
+      },
+      {
+        href: "/ava/teacher#criar-homework",
+        icon: ClipboardCheck,
+        label: "Criar homework",
+      },
+      {
+        href: "/ava/teacher#corrigir-homeworks",
+        icon: MessageSquareText,
+        label: "Corrigir respostas",
+      },
+      {
+        href: "/ava/teacher#contratos",
+        icon: FileText,
+        label: "Contratos PDF",
+      },
+    ],
   },
   {
     allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
     href: "/ava/student",
     icon: UserRound,
     label: "Student",
-  },
-];
-
-const taskLinks = [
-  {
-    allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin#conteudo-site",
-    icon: PencilLine,
-    label: "Editar site",
-  },
-  {
-    allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin#cadastrar-acesso",
-    icon: UserPlus,
-    label: "Criar admin",
-  },
-  {
-    allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin#cadastrar-acesso",
-    icon: GraduationCap,
-    label: "Criar teacher",
-  },
-  {
-    allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin#cadastrar-acesso",
-    icon: UserRound,
-    label: "Criar aluno",
-  },
-  {
-    allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin#vincular-teacher",
-    icon: Link2,
-    label: "Vincular aluno",
-  },
-  {
-    allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin#usuarios",
-    icon: UsersRound,
-    label: "Usuarios",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER"] as const,
-    href: "/ava/teacher#aula-ao-vivo",
-    icon: Radio,
-    label: "Aula ao vivo",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER"] as const,
-    href: "/ava/teacher#criar-aula",
-    icon: BookOpen,
-    label: "Criar aula",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER"] as const,
-    href: "/ava/teacher#criar-homework",
-    icon: ClipboardCheck,
-    label: "Criar homework",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER"] as const,
-    href: "/ava/teacher#corrigir-homeworks",
-    icon: MessageSquareText,
-    label: "Corrigir respostas",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER"] as const,
-    href: "/ava/teacher#contratos",
-    icon: FileText,
-    label: "Contratos PDF",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
-    href: "/ava/student#aulas",
-    icon: BookOpen,
-    label: "Aulas e materiais",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
-    href: "/ava/student#homeworks",
-    icon: ClipboardCheck,
-    label: "Responder homework",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
-    href: "/ava/student#contratos",
-    icon: FileText,
-    label: "Meus contratos",
-  },
-  {
-    allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
-    href: "/ava/student#perfil",
-    icon: UserRound,
-    label: "Meu perfil",
+    links: [
+      {
+        href: "/ava/student#aula-ao-vivo",
+        icon: Radio,
+        label: "Aula ao vivo",
+      },
+      {
+        href: "/ava/student#aulas",
+        icon: BookOpen,
+        label: "Aulas e materiais",
+      },
+      {
+        href: "/ava/student#homeworks",
+        icon: ClipboardCheck,
+        label: "Responder homework",
+      },
+      {
+        href: "/ava/student#contratos",
+        icon: FileText,
+        label: "Meus contratos",
+      },
+      {
+        href: "/ava/student#perfil",
+        icon: UserRound,
+        label: "Meu perfil",
+      },
+    ],
   },
 ];
 
@@ -142,11 +136,8 @@ export default async function AvaLayout({
 }>) {
   const session = await auth();
   const role = isRole(session?.user?.role) ? session.user.role : null;
-  const visibleLinks = role
-    ? avaLinks.filter((link) => canAccessRole(role, link.allowedRoles))
-    : [];
-  const visibleTaskLinks = role
-    ? taskLinks.filter((link) => canAccessRole(role, link.allowedRoles))
+  const visibleGroups = role
+    ? navGroups.filter((link) => canAccessRole(role, link.allowedRoles))
     : [];
 
   return (
@@ -184,18 +175,42 @@ export default async function AvaLayout({
             </div>
 
             <nav className="flex flex-col gap-2" aria-label="Navegacao do AVA">
-              {visibleLinks.map((link) => (
-                <Button
-                  key={link.href}
-                  asChild
-                  variant="ghost"
-                  className="justify-start"
+              {visibleGroups.map((group) => (
+                <details
+                  key={group.href}
+                  open={group.label === "Admin" && role === "ADMIN"}
+                  className="group rounded-lg"
                 >
-                  <Link href={link.href}>
-                    <link.icon data-icon="inline-start" />
-                    {link.label}
-                  </Link>
-                </Button>
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <group.icon aria-hidden="true" className="size-4" />
+                      {group.label}
+                    </span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+
+                  <div className="ml-5 mt-1 flex flex-col gap-1 border-l pl-3">
+                    <Link
+                      href={group.href}
+                      className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      Painel {group.label}
+                    </Link>
+                    {group.links.map((link) => (
+                      <Link
+                        key={`${group.href}-${link.href}-${link.label}`}
+                        href={link.href}
+                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        <link.icon aria-hidden="true" className="size-4" />
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </details>
               ))}
               {!role ? (
                 <Button asChild variant="ghost" className="justify-start">
@@ -207,23 +222,6 @@ export default async function AvaLayout({
               ) : null}
             </nav>
 
-            {role ? (
-              <div className="flex max-h-72 flex-col gap-3 overflow-y-auto rounded-lg border p-3 text-sm text-muted-foreground lg:max-h-none">
-                <p className="px-2 text-xs font-semibold uppercase tracking-[0.16em]">
-                  Atalhos
-                </p>
-                {visibleTaskLinks.map((link) => (
-                  <Link
-                    key={`${link.href}-${link.label}`}
-                    href={link.href}
-                    className="flex items-center gap-2 rounded-md px-2 py-2 hover:bg-muted hover:text-foreground"
-                  >
-                    <link.icon aria-hidden="true" />
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
           </div>
         </aside>
 

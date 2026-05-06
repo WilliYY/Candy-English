@@ -141,9 +141,12 @@ Regras:
 ```mermaid
 flowchart LR
   A["Usuario logado"] --> B["Sidebar por role"]
-  B --> C["ADMIN: editar site, criar acessos, vincular aluno, usuarios"]
-  B --> D["TEACHER: aula ao vivo, criar aula, criar homework, corrigir, contratos"]
-  B --> E["STUDENT: aulas, homeworks, contratos, perfil"]
+  B --> C["Grupo ADMIN"]
+  B --> D["Grupo TEACHER"]
+  B --> E["Grupo STUDENT"]
+  C --> C1["Editar site, criar acessos, vincular aluno, usuarios"]
+  D --> D1["Aula ao vivo, criar aula, criar homework, corrigir, contratos"]
+  E --> E1["Aulas, homeworks, contratos, perfil"]
   C --> F["Clique leva direto ao bloco da pagina"]
   D --> F
   E --> F
@@ -152,8 +155,10 @@ flowchart LR
 Regras:
 
 - A sidebar deve ser o indice principal de operacao do AVA.
+- Grupos como `Teacher` e `Student` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
 - Os atalhos usam ancoras internas, como `#cadastrar-acesso`, `#criar-aula` e `#homeworks`.
 - Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
+- Nao usar uma caixa interna com barra de rolagem para atalhos; se houver muitas opcoes, agrupar por role.
 
 ## Deploy Quando Ha Migration
 

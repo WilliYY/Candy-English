@@ -241,7 +241,7 @@ A decima primeira fase estrutura o AVA como produto operacional:
 
 - layout `/ava` usa sidebar por role;
 - menu muda para admin, teacher e student;
-- sidebar passa a funcionar como indice operacional, com atalhos profundos para as secoes de cada area;
+- sidebar passa a funcionar como indice operacional, com grupos expansíveis por role e atalhos profundos para as secoes de cada area;
 - protecao real continua nas paginas e server actions;
 - o objetivo e facilitar uso diario sem criar dashboard pesado.
 
@@ -276,7 +276,7 @@ A decima quarta fase define orcamento de memoria no Docker:
 - `postgres` recebe `shm_size=128mb` e parametros internos coerentes com um banco pequeno/medio;
 - `migrate`, `seed` e `audit-server-smoke` limitam memoria porque sao ferramentas transitorias;
 - a porta `5432` continua sem publicacao no host.
-- o layout do AVA foi refinado para reduzir confusao: admin, teacher e student exibem atalhos laterais para os principais blocos de leitura/edicao.
+- o layout do AVA foi refinado para reduzir confusao: admin, teacher e student exibem grupos expansíveis na sidebar para os principais blocos de leitura/edicao, sem caixa interna de rolagem nos atalhos.
 
 ## Decisao Sobre Aula Ao Vivo
 
