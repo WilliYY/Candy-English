@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import { AdminUsersPanel } from "@/components/ava/admin-users-panel";
 import { requireAvaRole } from "@/lib/authorization";
-import { AvaDashboard } from "@/components/ava/ava-dashboard";
+import { getPrisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
   title: "Admin AVA",
@@ -11,13 +12,29 @@ export const runtime = "nodejs";
 
 export default async function AdminPage() {
   const session = await requireAvaRole(["ADMIN"], "/ava/admin");
+  const prisma = getPrisma();
+  const users = await prisma.user.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      createdAt: true,
+      email: true,
+      id: true,
+      name: true,
+      role: true,
+      studentProfile: {
+        select: {
+          level: true,
+        },
+      },
+      teacherProfile: {
+        select: {
+          bio: true,
+        },
+      },
+    },
+  });
 
-  return (
-    <AvaDashboard
-      title="Admin"
-      description="Area administrativa inicial do AVA Candy English."
-      items={["Gestão de usuários", "Cadastro de alunos", "Configurações do AVA"]}
-      user={session.user}
-    />
-  );
+  return <AdminUsersPanel currentUser={session.user} users={users} />;
 }

@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 2 concluida: login real do AVA com Auth.js / NextAuth v5, sessao JWT, roles, protecao das areas `/ava/admin`, `/ava/teacher` e `/ava/student`, Prisma 7 com perfis iniciais e seed do primeiro ADMIN.
+FASE 3 em andamento: alem do login real da FASE 2, o `/ava/admin` agora possui uma base inicial de gestao de usuarios, com listagem, contadores por role e cadastro de `ADMIN`, `TEACHER` e `STUDENT`.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -24,6 +24,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - As senhas sao armazenadas somente como hash `bcryptjs`.
 - A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
+- O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
 
 ## Rotas
 
@@ -68,12 +69,15 @@ src/
       auth/[...nextauth]/route.ts
       health/route.ts
     ava/
+      admin/actions.ts
       login/page.tsx
       admin/page.tsx
       teacher/page.tsx
       student/page.tsx
   components/
     ava/
+      admin-create-user-form.tsx
+      admin-users-panel.tsx
     site/
     ui/
   lib/
@@ -82,6 +86,7 @@ src/
     prisma.ts
     roles.ts
     validations/
+      admin-users.ts
   types/
     next-auth.d.ts
 docs/
@@ -251,6 +256,27 @@ O schema atual define:
 - `User`
 - `StudentProfile`
 - `TeacherProfile`
+
+## FASE 3 - Admin
+
+Implementado:
+
+- listagem de usuarios no `/ava/admin`;
+- contadores de usuarios, teachers e alunos;
+- cadastro de usuario com nome, email, senha temporaria e role;
+- criacao automatica de `StudentProfile` para alunos;
+- criacao automatica de `TeacherProfile` para teachers;
+- validacao com Zod e React Hook Form;
+- hash de senha com `bcryptjs`;
+- revalidacao da pagina admin apos cadastro.
+
+Ainda nao implementado nesta fase:
+
+- edicao de usuario existente;
+- reset de senha pela interface;
+- desativacao de usuario;
+- vinculo formal aluno-teacher;
+- importacao em massa.
 
 ## O Que Ainda Nao Foi Criado
 

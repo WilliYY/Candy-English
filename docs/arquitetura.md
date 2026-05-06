@@ -8,6 +8,18 @@ A primeira fase criou uma base limpa e funcional para o site institucional da Ca
 
 A segunda fase implementa login real do AVA, roles e protecao de rotas.
 
+## FASE 3
+
+A terceira fase inicia a gestao administrativa do AVA:
+
+- `/ava/admin` deixa de ser apenas um placeholder e passa a listar usuarios reais;
+- `ADMIN` pode cadastrar novos acessos com nome, email, senha temporaria e role;
+- ao criar `STUDENT`, o sistema cria tambem `StudentProfile`;
+- ao criar `TEACHER`, o sistema cria tambem `TeacherProfile`;
+- a senha temporaria e armazenada somente como hash `bcryptjs`;
+- o formulario usa React Hook Form e Zod;
+- a escrita acontece em server action protegida por sessao `ADMIN`.
+
 ## Endurecimento Operacional
 
 Foi feita uma leitura do repositorio SavePointFinance como referencia externa de robustez operacional: https://github.com/Marks013/SavePointFinance
@@ -47,6 +59,7 @@ Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem a
 - Sessao: JWT, com `id` e `role` adicionados no token e na session.
 - Senhas: hash com `bcryptjs`, compativel com Windows e Linux.
 - O Prisma Client e inicializado de forma lazy em `src/lib/prisma.ts`, evitando falhas de build por variaveis de ambiente ainda nao carregadas.
+- A gestao inicial de usuarios fica concentrada no `/ava/admin`, sem criar rotas publicas de cadastro.
 
 ### Rotas
 
@@ -75,6 +88,7 @@ A protecao das areas do AVA acontece no servidor, diretamente nas paginas proteg
 - `/ava/student`: exige `ADMIN`, `TEACHER` ou `STUDENT`
 - Usuario nao logado e redirecionado para `/ava/login`
 - Usuario logado sem permissao e redirecionado para sua area padrao
+- Server actions administrativas tambem validam a sessao antes de gravar dados.
 
 Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao junto da renderizacao server-side das paginas do AVA.
 
@@ -90,6 +104,7 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - O seed cria o primeiro `ADMIN` usando `ADMIN_NAME`, `ADMIN_EMAIL` e `ADMIN_PASSWORD`.
 - O seed nao redefine senha de admin existente por padrao. Para redefinir, e necessario definir `ADMIN_RESET_PASSWORD=true`.
 - O comando de seed do Prisma 7 fica em `prisma.config.ts`, dentro de `migrations.seed`, e e executado por `npm run prisma:seed`.
+- Na FASE 3 nao houve alteracao de schema. O cadastro de usuarios usa as tabelas `User`, `StudentProfile` e `TeacherProfile` ja existentes.
 
 ### Docker
 
@@ -118,8 +133,10 @@ Itens identificados como proximos endurecimentos, mas ainda fora desta entrega:
 - rotina formal de backup e restore do PostgreSQL;
 - normalizacao case-insensitive mais forte para email;
 - menus responsivos mais completos para areas do site e do AVA.
+- edicao e desativacao de usuarios pela interface admin;
+- vinculo formal entre aluno e teacher.
 
-## Fora do Escopo da FASE 2
+## Fora do Escopo da FASE 3
 
 - Jogos
 - Recursos de IA
