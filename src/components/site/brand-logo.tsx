@@ -4,12 +4,14 @@ import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
   className?: string;
+  imageClassName?: string;
   markClassName?: string;
   variant?: "light" | "dark";
 };
 
 export function BrandLogo({
   className,
+  imageClassName,
   markClassName,
   variant = "dark",
 }: BrandLogoProps) {
@@ -17,30 +19,28 @@ export function BrandLogo({
     <Link
       href="/"
       className={cn(
-        "inline-flex items-center gap-3 font-semibold tracking-normal",
+        "group relative inline-flex h-16 w-[230px] items-center overflow-hidden rounded-lg",
         variant === "light" ? "text-white" : "text-foreground",
         className,
       )}
+      aria-label="Candy English"
     >
-      <span
-        className={cn(
-          "flex size-11 overflow-hidden rounded-lg bg-white p-1 shadow-sm",
-          markClassName,
-        )}
-      >
+      {variant === "light" ? (
+        <span className="absolute inset-1 rounded-lg bg-white/95" />
+      ) : null}
+      <span className={cn("relative block h-full w-full", markClassName)}>
         <Image
-          src="/brand/logo-1.svg"
-          alt=""
-          width={44}
-          height={44}
+          src="/brand/logo-2.svg"
+          alt="Candy English"
+          width={320}
+          height={400}
           priority
           unoptimized
-          className="h-full w-full object-contain"
+          className={cn(
+            "absolute left-1/2 top-1/2 h-auto w-[280px] -translate-x-1/2 -translate-y-1/2 scale-[1.18] object-contain transition-transform duration-300 group-hover:scale-[1.24]",
+            imageClassName,
+          )}
         />
-      </span>
-      <span className="leading-tight">
-        Candy
-        <span className="block text-sm font-medium opacity-75">English</span>
       </span>
     </Link>
   );

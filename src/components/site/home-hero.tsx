@@ -32,7 +32,7 @@ export function HomeHero({ content }: HomeHeroProps) {
       <div className="candy-kinetic-grid absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fefbfa] to-transparent" />
 
-      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16">
+      <div className="relative z-20 mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16">
         <div className="candy-reveal flex max-w-3xl flex-col justify-center gap-7">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm text-white/80 backdrop-blur">
             <CheckCircle2 aria-hidden="true" />
@@ -132,7 +132,7 @@ export function HomeHero({ content }: HomeHeroProps) {
         </div>
       </div>
 
-      <div className="relative border-y border-white/10 bg-white/10 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
+      <div className="relative z-20 border-y border-white/10 bg-white/10 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
         <div className="candy-marquee flex w-[200%] gap-10 whitespace-nowrap">
           {[...activity, ...activity, ...activity, ...activity].map(
             (item, index) => (

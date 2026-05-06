@@ -59,7 +59,7 @@ export default async function AvaLayout({
         <aside className="border-b bg-card/95 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col gap-6 px-5 py-5">
             <div className="flex items-center justify-between gap-3">
-              <BrandLogo markClassName="size-10" />
+              <BrandLogo className="h-14 w-[200px]" imageClassName="w-[245px]" />
               <Button asChild variant="outline" size="icon">
                 <Link href="/">
                   <Home aria-hidden="true" />

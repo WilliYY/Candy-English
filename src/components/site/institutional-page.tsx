@@ -30,7 +30,7 @@ export function InstitutionalPage({
     <>
       <section className="candy-deep relative isolate overflow-hidden text-white">
         <div className="candy-kinetic-grid absolute inset-0" />
-        <div className="relative mx-auto flex min-h-[420px] w-full max-w-7xl flex-col justify-center gap-7 px-6 py-16 lg:px-8">
+        <div className="relative z-20 mx-auto flex min-h-[420px] w-full max-w-7xl flex-col justify-center gap-7 px-6 py-16 lg:px-8">
           <span className="text-sm font-semibold uppercase tracking-[0.28em] text-[#e57cd8]">
             {eyebrow}
           </span>
@@ -54,7 +54,7 @@ export function InstitutionalPage({
       </section>
 
       <section className="border-b bg-background">
-        <div className="mx-auto grid w-full max-w-7xl gap-5 px-6 py-16 md:grid-cols-2 lg:px-8">
+        <div className="relative z-20 mx-auto grid w-full max-w-7xl gap-5 px-6 py-16 md:grid-cols-2 lg:px-8">
           {sections.map((section, index) => (
             <article
               key={section.title}

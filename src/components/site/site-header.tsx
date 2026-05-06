@@ -12,9 +12,9 @@ const navItems = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-6 lg:px-8">
-        <BrandLogo />
+    <header className="sticky top-0 z-40 border-b border-border/70 bg-background/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-24 w-full max-w-7xl items-center justify-between px-6 lg:px-8">
+        <BrandLogo className="h-20 w-[280px] shrink-0" imageClassName="w-[350px]" />
         <nav
           className="hidden items-center gap-1 md:flex"
           aria-label="Navegacao principal"

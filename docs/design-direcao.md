@@ -27,8 +27,8 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 ## Assets
 
 - Favicon: `public/favicon.svg`
-- Logo principal: `public/brand/logo-1.svg`
-- Logo alternativa: `public/brand/logo-2.svg`
+- Logo principal no header: `public/brand/logo-2.svg`, horizontal, maior e sem caixa de fundo.
+- Logo alternativa: `public/brand/logo-1.svg`
 - Logo hero: `public/brand/logo-3.svg`
 
 Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo como string.
