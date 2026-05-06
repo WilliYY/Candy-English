@@ -2,7 +2,7 @@ import { compare } from "bcryptjs";
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { getPrisma } from "@/lib/prisma";
-import type { Role } from "@/lib/roles";
+import { isRole } from "@/lib/roles";
 import { loginSchema } from "@/lib/validations/auth";
 
 export const authConfig = {
@@ -64,7 +64,9 @@ export const authConfig = {
         const tokenId = typeof token.id === "string" ? token.id : token.sub;
 
         session.user.id = tokenId ?? "";
-        session.user.role = (token.role as Role | undefined) ?? "STUDENT";
+        if (isRole(token.role)) {
+          session.user.role = token.role;
+        }
       }
 
       return session;

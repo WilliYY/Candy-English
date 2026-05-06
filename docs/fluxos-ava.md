@@ -1,0 +1,115 @@
+# Fluxos do AVA Candy English
+
+Este documento explica, em portugues simples, como funcionam as FASES 4, 5 e 6 do AVA Candy English.
+
+## Papeis
+
+- **ADMIN**: administra usuarios e pode supervisionar o AVA.
+- **TEACHER**: cria aulas, materiais, vocabulario, homeworks e corrige respostas.
+- **STUDENT**: acessa aulas, estuda materiais/vocabulario, responde homeworks e ve feedback.
+
+## Visao Geral
+
+```mermaid
+flowchart LR
+  A["ADMIN cadastra usuarios"] --> B["TEACHER cria aula"]
+  B --> C["TEACHER adiciona material e vocabulario"]
+  C --> D["TEACHER cria homework"]
+  D --> E["STUDENT responde online"]
+  E --> F["TEACHER corrige"]
+  F --> G["STUDENT ve feedback"]
+```
+
+## FASE 4 - Aulas, Materiais e Vocabulario
+
+```mermaid
+flowchart TD
+  A["TEACHER entra em /ava/teacher"] --> B["Cria aula"]
+  B --> C["Escolhe teacher e aluno"]
+  C --> D["Define titulo, resumo e data"]
+  D --> E["Adiciona primeiro material"]
+  D --> F["Adiciona primeiro vocabulario"]
+  E --> G["Aula fica disponivel"]
+  F --> G
+  G --> H["STUDENT entra em /ava/student"]
+  H --> I["Aluno ve aula, materiais e vocabulario"]
+```
+
+Regras:
+
+- `ADMIN` pode ver a area teacher para supervisao.
+- `TEACHER` cria aulas.
+- `TEACHER` ve apenas alunos vinculados a sua area.
+- `ADMIN` pode criar o primeiro vinculo aluno-teacher ao criar uma aula.
+- Aula vinculada a um aluno aparece para esse aluno.
+- PostgreSQL continua interno no Docker.
+
+## FASE 5 - Homework e Resposta
+
+```mermaid
+flowchart TD
+  A["TEACHER escolhe uma aula"] --> B["Cria homework"]
+  B --> C["Define titulo, instrucoes, prazo e pergunta"]
+  C --> D["Homework aparece para o aluno da aula"]
+  D --> E["STUDENT escreve resposta"]
+  E --> F["STUDENT envia resposta"]
+  F --> G["Sistema salva HomeworkSubmission"]
+  G --> H["TEACHER ve resposta pendente"]
+```
+
+Regras:
+
+- Homework sempre pertence a uma aula.
+- Resposta do aluno fica vinculada ao perfil `StudentProfile`.
+- O aluno so envia homework vinculada ao proprio perfil.
+- Se o aluno reenviar, a resposta anterior e atualizada.
+- Depois que a resposta recebe feedback, o reenvio fica bloqueado para preservar a correcao.
+
+## FASE 6 - Correcao e Feedback
+
+```mermaid
+flowchart TD
+  A["TEACHER abre respostas enviadas"] --> B["Le pergunta e resposta"]
+  B --> C["Escreve feedback"]
+  C --> D["Sistema marca como REVIEWED"]
+  D --> E["STUDENT ve feedback em /ava/student"]
+```
+
+Regras:
+
+- `TEACHER` so corrige respostas de homeworks das proprias aulas.
+- `ADMIN` pode supervisionar.
+- Feedback fica salvo em `HomeworkSubmission.feedback`.
+- Quando corrigida, a resposta muda de `SUBMITTED` para `REVIEWED`.
+
+## Deploy Quando Ha Migration
+
+Use quando `prisma/schema.prisma` ou `prisma/migrations/` mudarem:
+
+```bash
+cd /home/ubuntu/candy-english
+git pull
+docker compose up -d postgres
+docker compose build app migrate audit-server-smoke
+docker compose --profile tools run --rm migrate
+docker compose up -d --force-recreate app
+sleep 45
+docker compose ps
+docker compose --profile tools run --rm audit-server-smoke
+```
+
+Termos:
+
+- `git pull`: baixa as alteracoes do GitHub.
+- `docker compose build`: cria novas imagens Docker.
+- `migrate`: aplica alteracoes no banco.
+- `up -d --force-recreate app`: recria o container do site/AVA.
+- `ps`: mostra status dos containers.
+- `audit-server-smoke`: testa health, home, login e protecao de admin.
+
+## Cuidados
+
+- Nunca versionar `.env`.
+- Nunca expor PostgreSQL publicamente.
+- Nao colar `AUTH_SECRET`, `DATABASE_URL` ou senhas em prints publicos.
+- Depois de expor segredo em tela, rotacionar o valor no `.env` do servidor.

@@ -17,3 +17,7 @@ export function getDefaultAvaPath(role: Role) {
 export function canAccessRole(userRole: Role, allowedRoles: readonly Role[]) {
   return allowedRoles.includes(userRole);
 }
+
+export function isRole(role: unknown): role is Role {
+  return role === "ADMIN" || role === "TEACHER" || role === "STUDENT";
+}

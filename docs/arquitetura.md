@@ -20,6 +20,36 @@ A terceira fase inicia a gestao administrativa do AVA:
 - o formulario usa React Hook Form e Zod;
 - a escrita acontece em server action protegida por sessao `ADMIN`.
 
+## FASE 4
+
+A quarta fase cria a base de aulas, materiais e vocabulario:
+
+- `Lesson` representa uma aula criada por teacher/admin;
+- `LessonMaterial` guarda texto ou link de apoio;
+- `VocabularyItem` guarda termo, traducao e exemplo;
+- aula pode ser vinculada a um `StudentProfile`;
+- `/ava/teacher` cria aulas;
+- `/ava/student` lista aulas vinculadas ao aluno.
+
+## FASE 5
+
+A quinta fase cria homework online:
+
+- `Homework` pertence a uma aula;
+- `HomeworkQuestion` guarda a pergunta inicial;
+- `HomeworkSubmission` guarda a resposta do aluno em JSON;
+- aluno `STUDENT` envia resposta pela propria area;
+- reenviar homework atualiza a submissao existente.
+
+## FASE 6
+
+A sexta fase cria correcao e feedback:
+
+- teacher/admin visualiza respostas enviadas;
+- teacher/admin escreve feedback;
+- submissao muda de `SUBMITTED` para `REVIEWED`;
+- aluno visualiza feedback em `/ava/student`.
+
 ## Endurecimento Operacional
 
 Foi feita uma leitura do repositorio SavePointFinance como referencia externa de robustez operacional: https://github.com/Marks013/SavePointFinance
@@ -60,6 +90,8 @@ Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem a
 - Senhas: hash com `bcryptjs`, compativel com Windows e Linux.
 - O Prisma Client e inicializado de forma lazy em `src/lib/prisma.ts`, evitando falhas de build por variaveis de ambiente ainda nao carregadas.
 - A gestao inicial de usuarios fica concentrada no `/ava/admin`, sem criar rotas publicas de cadastro.
+- Escritas sensiveis usam server actions com `auth()` e validacao por role/dado.
+- `TEACHER` nao recebe lista global de alunos; ve apenas alunos ja vinculados por `StudentTeacherAssignment`.
 
 ### Rotas
 
@@ -105,6 +137,10 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - O seed nao redefine senha de admin existente por padrao. Para redefinir, e necessario definir `ADMIN_RESET_PASSWORD=true`.
 - O comando de seed do Prisma 7 fica em `prisma.config.ts`, dentro de `migrations.seed`, e e executado por `npm run prisma:seed`.
 - Na FASE 3 nao houve alteracao de schema. O cadastro de usuarios usa as tabelas `User`, `StudentProfile` e `TeacherProfile` ja existentes.
+- Na FASE 4-6 o schema adiciona `StudentTeacherAssignment`, `Lesson`, `LessonMaterial`, `VocabularyItem`, `Homework`, `HomeworkQuestion` e `HomeworkSubmission`.
+- `HomeworkSubmission` tem chave unica por `homeworkId` e `studentProfileId`, evitando duplicidade de resposta por aluno/homework.
+- Homework corrigida nao pode ser reenviada pelo aluno nesta fase, preservando o feedback ja enviado.
+- Indices foram adicionados em campos de busca por teacher, student, status e relacionamentos principais.
 
 ### Docker
 
@@ -135,13 +171,15 @@ Itens identificados como proximos endurecimentos, mas ainda fora desta entrega:
 - normalizacao case-insensitive mais forte para email;
 - menus responsivos mais completos para areas do site e do AVA.
 - edicao e desativacao de usuarios pela interface admin;
-- vinculo formal entre aluno e teacher.
+- gestao visual completa dos vinculos aluno-teacher.
+- telas de edicao/delecao de aulas, materiais e homeworks;
+- multiplas perguntas por homework na interface.
 
-## Fora do Escopo da FASE 3
+## Fora do Escopo da FASE 6
 
 - Jogos
 - Recursos de IA
-- Correcao completa de homework
+- Correcao avancada de homework com notas, rubricas e relatorios
 - Upload de arquivos
 - MinIO
 - Pagamentos

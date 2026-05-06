@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 3 em andamento: alem do login real da FASE 2, o `/ava/admin` agora possui uma base inicial de gestao de usuarios, com listagem, contadores por role e cadastro de `ADMIN`, `TEACHER` e `STUDENT`.
+FASE 6 implementada: alem do login real e da gestao inicial de usuarios, o AVA agora possui o primeiro fluxo de aulas, materiais, vocabulario, homeworks, respostas online e feedback.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -26,6 +26,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
 - O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
+- As actions de aulas/homeworks/feedback validam role e vinculo de dados no servidor.
 
 ## Rotas
 
@@ -71,6 +72,8 @@ src/
       health/route.ts
     ava/
       admin/actions.ts
+      teacher/actions.ts
+      student/actions.ts
       login/page.tsx
       admin/page.tsx
       teacher/page.tsx
@@ -79,6 +82,10 @@ src/
     ava/
       admin-create-user-form.tsx
       admin-users-panel.tsx
+      teacher-forms.tsx
+      teacher-workspace.tsx
+      student-homework-form.tsx
+      student-workspace.tsx
     site/
     ui/
   lib/
@@ -88,11 +95,13 @@ src/
     roles.ts
     validations/
       admin-users.ts
+      learning.ts
   types/
     next-auth.d.ts
 docs/
   arquitetura.md
   producao-checklist.md
+  fluxos-ava.md
 prisma/
   migrations/
   schema.prisma
@@ -203,24 +212,26 @@ O app fica em `http://localhost:3000`. O PostgreSQL nao expoe porta publica; o a
 Rotina curta apos atualizar o repositorio, sem mudanca de banco:
 
 ```bash
-cd /home/ubuntu/projetos/candy-english
+cd /home/ubuntu/candy-english
 git pull
 docker compose build app audit-server-smoke
 docker compose up -d --force-recreate app
-docker compose logs --tail=100 app
+sleep 45
+docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 ```
 
 Com alteracao em `prisma/schema.prisma` ou `prisma/migrations/`:
 
 ```bash
-cd /home/ubuntu/projetos/candy-english
+cd /home/ubuntu/candy-english
 git pull
 docker compose up -d postgres
 docker compose build app migrate audit-server-smoke
 docker compose --profile tools run --rm migrate
 docker compose up -d --force-recreate app
-docker compose logs --tail=100 app
+sleep 45
+docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 ```
 
@@ -254,9 +265,20 @@ npm run verify:server-smoke
 O schema atual define:
 
 - enum `Role`: `ADMIN`, `TEACHER`, `STUDENT`
+- enum `LessonStatus`: `DRAFT`, `PUBLISHED`, `ARCHIVED`
+- enum `MaterialType`: `TEXT`, `LINK`
+- enum `HomeworkStatus`: `DRAFT`, `PUBLISHED`, `ARCHIVED`
+- enum `SubmissionStatus`: `SUBMITTED`, `REVIEWED`
 - `User`
 - `StudentProfile`
 - `TeacherProfile`
+- `StudentTeacherAssignment`
+- `Lesson`
+- `LessonMaterial`
+- `VocabularyItem`
+- `Homework`
+- `HomeworkQuestion`
+- `HomeworkSubmission`
 
 ## FASE 3 - Admin
 
@@ -279,11 +301,40 @@ Ainda nao implementado nesta fase:
 - vinculo formal aluno-teacher;
 - importacao em massa.
 
+## FASES 4, 5 e 6 - Aulas, Homework e Feedback
+
+Implementado:
+
+- teacher/admin cria aulas em `/ava/teacher`;
+- aula pode ser vinculada a um aluno;
+- teacher ve e vincula apenas alunos ja ligados a sua area;
+- admin pode criar o primeiro vinculo aluno-teacher ao criar aula;
+- aula pode receber primeiro material e primeiro vocabulario;
+- teacher/admin cria homework ligada a uma aula;
+- aluno STUDENT ve aulas vinculadas em `/ava/student`;
+- aluno STUDENT envia resposta online;
+- homework ja corrigida fica bloqueada para reenvio;
+- teacher/admin ve respostas enviadas;
+- teacher/admin envia feedback;
+- aluno ve feedback corrigido.
+
+Fluxogramas e explicacao detalhada: `docs/fluxos-ava.md`.
+
+Ainda nao implementado:
+
+- edicao/delecao de aulas e homeworks;
+- varios materiais ou varias perguntas por tela;
+- upload de arquivos;
+- IA;
+- notas numericas;
+- notificacoes por email/WhatsApp;
+- jogos.
+
 ## O Que Ainda Nao Foi Criado
 
 - Jogos
 - IA
-- Sistema completo de correcao
+- Sistema avancado de correcao, notas e relatorios
 - Upload de arquivos
 - MinIO
 - Pagamentos

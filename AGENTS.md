@@ -1,12 +1,12 @@
-# AGENTS.md — Candy English AVA
+# AGENTS.md - Candy English AVA
 
 ## Objetivo do projeto
 
-Criar um AVA separado para Candy English, com área administrativa, área teacher e área do aluno.
+Criar um AVA separado para Candy English, com area administrativa, area teacher e area do aluno.
 
-O sistema deve permitir que a teacher crie aulas, materiais, vocabulários, homeworks e correções. O aluno deve conseguir acessar seus materiais, responder atividades online e visualizar feedback.
+O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homeworks e correcoes. O aluno deve conseguir acessar seus materiais, responder atividades online e visualizar feedback.
 
-## Stack obrigatória
+## Stack obrigatoria
 
 - Next.js 15 com App Router
 - TypeScript
@@ -20,28 +20,84 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabulários, home
 - React Hook Form + Zod
 - Docker + Docker Compose
 
-## Estrutura de rotas
+## Rotas do AVA
 
-- /admin
-- /teacher
-- /student
+- `/ava/admin`
+- `/ava/teacher`
+- `/ava/student`
+- `/ava/login`
 
-## Perfis de usuário
+## Perfis de usuario
 
-- ADMIN
-- TEACHER
-- STUDENT
+- `ADMIN`
+- `TEACHER`
+- `STUDENT`
 
 ## Regras principais
 
-- O projeto não deve ser feito em WordPress.
+- O projeto nao deve ser feito em WordPress.
 - O projeto deve rodar em Docker.
-- O banco PostgreSQL não deve ficar exposto publicamente.
-- As credenciais devem ficar em .env.
-- O arquivo .env nunca deve ser versionado no GitHub.
-- O arquivo .env.example deve conter apenas exemplos.
-- Toda mudança estrutural precisa ser documentada no README.md.
-- Toda decisão importante precisa ser registrada em docs/arquitetura.md.
+- O banco PostgreSQL nao deve ficar exposto publicamente.
+- As credenciais devem ficar em `.env`.
+- O arquivo `.env` nunca deve ser versionado no GitHub.
+- O arquivo `.env.example` deve conter apenas exemplos.
+- Toda mudanca estrutural precisa ser documentada no `README.md`.
+- Toda decisao importante precisa ser registrada em `docs/arquitetura.md`.
+- Fluxos de produto devem ser registrados em `docs/fluxos-ava.md`.
+- Server actions precisam validar role e permissao por dado, nao apenas renderizar UI protegida.
+
+## Fase atual
+
+FASE 6 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, aulas, materiais, vocabulario, homework online e feedback inicial.
+
+## Fases implementadas
+
+### FASE 1
+
+Base Next.js, site institucional e rotas iniciais do AVA.
+
+### FASE 2
+
+Login real com Auth.js/NextAuth v5, roles, JWT session, Prisma e seed de admin.
+
+### FASE 3
+
+Gestao inicial de usuarios em `/ava/admin`:
+
+- listar usuarios;
+- cadastrar `ADMIN`, `TEACHER` e `STUDENT`;
+- criar `StudentProfile` e `TeacherProfile`;
+- manter senha com hash `bcryptjs`.
+
+### FASE 4
+
+Aulas, materiais e vocabulario:
+
+- `Lesson`;
+- `LessonMaterial`;
+- `VocabularyItem`;
+- teacher/admin cria aula em `/ava/teacher`;
+- teacher so ve alunos ja vinculados a sua area;
+- admin pode criar o primeiro vinculo aluno-teacher ao criar aula;
+- aluno ve aula vinculada em `/ava/student`.
+
+### FASE 5
+
+Homework online:
+
+- `Homework`;
+- `HomeworkQuestion`;
+- aluno envia resposta online;
+- resposta fica em `HomeworkSubmission`.
+
+### FASE 6
+
+Correcao e feedback:
+
+- teacher/admin ve respostas enviadas;
+- teacher/admin envia feedback;
+- aluno ve feedback na propria area.
+- homework corrigida nao pode ser reenviada pelo aluno nesta fase.
 
 ## MVP inicial
 
@@ -54,4 +110,42 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabulários, home
 7. Cadastro de aulas
 8. Materiais da aula
 9. Homework online
-10. Correção com feedback
+10. Correcao com feedback
+
+## Comandos importantes
+
+### Desenvolvimento local
+
+```bash
+npm install
+npm run lint
+npm run typecheck
+npm run build
+npm run prisma:validate
+```
+
+### Deploy Oracle com migration
+
+```bash
+cd /home/ubuntu/candy-english
+git pull
+docker compose up -d postgres
+docker compose build app migrate audit-server-smoke
+docker compose --profile tools run --rm migrate
+docker compose up -d --force-recreate app
+sleep 45
+docker compose ps
+docker compose --profile tools run --rm audit-server-smoke
+```
+
+## Cuidados para agentes futuros
+
+- Nao alterar `.env` real.
+- Nao imprimir segredos em logs ou respostas.
+- Nao expor porta `5432` do PostgreSQL.
+- Nao criar upload, MinIO, pagamento, IA ou jogos sem pedido explicito.
+- Manter o AVA em `/ava`.
+- Preferir server components para leitura e server actions para escrita.
+- Cada nova action sensivel precisa chamar `auth()` e validar role.
+- `STUDENT` so deve acessar dados do proprio `StudentProfile`.
+- `TEACHER` so deve editar/corrigir dados das proprias aulas.

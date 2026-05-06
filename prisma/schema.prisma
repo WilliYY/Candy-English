@@ -13,6 +13,28 @@ enum Role {
   STUDENT
 }
 
+enum LessonStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MaterialType {
+  TEXT
+  LINK
+}
+
+enum HomeworkStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  REVIEWED
+}
+
 model User {
   id             String          @id @default(cuid())
   name           String
@@ -26,17 +48,137 @@ model User {
 }
 
 model StudentProfile {
-  id        String    @id @default(cuid())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level     String?
-  birthDate DateTime?
-  notes     String?
+  id                 String                     @id @default(cuid())
+  userId             String                     @unique
+  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level              String?
+  birthDate          DateTime?
+  notes              String?
+  teacherAssignments StudentTeacherAssignment[] @relation("StudentAssignments")
+  lessons            Lesson[]
+  submissions        HomeworkSubmission[]
 }
 
 model TeacherProfile {
-  id     String  @id @default(cuid())
-  userId String  @unique
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bio    String?
+  id                 String                     @id @default(cuid())
+  userId             String                     @unique
+  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                String?
+  studentAssignments StudentTeacherAssignment[] @relation("TeacherAssignments")
+  lessons            Lesson[]
+  homeworks          Homework[]
+  reviewedSubmissions HomeworkSubmission[]
+}
+
+model StudentTeacherAssignment {
+  id               String         @id @default(cuid())
+  teacherProfileId String
+  teacherProfile   TeacherProfile @relation("TeacherAssignments", fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile @relation("StudentAssignments", fields: [studentProfileId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([teacherProfileId, studentProfileId])
+  @@index([studentProfileId])
+}
+
+model Lesson {
+  id               String           @id @default(cuid())
+  title            String
+  description      String?
+  scheduledAt      DateTime?
+  status           LessonStatus     @default(PUBLISHED)
+  teacherProfileId String
+  teacherProfile   TeacherProfile   @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  studentProfileId String?
+  studentProfile   StudentProfile?  @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  materials        LessonMaterial[]
+  vocabularyItems  VocabularyItem[]
+  homeworks        Homework[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([teacherProfileId])
+  @@index([studentProfileId])
+  @@index([status])
+}
+
+model LessonMaterial {
+  id        String       @id @default(cuid())
+  lessonId  String
+  lesson    Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  title     String
+  type      MaterialType @default(TEXT)
+  content   String?
+  url       String?
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([lessonId])
+}
+
+model VocabularyItem {
+  id          String   @id @default(cuid())
+  lessonId    String
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  term        String
+  translation String
+  example     String?
+  notes       String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([lessonId])
+}
+
+model Homework {
+  id               String               @id @default(cuid())
+  lessonId         String
+  lesson           Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherProfileId String
+  teacherProfile   TeacherProfile       @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  title            String
+  instructions     String?
+  dueDate          DateTime?
+  status           HomeworkStatus       @default(PUBLISHED)
+  questions        HomeworkQuestion[]
+  submissions      HomeworkSubmission[]
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  @@index([lessonId])
+  @@index([teacherProfileId])
+  @@index([status])
+}
+
+model HomeworkQuestion {
+  id             String   @id @default(cuid())
+  homeworkId     String
+  homework       Homework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  prompt         String
+  expectedAnswer String?
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([homeworkId])
+}
+
+model HomeworkSubmission {
+  id                        String           @id @default(cuid())
+  homeworkId                String
+  homework                  Homework         @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  studentProfileId          String
+  studentProfile            StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  answers                   Json
+  status                    SubmissionStatus @default(SUBMITTED)
+  submittedAt               DateTime         @default(now())
+  feedback                  String?
+  reviewedAt                DateTime?
+  reviewedByTeacherProfileId String?
+  reviewedByTeacherProfile   TeacherProfile? @relation(fields: [reviewedByTeacherProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([homeworkId, studentProfileId])
+  @@index([studentProfileId])
+  @@index([status])
 }

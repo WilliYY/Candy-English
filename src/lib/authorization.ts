@@ -1,7 +1,12 @@
 import type { Session } from "next-auth";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { canAccessRole, getDefaultAvaPath, type Role } from "@/lib/roles";
+import {
+  canAccessRole,
+  getDefaultAvaPath,
+  isRole,
+  type Role,
+} from "@/lib/roles";
 
 type AvaSession = Session & {
   user: NonNullable<Session["user"]> & {
@@ -13,7 +18,7 @@ type AvaSession = Session & {
 
 function isAvaSession(session: Session | null): session is AvaSession {
   return Boolean(
-    session?.user?.email && session.user.id && session.user.role,
+    session?.user?.email && session.user.id && isRole(session.user.role),
   );
 }
 
