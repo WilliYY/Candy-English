@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 14 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito do site/login. O AVA tambem possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
+FASE 15 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito do site/login. O AVA tambem possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -26,6 +26,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
 - O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
+- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno e editar site sem criar novas rotas.
 - As actions de aulas/homeworks/feedback validam role e vinculo de dados no servidor.
 - Usuarios inativos nao conseguem fazer login.
 - Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
@@ -401,6 +402,20 @@ Ainda nao implementado:
 - upload de materiais de aula para cada homework;
 - permissoes finas customizaveis por teacher;
 - IA real conectada ao Catty.
+
+## FASE 15 - Admin por tarefa
+
+Implementado:
+
+- sidebar admin ordenada como: usuarios, criar admin, criar teacher, criar aluno, vincular aluno e editar site;
+- `/ava/admin?task=usuarios` mostra somente listagem, contadores e status de usuarios;
+- `/ava/admin?task=criar-admin` mostra somente o formulario de admin;
+- `/ava/admin?task=criar-teacher` mostra somente o formulario de teacher;
+- `/ava/admin?task=criar-aluno` mostra somente o formulario de aluno;
+- cadastro de aluno usa nome completo, email/usuario de login, senha provisoria, data de nascimento e campo de documento/responsavel;
+- idade do aluno nao fica fixa no banco: ela e calculada pela data de nascimento conforme o ano passa;
+- `/ava/admin?task=vincular-aluno` mostra o formulario de vinculo e os vinculos atuais;
+- `/ava/admin?task=editar-site` mostra somente a edicao de textos institucionais.
 
 ## Ferramentas Locais Recomendadas
 

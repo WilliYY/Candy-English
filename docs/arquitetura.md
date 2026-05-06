@@ -278,6 +278,17 @@ A decima quarta fase define orcamento de memoria no Docker:
 - a porta `5432` continua sem publicacao no host.
 - o layout do AVA foi refinado para reduzir confusao: admin, teacher e student exibem grupos expansíveis na sidebar para os principais blocos de leitura/edicao, sem caixa interna de rolagem nos atalhos.
 
+## FASE 15
+
+A decima quinta fase organiza o admin por tarefa dentro da mesma rota:
+
+- `/ava/admin?task=usuarios` e a entrada padrao do admin;
+- os links da sidebar usam `?task=` em vez de ancora para renderizar somente uma area principal por vez;
+- criar admin, criar teacher e criar aluno usam o mesmo server action `createAvaUser`, mas a UI fixa o role de cada formulario;
+- o cadastro de aluno coleta data de nascimento e calcula idade na interface, evitando gravar idade fixa no banco;
+- o campo documento/responsavel usa as notas iniciais do `StudentProfile` nesta etapa, sem nova migration;
+- vincular aluno e editar site continuam usando server actions protegidas por `ADMIN`.
+
 ## Decisao Sobre Aula Ao Vivo
 
 O projeto usa Google Meet nesta fase. Isso entrega camera, microfone e compartilhamento de tela com seguranca e estabilidade sem criar uma infraestrutura WebRTC propria. A aula nao fica embutida como player interno; o AVA mostra o botao protegido e abre o Meet para usuarios autorizados.

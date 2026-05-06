@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { AdminUsersPanel } from "@/components/ava/admin-users-panel";
+import {
+  AdminUsersPanel,
+  normalizeAdminTask,
+} from "@/components/ava/admin-users-panel";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
 
@@ -10,9 +13,20 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function AdminPage() {
+type AdminPageProps = {
+  searchParams?: Promise<{
+    task?: string | string[];
+  }>;
+};
+
+export default async function AdminPage({ searchParams }: AdminPageProps) {
   const session = await requireAvaRole(["ADMIN"], "/ava/admin");
   const prisma = getPrisma();
+  const params = searchParams ? await searchParams : undefined;
+  const requestedTask = Array.isArray(params?.task)
+    ? params?.task[0]
+    : params?.task;
+  const activeTask = normalizeAdminTask(requestedTask);
 
   const [users, teachers, students, assignments, siteContents] =
     await Promise.all([
@@ -118,6 +132,7 @@ export default async function AdminPage() {
 
   return (
     <AdminUsersPanel
+      activeTask={activeTask}
       assignments={assignments.map((assignment) => ({
         createdAt: assignment.createdAt,
         id: assignment.id,

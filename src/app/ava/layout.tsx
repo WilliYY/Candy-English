@@ -25,39 +25,39 @@ import { Button } from "@/components/ui/button";
 const navGroups = [
   {
     allowedRoles: ["ADMIN"] as const,
-    href: "/ava/admin",
+    href: "/ava/admin?task=usuarios",
     icon: Settings,
     label: "Admin",
     links: [
       {
-        href: "/ava/admin#conteudo-site",
-        icon: PencilLine,
-        label: "Editar site",
+        href: "/ava/admin?task=usuarios",
+        icon: UsersRound,
+        label: "Usuarios",
       },
       {
-        href: "/ava/admin#cadastrar-acesso",
+        href: "/ava/admin?task=criar-admin",
         icon: UserPlus,
         label: "Criar admin",
       },
       {
-        href: "/ava/admin#cadastrar-acesso",
+        href: "/ava/admin?task=criar-teacher",
         icon: GraduationCap,
         label: "Criar teacher",
       },
       {
-        href: "/ava/admin#cadastrar-acesso",
+        href: "/ava/admin?task=criar-aluno",
         icon: UserRound,
         label: "Criar aluno",
       },
       {
-        href: "/ava/admin#vincular-teacher",
+        href: "/ava/admin?task=vincular-aluno",
         icon: Link2,
         label: "Vincular aluno",
       },
       {
-        href: "/ava/admin#usuarios",
-        icon: UsersRound,
-        label: "Usuarios",
+        href: "/ava/admin?task=editar-site",
+        icon: PencilLine,
+        label: "Editar site",
       },
     ],
   },

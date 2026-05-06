@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 14 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca e Catty no canto inferior direito do site/login. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas.
+FASE 15 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca e Catty no canto inferior direito do site/login. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas. O admin agora usa `/ava/admin?task=...` para abrir uma tarefa limpa por vez sem criar novas rotas.
 
 ## Fases implementadas
 
@@ -168,6 +168,18 @@ Orcamento de RAM e refino visual operacional:
 - resumo de usuario no AVA usa faixa clara em formato de bala, sem visual de cartao;
 - seletores de role devem evitar colunas estreitas que cortem texto.
 - sidebar do AVA funciona como indice operacional por role, com grupos expansíveis e atalhos profundos para os blocos da pagina.
+
+### FASE 15
+
+Admin por tarefa:
+
+- sidebar admin ordenada como usuarios, criar admin, criar teacher, criar aluno, vincular aluno e editar site;
+- `/ava/admin?task=usuarios` mostra somente listagem, contadores e status de usuarios;
+- `/ava/admin?task=criar-admin`, `criar-teacher` e `criar-aluno` mostram formularios separados por role;
+- criar aluno usa nome completo, email/usuario de login, senha provisoria, data de nascimento e documento/responsavel;
+- idade do aluno e calculada pela data de nascimento, nao salva como numero fixo;
+- `/ava/admin?task=vincular-aluno` mostra vinculo e lista de vinculos atuais;
+- `/ava/admin?task=editar-site` mostra somente a edicao do site institucional.
 
 ## MVP inicial
 

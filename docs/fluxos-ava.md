@@ -144,10 +144,10 @@ flowchart LR
   B --> C["Grupo ADMIN"]
   B --> D["Grupo TEACHER"]
   B --> E["Grupo STUDENT"]
-  C --> C1["Editar site, criar acessos, vincular aluno, usuarios"]
+  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, editar site"]
   D --> D1["Aula ao vivo, criar aula, criar homework, corrigir, contratos"]
   E --> E1["Aulas, homeworks, contratos, perfil"]
-  C --> F["Clique leva direto ao bloco da pagina"]
+  C --> F["Clique troca a tarefa principal do admin"]
   D --> F
   E --> F
 ```
@@ -156,9 +156,26 @@ Regras:
 
 - A sidebar deve ser o indice principal de operacao do AVA.
 - Grupos como `Teacher` e `Student` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
-- Os atalhos usam ancoras internas, como `#cadastrar-acesso`, `#criar-aula` e `#homeworks`.
+- No admin, os atalhos usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno` e `?task=editar-site` para mostrar uma tarefa por vez.
+- Nas areas teacher/student, os atalhos ainda podem usar ancoras internas como `#criar-aula` e `#homeworks`.
 - Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
 - Nao usar uma caixa interna com barra de rolagem para atalhos; se houver muitas opcoes, agrupar por role.
+
+## Fluxo Admin Por Tarefa
+
+```mermaid
+flowchart TD
+  A["ADMIN abre /ava/admin"] --> B["task padrao: usuarios"]
+  B --> C["Lista usuarios e status"]
+  A --> D["?task=criar-admin"]
+  A --> E["?task=criar-teacher"]
+  A --> F["?task=criar-aluno"]
+  F --> F1["Nome completo, data de nascimento, documento/responsavel, email/login e senha provisoria"]
+  A --> G["?task=vincular-aluno"]
+  G --> G1["Seleciona teacher e aluno ativo"]
+  A --> H["?task=editar-site"]
+  H --> H1["Edita textos institucionais"]
+```
 
 ## Deploy Quando Ha Migration
 
