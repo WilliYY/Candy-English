@@ -1,17 +1,23 @@
 import type { Metadata } from "next";
 import { BookOpen, HeartHandshake, ShieldCheck, Sparkles } from "lucide-react";
 import { InstitutionalPage } from "@/components/site/institutional-page";
+import { getSitePageContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Sobre",
 };
 
-export default function SobrePage() {
+export const dynamic = "force-dynamic";
+
+export default async function SobrePage() {
+  const content = await getSitePageContent("sobre");
+
   return (
     <InstitutionalPage
       eyebrow="Sobre"
-      title="Uma escola de ingles com cuidado humano e base digital propria."
-      description="A Candy English une aulas proximas, materiais organizados e acompanhamento continuo para que o aluno evolua com clareza."
+      title={content.title}
+      description={content.description}
+      ctaLabel={content.ctaLabel}
       sections={[
         {
           title: "Ensino proximo",

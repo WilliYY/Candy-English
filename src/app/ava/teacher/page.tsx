@@ -49,7 +49,20 @@ export default async function TeacherPage() {
         }
       : {};
 
-  const [teachers, students, lessons, submissions] = await Promise.all([
+  const [currentUser, teachers, students, lessons, submissions, liveSessions, contracts] =
+    await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          address: true,
+          avatarPath: true,
+          email: true,
+          id: true,
+          name: true,
+          phone: true,
+          role: true,
+        },
+      }),
     prisma.teacherProfile.findMany({
       where: teacherWhere,
       orderBy: {
@@ -190,12 +203,96 @@ export default async function TeacherPage() {
         submittedAt: true,
       },
     }),
+    prisma.liveSession.findMany({
+      where: lessonWhere,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        isLive: true,
+        meetUrl: true,
+        startsAt: true,
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        teacherProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        title: true,
+      },
+    }),
+    prisma.contractDocument.findMany({
+      where:
+        session.user.role === "TEACHER"
+          ? {
+              OR: [
+                { studentProfileId: null },
+                {
+                  studentProfile: {
+                    teacherAssignments: {
+                      some: {
+                        teacherProfileId: teacherProfileIdForFiltering,
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {},
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+        id: true,
+        sizeBytes: true,
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        title: true,
+      },
+    }),
   ]);
 
   return (
     <TeacherWorkspace
-      currentUser={session.user}
+      contracts={contracts.map((contract) => ({
+        createdAt: contract.createdAt,
+        id: contract.id,
+        sizeBytes: contract.sizeBytes,
+        studentName: contract.studentProfile?.user.name ?? null,
+        title: contract.title,
+      }))}
+      currentUser={currentUser ?? session.user}
       lessons={lessons}
+      liveSessions={liveSessions.map((session) => ({
+        id: session.id,
+        isLive: session.isLive,
+        meetUrl: session.meetUrl,
+        startsAt: session.startsAt,
+        studentName: session.studentProfile?.user.name ?? null,
+        teacherName: session.teacherProfile.user.name,
+        title: session.title,
+      }))}
       students={students.map((student) => ({
         id: student.id,
         label: `${student.user.name}${student.level ? ` - ${student.level}` : ""}`,

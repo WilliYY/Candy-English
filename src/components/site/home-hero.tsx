@@ -17,9 +17,29 @@ const activity = [
   "Fluency",
 ];
 
-export function HomeHero() {
+type HomeHeroProps = {
+  content?: {
+    ctaLabel: string;
+    description: string;
+    title: string;
+  };
+};
+
+export function HomeHero({ content }: HomeHeroProps) {
   return (
     <section className="candy-deep relative isolate min-h-[calc(100svh-5rem)] overflow-hidden text-white">
+      <video
+        className="absolute inset-0 size-full object-cover opacity-35"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        aria-hidden="true"
+      >
+        <source src="/media/nuvem-fundo.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 bg-[#2c1338]/72" />
       <div className="candy-kinetic-grid absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fefbfa] to-transparent" />
 
@@ -35,11 +55,11 @@ export function HomeHero() {
               Candy English
             </p>
             <h1 className="max-w-4xl text-5xl font-semibold leading-[0.96] tracking-normal sm:text-6xl lg:text-7xl">
-              Fale ingles com clareza, rotina e feedback.
+              {content?.title ?? "Fale ingles com clareza, rotina e feedback."}
             </h1>
             <p className="max-w-2xl text-base leading-8 text-white/75 md:text-lg">
-              Aulas personalizadas com materiais, vocabulario, homework online
-              e devolutivas em um AVA proprio para acompanhar cada passo.
+              {content?.description ??
+                "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo."}
             </p>
           </div>
 
@@ -50,7 +70,7 @@ export function HomeHero() {
               className="bg-[#e57cd8] text-[#2c1338] hover:bg-[#f7a8ed]"
             >
               <Link href="/contato">
-                Comecar conversa
+                {content?.ctaLabel ?? "Comecar conversa"}
                 <ArrowRight data-icon="inline-end" />
               </Link>
             </Button>

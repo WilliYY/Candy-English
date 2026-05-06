@@ -41,6 +41,9 @@ Movimentos permitidos nesta fase:
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
+- nuvem em video loop no hero;
+- balas e sprites pequenos fugindo do mouse;
+- Catty fixo no canto inferior direito.
 
 Cuidados:
 
@@ -48,6 +51,7 @@ Cuidados:
 - nao usar movimento em formularios de login/admin que atrapalhe foco;
 - nao usar decoracao em bolhas/orbs;
 - manter contraste alto em texto sobre fundo roxo.
+- usar `prefers-reduced-motion` para reduzir animacoes quando o navegador pedir.
 
 ## Fluxo Visual Do Site
 

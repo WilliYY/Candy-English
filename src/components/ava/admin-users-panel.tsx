@@ -14,6 +14,7 @@ import {
   AdminAssignTeacherForm,
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
+import { AdminSiteContentForm } from "@/components/ava/admin-site-content-form";
 import { SignOutButton } from "@/components/ava/sign-out-button";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,13 @@ type AssignmentRow = {
   teacherProfileId: string;
 };
 
+type SiteContentRow = {
+  ctaLabel: string | null;
+  description: string;
+  slug: "home" | "sobre" | "metodologia" | "planos" | "contato";
+  title: string;
+};
+
 type AdminUsersPanelProps = {
   assignments: AssignmentRow[];
   currentUser: {
@@ -57,6 +65,7 @@ type AdminUsersPanelProps = {
     name?: string | null;
     role: Role;
   };
+  siteContents: SiteContentRow[];
   students: AssignmentOption[];
   teachers: AssignmentOption[];
   users: AdminUserRow[];
@@ -97,6 +106,7 @@ function getProfileSummary(user: AdminUserRow) {
 export function AdminUsersPanel({
   assignments,
   currentUser,
+  siteContents,
   students,
   teachers,
   users,
@@ -207,6 +217,15 @@ export function AdminUsersPanel({
           </Card>
         ))}
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Conteudo do site</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AdminSiteContentForm contents={siteContents} />
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
         <div className="flex flex-col gap-6">

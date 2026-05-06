@@ -14,7 +14,8 @@ export default async function AdminPage() {
   const session = await requireAvaRole(["ADMIN"], "/ava/admin");
   const prisma = getPrisma();
 
-  const [users, teachers, students, assignments] = await Promise.all([
+  const [users, teachers, students, assignments, siteContents] =
+    await Promise.all([
     prisma.user.findMany({
       orderBy: {
         createdAt: "desc",
@@ -102,6 +103,17 @@ export default async function AdminPage() {
         },
       },
     }),
+    prisma.sitePageContent.findMany({
+      orderBy: {
+        slug: "asc",
+      },
+      select: {
+        ctaLabel: true,
+        description: true,
+        slug: true,
+        title: true,
+      },
+    }),
   ]);
 
   return (
@@ -115,6 +127,12 @@ export default async function AdminPage() {
         teacherProfileId: assignment.teacherProfileId,
       }))}
       currentUser={session.user}
+      siteContents={siteContents.map((content) => ({
+        ctaLabel: content.ctaLabel,
+        description: content.description,
+        slug: content.slug as "home" | "sobre" | "metodologia" | "planos" | "contato",
+        title: content.title,
+      }))}
       students={students.map((student) => ({
         email: student.user.email,
         id: student.id,

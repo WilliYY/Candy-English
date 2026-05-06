@@ -109,6 +109,31 @@ Regras:
 - O sistema deve manter pelo menos um admin ativo.
 - Vinculo aluno-teacher orienta quais alunos aparecem para a teacher.
 
+## FASES 11 a 13 - Sidebar, Aula Ao Vivo, Contratos e Catty
+
+```mermaid
+flowchart TD
+  A["Usuario entra no AVA"] --> B{"Role"}
+  B --> C["ADMIN: usuarios, conteudo do site, vinculos"]
+  B --> D["TEACHER: aulas, homeworks, contratos, aula ao vivo"]
+  B --> E["STUDENT: aulas, perfil, contratos, botao ao vivo"]
+  D --> F["Teacher abre LiveSession com link Google Meet"]
+  F --> G["Aluno logado ve Aula ao vivo"]
+  G --> H["Aluno abre Google Meet"]
+  C --> I["Admin sobe contrato PDF"]
+  D --> I
+  I --> J["Aluno autorizado visualiza PDF protegido"]
+```
+
+Regras:
+
+- Aula ao vivo usa Google Meet nesta fase.
+- O AVA nao libera o link para visitante sem login.
+- Contratos PDF sao servidos por rota protegida.
+- Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
+- Contrato aceita PDF ate 8 MB.
+- Catty e os sprites sao interface visual; IA real ainda nao esta conectada.
+
 ## Deploy Quando Ha Migration
 
 Use quando `prisma/schema.prisma` ou `prisma/migrations/` mudarem:

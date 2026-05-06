@@ -83,7 +83,23 @@ export const adminAssignTeacherSchema = z.object({
   teacherProfileId: z.string().min(1, "Selecione uma teacher."),
 });
 
+export const adminSiteContentSchema = z.object({
+  ctaLabel: optionalText(80, "O texto do botao pode ter no maximo 80 caracteres."),
+  description: z
+    .string()
+    .trim()
+    .min(10, "Informe uma descricao com pelo menos 10 caracteres.")
+    .max(900, "A descricao pode ter no maximo 900 caracteres."),
+  slug: z.enum(["home", "sobre", "metodologia", "planos", "contato"]),
+  title: z
+    .string()
+    .trim()
+    .min(3, "Informe um titulo com pelo menos 3 caracteres.")
+    .max(180, "O titulo pode ter no maximo 180 caracteres."),
+});
+
 export type AdminToggleUserStatusInput = z.input<
   typeof adminToggleUserStatusSchema
 >;
 export type AdminAssignTeacherInput = z.input<typeof adminAssignTeacherSchema>;
+export type AdminSiteContentInput = z.input<typeof adminSiteContentSchema>;

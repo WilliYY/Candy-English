@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 10 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual com movimento, logos reais e paleta roxa inspirada em produtos SaaS modernos. O AVA tambem recebeu melhorias operacionais de admin: status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher.
+FASE 13 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual com movimento, nuvem em loop, bala como favicon, Catty e sprites animados. O AVA tambem recebeu sidebar por role, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -31,6 +31,9 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
 - A direcao visual usa assets em `public/brand/` e `public/favicon.svg`.
 - Headers basicos de seguranca sao definidos em `next.config.ts`.
+- A aula ao vivo usa link protegido do Google Meet dentro do AVA; camera e compartilhamento de tela acontecem no Meet.
+- Login com Google esta preparado de forma opcional e so aceita emails ja cadastrados no AVA.
+- Uploads locais ficam em `storage/` no desenvolvimento e em volume Docker `app-storage` em producao.
 
 ## Rotas
 
@@ -86,12 +89,18 @@ src/
     ava/
       admin-create-user-form.tsx
       admin-operations.tsx
+      admin-site-content-form.tsx
       admin-users-panel.tsx
+      contract-upload-form.tsx
+      live-session-forms.tsx
+      profile-forms.tsx
       teacher-forms.tsx
       teacher-workspace.tsx
       student-homework-form.tsx
       student-workspace.tsx
     site/
+      candy-field.tsx
+      catty-widget.tsx
     ui/
   lib/
     auth.ts
@@ -127,6 +136,9 @@ DATABASE_URL="postgresql://candy_user:senha@postgres:5432/candy_english?schema=p
 AUTH_SECRET="use-um-valor-seguro"
 NEXTAUTH_URL="http://localhost:3000"
 AUTH_URL="http://localhost:3000"
+AVA_STORAGE_DIR="/app/storage"
+GOOGLE_CLIENT_ID=""
+GOOGLE_CLIENT_SECRET=""
 ADMIN_NAME="Candy Admin"
 ADMIN_EMAIL="admin@example.com"
 ADMIN_PASSWORD="troque-esta-senha"
@@ -286,6 +298,9 @@ O schema atual define:
 - `HomeworkQuestion`
 - `HomeworkSubmission`
 - `LoginAttempt`
+- `LiveSession`
+- `ContractDocument`
+- `SitePageContent`
 
 `User` tambem possui `isActive`, usado para desativar acesso sem apagar historico.
 
@@ -349,6 +364,78 @@ Ainda nao implementado:
 - relatorios avancados;
 - dashboard complexo;
 - notificacoes.
+
+## FASES 11, 12 e 13 - AVA Estruturado, Aula Ao Vivo e Movimento
+
+Implementado:
+
+- layout do AVA com sidebar por role;
+- perfil com nome, telefone, endereco e foto;
+- upload seguro de foto PNG/JPG/WebP ate 2 MB;
+- upload seguro de contratos PDF ate 8 MB;
+- visualizacao protegida de contratos em `/ava/contracts/[contractId]`;
+- aula ao vivo via link Google Meet em `LiveSession`;
+- teacher/admin pode abrir e encerrar aula ao vivo;
+- student ve botao "Aula ao vivo" quando ha sessao ativa para ele ou geral;
+- Google login opcional com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`;
+- editor simples de conteudo institucional no admin;
+- bala sem fundo como favicon e sprite;
+- hero com video `nuvem-fundo.mp4` em loop;
+- Catty no canto inferior direito;
+- 25 balas + 2 sprites de cada GIF informado fugindo do mouse.
+
+Ainda nao implementado:
+
+- videoconferencia propria WebRTC dentro do site;
+- assinatura digital de contrato;
+- upload de materiais de aula para cada homework;
+- permissoes finas customizaveis por teacher;
+- IA real conectada ao Catty.
+
+## Ferramentas Locais Recomendadas
+
+Instalado neste Windows:
+
+- Visual Studio Code;
+- extensoes VS Code: Docker, Prisma, ESLint, Tailwind CSS IntelliSense, GitLens;
+- DBeaver Community.
+
+Docker Desktop tentou instalar, mas exige PowerShell como administrador. Rode manualmente:
+
+```powershell
+winget install --id Docker.DockerDesktop --exact --source winget --accept-source-agreements --accept-package-agreements
+```
+
+Limite WSL2/Docker criado em `C:\Users\casas bahia\.wslconfig`:
+
+```ini
+[wsl2]
+memory=3GB
+processors=2
+swap=1GB
+localhostForwarding=true
+```
+
+Depois de alterar `.wslconfig`, reinicie o Windows ou rode `wsl --shutdown`.
+
+## Figma
+
+Figma e uma ferramenta de design/prototipo. Ela serve para desenhar telas antes de programar, revisar visual com cliente/professora e manter um design system. Nao e obrigatoria para rodar o Candy English, mas ajuda quando voce quiser aprovar o visual das paginas antes de implementar.
+
+## Usando Em Outro Computador
+
+Instale Git, Node.js LTS, VS Code, Docker Desktop, DBeaver e PuTTY. Depois:
+
+```bash
+git clone https://github.com/WilliYY/Candy-English.git candy-english
+cd candy-english
+npm install
+cp .env.example .env
+npm run prisma:generate
+npm run dev
+```
+
+Nunca copie `.env` para o GitHub. Em outro computador, crie um `.env` novo com os valores corretos.
 
 Ainda nao implementado:
 

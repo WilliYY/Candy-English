@@ -70,7 +70,12 @@ export default async function LoginPage() {
                 <p className="text-sm text-muted-foreground">Carregando...</p>
               }
             >
-              <LoginForm />
+              <LoginForm
+                googleEnabled={Boolean(
+                  process.env.GOOGLE_CLIENT_ID &&
+                    process.env.GOOGLE_CLIENT_SECRET,
+                )}
+              />
             </Suspense>
           </CardContent>
         </Card>

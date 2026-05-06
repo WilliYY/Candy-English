@@ -1,18 +1,28 @@
 import type { Metadata } from "next";
-import { BookMarked, CheckCircle2, ClipboardCheck, MessageSquareText } from "lucide-react";
+import {
+  BookMarked,
+  CheckCircle2,
+  ClipboardCheck,
+  MessageSquareText,
+} from "lucide-react";
 import { InstitutionalPage } from "@/components/site/institutional-page";
+import { getSitePageContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Metodologia",
 };
 
-export default function MetodologiaPage() {
+export const dynamic = "force-dynamic";
+
+export default async function MetodologiaPage() {
+  const content = await getSitePageContent("metodologia");
+
   return (
     <InstitutionalPage
       eyebrow="Metodologia"
-      title="Aula, pratica e feedback no mesmo caminho."
-      description="A metodologia prioriza uso real do ingles, revisao inteligente e acompanhamento para o aluno saber onde esta e qual e o proximo passo."
-      ctaLabel="Ver planos"
+      title={content.title}
+      description={content.description}
+      ctaLabel={content.ctaLabel}
       ctaHref="/planos"
       sections={[
         {

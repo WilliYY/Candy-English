@@ -232,3 +232,43 @@ Itens identificados como proximos endurecimentos, mas ainda fora desta entrega:
 - MinIO
 - Pagamentos
 - Dashboards complexos
+
+## FASE 11
+
+A decima primeira fase estrutura o AVA como produto operacional:
+
+- layout `/ava` usa sidebar por role;
+- menu muda para admin, teacher e student;
+- protecao real continua nas paginas e server actions;
+- o objetivo e facilitar uso diario sem criar dashboard pesado.
+
+## FASE 12
+
+A decima segunda fase adiciona recursos escolares de base:
+
+- `LiveSession` guarda aula ao vivo por Google Meet;
+- teacher/admin pode abrir e encerrar aula ao vivo;
+- student ve botao de Meet apenas quando ha sessao ativa para ele ou geral;
+- `ContractDocument` guarda metadados de contratos PDF;
+- arquivos ficam fora do Git, em `storage/` local ou volume Docker `app-storage`;
+- rotas `/ava/contracts/[contractId]` e `/ava/avatar/[userId]` validam sessao antes de servir arquivo;
+- `User` passa a ter telefone, endereco e foto;
+- login com Google e opcional e so aceita email ja cadastrado no AVA.
+
+## FASE 13
+
+A decima terceira fase adiciona movimento e experiencia visual:
+
+- bala sem fundo vira favicon e sprite;
+- `nuvem-fundo.mp4` roda em loop no hero;
+- Catty fica no canto inferior direito como chatbot visual;
+- 25 balas e 2 sprites de cada GIF informado fogem do mouse;
+- animacoes respeitam `prefers-reduced-motion`.
+
+## Decisao Sobre Aula Ao Vivo
+
+O projeto usa Google Meet nesta fase. Isso entrega camera, microfone e compartilhamento de tela com seguranca e estabilidade sem criar uma infraestrutura WebRTC propria. A aula nao fica embutida como player interno; o AVA mostra o botao protegido e abre o Meet para usuarios autorizados.
+
+## Decisao Sobre Uploads
+
+Uploads agora existem apenas para foto de perfil e contratos PDF. Eles usam validacao de tipo e tamanho no servidor. Nao ha upload livre de materiais ainda. Em producao, o volume Docker `app-storage` preserva os arquivos entre recriacoes do container.

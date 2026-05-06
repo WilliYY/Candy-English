@@ -11,6 +11,9 @@ import {
 import { HomeHero } from "@/components/site/home-hero";
 import { SectionShell } from "@/components/site/section-shell";
 import { Button } from "@/components/ui/button";
+import { getSitePageContent } from "@/lib/site-content";
+
+export const dynamic = "force-dynamic";
 
 const workflow = [
   {
@@ -37,10 +40,12 @@ const promises = [
   "Base propria, sem WordPress e sem dependencia de hospedagem compartilhada",
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const content = await getSitePageContent("home");
+
   return (
     <>
-      <HomeHero />
+      <HomeHero content={content} />
 
       <SectionShell
         eyebrow="Metodologia"

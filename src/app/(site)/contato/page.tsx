@@ -1,18 +1,23 @@
 import type { Metadata } from "next";
 import { Mail, MessageCircle, Send, ShieldCheck } from "lucide-react";
 import { InstitutionalPage } from "@/components/site/institutional-page";
+import { getSitePageContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Contato",
 };
 
-export default function ContatoPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ContatoPage() {
+  const content = await getSitePageContent("contato");
+
   return (
     <InstitutionalPage
       eyebrow="Contato"
-      title="Converse com a Candy English e encontre o melhor caminho."
-      description="Use esta pagina como base institucional. Quando os canais oficiais estiverem definidos, os links diretos de email e WhatsApp entram aqui."
-      ctaLabel="Acessar AVA"
+      title={content.title}
+      description={content.description}
+      ctaLabel={content.ctaLabel}
       ctaHref="/ava"
       sections={[
         {

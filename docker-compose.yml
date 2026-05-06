@@ -10,6 +10,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      AVA_STORAGE_DIR: /app/storage
       AUTH_SECRET: ${AUTH_SECRET:?Defina AUTH_SECRET no arquivo .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL no arquivo .env}
@@ -31,6 +32,8 @@ services:
     ports:
       - "${APP_HOST_BIND:-127.0.0.1}:${APP_PORT:-3000}:3000"
     restart: unless-stopped
+    volumes:
+      - app-storage:/app/storage
 
   postgres:
     image: postgres:17-alpine
@@ -108,4 +111,5 @@ services:
     command: npm run audit:server-smoke
 
 volumes:
+  app-storage:
   postgres-data:

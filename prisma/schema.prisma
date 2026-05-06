@@ -36,16 +36,21 @@ enum SubmissionStatus {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  name           String
-  email          String          @unique
-  passwordHash   String
-  role           Role            @default(STUDENT)
-  isActive       Boolean         @default(true)
-  studentProfile StudentProfile?
-  teacherProfile TeacherProfile?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                String             @id @default(cuid())
+  name              String
+  email             String             @unique
+  passwordHash      String
+  role              Role               @default(STUDENT)
+  isActive          Boolean            @default(true)
+  phone             String?
+  address           String?
+  avatarPath        String?
+  avatarMimeType    String?
+  studentProfile    StudentProfile?
+  teacherProfile    TeacherProfile?
+  uploadedContracts ContractDocument[] @relation("UploadedContracts")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([isActive])
 }
@@ -60,6 +65,8 @@ model StudentProfile {
   teacherAssignments StudentTeacherAssignment[] @relation("StudentAssignments")
   lessons            Lesson[]
   submissions        HomeworkSubmission[]
+  contracts          ContractDocument[]
+  liveSessions       LiveSession[]
 }
 
 model TeacherProfile {
@@ -71,6 +78,7 @@ model TeacherProfile {
   lessons            Lesson[]
   homeworks          Homework[]
   reviewedSubmissions HomeworkSubmission[]
+  liveSessions       LiveSession[]
 }
 
 model StudentTeacherAssignment {
@@ -184,6 +192,52 @@ model HomeworkSubmission {
   @@unique([homeworkId, studentProfileId])
   @@index([studentProfileId])
   @@index([status])
+}
+
+model LiveSession {
+  id               String         @id @default(cuid())
+  title            String
+  meetUrl          String
+  startsAt         DateTime?
+  endsAt           DateTime?
+  isLive           Boolean        @default(true)
+  teacherProfileId String
+  teacherProfile   TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  studentProfileId String?
+  studentProfile   StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([teacherProfileId])
+  @@index([studentProfileId])
+  @@index([isLive])
+}
+
+model ContractDocument {
+  id               String          @id @default(cuid())
+  title            String
+  fileName         String
+  storagePath      String
+  mimeType         String
+  sizeBytes        Int
+  studentProfileId String?
+  studentProfile   StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  uploadedByUserId String
+  uploadedByUser   User            @relation("UploadedContracts", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+
+  @@index([studentProfileId])
+  @@index([uploadedByUserId])
+}
+
+model SitePageContent {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  ctaLabel    String?
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
 }
 
 model LoginAttempt {

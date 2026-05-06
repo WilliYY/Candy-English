@@ -8,9 +8,11 @@ import type { Role } from "@/lib/roles";
 import {
   adminAssignTeacherSchema,
   adminCreateUserSchema,
+  adminSiteContentSchema,
   adminToggleUserStatusSchema,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
+  type AdminSiteContentInput,
   type AdminToggleUserStatusInput,
 } from "@/lib/validations/admin-users";
 
@@ -297,5 +299,52 @@ export async function assignStudentToTeacher(
   return {
     ok: true,
     message: "Aluno vinculado a teacher com sucesso.",
+  };
+}
+
+export async function updateSiteContent(
+  input: AdminSiteContentInput,
+): Promise<AdminActionResult<AdminSiteContentInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para alterar o site.",
+    };
+  }
+
+  const parsed = adminSiteContentSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminSiteContentInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o conteudo do site.",
+    };
+  }
+
+  const prisma = getPrisma();
+
+  await prisma.sitePageContent.upsert({
+    where: { slug: parsed.data.slug },
+    create: parsed.data,
+    update: {
+      ctaLabel: parsed.data.ctaLabel,
+      description: parsed.data.description,
+      title: parsed.data.title,
+    },
+  });
+
+  revalidatePath("/");
+  revalidatePath("/sobre");
+  revalidatePath("/metodologia");
+  revalidatePath("/planos");
+  revalidatePath("/contato");
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Conteudo do site atualizado com sucesso.",
   };
 }

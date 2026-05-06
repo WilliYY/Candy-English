@@ -3,9 +3,21 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  FileText,
   GraduationCap,
   MessageSquareText,
+  Radio,
 } from "lucide-react";
+import Link from "next/link";
+import { ContractUploadForm } from "@/components/ava/contract-upload-form";
+import {
+  LiveSessionForm,
+  ToggleLiveSessionButton,
+} from "@/components/ava/live-session-forms";
+import {
+  AvatarUploadForm,
+  ProfileForm,
+} from "@/components/ava/profile-forms";
 import {
   CreateHomeworkForm,
   CreateLessonForm,
@@ -79,13 +91,37 @@ type TeacherSubmission = {
   submittedAt: Date;
 };
 
+type LiveSessionRow = {
+  id: string;
+  isLive: boolean;
+  meetUrl: string;
+  startsAt: Date | null;
+  studentName: string | null;
+  teacherName: string;
+  title: string;
+};
+
+type ContractRow = {
+  createdAt: Date;
+  id: string;
+  sizeBytes: number;
+  studentName: string | null;
+  title: string;
+};
+
 type TeacherWorkspaceProps = {
   currentUser: {
+    address?: string | null;
+    avatarPath?: string | null;
     email: string;
+    id: string;
     name?: string | null;
+    phone?: string | null;
     role: Role;
   };
+  contracts: ContractRow[];
   lessons: TeacherLesson[];
+  liveSessions: LiveSessionRow[];
   students: Option[];
   submissions: TeacherSubmission[];
   teachers: Option[];
@@ -118,7 +154,9 @@ function getAnswerText(answers: unknown) {
 
 export function TeacherWorkspace({
   currentUser,
+  contracts,
   lessons,
+  liveSessions,
   students,
   submissions,
   teachers,
@@ -200,6 +238,64 @@ export function TeacherWorkspace({
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Aula ao vivo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <LiveSessionForm students={students} teachers={teachers} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ao vivo aberto</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {liveSessions.length === 0 ? (
+              <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+                Nenhuma aula ao vivo aberta ainda.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {liveSessions.map((session) => (
+                  <article key={session.id} className="rounded-lg border p-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="flex min-w-0 flex-col gap-2">
+                        <span className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
+                          <Radio aria-hidden="true" />
+                          {session.isLive ? "Ao vivo" : "Encerrada"}
+                        </span>
+                        <h2 className="font-semibold">{session.title}</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Teacher: {session.teacherName}
+                          {session.studentName
+                            ? ` - Aluno: ${session.studentName}`
+                            : " - Turma geral"}
+                        </p>
+                        <Link
+                          href={session.meetUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-medium text-primary underline"
+                        >
+                          Abrir Google Meet
+                        </Link>
+                      </div>
+                      <ToggleLiveSessionButton
+                        isLive={session.isLive}
+                        liveSessionId={session.id}
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
@@ -292,6 +388,67 @@ export function TeacherWorkspace({
           )}
         </CardContent>
       </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Perfil da teacher</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              <ProfileForm
+                defaultValues={{
+                  address: currentUser.address ?? "",
+                  name: currentUser.name ?? "",
+                  phone: currentUser.phone ?? "",
+                }}
+              />
+              <AvatarUploadForm />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contratos PDF</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              <ContractUploadForm students={students} />
+              {contracts.length === 0 ? (
+                <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+                  Nenhum contrato enviado ainda.
+                </p>
+              ) : (
+                <div className="grid gap-3">
+                  {contracts.map((contract) => (
+                    <Link
+                      key={contract.id}
+                      href={`/ava/contracts/${contract.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
+                    >
+                      <span className="flex min-w-0 items-center gap-3">
+                        <FileText aria-hidden="true" />
+                        <span className="truncate">
+                          {contract.title}
+                          {contract.studentName
+                            ? ` - ${contract.studentName}`
+                            : ""}
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        {Math.ceil(contract.sizeBytes / 1024)} KB
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>

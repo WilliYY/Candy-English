@@ -28,7 +28,7 @@ function getSafeCallbackUrl(callbackUrl: string | null) {
   return "/ava";
 }
 
-export function LoginForm() {
+export function LoginForm({ googleEnabled }: { googleEnabled?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
@@ -110,6 +110,28 @@ export function LoginForm() {
         )}
         Entrar
       </Button>
+
+      <div className="flex flex-col gap-3">
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          disabled={!googleEnabled || isSubmitting}
+          onClick={() => {
+            void signIn("google", {
+              callbackUrl: getSafeCallbackUrl(searchParams.get("callbackUrl")),
+            });
+          }}
+        >
+          Entrar com Google
+        </Button>
+        {!googleEnabled ? (
+          <p className="text-xs leading-5 text-muted-foreground">
+            Google login fica disponivel quando GOOGLE_CLIENT_ID e
+            GOOGLE_CLIENT_SECRET forem configurados no .env.
+          </p>
+        ) : null}
+      </div>
     </form>
   );
 }

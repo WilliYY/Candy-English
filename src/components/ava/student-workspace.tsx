@@ -3,8 +3,15 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardCheck,
+  FileText,
   MessageSquareText,
+  Radio,
 } from "lucide-react";
+import Link from "next/link";
+import {
+  AvatarUploadForm,
+  ProfileForm,
+} from "@/components/ava/profile-forms";
 import { SignOutButton } from "@/components/ava/sign-out-button";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
@@ -53,12 +60,30 @@ type StudentLesson = {
 };
 
 type StudentWorkspaceProps = {
+  contracts: {
+    createdAt: Date;
+    id: string;
+    sizeBytes: number;
+    title: string;
+  }[];
   currentUser: {
+    address?: string | null;
+    avatarPath?: string | null;
     email: string;
+    id: string;
     name?: string | null;
+    phone?: string | null;
     role: Role;
   };
   lessons: StudentLesson[];
+  liveSessions: {
+    id: string;
+    isLive: boolean;
+    meetUrl: string;
+    startsAt: Date | null;
+    teacherName: string;
+    title: string;
+  }[];
 };
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -87,8 +112,10 @@ function getAnswerText(answers: unknown) {
 }
 
 export function StudentWorkspace({
+  contracts,
   currentUser,
   lessons,
+  liveSessions,
 }: StudentWorkspaceProps) {
   const homeworkCount = lessons.reduce(
     (total, lesson) => total + lesson.homeworks.length,
@@ -163,6 +190,102 @@ export function StudentWorkspace({
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <Card className="border-primary/20 bg-primary text-primary-foreground">
+        <CardHeader>
+          <CardTitle>Aula ao vivo</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {liveSessions.some((session) => session.isLive) ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {liveSessions
+                .filter((session) => session.isLive)
+                .map((session) => (
+                  <div
+                    key={session.id}
+                    className="flex flex-col gap-4 rounded-lg bg-primary-foreground p-5 text-primary"
+                  >
+                    <span className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
+                      <Radio aria-hidden="true" />
+                      Ao vivo agora
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      <strong>{session.title}</strong>
+                      <span className="text-sm text-primary/70">
+                        Teacher: {session.teacherName}
+                      </span>
+                    </div>
+                    <Link
+                      href={session.meetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex w-fit rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                    >
+                      Entrar no Google Meet
+                    </Link>
+                  </div>
+                ))}
+            </div>
+          ) : (
+            <p className="rounded-lg border border-primary-foreground/20 bg-primary-foreground/10 p-5 text-sm text-primary-foreground/75">
+              Nenhuma aula ao vivo aberta para seu usuario neste momento.
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle>Meu perfil</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-6">
+              <ProfileForm
+                defaultValues={{
+                  address: currentUser.address ?? "",
+                  name: currentUser.name ?? "",
+                  phone: currentUser.phone ?? "",
+                }}
+              />
+              <AvatarUploadForm />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contratos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {contracts.length === 0 ? (
+              <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+                Nenhum contrato vinculado ao seu perfil ainda.
+              </p>
+            ) : (
+              <div className="grid gap-3">
+                {contracts.map((contract) => (
+                  <Link
+                    key={contract.id}
+                    href={`/ava/contracts/${contract.id}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
+                  >
+                    <span className="flex min-w-0 items-center gap-3">
+                      <FileText aria-hidden="true" />
+                      <span className="truncate">{contract.title}</span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      {Math.ceil(contract.sizeBytes / 1024)} KB
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {lessons.length === 0 ? (

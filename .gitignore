@@ -25,6 +25,9 @@ yarn-error.log*
 pnpm-debug.log*
 dev-server.*.log
 
+# local uploaded files
+storage/
+
 # OS/editor
 .DS_Store
 Thumbs.db

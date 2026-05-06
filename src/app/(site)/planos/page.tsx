@@ -1,18 +1,28 @@
 import type { Metadata } from "next";
-import { CalendarDays, GraduationCap, MessageCircle, Repeat2 } from "lucide-react";
+import {
+  CalendarDays,
+  GraduationCap,
+  MessageCircle,
+  Repeat2,
+} from "lucide-react";
 import { InstitutionalPage } from "@/components/site/institutional-page";
+import { getSitePageContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
   title: "Planos",
 };
 
-export default function PlanosPage() {
+export const dynamic = "force-dynamic";
+
+export default async function PlanosPage() {
+  const content = await getSitePageContent("planos");
+
   return (
     <InstitutionalPage
       eyebrow="Planos"
-      title="Planos pensados por rotina, objetivo e acompanhamento."
-      description="Esta pagina prepara a apresentacao comercial da Candy English sem criar pagamento nesta fase. O foco agora e clareza para o aluno interessado."
-      ctaLabel="Chamar no contato"
+      title={content.title}
+      description={content.description}
+      ctaLabel={content.ctaLabel}
       ctaHref="/contato"
       sections={[
         {

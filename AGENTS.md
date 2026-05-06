@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 10 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online e feedback inicial. O site institucional tem direcao visual roxa, logos reais e movimento leve.
+FASE 13 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, nuvem em loop, Catty e sprites animados.
 
 ## Fases implementadas
 
@@ -132,6 +132,32 @@ Documentacao e fluxo de deploy:
 - contexto atualizado em `README.md`, `AGENTS.md`, `docs/arquitetura.md`, `docs/fluxos-ava.md` e `docs/design-direcao.md`;
 - comandos de producao devem rodar migration antes de recriar app quando `prisma/migrations/` mudar.
 
+### FASE 11
+
+Layout estruturado do AVA:
+
+- sidebar por role em `/ava`;
+- admin, teacher e student com navegacao separada;
+- protecao continua no servidor.
+
+### FASE 12
+
+Operacao escolar:
+
+- perfil do usuario com telefone, endereco e foto;
+- contratos PDF protegidos por login e permissao;
+- aula ao vivo via Google Meet em `LiveSession`;
+- Google login opcional somente para emails ja cadastrados.
+
+### FASE 13
+
+Experiencia visual:
+
+- bala sem fundo como favicon e sprite;
+- hero com `nuvem-fundo.mp4` em loop;
+- Catty no canto inferior direito;
+- sprites animados fugindo do mouse.
+
 ## MVP inicial
 
 1. Login com email e senha
@@ -176,7 +202,7 @@ docker compose --profile tools run --rm audit-server-smoke
 - Nao alterar `.env` real.
 - Nao imprimir segredos em logs ou respostas.
 - Nao expor porta `5432` do PostgreSQL.
-- Nao criar upload, MinIO, pagamento, IA ou jogos sem pedido explicito.
+- Nao criar MinIO, pagamento, IA real ou jogos sem pedido explicito.
 - Manter o AVA em `/ava`.
 - Preferir server components para leitura e server actions para escrita.
 - Cada nova action sensivel precisa chamar `auth()` e validar role.
@@ -185,3 +211,5 @@ docker compose --profile tools run --rm audit-server-smoke
 - `User.isActive=false` deve bloquear login sem apagar dados historicos.
 - Nao registrar nem imprimir `.env`, `DATABASE_URL`, `AUTH_SECRET` ou senhas.
 - Mudancas visuais devem respeitar `docs/design-direcao.md`.
+- Upload local deve ficar em `storage/`, que nao deve ser versionado.
+- Contratos devem continuar protegidos por rota server-side.
