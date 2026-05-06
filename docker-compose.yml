@@ -13,6 +13,7 @@ services:
       AUTH_SECRET: ${AUTH_SECRET:?Defina AUTH_SECRET no arquivo .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL no arquivo .env}
+      HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NODE_ENV: production
       NODE_OPTIONS: ${NODE_OPTIONS:---max_old_space_size=1024}

@@ -115,6 +115,7 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - Os servicos utilitarios usam o perfil `tools` e devem ser executados sob demanda.
 - O servico `seed` pode ser chamado diretamente com `docker compose run --rm seed`; o Compose ativa o servico solicitado mesmo ele estando no perfil `tools`.
 - O app publica a porta `3000` apenas no host definido por `APP_HOST_BIND`, com padrao `127.0.0.1`.
+- O runtime do Next.js no container define `HOSTNAME=0.0.0.0`, permitindo healthcheck interno em `127.0.0.1:3000` e acesso pelo servico `app` na rede Docker.
 - Logs de `app` e `postgres` usam driver `json-file` com `max-size=10m` e `max-file=3`.
 
 ### Operacao

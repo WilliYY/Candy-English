@@ -19,6 +19,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - O AVA fica em `candyenglish.com.br/ava`.
 - O PostgreSQL roda apenas na rede interna do Docker Compose, sem publicacao da porta `5432`.
 - O app publica a porta `3000` em `127.0.0.1` por padrao, para ser acessado pelo proxy reverso local.
+- Dentro do container, o Next.js usa `HOSTNAME=0.0.0.0` para responder ao healthcheck e aos demais servicos da rede Docker.
 - Credenciais reais ficam em `.env`, que nao deve ser versionado.
 - A autenticacao do AVA usa Credentials Provider com email e senha.
 - As senhas sao armazenadas somente como hash `bcryptjs`.

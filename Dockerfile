@@ -27,6 +27,7 @@ COPY . .
 CMD ["npm", "run", "prisma:deploy"]
 
 FROM base AS runner
+ENV HOSTNAME=0.0.0.0
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
