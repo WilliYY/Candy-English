@@ -16,19 +16,21 @@ export const runtime = "nodejs";
 
 const areas = [
   {
+    description:
+      "Base reservada para gestao de usuarios, alunos e configuracao do AVA.",
     href: "/ava/admin",
-    title: "Área admin",
-    description: "Base reservada para gestão de usuários, alunos e configuração do AVA.",
+    title: "Area admin",
   },
   {
-    href: "/ava/teacher",
-    title: "Área teacher",
     description: "Base reservada para aulas, materiais, homeworks e feedbacks.",
+    href: "/ava/teacher",
+    title: "Area teacher",
   },
   {
+    description:
+      "Base reservada para materiais, atividades online e acompanhamento.",
     href: "/ava/student",
-    title: "Área student",
-    description: "Base reservada para materiais, atividades online e acompanhamento.",
+    title: "Area student",
   },
 ];
 
@@ -60,11 +62,16 @@ export default async function AvaHomePage() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-3">
                   {area.title}
-                  <ArrowRight aria-hidden="true" className="text-muted-foreground" />
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="text-muted-foreground"
+                  />
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="leading-7 text-muted-foreground">{area.description}</p>
+                <p className="leading-7 text-muted-foreground">
+                  {area.description}
+                </p>
               </CardContent>
             </Card>
           </Link>

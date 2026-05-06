@@ -5,6 +5,47 @@ import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { loginSchema } from "@/lib/validations/auth";
 
+const LOGIN_WINDOW_MINUTES = 15;
+const LOGIN_MAX_FAILURES = 8;
+
+async function hasTooManyFailedLogins(email: string) {
+  const prisma = getPrisma();
+  const windowStart = new Date(Date.now() - LOGIN_WINDOW_MINUTES * 60 * 1000);
+  const failures = await prisma.loginAttempt.count({
+    where: {
+      createdAt: {
+        gte: windowStart,
+      },
+      email,
+      success: false,
+    },
+  });
+
+  return failures >= LOGIN_MAX_FAILURES;
+}
+
+async function recordLoginAttempt(email: string, success: boolean) {
+  const prisma = getPrisma();
+
+  await prisma.loginAttempt.create({
+    data: {
+      email,
+      success,
+    },
+  });
+
+  if (success) {
+    await prisma.loginAttempt.deleteMany({
+      where: {
+        createdAt: {
+          lt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+        email,
+      },
+    });
+  }
+}
+
 export const authConfig = {
   pages: {
     signIn: "/ava/login",
@@ -27,19 +68,33 @@ export const authConfig = {
 
         const { email, password } = parsed.data;
         const prisma = getPrisma();
+
+        if (await hasTooManyFailedLogins(email)) {
+          return null;
+        }
+
         const user = await prisma.user.findUnique({
           where: { email },
         });
 
         if (!user) {
+          await recordLoginAttempt(email, false);
+          return null;
+        }
+
+        if (!user.isActive) {
+          await recordLoginAttempt(email, false);
           return null;
         }
 
         const passwordMatches = await compare(password, user.passwordHash);
 
         if (!passwordMatches) {
+          await recordLoginAttempt(email, false);
           return null;
         }
+
+        await recordLoginAttempt(email, true);
 
         return {
           id: user.id,

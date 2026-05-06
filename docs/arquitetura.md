@@ -50,6 +50,50 @@ A sexta fase cria correcao e feedback:
 - submissao muda de `SUBMITTED` para `REVIEWED`;
 - aluno visualiza feedback em `/ava/student`.
 
+## FASE 7
+
+A setima fase melhora a apresentacao institucional:
+
+- site deixa de parecer apenas base tecnica e passa a ter direcao visual propria;
+- paleta principal usa roxos, coral suave e fundo claro;
+- hero da home usa plano roxo, grid cinetico, cards flutuantes e marquee leve;
+- logos enviados pelo projeto ficam em `public/brand/`;
+- favicon do site fica em `public/favicon.svg`;
+- paginas institucionais usam componentes compartilhados para manter consistencia.
+
+## FASE 8
+
+A oitava fase melhora a experiencia do AVA sem criar dashboard complexo:
+
+- layout `/ava` usa navegacao consciente de role;
+- usuario nao logado ve apenas login/site;
+- admin ve admin, teacher e student;
+- teacher ve teacher e student;
+- student ve apenas student;
+- tela de login usa composicao visual com marca, mantendo Auth.js no servidor.
+
+## FASE 9
+
+A nona fase endurece operacao administrativa e login:
+
+- `User.isActive` permite bloquear acesso sem excluir historico;
+- `LoginAttempt` registra tentativas de login com sucesso/falha;
+- login bloqueia usuario inativo;
+- login limita falhas repetidas em janela curta;
+- admin pode ativar/desativar usuarios;
+- admin nao pode desativar o proprio acesso;
+- sistema preserva pelo menos um admin ativo;
+- admin pode vincular `StudentProfile` a `TeacherProfile` em `/ava/admin`.
+
+## FASE 10
+
+A decima fase consolida documentacao e fluxo:
+
+- README, AGENTS e docs registram as novas decisoes;
+- `docs/design-direcao.md` descreve identidade visual e movimento;
+- `docs/fluxos-ava.md` registra fluxo atualizado admin -> teacher -> student;
+- deploy em producao continua usando Docker Compose, PostgreSQL interno e migrations antes do app quando o schema mudar.
+
 ## Endurecimento Operacional
 
 Foi feita uma leitura do repositorio SavePointFinance como referencia externa de robustez operacional: https://github.com/Marks013/SavePointFinance
@@ -92,6 +136,9 @@ Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem a
 - A gestao inicial de usuarios fica concentrada no `/ava/admin`, sem criar rotas publicas de cadastro.
 - Escritas sensiveis usam server actions com `auth()` e validacao por role/dado.
 - `TEACHER` nao recebe lista global de alunos; ve apenas alunos ja vinculados por `StudentTeacherAssignment`.
+- Menus do AVA sao filtrados por role para facilitar uso, mas a protecao real continua nas paginas e server actions.
+- O login rejeita usuario inativo e muitas falhas recentes, reduzindo abuso basico sem depender de servico externo.
+- `next.config.ts` adiciona headers basicos de seguranca: anti-iframe, nosniff, referrer policy e bloqueio de camera/microfone/geolocalizacao.
 
 ### Rotas
 
@@ -138,6 +185,7 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - O comando de seed do Prisma 7 fica em `prisma.config.ts`, dentro de `migrations.seed`, e e executado por `npm run prisma:seed`.
 - Na FASE 3 nao houve alteracao de schema. O cadastro de usuarios usa as tabelas `User`, `StudentProfile` e `TeacherProfile` ja existentes.
 - Na FASE 4-6 o schema adiciona `StudentTeacherAssignment`, `Lesson`, `LessonMaterial`, `VocabularyItem`, `Homework`, `HomeworkQuestion` e `HomeworkSubmission`.
+- Na FASE 9 o schema adiciona `User.isActive` e `LoginAttempt`.
 - `HomeworkSubmission` tem chave unica por `homeworkId` e `studentProfileId`, evitando duplicidade de resposta por aluno/homework.
 - Homework corrigida nao pode ser reenviada pelo aluno nesta fase, preservando o feedback ja enviado.
 - Indices foram adicionados em campos de busca por teacher, student, status e relacionamentos principais.
@@ -165,17 +213,17 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 
 Itens identificados como proximos endurecimentos, mas ainda fora desta entrega:
 
-- limite de tentativas de login ou throttling;
+- throttling mais forte por IP ou servico dedicado;
 - revogacao imediata de sessoes JWT apos mudanca de role;
 - rotina formal de backup e restore do PostgreSQL;
 - normalizacao case-insensitive mais forte para email;
-- menus responsivos mais completos para areas do site e do AVA.
-- edicao e desativacao de usuarios pela interface admin;
-- gestao visual completa dos vinculos aluno-teacher.
+- menus responsivos mais completos para areas do site e do AVA;
+- edicao completa de usuarios e reset de senha pela interface admin;
+- remocao visual de vinculos aluno-teacher.
 - telas de edicao/delecao de aulas, materiais e homeworks;
 - multiplas perguntas por homework na interface.
 
-## Fora do Escopo da FASE 6
+## Fora do Escopo da FASE 10
 
 - Jogos
 - Recursos de IA

@@ -31,24 +31,24 @@
 
 :root {
   --radius: 0.5rem;
-  --background: #fffdf8;
-  --foreground: #231f20;
+  --background: #fefbfa;
+  --foreground: #2c1338;
   --card: #ffffff;
-  --card-foreground: #231f20;
+  --card-foreground: #2c1338;
   --popover: #ffffff;
-  --popover-foreground: #231f20;
-  --primary: #c13b61;
+  --popover-foreground: #2c1338;
+  --primary: #412a4c;
   --primary-foreground: #ffffff;
-  --secondary: #f2efe7;
-  --secondary-foreground: #231f20;
-  --muted: #f5f1e8;
-  --muted-foreground: #6d6462;
-  --accent: #1f9d8a;
-  --accent-foreground: #ffffff;
+  --secondary: #fce5d8;
+  --secondary-foreground: #2c1338;
+  --muted: #fcf1f8;
+  --muted-foreground: #6b5a74;
+  --accent: #e57cd8;
+  --accent-foreground: #2c1338;
   --destructive: #c83232;
-  --border: #e5ddd1;
-  --input: #e5ddd1;
-  --ring: #c13b61;
+  --border: #eadfec;
+  --input: #e0d4e3;
+  --ring: #e57cd8;
 }
 
 * {
@@ -68,4 +68,83 @@ body {
 
 a {
   text-underline-offset: 4px;
+}
+
+.candy-deep {
+  background:
+    linear-gradient(135deg, rgb(44 19 56) 0%, rgb(65 42 76) 54%, rgb(44 19 56) 100%),
+    linear-gradient(90deg, rgb(229 124 216 / 0.18), transparent 55%),
+    #2c1338;
+}
+
+.candy-kinetic-grid {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.08) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: linear-gradient(to bottom, black, transparent 84%);
+}
+
+.candy-float-slow {
+  animation: candy-float 8s ease-in-out infinite;
+}
+
+.candy-float-medium {
+  animation: candy-float 6s ease-in-out infinite;
+}
+
+.candy-marquee {
+  animation: candy-marquee 22s linear infinite;
+}
+
+.candy-reveal {
+  animation: candy-reveal 700ms ease-out both;
+}
+
+.candy-reveal-delay {
+  animation: candy-reveal 850ms 120ms ease-out both;
+}
+
+@keyframes candy-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-1deg);
+  }
+
+  50% {
+    transform: translate3d(0, -14px, 0) rotate(1deg);
+  }
+}
+
+@keyframes candy-marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes candy-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }

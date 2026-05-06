@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 6 implementada: alem do login real e da gestao inicial de usuarios, o AVA agora possui o primeiro fluxo de aulas, materiais, vocabulario, homeworks, respostas online e feedback.
+FASE 10 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual com movimento, logos reais e paleta roxa inspirada em produtos SaaS modernos. O AVA tambem recebeu melhorias operacionais de admin: status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -27,6 +27,10 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
 - O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
 - As actions de aulas/homeworks/feedback validam role e vinculo de dados no servidor.
+- Usuarios inativos nao conseguem fazer login.
+- Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
+- A direcao visual usa assets em `public/brand/` e `public/favicon.svg`.
+- Headers basicos de seguranca sao definidos em `next.config.ts`.
 
 ## Rotas
 
@@ -81,6 +85,7 @@ src/
   components/
     ava/
       admin-create-user-form.tsx
+      admin-operations.tsx
       admin-users-panel.tsx
       teacher-forms.tsx
       teacher-workspace.tsx
@@ -100,6 +105,7 @@ src/
     next-auth.d.ts
 docs/
   arquitetura.md
+  design-direcao.md
   producao-checklist.md
   fluxos-ava.md
 prisma/
@@ -279,6 +285,9 @@ O schema atual define:
 - `Homework`
 - `HomeworkQuestion`
 - `HomeworkSubmission`
+- `LoginAttempt`
+
+`User` tambem possui `isActive`, usado para desativar acesso sem apagar historico.
 
 ## FASE 3 - Admin
 
@@ -297,8 +306,6 @@ Ainda nao implementado nesta fase:
 
 - edicao de usuario existente;
 - reset de senha pela interface;
-- desativacao de usuario;
-- vinculo formal aluno-teacher;
 - importacao em massa.
 
 ## FASES 4, 5 e 6 - Aulas, Homework e Feedback
@@ -319,6 +326,29 @@ Implementado:
 - aluno ve feedback corrigido.
 
 Fluxogramas e explicacao detalhada: `docs/fluxos-ava.md`.
+
+## FASES 7, 8, 9 e 10 - Design, UX e Operacao
+
+Implementado:
+
+- site institucional redesenhado com hero em movimento, blocos visuais e paleta roxa;
+- favicon e logos em SVG adicionados em `public/`;
+- identidade visual documentada em `docs/design-direcao.md`;
+- layout do AVA com navegacao por role;
+- login do AVA com tela mais visual e responsiva;
+- admin pode desativar e reativar usuarios;
+- usuario inativo nao consegue autenticar;
+- protecao simples contra muitas tentativas de login em janela curta;
+- admin pode vincular aluno a teacher diretamente em `/ava/admin`;
+- migrations para `User.isActive` e `LoginAttempt`.
+
+Ainda nao implementado:
+
+- reset de senha pela interface;
+- edicao completa de usuarios;
+- relatorios avancados;
+- dashboard complexo;
+- notificacoes.
 
 Ainda nao implementado:
 

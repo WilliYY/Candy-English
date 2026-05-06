@@ -72,3 +72,18 @@ export const adminCreateUserSchema = z
 
 export type AdminCreateUserInput = z.input<typeof adminCreateUserSchema>;
 export type AdminCreateUserData = z.output<typeof adminCreateUserSchema>;
+
+export const adminToggleUserStatusSchema = z.object({
+  isActive: z.boolean(),
+  userId: z.string().min(1, "Usuario invalido."),
+});
+
+export const adminAssignTeacherSchema = z.object({
+  studentProfileId: z.string().min(1, "Selecione um aluno."),
+  teacherProfileId: z.string().min(1, "Selecione uma teacher."),
+});
+
+export type AdminToggleUserStatusInput = z.input<
+  typeof adminToggleUserStatusSchema
+>;
+export type AdminAssignTeacherInput = z.input<typeof adminAssignTeacherSchema>;

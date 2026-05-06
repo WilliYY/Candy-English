@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 6 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, aulas, materiais, vocabulario, homework online e feedback inicial.
+FASE 10 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online e feedback inicial. O site institucional tem direcao visual roxa, logos reais e movimento leve.
 
 ## Fases implementadas
 
@@ -98,6 +98,39 @@ Correcao e feedback:
 - teacher/admin envia feedback;
 - aluno ve feedback na propria area.
 - homework corrigida nao pode ser reenviada pelo aluno nesta fase.
+
+### FASE 7
+
+Redesign institucional:
+
+- hero visual com movimento leve;
+- paleta roxa inspirada em produtos SaaS modernos;
+- logos e favicon em `public/`;
+- paginas `/`, `/sobre`, `/metodologia`, `/planos` e `/contato` com hierarquia visual mais clara.
+
+### FASE 8
+
+UX do AVA:
+
+- layout `/ava` com navegacao por role;
+- tela de login mais visual e responsiva;
+- preserva protecao no servidor, nao apenas no menu.
+
+### FASE 9
+
+Operacao admin e seguranca basica:
+
+- `User.isActive` para desativar acesso sem apagar historico;
+- `LoginAttempt` para registrar tentativas de login e limitar abuso simples;
+- admin pode reativar/desativar usuarios;
+- admin pode vincular aluno a teacher em `/ava/admin`.
+
+### FASE 10
+
+Documentacao e fluxo de deploy:
+
+- contexto atualizado em `README.md`, `AGENTS.md`, `docs/arquitetura.md`, `docs/fluxos-ava.md` e `docs/design-direcao.md`;
+- comandos de producao devem rodar migration antes de recriar app quando `prisma/migrations/` mudar.
 
 ## MVP inicial
 
@@ -149,3 +182,6 @@ docker compose --profile tools run --rm audit-server-smoke
 - Cada nova action sensivel precisa chamar `auth()` e validar role.
 - `STUDENT` so deve acessar dados do proprio `StudentProfile`.
 - `TEACHER` so deve editar/corrigir dados das proprias aulas.
+- `User.isActive=false` deve bloquear login sem apagar dados historicos.
+- Nao registrar nem imprimir `.env`, `DATABASE_URL`, `AUTH_SECRET` ou senhas.
+- Mudancas visuais devem respeitar `docs/design-direcao.md`.

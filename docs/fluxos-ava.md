@@ -12,12 +12,13 @@ Este documento explica, em portugues simples, como funcionam as FASES 4, 5 e 6 d
 
 ```mermaid
 flowchart LR
-  A["ADMIN cadastra usuarios"] --> B["TEACHER cria aula"]
-  B --> C["TEACHER adiciona material e vocabulario"]
-  C --> D["TEACHER cria homework"]
-  D --> E["STUDENT responde online"]
-  E --> F["TEACHER corrige"]
-  F --> G["STUDENT ve feedback"]
+  A["ADMIN cadastra usuarios"] --> B["ADMIN vincula aluno a teacher"]
+  B --> C["TEACHER cria aula"]
+  C --> D["TEACHER adiciona material e vocabulario"]
+  D --> E["TEACHER cria homework"]
+  E --> F["STUDENT responde online"]
+  F --> G["TEACHER corrige"]
+  G --> H["STUDENT ve feedback"]
 ```
 
 ## FASE 4 - Aulas, Materiais e Vocabulario
@@ -40,7 +41,8 @@ Regras:
 - `ADMIN` pode ver a area teacher para supervisao.
 - `TEACHER` cria aulas.
 - `TEACHER` ve apenas alunos vinculados a sua area.
-- `ADMIN` pode criar o primeiro vinculo aluno-teacher ao criar uma aula.
+- `ADMIN` pode criar vinculo aluno-teacher em `/ava/admin`.
+- `ADMIN` tambem pode criar o primeiro vinculo aluno-teacher ao criar uma aula.
 - Aula vinculada a um aluno aparece para esse aluno.
 - PostgreSQL continua interno no Docker.
 
@@ -81,6 +83,31 @@ Regras:
 - `ADMIN` pode supervisionar.
 - Feedback fica salvo em `HomeworkSubmission.feedback`.
 - Quando corrigida, a resposta muda de `SUBMITTED` para `REVIEWED`.
+
+## FASES 7 a 10 - Visual, Login e Admin
+
+```mermaid
+flowchart TD
+  A["Visitante acessa site"] --> B["Home visual com movimento"]
+  B --> C["Contato ou entrada no AVA"]
+  C --> D["/ava/login"]
+  D --> E["Auth.js valida credenciais"]
+  E --> F{"Usuario ativo?"}
+  F -->|Nao| G["Login negado"]
+  F -->|Sim| H{"Role"}
+  H --> I["ADMIN: gestao de usuarios e vinculos"]
+  H --> J["TEACHER: aulas, homeworks e feedback"]
+  H --> K["STUDENT: aulas e respostas"]
+```
+
+Regras:
+
+- Usuario com `isActive=false` nao entra no AVA.
+- Muitas falhas recentes de login bloqueiam novas tentativas por seguranca basica.
+- Menu do AVA muda conforme role, mas a permissao real continua no servidor.
+- Admin nao pode desativar o proprio usuario.
+- O sistema deve manter pelo menos um admin ativo.
+- Vinculo aluno-teacher orienta quais alunos aparecem para a teacher.
 
 ## Deploy Quando Ha Migration
 

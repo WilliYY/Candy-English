@@ -56,6 +56,10 @@ ADMIN_RESET_PASSWORD=true docker compose run --rm seed
 - `/ava/login` carrega.
 - `/ava/admin` sem sessao redireciona para `/ava/login`.
 - Smoke test termina com `Candy English server smoke OK`.
+- Admin consegue entrar depois do deploy.
+- Teacher e student continuam sendo redirecionados para suas areas corretas.
+- Usuario desativado em `/ava/admin` nao consegue fazer login.
+- Vinculo aluno-teacher aparece no painel admin.
 
 ## Comandos Uteis
 
@@ -78,3 +82,11 @@ NEXTAUTH_URL=https://candyenglish.com.br
 ```
 
 Assim o app fica acessivel para o proxy reverso local, mas nao diretamente pela porta `3000` publica do servidor.
+
+## Termos Rapidos
+
+- `build`: cria a imagem Docker nova a partir do codigo.
+- `migration`: aplica mudancas de estrutura no banco.
+- `seed`: cria ou preserva o admin inicial.
+- `health`: teste automatico de saude do container.
+- `smoke test`: teste curto que confirma se as paginas essenciais respondem.

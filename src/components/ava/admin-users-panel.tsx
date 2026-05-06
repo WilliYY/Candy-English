@@ -2,12 +2,18 @@ import {
   CalendarDays,
   GraduationCap,
   Mail,
+  Power,
   ShieldCheck,
+  UserCheck,
   UserRound,
   UsersRound,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
+import {
+  AdminAssignTeacherForm,
+  AdminUserStatusButton,
+} from "@/components/ava/admin-operations";
 import { SignOutButton } from "@/components/ava/sign-out-button";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
@@ -17,6 +23,7 @@ type AdminUserRow = {
   createdAt: Date;
   email: string;
   id: string;
+  isActive: boolean;
   name: string;
   role: Role;
   studentProfile: {
@@ -27,12 +34,31 @@ type AdminUserRow = {
   } | null;
 };
 
+type AssignmentOption = {
+  email: string;
+  id: string;
+  isActive: boolean;
+  label: string;
+};
+
+type AssignmentRow = {
+  createdAt: Date;
+  id: string;
+  studentName: string;
+  studentProfileId: string;
+  teacherName: string;
+  teacherProfileId: string;
+};
+
 type AdminUsersPanelProps = {
+  assignments: AssignmentRow[];
   currentUser: {
     email: string;
     name?: string | null;
     role: Role;
   };
+  students: AssignmentOption[];
+  teachers: AssignmentOption[];
   users: AdminUserRow[];
 };
 
@@ -68,10 +94,19 @@ function getProfileSummary(user: AdminUserRow) {
   return "Administracao";
 }
 
-export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
+export function AdminUsersPanel({
+  assignments,
+  currentUser,
+  students,
+  teachers,
+  users,
+}: AdminUsersPanelProps) {
   const totals = users.reduce(
     (accumulator, user) => {
       accumulator.total += 1;
+      if (user.isActive) {
+        accumulator.active += 1;
+      }
       accumulator[user.role] += 1;
       return accumulator;
     },
@@ -79,6 +114,7 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
       ADMIN: 0,
       STUDENT: 0,
       TEACHER: 0,
+      active: 0,
       total: 0,
     },
   );
@@ -98,6 +134,11 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
       icon: UserRound,
       label: "Alunos",
       value: totals.STUDENT,
+    },
+    {
+      icon: Power,
+      label: "Ativos",
+      value: totals.active,
     },
   ];
 
@@ -149,7 +190,7 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="flex items-center justify-between gap-4">
@@ -168,14 +209,25 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.3fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cadastrar acesso</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AdminCreateUserForm />
-          </CardContent>
-        </Card>
+        <div className="flex flex-col gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cadastrar acesso</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminCreateUserForm />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Vincular aluno a teacher</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AdminAssignTeacherForm students={students} teachers={teachers} />
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
           <CardHeader>
@@ -192,13 +244,15 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[720px] text-left text-sm">
+                <table className="w-full min-w-[980px] text-left text-sm">
                   <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                     <tr>
                       <th className="py-3 pr-4 font-medium">Usuario</th>
                       <th className="px-4 py-3 font-medium">Perfil</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
                       <th className="px-4 py-3 font-medium">Resumo</th>
-                      <th className="pl-4 py-3 font-medium">Criado em</th>
+                      <th className="px-4 py-3 font-medium">Criado em</th>
+                      <th className="pl-4 py-3 font-medium">Acao</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -227,14 +281,33 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
                               {ROLE_LABELS[user.role]}
                             </span>
                           </td>
+                          <td className="px-4 py-4">
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold",
+                                user.isActive
+                                  ? "border-primary/20 bg-primary/10 text-primary"
+                                  : "border-border bg-muted text-muted-foreground",
+                              )}
+                            >
+                              <UserCheck aria-hidden="true" />
+                              {user.isActive ? "Ativo" : "Inativo"}
+                            </span>
+                          </td>
                           <td className="px-4 py-4 text-muted-foreground">
                             {getProfileSummary(user)}
                           </td>
-                          <td className="pl-4 py-4 text-muted-foreground">
+                          <td className="px-4 py-4 text-muted-foreground">
                             <span className="inline-flex items-center gap-2">
                               <CalendarDays aria-hidden="true" />
                               {dateFormatter.format(user.createdAt)}
                             </span>
+                          </td>
+                          <td className="pl-4 py-4">
+                            <AdminUserStatusButton
+                              isActive={user.isActive}
+                              userId={user.id}
+                            />
                           </td>
                         </tr>
                       );
@@ -246,6 +319,48 @@ export function AdminUsersPanel({ currentUser, users }: AdminUsersPanelProps) {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Vinculos teacher/aluno</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {assignments.length === 0 ? (
+            <div className="flex min-h-32 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 text-center">
+              <UsersRound aria-hidden="true" />
+              <p className="max-w-sm text-sm text-muted-foreground">
+                Nenhum aluno vinculado a uma teacher ainda.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {assignments.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="rounded-lg border bg-background p-4"
+                >
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <GraduationCap aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">
+                        {assignment.teacherName}
+                      </p>
+                      <p className="truncate text-muted-foreground">
+                        {assignment.studentName}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Criado em {dateFormatter.format(assignment.createdAt)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CalendarDays, GraduationCap, MessageCircle, Repeat2 } from "lucide-react";
 import { InstitutionalPage } from "@/components/site/institutional-page";
 
 export const metadata: Metadata = {
@@ -8,16 +9,31 @@ export const metadata: Metadata = {
 export default function PlanosPage() {
   return (
     <InstitutionalPage
-      title="Planos"
-      description="Os planos serão apresentados com clareza, respeitando diferentes necessidades de frequência, acompanhamento e objetivos."
+      eyebrow="Planos"
+      title="Planos pensados por rotina, objetivo e acompanhamento."
+      description="Esta pagina prepara a apresentacao comercial da Candy English sem criar pagamento nesta fase. O foco agora e clareza para o aluno interessado."
+      ctaLabel="Chamar no contato"
+      ctaHref="/contato"
       sections={[
         {
-          title: "Organização inicial",
-          text: "Nesta fase, a página reserva a estrutura institucional para os planos sem implementar pagamento, checkout ou integrações comerciais.",
+          title: "Aulas recorrentes",
+          text: "Para alunos que precisam de consistencia semanal, revisao e acompanhamento progressivo.",
+          icon: Repeat2,
         },
         {
-          title: "Próximos passos",
-          text: "Depois da base do AVA, esta área poderá receber descrições detalhadas, condições de matrícula e chamadas de contato.",
+          title: "Reforco pontual",
+          text: "Para objetivos especificos como prova, entrevista, viagem ou retomada de ingles.",
+          icon: CalendarDays,
+        },
+        {
+          title: "Acompanhamento no AVA",
+          text: "Materiais, homeworks e feedbacks ficam organizados na area do aluno.",
+          icon: GraduationCap,
+        },
+        {
+          title: "Matricula por conversa",
+          text: "O contato inicial define melhor formato, frequencia e disponibilidade antes de qualquer pagamento futuro.",
+          icon: MessageCircle,
         },
       ]}
     />
