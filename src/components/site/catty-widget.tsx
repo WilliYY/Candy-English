@@ -43,7 +43,7 @@ export function CattyWidget() {
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-5 sm:right-5">
       {open ? (
         <section className="w-[min(360px,calc(100vw-2.5rem))] overflow-hidden rounded-lg border bg-card shadow-2xl">
           <header className="flex items-center justify-between gap-3 bg-primary px-4 py-3 text-primary-foreground">
@@ -130,7 +130,7 @@ export function CattyWidget() {
       <Button
         type="button"
         size="lg"
-        className="h-14 rounded-full px-5 shadow-2xl"
+        className="h-12 rounded-full px-4 shadow-2xl sm:h-14 sm:px-5"
         onClick={() => setOpen((current) => !current)}
       >
         <MessageCircle data-icon="inline-start" />

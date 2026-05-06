@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 13 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual com movimento, nuvem em loop, bala como favicon, Catty e sprites animados. O AVA tambem recebeu sidebar por role, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher.
+FASE 14 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito. O AVA tambem possui sidebar por role, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -99,7 +99,6 @@ src/
       student-homework-form.tsx
       student-workspace.tsx
     site/
-      candy-field.tsx
       catty-widget.tsx
     ui/
   lib/
@@ -147,6 +146,16 @@ AUDIT_BASE_URL="http://localhost:3000"
 ```
 
 Nunca versione `.env`. Em producao, use `AUTH_URL` e `NEXTAUTH_URL` com `https://candyenglish.com.br`.
+
+### Orcamento de RAM no Docker
+
+O `docker-compose.yml` define reservas e limites de memoria para manter o uso coerente com a meta de cerca de 10% de 24 GB em runtime:
+
+- `app`: reserva `512m`, limite `1536m`, com `NODE_OPTIONS=--max_old_space_size=1024`;
+- `postgres`: reserva `512m`, limite `768m`, `shm_size=128mb` e parametros conservadores de PostgreSQL;
+- `migrate`, `seed` e `audit-server-smoke`: reserva `256m`, limite `768m`, pois rodam apenas sob demanda.
+
+Esses valores podem ser ajustados pelo `.env` usando `APP_MEM_LIMIT`, `POSTGRES_MEM_LIMIT`, `TOOLS_MEM_LIMIT` e variaveis relacionadas. Nao publique a porta `5432` para usar DBeaver; o PostgreSQL permanece interno por seguranca.
 
 ## Como Rodar Localmente
 
@@ -365,7 +374,7 @@ Ainda nao implementado:
 - dashboard complexo;
 - notificacoes.
 
-## FASES 11, 12 e 13 - AVA Estruturado, Aula Ao Vivo e Movimento
+## FASES 11, 12, 13 e 14 - AVA Estruturado, Aula Ao Vivo, Visual e RAM
 
 Implementado:
 
@@ -379,10 +388,10 @@ Implementado:
 - student ve botao "Aula ao vivo" quando ha sessao ativa para ele ou geral;
 - Google login opcional com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`;
 - editor simples de conteudo institucional no admin;
-- bala sem fundo como favicon e sprite;
-- hero com video `nuvem-fundo.mp4` em loop;
+- favicon com marca Candy English;
 - Catty no canto inferior direito;
-- 25 balas + 2 sprites de cada GIF informado fugindo do mouse.
+- animacoes decorativas com video, balas e GIFs removidas por performance e clareza;
+- Docker Compose com reservas e limites de memoria para app, PostgreSQL e ferramentas.
 
 Ainda nao implementado:
 

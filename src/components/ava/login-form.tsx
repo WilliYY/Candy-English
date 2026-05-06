@@ -126,7 +126,7 @@ export function LoginForm({ googleEnabled }: { googleEnabled?: boolean }) {
           Entrar com Google
         </Button>
         {!googleEnabled ? (
-          <p className="text-xs leading-5 text-muted-foreground">
+          <p className="break-words text-xs leading-5 text-muted-foreground">
             Google login fica disponivel quando GOOGLE_CLIENT_ID e
             GOOGLE_CLIENT_SECRET forem configurados no .env.
           </p>

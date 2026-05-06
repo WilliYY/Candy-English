@@ -22,7 +22,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <section className="grid min-h-[calc(100svh-5rem)] grid-cols-1 bg-background lg:grid-cols-[1.05fr_0.95fr]">
+    <section className="grid min-h-[calc(100svh-5rem)] min-w-0 grid-cols-1 overflow-hidden bg-background lg:grid-cols-[1.05fr_0.95fr]">
       <div className="candy-deep relative isolate hidden overflow-hidden px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between">
         <div className="candy-kinetic-grid absolute inset-0" />
         <div className="relative flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.22em] text-white/70">
@@ -59,8 +59,8 @@ export default async function LoginPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center px-6 py-12 lg:px-10">
-        <Card className="w-full max-w-md">
+      <div className="flex min-w-0 items-center justify-center px-6 py-12 lg:px-10">
+        <Card className="w-full min-w-0 max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">Entrar no AVA</CardTitle>
           </CardHeader>

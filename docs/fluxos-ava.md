@@ -132,7 +132,8 @@ Regras:
 - Contratos PDF sao servidos por rota protegida.
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
 - Contrato aceita PDF ate 8 MB.
-- Catty e os sprites sao interface visual; IA real ainda nao esta conectada.
+- Catty e interface visual; IA real ainda nao esta conectada.
+- As animacoes decorativas com video, balas e GIFs foram removidas para reduzir distracao e consumo de recursos.
 
 ## Deploy Quando Ha Migration
 

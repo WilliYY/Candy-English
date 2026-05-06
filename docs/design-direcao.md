@@ -30,6 +30,7 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 - Logo principal no header: `public/brand/logo-2.svg`, horizontal, maior e sem caixa de fundo.
 - Logo alternativa: `public/brand/logo-1.svg`
 - Logo hero: `public/brand/logo-3.svg`
+- Catty: `public/brand/catty.png`
 
 Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo como string.
 
@@ -41,8 +42,6 @@ Movimentos permitidos nesta fase:
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
-- nuvem em video loop suave no site inteiro;
-- balas pequenas e sprites GIF maiores fugindo suavemente do mouse;
 - Catty fixo no canto inferior direito.
 
 Cuidados:
@@ -52,6 +51,7 @@ Cuidados:
 - nao usar decoracao em bolhas/orbs;
 - manter contraste alto em texto sobre fundo roxo.
 - usar `prefers-reduced-motion` para reduzir animacoes quando o navegador pedir.
+- videos globais, balas e GIFs decorativos foram removidos para manter leitura, performance e foco.
 
 ## Fluxo Visual Do Site
 

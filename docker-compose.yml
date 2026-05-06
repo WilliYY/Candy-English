@@ -18,6 +18,8 @@ services:
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NODE_ENV: production
       NODE_OPTIONS: ${NODE_OPTIONS:---max_old_space_size=1024}
+    mem_limit: ${APP_MEM_LIMIT:-1536m}
+    mem_reservation: ${APP_MEM_RESERVATION:-512m}
     healthcheck:
       test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s
@@ -38,12 +40,27 @@ services:
   postgres:
     image: postgres:17-alpine
     container_name: candy-english-postgres
+    command:
+      - postgres
+      - -c
+      - shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+      - -c
+      - work_mem=${POSTGRES_WORK_MEM:-8MB}
+      - -c
+      - maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-128MB}
+      - -c
+      - effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-768MB}
+      - -c
+      - max_connections=${POSTGRES_MAX_CONNECTIONS:-50}
     env_file:
       - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?Defina POSTGRES_DB no arquivo .env}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
       POSTGRES_USER: ${POSTGRES_USER:?Defina POSTGRES_USER no arquivo .env}
+    mem_limit: ${POSTGRES_MEM_LIMIT:-768m}
+    mem_reservation: ${POSTGRES_MEM_RESERVATION:-512m}
+    shm_size: ${POSTGRES_SHM_SIZE:-128mb}
     logging:
       driver: "json-file"
       options:
@@ -72,6 +89,8 @@ services:
       - .env
     environment:
       DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL no arquivo .env}
+    mem_limit: ${TOOLS_MEM_LIMIT:-768m}
+    mem_reservation: ${TOOLS_MEM_RESERVATION:-256m}
     command: npm run prisma:deploy
 
   seed:
@@ -92,6 +111,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD no arquivo .env}
       ADMIN_RESET_PASSWORD: ${ADMIN_RESET_PASSWORD:-false}
       DATABASE_URL: ${DATABASE_URL:?Defina DATABASE_URL no arquivo .env}
+    mem_limit: ${TOOLS_MEM_LIMIT:-768m}
+    mem_reservation: ${TOOLS_MEM_RESERVATION:-256m}
     command: npm run prisma:seed
 
   audit-server-smoke:
@@ -108,6 +129,8 @@ services:
       - .env
     environment:
       AUDIT_BASE_URL: http://app:3000
+    mem_limit: ${TOOLS_MEM_LIMIT:-768m}
+    mem_reservation: ${TOOLS_MEM_RESERVATION:-256m}
     command: npm run audit:server-smoke
 
 volumes:

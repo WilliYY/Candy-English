@@ -78,30 +78,6 @@ a {
     #2c1338;
 }
 
-.candy-cloud-backdrop {
-  inset: 0;
-  opacity: 0.18;
-  overflow: hidden;
-  pointer-events: none;
-  position: fixed;
-  z-index: 1;
-}
-
-.candy-cloud-backdrop::after {
-  background:
-    radial-gradient(circle at 20% 18%, rgb(229 124 216 / 0.28), transparent 34%),
-    linear-gradient(180deg, rgb(254 251 250 / 0.36), rgb(254 251 250 / 0.08));
-  content: "";
-  inset: 0;
-  position: absolute;
-}
-
-.candy-cloud-backdrop video {
-  height: 100%;
-  object-fit: cover;
-  width: 100%;
-}
-
 .candy-kinetic-grid {
   background-image:
     linear-gradient(rgb(255 255 255 / 0.08) 1px, transparent 1px),
@@ -164,10 +140,6 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .candy-cloud-backdrop {
-    display: none;
-  }
-
   *,
   *::before,
   *::after {

@@ -32,9 +32,9 @@ export function HomeHero({ content }: HomeHeroProps) {
       <div className="candy-kinetic-grid absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fefbfa] to-transparent" />
 
-      <div className="relative z-20 mx-auto grid w-full max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16">
-        <div className="candy-reveal flex max-w-3xl flex-col justify-center gap-7">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm text-white/80 backdrop-blur">
+      <div className="relative z-20 mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16">
+        <div className="candy-reveal flex min-w-0 max-w-3xl flex-col justify-center gap-7">
+          <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm text-white/80 backdrop-blur">
             <CheckCircle2 aria-hidden="true" />
             Ingles vivo, organizado e acompanhado
           </div>
@@ -43,10 +43,10 @@ export function HomeHero({ content }: HomeHeroProps) {
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#e57cd8]">
               Candy English
             </p>
-            <h1 className="max-w-4xl text-5xl font-semibold leading-[0.96] tracking-normal sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-4xl break-words text-4xl font-semibold leading-[0.96] tracking-normal sm:text-6xl lg:text-7xl">
               {content?.title ?? "Fale ingles com clareza, rotina e feedback."}
             </h1>
-            <p className="max-w-2xl text-base leading-8 text-white/75 md:text-lg">
+            <p className="max-w-2xl break-words text-base leading-8 text-white/75 md:text-lg">
               {content?.description ??
                 "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo."}
             </p>
@@ -74,7 +74,7 @@ export function HomeHero({ content }: HomeHeroProps) {
           </div>
         </div>
 
-        <div className="candy-reveal-delay relative min-h-[420px] lg:min-h-[560px]">
+        <div className="candy-reveal-delay relative hidden min-h-[420px] md:block lg:min-h-[560px]">
           <div className="absolute right-0 top-0 hidden w-[74%] overflow-hidden rounded-lg border border-white/15 bg-white/10 p-5 shadow-2xl backdrop-blur md:block candy-float-slow">
             <div className="mb-5 flex items-center justify-between text-sm text-white/70">
               <span>Aula de hoje</span>
@@ -132,7 +132,7 @@ export function HomeHero({ content }: HomeHeroProps) {
         </div>
       </div>
 
-      <div className="relative z-20 border-y border-white/10 bg-white/10 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
+      <div className="relative z-20 overflow-hidden border-y border-white/10 bg-white/10 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
         <div className="candy-marquee flex w-[200%] gap-10 whitespace-nowrap">
           {[...activity, ...activity, ...activity, ...activity].map(
             (item, index) => (

@@ -1,11 +1,12 @@
-<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Candy English">
-  <path d="M17 37L6 20C5 18 7 16 9 17L29 26L17 37Z" fill="#7C3AED"/>
-  <path d="M79 59L90 76C91 78 89 80 87 79L67 70L79 59Z" fill="#7C3AED"/>
-  <rect x="20" y="23" width="56" height="50" rx="22" transform="rotate(-12 20 23)" fill="#C084FC"/>
-  <rect x="27" y="30" width="42" height="36" rx="18" transform="rotate(-12 27 30)" fill="#F9A8D4"/>
-  <path d="M30 28L19 36L25 47L36 38L30 28Z" fill="#A855F7"/>
-  <path d="M66 58L77 60L70 49L59 48L66 58Z" fill="#A855F7"/>
-  <circle cx="43" cy="45" r="5" fill="#FFF7ED"/>
-  <circle cx="55" cy="43" r="4" fill="#FFF7ED"/>
-  <path d="M37 60C45 66 57 64 64 55" stroke="#4C1D95" stroke-width="5" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Candy English">
+  <defs>
+    <linearGradient id="candy-purple" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e57cd8"/>
+      <stop offset="0.52" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#412a4c"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#candy-purple)" d="M32 6c14.36 0 26 11.64 26 26S46.36 58 32 58 6 46.36 6 32 17.64 6 32 6Z"/>
+  <path fill="#fefbfa" d="M40.92 22.42c-2.03-2.22-4.76-3.45-8.07-3.45-7.18 0-12.47 5.47-12.47 13.03 0 7.52 5.29 13.03 12.47 13.03 3.5 0 6.48-1.38 8.5-3.8l-4.11-4.03c-1.1 1.34-2.48 2.02-4.16 2.02-3.55 0-5.98-2.92-5.98-7.22 0-4.34 2.43-7.22 5.98-7.22 1.58 0 2.92.6 4.02 1.78l3.82-4.14Z"/>
+  <path fill="#fefbfa" opacity=".72" d="M15 16.7 19.3 13l4.1 3.2-4.3 3.7L15 16.7Zm25.6 31.1 4.3-3.7L49 47.3 44.7 51l-4.1-3.2Z"/>
 </svg>

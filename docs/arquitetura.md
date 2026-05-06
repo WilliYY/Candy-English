@@ -201,6 +201,8 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - O app publica a porta `3000` apenas no host definido por `APP_HOST_BIND`, com padrao `127.0.0.1`.
 - O runtime do Next.js no container define `HOSTNAME=0.0.0.0`, permitindo healthcheck interno em `127.0.0.1:3000` e acesso pelo servico `app` na rede Docker.
 - Logs de `app` e `postgres` usam driver `json-file` com `max-size=10m` e `max-file=3`.
+- `app`, `postgres` e ferramentas possuem `mem_reservation` e `mem_limit` para manter o runtime proximo da meta de 10% de 24 GB.
+- O PostgreSQL usa parametros conservadores: `shared_buffers=256MB`, `work_mem=8MB`, `maintenance_work_mem=128MB`, `effective_cache_size=768MB` e `max_connections=50`, todos ajustaveis pelo `.env`.
 
 ### Operacao
 
@@ -257,13 +259,22 @@ A decima segunda fase adiciona recursos escolares de base:
 
 ## FASE 13
 
-A decima terceira fase adiciona movimento e experiencia visual:
+A decima terceira fase adicionou e depois revisou movimento e experiencia visual:
 
-- bala sem fundo vira favicon e sprite;
-- `nuvem-fundo.mp4` roda em loop suave no site inteiro como camada visual global;
+- favicon usa a marca Candy English;
 - Catty fica no canto inferior direito como chatbot visual;
-- 25 balas e 2 sprites de cada GIF informado zanzam aleatoriamente e fogem suavemente do mouse;
-- animacoes respeitam `prefers-reduced-motion`.
+- video global, balas e GIFs decorativos foram removidos para reduzir ruido visual e consumo de recursos;
+- animacoes restantes respeitam `prefers-reduced-motion`.
+
+## FASE 14
+
+A decima quarta fase define orcamento de memoria no Docker:
+
+- `app` reserva `512m` e limita em `1536m`;
+- `postgres` reserva `512m` e limita em `768m`;
+- `postgres` recebe `shm_size=128mb` e parametros internos coerentes com um banco pequeno/medio;
+- `migrate`, `seed` e `audit-server-smoke` limitam memoria porque sao ferramentas transitorias;
+- a porta `5432` continua sem publicacao no host.
 
 ## Decisao Sobre Aula Ao Vivo
 
