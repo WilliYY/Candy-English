@@ -8,6 +8,7 @@ const databaseUrl = process.env.DATABASE_URL;
 const adminName = process.env.ADMIN_NAME;
 const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
 const adminPassword = process.env.ADMIN_PASSWORD;
+const adminResetPassword = process.env.ADMIN_RESET_PASSWORD === "true";
 
 function getSeedConfig() {
   if (!databaseUrl) {
@@ -38,16 +39,33 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const passwordHash = await hash(seedConfig.adminPassword, 12);
-
-  const admin = await prisma.user.upsert({
+  const existingAdmin = await prisma.user.findUnique({
     where: { email: seedConfig.adminEmail },
-    update: {
-      name: seedConfig.adminName,
-      passwordHash,
-      role: "ADMIN",
-    },
-    create: {
+  });
+
+  if (existingAdmin) {
+    const admin = await prisma.user.update({
+      where: { email: seedConfig.adminEmail },
+      data: {
+        name: seedConfig.adminName,
+        role: "ADMIN",
+        ...(adminResetPassword
+          ? { passwordHash: await hash(seedConfig.adminPassword, 12) }
+          : {}),
+      },
+    });
+
+    console.log(
+      adminResetPassword
+        ? `Admin atualizado com senha redefinida: ${admin.email}`
+        : `Admin existente preservado sem redefinir senha: ${admin.email}`,
+    );
+    return;
+  }
+
+  const passwordHash = await hash(seedConfig.adminPassword, 12);
+  const admin = await prisma.user.create({
+    data: {
       name: seedConfig.adminName,
       email: seedConfig.adminEmail,
       passwordHash,
