@@ -15,7 +15,7 @@ import {
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
 import { AdminSiteContentForm } from "@/components/ava/admin-site-content-form";
-import { SignOutButton } from "@/components/ava/sign-out-button";
+import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,7 +154,7 @@ export function AdminUsersPanel({
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
+      <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
             <ShieldCheck aria-hidden="true" />
@@ -172,32 +172,11 @@ export function AdminUsersPanel({
           </div>
         </div>
 
-        <Card className="bg-primary text-primary-foreground">
-          <CardHeader>
-            <CardTitle>Usuario logado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1 text-sm">
-                <span className="text-primary-foreground/75">Nome</span>
-                <strong>{currentUser.name ?? "Sem nome"}</strong>
-              </div>
-              <div className="flex flex-col gap-1 text-sm">
-                <span className="text-primary-foreground/75">Email</span>
-                <strong className="break-all">{currentUser.email}</strong>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-sm text-primary-foreground/75">
-                  Perfil
-                </span>
-                <span className="rounded-md bg-primary-foreground px-2 py-1 text-xs font-semibold text-primary">
-                  {ROLE_LABELS[currentUser.role]}
-                </span>
-              </div>
-              <SignOutButton />
-            </div>
-          </CardContent>
-        </Card>
+        <UserSummaryPanel
+          email={currentUser.email}
+          name={currentUser.name}
+          role={currentUser.role}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">

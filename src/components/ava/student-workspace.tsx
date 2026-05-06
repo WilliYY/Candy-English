@@ -12,9 +12,9 @@ import {
   AvatarUploadForm,
   ProfileForm,
 } from "@/components/ava/profile-forms";
-import { SignOutButton } from "@/components/ava/sign-out-button";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
-import { ROLE_LABELS, type Role } from "@/lib/roles";
+import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
+import type { Role } from "@/lib/roles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type StudentLesson = {
@@ -138,7 +138,7 @@ export function StudentWorkspace({
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+      <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
             <BookOpen aria-hidden="true" />
@@ -155,23 +155,11 @@ export function StudentWorkspace({
           </div>
         </div>
 
-        <Card className="bg-primary text-primary-foreground">
-          <CardHeader>
-            <CardTitle>Usuario logado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4 text-sm">
-              <strong>{currentUser.name ?? "Sem nome"}</strong>
-              <span className="break-all text-primary-foreground/75">
-                {currentUser.email}
-              </span>
-              <span className="w-fit rounded-md bg-primary-foreground px-2 py-1 text-xs font-semibold text-primary">
-                {ROLE_LABELS[currentUser.role]}
-              </span>
-              <SignOutButton />
-            </div>
-          </CardContent>
-        </Card>
+        <UserSummaryPanel
+          email={currentUser.email}
+          name={currentUser.name}
+          role={currentUser.role}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

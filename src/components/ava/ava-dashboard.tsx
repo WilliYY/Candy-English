@@ -1,6 +1,7 @@
 import { CheckCircle2 } from "lucide-react";
-import { ROLE_LABELS, type Role } from "@/lib/roles";
+import type { Role } from "@/lib/roles";
 import { SignOutButton } from "@/components/ava/sign-out-button";
+import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type AvaDashboardUser = {
@@ -37,29 +38,9 @@ export function AvaDashboard({
         <SignOutButton />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Usuario logado</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <dl className="flex flex-col gap-4 text-sm">
-              <div className="flex flex-col gap-1">
-                <dt className="text-muted-foreground">Nome</dt>
-                <dd className="font-medium">{user.name ?? "Sem nome"}</dd>
-              </div>
-              <div className="flex flex-col gap-1">
-                <dt className="text-muted-foreground">Email</dt>
-                <dd className="font-medium">{user.email}</dd>
-              </div>
-              <div className="flex flex-col gap-1">
-                <dt className="text-muted-foreground">Role</dt>
-                <dd className="font-medium">{ROLE_LABELS[user.role]}</dd>
-              </div>
-            </dl>
-          </CardContent>
-        </Card>
+      <UserSummaryPanel email={user.email} name={user.name} role={user.role} />
 
+      <div className="grid grid-cols-1 gap-4">
         <Card>
           <CardHeader>
             <CardTitle>Base da area</CardTitle>

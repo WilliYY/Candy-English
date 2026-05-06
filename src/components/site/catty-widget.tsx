@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { MessageCircle, Send, X } from "lucide-react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -13,6 +14,7 @@ const quickReplies = [
 ];
 
 export function CattyWidget() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
@@ -40,6 +42,10 @@ export function CattyWidget() {
       },
     ]);
     setDraft("");
+  }
+
+  if (pathname.startsWith("/ava") && pathname !== "/ava/login") {
+    return null;
   }
 
   return (
@@ -130,11 +136,11 @@ export function CattyWidget() {
       <Button
         type="button"
         size="lg"
-        className="h-12 rounded-full px-4 shadow-2xl sm:h-14 sm:px-5"
+        className="size-12 rounded-full px-0 shadow-2xl sm:h-14 sm:w-auto sm:px-5"
         onClick={() => setOpen((current) => !current)}
       >
         <MessageCircle data-icon="inline-start" />
-        Catty
+        <span className="hidden sm:inline">Catty</span>
       </Button>
     </div>
   );

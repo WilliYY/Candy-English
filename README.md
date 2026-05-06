@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 14 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito. O AVA tambem possui sidebar por role, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
+FASE 14 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito do site/login. O AVA tambem possui sidebar por role, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -389,7 +389,7 @@ Implementado:
 - Google login opcional com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`;
 - editor simples de conteudo institucional no admin;
 - favicon com marca Candy English;
-- Catty no canto inferior direito;
+- Catty no canto inferior direito do site e do login, sem aparecer nos paineis logados do AVA;
 - animacoes decorativas com video, balas e GIFs removidas por performance e clareza;
 - Docker Compose com reservas e limites de memoria para app, PostgreSQL e ferramentas.
 

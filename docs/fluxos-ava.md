@@ -133,6 +133,7 @@ Regras:
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
 - Contrato aceita PDF ate 8 MB.
 - Catty e interface visual; IA real ainda nao esta conectada.
+- Catty aparece no site institucional e no login, mas fica oculto nos paineis logados para nao cobrir a operacao do AVA.
 - As animacoes decorativas com video, balas e GIFs foram removidas para reduzir distracao e consumo de recursos.
 
 ## Deploy Quando Ha Migration

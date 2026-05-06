@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 14 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca e Catty no canto inferior direito. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas.
+FASE 14 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca e Catty no canto inferior direito do site/login. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas.
 
 ## Fases implementadas
 
@@ -154,16 +154,19 @@ Operacao escolar:
 Experiencia visual:
 
 - favicon usa a marca Candy English;
-- Catty no canto inferior direito;
+- Catty no canto inferior direito do site e do login;
 - video global, balas e GIFs decorativos foram removidos por decisao de performance e clareza visual.
 
 ### FASE 14
 
-Orcamento de RAM no Docker:
+Orcamento de RAM e refino visual operacional:
 
 - `app` possui reserva e limite de memoria no Compose;
 - `postgres` possui reserva, limite, `shm_size` e parametros conservadores de PostgreSQL;
 - servicos utilitarios `migrate`, `seed` e `audit-server-smoke` possuem limite proprio porque rodam sob demanda.
+- paineis logados do AVA nao exibem Catty para nao cobrir botoes e formularios;
+- resumo de usuario no AVA usa faixa clara em formato de bala, sem visual de cartao;
+- seletores de role devem evitar colunas estreitas que cortem texto.
 
 ## MVP inicial
 
@@ -218,6 +221,7 @@ docker compose --profile tools run --rm audit-server-smoke
 - `User.isActive=false` deve bloquear login sem apagar dados historicos.
 - Nao registrar nem imprimir `.env`, `DATABASE_URL`, `AUTH_SECRET` ou senhas.
 - Mudancas visuais devem respeitar `docs/design-direcao.md`.
+- Catty deve ficar fora dos paineis logados do AVA, salvo pedido explicito para reavaliar isso.
 - Upload local deve ficar em `storage/`, que nao deve ser versionado.
 - Contratos devem continuar protegidos por rota server-side.
 - Manter o orcamento de RAM do Docker documentado em `docker-compose.yml`, `.env.example`, README e arquitetura.

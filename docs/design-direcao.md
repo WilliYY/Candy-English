@@ -42,7 +42,7 @@ Movimentos permitidos nesta fase:
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
-- Catty fixo no canto inferior direito.
+- Catty fixo no canto inferior direito no site institucional e no login do AVA.
 
 Cuidados:
 
@@ -52,6 +52,7 @@ Cuidados:
 - manter contraste alto em texto sobre fundo roxo.
 - usar `prefers-reduced-motion` para reduzir animacoes quando o navegador pedir.
 - videos globais, balas e GIFs decorativos foram removidos para manter leitura, performance e foco.
+- Catty nao aparece nos paineis logados do AVA para nao cobrir botoes, formularios, contratos ou tarefas.
 
 ## Fluxo Visual Do Site
 

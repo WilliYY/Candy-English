@@ -128,11 +128,11 @@ export function AdminCreateUserForm() {
 
         <FieldSet>
           <FieldLegend>Perfil</FieldLegend>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3">
             {ROLES.map((item) => (
               <label
                 key={item}
-                className="group flex cursor-pointer flex-col gap-2 rounded-lg border bg-background p-4 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                className="group grid cursor-pointer grid-cols-[auto_1fr] items-start gap-3 rounded-lg border bg-background p-4 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5"
               >
                 <input
                   type="radio"
@@ -141,16 +141,20 @@ export function AdminCreateUserForm() {
                   disabled={isPending}
                   {...form.register("role")}
                 />
-                <span className="flex items-center gap-2 text-sm font-semibold">
+                <span className="flex size-10 items-center justify-center rounded-full bg-secondary text-secondary-foreground group-has-[:checked]:bg-primary group-has-[:checked]:text-primary-foreground">
                   {item === "ADMIN" ? (
                     <ShieldCheck aria-hidden="true" />
                   ) : (
                     <UserRound aria-hidden="true" />
                   )}
-                  {ROLE_LABELS[item]}
                 </span>
-                <span className="text-xs leading-5 text-muted-foreground">
-                  {roleDescriptions[item]}
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold">
+                    {ROLE_LABELS[item]}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {roleDescriptions[item]}
+                  </span>
                 </span>
               </label>
             ))}
