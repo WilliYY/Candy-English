@@ -9,8 +9,8 @@ function NativeSelect({
     <select
       data-slot="native-select"
       className={cn(
-        "h-9 w-full min-w-0 rounded-md border border-input bg-background px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "h-11 w-full min-w-0 rounded-lg border border-input bg-white/90 px-4 py-2 text-base shadow-[0_1px_0_rgba(44,19,56,0.04)] transition-[border-color,box-shadow,background-color] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "hover:border-primary/35 focus-visible:border-primary focus-visible:bg-white focus-visible:ring-[3px] focus-visible:ring-ring/25",
         "aria-invalid:border-destructive aria-invalid:ring-destructive/20",
         className,
       )}

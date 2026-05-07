@@ -10,13 +10,10 @@ type UserSummaryPanelProps = {
 
 export function UserSummaryPanel({ email, name, role }: UserSummaryPanelProps) {
   return (
-    <section className="relative isolate overflow-hidden rounded-[2rem] border border-primary/15 bg-gradient-to-r from-[#fff7fd] via-white to-[#fce5d8] p-5 shadow-sm">
-      <div className="pointer-events-none absolute -left-10 top-1/2 h-20 w-20 -translate-y-1/2 rounded-full border-[18px] border-primary/10" />
-      <div className="pointer-events-none absolute -right-8 top-1/2 h-16 w-16 -translate-y-1/2 rounded-full border-[14px] border-accent/20" />
-
-      <div className="relative grid min-w-0 gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+    <section className="rounded-2xl border border-primary/15 bg-white/95 p-4 shadow-sm md:rounded-[999px]">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
         <div className="flex min-w-0 items-start gap-4">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <UserRound aria-hidden="true" />
           </span>
 
@@ -34,7 +31,10 @@ export function UserSummaryPanel({ email, name, role }: UserSummaryPanelProps) {
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Email
               </p>
-              <p className="mt-1 break-all text-sm font-medium text-foreground">
+              <p
+                className="mt-1 max-w-[220px] truncate text-sm font-medium text-foreground"
+                title={email}
+              >
                 <Mail className="mr-1 inline size-4 align-[-3px] text-muted-foreground" />
                 {email}
               </p>
@@ -43,7 +43,7 @@ export function UserSummaryPanel({ email, name, role }: UserSummaryPanelProps) {
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center lg:justify-end">
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-white px-3 py-2 text-sm font-semibold text-primary shadow-xs">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-muted px-3 py-2 text-sm font-semibold text-primary">
             <ShieldCheck aria-hidden="true" className="size-4" />
             {ROLE_LABELS[role]}
           </span>

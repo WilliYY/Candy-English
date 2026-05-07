@@ -48,6 +48,7 @@ model User {
   avatarMimeType    String?
   studentProfile    StudentProfile?
   teacherProfile    TeacherProfile?
+  sentChatMessages  ChatMessage[]
   uploadedContracts ContractDocument[] @relation("UploadedContracts")
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
@@ -61,7 +62,13 @@ model StudentProfile {
   user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   level              String?
   birthDate          DateTime?
+  guardianDocument   String?
+  studentPhone       String?
+  studentPhoneAlt    String?
+  motherName         String?
+  motherPhone        String?
   notes              String?
+  chatThreads        ChatThread[]
   teacherAssignments StudentTeacherAssignment[] @relation("StudentAssignments")
   lessons            Lesson[]
   submissions        HomeworkSubmission[]
@@ -75,6 +82,7 @@ model TeacherProfile {
   user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                String?
   studentAssignments StudentTeacherAssignment[] @relation("TeacherAssignments")
+  chatThreads        ChatThread[]
   lessons            Lesson[]
   homeworks          Homework[]
   reviewedSubmissions HomeworkSubmission[]
@@ -238,6 +246,40 @@ model SitePageContent {
   ctaLabel    String?
   updatedAt   DateTime @updatedAt
   createdAt   DateTime @default(now())
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatThread {
+  id               String         @id @default(cuid())
+  teacherProfileId String
+  teacherProfile   TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  messages         ChatMessage[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([teacherProfileId, studentProfileId])
+  @@index([studentProfileId])
+}
+
+model ChatMessage {
+  id           String     @id @default(cuid())
+  threadId     String
+  thread       ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderUserId String
+  senderUser   User       @relation(fields: [senderUserId], references: [id], onDelete: Cascade)
+  body         String
+  createdAt    DateTime   @default(now())
+
+  @@index([threadId, createdAt])
+  @@index([senderUserId])
 }
 
 model LoginAttempt {

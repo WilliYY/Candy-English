@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 15 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca e Catty no canto inferior direito do site/login. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas. O admin agora usa `/ava/admin?task=...` para abrir uma tarefa limpa por vez sem criar novas rotas.
+FASE 16 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca, Catty e WhatsApp no site/login. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. O admin controla modo manutencao para bloquear alunos durante ajustes, e teacher/aluno possuem chatbox registrada no banco.
 
 ## Fases implementadas
 
@@ -179,7 +179,20 @@ Admin por tarefa:
 - criar aluno usa nome completo, email/usuario de login, senha provisoria, data de nascimento e documento/responsavel;
 - idade do aluno e calculada pela data de nascimento, nao salva como numero fixo;
 - `/ava/admin?task=vincular-aluno` mostra vinculo e lista de vinculos atuais;
-- `/ava/admin?task=editar-site` mostra somente a edicao do site institucional.
+- `/ava/admin?task=editar-site` fica reservado para manutencao operacional.
+
+### FASE 16
+
+Manutencao, contatos e chatbox:
+
+- cadastro de aluno com dois telefones do aluno, documento/responsavel, nome da mae e telefone da mae;
+- modo manutencao salvo em `AppSetting`;
+- alunos nao conseguem logar durante manutencao;
+- student logado ve tela "Manutencao Candy";
+- `ADMIN` e `TEACHER` continuam acessando durante manutencao;
+- teacher e student tambem usam tarefas separadas por `?task=`;
+- chatbox teacher/aluno usa `ChatThread` e `ChatMessage`, sempre validando o vinculo `StudentTeacherAssignment`;
+- WhatsApp comercial aparece no site e no login, mas nao nos paineis logados do AVA.
 
 ## MVP inicial
 
@@ -231,6 +244,8 @@ docker compose --profile tools run --rm audit-server-smoke
 - Cada nova action sensivel precisa chamar `auth()` e validar role.
 - `STUDENT` so deve acessar dados do proprio `StudentProfile`.
 - `TEACHER` so deve editar/corrigir dados das proprias aulas.
+- Chat teacher/aluno deve validar o vinculo `StudentTeacherAssignment` antes de gravar mensagem.
+- Modo manutencao deve bloquear `STUDENT`, mas nao `ADMIN` nem `TEACHER`.
 - `User.isActive=false` deve bloquear login sem apagar dados historicos.
 - Nao registrar nem imprimir `.env`, `DATABASE_URL`, `AUTH_SECRET` ou senhas.
 - Mudancas visuais devem respeitar `docs/design-direcao.md`.

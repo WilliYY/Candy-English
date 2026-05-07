@@ -29,6 +29,26 @@ export const adminCreateUserSchema = z
       .max(120, "A senha temporaria pode ter no maximo 120 caracteres."),
     role: z.enum(ROLES),
     level: optionalText(80, "O nivel pode ter no maximo 80 caracteres."),
+    guardianDocument: optionalText(
+      180,
+      "O documento ou responsavel pode ter no maximo 180 caracteres.",
+    ),
+    studentPhone: optionalText(
+      40,
+      "O telefone principal pode ter no maximo 40 caracteres.",
+    ),
+    studentPhoneAlt: optionalText(
+      40,
+      "O telefone secundario pode ter no maximo 40 caracteres.",
+    ),
+    motherName: optionalText(
+      120,
+      "O nome da mae pode ter no maximo 120 caracteres.",
+    ),
+    motherPhone: optionalText(
+      40,
+      "O telefone da mae pode ter no maximo 40 caracteres.",
+    ),
     birthDate: z
       .string()
       .optional()
@@ -68,6 +88,26 @@ export const adminCreateUserSchema = z
         path: ["bio"],
       });
     }
+
+    if (data.role !== "STUDENT") {
+      (
+        [
+          "guardianDocument",
+          "studentPhone",
+          "studentPhoneAlt",
+          "motherName",
+          "motherPhone",
+        ] as const
+      ).forEach((field) => {
+        if (data[field]) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Este campo e usado apenas para alunos.",
+            path: [field],
+          });
+        }
+      });
+    }
   });
 
 export type AdminCreateUserInput = z.input<typeof adminCreateUserSchema>;
@@ -98,8 +138,13 @@ export const adminSiteContentSchema = z.object({
     .max(180, "O titulo pode ter no maximo 180 caracteres."),
 });
 
+export const adminMaintenanceSchema = z.object({
+  enabled: z.boolean(),
+});
+
 export type AdminToggleUserStatusInput = z.input<
   typeof adminToggleUserStatusSchema
 >;
 export type AdminAssignTeacherInput = z.input<typeof adminAssignTeacherSchema>;
 export type AdminSiteContentInput = z.input<typeof adminSiteContentSchema>;
+export type AdminMaintenanceInput = z.input<typeof adminMaintenanceSchema>;

@@ -28,7 +28,13 @@ function getSafeCallbackUrl(callbackUrl: string | null) {
   return "/ava";
 }
 
-export function LoginForm({ googleEnabled }: { googleEnabled?: boolean }) {
+export function LoginForm({
+  googleEnabled,
+  maintenanceMode,
+}: {
+  googleEnabled?: boolean;
+  maintenanceMode?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
@@ -51,7 +57,11 @@ export function LoginForm({ googleEnabled }: { googleEnabled?: boolean }) {
       });
 
       if (result?.error) {
-        setAuthError("Email ou senha invalidos.");
+        setAuthError(
+          maintenanceMode
+            ? "Acesso de alunos pausado durante a manutencao. Admins e teachers podem entrar."
+            : "Email ou senha invalidos.",
+        );
         return;
       }
 

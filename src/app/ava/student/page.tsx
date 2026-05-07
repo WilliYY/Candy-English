@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
 import { AvaDashboard } from "@/components/ava/ava-dashboard";
-import { StudentWorkspace } from "@/components/ava/student-workspace";
+import {
+  normalizeStudentTask,
+  StudentWorkspace,
+} from "@/components/ava/student-workspace";
+import { StudentMaintenanceScreen } from "@/components/ava/student-maintenance-screen";
+import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
 
@@ -11,11 +16,27 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function StudentPage() {
+type StudentPageProps = {
+  searchParams?: Promise<{
+    task?: string | string[];
+  }>;
+};
+
+export default async function StudentPage({ searchParams }: StudentPageProps) {
   const session = await requireAvaRole(
     ["ADMIN", "TEACHER", "STUDENT"],
     "/ava/student",
   );
+  const params = searchParams ? await searchParams : undefined;
+  const requestedTask = Array.isArray(params?.task)
+    ? params?.task[0]
+    : params?.task;
+  const activeTask = normalizeStudentTask(requestedTask);
+  const maintenanceMode = await isMaintenanceModeEnabled();
+
+  if (session.user.role === "STUDENT" && maintenanceMode) {
+    return <StudentMaintenanceScreen />;
+  }
 
   if (session.user.role !== "STUDENT") {
     return (
@@ -62,7 +83,8 @@ export default async function StudentPage() {
     );
   }
 
-  const [lessons, liveSessions, contracts] = await Promise.all([
+  const [lessons, liveSessions, contracts, teacherAssignments, chatThreads] =
+    await Promise.all([
     prisma.lesson.findMany({
       where: {
         status: "PUBLISHED",
@@ -192,10 +214,98 @@ export default async function StudentPage() {
         title: true,
       },
     }),
+    prisma.studentTeacherAssignment.findMany({
+      where: {
+        studentProfileId: studentProfile.id,
+      },
+      orderBy: {
+        teacherProfile: {
+          user: {
+            name: "asc",
+          },
+        },
+      },
+      select: {
+        teacherProfileId: true,
+        teacherProfile: {
+          select: {
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    prisma.chatThread.findMany({
+      where: {
+        studentProfileId: studentProfile.id,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      select: {
+        id: true,
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            body: true,
+            createdAt: true,
+            id: true,
+            senderUser: {
+              select: {
+                name: true,
+                role: true,
+              },
+            },
+          },
+          take: 50,
+        },
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        studentProfileId: true,
+        teacherProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        teacherProfileId: true,
+      },
+    }),
   ]);
 
   return (
     <StudentWorkspace
+      activeTask={activeTask}
+      chatThreads={chatThreads.map((thread) => ({
+        id: thread.id,
+        messages: thread.messages.map((message) => ({
+          body: message.body,
+          createdAt: message.createdAt.toISOString(),
+          id: message.id,
+          senderName: message.senderUser.name,
+          senderRole: message.senderUser.role,
+        })),
+        studentName: thread.studentProfile.user.name,
+        studentProfileId: thread.studentProfileId,
+        teacherName: thread.teacherProfile.user.name,
+        teacherProfileId: thread.teacherProfileId,
+      }))}
       contracts={contracts}
       currentUser={studentProfile.user}
       lessons={lessons}
@@ -206,6 +316,11 @@ export default async function StudentPage() {
         startsAt: liveSession.startsAt,
         teacherName: liveSession.teacherProfile.user.name,
         title: liveSession.title,
+      }))}
+      studentProfileId={studentProfile.id}
+      teachers={teacherAssignments.map((assignment) => ({
+        id: assignment.teacherProfileId,
+        label: `${assignment.teacherProfile.user.name} - ${assignment.teacherProfile.user.email}`,
       }))}
     />
   );

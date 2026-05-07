@@ -34,11 +34,16 @@ const defaultValues: AdminCreateUserInput = {
   bio: "",
   birthDate: "",
   email: "",
+  guardianDocument: "",
   level: "",
+  motherName: "",
+  motherPhone: "",
   name: "",
   notes: "",
   password: "",
   role: "STUDENT",
+  studentPhone: "",
+  studentPhoneAlt: "",
 };
 
 type AdminCreateUserFormProps = {
@@ -243,6 +248,36 @@ export function AdminCreateUserForm({
 
         {role === "STUDENT" ? (
           <div className="grid gap-5 md:grid-cols-2">
+            <Field data-invalid={Boolean(form.formState.errors.studentPhone)}>
+              <FieldLabel htmlFor="admin-user-student-phone">
+                Telefone do aluno
+              </FieldLabel>
+              <Input
+                id="admin-user-student-phone"
+                autoComplete="tel"
+                aria-invalid={Boolean(form.formState.errors.studentPhone)}
+                disabled={isPending}
+                placeholder="(00) 00000-0000"
+                {...form.register("studentPhone")}
+              />
+              <FieldError errors={[form.formState.errors.studentPhone]} />
+            </Field>
+
+            <Field data-invalid={Boolean(form.formState.errors.studentPhoneAlt)}>
+              <FieldLabel htmlFor="admin-user-student-phone-alt">
+                Segundo contato do aluno
+              </FieldLabel>
+              <Input
+                id="admin-user-student-phone-alt"
+                autoComplete="tel"
+                aria-invalid={Boolean(form.formState.errors.studentPhoneAlt)}
+                disabled={isPending}
+                placeholder="(00) 00000-0000"
+                {...form.register("studentPhoneAlt")}
+              />
+              <FieldError errors={[form.formState.errors.studentPhoneAlt]} />
+            </Field>
+
             <Field data-invalid={Boolean(form.formState.errors.birthDate)}>
               <FieldLabel htmlFor="admin-user-birth-date">
                 Data de nascimento
@@ -263,19 +298,49 @@ export function AdminCreateUserForm({
             </Field>
 
             <Field
-              data-invalid={Boolean(form.formState.errors.notes)}
+              data-invalid={Boolean(form.formState.errors.guardianDocument)}
             >
-              <FieldLabel htmlFor="admin-user-notes">
+              <FieldLabel htmlFor="admin-user-guardian-document">
                 Documento ou responsavel
               </FieldLabel>
               <Input
-                id="admin-user-notes"
-                aria-invalid={Boolean(form.formState.errors.notes)}
+                id="admin-user-guardian-document"
+                aria-invalid={Boolean(form.formState.errors.guardianDocument)}
                 disabled={isPending}
                 placeholder="CPF/RG do aluno ou nome/documento do responsavel"
-                {...form.register("notes")}
+                {...form.register("guardianDocument")}
               />
-              <FieldError errors={[form.formState.errors.notes]} />
+              <FieldError errors={[form.formState.errors.guardianDocument]} />
+            </Field>
+
+            <Field data-invalid={Boolean(form.formState.errors.motherName)}>
+              <FieldLabel htmlFor="admin-user-mother-name">
+                Nome da mae
+              </FieldLabel>
+              <Input
+                id="admin-user-mother-name"
+                autoComplete="name"
+                aria-invalid={Boolean(form.formState.errors.motherName)}
+                disabled={isPending}
+                placeholder="Nome completo da mae"
+                {...form.register("motherName")}
+              />
+              <FieldError errors={[form.formState.errors.motherName]} />
+            </Field>
+
+            <Field data-invalid={Boolean(form.formState.errors.motherPhone)}>
+              <FieldLabel htmlFor="admin-user-mother-phone">
+                Telefone da mae
+              </FieldLabel>
+              <Input
+                id="admin-user-mother-phone"
+                autoComplete="tel"
+                aria-invalid={Boolean(form.formState.errors.motherPhone)}
+                disabled={isPending}
+                placeholder="(00) 00000-0000"
+                {...form.register("motherPhone")}
+              />
+              <FieldError errors={[form.formState.errors.motherPhone]} />
             </Field>
           </div>
         ) : null}

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/lib/auth";
+import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { getDefaultAvaPath } from "@/lib/roles";
 import { LoginForm } from "@/components/ava/login-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +16,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function LoginPage() {
-  const session = await auth();
+  const [session, maintenanceMode] = await Promise.all([
+    auth(),
+    isMaintenanceModeEnabled(),
+  ]);
 
   if (session?.user?.role) {
     redirect(getDefaultAvaPath(session.user.role));
@@ -65,6 +69,12 @@ export default async function LoginPage() {
             <CardTitle className="text-2xl">Entrar no AVA</CardTitle>
           </CardHeader>
           <CardContent>
+            {maintenanceMode ? (
+              <div className="mb-5 rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm leading-6 text-primary">
+                Manutencao Candy ativa: alunos entram novamente quando a
+                manutencao terminar. Admins e teachers podem acessar normalmente.
+              </div>
+            ) : null}
             <Suspense
               fallback={
                 <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -75,6 +85,7 @@ export default async function LoginPage() {
                   process.env.GOOGLE_CLIENT_ID &&
                     process.env.GOOGLE_CLIENT_SECRET,
                 )}
+                maintenanceMode={maintenanceMode}
               />
             </Suspense>
           </CardContent>

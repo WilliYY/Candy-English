@@ -43,6 +43,7 @@ Movimentos permitidos nesta fase:
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
 - Catty fixo no canto inferior direito no site institucional e no login do AVA.
+- WhatsApp fixo no canto inferior esquerdo no site institucional e no login do AVA.
 
 Cuidados:
 
@@ -53,6 +54,9 @@ Cuidados:
 - usar `prefers-reduced-motion` para reduzir animacoes quando o navegador pedir.
 - videos globais, balas e GIFs decorativos foram removidos para manter leitura, performance e foco.
 - Catty nao aparece nos paineis logados do AVA para nao cobrir botoes, formularios, contratos ou tarefas.
+- WhatsApp tambem nao aparece nos paineis logados do AVA, para nao disputar espaco com a operacao.
+- Teacher e student devem abrir uma tarefa por vez com `?task=`, como o admin.
+- Resumo do usuario no AVA usa formato de bala limpa, sem visual de cartao de credito.
 
 ## Fluxo Visual Do Site
 

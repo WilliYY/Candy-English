@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { CattyWidget } from "@/components/site/catty-widget";
+import { WhatsAppWidget } from "@/components/site/whatsapp-widget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         <Providers>
           {children}
+          <WhatsAppWidget />
           <CattyWidget />
         </Providers>
       </body>

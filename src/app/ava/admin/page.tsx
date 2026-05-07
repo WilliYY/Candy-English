@@ -3,6 +3,7 @@ import {
   AdminUsersPanel,
   normalizeAdminTask,
 } from "@/components/ava/admin-users-panel";
+import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
 
@@ -28,7 +29,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
 
-  const [users, teachers, students, assignments, siteContents] =
+  const [users, teachers, students, assignments, maintenanceMode] =
     await Promise.all([
     prisma.user.findMany({
       orderBy: {
@@ -117,17 +118,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
       },
     }),
-    prisma.sitePageContent.findMany({
-      orderBy: {
-        slug: "asc",
-      },
-      select: {
-        ctaLabel: true,
-        description: true,
-        slug: true,
-        title: true,
-      },
-    }),
+    isMaintenanceModeEnabled(),
   ]);
 
   return (
@@ -142,12 +133,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         teacherProfileId: assignment.teacherProfileId,
       }))}
       currentUser={session.user}
-      siteContents={siteContents.map((content) => ({
-        ctaLabel: content.ctaLabel,
-        description: content.description,
-        slug: content.slug as "home" | "sobre" | "metodologia" | "planos" | "contato",
-        title: content.title,
-      }))}
+      maintenanceMode={maintenanceMode}
       students={students.map((student) => ({
         email: student.user.email,
         id: student.id,

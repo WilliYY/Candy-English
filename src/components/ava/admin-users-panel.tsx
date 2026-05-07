@@ -3,12 +3,12 @@ import {
   GraduationCap,
   Link2,
   Mail,
-  PencilLine,
   Power,
   ShieldCheck,
   UserCheck,
   UserRound,
   UsersRound,
+  Wrench,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
@@ -16,7 +16,7 @@ import {
   AdminAssignTeacherForm,
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
-import { AdminSiteContentForm } from "@/components/ava/admin-site-content-form";
+import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
@@ -64,13 +64,6 @@ type AssignmentRow = {
   teacherProfileId: string;
 };
 
-type SiteContentRow = {
-  ctaLabel: string | null;
-  description: string;
-  slug: "home" | "sobre" | "metodologia" | "planos" | "contato";
-  title: string;
-};
-
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   assignments: AssignmentRow[];
@@ -79,7 +72,7 @@ type AdminUsersPanelProps = {
     name?: string | null;
     role: Role;
   };
-  siteContents: SiteContentRow[];
+  maintenanceMode: boolean;
   students: AssignmentOption[];
   teachers: AssignmentOption[];
   users: AdminUserRow[];
@@ -130,9 +123,9 @@ const taskMeta = {
   },
   "editar-site": {
     description:
-      "Edite os textos principais das paginas institucionais sem mexer no codigo.",
-    icon: PencilLine,
-    title: "Editar site",
+      "Controle o modo manutencao enquanto o site ou o AVA estiverem em ajuste.",
+    icon: Wrench,
+    title: "Manutencao Candy",
   },
   usuarios: {
     description:
@@ -302,7 +295,7 @@ export function AdminUsersPanel({
   activeTask,
   assignments,
   currentUser,
-  siteContents,
+  maintenanceMode,
   students,
   teachers,
   users,
@@ -364,7 +357,7 @@ export function AdminUsersPanel({
             </h1>
             <p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
               Use a lateral para abrir uma tarefa por vez: usuarios, criacao de
-              acessos, vinculo aluno-teacher ou edicao do site.
+              acessos, vinculo aluno-teacher ou manutencao do AVA.
             </p>
           </div>
         </div>
@@ -391,7 +384,7 @@ export function AdminUsersPanel({
               </div>
             </div>
             <span className="inline-flex w-fit items-center rounded-md border bg-background px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {activeTask.replace("-", " ")}
+              {task.title}
             </span>
           </div>
         </CardHeader>
@@ -448,7 +441,7 @@ export function AdminUsersPanel({
           ) : null}
 
           {activeTask === "editar-site" ? (
-            <AdminSiteContentForm contents={siteContents} />
+            <AdminMaintenancePanel enabled={maintenanceMode} />
           ) : null}
         </CardContent>
       </Card>

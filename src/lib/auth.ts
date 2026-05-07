@@ -2,6 +2,7 @@ import { compare } from "bcryptjs";
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { loginSchema } from "@/lib/validations/auth";
@@ -103,6 +104,11 @@ const providers: NextAuthConfig["providers"] = [
         return null;
       }
 
+      if (user.role === "STUDENT" && (await isMaintenanceModeEnabled())) {
+        await recordLoginAttempt(email, false);
+        return null;
+      }
+
       await recordLoginAttempt(email, true);
 
       return {
@@ -145,6 +151,13 @@ export const authConfig = {
       }
 
       const existingUser = await getActiveUserByEmail(email);
+
+      if (
+        existingUser?.role === "STUDENT" &&
+        (await isMaintenanceModeEnabled())
+      ) {
+        return false;
+      }
 
       return Boolean(existingUser?.isActive);
     },

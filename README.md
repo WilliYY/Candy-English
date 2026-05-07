@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 15 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca e Catty no canto inferior direito do site/login. O AVA tambem possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos.
+FASE 16 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student agora abrem uma tarefa principal por vez. O admin tambem controla modo manutencao para bloquear alunos durante ajustes, e teacher/aluno possuem chatbox registrada no banco.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -35,6 +35,9 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A aula ao vivo usa link protegido do Google Meet dentro do AVA; camera e compartilhamento de tela acontecem no Meet.
 - Login com Google esta preparado de forma opcional e so aceita emails ja cadastrados no AVA.
 - Uploads locais ficam em `storage/` no desenvolvimento e em volume Docker `app-storage` em producao.
+- O modo manutencao fica em `AppSetting` no banco: alunos nao conseguem entrar durante manutencao, mas `ADMIN` e `TEACHER` continuam acessando.
+- A chatbox do AVA usa `ChatThread` e `ChatMessage`, sempre presa ao vinculo `StudentTeacherAssignment`.
+- O cadastro de aluno guarda dois telefones do aluno, nome da mae e telefone da mae quando houver necessidade.
 
 ## Rotas
 
@@ -89,9 +92,10 @@ src/
   components/
     ava/
       admin-create-user-form.tsx
+      admin-maintenance-panel.tsx
       admin-operations.tsx
-      admin-site-content-form.tsx
       admin-users-panel.tsx
+      chat-thread-panel.tsx
       contract-upload-form.tsx
       live-session-forms.tsx
       profile-forms.tsx
@@ -101,6 +105,7 @@ src/
       student-workspace.tsx
     site/
       catty-widget.tsx
+      whatsapp-widget.tsx
     ui/
   lib/
     auth.ts
@@ -311,6 +316,9 @@ O schema atual define:
 - `LiveSession`
 - `ContractDocument`
 - `SitePageContent`
+- `AppSetting`
+- `ChatThread`
+- `ChatMessage`
 
 `User` tambem possui `isActive`, usado para desativar acesso sem apagar historico.
 
@@ -389,7 +397,7 @@ Implementado:
 - teacher/admin pode abrir e encerrar aula ao vivo;
 - student ve botao "Aula ao vivo" quando ha sessao ativa para ele ou geral;
 - Google login opcional com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`;
-- editor simples de conteudo institucional no admin;
+- modo manutencao operacional no admin;
 - favicon com marca Candy English;
 - Catty no canto inferior direito do site e do login, sem aparecer nos paineis logados do AVA;
 - animacoes decorativas com video, balas e GIFs removidas por performance e clareza;
@@ -415,7 +423,21 @@ Implementado:
 - cadastro de aluno usa nome completo, email/usuario de login, senha provisoria, data de nascimento e campo de documento/responsavel;
 - idade do aluno nao fica fixa no banco: ela e calculada pela data de nascimento conforme o ano passa;
 - `/ava/admin?task=vincular-aluno` mostra o formulario de vinculo e os vinculos atuais;
-- `/ava/admin?task=editar-site` mostra somente a edicao de textos institucionais.
+- `/ava/admin?task=editar-site` passa a ser reservado para manutencao operacional.
+
+## FASE 16 - Manutencao, contatos e chatbox
+
+Implementado:
+
+- cadastro de aluno com dois telefones do aluno, documento/responsavel, nome da mae e telefone da mae;
+- campos de formulario refinados para ficarem mais legiveis;
+- `/ava/admin?task=editar-site` agora mostra um card de modo manutencao, nao um editor interno de texto;
+- modo manutencao bloqueia login de alunos e mostra tela "Manutencao Candy" para student logado;
+- `ADMIN` e `TEACHER` continuam podendo entrar durante manutencao;
+- `/ava/teacher?task=...` e `/ava/student?task=...` exibem uma tarefa por vez, seguindo a mesma logica do admin;
+- chatbox teacher/aluno com mensagens salvas em `ChatThread` e `ChatMessage`;
+- botao flutuante de WhatsApp para contato comercial no site e no login;
+- navegacao institucional com fonte maior para Sobre, Metodologia, Planos, Contato e AVA.
 
 ## Ferramentas Locais Recomendadas
 

@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { TeacherWorkspace } from "@/components/ava/teacher-workspace";
+import {
+  normalizeTeacherTask,
+  TeacherWorkspace,
+} from "@/components/ava/teacher-workspace";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
 
@@ -10,9 +13,20 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function TeacherPage() {
+type TeacherPageProps = {
+  searchParams?: Promise<{
+    task?: string | string[];
+  }>;
+};
+
+export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   const session = await requireAvaRole(["ADMIN", "TEACHER"], "/ava/teacher");
   const prisma = getPrisma();
+  const params = searchParams ? await searchParams : undefined;
+  const requestedTask = Array.isArray(params?.task)
+    ? params?.task[0]
+    : params?.task;
+  const activeTask = normalizeTeacherTask(requestedTask);
   const currentTeacherProfile =
     session.user.role === "TEACHER"
       ? await prisma.teacherProfile.findUnique({
@@ -48,9 +62,21 @@ export default async function TeacherPage() {
           },
         }
       : {};
+  const chatThreadWhere =
+    session.user.role === "TEACHER"
+      ? { teacherProfileId: teacherProfileIdForFiltering }
+      : {};
 
-  const [currentUser, teachers, students, lessons, submissions, liveSessions, contracts] =
-    await Promise.all([
+  const [
+    currentUser,
+    teachers,
+    students,
+    lessons,
+    submissions,
+    liveSessions,
+    contracts,
+    chatThreads,
+  ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -271,10 +297,71 @@ export default async function TeacherPage() {
         title: true,
       },
     }),
+    prisma.chatThread.findMany({
+      where: chatThreadWhere,
+      orderBy: {
+        updatedAt: "desc",
+      },
+      select: {
+        id: true,
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            body: true,
+            createdAt: true,
+            id: true,
+            senderUser: {
+              select: {
+                name: true,
+                role: true,
+              },
+            },
+          },
+          take: 50,
+        },
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        studentProfileId: true,
+        teacherProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        teacherProfileId: true,
+      },
+    }),
   ]);
 
   return (
     <TeacherWorkspace
+      activeTask={activeTask}
+      chatThreads={chatThreads.map((thread) => ({
+        id: thread.id,
+        messages: thread.messages.map((message) => ({
+          body: message.body,
+          createdAt: message.createdAt.toISOString(),
+          id: message.id,
+          senderName: message.senderUser.name,
+          senderRole: message.senderUser.role,
+        })),
+        studentName: thread.studentProfile.user.name,
+        studentProfileId: thread.studentProfileId,
+        teacherName: thread.teacherProfile.user.name,
+        teacherProfileId: thread.teacherProfileId,
+      }))}
       contracts={contracts.map((contract) => ({
         createdAt: contract.createdAt,
         id: contract.id,

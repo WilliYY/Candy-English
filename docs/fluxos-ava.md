@@ -145,8 +145,8 @@ flowchart LR
   B --> D["Grupo TEACHER"]
   B --> E["Grupo STUDENT"]
   C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, editar site"]
-  D --> D1["Aula ao vivo, criar aula, criar homework, corrigir, contratos"]
-  E --> E1["Aulas, homeworks, contratos, perfil"]
+  D --> D1["Aula ao vivo, criar aula, criar homework, mensagens, corrigir, contratos"]
+  E --> E1["Aula ao vivo, aulas, homeworks, mensagens, contratos, perfil"]
   C --> F["Clique troca a tarefa principal do admin"]
   D --> F
   E --> F
@@ -157,7 +157,7 @@ Regras:
 - A sidebar deve ser o indice principal de operacao do AVA.
 - Grupos como `Teacher` e `Student` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
 - No admin, os atalhos usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno` e `?task=editar-site` para mostrar uma tarefa por vez.
-- Nas areas teacher/student, os atalhos ainda podem usar ancoras internas como `#criar-aula` e `#homeworks`.
+- Nas areas teacher/student, os atalhos tambem usam `?task=` para mostrar uma tarefa por vez.
 - Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
 - Nao usar uma caixa interna com barra de rolagem para atalhos; se houver muitas opcoes, agrupar por role.
 
@@ -174,8 +174,48 @@ flowchart TD
   A --> G["?task=vincular-aluno"]
   G --> G1["Seleciona teacher e aluno ativo"]
   A --> H["?task=editar-site"]
-  H --> H1["Edita textos institucionais"]
+  H --> H1["Liga ou desliga modo manutencao"]
 ```
+
+## Fluxo Manutencao Candy
+
+```mermaid
+flowchart TD
+  A["ADMIN abre /ava/admin?task=editar-site"] --> B["Clica em modo manutencao"]
+  B --> C["AppSetting maintenanceMode = on"]
+  C --> D{"Usuario tentando entrar"}
+  D -->|ADMIN| E["Entra normalmente"]
+  D -->|TEACHER| F["Entra normalmente"]
+  D -->|STUDENT| G["Login bloqueado ou tela Manutencao Candy"]
+  B --> H["ADMIN desliga manutencao"]
+  H --> I["Alunos voltam a entrar"]
+```
+
+Regras:
+
+- Modo manutencao nao mexe no `.env`.
+- Modo manutencao nao apaga dados.
+- O bloqueio e aplicado no login e tambem na pagina student para quem ja tinha sessao.
+
+## Fluxo Chatbox Teacher/Aluno
+
+```mermaid
+flowchart TD
+  A["ADMIN vincula aluno a teacher"] --> B["Existe StudentTeacherAssignment"]
+  B --> C["Teacher abre /ava/teacher?task=mensagens"]
+  B --> D["Student abre /ava/student?task=mensagens"]
+  C --> E["Envia mensagem"]
+  D --> F["Responde mensagem"]
+  E --> G["Sistema cria ou reutiliza ChatThread"]
+  F --> G
+  G --> H["Sistema grava ChatMessage"]
+```
+
+Regras:
+
+- Teacher so conversa com aluno vinculado.
+- Student so conversa usando o proprio perfil.
+- Admin pode supervisionar a area teacher, mas a conversa continua presa ao vinculo teacher-aluno.
 
 ## Deploy Quando Ha Migration
 

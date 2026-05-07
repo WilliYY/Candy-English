@@ -189,6 +189,9 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - `HomeworkSubmission` tem chave unica por `homeworkId` e `studentProfileId`, evitando duplicidade de resposta por aluno/homework.
 - Homework corrigida nao pode ser reenviada pelo aluno nesta fase, preservando o feedback ja enviado.
 - Indices foram adicionados em campos de busca por teacher, student, status e relacionamentos principais.
+- `AppSetting` guarda configuracoes operacionais simples, como modo manutencao.
+- `ChatThread` representa a conversa privada de um vinculo teacher-aluno.
+- `ChatMessage` guarda mensagens do chatbox com `senderUserId`, sempre validado por role e vinculo antes da escrita.
 
 ### Docker
 
@@ -286,8 +289,24 @@ A decima quinta fase organiza o admin por tarefa dentro da mesma rota:
 - os links da sidebar usam `?task=` em vez de ancora para renderizar somente uma area principal por vez;
 - criar admin, criar teacher e criar aluno usam o mesmo server action `createAvaUser`, mas a UI fixa o role de cada formulario;
 - o cadastro de aluno coleta data de nascimento e calcula idade na interface, evitando gravar idade fixa no banco;
-- o campo documento/responsavel usa as notas iniciais do `StudentProfile` nesta etapa, sem nova migration;
-- vincular aluno e editar site continuam usando server actions protegidas por `ADMIN`.
+- o campo documento/responsavel passa a ter campo proprio no `StudentProfile`;
+- vincular aluno continua usando server action protegida por `ADMIN`;
+- o antigo espaco de editar site passa a ser reservado para manutencao operacional.
+
+## FASE 16
+
+A decima sexta fase amplia operacao escolar e manutencao:
+
+- `StudentProfile` passa a guardar `guardianDocument`, `studentPhone`, `studentPhoneAlt`, `motherName` e `motherPhone`;
+- `AppSetting` guarda o modo manutencao;
+- login por credentials e Google rejeita `STUDENT` quando manutencao esta ativa;
+- `/ava/student` mostra uma tela de "Manutencao Candy" para student que ja tinha sessao;
+- `ADMIN` e `TEACHER` continuam acessando o AVA durante manutencao;
+- `ChatThread` e `ChatMessage` criam uma chatbox teacher/aluno dentro do AVA;
+- mensagens so podem ser criadas quando existe `StudentTeacherAssignment`;
+- teacher e student passam a usar `?task=` para renderizar uma tarefa principal por vez;
+- o site/login recebe botao de WhatsApp para contato comercial;
+- navegacao institucional ganha textos maiores para melhorar leitura.
 
 ## Decisao Sobre Aula Ao Vivo
 

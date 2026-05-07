@@ -57,38 +57,43 @@ const navGroups = [
       {
         href: "/ava/admin?task=editar-site",
         icon: PencilLine,
-        label: "Editar site",
+        label: "Manutencao",
       },
     ],
   },
   {
     allowedRoles: ["ADMIN", "TEACHER"] as const,
-    href: "/ava/teacher",
+    href: "/ava/teacher?task=resumo",
     icon: GraduationCap,
     label: "Teacher",
     links: [
       {
-        href: "/ava/teacher#aula-ao-vivo",
+        href: "/ava/teacher?task=aula-ao-vivo",
         icon: Radio,
         label: "Aula ao vivo",
       },
       {
-        href: "/ava/teacher#criar-aula",
+        href: "/ava/teacher?task=criar-aula",
         icon: BookOpen,
         label: "Criar aula",
       },
       {
-        href: "/ava/teacher#criar-homework",
+        href: "/ava/teacher?task=criar-homework",
         icon: ClipboardCheck,
         label: "Criar homework",
       },
       {
-        href: "/ava/teacher#corrigir-homeworks",
+        href: "/ava/teacher?task=mensagens",
+        icon: MessageSquareText,
+        label: "Mensagens",
+      },
+      {
+        href: "/ava/teacher?task=corrigir-respostas",
         icon: MessageSquareText,
         label: "Corrigir respostas",
       },
       {
-        href: "/ava/teacher#contratos",
+        href: "/ava/teacher?task=contratos",
         icon: FileText,
         label: "Contratos PDF",
       },
@@ -96,32 +101,37 @@ const navGroups = [
   },
   {
     allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
-    href: "/ava/student",
+    href: "/ava/student?task=resumo",
     icon: UserRound,
     label: "Student",
     links: [
       {
-        href: "/ava/student#aula-ao-vivo",
+        href: "/ava/student?task=aula-ao-vivo",
         icon: Radio,
         label: "Aula ao vivo",
       },
       {
-        href: "/ava/student#aulas",
+        href: "/ava/student?task=aulas",
         icon: BookOpen,
         label: "Aulas e materiais",
       },
       {
-        href: "/ava/student#homeworks",
+        href: "/ava/student?task=homeworks",
         icon: ClipboardCheck,
         label: "Responder homework",
       },
       {
-        href: "/ava/student#contratos",
+        href: "/ava/student?task=mensagens",
+        icon: MessageSquareText,
+        label: "Mensagens",
+      },
+      {
+        href: "/ava/student?task=contratos",
         icon: FileText,
         label: "Meus contratos",
       },
       {
-        href: "/ava/student#perfil",
+        href: "/ava/student?task=perfil",
         icon: UserRound,
         label: "Meu perfil",
       },

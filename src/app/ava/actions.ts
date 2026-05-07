@@ -7,10 +7,12 @@ import { isRole, type Role } from "@/lib/roles";
 import { saveAvatarImage, saveContractPdf } from "@/lib/storage";
 import {
   createLiveSessionSchema,
+  sendChatMessageSchema,
   toggleLiveSessionSchema,
   updateProfileSchema,
   uploadContractSchema,
   type CreateLiveSessionInput,
+  type SendChatMessageInput,
   type ToggleLiveSessionInput,
   type UpdateProfileInput,
   type UploadContractInput,
@@ -434,5 +436,117 @@ export async function uploadContractDocument(formData: FormData) {
   return {
     ok: true,
     message: "Contrato enviado com sucesso.",
+  };
+}
+
+export async function sendChatMessage(
+  input: SendChatMessageInput,
+): Promise<ActionResult<SendChatMessageInput>> {
+  const actor = await getActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Entre no AVA para enviar mensagens.",
+    };
+  }
+
+  const parsed = sendChatMessageSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<SendChatMessageInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a mensagem.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const { body, studentProfileId, teacherProfileId } = parsed.data;
+  const assignment = await prisma.studentTeacherAssignment.findUnique({
+    where: {
+      teacherProfileId_studentProfileId: {
+        studentProfileId,
+        teacherProfileId,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (!assignment) {
+    return {
+      ok: false,
+      message:
+        "Vincule este aluno a esta teacher antes de iniciar a conversa.",
+    };
+  }
+
+  if (actor.role === "TEACHER") {
+    const teacherProfile = await prisma.teacherProfile.findUnique({
+      where: { userId: actor.userId },
+      select: { id: true },
+    });
+
+    if (!teacherProfile || teacherProfile.id !== teacherProfileId) {
+      return {
+        ok: false,
+        message: "Voce so pode enviar mensagens como sua propria teacher.",
+      };
+    }
+  }
+
+  if (actor.role === "STUDENT") {
+    const studentProfile = await prisma.studentProfile.findUnique({
+      where: { userId: actor.userId },
+      select: { id: true },
+    });
+
+    if (!studentProfile || studentProfile.id !== studentProfileId) {
+      return {
+        ok: false,
+        message: "Voce so pode enviar mensagens do seu proprio perfil.",
+      };
+    }
+  }
+
+  if (actor.role !== "ADMIN" && actor.role !== "TEACHER" && actor.role !== "STUDENT") {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para enviar mensagens.",
+    };
+  }
+
+  const thread = await prisma.chatThread.upsert({
+    where: {
+      teacherProfileId_studentProfileId: {
+        studentProfileId,
+        teacherProfileId,
+      },
+    },
+    create: {
+      studentProfileId,
+      teacherProfileId,
+    },
+    update: {
+      updatedAt: new Date(),
+    },
+    select: { id: true },
+  });
+
+  await prisma.chatMessage.create({
+    data: {
+      body,
+      senderUserId: actor.userId,
+      threadId: thread.id,
+    },
+  });
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Mensagem enviada.",
   };
 }

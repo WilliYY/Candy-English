@@ -6,16 +6,34 @@ import {
   FileText,
   MessageSquareText,
   Radio,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
+import type { ComponentType, SVGProps } from "react";
+import {
+  ChatThreadPanel,
+  type ChatThreadRow,
+} from "@/components/ava/chat-thread-panel";
 import {
   AvatarUploadForm,
   ProfileForm,
 } from "@/components/ava/profile-forms";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
-import type { Role } from "@/lib/roles";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Role } from "@/lib/roles";
+
+export const studentTaskIds = [
+  "resumo",
+  "aula-ao-vivo",
+  "aulas",
+  "homeworks",
+  "mensagens",
+  "contratos",
+  "perfil",
+] as const;
+
+export type StudentTask = (typeof studentTaskIds)[number];
 
 type StudentLesson = {
   description: string | null;
@@ -60,6 +78,8 @@ type StudentLesson = {
 };
 
 type StudentWorkspaceProps = {
+  activeTask: StudentTask;
+  chatThreads: ChatThreadRow[];
   contracts: {
     createdAt: Date;
     id: string;
@@ -84,6 +104,11 @@ type StudentWorkspaceProps = {
     teacherName: string;
     title: string;
   }[];
+  studentProfileId: string;
+  teachers: {
+    id: string;
+    label: string;
+  }[];
 };
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -91,6 +116,58 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "2-digit",
   year: "numeric",
 });
+
+const taskMeta = {
+  "aula-ao-vivo": {
+    description: "Entre no Google Meet quando a teacher abrir a aula.",
+    icon: Radio,
+    title: "Aula ao vivo",
+  },
+  aulas: {
+    description: "Veja materiais, links e vocabulario das suas aulas.",
+    icon: BookOpen,
+    title: "Aulas e materiais",
+  },
+  contratos: {
+    description: "Abra contratos PDF liberados para seu perfil.",
+    icon: FileText,
+    title: "Meus contratos",
+  },
+  homeworks: {
+    description: "Responda atividades online e acompanhe feedbacks.",
+    icon: ClipboardCheck,
+    title: "Homeworks",
+  },
+  mensagens: {
+    description: "Espaco de conversa com a teacher dentro do AVA.",
+    icon: MessageSquareText,
+    title: "Mensagens",
+  },
+  perfil: {
+    description: "Atualize seus dados e sua foto de perfil.",
+    icon: UserRound,
+    title: "Meu perfil",
+  },
+  resumo: {
+    description: "Resumo rapido do que esta disponivel no seu AVA.",
+    icon: BookOpen,
+    title: "Resumo student",
+  },
+} satisfies Record<
+  StudentTask,
+  {
+    description: string;
+    icon: ComponentType<SVGProps<SVGSVGElement>>;
+    title: string;
+  }
+>;
+
+export function normalizeStudentTask(value: unknown): StudentTask {
+  return typeof value === "string" &&
+    studentTaskIds.includes(value as StudentTask)
+    ? (value as StudentTask)
+    : "resumo";
+}
 
 function getAnswerText(answers: unknown) {
   if (!Array.isArray(answers)) {
@@ -111,11 +188,23 @@ function getAnswerText(answers: unknown) {
   return "";
 }
 
+function EmptyState({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+      {children}
+    </p>
+  );
+}
+
 export function StudentWorkspace({
+  activeTask,
+  chatThreads,
   contracts,
   currentUser,
   lessons,
   liveSessions,
+  studentProfileId,
+  teachers,
 }: StudentWorkspaceProps) {
   const homeworkCount = lessons.reduce(
     (total, lesson) => total + lesson.homeworks.length,
@@ -129,7 +218,8 @@ export function StudentWorkspace({
       ).length,
     0,
   );
-
+  const task = taskMeta[activeTask];
+  const TaskIcon = task.icon;
   const stats = [
     { icon: BookOpen, label: "Aulas", value: lessons.length },
     { icon: ClipboardCheck, label: "Homeworks", value: homeworkCount },
@@ -137,23 +227,22 @@ export function StudentWorkspace({
   ];
 
   return (
-    <section
-      id="student-overview"
-      className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8"
-    >
-      <div className="flex flex-col gap-8">
-        <div className="flex flex-col gap-5">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
+    <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 overflow-hidden px-6 py-10 lg:px-8">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_15%_25%,rgba(229,124,216,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.9),transparent_26%),linear-gradient(180deg,rgba(252,241,248,0.95),rgba(254,251,250,0))]" />
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+        <div className="flex min-w-0 flex-col gap-5">
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background/90 px-3 py-2 text-sm text-muted-foreground">
             <BookOpen aria-hidden="true" />
             Area student
           </div>
           <div className="flex flex-col gap-4">
             <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
-              Suas aulas e homeworks
+              Seu AVA Candy
             </h1>
             <p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
-              Consulte materiais, estude vocabulario, envie respostas e acompanhe
-              o feedback da teacher.
+              Use a lateral para abrir aula ao vivo, materiais, homeworks,
+              mensagens, contratos ou perfil sem misturar tudo na mesma tela.
             </p>
           </div>
         </div>
@@ -165,80 +254,84 @@ export function StudentWorkspace({
         />
       </div>
 
-      <div
-        id="student-resumo"
-        className="grid scroll-mt-8 gap-4 md:grid-cols-3"
-      >
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="flex items-center justify-between gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-sm text-muted-foreground">
-                  {stat.label}
-                </span>
-                <strong className="text-3xl font-semibold">{stat.value}</strong>
-              </div>
-              <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                <stat.icon aria-hidden="true" />
-              </span>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card
-        id="aula-ao-vivo"
-        className="scroll-mt-8 border-primary/20 bg-primary text-primary-foreground"
-      >
-        <CardHeader>
-          <CardTitle>Aula ao vivo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {liveSessions.some((session) => session.isLive) ? (
-            <div className="grid gap-3 md:grid-cols-2">
-              {liveSessions
-                .filter((session) => session.isLive)
-                .map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex flex-col gap-4 rounded-lg bg-primary-foreground p-5 text-primary"
-                  >
-                    <span className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
-                      <Radio aria-hidden="true" />
-                      Ao vivo agora
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      <strong>{session.title}</strong>
-                      <span className="text-sm text-primary/70">
-                        Teacher: {session.teacherName}
-                      </span>
-                    </div>
-                    <Link
-                      href={session.meetUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex w-fit rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-                    >
-                      Entrar no Google Meet
-                    </Link>
-                  </div>
-                ))}
+      <Card className="overflow-hidden bg-white/92 backdrop-blur">
+        <CardHeader className="border-b bg-muted/30">
+          <div className="flex items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <TaskIcon aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <CardTitle className="text-xl">{task.title}</CardTitle>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+                {task.description}
+              </p>
             </div>
-          ) : (
-            <p className="rounded-lg border border-primary-foreground/20 bg-primary-foreground/10 p-5 text-sm text-primary-foreground/75">
-              Nenhuma aula ao vivo aberta para seu usuario neste momento.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        </CardHeader>
+        <CardContent className="py-6">
+          {activeTask === "resumo" ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              {stats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-muted-foreground">
+                      {stat.label}
+                    </span>
+                    <strong className="text-3xl font-semibold">
+                      {stat.value}
+                    </strong>
+                  </div>
+                  <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                    <stat.icon aria-hidden="true" />
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card id="perfil" className="scroll-mt-8">
-          <CardHeader>
-            <CardTitle>Meu perfil</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-6">
+          {activeTask === "aula-ao-vivo" ? (
+            liveSessions.some((session) => session.isLive) ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {liveSessions
+                  .filter((session) => session.isLive)
+                  .map((session) => (
+                    <div
+                      key={session.id}
+                      className="flex flex-col gap-4 rounded-lg bg-primary p-5 text-primary-foreground"
+                    >
+                      <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white/15 px-2 py-1 text-xs font-semibold">
+                        <Radio aria-hidden="true" />
+                        Ao vivo agora
+                      </span>
+                      <div className="flex flex-col gap-1">
+                        <strong>{session.title}</strong>
+                        <span className="text-sm text-primary-foreground/70">
+                          Teacher: {session.teacherName}
+                        </span>
+                      </div>
+                      <Link
+                        href={session.meetUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex w-fit rounded-lg bg-white px-4 py-2 text-sm font-semibold text-primary"
+                      >
+                        Entrar no Google Meet
+                      </Link>
+                    </div>
+                  ))}
+              </div>
+            ) : (
+              <EmptyState>
+                Nenhuma aula ao vivo aberta para seu usuario neste momento.
+              </EmptyState>
+            )
+          ) : null}
+
+          {activeTask === "perfil" ? (
+            <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
               <ProfileForm
                 defaultValues={{
                   address: currentUser.address ?? "",
@@ -248,18 +341,13 @@ export function StudentWorkspace({
               />
               <AvatarUploadForm />
             </div>
-          </CardContent>
-        </Card>
+          ) : null}
 
-        <Card id="contratos" className="scroll-mt-8">
-          <CardHeader>
-            <CardTitle>Contratos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {contracts.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+          {activeTask === "contratos" ? (
+            contracts.length === 0 ? (
+              <EmptyState>
                 Nenhum contrato vinculado ao seu perfil ainda.
-              </p>
+              </EmptyState>
             ) : (
               <div className="grid gap-3">
                 {contracts.map((contract) => (
@@ -280,155 +368,156 @@ export function StudentWorkspace({
                   </Link>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            )
+          ) : null}
 
-      <div id="aulas" className="scroll-mt-8">
-        <div id="homeworks" className="scroll-mt-8" />
-        {lessons.length === 0 ? (
-          <Card>
-            <CardContent>
-              <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
-                Nenhuma aula foi vinculada ao seu perfil ainda.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6">
-            {lessons.map((lesson) => (
-              <Card key={lesson.id}>
-              <CardHeader>
-                <CardTitle>{lesson.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-                  <div className="flex flex-col gap-4">
-                    <p className="text-sm leading-6 text-muted-foreground">
-                      {lesson.description ?? "Sem resumo cadastrado."}
-                    </p>
-                    <div className="grid gap-2 text-sm text-muted-foreground">
-                      <span>Teacher: {lesson.teacherProfile.user.name}</span>
-                      <span className="inline-flex items-center gap-2">
-                        <CalendarDays aria-hidden="true" />
-                        {lesson.scheduledAt
-                          ? dateFormatter.format(lesson.scheduledAt)
-                          : "Sem data"}
-                      </span>
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <strong className="text-sm">Materiais</strong>
-                      <ul className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground">
-                        {lesson.materials.length === 0 ? (
-                          <li>Nenhum material cadastrado.</li>
-                        ) : (
-                          lesson.materials.map((material) => (
-                            <li key={material.id} className="leading-6">
-                              <span className="font-medium text-foreground">
-                                {material.title}
-                              </span>
-                              {material.content ? (
-                                <p>{material.content}</p>
-                              ) : null}
-                              {material.url ? (
-                                <a
-                                  className="text-primary underline"
-                                  href={material.url}
-                                  rel="noreferrer"
-                                  target="_blank"
-                                >
-                                  Abrir link
-                                </a>
-                              ) : null}
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    </div>
-                    <div className="rounded-lg bg-muted/50 p-4">
-                      <strong className="text-sm">Vocabulario</strong>
-                      <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
-                        {lesson.vocabularyItems.length === 0 ? (
-                          <li>Nenhum vocabulario cadastrado.</li>
-                        ) : (
-                          lesson.vocabularyItems.map((item) => (
-                            <li key={item.id} className="leading-6">
-                              <span className="font-medium text-foreground">
-                                {item.term}
-                              </span>{" "}
-                              - {item.translation}
-                              {item.example ? <p>{item.example}</p> : null}
-                            </li>
-                          ))
-                        )}
-                      </ul>
-                    </div>
-                  </div>
+          {activeTask === "mensagens" ? (
+            <ChatThreadPanel
+              defaultStudentProfileId={studentProfileId}
+              mode="student"
+              students={[
+                {
+                  id: studentProfileId,
+                  label: currentUser.name ?? currentUser.email,
+                },
+              ]}
+              teachers={teachers}
+              threads={chatThreads}
+            />
+          ) : null}
 
-                  <div className="flex flex-col gap-4">
-                    {lesson.homeworks.length === 0 ? (
-                      <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
-                        Nenhuma homework para esta aula.
-                      </p>
-                    ) : (
-                      lesson.homeworks.map((homework) => {
-                        const submission = homework.submissions[0];
+          {activeTask === "aulas" ? (
+            lessons.length === 0 ? (
+              <EmptyState>Nenhuma aula foi vinculada ao seu perfil ainda.</EmptyState>
+            ) : (
+              <div className="grid gap-5">
+                {lessons.map((lesson) => (
+                  <article key={lesson.id} className="rounded-lg border p-5">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col gap-2">
+                        <h2 className="text-lg font-semibold">
+                          {lesson.title}
+                        </h2>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {lesson.description ?? "Sem resumo cadastrado."}
+                        </p>
+                      </div>
+                      <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                        <span>Teacher: {lesson.teacherProfile.user.name}</span>
+                        <span className="inline-flex items-center gap-2">
+                          <CalendarDays aria-hidden="true" />
+                          {lesson.scheduledAt
+                            ? dateFormatter.format(lesson.scheduledAt)
+                            : "Sem data"}
+                        </span>
+                      </div>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="rounded-lg bg-muted/50 p-4">
+                          <strong className="text-sm">Materiais</strong>
+                          <ul className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground">
+                            {lesson.materials.length === 0 ? (
+                              <li>Nenhum material cadastrado.</li>
+                            ) : (
+                              lesson.materials.map((material) => (
+                                <li key={material.id} className="leading-6">
+                                  <span className="font-medium text-foreground">
+                                    {material.title}
+                                  </span>
+                                  {material.content ? (
+                                    <p>{material.content}</p>
+                                  ) : null}
+                                  {material.url ? (
+                                    <a
+                                      className="text-primary underline"
+                                      href={material.url}
+                                      rel="noreferrer"
+                                      target="_blank"
+                                    >
+                                      Abrir link
+                                    </a>
+                                  ) : null}
+                                </li>
+                              ))
+                            )}
+                          </ul>
+                        </div>
+                        <div className="rounded-lg bg-muted/50 p-4">
+                          <strong className="text-sm">Vocabulario</strong>
+                          <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
+                            {lesson.vocabularyItems.length === 0 ? (
+                              <li>Nenhum vocabulario cadastrado.</li>
+                            ) : (
+                              lesson.vocabularyItems.map((item) => (
+                                <li key={item.id} className="leading-6">
+                                  <span className="font-medium text-foreground">
+                                    {item.term}
+                                  </span>{" "}
+                                  - {item.translation}
+                                  {item.example ? <p>{item.example}</p> : null}
+                                </li>
+                              ))
+                            )}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )
+          ) : null}
 
-                        return (
-                          <article
-                            key={homework.id}
-                            className="rounded-lg border p-5"
-                          >
-                            <div className="flex flex-col gap-4">
-                              <div className="flex flex-col gap-2">
-                                <div className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs text-secondary-foreground">
-                                  <CheckCircle2 aria-hidden="true" />
-                                  {submission?.status === "REVIEWED"
-                                    ? "Corrigida"
-                                    : submission
-                                      ? "Enviada"
-                                      : "Pendente"}
-                                </div>
-                                <h3 className="font-semibold">
-                                  {homework.title}
-                                </h3>
-                                <p className="text-sm leading-6 text-muted-foreground">
-                                  {homework.instructions ??
-                                    "Sem instrucoes adicionais."}
-                                </p>
-                              </div>
-                              <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
-                                <strong>Pergunta:</strong>{" "}
-                                {homework.questions[0]?.prompt ??
-                                  "Resposta livre"}
-                              </div>
-                              <StudentHomeworkForm
-                                homeworkId={homework.id}
-                                initialAnswer={getAnswerText(
-                                  submission?.answers,
-                                )}
-                                isReviewed={submission?.status === "REVIEWED"}
-                              />
-                              {submission?.feedback ? (
-                                <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
-                                  <strong>Feedback:</strong>{" "}
-                                  {submission.feedback}
-                                </div>
-                              ) : null}
+          {activeTask === "homeworks" ? (
+            homeworkCount === 0 ? (
+              <EmptyState>Nenhuma homework disponivel no momento.</EmptyState>
+            ) : (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {lessons.flatMap((lesson) =>
+                  lesson.homeworks.map((homework) => {
+                    const submission = homework.submissions[0];
+
+                    return (
+                      <article key={homework.id} className="rounded-lg border p-5">
+                        <div className="flex flex-col gap-4">
+                          <div className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs text-secondary-foreground">
+                            <CheckCircle2 aria-hidden="true" />
+                            {submission?.status === "REVIEWED"
+                              ? "Corrigida"
+                              : submission
+                                ? "Enviada"
+                                : "Pendente"}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold">{homework.title}</h3>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                              {homework.instructions ??
+                                "Sem instrucoes adicionais."}
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
+                            <strong>Pergunta:</strong>{" "}
+                            {homework.questions[0]?.prompt ?? "Resposta livre"}
+                          </div>
+                          <StudentHomeworkForm
+                            homeworkId={homework.id}
+                            initialAnswer={getAnswerText(submission?.answers)}
+                            isReviewed={submission?.status === "REVIEWED"}
+                          />
+                          {submission?.feedback ? (
+                            <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
+                              <strong>Feedback:</strong> {submission.feedback}
                             </div>
-                          </article>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
+                          ) : null}
+                        </div>
+                      </article>
+                    );
+                  }),
+                )}
+              </div>
+            )
+          ) : null}
+        </CardContent>
+      </Card>
     </section>
   );
 }

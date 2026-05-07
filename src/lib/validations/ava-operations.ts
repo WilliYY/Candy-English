@@ -79,7 +79,18 @@ export const uploadContractSchema = z.object({
     .max(160, "O titulo pode ter no maximo 160 caracteres."),
 });
 
+export const sendChatMessageSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, "Escreva uma mensagem.")
+    .max(1000, "A mensagem pode ter no maximo 1000 caracteres."),
+  studentProfileId: z.string().min(1, "Selecione um aluno."),
+  teacherProfileId: z.string().min(1, "Selecione uma teacher."),
+});
+
 export type UpdateProfileInput = z.input<typeof updateProfileSchema>;
 export type CreateLiveSessionInput = z.input<typeof createLiveSessionSchema>;
 export type ToggleLiveSessionInput = z.input<typeof toggleLiveSessionSchema>;
 export type UploadContractInput = z.input<typeof uploadContractSchema>;
+export type SendChatMessageInput = z.input<typeof sendChatMessageSchema>;

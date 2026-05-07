@@ -3,13 +3,16 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { setMaintenanceMode } from "@/lib/app-settings";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 import {
+  adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
   adminSiteContentSchema,
   adminToggleUserStatusSchema,
+  type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
   type AdminSiteContentInput,
@@ -91,8 +94,21 @@ export async function createAvaUser(
   }
 
   const prisma = getPrisma();
-  const { bio, birthDate, email, level, name, notes, password, role } =
-    parsed.data;
+  const {
+    bio,
+    birthDate,
+    email,
+    guardianDocument,
+    level,
+    motherName,
+    motherPhone,
+    name,
+    notes,
+    password,
+    role,
+    studentPhone,
+    studentPhoneAlt,
+  } = parsed.data;
   const passwordHash = await hash(password, 12);
 
   try {
@@ -102,6 +118,7 @@ export async function createAvaUser(
           email,
           name,
           passwordHash,
+          phone: role === "STUDENT" ? studentPhone : undefined,
           role,
         },
       });
@@ -110,8 +127,13 @@ export async function createAvaUser(
         await tx.studentProfile.create({
           data: {
             birthDate,
+            guardianDocument,
             level,
+            motherName,
+            motherPhone,
             notes,
+            studentPhone,
+            studentPhoneAlt,
             userId: user.id,
           },
         });
@@ -346,5 +368,41 @@ export async function updateSiteContent(
   return {
     ok: true,
     message: "Conteudo do site atualizado com sucesso.",
+  };
+}
+
+export async function toggleMaintenanceMode(
+  input: AdminMaintenanceInput,
+): Promise<AdminActionResult<AdminMaintenanceInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para alterar manutencao.",
+    };
+  }
+
+  const parsed = adminMaintenanceSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminMaintenanceInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a configuracao de manutencao.",
+    };
+  }
+
+  await setMaintenanceMode(parsed.data.enabled);
+
+  revalidatePath("/ava/admin");
+  revalidatePath("/ava/login");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message: parsed.data.enabled
+      ? "Modo manutencao ativado para alunos."
+      : "Modo manutencao desativado.",
   };
 }
