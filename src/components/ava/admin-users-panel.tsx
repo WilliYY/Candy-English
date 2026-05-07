@@ -19,7 +19,7 @@ import {
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ROLE_LABELS, type Role } from "@/lib/roles";
+import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 export const adminTaskIds = [
@@ -34,6 +34,10 @@ export const adminTaskIds = [
 export type AdminTask = (typeof adminTaskIds)[number];
 
 type AdminUserRow = {
+  _count: {
+    sentChatMessages: number;
+    uploadedContracts: number;
+  };
   createdAt: Date;
   email: string;
   id: string;
@@ -41,9 +45,25 @@ type AdminUserRow = {
   name: string;
   role: Role;
   studentProfile: {
+    _count: {
+      chatThreads: number;
+      contracts: number;
+      lessons: number;
+      liveSessions: number;
+      submissions: number;
+      teacherAssignments: number;
+    };
     level: string | null;
   } | null;
   teacherProfile: {
+    _count: {
+      chatThreads: number;
+      homeworks: number;
+      lessons: number;
+      liveSessions: number;
+      reviewedSubmissions: number;
+      studentAssignments: number;
+    };
     bio: string | null;
   } | null;
 };
@@ -79,7 +99,6 @@ type AdminUsersPanelProps = {
 };
 
 type TaskMeta = {
-  description: string;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   title: string;
 };
@@ -104,38 +123,26 @@ const roleIcons = {
 
 const taskMeta = {
   "criar-admin": {
-    description:
-      "Crie um novo administrador com acesso total ao AVA. Use com cuidado porque este perfil altera usuarios e conteudo.",
     icon: ShieldCheck,
     title: "Criar admin",
   },
   "criar-aluno": {
-    description:
-      "Cadastre o aluno com login, senha provisoria e data de nascimento para o sistema calcular a idade automaticamente.",
     icon: UserRound,
     title: "Criar aluno",
   },
   "criar-teacher": {
-    description:
-      "Crie uma teacher para organizar aulas, homeworks, contratos e aulas ao vivo dos alunos vinculados.",
     icon: GraduationCap,
     title: "Criar teacher",
   },
   "editar-site": {
-    description:
-      "Controle o modo manutencao enquanto o site ou o AVA estiverem em ajuste.",
     icon: Wrench,
     title: "Manutencao Candy",
   },
   usuarios: {
-    description:
-      "Acompanhe todos os acessos do AVA, veja status e desative usuarios sem apagar historico.",
     icon: UsersRound,
     title: "Usuarios",
   },
   "vincular-aluno": {
-    description:
-      "Defina qual teacher acompanha cada aluno. Esse vinculo controla o que aparece no painel da teacher.",
     icon: Link2,
     title: "Vincular aluno",
   },
@@ -166,7 +173,54 @@ function getProfileSummary(user: AdminUserRow) {
   return "Administracao";
 }
 
-function UsersTable({ users }: { users: AdminUserRow[] }) {
+function getUserHistory(user: AdminUserRow) {
+  const history = [`Cadastrado em ${formatDate(user.createdAt)}`];
+
+  if (user.role === "TEACHER") {
+    const counts = user.teacherProfile?._count;
+
+    if (!counts) {
+      return [...history, "Perfil teacher pendente"];
+    }
+
+    return [
+      ...history,
+      `${counts.studentAssignments} aluno(s) vinculado(s)`,
+      `${counts.lessons} aula(s) criada(s)`,
+      `${counts.homeworks} homework(s)`,
+      `${counts.reviewedSubmissions} feedback(s)`,
+      `${counts.liveSessions} aula(s) ao vivo`,
+      `${counts.chatThreads} conversa(s)`,
+      `${user._count.uploadedContracts} contrato(s) enviado(s)`,
+    ];
+  }
+
+  if (user.role === "STUDENT") {
+    const counts = user.studentProfile?._count;
+
+    if (!counts) {
+      return [...history, "Perfil aluno pendente"];
+    }
+
+    return [
+      ...history,
+      `${counts.teacherAssignments} teacher(s) vinculado(s)`,
+      `${counts.lessons} aula(s) recebida(s)`,
+      `${counts.submissions} resposta(s) enviada(s)`,
+      `${counts.contracts} contrato(s)`,
+      `${counts.liveSessions} aula(s) ao vivo`,
+      `${counts.chatThreads} conversa(s)`,
+    ];
+  }
+
+  return [
+    ...history,
+    `${user._count.uploadedContracts} contrato(s) enviado(s)`,
+    `${user._count.sentChatMessages} mensagem(ns) enviadas`,
+  ];
+}
+
+function UsersByRole({ users }: { users: AdminUserRow[] }) {
   if (users.length === 0) {
     return (
       <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 text-center">
@@ -179,78 +233,113 @@ function UsersTable({ users }: { users: AdminUserRow[] }) {
     );
   }
 
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[920px] text-left text-sm">
-        <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-          <tr>
-            <th className="py-3 pr-4 font-medium">Usuario</th>
-            <th className="px-4 py-3 font-medium">Perfil</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3 font-medium">Resumo</th>
-            <th className="px-4 py-3 font-medium">Criado em</th>
-            <th className="py-3 pl-4 font-medium">Acao</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y">
-          {users.map((user) => {
-            const Icon = roleIcons[user.role];
+  const columns = [
+    { empty: "Nenhum admin cadastrado.", role: "ADMIN", title: "Admins" },
+    { empty: "Nenhuma teacher cadastrada.", role: "TEACHER", title: "Teachers" },
+    { empty: "Nenhum aluno cadastrado.", role: "STUDENT", title: "Alunos" },
+  ] satisfies { empty: string; role: Role; title: string }[];
 
-            return (
-              <tr key={user.id} className="align-top">
-                <td className="py-4 pr-4">
-                  <div className="flex flex-col gap-1">
-                    <span className="font-medium">{user.name}</span>
-                    <span className="flex items-center gap-2 text-muted-foreground">
-                      <Mail aria-hidden="true" />
-                      {user.email}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-4">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold",
-                      roleStyles[user.role],
-                    )}
+  return (
+    <div className="grid gap-4 xl:grid-cols-3">
+      {columns.map((column) => {
+        const columnUsers = users.filter((user) => user.role === column.role);
+        const Icon = roleIcons[column.role];
+
+        return (
+          <section
+            key={column.role}
+            className="flex min-w-0 flex-col gap-4 rounded-lg border bg-background p-4"
+          >
+            <div className="flex items-center justify-between gap-3 border-b pb-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className={cn(
+                    "flex size-10 shrink-0 items-center justify-center rounded-lg border",
+                    roleStyles[column.role],
+                  )}
+                >
+                  <Icon aria-hidden="true" className="size-5" />
+                </span>
+                <div className="min-w-0">
+                  <h2 className="truncate text-lg font-semibold">
+                    {column.title}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {columnUsers.length} usuario(s)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {columnUsers.length === 0 ? (
+              <p className="rounded-lg border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground">
+                {column.empty}
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {columnUsers.map((user) => (
+                  <article
+                    key={user.id}
+                    className="flex min-w-0 flex-col gap-4 rounded-lg border bg-white p-4 shadow-sm"
                   >
-                    <Icon aria-hidden="true" />
-                    {ROLE_LABELS[user.role]}
-                  </span>
-                </td>
-                <td className="px-4 py-4">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold",
-                      user.isActive
-                        ? "border-primary/20 bg-primary/10 text-primary"
-                        : "border-border bg-muted text-muted-foreground",
-                    )}
-                  >
-                    <UserCheck aria-hidden="true" />
-                    {user.isActive ? "Ativo" : "Inativo"}
-                  </span>
-                </td>
-                <td className="px-4 py-4 text-muted-foreground">
-                  {getProfileSummary(user)}
-                </td>
-                <td className="px-4 py-4 text-muted-foreground">
-                  <span className="inline-flex items-center gap-2">
-                    <CalendarDays aria-hidden="true" />
-                    {formatDate(user.createdAt)}
-                  </span>
-                </td>
-                <td className="py-4 pl-4">
-                  <AdminUserStatusButton
-                    isActive={user.isActive}
-                    userId={user.id}
-                  />
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-base font-semibold">
+                          {user.name}
+                        </h3>
+                        <p
+                          className="mt-1 flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
+                          title={user.email}
+                        >
+                          <Mail aria-hidden="true" className="size-4 shrink-0" />
+                          <span className="truncate">{user.email}</span>
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          "inline-flex shrink-0 items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold",
+                          user.isActive
+                            ? "border-primary/20 bg-primary/10 text-primary"
+                            : "border-border bg-muted text-muted-foreground",
+                        )}
+                      >
+                        <UserCheck aria-hidden="true" className="size-4" />
+                        {user.isActive ? "Ativo" : "Inativo"}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground">
+                      {getProfileSummary(user)}
+                    </p>
+
+                    <div className="flex flex-col gap-2 rounded-lg bg-muted/45 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        Historico
+                      </p>
+                      <ul className="grid gap-1.5 text-sm text-muted-foreground">
+                        {getUserHistory(user).map((item) => (
+                          <li key={item} className="flex items-start gap-2">
+                            <CalendarDays
+                              aria-hidden="true"
+                              className="mt-0.5 size-4 shrink-0"
+                            />
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <AdminUserStatusButton
+                      isActive={user.isActive}
+                      userId={user.id}
+                    />
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -345,7 +434,7 @@ export function AdminUsersPanel({
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
             <ShieldCheck aria-hidden="true" />
@@ -355,10 +444,6 @@ export function AdminUsersPanel({
             <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
               Admin Candy English
             </h1>
-            <p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
-              Use a lateral para abrir uma tarefa por vez: usuarios, criacao de
-              acessos, vinculo aluno-teacher ou manutencao do AVA.
-            </p>
           </div>
         </div>
 
@@ -378,9 +463,6 @@ export function AdminUsersPanel({
               </span>
               <div className="min-w-0">
                 <CardTitle className="text-xl">{task.title}</CardTitle>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                  {task.description}
-                </p>
               </div>
             </div>
             <span className="inline-flex w-fit items-center rounded-md border bg-background px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -411,7 +493,7 @@ export function AdminUsersPanel({
                   </div>
                 ))}
               </div>
-              <UsersTable users={users} />
+              <UsersByRole users={users} />
             </div>
           ) : null}
 

@@ -283,7 +283,7 @@ export function TeacherWorkspace({
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
             <GraduationCap aria-hidden="true" />
@@ -293,10 +293,6 @@ export function TeacherWorkspace({
             <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
               Teacher Candy English
             </h1>
-            <p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
-              Use a lateral para abrir uma tarefa por vez: aula ao vivo,
-              criacao, correcao, contratos, mensagens ou perfil.
-            </p>
           </div>
         </div>
 
@@ -315,9 +311,6 @@ export function TeacherWorkspace({
             </span>
             <div className="min-w-0">
               <CardTitle className="text-xl">{task.title}</CardTitle>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                {task.description}
-              </p>
             </div>
           </div>
         </CardHeader>

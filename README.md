@@ -439,6 +439,18 @@ Implementado:
 - botao flutuante de WhatsApp para contato comercial no site e no login;
 - navegacao institucional com fonte maior para Sobre, Metodologia, Planos, Contato e AVA.
 
+## FASE 17 - Refinos visuais e historico de usuarios
+
+Implementado:
+
+- `/ava/admin?task=usuarios` agora separa usuarios em tres colunas: admins, teachers e alunos;
+- cada usuario mostra historico operacional simples com data de cadastro e contadores de aulas, homeworks, respostas, feedbacks, contratos, chats e aulas ao vivo quando aplicavel;
+- resumo do usuario logado no AVA virou card compacto para evitar conteudo fora da caixa em desktop;
+- textos explicativos longos foram removidos dos headers de admin, teacher e student para deixar a leitura mais objetiva;
+- home removeu a marca decorativa solta que ficava sobre os cards do hero;
+- footer passou a usar marca textual simples, sem card branco envolvendo logo;
+- favicon voltou a usar a bala SVG transparente enviada para `public/favicon.svg`.
+
 ## Ferramentas Locais Recomendadas
 
 Instalado neste Windows:

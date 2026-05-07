@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { BrandLogo } from "@/components/site/brand-logo";
 
 export function SiteFooter() {
   return (
     <footer className="border-t bg-[#2c1338] text-white">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-10 md:grid-cols-[1fr_1fr] md:items-end lg:px-8">
         <div className="flex flex-col gap-4">
-          <BrandLogo variant="light" className="h-16 w-[230px]" />
-          <p className="max-w-md text-sm leading-6 text-white/70">
-            Site institucional e AVA proprio da Candy English em
-            candyenglish.com.br/ava.
+          <Link
+            href="/"
+            className="w-fit text-2xl font-semibold tracking-normal text-white"
+          >
+            Candy English
+          </Link>
+          <p className="max-w-md text-sm font-semibold uppercase tracking-[0.18em] text-[#e57cd8]">
+            Aprender ingles nunca foi tao doce
           </p>
         </div>
         <nav

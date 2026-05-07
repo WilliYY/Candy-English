@@ -26,7 +26,7 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 
 ## Assets
 
-- Favicon: `public/favicon.svg`
+- Favicon: `public/favicon.svg`, usando a bala SVG transparente enviada pela Candy.
 - Logo principal no header: `public/brand/logo-2.svg`, horizontal, maior e sem caixa de fundo.
 - Logo alternativa: `public/brand/logo-1.svg`
 - Logo hero: `public/brand/logo-3.svg`
@@ -56,7 +56,10 @@ Cuidados:
 - Catty nao aparece nos paineis logados do AVA para nao cobrir botoes, formularios, contratos ou tarefas.
 - WhatsApp tambem nao aparece nos paineis logados do AVA, para nao disputar espaco com a operacao.
 - Teacher e student devem abrir uma tarefa por vez com `?task=`, como o admin.
-- Resumo do usuario no AVA usa formato de bala limpa, sem visual de cartao de credito.
+- Resumo do usuario no AVA usa card compacto, com email truncado e botoes dentro da propria caixa.
+- Admin deve listar usuarios por role em colunas separadas para reduzir confusao visual.
+- Home nao deve usar marca decorativa solta sobre os cards do hero.
+- Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
 
 ## Fluxo Visual Do Site
 

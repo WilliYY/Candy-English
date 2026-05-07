@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 16 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF e aula ao vivo por Google Meet. O site institucional tem direcao visual roxa, logo visivel, favicon com marca, Catty e WhatsApp no site/login. As animacoes decorativas com video, balas e GIFs foram removidas para reduzir ruido visual e consumo de recursos, e o Docker Compose agora reserva/limita memoria para app, PostgreSQL e ferramentas. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. O admin controla modo manutencao para bloquear alunos durante ajustes, e teacher/aluno possuem chatbox registrada no banco.
+FASE 17 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role e mostra historico operacional derivado dos dados existentes. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez.
 
 ## Fases implementadas
 
@@ -165,7 +165,7 @@ Orcamento de RAM e refino visual operacional:
 - `postgres` possui reserva, limite, `shm_size` e parametros conservadores de PostgreSQL;
 - servicos utilitarios `migrate`, `seed` e `audit-server-smoke` possuem limite proprio porque rodam sob demanda.
 - paineis logados do AVA nao exibem Catty para nao cobrir botoes e formularios;
-- resumo de usuario no AVA usa faixa clara em formato de bala, sem visual de cartao;
+- resumo de usuario no AVA usa card compacto, sem visual de cartao de credito;
 - seletores de role devem evitar colunas estreitas que cortem texto.
 - sidebar do AVA funciona como indice operacional por role, com grupos expansíveis e atalhos profundos para os blocos da pagina.
 
@@ -193,6 +193,18 @@ Manutencao, contatos e chatbox:
 - teacher e student tambem usam tarefas separadas por `?task=`;
 - chatbox teacher/aluno usa `ChatThread` e `ChatMessage`, sempre validando o vinculo `StudentTeacherAssignment`;
 - WhatsApp comercial aparece no site e no login, mas nao nos paineis logados do AVA.
+
+### FASE 17
+
+Refino visual e historico:
+
+- `/ava/admin?task=usuarios` agrupa usuarios em admins, teachers e alunos;
+- cada card de usuario mostra historico operacional com data de cadastro e contadores relevantes;
+- resumo do usuario logado no AVA usa card compacto para evitar overflow;
+- textos explicativos longos foram removidos dos paineis admin, teacher e student;
+- home removeu a marca decorativa solta sobre os cards do hero;
+- footer usa marca textual simples, sem card branco envolvendo logo;
+- favicon usa a bala SVG transparente em `public/favicon.svg`.
 
 ## MVP inicial
 

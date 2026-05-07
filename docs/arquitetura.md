@@ -315,3 +315,16 @@ O projeto usa Google Meet nesta fase. Isso entrega camera, microfone e compartil
 ## Decisao Sobre Uploads
 
 Uploads agora existem apenas para foto de perfil e contratos PDF. Eles usam validacao de tipo e tamanho no servidor. Nao ha upload livre de materiais ainda. Em producao, o volume Docker `app-storage` preserva os arquivos entre recriacoes do container.
+
+## FASE 17
+
+A decima setima fase refina leitura visual e auditoria basica de usuarios:
+
+- a listagem de usuarios do admin passa de tabela unica para tres colunas por role: admin, teacher e aluno;
+- o historico exibido no admin e derivado de dados existentes no banco, sem nova tabela nesta fase;
+- teacher mostra contadores de alunos vinculados, aulas, homeworks, feedbacks, aulas ao vivo, chats e contratos enviados;
+- aluno mostra contadores de teachers vinculados, aulas recebidas, respostas enviadas, contratos, aulas ao vivo e chats;
+- o resumo do usuario logado foi reduzido para um card compacto, evitando overflow visual;
+- textos explicativos redundantes foram removidos dos paineis operacionais;
+- o favicon usa a bala SVG transparente em `public/favicon.svg`;
+- a home removeu o elemento decorativo solto sobre o mockup e o footer deixou de usar logo dentro de card branco.

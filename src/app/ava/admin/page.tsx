@@ -29,13 +29,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
 
-  const [users, teachers, students, assignments, maintenanceMode] =
-    await Promise.all([
+  const [users, teachers, students, assignments, maintenanceMode] = await Promise.all([
     prisma.user.findMany({
       orderBy: {
         createdAt: "desc",
       },
       select: {
+        _count: {
+          select: {
+            sentChatMessages: true,
+            uploadedContracts: true,
+          },
+        },
         createdAt: true,
         email: true,
         id: true,
@@ -44,11 +49,31 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         role: true,
         studentProfile: {
           select: {
+            _count: {
+              select: {
+                chatThreads: true,
+                contracts: true,
+                lessons: true,
+                liveSessions: true,
+                submissions: true,
+                teacherAssignments: true,
+              },
+            },
             level: true,
           },
         },
         teacherProfile: {
           select: {
+            _count: {
+              select: {
+                chatThreads: true,
+                homeworks: true,
+                lessons: true,
+                liveSessions: true,
+                reviewedSubmissions: true,
+                studentAssignments: true,
+              },
+            },
             bio: true,
           },
         },

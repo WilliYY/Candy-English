@@ -230,7 +230,7 @@ export function StudentWorkspace({
     <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 overflow-hidden px-6 py-10 lg:px-8">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_15%_25%,rgba(229,124,216,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.9),transparent_26%),linear-gradient(180deg,rgba(252,241,248,0.95),rgba(254,251,250,0))]" />
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background/90 px-3 py-2 text-sm text-muted-foreground">
             <BookOpen aria-hidden="true" />
@@ -240,10 +240,6 @@ export function StudentWorkspace({
             <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
               Seu AVA Candy
             </h1>
-            <p className="max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">
-              Use a lateral para abrir aula ao vivo, materiais, homeworks,
-              mensagens, contratos ou perfil sem misturar tudo na mesma tela.
-            </p>
           </div>
         </div>
 
@@ -262,9 +258,6 @@ export function StudentWorkspace({
             </span>
             <div className="min-w-0">
               <CardTitle className="text-xl">{task.title}</CardTitle>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                {task.description}
-              </p>
             </div>
           </div>
         </CardHeader>

@@ -217,6 +217,23 @@ Regras:
 - Student so conversa usando o proprio perfil.
 - Admin pode supervisionar a area teacher, mas a conversa continua presa ao vinculo teacher-aluno.
 
+## Fluxo Historico De Usuarios
+
+```mermaid
+flowchart TD
+  A["ADMIN abre /ava/admin?task=usuarios"] --> B["Sistema busca usuarios"]
+  B --> C["Agrupa em Admins, Teachers e Alunos"]
+  C --> D["Conta relacoes existentes no Prisma"]
+  D --> E["Mostra historico no card do usuario"]
+```
+
+Regras:
+
+- O historico desta fase e calculado com dados ja existentes.
+- Nao existe tabela nova de auditoria nesta fase.
+- Teacher mostra aulas, homeworks, feedbacks, contratos, chats e aulas ao vivo.
+- Aluno mostra vinculos, aulas recebidas, respostas, contratos, chats e aulas ao vivo.
+
 ## Deploy Quando Ha Migration
 
 Use quando `prisma/schema.prisma` ou `prisma/migrations/` mudarem:

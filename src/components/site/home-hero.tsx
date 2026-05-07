@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -120,15 +119,6 @@ export function HomeHero({ content }: HomeHeroProps) {
             </p>
           </div>
 
-          <Image
-            src="/brand/logo-3.svg"
-            alt="Marca Candy English"
-            width={520}
-            height={650}
-            priority
-            unoptimized
-            className="absolute left-[42%] top-8 hidden h-auto w-[42%] -translate-x-1/2 opacity-95 md:block"
-          />
         </div>
       </div>
 
