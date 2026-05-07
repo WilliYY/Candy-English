@@ -133,12 +133,15 @@ export function LoginForm({
             });
           }}
         >
+          <span aria-hidden="true" className="text-base font-semibold">
+            G
+          </span>
           Entrar com Google
         </Button>
         {!googleEnabled ? (
           <p className="break-words text-xs leading-5 text-muted-foreground">
-            Google login fica disponivel quando GOOGLE_CLIENT_ID e
-            GOOGLE_CLIENT_SECRET forem configurados no .env.
+            O acesso com Google sera ativado quando a conta Google da Candy
+            estiver conectada ao AVA.
           </p>
         ) : null}
       </div>

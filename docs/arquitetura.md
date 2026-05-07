@@ -339,3 +339,14 @@ A decima oitava fase altera apenas a experiencia visual da home:
 - nas demais rotas, o header continua sticky com fundo claro, preservando leitura;
 - fontes Inter e Instrument Serif sao carregadas via Google Fonts no CSS global;
 - o AVA, autenticacao, Prisma e regras de permissao nao foram alterados.
+
+## FASE 19
+
+A decima nona fase simplifica a entrada do AVA e reforca verificacao de login:
+
+- `/ava` deixou de renderizar cards publicos de admin, teacher e student;
+- visitante em `/ava` redireciona para `/ava/login`;
+- usuario ja autenticado em `/ava` redireciona para a area padrao do proprio role;
+- o login com Google continua opcional e so fica ativo quando as credenciais Google existem no `.env`;
+- `scripts/auth-smoke.ts` cria usuarios temporarios de `ADMIN`, `TEACHER` e `STUDENT`, testa login por credentials e remove os usuarios ao final;
+- `npm run verify:auth-smoke` executa esse teste em Docker Compose pelo perfil `tools`.

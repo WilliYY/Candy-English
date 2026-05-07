@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 18 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role e mostra historico operacional derivado dos dados existentes. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez.
+FASE 19 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role e mostra historico operacional derivado dos dados existentes. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role.
 
 ## Fases implementadas
 
@@ -217,6 +217,16 @@ Hero cinematografico da home:
 - conteudo textual continua sendo da Candy English;
 - logica do AVA nao foi alterada.
 
+### FASE 19
+
+Entrada direta no login do AVA:
+
+- `/ava` nao renderiza mais cards publicos de admin, teacher e student;
+- visitante em `/ava` vai para `/ava/login`;
+- usuario logado em `/ava` vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`;
+- botao Google permanece no login, ativo apenas quando `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` estao configurados;
+- `scripts/auth-smoke.ts` testa login temporario de admin, teacher e student e limpa os usuarios criados.
+
 ## MVP inicial
 
 1. Login com email e senha
@@ -240,6 +250,7 @@ npm run lint
 npm run typecheck
 npm run build
 npm run prisma:validate
+npm run audit:auth-smoke
 ```
 
 ### Deploy Oracle com migration

@@ -90,8 +90,9 @@ Regras:
 flowchart TD
   A["Visitante acessa site"] --> B["Home visual com movimento"]
   B --> C["Contato ou entrada no AVA"]
-  C --> D["/ava/login"]
-  D --> E["Auth.js valida credenciais"]
+  C --> D["/ava"]
+  D --> D1["Visitante redireciona para /ava/login"]
+  D1 --> E["Auth.js valida credenciais"]
   E --> F{"Usuario ativo?"}
   F -->|Nao| G["Login negado"]
   F -->|Sim| H{"Role"}
@@ -103,6 +104,7 @@ flowchart TD
 Regras:
 
 - Usuario com `isActive=false` nao entra no AVA.
+- `/ava` nao mostra cards intermediarios: visitante vai para `/ava/login`; usuario logado vai para a area do proprio role.
 - Muitas falhas recentes de login bloqueiam novas tentativas por seguranca basica.
 - Menu do AVA muda conforme role, mas a permissao real continua no servidor.
 - Admin nao pode desativar o proprio usuario.
@@ -258,6 +260,7 @@ Termos:
 - `up -d --force-recreate app`: recria o container do site/AVA.
 - `ps`: mostra status dos containers.
 - `audit-server-smoke`: testa health, home, login e protecao de admin.
+- `audit:auth-smoke`: cria usuarios temporarios, testa login real de admin/teacher/student e apaga os testes no final.
 
 ## Cuidados
 

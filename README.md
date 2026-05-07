@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 16 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student agora abrem uma tarefa principal por vez. O admin tambem controla modo manutencao para bloquear alunos durante ajustes, e teacher/aluno possuem chatbox registrada no banco.
+FASE 19 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student agora abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao para bloquear alunos durante ajustes, e teacher/aluno possuem chatbox registrada no banco.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -34,6 +34,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - Headers basicos de seguranca sao definidos em `next.config.ts`.
 - A aula ao vivo usa link protegido do Google Meet dentro do AVA; camera e compartilhamento de tela acontecem no Meet.
 - Login com Google esta preparado de forma opcional e so aceita emails ja cadastrados no AVA.
+- `/ava` funciona como roteador do AVA: visitante vai para `/ava/login`; usuario logado vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`.
 - Uploads locais ficam em `storage/` no desenvolvimento e em volume Docker `app-storage` em producao.
 - O modo manutencao fica em `AppSetting` no banco: alunos nao conseguem entrar durante manutencao, mas `ADMIN` e `TEACHER` continuam acessando.
 - A chatbox do AVA usa `ChatThread` e `ChatMessage`, sempre presa ao vinculo `StudentTeacherAssignment`.
@@ -127,6 +128,7 @@ prisma/
   schema.prisma
   seed.ts
 scripts/
+  auth-smoke.ts
   server-smoke.ts
 ```
 
@@ -205,6 +207,8 @@ http://localhost:3000/api/health
 
 ```bash
 npm run audit:server-smoke
+npm run audit:auth-smoke
+npm run verify:auth-smoke
 ```
 
 ## Como Rodar com Docker
@@ -236,6 +240,7 @@ docker compose up -d --build app
 docker compose ps
 docker compose logs --tail=100 app
 docker compose --profile tools run --rm audit-server-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 ```
 
 O app fica em `http://localhost:3000`. O PostgreSQL nao expoe porta publica; o app acessa o banco pela rede interna usando o host `postgres`.
@@ -252,6 +257,7 @@ docker compose up -d --force-recreate app
 sleep 45
 docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 ```
 
 Com alteracao em `prisma/schema.prisma` ou `prisma/migrations/`:
@@ -290,7 +296,9 @@ npm run prisma:migrate
 npm run prisma:deploy
 npm run prisma:seed
 npm run audit:server-smoke
+npm run audit:auth-smoke
 npm run verify:server-smoke
+npm run verify:auth-smoke
 ```
 
 ## Banco / Prisma
@@ -461,6 +469,15 @@ Implementado:
 - botoes principais do hero usam efeito `liquid-glass`;
 - conteudo textual continua sendo da Candy English e pode seguir vindo do cadastro de conteudo do site;
 - paginas institucionais e rotas do AVA nao tiveram a logica alterada.
+
+## FASE 19 - Entrada Direta no Login do AVA
+
+Implementado:
+
+- `/ava` redireciona visitante diretamente para `/ava/login`, removendo a tela intermediaria com cards de admin/teacher/student;
+- quando ja existe sessao, `/ava` redireciona automaticamente para a area correta pelo role;
+- o botao "Entrar com Google" permanece na tela de login e fica ativo quando `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` estao configurados;
+- `scripts/auth-smoke.ts` testa login real temporario para `ADMIN`, `TEACHER` e `STUDENT`, valida o redirecionamento por role e apaga os usuarios de teste ao final.
 
 ## Ferramentas Locais Recomendadas
 

@@ -15,7 +15,9 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "prisma generate && prisma db seed",
     "audit:server-smoke": "tsx scripts/server-smoke.ts",
-    "verify:server-smoke": "docker compose --profile tools run --rm audit-server-smoke"
+    "audit:auth-smoke": "tsx scripts/auth-smoke.ts",
+    "verify:server-smoke": "docker compose --profile tools run --rm audit-server-smoke",
+    "verify:auth-smoke": "docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke"
   },
   "dependencies": {
     "@hookform/resolvers": "5.2.2",
