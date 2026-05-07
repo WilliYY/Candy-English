@@ -19,7 +19,7 @@ export function WhatsAppWidget() {
       target="_blank"
       rel="noreferrer"
       aria-label="Falar com a Candy English pelo WhatsApp"
-      className="fixed bottom-4 left-4 z-50 inline-flex size-12 items-center justify-center rounded-full bg-[#25d366] text-white shadow-2xl transition-transform hover:scale-105 sm:bottom-5 sm:left-5 sm:size-14"
+      className="fixed bottom-20 right-4 z-50 inline-flex size-12 items-center justify-center rounded-full bg-[#25d366] text-white shadow-2xl transition-transform hover:scale-105 sm:bottom-24 sm:right-5 sm:size-14"
     >
       <MessageCircle aria-hidden="true" className="size-6" />
     </a>

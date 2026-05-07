@@ -13,19 +13,6 @@ type HomeHeroProps = {
   };
 };
 
-function HeroTitle({ title }: { title: string }) {
-  if (title !== "Fale ingles com clareza, rotina e feedback.") {
-    return <>{title}</>;
-  }
-
-  return (
-    <>
-      Fale <em className="not-italic text-white/60">ingles</em> com clareza,
-      rotina e <em className="not-italic text-white/60">feedback.</em>
-    </>
-  );
-}
-
 export function HomeHero({ content }: HomeHeroProps) {
   const title = content?.title ?? "Fale ingles com clareza, rotina e feedback.";
   const description =
@@ -47,22 +34,22 @@ export function HomeHero({ content }: HomeHeroProps) {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 pb-28 pt-36 text-center sm:pb-36 sm:pt-44 lg:px-8">
         <div className="flex min-w-0 flex-col items-center gap-7">
-          <div className="liquid-glass animate-fade-rise inline-flex w-fit max-w-full items-center gap-2 rounded-full px-4 py-2 text-sm text-white/84">
-            <CheckCircle2 aria-hidden="true" />
+          <div className="liquid-glass animate-fade-rise inline-flex w-fit max-w-full items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white/88">
+            <CheckCircle2 aria-hidden="true" className="size-5 shrink-0" />
             Ingles vivo, organizado e acompanhado
           </div>
 
           <div className="flex flex-col items-center gap-6">
-            <p className="animate-fade-rise text-sm font-medium uppercase tracking-[0.28em] text-white/75">
+            <p className="animate-fade-rise text-sm font-medium uppercase tracking-[0.24em] text-white/78">
               Candy English
             </p>
             <h1
-              className="animate-fade-rise max-w-7xl break-words text-5xl font-normal leading-[0.95] tracking-[-1.8px] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.28)] sm:text-7xl md:text-8xl md:tracking-[-2.46px]"
-              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="animate-fade-rise max-w-6xl break-words text-5xl font-normal leading-[1.02] tracking-normal text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.34)] sm:text-6xl md:text-7xl lg:text-8xl"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              <HeroTitle title={title} />
+              {title}
             </h1>
-            <p className="animate-fade-rise-delay mt-2 max-w-2xl break-words text-base leading-relaxed text-white/70 sm:text-lg">
+            <p className="animate-fade-rise-delay mt-2 max-w-2xl break-words text-base font-medium leading-relaxed text-white/80 sm:text-lg">
               {description}
             </p>
           </div>

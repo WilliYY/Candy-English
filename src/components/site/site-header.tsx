@@ -23,7 +23,7 @@ export function SiteHeader() {
       className={cn(
         "top-0 z-40",
         isHome
-          ? "fixed inset-x-0 text-white"
+          ? "fixed inset-x-0 text-primary"
           : "sticky border-b border-border/70 bg-background/95 backdrop-blur-xl",
       )}
     >
@@ -31,7 +31,7 @@ export function SiteHeader() {
         className={cn(
           "mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8",
           isHome
-            ? "mt-4 h-[4.75rem] rounded-full bg-white/[0.03] py-3 shadow-2xl shadow-black/15 liquid-glass"
+            ? "mt-4 min-h-20 overflow-visible rounded-full bg-white/92 py-3 shadow-2xl shadow-black/20 ring-1 ring-white/70 backdrop-blur-xl"
             : "h-[5.5rem] sm:h-24",
         )}
       >
@@ -39,11 +39,13 @@ export function SiteHeader() {
           className={cn(
             "shrink-0",
             isHome
-              ? "h-14 w-[205px] sm:h-16 sm:w-[235px]"
+              ? "h-16 w-[230px] overflow-visible sm:h-[4.25rem] sm:w-[285px]"
               : "h-16 w-[215px] sm:h-20 sm:w-[280px]",
           )}
           imageClassName={cn(
-            isHome ? "w-[245px] sm:w-[285px]" : "w-[255px] sm:w-[350px]",
+            isHome
+              ? "w-[245px] scale-100 group-hover:scale-[1.04] sm:w-[310px]"
+              : "w-[255px] sm:w-[350px]",
           )}
         />
         <nav
@@ -59,7 +61,7 @@ export function SiteHeader() {
               className={cn(
                 "px-4 text-base font-semibold transition-colors",
                 isHome
-                  ? "text-white/70 hover:bg-white/10 hover:text-white"
+                  ? "text-primary/75 hover:bg-primary/5 hover:text-primary"
                   : "text-foreground",
               )}
             >
@@ -72,7 +74,7 @@ export function SiteHeader() {
           size="lg"
           className={cn(
             "shrink-0 px-5 text-base font-semibold transition-transform hover:scale-[1.03]",
-            isHome && "liquid-glass bg-white/[0.03] text-white hover:bg-white/10",
+            isHome && "bg-primary text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90",
           )}
         >
           <Link href="/ava">
