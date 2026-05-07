@@ -1,20 +1,9 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  BookOpen,
-  CheckCircle2,
-  MessageSquareText,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const activity = [
-  "Speaking",
-  "Homework",
-  "Feedback",
-  "Vocabulary",
-  "Confidence",
-  "Fluency",
-];
+const heroVideoUrl =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4";
 
 type HomeHeroProps = {
   content?: {
@@ -24,38 +13,65 @@ type HomeHeroProps = {
   };
 };
 
-export function HomeHero({ content }: HomeHeroProps) {
-  return (
-    <section className="candy-deep relative isolate min-h-[calc(100svh-5rem)] overflow-hidden text-white">
-      <div className="absolute inset-0 bg-[#2c1338]/72" />
-      <div className="candy-kinetic-grid absolute inset-0" />
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fefbfa] to-transparent" />
+function HeroTitle({ title }: { title: string }) {
+  if (title !== "Fale ingles com clareza, rotina e feedback.") {
+    return <>{title}</>;
+  }
 
-      <div className="relative z-20 mx-auto grid w-full min-w-0 max-w-7xl grid-cols-1 gap-10 px-6 pb-16 pt-12 lg:grid-cols-[0.92fr_1.08fr] lg:px-8 lg:pb-20 lg:pt-16">
-        <div className="candy-reveal flex min-w-0 max-w-3xl flex-col justify-center gap-7">
-          <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm text-white/80 backdrop-blur">
+  return (
+    <>
+      Fale <em className="not-italic text-white/60">ingles</em> com clareza,
+      rotina e <em className="not-italic text-white/60">feedback.</em>
+    </>
+  );
+}
+
+export function HomeHero({ content }: HomeHeroProps) {
+  const title = content?.title ?? "Fale ingles com clareza, rotina e feedback.";
+  const description =
+    content?.description ??
+    "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo.";
+
+  return (
+    <section className="relative isolate flex min-h-screen overflow-hidden text-white">
+      <video
+        aria-label="Fundo em video da Candy English"
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 z-0 h-full w-full object-cover"
+      >
+        <source src={heroVideoUrl} type="video/mp4" />
+      </video>
+
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 pb-28 pt-36 text-center sm:pb-36 sm:pt-44 lg:px-8">
+        <div className="flex min-w-0 flex-col items-center gap-7">
+          <div className="liquid-glass animate-fade-rise inline-flex w-fit max-w-full items-center gap-2 rounded-full px-4 py-2 text-sm text-white/84">
             <CheckCircle2 aria-hidden="true" />
             Ingles vivo, organizado e acompanhado
           </div>
 
-          <div className="flex flex-col gap-5">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#e57cd8]">
+          <div className="flex flex-col items-center gap-6">
+            <p className="animate-fade-rise text-sm font-medium uppercase tracking-[0.28em] text-white/75">
               Candy English
             </p>
-            <h1 className="max-w-4xl break-words text-4xl font-semibold leading-[0.96] tracking-normal sm:text-6xl lg:text-7xl">
-              {content?.title ?? "Fale ingles com clareza, rotina e feedback."}
+            <h1
+              className="animate-fade-rise max-w-7xl break-words text-5xl font-normal leading-[0.95] tracking-[-1.8px] text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.28)] sm:text-7xl md:text-8xl md:tracking-[-2.46px]"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              <HeroTitle title={title} />
             </h1>
-            <p className="max-w-2xl break-words text-base leading-8 text-white/75 md:text-lg">
-              {content?.description ??
-                "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo."}
+            <p className="animate-fade-rise-delay mt-2 max-w-2xl break-words text-base leading-relaxed text-white/70 sm:text-lg">
+              {description}
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="animate-fade-rise-delay-2 mt-5 flex flex-col gap-3 sm:flex-row">
             <Button
               asChild
               size="lg"
-              className="bg-[#e57cd8] text-[#2c1338] hover:bg-[#f7a8ed]"
+              className="liquid-glass rounded-full bg-white/[0.03] px-14 py-5 text-base text-white transition-transform hover:scale-[1.03] hover:bg-white/10"
             >
               <Link href="/contato">
                 {content?.ctaLabel ?? "Comecar conversa"}
@@ -66,69 +82,11 @@ export function HomeHero({ content }: HomeHeroProps) {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/25 bg-white/10 text-white hover:bg-white hover:text-[#2c1338]"
+              className="liquid-glass rounded-full bg-white/[0.03] px-10 py-5 text-base text-white transition-transform hover:scale-[1.03] hover:bg-white/10"
             >
               <Link href="/ava">Entrar no AVA</Link>
             </Button>
           </div>
-        </div>
-
-        <div className="candy-reveal-delay relative hidden min-h-[420px] md:block lg:min-h-[560px]">
-          <div className="absolute right-0 top-0 hidden w-[74%] overflow-hidden rounded-lg border border-white/15 bg-white/10 p-5 shadow-2xl backdrop-blur md:block candy-float-slow">
-            <div className="mb-5 flex items-center justify-between text-sm text-white/70">
-              <span>Aula de hoje</span>
-              <span>19:00</span>
-            </div>
-            <div className="flex flex-col gap-4">
-              <div className="rounded-lg bg-white p-5 text-[#2c1338]">
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-                  <BookOpen aria-hidden="true" />
-                  Simple past in conversation
-                </div>
-                <p className="text-sm leading-6 text-[#6b5a74]">
-                  Revisao guiada, vocabulario de rotina e pratica oral com
-                  perguntas abertas.
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg bg-[#fce5d8] p-4 text-[#2c1338]">
-                  <strong className="text-2xl">12</strong>
-                  <p className="text-sm">termos novos</p>
-                </div>
-                <div className="rounded-lg bg-[#e57cd8] p-4 text-[#2c1338]">
-                  <strong className="text-2xl">1</strong>
-                  <p className="text-sm">homework</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="absolute bottom-6 left-0 w-[78%] max-w-md rounded-lg border border-white/15 bg-white p-5 text-[#2c1338] shadow-2xl candy-float-medium">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-lg bg-[#412a4c] text-white">
-                <MessageSquareText aria-hidden="true" />
-              </span>
-              <div>
-                <strong>Feedback enviado</strong>
-                <p className="text-sm text-[#6b5a74]">Pronunciation + fluency</p>
-              </div>
-            </div>
-            <p className="text-sm leading-6 text-[#6b5a74]">
-              Great progress. Next class: connect your answers with more detail
-              and natural transitions.
-            </p>
-          </div>
-
-        </div>
-      </div>
-
-      <div className="relative z-20 overflow-hidden border-y border-white/10 bg-white/10 py-3 text-sm font-semibold uppercase tracking-[0.24em] text-white/70">
-        <div className="candy-marquee flex w-[200%] gap-10 whitespace-nowrap">
-          {[...activity, ...activity, ...activity, ...activity].map(
-            (item, index) => (
-              <span key={`${item}-${index}`}>{item}</span>
-            ),
-          )}
         </div>
       </div>
     </section>

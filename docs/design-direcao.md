@@ -13,6 +13,8 @@ As referencias servem apenas como inspiracao de qualidade, ritmo e energia. O la
 
 Candy English deve parecer uma escola digital leve, organizada e humana: roxo profundo como base de confianca, rosa/coral como energia, fundos claros para leitura e movimento suave para mostrar progresso.
 
+Na home, a direcao pode ficar mais cinematografica: video em tela cheia, navegacao glass, tipografia editorial e poucos elementos competindo com a marca.
+
 ## Paleta
 
 - Roxo principal: `#412a4c`
@@ -38,6 +40,8 @@ Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo c
 
 Movimentos permitidos nesta fase:
 
+- video fullscreen em loop na home;
+- entrada curta de headline, texto e botoes no hero;
 - grid cinetico muito leve no hero;
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
@@ -60,6 +64,8 @@ Cuidados:
 - Admin deve listar usuarios por role em colunas separadas para reduzir confusao visual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
+- Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
+- O video da home deve ser o elemento visual principal, sem blobs ou decoracoes extras.
 
 ## Fluxo Visual Do Site
 

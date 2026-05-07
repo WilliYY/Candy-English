@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 17 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role e mostra historico operacional derivado dos dados existentes. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez.
+FASE 18 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role e mostra historico operacional derivado dos dados existentes. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez.
 
 ## Fases implementadas
 
@@ -205,6 +205,17 @@ Refino visual e historico:
 - home removeu a marca decorativa solta sobre os cards do hero;
 - footer usa marca textual simples, sem card branco envolvendo logo;
 - favicon usa a bala SVG transparente em `public/favicon.svg`.
+
+### FASE 18
+
+Hero cinematografico da home:
+
+- `HomeHero` usa video remoto fullscreen em loop;
+- navbar fica glass apenas na home, mantendo logo, links e AVA;
+- Inter e Instrument Serif sao carregadas via Google Fonts no CSS global;
+- CTA do hero usa efeito `liquid-glass`;
+- conteudo textual continua sendo da Candy English;
+- logica do AVA nao foi alterada.
 
 ## MVP inicial
 

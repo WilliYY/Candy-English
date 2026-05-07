@@ -328,3 +328,14 @@ A decima setima fase refina leitura visual e auditoria basica de usuarios:
 - textos explicativos redundantes foram removidos dos paineis operacionais;
 - o favicon usa a bala SVG transparente em `public/favicon.svg`;
 - a home removeu o elemento decorativo solto sobre o mockup e o footer deixou de usar logo dentro de card branco.
+
+## FASE 18
+
+A decima oitava fase altera apenas a experiencia visual da home:
+
+- `HomeHero` usa um `<video>` remoto fullscreen como plano principal;
+- `SiteHeader` virou client component para detectar a rota atual com `usePathname`;
+- na rota `/`, o header fica fixo sobre o hero com efeito `liquid-glass`;
+- nas demais rotas, o header continua sticky com fundo claro, preservando leitura;
+- fontes Inter e Instrument Serif sao carregadas via Google Fonts no CSS global;
+- o AVA, autenticacao, Prisma e regras de permissao nao foram alterados.

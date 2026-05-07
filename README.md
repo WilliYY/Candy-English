@@ -451,6 +451,17 @@ Implementado:
 - footer passou a usar marca textual simples, sem card branco envolvendo logo;
 - favicon voltou a usar a bala SVG transparente enviada para `public/favicon.svg`.
 
+## FASE 18 - Hero cinematografico da home
+
+Implementado:
+
+- home usa video de fundo fullscreen em loop, com `autoPlay`, `loop`, `muted` e `playsInline`;
+- navbar institucional ganha efeito glass apenas na rota `/`, mantendo logo, links e botao AVA;
+- tipografia da home usa Inter no corpo e Instrument Serif no headline principal;
+- botoes principais do hero usam efeito `liquid-glass`;
+- conteudo textual continua sendo da Candy English e pode seguir vindo do cadastro de conteudo do site;
+- paginas institucionais e rotas do AVA nao tiveram a logica alterada.
+
 ## Ferramentas Locais Recomendadas
 
 Instalado neste Windows:
