@@ -146,7 +146,7 @@ flowchart LR
   B --> C["Grupo ADMIN"]
   B --> D["Grupo TEACHER"]
   B --> E["Grupo STUDENT"]
-  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, editar site"]
+  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos, manutencao"]
   D --> D1["Aula ao vivo, criar aula, criar homework, mensagens, corrigir, contratos"]
   E --> E1["Aula ao vivo, aulas, homeworks, mensagens, contratos, perfil"]
   C --> F["Clique troca a tarefa principal do admin"]
@@ -157,8 +157,9 @@ flowchart LR
 Regras:
 
 - A sidebar deve ser o indice principal de operacao do AVA.
-- Grupos como `Teacher` e `Student` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
-- No admin, os atalhos usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno` e `?task=editar-site` para mostrar uma tarefa por vez.
+- Grupos como `Admin` e `Teacher` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
+- Para role `STUDENT`, a sidebar fica sempre aberta com botoes roxos porque a area do aluno precisa ser mais direta.
+- No admin, os atalhos usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno`, `?task=contratos` e `?task=editar-site` para mostrar uma tarefa por vez.
 - Nas areas teacher/student, os atalhos tambem usam `?task=` para mostrar uma tarefa por vez.
 - Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
 - Nao usar uma caixa interna com barra de rolagem para atalhos; se houver muitas opcoes, agrupar por role.
@@ -175,8 +176,10 @@ flowchart TD
   F --> F1["Nome completo, data de nascimento, documento/responsavel, email/login e senha provisoria"]
   A --> G["?task=vincular-aluno"]
   G --> G1["Seleciona teacher e aluno ativo"]
-  A --> H["?task=editar-site"]
-  H --> H1["Liga ou desliga modo manutencao"]
+  A --> H["?task=contratos"]
+  H --> H1["Seleciona aluno e envia PDF protegido"]
+  A --> I["?task=editar-site"]
+  I --> I1["Liga ou desliga modo manutencao"]
 ```
 
 ## Fluxo Manutencao Candy
@@ -236,6 +239,31 @@ Regras:
 - Teacher mostra aulas, homeworks, feedbacks, contratos, chats e aulas ao vivo.
 - Aluno mostra vinculos, aulas recebidas, respostas, contratos, chats e aulas ao vivo.
 
+## Fluxo Perfil, Contratos e Materiais
+
+```mermaid
+flowchart TD
+  A["STUDENT abre /ava/student?task=perfil"] --> B["Edita dados pessoais e contatos"]
+  B --> C["Server action atualiza User e StudentProfile"]
+  A --> D["Envia foto PNG/JPG/WebP"]
+  D --> E["Arquivo fica em storage/avatars"]
+  F["ADMIN abre /ava/admin?task=contratos"] --> G["Seleciona aluno e PDF"]
+  G --> H["Arquivo fica em storage/contracts"]
+  H --> I["STUDENT abre /ava/student?task=contratos"]
+  I --> J["PDF aparece embutido ou mensagem sem contrato"]
+  K["TEACHER cadastra link Canva/material"] --> L["STUDENT abre /ava/student?task=aulas"]
+  L --> M["AVA tenta exibir previa e mantem link de nova aba"]
+```
+
+Regras:
+
+- Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
+- Contrato aceita PDF ate 8 MB.
+- Admin ve uso aproximado de arquivos em MB no painel de usuarios.
+- Contratos continuam servidos por rota protegida.
+- Material de Canva depende do link permitir visualizacao embutida; se nao permitir, o aluno abre em nova aba.
+- Homework online continua sendo o caminho para responder dentro do site; editor Word embutido fica para fase futura.
+
 ## Deploy Quando Ha Migration
 
 Use quando `prisma/schema.prisma` ou `prisma/migrations/` mudarem:
@@ -261,6 +289,7 @@ Termos:
 - `ps`: mostra status dos containers.
 - `audit-server-smoke`: testa health, home, login e protecao de admin.
 - `audit:auth-smoke`: cria usuarios temporarios, testa login real de admin/teacher/student e apaga os testes no final.
+- `audit:avatar-smoke`: cria aluno temporario, salva uma foto no storage, faz login e confirma que `/ava/avatar/[userId]` entrega a imagem protegida.
 
 ## Cuidados
 

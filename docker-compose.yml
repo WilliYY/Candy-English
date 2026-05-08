@@ -129,9 +129,12 @@ services:
       - .env
     environment:
       AUDIT_BASE_URL: http://app:3000
+      AVA_STORAGE_DIR: /app/storage
     mem_limit: ${TOOLS_MEM_LIMIT:-768m}
     mem_reservation: ${TOOLS_MEM_RESERVATION:-256m}
     command: npm run audit:server-smoke
+    volumes:
+      - app-storage:/app/storage
 
 volumes:
   app-storage:

@@ -211,6 +211,7 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 
 - `/api/health` e usado pelo healthcheck do container e pode ser validado pelo proxy/operador.
 - `scripts/server-smoke.ts` valida carregamento do site, tela de login e redirecionamento de area protegida sem sessao.
+- `scripts/avatar-smoke.ts` valida o fluxo tecnico de foto de perfil: grava imagem no volume `storage`, cria student temporario, autentica e le `/ava/avatar/[userId]`.
 - `npm run verify:server-smoke` executa o smoke test via Docker Compose usando o perfil `tools`.
 - `docs/producao-checklist.md` registra o fluxo recomendado de deploy com e sem migration.
 
@@ -314,7 +315,7 @@ O projeto usa Google Meet nesta fase. Isso entrega camera, microfone e compartil
 
 ## Decisao Sobre Uploads
 
-Uploads agora existem apenas para foto de perfil e contratos PDF. Eles usam validacao de tipo e tamanho no servidor. Nao ha upload livre de materiais ainda. Em producao, o volume Docker `app-storage` preserva os arquivos entre recriacoes do container.
+Uploads agora existem para foto de perfil e contratos PDF. Eles usam validacao de tipo e tamanho no servidor. O admin tambem visualiza o uso aproximado da pasta `storage/` em KB/MB para acompanhar crescimento de arquivos. Nao ha upload livre de materiais ainda; materiais de aula podem usar link externo, inclusive Canva compartilhado, com tentativa de previa via iframe no AVA do aluno. Em producao, o volume Docker `app-storage` preserva os arquivos entre recriacoes do container.
 
 ## FASE 17
 
@@ -350,3 +351,26 @@ A decima nona fase simplifica a entrada do AVA e reforca verificacao de login:
 - o login com Google continua opcional e so fica ativo quando as credenciais Google existem no `.env`;
 - `scripts/auth-smoke.ts` cria usuarios temporarios de `ADMIN`, `TEACHER` e `STUDENT`, testa login por credentials e remove os usuarios ao final;
 - `npm run verify:auth-smoke` executa esse teste em Docker Compose pelo perfil `tools`.
+
+## FASE 20
+
+A vigesima fase melhora a experiencia operacional sem alterar o schema:
+
+- a listagem de usuarios do admin passa a usar grupos minimizaveis por role;
+- o historico operacional de cada usuario fica recolhido por padrao para reduzir altura dos cards;
+- `/ava/admin?task=contratos` reutiliza `ContractUploadForm`, permitindo que admin selecione aluno e envie PDF protegido;
+- o admin calcula uso aproximado de `storage/` por leitura server-side do volume, sem expor caminhos internos;
+- o perfil student usa os campos ja existentes em `StudentProfile`: nivel, nascimento, documento/responsavel, telefones do aluno, nome/telefone da mae e observacoes;
+- `updateMyProfile` atualiza `User` e faz `upsert` do `StudentProfile` quando o ator e `STUDENT`;
+- student visualiza contratos por iframe em `/ava/contracts/[contractId]`, mantendo a rota protegida;
+- contratos gerais, sem aluno definido, podem ser vistos por students logados; contratos com aluno definido exigem o proprio aluno, teacher vinculada ou admin;
+- links de material tentam renderizar uma previa por iframe no student, mas mantem link de nova aba porque alguns sites bloqueiam embed;
+- a sidebar do student fica sempre aberta com botoes roxos, enquanto admin/teacher permanecem com grupos expansíveis;
+- a home recebe secao de contatos e link Home na navbar, e o login recebe marca com movimento suave.
+- o servico `audit-server-smoke` monta o volume `app-storage` para validar avatar no mesmo storage usado pelo app.
+
+Decisao sobre Word:
+
+- o MVP continua usando homework online em texto, que o aluno responde dentro do site;
+- editar `.docx` dentro do navegador nao foi implementado nesta fase porque exige conversao para formulario online ou integracao com editor de documentos;
+- quando a teacher usar material feito no Canva, o caminho preferencial e publicar/compartilhar o link e cadastrar como material da aula.

@@ -437,7 +437,10 @@ export function TeacherWorkspace({
                   phone: currentUser.phone ?? "",
                 }}
               />
-              <AvatarUploadForm />
+              <AvatarUploadForm
+                avatarPath={currentUser.avatarPath}
+                userId={currentUser.id}
+              />
             </div>
           ) : null}
 

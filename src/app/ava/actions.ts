@@ -130,10 +130,56 @@ export async function updateMyProfile(
   }
 
   const prisma = getPrisma();
+  const {
+    address,
+    birthDate,
+    guardianDocument,
+    level,
+    motherName,
+    motherPhone,
+    name,
+    notes,
+    phone,
+    studentPhone,
+    studentPhoneAlt,
+  } = parsed.data;
 
-  await prisma.user.update({
-    where: { id: actor.userId },
-    data: parsed.data,
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: actor.userId },
+      data: {
+        address,
+        name,
+        phone,
+      },
+    });
+
+    if (actor.role === "STUDENT") {
+      await tx.studentProfile.upsert({
+        where: { userId: actor.userId },
+        create: {
+          birthDate,
+          guardianDocument,
+          level,
+          motherName,
+          motherPhone,
+          notes,
+          studentPhone,
+          studentPhoneAlt,
+          userId: actor.userId,
+        },
+        update: {
+          birthDate,
+          guardianDocument,
+          level,
+          motherName,
+          motherPhone,
+          notes,
+          studentPhone,
+          studentPhoneAlt,
+        },
+      });
+    }
   });
 
   revalidatePath("/ava/student");

@@ -39,7 +39,11 @@ export async function GET(
       select: { id: true },
     });
 
-    if (!studentProfile || contract.studentProfileId !== studentProfile.id) {
+    if (
+      !studentProfile ||
+      (contract.studentProfileId &&
+        contract.studentProfileId !== studentProfile.id)
+    ) {
       return new NextResponse("Nao autorizado.", { status: 403 });
     }
   }

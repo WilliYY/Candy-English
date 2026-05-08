@@ -208,14 +208,20 @@ export function CreateLessonForm({
               <FieldError errors={[form.formState.errors.materialContent]} />
             </Field>
             <Field data-invalid={Boolean(form.formState.errors.materialUrl)}>
-              <FieldLabel htmlFor="material-url">Link opcional</FieldLabel>
+              <FieldLabel htmlFor="material-url">
+                Link opcional do material
+              </FieldLabel>
               <Input
                 id="material-url"
                 aria-invalid={Boolean(form.formState.errors.materialUrl)}
                 disabled={isPending}
-                placeholder="https://..."
+                placeholder="https://www.canva.com/..."
                 {...form.register("materialUrl")}
               />
+              <FieldDescription>
+                Cole links compartilhados do Canva, PDF externo ou pagina de
+                apoio. O aluno ve a previa no AVA quando o site permite.
+              </FieldDescription>
               <FieldError errors={[form.formState.errors.materialUrl]} />
             </Field>
             <div className="grid gap-4 md:grid-cols-2">

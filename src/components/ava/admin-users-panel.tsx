@@ -1,6 +1,8 @@
 import {
   CalendarDays,
+  FileText,
   GraduationCap,
+  HardDrive,
   Link2,
   Mail,
   Power,
@@ -17,6 +19,7 @@ import {
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
+import { ContractUploadForm } from "@/components/ava/contract-upload-form";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Role } from "@/lib/roles";
@@ -28,6 +31,7 @@ export const adminTaskIds = [
   "criar-teacher",
   "criar-aluno",
   "vincular-aluno",
+  "contratos",
   "editar-site",
 ] as const;
 
@@ -84,9 +88,18 @@ type AssignmentRow = {
   teacherProfileId: string;
 };
 
+type AdminContractRow = {
+  createdAt: Date;
+  id: string;
+  sizeBytes: number;
+  studentName: string | null;
+  title: string;
+};
+
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   assignments: AssignmentRow[];
+  contracts: AdminContractRow[];
   currentUser: {
     email: string;
     name?: string | null;
@@ -94,6 +107,7 @@ type AdminUsersPanelProps = {
   };
   maintenanceMode: boolean;
   students: AssignmentOption[];
+  storageUsageBytes: number;
   teachers: AssignmentOption[];
   users: AdminUserRow[];
 };
@@ -134,6 +148,10 @@ const taskMeta = {
     icon: GraduationCap,
     title: "Criar teacher",
   },
+  contratos: {
+    icon: FileText,
+    title: "Contratos PDF",
+  },
   "editar-site": {
     icon: Wrench,
     title: "Manutencao Candy",
@@ -157,6 +175,20 @@ export function normalizeAdminTask(value: unknown): AdminTask {
 
 function formatDate(value: Date) {
   return dateFormatter.format(value);
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) {
+    return `${bytes} B`;
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${Math.ceil(bytes / 1024)} KB`;
+  }
+
+  return `${(bytes / 1024 / 1024).toLocaleString("pt-BR", {
+    maximumFractionDigits: 1,
+  })} MB`;
 }
 
 function getProfileSummary(user: AdminUserRow) {
@@ -246,11 +278,12 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
         const Icon = roleIcons[column.role];
 
         return (
-          <section
+          <details
             key={column.role}
-            className="flex min-w-0 flex-col gap-4 rounded-lg border bg-background p-4"
+            className="group min-w-0 rounded-lg border bg-background p-4"
+            open
           >
-            <div className="flex items-center justify-between gap-3 border-b pb-3">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b pb-3 [&::-webkit-details-marker]:hidden">
               <div className="flex min-w-0 items-center gap-3">
                 <span
                   className={cn(
@@ -269,14 +302,25 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                   </p>
                 </div>
               </div>
-            </div>
+              <span className="rounded-full border bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors group-open:bg-primary group-open:text-primary-foreground">
+                {columnUsers.length === 0 ? (
+                  "vazio"
+                ) : (
+                  <>
+                    <span className="group-open:hidden">abrir</span>
+                    <span className="hidden group-open:inline">minimizar</span>
+                  </>
+                )}
+              </span>
+            </summary>
 
-            {columnUsers.length === 0 ? (
+            <div className="mt-4 flex flex-col gap-3">
+              {columnUsers.length === 0 ? (
               <p className="rounded-lg border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground">
                 {column.empty}
               </p>
             ) : (
-              <div className="flex flex-col gap-3">
+              <>
                 {columnUsers.map((user) => (
                   <article
                     key={user.id}
@@ -312,10 +356,18 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                       {getProfileSummary(user)}
                     </p>
 
-                    <div className="flex flex-col gap-2 rounded-lg bg-muted/45 p-3">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <details className="group/history rounded-lg bg-muted/45 p-3">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
                         Historico
-                      </p>
+                        <span className="rounded-full bg-white px-2 py-1 text-[0.68rem] tracking-normal">
+                          <span className="group-open/history:hidden">
+                            abrir
+                          </span>
+                          <span className="hidden group-open/history:inline">
+                            minimizar
+                          </span>
+                        </span>
+                      </summary>
                       <ul className="grid gap-1.5 text-sm text-muted-foreground">
                         {getUserHistory(user).map((item) => (
                           <li key={item} className="flex items-start gap-2">
@@ -327,7 +379,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                           </li>
                         ))}
                       </ul>
-                    </div>
+                    </details>
 
                     <AdminUserStatusButton
                       isActive={user.isActive}
@@ -335,9 +387,10 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                     />
                   </article>
                 ))}
-              </div>
+              </>
             )}
-          </section>
+            </div>
+          </details>
         );
       })}
     </div>
@@ -380,12 +433,57 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
   );
 }
 
+function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
+  if (contracts.length === 0) {
+    return (
+      <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 text-center">
+        <FileText aria-hidden="true" />
+        <p className="max-w-sm text-sm text-muted-foreground">
+          Nenhum contrato PDF enviado ainda.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3">
+      {contracts.map((contract) => (
+        <a
+          key={contract.id}
+          href={`/ava/contracts/${contract.id}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-between gap-4 rounded-lg border bg-background p-4 text-sm hover:border-primary"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <FileText aria-hidden="true" className="size-4 shrink-0" />
+            <span className="min-w-0">
+              <span className="block truncate font-semibold">
+                {contract.title}
+              </span>
+              <span className="block truncate text-muted-foreground">
+                {contract.studentName ?? "Contrato geral"} -{" "}
+                {formatDate(contract.createdAt)}
+              </span>
+            </span>
+          </span>
+          <span className="shrink-0 text-muted-foreground">
+            {formatBytes(contract.sizeBytes)}
+          </span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export function AdminUsersPanel({
   activeTask,
   assignments,
+  contracts,
   currentUser,
   maintenanceMode,
   students,
+  storageUsageBytes,
   teachers,
   users,
 }: AdminUsersPanelProps) {
@@ -427,6 +525,11 @@ export function AdminUsersPanel({
       icon: Power,
       label: "Ativos",
       value: totals.active,
+    },
+    {
+      icon: HardDrive,
+      label: "Arquivos",
+      value: formatBytes(storageUsageBytes),
     },
   ];
   const task = taskMeta[activeTask];
@@ -473,7 +576,7 @@ export function AdminUsersPanel({
         <CardContent className="py-6">
           {activeTask === "usuarios" ? (
             <div className="flex flex-col gap-6">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
@@ -518,6 +621,16 @@ export function AdminUsersPanel({
               <div className="flex flex-col gap-3">
                 <h2 className="text-lg font-semibold">Vinculos atuais</h2>
                 <AssignmentList assignments={assignments} />
+              </div>
+            </div>
+          ) : null}
+
+          {activeTask === "contratos" ? (
+            <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+              <ContractUploadForm students={students} />
+              <div className="flex flex-col gap-3">
+                <h2 className="text-lg font-semibold">Contratos enviados</h2>
+                <ContractsList contracts={contracts} />
               </div>
             </div>
           ) : null}

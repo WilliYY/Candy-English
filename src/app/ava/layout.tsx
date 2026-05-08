@@ -55,6 +55,11 @@ const navGroups = [
         label: "Vincular aluno",
       },
       {
+        href: "/ava/admin?task=contratos",
+        icon: FileText,
+        label: "Contratos PDF",
+      },
+      {
         href: "/ava/admin?task=editar-site",
         icon: PencilLine,
         label: "Manutencao",
@@ -164,10 +169,10 @@ export default async function AvaLayout({
                 className="h-12 w-[170px] sm:h-14 sm:w-[200px]"
                 imageClassName="w-[205px] sm:w-[245px]"
               />
-              <Button asChild variant="outline" size="icon">
+              <Button asChild variant="outline" className="px-3">
                 <Link href="/">
                   <Home aria-hidden="true" />
-                  <span className="sr-only">Site</span>
+                  Home
                 </Link>
               </Button>
             </div>
@@ -189,43 +194,80 @@ export default async function AvaLayout({
             </div>
 
             <nav className="flex flex-col gap-2" aria-label="Navegacao do AVA">
-              {visibleGroups.map((group) => (
-                <details
-                  key={group.href}
-                  open={group.label === "Admin" && role === "ADMIN"}
-                  className="group rounded-lg"
-                >
-                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <group.icon aria-hidden="true" className="size-4" />
-                      {group.label}
-                    </span>
-                    <ChevronDown
-                      aria-hidden="true"
-                      className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-                    />
-                  </summary>
-
-                  <div className="ml-5 mt-1 flex flex-col gap-1 border-l pl-3">
-                    <Link
-                      href={group.href}
-                      className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              {visibleGroups.map((group) => {
+                if (role === "STUDENT" && group.label === "Student") {
+                  return (
+                    <div
+                      key={group.href}
+                      className="rounded-2xl border border-primary/10 bg-gradient-to-b from-muted to-white p-3 shadow-sm"
                     >
-                      Painel {group.label}
-                    </Link>
-                    {group.links.map((link) => (
+                      <div className="mb-2 flex items-center gap-2 px-2 py-1 text-sm font-bold text-primary">
+                        <group.icon aria-hidden="true" className="size-4" />
+                        Student
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Link
+                          href={group.href}
+                          className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-transform hover:-translate-y-0.5 hover:bg-primary/90"
+                        >
+                          Painel Student
+                        </Link>
+                        {group.links.map((link) => (
+                          <Link
+                            key={`${group.href}-${link.href}-${link.label}`}
+                            href={link.href}
+                            className="flex items-center gap-2 rounded-full border border-primary/10 bg-white px-4 py-2.5 text-sm font-semibold text-primary transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/70 hover:shadow-sm"
+                          >
+                            <link.icon aria-hidden="true" className="size-4" />
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <details
+                    key={group.href}
+                    open={
+                      (group.label === "Admin" && role === "ADMIN") ||
+                      (group.label === "Student" && role === "STUDENT")
+                    }
+                    className="group rounded-lg"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <group.icon aria-hidden="true" className="size-4" />
+                        {group.label}
+                      </span>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                      />
+                    </summary>
+
+                    <div className="ml-5 mt-1 flex flex-col gap-1 border-l pl-3">
                       <Link
-                        key={`${group.href}-${link.href}-${link.label}`}
-                        href={link.href}
-                        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                        href={group.href}
+                        className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                       >
-                        <link.icon aria-hidden="true" className="size-4" />
-                        {link.label}
+                        Painel {group.label}
                       </Link>
-                    ))}
-                  </div>
-                </details>
-              ))}
+                      {group.links.map((link) => (
+                        <Link
+                          key={`${group.href}-${link.href}-${link.label}`}
+                          href={link.href}
+                          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                        >
+                          <link.icon aria-hidden="true" className="size-4" />
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })}
               {!role ? (
                 <Button asChild variant="ghost" className="justify-start">
                   <Link href="/ava/login">

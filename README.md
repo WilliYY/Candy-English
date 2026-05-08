@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 19 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para as tarefas, perfil com foto, contratos PDF, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student agora abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao para bloquear alunos durante ajustes, e teacher/aluno possuem chatbox registrada no banco.
+FASE 20 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF e acompanha uso de arquivos em MB.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -26,7 +26,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
 - O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
-- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno e editar site sem criar novas rotas.
+- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos PDF e manutencao sem criar novas rotas.
 - As actions de aulas/homeworks/feedback validam role e vinculo de dados no servidor.
 - Usuarios inativos nao conseguem fazer login.
 - Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
@@ -36,6 +36,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - Login com Google esta preparado de forma opcional e so aceita emails ja cadastrados no AVA.
 - `/ava` funciona como roteador do AVA: visitante vai para `/ava/login`; usuario logado vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`.
 - Uploads locais ficam em `storage/` no desenvolvimento e em volume Docker `app-storage` em producao.
+- O admin ve o uso aproximado de arquivos em MB calculado a partir da pasta de storage.
 - O modo manutencao fica em `AppSetting` no banco: alunos nao conseguem entrar durante manutencao, mas `ADMIN` e `TEACHER` continuam acessando.
 - A chatbox do AVA usa `ChatThread` e `ChatMessage`, sempre presa ao vinculo `StudentTeacherAssignment`.
 - O cadastro de aluno guarda dois telefones do aluno, nome da mae e telefone da mae quando houver necessidade.
@@ -129,6 +130,7 @@ prisma/
   seed.ts
 scripts/
   auth-smoke.ts
+  avatar-smoke.ts
   server-smoke.ts
 ```
 
@@ -208,7 +210,9 @@ http://localhost:3000/api/health
 ```bash
 npm run audit:server-smoke
 npm run audit:auth-smoke
+npm run audit:avatar-smoke
 npm run verify:auth-smoke
+npm run verify:avatar-smoke
 ```
 
 ## Como Rodar com Docker
@@ -241,6 +245,7 @@ docker compose ps
 docker compose logs --tail=100 app
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
 ```
 
 O app fica em `http://localhost:3000`. O PostgreSQL nao expoe porta publica; o app acessa o banco pela rede interna usando o host `postgres`.
@@ -258,6 +263,7 @@ sleep 45
 docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
 ```
 
 Com alteracao em `prisma/schema.prisma` ou `prisma/migrations/`:
@@ -272,6 +278,7 @@ docker compose up -d --force-recreate app
 sleep 45
 docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
 ```
 
 Se for a primeira execucao, revise o `.env` antes de rodar `seed`, principalmente `ADMIN_EMAIL` e `ADMIN_PASSWORD`.
@@ -297,8 +304,10 @@ npm run prisma:deploy
 npm run prisma:seed
 npm run audit:server-smoke
 npm run audit:auth-smoke
+npm run audit:avatar-smoke
 npm run verify:server-smoke
 npm run verify:auth-smoke
+npm run verify:avatar-smoke
 ```
 
 ## Banco / Prisma
@@ -479,6 +488,28 @@ Implementado:
 - o botao "Entrar com Google" permanece na tela de login e fica ativo quando `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` estao configurados;
 - `scripts/auth-smoke.ts` testa login real temporario para `ADMIN`, `TEACHER` e `STUDENT`, valida o redirecionamento por role e apaga os usuarios de teste ao final.
 
+## FASE 20 - Perfil, Contratos e UX Student
+
+Implementado:
+
+- `/ava/admin?task=usuarios` permite minimizar grupos Admins, Teachers e Alunos, e cada historico de usuario abre sob demanda;
+- `/ava/admin?task=contratos` permite ao admin selecionar aluno e enviar PDF protegido;
+- admin ve card de uso de arquivos em `storage/`, exibido em KB/MB;
+- perfil student edita nome, telefone geral, endereco, nivel, nascimento, documento/responsavel, dois contatos do aluno, nome/telefone da mae e observacoes;
+- upload de foto do perfil mostra preview atual e continua aceitando PNG/JPG/WebP ate 2 MB;
+- `scripts/avatar-smoke.ts` valida o fluxo tecnico de avatar criando aluno temporario, salvando imagem no volume `storage` e lendo pela rota protegida;
+- student ve contratos PDF embutidos na tela; se nao houver contrato, aparece "Contrato ainda nao adicionado";
+- student tem sidebar sempre aberta com botoes roxos para Aula ao vivo, Aulas, Homework, Mensagens, Contratos e Perfil;
+- materiais com link, como Canva compartilhado, aparecem com tentativa de previa embutida e link para abrir em nova aba;
+- home ganhou link Home na navbar, botao AVA com formato mais proximo de bala e secao de contatos com WhatsApp, Instagram, Facebook e email;
+- login do AVA ganhou logo reposicionada e movimento suave na marca.
+
+Observacao sobre Word/Canva:
+
+- homework online ja permite responder dentro do site por texto;
+- materiais do Canva podem ser compartilhados por link e visualizados no AVA quando o Canva permitir iframe;
+- upload/edicao de Word dentro do navegador exige uma fase propria para converter o documento em perguntas online ou integrar um visualizador/editor de documentos.
+
 ## Ferramentas Locais Recomendadas
 
 Instalado neste Windows:
@@ -553,7 +584,7 @@ Ainda nao implementado:
 
 - edicao/delecao de aulas e homeworks;
 - varios materiais ou varias perguntas por tela;
-- upload de arquivos;
+- upload livre de materiais de aula e editor Word embutido;
 - IA;
 - notas numericas;
 - notificacoes por email/WhatsApp;
@@ -564,7 +595,7 @@ Ainda nao implementado:
 - Jogos
 - IA
 - Sistema avancado de correcao, notas e relatorios
-- Upload de arquivos
+- Upload livre de arquivos/material Word
 - MinIO
 - Pagamentos
 - Dashboard complexo

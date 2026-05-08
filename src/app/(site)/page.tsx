@@ -4,9 +4,12 @@ import {
   BookOpen,
   CheckCircle2,
   ClipboardCheck,
+  Facebook,
   GraduationCap,
+  Instagram,
+  Mail,
   MessageSquareText,
-  Sparkles,
+  PhoneCall,
 } from "lucide-react";
 import { HomeHero } from "@/components/site/home-hero";
 import { SectionShell } from "@/components/site/section-shell";
@@ -38,6 +41,36 @@ const promises = [
   "Materiais e vocabulario sempre acessiveis",
   "Homework online com feedback da teacher",
   "Base propria, sem WordPress e sem dependencia de hospedagem compartilhada",
+];
+
+const whatsappUrl =
+  "https://wa.me/5544997382355?text=Ol%C3%A1%21%20Tenho%20interesse%20em%20mais%20informa%C3%A7%C3%B5es";
+
+const contactLinks = [
+  {
+    detail: "+55 44 99738-2355",
+    href: whatsappUrl,
+    icon: PhoneCall,
+    label: "WhatsApp",
+  },
+  {
+    detail: "@candyenglish",
+    href: "/contato",
+    icon: Instagram,
+    label: "Instagram",
+  },
+  {
+    detail: "Candy English",
+    href: "/contato",
+    icon: Facebook,
+    label: "Facebook",
+  },
+  {
+    detail: "contato@candyenglish.com.br",
+    href: "mailto:contato@candyenglish.com.br",
+    icon: Mail,
+    label: "Email",
+  },
 ];
 
 export default async function HomePage() {
@@ -104,31 +137,50 @@ export default async function HomePage() {
         </div>
       </SectionShell>
 
-      <section className="candy-deep border-b text-white">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 py-16 lg:grid-cols-[1fr_0.8fr] lg:items-center lg:px-8">
+      <section className="border-b bg-white">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:px-8">
           <div className="flex flex-col gap-5">
-            <span className="inline-flex w-fit items-center gap-2 rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-sm text-white/75">
-              <Sparkles aria-hidden="true" />
-              Proxima evolucao
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border bg-muted px-3 py-2 text-sm font-medium text-primary">
+              <PhoneCall aria-hidden="true" />
+              Contatos Candy English
             </span>
-            <h2 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
-              Agora o site tambem acompanha a qualidade da escola.
+            <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
+              Fale com a Candy por onde for mais facil.
             </h2>
-            <p className="max-w-2xl text-base leading-8 text-white/75">
-              Visual roxo, movimento suave, paginas institucionais claras e uma
-              base pronta para crescer com gestao, seguranca e operacao.
+            <p className="max-w-xl text-base leading-8 text-muted-foreground">
+              WhatsApp para conversa rapida e canais sociais para acompanhar
+              avisos, rotina de aulas e novidades da escola.
             </p>
+            <Button asChild className="w-fit">
+              <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                Falar no WhatsApp
+                <ArrowRight data-icon="inline-end" />
+              </a>
+            </Button>
           </div>
-          <Button
-            asChild
-            size="lg"
-            className="w-fit bg-white text-[#2c1338] hover:bg-[#fce5d8]"
-          >
-            <Link href="/contato">
-              Quero estudar ingles
-              <ArrowRight data-icon="inline-end" />
-            </Link>
-          </Button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {contactLinks.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                target={item.href.startsWith("http") ? "_blank" : undefined}
+                rel={
+                  item.href.startsWith("http") ? "noreferrer" : undefined
+                }
+                className="group flex min-h-28 items-center gap-4 rounded-lg border bg-background p-5 transition-all hover:-translate-y-1 hover:border-primary/35 hover:shadow-sm"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
+                  <item.icon aria-hidden="true" className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block font-semibold">{item.label}</span>
+                  <span className="mt-1 block truncate text-sm text-muted-foreground">
+                    {item.detail}
+                  </span>
+                </span>
+              </a>
+            ))}
+          </div>
         </div>
       </section>
     </>

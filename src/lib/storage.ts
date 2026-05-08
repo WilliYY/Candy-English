@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import type { Dirent } from "node:fs";
+import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const STORAGE_ROOT = process.env.AVA_STORAGE_DIR ?? path.join(process.cwd(), "storage");
@@ -17,6 +18,47 @@ export function getStoragePath(relativePath: string) {
   }
 
   return path.join(STORAGE_ROOT, normalized);
+}
+
+async function getDirectorySize(directory: string): Promise<number> {
+  let entries: Dirent<string>[];
+  try {
+    entries = await readdir(directory, { withFileTypes: true });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "ENOENT"
+    ) {
+      return 0;
+    }
+
+    throw error;
+  }
+
+  const sizes = await Promise.all(
+    entries.map(async (entry) => {
+      const fullPath = path.join(directory, entry.name);
+
+      if (entry.isDirectory()) {
+        return getDirectorySize(fullPath);
+      }
+
+      if (!entry.isFile()) {
+        return 0;
+      }
+
+      const file = await stat(fullPath);
+      return file.size;
+    }),
+  );
+
+  return sizes.reduce((total, size) => total + size, 0);
+}
+
+export async function getStorageUsageBytes() {
+  return getDirectorySize(STORAGE_ROOT);
 }
 
 async function saveFileBuffer(directory: string, extension: string, buffer: Buffer) {

@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 19 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis, perfil com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role e mostra historico operacional derivado dos dados existentes. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role.
+FASE 20 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role.
 
 ## Fases implementadas
 
@@ -226,6 +226,21 @@ Entrada direta no login do AVA:
 - usuario logado em `/ava` vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`;
 - botao Google permanece no login, ativo apenas quando `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` estao configurados;
 - `scripts/auth-smoke.ts` testa login temporario de admin, teacher e student e limpa os usuarios criados.
+- `scripts/avatar-smoke.ts` testa armazenamento de avatar com imagem temporaria, login student e rota protegida `/ava/avatar/[userId]`.
+
+### FASE 20
+
+Perfil, contratos e UX student:
+
+- admin usuarios usa grupos e historicos minimizaveis;
+- admin possui `/ava/admin?task=contratos` para enviar PDF a aluno;
+- admin mostra card de arquivos com uso aproximado de `storage/`;
+- student tem sidebar fixa em botoes roxos;
+- student edita perfil completo com telefones, nascimento, responsavel, mae, nivel e observacoes;
+- foto de perfil mostra preview e usa upload protegido existente;
+- student ve contratos PDF embutidos e mensagem "Contrato ainda nao adicionado" quando nao houver contrato;
+- links de material, inclusive Canva compartilhado, tentam abrir uma previa embutida e mantem link de nova aba;
+- home ganhou link Home na navbar, secao de contatos e botao AVA em formato mais proximo de bala.
 
 ## MVP inicial
 
@@ -251,6 +266,7 @@ npm run typecheck
 npm run build
 npm run prisma:validate
 npm run audit:auth-smoke
+npm run audit:avatar-smoke
 ```
 
 ### Deploy Oracle com migration
@@ -265,6 +281,7 @@ docker compose up -d --force-recreate app
 sleep 45
 docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
 ```
 
 ## Cuidados para agentes futuros
@@ -288,4 +305,5 @@ docker compose --profile tools run --rm audit-server-smoke
 - Nao criar caixa interna com barra de rolagem para atalhos; agrupar opcoes em Admin, Teacher e Student.
 - Upload local deve ficar em `storage/`, que nao deve ser versionado.
 - Contratos devem continuar protegidos por rota server-side.
+- Contratos gerais podem ser vistos por alunos logados, mas contrato com aluno definido so pode ser visto pelo proprio aluno, teacher vinculada ou admin.
 - Manter o orcamento de RAM do Docker documentado em `docker-compose.yml`, `.env.example`, README e arquitetura.

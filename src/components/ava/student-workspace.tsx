@@ -105,6 +105,16 @@ type StudentWorkspaceProps = {
     title: string;
   }[];
   studentProfileId: string;
+  studentProfile: {
+    birthDate?: Date | null;
+    guardianDocument?: string | null;
+    level?: string | null;
+    motherName?: string | null;
+    motherPhone?: string | null;
+    notes?: string | null;
+    studentPhone?: string | null;
+    studentPhoneAlt?: string | null;
+  };
   teachers: {
     id: string;
     label: string;
@@ -196,6 +206,23 @@ function EmptyState({ children }: { children: React.ReactNode }) {
   );
 }
 
+function formatDateInput(value?: Date | null) {
+  return value ? value.toISOString().slice(0, 10) : "";
+}
+
+function canPreviewUrl(url?: string | null) {
+  if (!url) {
+    return false;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export function StudentWorkspace({
   activeTask,
   chatThreads,
@@ -204,6 +231,7 @@ export function StudentWorkspace({
   lessons,
   liveSessions,
   studentProfileId,
+  studentProfile,
   teachers,
 }: StudentWorkspaceProps) {
   const homeworkCount = lessons.reduce(
@@ -328,37 +356,66 @@ export function StudentWorkspace({
               <ProfileForm
                 defaultValues={{
                   address: currentUser.address ?? "",
+                  birthDate: formatDateInput(studentProfile.birthDate),
+                  guardianDocument: studentProfile.guardianDocument ?? "",
+                  level: studentProfile.level ?? "",
+                  motherName: studentProfile.motherName ?? "",
+                  motherPhone: studentProfile.motherPhone ?? "",
                   name: currentUser.name ?? "",
+                  notes: studentProfile.notes ?? "",
                   phone: currentUser.phone ?? "",
+                  studentPhone: studentProfile.studentPhone ?? "",
+                  studentPhoneAlt: studentProfile.studentPhoneAlt ?? "",
                 }}
+                showStudentFields
               />
-              <AvatarUploadForm />
+              <AvatarUploadForm
+                avatarPath={currentUser.avatarPath}
+                userId={currentUser.id}
+              />
             </div>
           ) : null}
 
           {activeTask === "contratos" ? (
             contracts.length === 0 ? (
               <EmptyState>
-                Nenhum contrato vinculado ao seu perfil ainda.
+                Contrato ainda nao adicionado.
               </EmptyState>
             ) : (
               <div className="grid gap-3">
-                {contracts.map((contract) => (
-                  <Link
+                {contracts.map((contract, index) => (
+                  <details
                     key={contract.id}
-                    href={`/ava/contracts/${contract.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
+                    className="group overflow-hidden rounded-lg border bg-white"
+                    open={index === 0}
                   >
-                    <span className="flex min-w-0 items-center gap-3">
-                      <FileText aria-hidden="true" />
-                      <span className="truncate">{contract.title}</span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      {Math.ceil(contract.sizeBytes / 1024)} KB
-                    </span>
-                  </Link>
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 text-sm hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+                      <span className="flex min-w-0 items-center gap-3">
+                        <FileText aria-hidden="true" />
+                        <span className="truncate font-semibold">
+                          {contract.title}
+                        </span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        {Math.ceil(contract.sizeBytes / 1024)} KB
+                      </span>
+                    </summary>
+                    <div className="border-t bg-muted/20 p-3">
+                      <iframe
+                        src={`/ava/contracts/${contract.id}`}
+                        title={`Visualizacao do contrato ${contract.title}`}
+                        className="h-[540px] w-full rounded-md border bg-white"
+                      />
+                      <Link
+                        href={`/ava/contracts/${contract.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                      >
+                        Abrir em nova aba
+                      </Link>
+                    </div>
+                  </details>
                 ))}
               </div>
             )
@@ -420,14 +477,25 @@ export function StudentWorkspace({
                                     <p>{material.content}</p>
                                   ) : null}
                                   {material.url ? (
-                                    <a
-                                      className="text-primary underline"
-                                      href={material.url}
-                                      rel="noreferrer"
-                                      target="_blank"
-                                    >
-                                      Abrir link
-                                    </a>
+                                    <div className="mt-3 flex flex-col gap-2">
+                                      {canPreviewUrl(material.url) ? (
+                                        <iframe
+                                          src={material.url}
+                                          title={`Previa do material ${material.title}`}
+                                          sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
+                                          referrerPolicy="no-referrer"
+                                          className="h-64 w-full rounded-md border bg-white"
+                                        />
+                                      ) : null}
+                                      <a
+                                        className="font-medium text-primary underline"
+                                        href={material.url}
+                                        rel="noreferrer"
+                                        target="_blank"
+                                      >
+                                        Abrir material em nova aba
+                                      </a>
+                                    </div>
                                   ) : null}
                                 </li>
                               ))

@@ -146,32 +146,41 @@ a {
 }
 
 .candy-ava-button {
+  min-width: 5.2rem;
   border-radius: 9999px;
   isolation: isolate;
   overflow: visible;
   position: relative;
+  box-shadow:
+    0 14px 24px rgb(44 19 56 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.16);
 }
 
 .candy-ava-button::before,
 .candy-ava-button::after {
   background: inherit;
-  border-radius: 0.45rem 0.9rem 0.45rem 0.9rem;
+  border-radius: 0.55rem 1rem 0.55rem 1rem;
   content: "";
-  height: 1.3rem;
+  height: 1.45rem;
   position: absolute;
   top: 50%;
-  width: 1.3rem;
+  width: 1.45rem;
   z-index: -1;
 }
 
 .candy-ava-button::before {
-  left: -0.45rem;
+  left: -0.56rem;
   transform: translateY(-50%) rotate(42deg);
 }
 
 .candy-ava-button::after {
-  right: -0.45rem;
+  right: -0.56rem;
   transform: translateY(-50%) rotate(-42deg);
+}
+
+.candy-logo-soft {
+  animation: candy-logo-soft 9s ease-in-out infinite;
+  transform-origin: center;
 }
 
 .animate-fade-rise {
@@ -194,6 +203,19 @@ a {
 
   50% {
     transform: translate3d(0, -14px, 0) rotate(1deg);
+  }
+}
+
+@keyframes candy-logo-soft {
+  0%,
+  100% {
+    filter: drop-shadow(0 18px 30px rgb(0 0 0 / 0.22));
+    transform: translate3d(0, 0, 0) rotate(-2deg) scale(1);
+  }
+
+  50% {
+    filter: drop-shadow(0 26px 38px rgb(0 0 0 / 0.3));
+    transform: translate3d(0, -12px, 0) rotate(2deg) scale(1.04);
   }
 }
 

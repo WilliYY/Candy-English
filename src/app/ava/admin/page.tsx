@@ -6,6 +6,7 @@ import {
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
+import { getStorageUsageBytes } from "@/lib/storage";
 
 export const metadata: Metadata = {
   title: "Admin AVA",
@@ -29,7 +30,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
 
-  const [users, teachers, students, assignments, maintenanceMode] = await Promise.all([
+  const [
+    users,
+    teachers,
+    students,
+    assignments,
+    contracts,
+    maintenanceMode,
+    storageUsageBytes,
+  ] = await Promise.all([
     prisma.user.findMany({
       orderBy: {
         createdAt: "desc",
@@ -143,7 +152,28 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
       },
     }),
+    prisma.contractDocument.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+        id: true,
+        sizeBytes: true,
+        studentProfile: {
+          select: {
+            user: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+        title: true,
+      },
+    }),
     isMaintenanceModeEnabled(),
+    getStorageUsageBytes(),
   ]);
 
   return (
@@ -157,6 +187,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         teacherName: assignment.teacherProfile.user.name,
         teacherProfileId: assignment.teacherProfileId,
       }))}
+      contracts={contracts.map((contract) => ({
+        createdAt: contract.createdAt,
+        id: contract.id,
+        sizeBytes: contract.sizeBytes,
+        studentName: contract.studentProfile?.user.name ?? null,
+        title: contract.title,
+      }))}
       currentUser={session.user}
       maintenanceMode={maintenanceMode}
       students={students.map((student) => ({
@@ -165,6 +202,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         isActive: student.user.isActive,
         label: `${student.user.name}${student.level ? ` - ${student.level}` : ""}`,
       }))}
+      storageUsageBytes={storageUsageBytes}
       teachers={teachers.map((teacher) => ({
         email: teacher.user.email,
         id: teacher.id,

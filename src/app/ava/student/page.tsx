@@ -57,7 +57,15 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const studentProfile = await prisma.studentProfile.findUnique({
     where: { userId: session.user.id },
     select: {
+      birthDate: true,
+      guardianDocument: true,
       id: true,
+      level: true,
+      motherName: true,
+      motherPhone: true,
+      notes: true,
+      studentPhone: true,
+      studentPhoneAlt: true,
       user: {
         select: {
           address: true,
@@ -318,6 +326,16 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         title: liveSession.title,
       }))}
       studentProfileId={studentProfile.id}
+      studentProfile={{
+        birthDate: studentProfile.birthDate,
+        guardianDocument: studentProfile.guardianDocument,
+        level: studentProfile.level,
+        motherName: studentProfile.motherName,
+        motherPhone: studentProfile.motherPhone,
+        notes: studentProfile.notes,
+        studentPhone: studentProfile.studentPhone,
+        studentPhoneAlt: studentProfile.studentPhoneAlt,
+      }}
       teachers={teacherAssignments.map((assignment) => ({
         id: assignment.teacherProfileId,
         label: `${assignment.teacherProfile.user.name} - ${assignment.teacherProfile.user.email}`,

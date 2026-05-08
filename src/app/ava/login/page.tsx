@@ -34,11 +34,12 @@ export default async function LoginPage() {
       <div className="candy-kinetic-grid absolute inset-0" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-        <BrandLogo
-          variant="light"
-          className="h-14 w-[210px] overflow-visible rounded-xl sm:h-16 sm:w-[250px]"
-          imageClassName="w-[240px] scale-100 group-hover:scale-[1.03] sm:w-[300px]"
-        />
+        <div className="rounded-full bg-white/95 px-4 py-2 shadow-xl shadow-black/10 ring-1 ring-white/70">
+          <BrandLogo
+            className="h-12 w-[190px] overflow-visible sm:h-14 sm:w-[230px]"
+            imageClassName="w-[225px] scale-100 group-hover:scale-[1.03] sm:w-[280px]"
+          />
+        </div>
         <Button
           asChild
           variant="outline"
@@ -60,7 +61,7 @@ export default async function LoginPage() {
             height={260}
             priority
             unoptimized
-            className="h-auto w-48 drop-shadow-2xl"
+            className="candy-logo-soft h-auto w-48"
           />
           <div className="flex flex-col gap-4">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/65">
