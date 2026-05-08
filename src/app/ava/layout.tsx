@@ -21,6 +21,7 @@ import { auth } from "@/lib/auth";
 import { canAccessRole, isRole, ROLE_LABELS } from "@/lib/roles";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
+import { AvaStudentBackdrop } from "@/components/ava/ava-student-backdrop";
 
 const navGroups = [
   {
@@ -160,9 +161,10 @@ export default async function AvaLayout({
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-b bg-card/95 backdrop-blur lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
+    <div className="relative min-h-screen overflow-x-hidden bg-background">
+      <AvaStudentBackdrop />
+      <div className="relative z-10 grid min-h-screen lg:grid-cols-[280px_1fr]">
+        <aside className="ava-sidebar-glass relative overflow-hidden border-b border-white/45 backdrop-blur-2xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
           <div className="flex h-full flex-col gap-6 px-5 py-5">
             <div className="flex items-center justify-between gap-3">
               <BrandLogo
@@ -177,7 +179,7 @@ export default async function AvaLayout({
               </Button>
             </div>
 
-            <div className="rounded-lg bg-muted p-4">
+            <div className="rounded-2xl border border-white/50 bg-white/60 p-4 shadow-sm backdrop-blur-xl">
               <div className="flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <LayoutDashboard aria-hidden="true" />
@@ -199,7 +201,7 @@ export default async function AvaLayout({
                   return (
                     <div
                       key={group.href}
-                      className="rounded-2xl border border-primary/10 bg-gradient-to-b from-muted to-white p-3 shadow-sm"
+                      className="rounded-2xl border border-white/50 bg-white/50 p-3 shadow-lg shadow-primary/5 backdrop-blur-xl"
                     >
                       <div className="mb-2 flex items-center gap-2 px-2 py-1 text-sm font-bold text-primary">
                         <group.icon aria-hidden="true" className="size-4" />
@@ -216,7 +218,7 @@ export default async function AvaLayout({
                           <Link
                             key={`${group.href}-${link.href}-${link.label}`}
                             href={link.href}
-                            className="flex items-center gap-2 rounded-full border border-primary/10 bg-white px-4 py-2.5 text-sm font-semibold text-primary transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/70 hover:shadow-sm"
+                            className="flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-sm font-semibold text-primary shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/80 hover:shadow-md"
                           >
                             <link.icon aria-hidden="true" className="size-4" />
                             {link.label}
