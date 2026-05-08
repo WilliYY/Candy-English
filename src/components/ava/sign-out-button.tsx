@@ -15,8 +15,12 @@ export function SignOutButton({ className }: SignOutButtonProps) {
         await signOut({ redirectTo: "/ava/login" });
       }}
     >
-      <Button type="submit" variant="outline" className="w-full bg-white">
-        <LogOut data-icon="inline-start" />
+      <Button
+        type="submit"
+        variant="outline"
+        className="w-full border-primary/20 bg-white text-primary hover:bg-primary hover:text-primary-foreground"
+      >
+        <LogOut data-icon="inline-start" className="size-4" />
         Sair
       </Button>
     </form>
