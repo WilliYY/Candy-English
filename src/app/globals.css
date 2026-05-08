@@ -205,6 +205,10 @@ a {
   min-height: 760px;
 }
 
+.home-method-video {
+  object-position: center 82%;
+}
+
 .animate-fade-rise {
   animation: fade-rise 0.8s ease-out both;
 }

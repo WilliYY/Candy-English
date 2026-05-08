@@ -103,11 +103,11 @@ export default async function HomePage() {
           muted
           playsInline
           preload="metadata"
-          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
+          className="home-method-video absolute inset-0 -z-20 h-full w-full object-cover"
         >
           <source src={homeMethodVideoUrl} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.9),rgba(43,18,55,0.58)_50%,rgba(43,18,55,0.82))]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.68),rgba(43,18,55,0.34)_50%,rgba(43,18,55,0.58))]" />
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-28 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
           <div className="flex flex-col gap-5">
             <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/80">
