@@ -25,9 +25,6 @@ export function SiteFooter() {
           <Link className="hover:text-white" href="/metodologia">
             Metodologia
           </Link>
-          <Link className="hover:text-white" href="/planos">
-            Planos
-          </Link>
           <Link className="hover:text-white" href="/contato">
             Contato
           </Link>

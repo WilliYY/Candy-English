@@ -9,10 +9,13 @@ import {
   Instagram,
   Mail,
   MessageSquareText,
-  PhoneCall,
 } from "lucide-react";
-import { HomeHero } from "@/components/site/home-hero";
+import {
+  HomeHero,
+  homeMethodVideoUrl,
+} from "@/components/site/home-hero";
 import { SectionShell } from "@/components/site/section-shell";
+import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { getSitePageContent } from "@/lib/site-content";
 
@@ -50,7 +53,7 @@ const contactLinks = [
   {
     detail: "+55 44 99738-2355",
     href: whatsappUrl,
-    icon: PhoneCall,
+    icon: WhatsAppIcon,
     label: "WhatsApp",
   },
   {
@@ -66,8 +69,8 @@ const contactLinks = [
     label: "Facebook",
   },
   {
-    detail: "contato@candyenglish.com.br",
-    href: "mailto:contato@candyenglish.com.br",
+    detail: "candyenglishbr@gmail.com",
+    href: "mailto:candyenglishbr@gmail.com",
     icon: Mail,
     label: "Email",
   },
@@ -80,30 +83,54 @@ export default async function HomePage() {
     <>
       <HomeHero content={content} />
 
-      <SectionShell
-        eyebrow="Metodologia"
-        title="Uma rotina de ingles que nao se perde depois da aula."
-        description="A Candy English combina aula personalizada, pratica guiada e feedback registrado para o aluno saber exatamente o que fazer em seguida."
-      >
-        <div className="grid gap-4 md:grid-cols-3">
-          {workflow.map((item) => (
-            <article
-              key={item.title}
-              className="flex min-h-72 flex-col justify-between rounded-lg border bg-card p-6 transition-transform duration-300 hover:-translate-y-1"
-            >
-              <span className="flex size-12 items-center justify-center rounded-lg bg-muted text-primary">
-                <item.icon aria-hidden="true" />
-              </span>
-              <div className="flex flex-col gap-3">
-                <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="leading-7 text-muted-foreground">
-                  {item.description}
-                </p>
-              </div>
-            </article>
-          ))}
+      <section className="relative isolate overflow-hidden border-b text-white">
+        <video
+          aria-label="Fundo em video para metodologia Candy English"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 -z-20 h-full w-full object-cover"
+        >
+          <source src={homeMethodVideoUrl} type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.88),rgba(43,18,55,0.56)_48%,rgba(43,18,55,0.76))]" />
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8 lg:py-28">
+          <div className="flex flex-col gap-5">
+            <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/80">
+              Metodologia
+            </span>
+            <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
+              Uma rotina de ingles que nao se perde depois da aula.
+            </h2>
+            <p className="max-w-xl text-base leading-8 text-white/78">
+              A Candy English combina aula personalizada, pratica guiada e
+              feedback registrado para o aluno saber exatamente o que fazer em
+              seguida.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {workflow.map((item) => (
+              <article
+                key={item.title}
+                className="flex min-h-64 flex-col justify-between rounded-lg border border-white/25 bg-white/88 p-6 text-primary shadow-2xl shadow-black/15 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
+              >
+                <span className="flex size-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <item.icon aria-hidden="true" />
+                </span>
+                <div className="flex flex-col gap-3">
+                  <h3 className="text-xl font-semibold">{item.title}</h3>
+                  <p className="leading-7 text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
-      </SectionShell>
+      </section>
 
       <SectionShell className="bg-[#fce5d8]" title="O AVA ja acompanha o essencial.">
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
@@ -141,7 +168,7 @@ export default async function HomePage() {
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:px-8">
           <div className="flex flex-col gap-5">
             <span className="inline-flex w-fit items-center gap-2 rounded-full border bg-muted px-3 py-2 text-sm font-medium text-primary">
-              <PhoneCall aria-hidden="true" />
+              <WhatsAppIcon className="size-4" />
               Contatos Candy English
             </span>
             <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">

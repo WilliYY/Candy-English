@@ -2,8 +2,10 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const heroVideoUrl =
+export const homeMethodVideoUrl =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4";
+
+const heroVideoUrl = "/brand/home.mp4";
 
 type HomeHeroProps = {
   content?: {
@@ -27,10 +29,12 @@ export function HomeHero({ content }: HomeHeroProps) {
         loop
         muted
         playsInline
+        preload="metadata"
         className="absolute inset-0 z-0 h-full w-full object-cover"
       >
         <source src={heroVideoUrl} type="video/mp4" />
       </video>
+      <div className="absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(12,4,20,0.35),rgba(12,4,20,0.12)_42%,rgba(12,4,20,0.42))]" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 pb-28 pt-36 text-center sm:pb-36 sm:pt-44 lg:px-8">
         <div className="flex min-w-0 flex-col items-center gap-7">

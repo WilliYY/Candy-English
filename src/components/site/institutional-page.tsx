@@ -1,12 +1,14 @@
-import type { LucideIcon } from "lucide-react";
+import type { ComponentType, SVGProps } from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
 type InstitutionalSection = {
   title: string;
   text: string;
-  icon?: LucideIcon;
+  icon?: IconComponent;
 };
 
 type InstitutionalPageProps = {
@@ -27,10 +29,23 @@ export function InstitutionalPage({
   title,
 }: InstitutionalPageProps) {
   return (
-    <>
-      <section className="candy-deep relative isolate overflow-hidden text-white">
-        <div className="candy-kinetic-grid absolute inset-0" />
-        <div className="relative z-20 mx-auto flex min-h-[420px] w-full max-w-7xl flex-col justify-center gap-7 px-6 py-16 lg:px-8">
+    <div className="relative isolate overflow-hidden bg-primary text-white">
+      <video
+        aria-label="Fundo em video das informacoes Candy English"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 -z-20 h-full w-full object-cover"
+      >
+        <source src="/brand/informacoes.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(39,14,50,0.82),rgba(39,14,50,0.58)_42%,rgba(39,14,50,0.9))]" />
+
+      <section className="relative overflow-hidden">
+        <div className="candy-kinetic-grid absolute inset-0 opacity-45" />
+        <div className="relative z-20 mx-auto flex min-h-[500px] w-full max-w-7xl flex-col justify-center gap-7 px-6 py-20 lg:px-8">
           <span className="text-sm font-semibold uppercase tracking-[0.28em] text-[#e57cd8]">
             {eyebrow}
           </span>
@@ -43,7 +58,7 @@ export function InstitutionalPage({
           <Button
             asChild
             size="lg"
-            className="w-fit bg-[#e57cd8] text-[#2c1338] hover:bg-[#f7a8ed]"
+            className="w-fit bg-white text-primary hover:bg-white/90"
           >
             <Link href={ctaHref}>
               {ctaLabel}
@@ -53,12 +68,12 @@ export function InstitutionalPage({
         </div>
       </section>
 
-      <section className="border-b bg-background">
+      <section className="relative border-y border-white/15 bg-white/10 backdrop-blur-sm">
         <div className="relative z-20 mx-auto grid w-full max-w-7xl gap-5 px-6 py-16 md:grid-cols-2 lg:px-8">
           {sections.map((section, index) => (
             <article
               key={section.title}
-              className="group flex min-h-64 flex-col justify-between rounded-lg border bg-card p-6 transition-transform duration-300 hover:-translate-y-1"
+              className="group flex min-h-64 flex-col justify-between rounded-lg border border-white/35 bg-white/88 p-6 text-foreground shadow-2xl shadow-black/10 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between gap-4">
@@ -88,6 +103,6 @@ export function InstitutionalPage({
           ))}
         </div>
       </section>
-    </>
+    </div>
   );
 }

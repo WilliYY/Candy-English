@@ -23,7 +23,7 @@ export default async function MetodologiaPage() {
       title={content.title}
       description={content.description}
       ctaLabel={content.ctaLabel}
-      ctaHref="/planos"
+      ctaHref="/contato"
       sections={[
         {
           title: "Diagnostico e objetivo",

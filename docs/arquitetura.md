@@ -387,3 +387,14 @@ A vigesima primeira fase ajusta a experiencia do aluno e prepara aula ao vivo em
 - `createLiveSession` gera URL Jitsi Meet quando `meetUrl` vem vazio;
 - `LiveClassRoom` carrega a API de iframe do Jitsi no cliente e exibe a sala dentro do AVA;
 - `next.config.ts` libera permissoes necessarias para camera, microfone e compartilhamento de tela em `meet.jit.si`.
+
+## FASE 22
+
+A vigesima segunda fase reorganiza a camada institucional sem alterar regras do AVA:
+
+- a home usa `public/brand/home.mp4` no hero principal;
+- o video remoto cinematografico anterior fica na segunda secao da home, explicando metodologia com cards translucidos;
+- paginas institucionais baseadas em `InstitutionalPage` usam `public/brand/informacoes.mp4` como fundo em loop com overlay para leitura;
+- `SiteLayout` chama `auth()` e passa o role para `SiteHeader`, permitindo mostrar estado logado no topo do site;
+- `Planos` foi removido da navegacao principal e do rodape, mas a rota `/planos` continua existindo para compatibilidade e edicao futura;
+- os pontos de contato visiveis usam `candyenglishbr@gmail.com` e WhatsApp com icone dedicado.

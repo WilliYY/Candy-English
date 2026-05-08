@@ -4,19 +4,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
+import { ROLE_LABELS, type Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/sobre", label: "Sobre" },
   { href: "/metodologia", label: "Metodologia" },
-  { href: "/planos", label: "Planos" },
   { href: "/contato", label: "Contato" },
 ];
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  sessionUser?: {
+    name?: string | null;
+    role: Role;
+  } | null;
+};
+
+export function SiteHeader({ sessionUser }: SiteHeaderProps) {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const loggedLabel = sessionUser
+    ? `Logado: ${ROLE_LABELS[sessionUser.role]}`
+    : null;
 
   return (
     <header
@@ -69,18 +79,33 @@ export function SiteHeader() {
             </Button>
           ))}
         </nav>
-        <Button
-          asChild
-          size="lg"
-          className={cn(
-            "shrink-0 text-base font-bold transition-transform hover:scale-[1.03]",
-            isHome
-              ? "candy-ava-button bg-primary px-8 text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90"
-              : "candy-ava-button px-8",
-          )}
-        >
-          <Link href="/ava">AVA</Link>
-        </Button>
+        <div className="flex shrink-0 items-center gap-3">
+          {loggedLabel ? (
+            <Link
+              href="/ava"
+              className={cn(
+                "hidden rounded-full border px-3 py-2 text-xs font-bold shadow-sm transition-transform hover:scale-[1.02] lg:inline-flex",
+                isHome
+                  ? "border-white/70 bg-white/75 text-primary"
+                  : "border-primary/15 bg-muted text-primary",
+              )}
+            >
+              {loggedLabel}
+            </Link>
+          ) : null}
+          <Button
+            asChild
+            size="lg"
+            className={cn(
+              "shrink-0 text-base font-bold transition-transform hover:scale-[1.03]",
+              isHome
+                ? "candy-ava-button bg-primary px-8 text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90"
+                : "candy-ava-button px-8",
+            )}
+          >
+            <Link href="/ava">AVA</Link>
+          </Button>
+        </div>
       </div>
     </header>
   );

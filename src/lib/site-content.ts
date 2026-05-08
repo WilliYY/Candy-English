@@ -2,9 +2,9 @@ import { getPrisma } from "@/lib/prisma";
 
 export const SITE_PAGE_DEFAULTS = {
   contato: {
-    ctaLabel: "Acessar AVA",
+    ctaLabel: "Enviar email",
     description:
-      "Use esta pagina como base institucional. Quando os canais oficiais estiverem definidos, os links diretos de email e WhatsApp entram aqui.",
+      "Fale com a Candy English pelo email candyenglishbr@gmail.com ou pelo WhatsApp para tirar duvidas e organizar o melhor caminho de estudo.",
     title: "Converse com a Candy English e encontre o melhor caminho.",
   },
   home: {
@@ -14,7 +14,7 @@ export const SITE_PAGE_DEFAULTS = {
     title: "Fale ingles com clareza, rotina e feedback.",
   },
   metodologia: {
-    ctaLabel: "Ver planos",
+    ctaLabel: "Falar com a Candy",
     description:
       "A metodologia prioriza uso real do ingles, revisao inteligente e acompanhamento para o aluno saber onde esta e qual e o proximo passo.",
     title: "Aula, pratica e feedback no mesmo caminho.",

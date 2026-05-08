@@ -454,7 +454,7 @@ Implementado:
 - `/ava/teacher?task=...` e `/ava/student?task=...` exibem uma tarefa por vez, seguindo a mesma logica do admin;
 - chatbox teacher/aluno com mensagens salvas em `ChatThread` e `ChatMessage`;
 - botao flutuante de WhatsApp para contato comercial no site e no login;
-- navegacao institucional com fonte maior para Sobre, Metodologia, Planos, Contato e AVA.
+- navegacao institucional com fonte maior para Sobre, Metodologia, Contato e AVA.
 
 ## FASE 17 - Refinos visuais e historico de usuarios
 
@@ -528,6 +528,18 @@ Observacao sobre aula ao vivo:
 
 - a implementacao atual entrega uma sala WebRTC embutida de baixo atrito;
 - para escala maior e controle profissional de gravacao, TURN, moderacao avancada e qualidade equivalente a plataforma dedicada, a proxima etapa recomendada e avaliar LiveKit/Jitsi self-host/JaaS.
+
+## FASE 22 - Videos Institucionais e Contato Oficial
+
+Implementado:
+
+- `public/brand/home.mp4` passou a ser o video principal do hero da home;
+- o video cinematografico remoto anterior foi movido para a segunda secao da home, com cards translucidos sobre a animacao;
+- `/sobre`, `/metodologia`, `/contato` e demais paginas que usam `InstitutionalPage` recebem `public/brand/informacoes.mp4` como fundo em loop;
+- o header do site mostra um indicador de sessao quando `ADMIN`, `TEACHER` ou `STUDENT` estiver logado;
+- `Planos` saiu da navegacao principal e do rodape, mantendo a rota existente para compatibilidade;
+- os contatos passam a usar o email oficial `candyenglishbr@gmail.com`;
+- o card e o botao flutuante de WhatsApp usam simbolo proprio do WhatsApp e mantem a mensagem padrao "Ola! Tenho interesse em mais informacoes".
 
 ## Ferramentas Locais Recomendadas
 

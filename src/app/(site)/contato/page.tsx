@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Mail, MessageCircle, Send, ShieldCheck } from "lucide-react";
+import { Mail, Send, ShieldCheck } from "lucide-react";
 import { InstitutionalPage } from "@/components/site/institutional-page";
+import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { getSitePageContent } from "@/lib/site-content";
 
 export const metadata: Metadata = {
@@ -18,17 +19,17 @@ export default async function ContatoPage() {
       title={content.title}
       description={content.description}
       ctaLabel={content.ctaLabel}
-      ctaHref="/ava"
+      ctaHref="mailto:candyenglishbr@gmail.com"
       sections={[
         {
           title: "Email oficial",
-          text: "Espaco reservado para o email institucional da Candy English.",
+          text: "candyenglishbr@gmail.com",
           icon: Mail,
         },
         {
           title: "WhatsApp",
-          text: "Espaco reservado para botao de conversa direta quando o numero oficial estiver confirmado.",
-          icon: MessageCircle,
+          text: "+55 44 99738-2355 para conversa rapida com a Candy English.",
+          icon: WhatsAppIcon,
         },
         {
           title: "Mensagem guiada",
