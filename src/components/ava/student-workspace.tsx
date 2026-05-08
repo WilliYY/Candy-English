@@ -18,6 +18,7 @@ import {
   AvatarUploadForm,
   ProfileForm,
 } from "@/components/ava/profile-forms";
+import { LiveClassRoom } from "@/components/ava/live-class-room";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -107,6 +108,7 @@ type StudentWorkspaceProps = {
   studentProfileId: string;
   studentProfile: {
     birthDate?: Date | null;
+    gender?: string | null;
     guardianDocument?: string | null;
     level?: string | null;
     motherName?: string | null;
@@ -129,7 +131,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 const taskMeta = {
   "aula-ao-vivo": {
-    description: "Entre no Google Meet quando a teacher abrir a aula.",
+    description: "Entre na sala ao vivo quando a teacher abrir a aula.",
     icon: Radio,
     title: "Aula ao vivo",
   },
@@ -255,17 +257,30 @@ export function StudentWorkspace({
   ];
 
   return (
-    <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-8 overflow-hidden px-6 py-10 lg:px-8">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-72 bg-[radial-gradient(circle_at_15%_25%,rgba(229,124,216,0.18),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.9),transparent_26%),linear-gradient(180deg,rgba(252,241,248,0.95),rgba(254,251,250,0))]" />
+    <section className="relative isolate mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10 text-white lg:px-8">
+      <div className="pointer-events-none fixed inset-y-0 right-0 -z-20 overflow-hidden bg-primary lg:left-[280px]">
+        <video
+          aria-hidden="true"
+          autoPlay
+          className="h-full w-full object-cover"
+          loop
+          muted
+          playsInline
+          preload="metadata"
+        >
+          <source src="/brand/ava-student.mp4" type="video/mp4" />
+        </video>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(45,16,56,0.82),rgba(45,16,56,0.54)),radial-gradient(circle_at_top_right,rgba(229,124,216,0.38),transparent_34%)]" />
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background/90 px-3 py-2 text-sm text-muted-foreground">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/90 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
             <BookOpen aria-hidden="true" />
             Area student
           </div>
           <div className="flex flex-col gap-4">
-            <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
+            <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal text-white drop-shadow md:text-5xl">
               Seu AVA Candy
             </h1>
           </div>
@@ -278,8 +293,8 @@ export function StudentWorkspace({
         />
       </div>
 
-      <Card className="overflow-hidden bg-white/92 backdrop-blur">
-        <CardHeader className="border-b bg-muted/30">
+      <Card className="overflow-hidden border-white/20 bg-white/92 text-foreground shadow-2xl shadow-primary/20 backdrop-blur">
+        <CardHeader className="border-b bg-white/70">
           <div className="flex items-start gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <TaskIcon aria-hidden="true" />
@@ -315,33 +330,30 @@ export function StudentWorkspace({
 
           {activeTask === "aula-ao-vivo" ? (
             liveSessions.some((session) => session.isLive) ? (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-5">
                 {liveSessions
                   .filter((session) => session.isLive)
                   .map((session) => (
-                    <div
+                    <article
                       key={session.id}
-                      className="flex flex-col gap-4 rounded-lg bg-primary p-5 text-primary-foreground"
+                      className="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm backdrop-blur"
                     >
-                      <span className="inline-flex w-fit items-center gap-2 rounded-md bg-white/15 px-2 py-1 text-xs font-semibold">
+                      <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
                         <Radio aria-hidden="true" />
                         Ao vivo agora
                       </span>
                       <div className="flex flex-col gap-1">
                         <strong>{session.title}</strong>
-                        <span className="text-sm text-primary-foreground/70">
+                        <span className="text-sm text-muted-foreground">
                           Teacher: {session.teacherName}
                         </span>
                       </div>
-                      <Link
-                        href={session.meetUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex w-fit rounded-lg bg-white px-4 py-2 text-sm font-semibold text-primary"
-                      >
-                        Entrar no Google Meet
-                      </Link>
-                    </div>
+                      <LiveClassRoom
+                        displayName={currentUser.name ?? currentUser.email}
+                        meetingUrl={session.meetUrl}
+                        title={session.title}
+                      />
+                    </article>
                   ))}
               </div>
             ) : (
@@ -353,22 +365,32 @@ export function StudentWorkspace({
 
           {activeTask === "perfil" ? (
             <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-              <ProfileForm
-                defaultValues={{
-                  address: currentUser.address ?? "",
-                  birthDate: formatDateInput(studentProfile.birthDate),
-                  guardianDocument: studentProfile.guardianDocument ?? "",
-                  level: studentProfile.level ?? "",
-                  motherName: studentProfile.motherName ?? "",
-                  motherPhone: studentProfile.motherPhone ?? "",
-                  name: currentUser.name ?? "",
-                  notes: studentProfile.notes ?? "",
-                  phone: currentUser.phone ?? "",
-                  studentPhone: studentProfile.studentPhone ?? "",
-                  studentPhoneAlt: studentProfile.studentPhoneAlt ?? "",
-                }}
-                showStudentFields
-              />
+              <div className="flex flex-col gap-4">
+                <div className="rounded-2xl border border-primary/10 bg-secondary/50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Nivel definido pela teacher
+                  </p>
+                  <p className="mt-2 text-lg font-semibold">
+                    {studentProfile.level ?? "Ainda nao definido"}
+                  </p>
+                </div>
+                <ProfileForm
+                  defaultValues={{
+                    address: currentUser.address ?? "",
+                    birthDate: formatDateInput(studentProfile.birthDate),
+                    gender: studentProfile.gender ?? "",
+                    guardianDocument: studentProfile.guardianDocument ?? "",
+                    motherName: studentProfile.motherName ?? "",
+                    motherPhone: studentProfile.motherPhone ?? "",
+                    name: currentUser.name ?? "",
+                    notes: studentProfile.notes ?? "",
+                    phone: currentUser.phone ?? "",
+                    studentPhone: studentProfile.studentPhone ?? "",
+                    studentPhoneAlt: studentProfile.studentPhoneAlt ?? "",
+                  }}
+                  showStudentFields
+                />
+              </div>
               <AvatarUploadForm
                 avatarPath={currentUser.avatarPath}
                 userId={currentUser.id}

@@ -382,7 +382,8 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       }))}
       students={students.map((student) => ({
         id: student.id,
-        label: `${student.user.name}${student.level ? ` - ${student.level}` : ""}`,
+        label: student.user.name,
+        level: student.level,
       }))}
       submissions={submissions}
       teachers={teachers.map((teacher) => ({

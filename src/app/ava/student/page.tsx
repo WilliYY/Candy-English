@@ -58,6 +58,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     where: { userId: session.user.id },
     select: {
       birthDate: true,
+      gender: true,
       guardianDocument: true,
       id: true,
       level: true,
@@ -328,6 +329,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       studentProfileId={studentProfile.id}
       studentProfile={{
         birthDate: studentProfile.birthDate,
+        gender: studentProfile.gender,
         guardianDocument: studentProfile.guardianDocument,
         level: studentProfile.level,
         motherName: studentProfile.motherName,

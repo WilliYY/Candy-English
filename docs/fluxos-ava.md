@@ -119,9 +119,9 @@ flowchart TD
   B --> C["ADMIN: usuarios, conteudo do site, vinculos"]
   B --> D["TEACHER: aulas, homeworks, contratos, aula ao vivo"]
   B --> E["STUDENT: aulas, perfil, contratos, botao ao vivo"]
-  D --> F["Teacher abre LiveSession com link Google Meet"]
+  D --> F["Teacher abre LiveSession ou gera sala Jitsi"]
   F --> G["Aluno logado ve Aula ao vivo"]
-  G --> H["Aluno abre Google Meet"]
+  G --> H["Aluno entra na sala embutida ou link externo"]
   C --> I["Admin sobe contrato PDF"]
   D --> I
   I --> J["Aluno autorizado visualiza PDF protegido"]
@@ -129,7 +129,8 @@ flowchart TD
 
 Regras:
 
-- Aula ao vivo usa Google Meet nesta fase.
+- Aula ao vivo gera sala Jitsi Meet embutida quando a teacher deixa o link vazio.
+- Link Google Meet ainda pode ser usado, mas abre como sala externa.
 - O AVA nao libera o link para visitante sem login.
 - Contratos PDF sao servidos por rota protegida.
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
@@ -258,11 +259,37 @@ flowchart TD
 Regras:
 
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
+- O aluno edita sexo/contatos/dados pessoais, mas nao edita nivel.
+- Teacher/admin atualizam o nivel do aluno na area teacher, com permissao validada por vinculo.
 - Contrato aceita PDF ate 8 MB.
 - Admin ve uso aproximado de arquivos em MB no painel de usuarios.
 - Contratos continuam servidos por rota protegida.
 - Material de Canva depende do link permitir visualizacao embutida; se nao permitir, o aluno abre em nova aba.
 - Homework online continua sendo o caminho para responder dentro do site; editor Word embutido fica para fase futura.
+
+## Fluxo Aula Ao Vivo Embutida
+
+```mermaid
+flowchart TD
+  A["TEACHER abre /ava/teacher?task=aula-ao-vivo"] --> B["Seleciona teacher e aluno"]
+  B --> C{"Informou link externo?"}
+  C -->|Nao| D["Sistema gera sala Jitsi Meet"]
+  C -->|Sim| E["Sistema salva Google Meet ou Jitsi"]
+  D --> F["LiveSession fica ativa"]
+  E --> F
+  F --> G["STUDENT abre /ava/student?task=aula-ao-vivo"]
+  G --> H{"Sala Jitsi?"}
+  H -->|Sim| I["AVA renderiza video, audio, chat e compartilhamento de tela"]
+  H -->|Nao| J["AVA mostra botao para abrir link externo"]
+```
+
+Regras:
+
+- Teacher so abre sala para aluno vinculado.
+- Admin pode supervisionar.
+- A sala Jitsi usa `meet.jit.si` e e carregada no navegador por iframe API.
+- Camera, microfone e compartilhamento de tela dependem de permissao do navegador do usuario.
+- Para operacao com escala alta, gravacao ou TURN dedicado, planejar fase propria com LiveKit/Jitsi dedicado.
 
 ## Deploy Quando Ha Migration
 

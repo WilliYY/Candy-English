@@ -156,7 +156,21 @@ async function main() {
     throw new Error("Avatar retornou arquivo pequeno demais para a imagem de teste.");
   }
 
-  console.log("OK avatar upload storage and protected route");
+  const profileResponse = await fetch(buildUrl("/ava/student?task=perfil"), {
+    headers: { cookie },
+  });
+
+  if (!profileResponse.ok) {
+    throw new Error(`Perfil student retornou HTTP ${profileResponse.status}`);
+  }
+
+  const profileHtml = await profileResponse.text();
+
+  if (profileHtml.includes("Application error")) {
+    throw new Error("Perfil student renderizou erro de aplicacao.");
+  }
+
+  console.log("OK avatar upload storage, protected route and student profile page");
 }
 
 main()

@@ -13,7 +13,6 @@ import {
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Role } from "@/lib/roles";
-import { ROLE_LABELS } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 type ChatOption = {
@@ -107,36 +106,38 @@ function ChatComposer({
         });
       }}
     >
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field>
-          <FieldLabel>Teacher</FieldLabel>
-          <NativeSelect
-            value={teacherProfileId}
-            onChange={(event) => setTeacherProfileId(event.target.value)}
-            disabled={isPending || compact || teachers.length <= 1}
-          >
-            {teachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field>
-          <FieldLabel>Aluno</FieldLabel>
-          <NativeSelect
-            value={studentProfileId}
-            onChange={(event) => setStudentProfileId(event.target.value)}
-            disabled={isPending || compact || students.length <= 1}
-          >
-            {students.map((student) => (
-              <option key={student.id} value={student.id}>
-                {student.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-      </div>
+      {!compact ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field>
+            <FieldLabel>Teacher</FieldLabel>
+            <NativeSelect
+              value={teacherProfileId}
+              onChange={(event) => setTeacherProfileId(event.target.value)}
+              disabled={isPending || teachers.length <= 1}
+            >
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field>
+            <FieldLabel>Aluno</FieldLabel>
+            <NativeSelect
+              value={studentProfileId}
+              onChange={(event) => setStudentProfileId(event.target.value)}
+              disabled={isPending || students.length <= 1}
+            >
+              {students.map((student) => (
+                <option key={student.id} value={student.id}>
+                  {student.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        </div>
+      ) : null}
       <Field>
         <FieldLabel>Mensagem</FieldLabel>
         <Textarea
@@ -145,10 +146,12 @@ function ChatComposer({
           placeholder="Escreva a mensagem para continuar a conversa."
           disabled={isPending}
         />
-        <FieldDescription>
-          A mensagem fica registrada dentro do AVA e respeita o vinculo
-          teacher-aluno.
-        </FieldDescription>
+        {!compact ? (
+          <FieldDescription>
+            A mensagem fica registrada dentro do AVA e respeita o vinculo
+            teacher-aluno.
+          </FieldDescription>
+        ) : null}
       </Field>
       {message ? (
         <p className="rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground">
@@ -194,29 +197,38 @@ export function ChatThreadPanel({
     );
   }
 
+  const showStartComposer = mode === "teacher" || visibleThreads.length === 0;
+
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-            <MessageSquareText aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="font-semibold">Nova mensagem</h2>
-            <p className="text-sm text-muted-foreground">
-              {mode === "student"
-                ? "Fale com sua teacher vinculada."
-                : "Escolha um aluno vinculado e envie uma mensagem."}
-            </p>
+    <div
+      className={cn(
+        "grid gap-6",
+        showStartComposer && "xl:grid-cols-[0.85fr_1.15fr]",
+      )}
+    >
+      {showStartComposer ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="flex size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+              <MessageSquareText aria-hidden="true" />
+            </span>
+            <div>
+              <h2 className="font-semibold">Nova mensagem</h2>
+              <p className="text-sm text-muted-foreground">
+                {mode === "student"
+                  ? "Fale com sua teacher vinculada."
+                  : "Escolha um aluno vinculado e envie uma mensagem."}
+              </p>
+            </div>
           </div>
+          <ChatComposer
+            defaultStudentProfileId={defaultStudentProfileId}
+            defaultTeacherProfileId={defaultTeacherProfileId}
+            students={students}
+            teachers={teachers}
+          />
         </div>
-        <ChatComposer
-          defaultStudentProfileId={defaultStudentProfileId}
-          defaultTeacherProfileId={defaultTeacherProfileId}
-          students={students}
-          teachers={teachers}
-        />
-      </div>
+      ) : null}
 
       <div className="flex flex-col gap-4">
         <h2 className="font-semibold">Conversas</h2>
@@ -234,26 +246,43 @@ export function ChatThreadPanel({
                 <h3 className="font-semibold">
                   {thread.teacherName} e {thread.studentName}
                 </h3>
-                <p className="text-xs text-muted-foreground">
-                  Chatbox privada do vinculo teacher-aluno.
-                </p>
               </div>
-              <div className="flex max-h-[420px] flex-col gap-3 overflow-y-auto pr-1">
-                {thread.messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className="rounded-lg bg-muted/50 p-3 text-sm leading-6"
-                  >
-                    <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                      <strong className="text-foreground">
-                        {message.senderName}
-                      </strong>
-                      <span>{ROLE_LABELS[message.senderRole]}</span>
-                      <span>{formatMessageTime(message.createdAt)}</span>
+              <div className="flex max-h-[420px] flex-col gap-3 overflow-y-auto rounded-2xl bg-muted/30 p-3">
+                {thread.messages.map((message) => {
+                  const isMine =
+                    (mode === "student" && message.senderRole === "STUDENT") ||
+                    (mode === "teacher" && message.senderRole === "TEACHER");
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={cn("flex", isMine && "justify-end")}
+                    >
+                      <div
+                        className={cn(
+                          "max-w-[82%] rounded-2xl px-4 py-2.5 text-sm leading-6 shadow-sm",
+                          isMine
+                            ? "rounded-br-md bg-primary text-primary-foreground"
+                            : "rounded-bl-md border bg-white text-foreground",
+                        )}
+                      >
+                        <p className="whitespace-pre-wrap break-words">
+                          {message.body}
+                        </p>
+                        <span
+                          className={cn(
+                            "mt-1 block text-[11px]",
+                            isMine
+                              ? "text-primary-foreground/70"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {formatMessageTime(message.createdAt)}
+                        </span>
+                      </div>
                     </div>
-                    <p>{message.body}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <ChatComposer
                 compact

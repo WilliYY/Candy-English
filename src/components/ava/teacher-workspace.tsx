@@ -20,6 +20,7 @@ import {
   LiveSessionForm,
   ToggleLiveSessionButton,
 } from "@/components/ava/live-session-forms";
+import { LiveClassRoom } from "@/components/ava/live-class-room";
 import {
   AvatarUploadForm,
   ProfileForm,
@@ -29,6 +30,7 @@ import {
   CreateLessonForm,
   ReviewSubmissionForm,
 } from "@/components/ava/teacher-forms";
+import { StudentLevelForm } from "@/components/ava/student-level-form";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Role } from "@/lib/roles";
@@ -50,6 +52,7 @@ export type TeacherTask = (typeof teacherTaskIds)[number];
 type Option = {
   id: string;
   label: string;
+  level?: string | null;
 };
 
 type TeacherLesson = {
@@ -157,7 +160,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 
 const taskMeta = {
   "aula-ao-vivo": {
-    description: "Abra ou encerre links do Google Meet para alunos.",
+    description: "Abra ou encerre salas ao vivo para alunos.",
     icon: Radio,
     title: "Aula ao vivo",
   },
@@ -316,25 +319,44 @@ export function TeacherWorkspace({
         </CardHeader>
         <CardContent className="py-6">
           {activeTask === "resumo" ? (
-            <div className="grid gap-4 md:grid-cols-3">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-muted-foreground">
-                      {stat.label}
+            <div className="flex flex-col gap-5">
+              <div className="grid gap-4 md:grid-cols-3">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground">
+                        {stat.label}
+                      </span>
+                      <strong className="text-3xl font-semibold">
+                        {stat.value}
+                      </strong>
+                    </div>
+                    <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <stat.icon aria-hidden="true" />
                     </span>
-                    <strong className="text-3xl font-semibold">
-                      {stat.value}
-                    </strong>
                   </div>
-                  <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                    <stat.icon aria-hidden="true" />
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="flex flex-col gap-3">
+                <h2 className="text-lg font-semibold">Nivel dos alunos</h2>
+                {students.length === 0 ? (
+                  <EmptyState>Nenhum aluno vinculado a esta teacher.</EmptyState>
+                ) : (
+                  <div className="grid gap-3">
+                    {students.map((student) => (
+                      <StudentLevelForm
+                        key={student.id}
+                        currentLevel={student.level}
+                        studentLabel={student.label}
+                        studentProfileId={student.id}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
 
@@ -342,9 +364,9 @@ export function TeacherWorkspace({
             <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
               <LiveSessionForm students={students} teachers={teachers} />
               <div className="flex flex-col gap-3">
-                <h2 className="text-lg font-semibold">Ao vivo aberto</h2>
+                <h2 className="text-lg font-semibold">Salas ao vivo</h2>
                 {liveSessions.length === 0 ? (
-                  <EmptyState>Nenhuma aula ao vivo aberta ainda.</EmptyState>
+                  <EmptyState>Nenhuma sala ao vivo aberta ainda.</EmptyState>
                 ) : (
                   <div className="grid gap-3">
                     {liveSessions.map((session) => (
@@ -362,14 +384,22 @@ export function TeacherWorkspace({
                                 ? ` - Aluno: ${session.studentName}`
                                 : " - Turma geral"}
                             </p>
-                            <Link
-                              href={session.meetUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-sm font-medium text-primary underline"
-                            >
-                              Abrir Google Meet
-                            </Link>
+                            {session.isLive ? (
+                              <LiveClassRoom
+                                displayName={currentUser.name ?? currentUser.email}
+                                meetingUrl={session.meetUrl}
+                                title={session.title}
+                              />
+                            ) : (
+                              <Link
+                                href={session.meetUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-sm font-medium text-primary underline"
+                              >
+                                Abrir sala em nova aba
+                              </Link>
+                            )}
                           </div>
                           <ToggleLiveSessionButton
                             isLive={session.isLive}

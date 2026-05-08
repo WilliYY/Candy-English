@@ -19,6 +19,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
 type ProfileFormProps = {
@@ -170,16 +171,22 @@ export function ProfileForm({
                 <FieldError errors={[form.formState.errors.birthDate]} />
               </Field>
 
-              <Field data-invalid={Boolean(form.formState.errors.level)}>
-                <FieldLabel htmlFor="profile-level">Nivel</FieldLabel>
-                <Input
-                  id="profile-level"
-                  aria-invalid={Boolean(form.formState.errors.level)}
+              <Field data-invalid={Boolean(form.formState.errors.gender)}>
+                <FieldLabel htmlFor="profile-gender">
+                  Identificacao de sexo
+                </FieldLabel>
+                <NativeSelect
+                  id="profile-gender"
+                  aria-invalid={Boolean(form.formState.errors.gender)}
                   disabled={isPending}
-                  placeholder="Ex: A1, A2, intermediario"
-                  {...form.register("level")}
-                />
-                <FieldError errors={[form.formState.errors.level]} />
+                  {...form.register("gender")}
+                >
+                  <option value="">Prefiro nao informar</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="outro">Outro</option>
+                </NativeSelect>
+                <FieldError errors={[form.formState.errors.gender]} />
               </Field>
 
               <Field

@@ -29,6 +29,15 @@ const optionalDateTime = z
     return date;
   });
 
+function canParseUrl(value: string) {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const updateProfileSchema = z.object({
   address: optionalText(300, "O endereco pode ter no maximo 300 caracteres."),
   birthDate: z
@@ -55,7 +64,7 @@ export const updateProfileSchema = z.object({
     180,
     "O documento ou responsavel pode ter no maximo 180 caracteres.",
   ),
-  level: optionalText(80, "O nivel pode ter no maximo 80 caracteres."),
+  gender: optionalText(40, "A identificacao pode ter no maximo 40 caracteres."),
   motherName: optionalText(
     120,
     "O nome da mae pode ter no maximo 120 caracteres.",
@@ -86,15 +95,27 @@ export const createLiveSessionSchema = z.object({
   meetUrl: z
     .string()
     .trim()
-    .url("Informe um link valido do Google Meet.")
     .max(500, "O link pode ter no maximo 500 caracteres.")
+    .optional()
+    .transform((value) => (value ? value : undefined))
+    .refine((url) => !url || canParseUrl(url), {
+      message: "Informe um link valido.",
+    })
     .refine(
       (url) => {
+        if (!url) {
+          return true;
+        }
+
         const host = new URL(url).hostname.toLowerCase();
-        return host === "meet.google.com" || host.endsWith(".meet.google.com");
+        return (
+          host === "meet.google.com" ||
+          host.endsWith(".meet.google.com") ||
+          host === "meet.jit.si"
+        );
       },
       {
-        message: "Use um link do Google Meet.",
+        message: "Use um link do Google Meet ou Jitsi Meet.",
       },
     ),
   startsAt: optionalDateTime,
@@ -110,6 +131,11 @@ export const createLiveSessionSchema = z.object({
 export const toggleLiveSessionSchema = z.object({
   isLive: z.boolean(),
   liveSessionId: z.string().min(1, "Aula ao vivo invalida."),
+});
+
+export const updateStudentLevelSchema = z.object({
+  level: optionalText(80, "O nivel pode ter no maximo 80 caracteres."),
+  studentProfileId: z.string().min(1, "Selecione um aluno."),
 });
 
 export const uploadContractSchema = z.object({
@@ -134,5 +160,6 @@ export const sendChatMessageSchema = z.object({
 export type UpdateProfileInput = z.input<typeof updateProfileSchema>;
 export type CreateLiveSessionInput = z.input<typeof createLiveSessionSchema>;
 export type ToggleLiveSessionInput = z.input<typeof toggleLiveSessionSchema>;
+export type UpdateStudentLevelInput = z.input<typeof updateStudentLevelSchema>;
 export type UploadContractInput = z.input<typeof uploadContractSchema>;
 export type SendChatMessageInput = z.input<typeof sendChatMessageSchema>;

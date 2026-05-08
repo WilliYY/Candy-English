@@ -138,7 +138,7 @@ Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem a
 - `TEACHER` nao recebe lista global de alunos; ve apenas alunos ja vinculados por `StudentTeacherAssignment`.
 - Menus do AVA sao filtrados por role para facilitar uso, mas a protecao real continua nas paginas e server actions.
 - O login rejeita usuario inativo e muitas falhas recentes, reduzindo abuso basico sem depender de servico externo.
-- `next.config.ts` adiciona headers basicos de seguranca: anti-iframe, nosniff, referrer policy e bloqueio de camera/microfone/geolocalizacao.
+- `next.config.ts` adiciona headers basicos de seguranca: anti-iframe, nosniff, referrer policy e permissao controlada de camera/microfone/display-capture para `meet.jit.si`.
 
 ### Rotas
 
@@ -253,7 +253,7 @@ A decima primeira fase estrutura o AVA como produto operacional:
 
 A decima segunda fase adiciona recursos escolares de base:
 
-- `LiveSession` guarda aula ao vivo por Google Meet;
+- `LiveSession` guarda aula ao vivo; quando a teacher nao informa link externo, o sistema gera sala Jitsi Meet embutida no AVA;
 - teacher/admin pode abrir e encerrar aula ao vivo;
 - student ve botao de Meet apenas quando ha sessao ativa para ele ou geral;
 - `ContractDocument` guarda metadados de contratos PDF;
@@ -311,7 +311,7 @@ A decima sexta fase amplia operacao escolar e manutencao:
 
 ## Decisao Sobre Aula Ao Vivo
 
-O projeto usa Google Meet nesta fase. Isso entrega camera, microfone e compartilhamento de tela com seguranca e estabilidade sem criar uma infraestrutura WebRTC propria. A aula nao fica embutida como player interno; o AVA mostra o botao protegido e abre o Meet para usuarios autorizados.
+O projeto passa a usar sala Jitsi Meet embutida quando a teacher deixa o link externo vazio. Isso entrega camera, microfone, chat e compartilhamento de tela dentro do AVA sem construir uma infraestrutura WebRTC propria nesta etapa. Links Google Meet continuam aceitos, mas abrem como sala externa porque o Google Meet nao oferece controle completo como player interno do AVA. Para escala maior, moderacao avancada, TURN dedicado e qualidade mais previsivel, a evolucao recomendada e avaliar LiveKit ou Jitsi self-host/JaaS.
 
 ## Decisao Sobre Uploads
 
@@ -374,3 +374,16 @@ Decisao sobre Word:
 - o MVP continua usando homework online em texto, que o aluno responde dentro do site;
 - editar `.docx` dentro do navegador nao foi implementado nesta fase porque exige conversao para formulario online ou integracao com editor de documentos;
 - quando a teacher usar material feito no Canva, o caminho preferencial e publicar/compartilhar o link e cadastrar como material da aula.
+
+## FASE 21
+
+A vigesima primeira fase ajusta a experiencia do aluno e prepara aula ao vivo embutida:
+
+- `StudentProfile` ganha `gender` para identificacao de sexo;
+- `STUDENT` nao edita `level`; o campo aparece como leitura no perfil do aluno;
+- `TEACHER` e `ADMIN` podem atualizar `level` pela area teacher, com validacao de vinculo quando o ator e teacher;
+- `/ava/student` usa video local `public/brand/ava-student.mp4` como fundo fixo, com overlay roxo e cards translucidos para leitura;
+- `ChatThreadPanel` passa a renderizar mensagens como bolhas ordenadas de chat, reduzindo metadados visuais;
+- `createLiveSession` gera URL Jitsi Meet quando `meetUrl` vem vazio;
+- `LiveClassRoom` carrega a API de iframe do Jitsi no cliente e exibe a sala dentro do AVA;
+- `next.config.ts` libera permissoes necessarias para camera, microfone e compartilhamento de tela em `meet.jit.si`.

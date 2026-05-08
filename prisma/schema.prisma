@@ -63,6 +63,7 @@ model StudentProfile {
   level              String?
   birthDate          DateTime?
   guardianDocument   String?
+  gender             String?
   studentPhone       String?
   studentPhoneAlt    String?
   motherName         String?

@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 20 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo por Google Meet, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role.
+FASE 21 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com video fullscreen e navbar glass, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role.
 
 ## Fases implementadas
 
@@ -146,7 +146,7 @@ Operacao escolar:
 
 - perfil do usuario com telefone, endereco e foto;
 - contratos PDF protegidos por login e permissao;
-- aula ao vivo via Google Meet em `LiveSession`;
+- aula ao vivo por `LiveSession`, com sala Jitsi embutida quando nao houver link externo;
 - Google login opcional somente para emails ja cadastrados.
 
 ### FASE 13
@@ -236,12 +236,27 @@ Perfil, contratos e UX student:
 - admin possui `/ava/admin?task=contratos` para enviar PDF a aluno;
 - admin mostra card de arquivos com uso aproximado de `storage/`;
 - student tem sidebar fixa em botoes roxos;
-- student edita perfil completo com telefones, nascimento, responsavel, mae, nivel e observacoes;
+- student edita perfil completo com telefones, sexo, nascimento, responsavel, mae e observacoes;
+- nivel do aluno e somente leitura para student e editavel por teacher/admin;
 - foto de perfil mostra preview e usa upload protegido existente;
 - student ve contratos PDF embutidos e mensagem "Contrato ainda nao adicionado" quando nao houver contrato;
 - links de material, inclusive Canva compartilhado, tentam abrir uma previa embutida e mantem link de nova aba;
 - home ganhou link Home na navbar, secao de contatos e botao AVA em formato mais proximo de bala.
 - login do AVA usa `public/brand/ava-login.mp4` em loop no fundo, mantendo overlay roxo e o formulario por cima.
+
+### FASE 21
+
+Student visual, nivel teacher e aula embutida:
+
+- `StudentProfile.gender` registra identificacao de sexo;
+- `STUDENT` nao edita mais `level`;
+- teacher/admin atualizam `level` pela area teacher com server action protegida;
+- student usa `public/brand/ava-student.mp4` como video de fundo fixo em loop;
+- cards do student usam camadas translucidas para leitura sobre o video;
+- chatbox teacher/aluno exibe mensagens como bolhas, com menos metadados visuais;
+- aula ao vivo gera sala Jitsi Meet quando o campo de link externo fica vazio;
+- link Google Meet continua aceito como sala externa;
+- `next.config.ts` permite camera, microfone e display capture para `meet.jit.si`.
 
 ## MVP inicial
 
@@ -297,6 +312,8 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 - `STUDENT` so deve acessar dados do proprio `StudentProfile`.
 - `TEACHER` so deve editar/corrigir dados das proprias aulas.
 - Chat teacher/aluno deve validar o vinculo `StudentTeacherAssignment` antes de gravar mensagem.
+- Nivel do aluno deve ser alterado por `TEACHER` vinculada ou `ADMIN`, nao pelo proprio `STUDENT`.
+- Aula ao vivo embutida usa Jitsi Meet; se trocar provedor, revisar `Permissions-Policy`, iframe/API e documentacao.
 - Modo manutencao deve bloquear `STUDENT`, mas nao `ADMIN` nem `TEACHER`.
 - `User.isActive=false` deve bloquear login sem apagar dados historicos.
 - Nao registrar nem imprimir `.env`, `DATABASE_URL`, `AUTH_SECRET` ou senhas.

@@ -116,7 +116,7 @@ export function LiveSessionForm({
             ))}
           </NativeSelect>
           <FieldDescription>
-            Se escolher um aluno, apenas ele ve este botao ao vivo.
+            Se escolher um aluno, apenas ele ve esta sala ao vivo.
           </FieldDescription>
           <FieldError errors={[form.formState.errors.studentProfileId]} />
         </Field>
@@ -134,14 +134,20 @@ export function LiveSessionForm({
         </Field>
 
         <Field data-invalid={Boolean(form.formState.errors.meetUrl)}>
-          <FieldLabel htmlFor="live-meet-url">Link do Google Meet</FieldLabel>
+          <FieldLabel htmlFor="live-meet-url">
+            Link externo opcional
+          </FieldLabel>
           <Input
             id="live-meet-url"
             aria-invalid={Boolean(form.formState.errors.meetUrl)}
             disabled={isPending}
-            placeholder="https://meet.google.com/..."
+            placeholder="Deixe vazio para o AVA criar a sala"
             {...form.register("meetUrl")}
           />
+          <FieldDescription>
+            Vazio cria uma sala Jitsi embutida no AVA. Google Meet abre em nova
+            aba.
+          </FieldDescription>
           <FieldError errors={[form.formState.errors.meetUrl]} />
         </Field>
 
@@ -184,7 +190,7 @@ export function LiveSessionForm({
         ) : (
           <Radio data-icon="inline-start" />
         )}
-        Abrir aula ao vivo
+        Iniciar aula ao vivo
       </Button>
     </form>
   );

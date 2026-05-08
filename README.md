@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 20 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo via Google Meet, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF e acompanha uso de arquivos em MB.
+FASE 21 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo embutida por Jitsi quando a teacher nao informa link externo, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF e acompanha uso de arquivos em MB.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -31,8 +31,8 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - Usuarios inativos nao conseguem fazer login.
 - Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
 - A direcao visual usa assets em `public/brand/` e `public/favicon.svg`.
-- Headers basicos de seguranca sao definidos em `next.config.ts`.
-- A aula ao vivo usa link protegido do Google Meet dentro do AVA; camera e compartilhamento de tela acontecem no Meet.
+- Headers basicos de seguranca sao definidos em `next.config.ts`, com permissao especifica para camera, microfone e compartilhamento de tela em `meet.jit.si`.
+- A aula ao vivo gera uma sala Jitsi Meet embutida no AVA quando a teacher deixa o link vazio; links Google Meet continuam permitidos, mas abrem como sala externa.
 - Login com Google esta preparado de forma opcional e so aceita emails ja cadastrados no AVA.
 - `/ava` funciona como roteador do AVA: visitante vai para `/ava/login`; usuario logado vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`.
 - Uploads locais ficam em `storage/` no desenvolvimento e em volume Docker `app-storage` em producao.
@@ -410,9 +410,9 @@ Implementado:
 - upload seguro de foto PNG/JPG/WebP ate 2 MB;
 - upload seguro de contratos PDF ate 8 MB;
 - visualizacao protegida de contratos em `/ava/contracts/[contractId]`;
-- aula ao vivo via link Google Meet em `LiveSession`;
+- aula ao vivo por `LiveSession`, com sala Jitsi embutida quando o link externo fica vazio;
 - teacher/admin pode abrir e encerrar aula ao vivo;
-- student ve botao "Aula ao vivo" quando ha sessao ativa para ele ou geral;
+- student ve a sala embutida quando ha sessao ativa para ele ou geral;
 - Google login opcional com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`;
 - modo manutencao operacional no admin;
 - favicon com marca Candy English;
@@ -495,7 +495,7 @@ Implementado:
 - `/ava/admin?task=usuarios` permite minimizar grupos Admins, Teachers e Alunos, e cada historico de usuario abre sob demanda;
 - `/ava/admin?task=contratos` permite ao admin selecionar aluno e enviar PDF protegido;
 - admin ve card de uso de arquivos em `storage/`, exibido em KB/MB;
-- perfil student edita nome, telefone geral, endereco, nivel, nascimento, documento/responsavel, dois contatos do aluno, nome/telefone da mae e observacoes;
+- perfil student edita nome, telefone geral, endereco, sexo, nascimento, documento/responsavel, dois contatos do aluno, nome/telefone da mae e observacoes; o nivel e somente leitura para o aluno e editado pela teacher;
 - upload de foto do perfil mostra preview atual e continua aceitando PNG/JPG/WebP ate 2 MB;
 - `scripts/avatar-smoke.ts` valida o fluxo tecnico de avatar criando aluno temporario, salvando imagem no volume `storage` e lendo pela rota protegida;
 - student ve contratos PDF embutidos na tela; se nao houver contrato, aparece "Contrato ainda nao adicionado";
@@ -510,6 +510,24 @@ Observacao sobre Word/Canva:
 - homework online ja permite responder dentro do site por texto;
 - materiais do Canva podem ser compartilhados por link e visualizados no AVA quando o Canva permitir iframe;
 - upload/edicao de Word dentro do navegador exige uma fase propria para converter o documento em perguntas online ou integrar um visualizador/editor de documentos.
+
+## FASE 21 - Student Visual, Nivel Teacher e Aula Embutida
+
+Implementado:
+
+- `StudentProfile.gender` guarda a identificacao de sexo informada no perfil do aluno;
+- o aluno nao edita mais o campo `level`; ele aparece como leitura no perfil student;
+- teacher/admin podem atualizar o nivel do aluno no resumo da area teacher, sempre validando vinculo quando o ator e `TEACHER`;
+- `/ava/student` usa `public/brand/ava-student.mp4` como video de fundo fixo em loop, com cards translucidos para manter leitura;
+- chat teacher/aluno foi redesenhado como conversa por bolhas, sem repetir role, email e metadados em cada mensagem;
+- aula ao vivo cria uma sala Jitsi Meet embutida quando a teacher deixa o link externo vazio;
+- links Google Meet continuam aceitos, mas abrem como sala externa porque o Google Meet nao foi projetado para ser controlado dentro de iframe do AVA;
+- `next.config.ts` libera camera, microfone e display capture para `meet.jit.si`.
+
+Observacao sobre aula ao vivo:
+
+- a implementacao atual entrega uma sala WebRTC embutida de baixo atrito;
+- para escala maior e controle profissional de gravacao, TURN, moderacao avancada e qualidade equivalente a plataforma dedicada, a proxima etapa recomendada e avaliar LiveKit/Jitsi self-host/JaaS.
 
 ## Ferramentas Locais Recomendadas
 

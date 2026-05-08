@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
@@ -9,11 +10,13 @@ import {
   createLiveSessionSchema,
   sendChatMessageSchema,
   toggleLiveSessionSchema,
+  updateStudentLevelSchema,
   updateProfileSchema,
   uploadContractSchema,
   type CreateLiveSessionInput,
   type SendChatMessageInput,
   type ToggleLiveSessionInput,
+  type UpdateStudentLevelInput,
   type UpdateProfileInput,
   type UploadContractInput,
 } from "@/lib/validations/ava-operations";
@@ -107,6 +110,19 @@ async function teacherCanAccessStudent(
   return Boolean(assignment);
 }
 
+function createJitsiMeetUrl(title: string) {
+  const slug = title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  const suffix = randomBytes(6).toString("hex");
+
+  return `https://meet.jit.si/CandyEnglish-${slug || "aula"}-${suffix}`;
+}
+
 export async function updateMyProfile(
   input: UpdateProfileInput,
 ): Promise<ActionResult<UpdateProfileInput>> {
@@ -133,8 +149,8 @@ export async function updateMyProfile(
   const {
     address,
     birthDate,
+    gender,
     guardianDocument,
-    level,
     motherName,
     motherPhone,
     name,
@@ -159,8 +175,8 @@ export async function updateMyProfile(
         where: { userId: actor.userId },
         create: {
           birthDate,
+          gender,
           guardianDocument,
-          level,
           motherName,
           motherPhone,
           notes,
@@ -170,8 +186,8 @@ export async function updateMyProfile(
         },
         update: {
           birthDate,
+          gender,
           guardianDocument,
-          level,
           motherName,
           motherPhone,
           notes,
@@ -306,7 +322,7 @@ export async function createLiveSession(
   await prisma.liveSession.create({
     data: {
       endsAt: data.endsAt,
-      meetUrl: data.meetUrl,
+      meetUrl: data.meetUrl ?? createJitsiMeetUrl(data.title),
       startsAt: data.startsAt,
       studentProfileId: data.studentProfileId,
       teacherProfileId,
@@ -392,6 +408,78 @@ export async function toggleLiveSession(
     message: parsed.data.isLive
       ? "Aula ao vivo reaberta."
       : "Aula ao vivo encerrada.",
+  };
+}
+
+export async function updateStudentLevel(
+  input: UpdateStudentLevelInput,
+): Promise<ActionResult<UpdateStudentLevelInput>> {
+  const actor = await getActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Entre no AVA para atualizar o nivel.",
+    };
+  }
+
+  const teacherActor = await getTeacherActor(actor);
+
+  if (!teacherActor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para atualizar nivel de aluno.",
+    };
+  }
+
+  const parsed = updateStudentLevelSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<UpdateStudentLevelInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o nivel do aluno.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const { level, studentProfileId } = parsed.data;
+
+  if (!teacherActor.isAdmin) {
+    const teacherProfileId = teacherActor.teacherProfileId;
+
+    if (!teacherProfileId) {
+      return {
+        ok: false,
+        message: "Teacher invalida para atualizar nivel.",
+      };
+    }
+
+    const canAccess = await teacherCanAccessStudent(
+      teacherProfileId,
+      studentProfileId,
+    );
+
+    if (!canAccess) {
+      return {
+        ok: false,
+        message: "Voce so pode alterar alunos vinculados a sua teacher.",
+      };
+    }
+  }
+
+  await prisma.studentProfile.update({
+    where: { id: studentProfileId },
+    data: { level },
+  });
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Nivel atualizado.",
   };
 }
 
