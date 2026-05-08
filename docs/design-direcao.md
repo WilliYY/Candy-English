@@ -33,6 +33,7 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 - Logo alternativa: `public/brand/logo-1.svg`
 - Logo hero: `public/brand/logo-3.svg`
 - Catty: `public/brand/catty.png`
+- Video do login do AVA: `public/brand/ava-login.mp4`
 
 Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo como string.
 
@@ -41,6 +42,7 @@ Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo c
 Movimentos permitidos nesta fase:
 
 - video fullscreen em loop na home;
+- video fullscreen em loop no login do AVA, mantendo overlay roxo para foco no formulario;
 - entrada curta de headline, texto e botoes no hero;
 - grid cinetico muito leve no hero;
 - cards flutuantes com movimento lento;

@@ -241,6 +241,7 @@ Perfil, contratos e UX student:
 - student ve contratos PDF embutidos e mensagem "Contrato ainda nao adicionado" quando nao houver contrato;
 - links de material, inclusive Canva compartilhado, tentam abrir uma previa embutida e mantem link de nova aba;
 - home ganhou link Home na navbar, secao de contatos e botao AVA em formato mais proximo de bala.
+- login do AVA usa `public/brand/ava-login.mp4` em loop no fundo, mantendo overlay roxo e o formulario por cima.
 
 ## MVP inicial
 

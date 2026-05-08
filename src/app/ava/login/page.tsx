@@ -31,7 +31,19 @@ export default async function LoginPage() {
 
   return (
     <section className="candy-deep relative isolate flex min-h-screen min-w-0 flex-col overflow-hidden px-5 py-6 text-white sm:px-8">
-      <div className="candy-kinetic-grid absolute inset-0" />
+      <video
+        aria-hidden="true"
+        className="absolute inset-0 z-0 h-full w-full object-cover opacity-75"
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+      >
+        <source src="/brand/ava-login.mp4" type="video/mp4" />
+      </video>
+      <div className="absolute inset-0 z-[1] bg-[#2c1338]/72" />
+      <div className="candy-kinetic-grid absolute inset-0 z-[2] opacity-55" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
         <div className="rounded-full bg-white/95 px-4 py-2 shadow-xl shadow-black/10 ring-1 ring-white/70">

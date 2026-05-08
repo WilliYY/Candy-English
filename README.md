@@ -503,6 +503,7 @@ Implementado:
 - materiais com link, como Canva compartilhado, aparecem com tentativa de previa embutida e link para abrir em nova aba;
 - home ganhou link Home na navbar, botao AVA com formato mais proximo de bala e secao de contatos com WhatsApp, Instagram, Facebook e email;
 - login do AVA ganhou logo reposicionada e movimento suave na marca.
+- login do AVA usa `public/brand/ava-login.mp4` em loop no fundo com overlay roxo para preservar leitura.
 
 Observacao sobre Word/Canva:
 
