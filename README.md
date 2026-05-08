@@ -541,6 +541,16 @@ Implementado:
 - os contatos passam a usar o email oficial `candyenglishbr@gmail.com`;
 - o card e o botao flutuante de WhatsApp usam simbolo proprio do WhatsApp e mantem a mensagem padrao "Ola! Tenho interesse em mais informacoes".
 
+## FASE 23 - Refinos Home e Entrada AVA
+
+Implementado:
+
+- a segunda secao em video da home ganhou mais altura para o enquadramento nao parecer cortado;
+- o bloco "O AVA ja acompanha o essencial" virou uma area mais moderna, com particulas discretas, cards com hover e texto mais claro;
+- o selo "Logado: Role" no header institucional virou informativo, sem link;
+- quando ha sessao, o botao AVA do header aponta diretamente para a area correta do usuario;
+- `/ava` agora valida o role com `isRole()` antes de redirecionar, reduzindo risco de erro de servidor em sessao inconsistente.
+
 ## Ferramentas Locais Recomendadas
 
 Instalado neste Windows:

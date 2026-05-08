@@ -74,7 +74,9 @@ Cuidados:
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O video da home deve ser o elemento visual principal, sem blobs ou decoracoes extras.
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
+- O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.
+- Secoes de produto, como o bloco do AVA na home, podem usar particulas discretas e hover em cards para dar vida sem poluir a leitura.
 
 ## Fluxo Visual Do Site
 

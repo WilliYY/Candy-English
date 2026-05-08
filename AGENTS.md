@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 22 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com `public/brand/home.mp4` no hero, video remoto na segunda secao, paginas informativas com `public/brand/informacoes.mp4`, navbar sem Planos, indicador de usuario logado, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role.
+FASE 23 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com `public/brand/home.mp4` no hero, video remoto na segunda secao, paginas informativas com `public/brand/informacoes.mp4`, navbar sem Planos, indicador informativo de usuario logado, botao AVA direto por role, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role com validacao de role.
 
 ## Fases implementadas
 
@@ -268,6 +268,16 @@ Videos institucionais e contato oficial:
 - o header institucional mostra um selo de sessao quando ha usuario logado;
 - `Planos` saiu do menu principal e do rodape, mas a rota `/planos` permanece disponivel;
 - contatos usam `candyenglishbr@gmail.com` e WhatsApp com icone dedicado.
+
+### FASE 23
+
+Refino home e entrada AVA:
+
+- segunda secao em video da home ganhou mais altura;
+- bloco do AVA na home usa particulas discretas e cards com hover;
+- selo "Logado" do header e informativo, sem link;
+- botao AVA do header aponta direto para a area do role quando ha sessao;
+- `/ava` valida role com `isRole()` antes do redirecionamento.
 
 ## MVP inicial
 

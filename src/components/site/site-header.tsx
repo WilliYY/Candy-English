@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
-import { ROLE_LABELS, type Role } from "@/lib/roles";
+import { getDefaultAvaPath, ROLE_LABELS, type Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -27,6 +27,7 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
   const loggedLabel = sessionUser
     ? `Logado: ${ROLE_LABELS[sessionUser.role]}`
     : null;
+  const avaHref = sessionUser ? getDefaultAvaPath(sessionUser.role) : "/ava/login";
 
   return (
     <header
@@ -79,19 +80,19 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
             </Button>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-3">
+        <div className="flex shrink-0 items-center gap-4 lg:gap-6">
           {loggedLabel ? (
-            <Link
-              href="/ava"
+            <span
+              aria-label={loggedLabel}
               className={cn(
-                "hidden rounded-full border px-3 py-2 text-xs font-bold shadow-sm transition-transform hover:scale-[1.02] lg:inline-flex",
+                "hidden cursor-default select-none rounded-full border px-4 py-2 text-xs font-bold shadow-sm lg:inline-flex",
                 isHome
                   ? "border-white/70 bg-white/75 text-primary"
                   : "border-primary/15 bg-muted text-primary",
               )}
             >
               {loggedLabel}
-            </Link>
+            </span>
           ) : null}
           <Button
             asChild
@@ -103,7 +104,7 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
                 : "candy-ava-button px-8",
             )}
           >
-            <Link href="/ava">AVA</Link>
+            <Link href={avaHref}>AVA</Link>
           </Button>
         </div>
       </div>

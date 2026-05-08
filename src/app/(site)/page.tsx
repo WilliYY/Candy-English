@@ -9,12 +9,12 @@ import {
   Instagram,
   Mail,
   MessageSquareText,
+  Sparkles,
 } from "lucide-react";
 import {
   HomeHero,
   homeMethodVideoUrl,
 } from "@/components/site/home-hero";
-import { SectionShell } from "@/components/site/section-shell";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { getSitePageContent } from "@/lib/site-content";
@@ -40,10 +40,22 @@ const workflow = [
 ];
 
 const promises = [
-  "Plano claro para estudar entre aulas",
-  "Materiais e vocabulario sempre acessiveis",
-  "Homework online com feedback da teacher",
-  "Base propria, sem WordPress e sem dependencia de hospedagem compartilhada",
+  {
+    title: "Plano entre aulas",
+    text: "O aluno sabe o que revisar, praticar e levar para a proxima aula.",
+  },
+  {
+    title: "Material sempre acessivel",
+    text: "Aulas, links e vocabulario ficam organizados no AVA.",
+  },
+  {
+    title: "Homework com feedback",
+    text: "A teacher corrige e deixa a devolutiva registrada para consulta.",
+  },
+  {
+    title: "Base propria",
+    text: "Sem WordPress e sem dependencia de hospedagem compartilhada.",
+  },
 ];
 
 const whatsappUrl =
@@ -83,7 +95,7 @@ export default async function HomePage() {
     <>
       <HomeHero content={content} />
 
-      <section className="relative isolate overflow-hidden border-b text-white">
+      <section className="relative isolate flex min-h-[680px] overflow-hidden border-b text-white lg:min-h-[760px]">
         <video
           aria-label="Fundo em video para metodologia Candy English"
           autoPlay
@@ -91,12 +103,12 @@ export default async function HomePage() {
           muted
           playsInline
           preload="metadata"
-          className="absolute inset-0 -z-20 h-full w-full object-cover"
+          className="absolute inset-0 -z-20 h-full w-full object-cover object-center"
         >
           <source src={homeMethodVideoUrl} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.88),rgba(43,18,55,0.56)_48%,rgba(43,18,55,0.76))]" />
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8 lg:py-28">
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.9),rgba(43,18,55,0.58)_50%,rgba(43,18,55,0.82))]" />
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-24 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
           <div className="flex flex-col gap-5">
             <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/80">
               Metodologia
@@ -111,11 +123,11 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-3">
             {workflow.map((item) => (
               <article
                 key={item.title}
-                className="flex min-h-64 flex-col justify-between rounded-lg border border-white/25 bg-white/88 p-6 text-primary shadow-2xl shadow-black/15 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
+                className="flex min-h-72 flex-col justify-between rounded-lg border border-white/30 bg-white/90 p-6 text-primary shadow-2xl shadow-black/15 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-white/70 hover:bg-white"
               >
                 <span className="flex size-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <item.icon aria-hidden="true" />
@@ -132,17 +144,23 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <SectionShell className="bg-[#fce5d8]" title="O AVA ja acompanha o essencial.">
-        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+      <section className="relative isolate overflow-hidden border-b bg-[#fce5d8]">
+        <div className="candy-particle-field absolute inset-0 opacity-70" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
+        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8 lg:py-28">
           <div className="flex flex-col gap-6">
-            <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-primary">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
               <GraduationCap aria-hidden="true" />
               Teacher, student e admin
             </div>
-            <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
-              Um ambiente simples para ensinar, praticar e corrigir.
+            <h2 className="max-w-xl text-4xl font-semibold leading-tight tracking-normal md:text-6xl">
+              Um AVA claro para ensinar, praticar e corrigir.
             </h2>
-            <Button asChild className="w-fit">
+            <p className="max-w-lg text-base leading-8 text-muted-foreground md:text-lg">
+              Uma base organizada para aula, material, homework, feedback e
+              acompanhamento, sem espalhar tudo em mensagens soltas.
+            </p>
+            <Button asChild size="lg" className="candy-ava-button w-fit px-8">
               <Link href="/ava">
                 Acessar AVA
                 <ArrowRight data-icon="inline-end" />
@@ -150,19 +168,31 @@ export default async function HomePage() {
             </Button>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            {promises.map((item) => (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {promises.map((item, index) => (
               <div
-                key={item}
-                className="flex min-h-32 items-start gap-3 rounded-lg bg-white p-5"
+                key={item.title}
+                className="group relative min-h-44 overflow-hidden rounded-lg border border-white/70 bg-white/82 p-6 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:border-primary/25 hover:bg-white hover:shadow-2xl hover:shadow-primary/10"
               >
-                <CheckCircle2 className="mt-1 text-primary" aria-hidden="true" />
-                <p className="leading-7 text-muted-foreground">{item}</p>
+                <span className="absolute right-5 top-4 text-xs font-bold uppercase tracking-[0.22em] text-primary/20 transition-colors group-hover:text-primary/35">
+                  0{index + 1}
+                </span>
+                <span className="mb-7 flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                  {index === 0 ? (
+                    <Sparkles aria-hidden="true" className="size-5" />
+                  ) : (
+                    <CheckCircle2 aria-hidden="true" className="size-5" />
+                  )}
+                </span>
+                <h3 className="text-xl font-semibold">{item.title}</h3>
+                <p className="mt-3 leading-7 text-muted-foreground">
+                  {item.text}
+                </p>
               </div>
             ))}
           </div>
         </div>
-      </SectionShell>
+      </section>
 
       <section className="border-b bg-white">
         <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:px-8">

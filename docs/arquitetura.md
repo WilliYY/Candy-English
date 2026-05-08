@@ -398,3 +398,13 @@ A vigesima segunda fase reorganiza a camada institucional sem alterar regras do 
 - `SiteLayout` chama `auth()` e passa o role para `SiteHeader`, permitindo mostrar estado logado no topo do site;
 - `Planos` foi removido da navegacao principal e do rodape, mas a rota `/planos` continua existindo para compatibilidade e edicao futura;
 - os pontos de contato visiveis usam `candyenglishbr@gmail.com` e WhatsApp com icone dedicado.
+
+## FASE 23
+
+A vigesima terceira fase faz refinamentos de entrada e UI sem alterar o banco:
+
+- `SiteHeader` usa o role recebido do layout para montar o destino direto do botao AVA;
+- o selo de sessao no header e somente informativo, sem navegacao;
+- `/ava` passa a validar o role com `isRole()` antes de chamar `getDefaultAvaPath`;
+- a segunda secao da home aumenta altura minima para enquadrar melhor o video remoto;
+- o bloco de apresentacao do AVA usa particulas leves e cards com hover, mantendo conteudo escaneavel.
