@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -73,14 +72,13 @@ export function SiteHeader() {
           asChild
           size="lg"
           className={cn(
-            "shrink-0 px-5 text-base font-semibold transition-transform hover:scale-[1.03]",
-            isHome && "bg-primary text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90",
+            "shrink-0 text-base font-bold transition-transform hover:scale-[1.03]",
+            isHome
+              ? "candy-ava-button bg-primary px-8 text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90"
+              : "candy-ava-button px-8",
           )}
         >
-          <Link href="/ava">
-            AVA
-            <ArrowRight data-icon="inline-end" />
-          </Link>
+          <Link href="/ava">AVA</Link>
         </Button>
       </div>
     </header>

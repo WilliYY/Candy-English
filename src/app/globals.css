@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -33,6 +33,7 @@
 :root {
   --radius: 0.5rem;
   --font-display: "Instrument Serif", serif;
+  --font-display-rounded: "Baloo 2", var(--font-body);
   --font-body: "Inter", sans-serif;
   --font-code: ui-monospace, sfmono-regular, consolas, "Liberation Mono", monospace;
   --background: #fefbfa;
@@ -142,6 +143,35 @@ a {
     linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
+}
+
+.candy-ava-button {
+  border-radius: 9999px;
+  isolation: isolate;
+  overflow: visible;
+  position: relative;
+}
+
+.candy-ava-button::before,
+.candy-ava-button::after {
+  background: inherit;
+  border-radius: 0.45rem 0.9rem 0.45rem 0.9rem;
+  content: "";
+  height: 1.3rem;
+  position: absolute;
+  top: 50%;
+  width: 1.3rem;
+  z-index: -1;
+}
+
+.candy-ava-button::before {
+  left: -0.45rem;
+  transform: translateY(-50%) rotate(42deg);
+}
+
+.candy-ava-button::after {
+  right: -0.45rem;
+  transform: translateY(-50%) rotate(-42deg);
 }
 
 .animate-fade-rise {

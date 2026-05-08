@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const heroVideoUrl =
@@ -34,18 +34,13 @@ export function HomeHero({ content }: HomeHeroProps) {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 pb-28 pt-36 text-center sm:pb-36 sm:pt-44 lg:px-8">
         <div className="flex min-w-0 flex-col items-center gap-7">
-          <div className="liquid-glass animate-fade-rise inline-flex w-fit max-w-full items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-white/88">
-            <CheckCircle2 aria-hidden="true" className="size-5 shrink-0" />
-            Ingles vivo, organizado e acompanhado
-          </div>
-
           <div className="flex flex-col items-center gap-6">
             <p className="animate-fade-rise text-sm font-medium uppercase tracking-[0.24em] text-white/78">
               Candy English
             </p>
             <h1
-              className="animate-fade-rise max-w-6xl break-words text-5xl font-normal leading-[1.02] tracking-normal text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.34)] sm:text-6xl md:text-7xl lg:text-8xl"
-              style={{ fontFamily: "var(--font-display)" }}
+              className="animate-fade-rise max-w-6xl break-words text-5xl font-bold leading-[1.02] tracking-normal text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.34)] sm:text-6xl md:text-7xl lg:text-8xl"
+              style={{ fontFamily: "var(--font-display-rounded)" }}
             >
               {title}
             </h1>
@@ -58,7 +53,7 @@ export function HomeHero({ content }: HomeHeroProps) {
             <Button
               asChild
               size="lg"
-              className="liquid-glass rounded-full bg-white/[0.03] px-14 py-5 text-base text-white transition-transform hover:scale-[1.03] hover:bg-white/10"
+              className="rounded-full bg-white px-14 py-5 text-base font-semibold text-primary shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-white/90"
             >
               <Link href="/contato">
                 {content?.ctaLabel ?? "Comecar conversa"}
@@ -69,7 +64,7 @@ export function HomeHero({ content }: HomeHeroProps) {
               asChild
               size="lg"
               variant="outline"
-              className="liquid-glass rounded-full bg-white/[0.03] px-10 py-5 text-base text-white transition-transform hover:scale-[1.03] hover:bg-white/10"
+              className="rounded-full border-white/70 bg-[#14071b] px-10 py-5 text-base font-semibold text-white shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-[#21102a] hover:text-white"
             >
               <Link href="/ava">Entrar no AVA</Link>
             </Button>

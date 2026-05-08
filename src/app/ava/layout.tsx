@@ -150,6 +150,10 @@ export default async function AvaLayout({
     ? navGroups.filter((link) => canAccessRole(role, link.allowedRoles))
     : [];
 
+  if (!role) {
+    return <div className="min-h-screen overflow-x-hidden">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
