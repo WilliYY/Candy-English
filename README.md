@@ -545,11 +545,12 @@ Implementado:
 
 Implementado:
 
-- a segunda secao em video da home ganhou mais altura para o enquadramento nao parecer cortado;
+- a segunda secao em video da home ganhou altura baseada na proporcao do video para o enquadramento nao parecer cortado;
 - o bloco "O AVA ja acompanha o essencial" virou uma area mais moderna, com particulas discretas, cards com hover e texto mais claro;
 - o selo "Logado: Role" no header institucional virou informativo, sem link;
 - quando ha sessao, o botao AVA do header aponta diretamente para a area correta do usuario;
 - `/ava` agora valida o role com `isRole()` antes de redirecionar, reduzindo risco de erro de servidor em sessao inconsistente.
+- se `/ava/student` mostrar erro de servidor apos deploy, confirmar se `docker compose --profile tools run --rm migrate` foi executado, pois a area student depende da migration `20260508090000_student_gender`.
 
 ## Ferramentas Locais Recomendadas
 

@@ -6,7 +6,7 @@ import { Suspense } from "react";
 import { Home } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
-import { getDefaultAvaPath } from "@/lib/roles";
+import { getDefaultAvaPath, isRole } from "@/lib/roles";
 import { LoginForm } from "@/components/ava/login-form";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ export default async function LoginPage() {
     isMaintenanceModeEnabled(),
   ]);
 
-  if (session?.user?.role) {
+  if (isRole(session?.user?.role)) {
     redirect(getDefaultAvaPath(session.user.role));
   }
 

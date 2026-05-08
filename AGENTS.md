@@ -274,10 +274,12 @@ Videos institucionais e contato oficial:
 Refino home e entrada AVA:
 
 - segunda secao em video da home ganhou mais altura;
+- segunda secao em video da home usa altura baseada na proporcao do video para reduzir corte;
 - bloco do AVA na home usa particulas discretas e cards com hover;
 - selo "Logado" do header e informativo, sem link;
 - botao AVA do header aponta direto para a area do role quando ha sessao;
-- `/ava` valida role com `isRole()` antes do redirecionamento.
+- `/ava` e `/ava/login` validam role com `isRole()` antes do redirecionamento;
+- se `/ava/student` quebrar apos deploy, rodar migration; a pagina depende de `20260508090000_student_gender`.
 
 ## MVP inicial
 

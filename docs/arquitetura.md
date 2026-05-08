@@ -406,5 +406,6 @@ A vigesima terceira fase faz refinamentos de entrada e UI sem alterar o banco:
 - `SiteHeader` usa o role recebido do layout para montar o destino direto do botao AVA;
 - o selo de sessao no header e somente informativo, sem navegacao;
 - `/ava` passa a validar o role com `isRole()` antes de chamar `getDefaultAvaPath`;
-- a segunda secao da home aumenta altura minima para enquadrar melhor o video remoto;
+- a segunda secao da home usa altura minima baseada na proporcao do video remoto para reduzir corte visual;
 - o bloco de apresentacao do AVA usa particulas leves e cards com hover, mantendo conteudo escaneavel.
+- a tela de login tambem valida role antes de redirecionar usuario autenticado.

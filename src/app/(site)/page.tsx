@@ -95,7 +95,7 @@ export default async function HomePage() {
     <>
       <HomeHero content={content} />
 
-      <section className="relative isolate flex min-h-[680px] overflow-hidden border-b text-white lg:min-h-[760px]">
+      <section className="relative isolate flex min-h-[760px] overflow-hidden border-b text-white lg:min-h-[960px] 2xl:min-h-[1080px]">
         <video
           aria-label="Fundo em video para metodologia Candy English"
           autoPlay
@@ -108,7 +108,7 @@ export default async function HomePage() {
           <source src={homeMethodVideoUrl} type="video/mp4" />
         </video>
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.9),rgba(43,18,55,0.58)_50%,rgba(43,18,55,0.82))]" />
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-24 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-28 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
           <div className="flex flex-col gap-5">
             <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/80">
               Metodologia
