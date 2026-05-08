@@ -270,7 +270,6 @@ export function StudentWorkspace({
         >
           <source src="/brand/ava-student.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(45,16,56,0.82),rgba(45,16,56,0.54)),radial-gradient(circle_at_top_right,rgba(229,124,216,0.38),transparent_34%)]" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
