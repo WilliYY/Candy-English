@@ -201,6 +201,10 @@ a {
   animation: candy-particle-drift 28s linear infinite;
 }
 
+.home-method-video-section {
+  min-height: 760px;
+}
+
 .animate-fade-rise {
   animation: fade-rise 0.8s ease-out both;
 }
@@ -284,6 +288,12 @@ a {
       60px -60px,
       84px 0,
       0 84px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-method-video-section {
+    min-height: clamp(920px, 56.25vw, 1180px);
   }
 }
 

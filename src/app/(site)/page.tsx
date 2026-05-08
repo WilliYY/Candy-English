@@ -95,7 +95,7 @@ export default async function HomePage() {
     <>
       <HomeHero content={content} />
 
-      <section className="relative isolate flex min-h-[760px] overflow-hidden border-b text-white lg:min-h-[960px] 2xl:min-h-[1080px]">
+      <section className="home-method-video-section relative isolate flex overflow-hidden border-b text-white">
         <video
           aria-label="Fundo em video para metodologia Candy English"
           autoPlay
