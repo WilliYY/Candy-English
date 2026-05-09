@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import {
   BookOpen,
   ChevronDown,
@@ -34,61 +35,73 @@ const navGroups = [
         href: "/ava/admin?task=usuarios",
         icon: UsersRound,
         label: "Usuarios",
+        section: "Gestao",
       },
       {
         href: "/ava/admin?task=criar-admin",
         icon: UserPlus,
         label: "Criar admin",
+        section: "Gestao",
       },
       {
         href: "/ava/admin?task=criar-teacher",
         icon: GraduationCap,
         label: "Criar teacher",
+        section: "Gestao",
       },
       {
         href: "/ava/admin?task=criar-aluno",
         icon: UserRound,
         label: "Criar aluno",
+        section: "Gestao",
       },
       {
         href: "/ava/admin?task=vincular-aluno",
         icon: Link2,
         label: "Vincular aluno",
+        section: "Gestao",
       },
       {
         href: "/ava/teacher?task=aula-ao-vivo",
         icon: Radio,
         label: "Aula ao vivo",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=criar-aula",
         icon: BookOpen,
         label: "Criar aula",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=criar-homework",
         icon: ClipboardCheck,
         label: "Criar homework",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=corrigir-respostas",
         icon: ClipboardCheck,
         label: "Corrigir homework",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=mensagens",
         icon: MessageSquareText,
         label: "Mensagens",
+        section: "Comunicacao",
       },
       {
         href: "/ava/admin?task=contratos",
         icon: FileText,
         label: "Contratos PDF",
+        section: "Arquivos",
       },
       {
         href: "/ava/admin?task=editar-site",
         icon: PencilLine,
         label: "Manutencao",
+        section: "Sistema",
       },
     ],
   },
@@ -102,31 +115,37 @@ const navGroups = [
         href: "/ava/teacher?task=aula-ao-vivo",
         icon: Radio,
         label: "Aula ao vivo",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=criar-aula",
         icon: BookOpen,
         label: "Criar aula",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=criar-homework",
         icon: ClipboardCheck,
         label: "Criar homework",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=corrigir-respostas",
         icon: ClipboardCheck,
         label: "Corrigir homework",
+        section: "Aulas",
       },
       {
         href: "/ava/teacher?task=mensagens",
         icon: MessageSquareText,
         label: "Mensagens",
+        section: "Comunicacao",
       },
       {
         href: "/ava/teacher?task=contratos",
         icon: FileText,
         label: "Contratos PDF",
+        section: "Arquivos",
       },
     ],
   },
@@ -254,6 +273,8 @@ export default async function AvaLayout({
                   );
                 }
 
+                let currentSection: string | undefined;
+
                 return (
                   <details
                     key={group.href}
@@ -261,9 +282,9 @@ export default async function AvaLayout({
                       (group.label === "Admin" && role === "ADMIN") ||
                       (group.label === "Student" && role === "STUDENT")
                     }
-                    className="group rounded-lg"
+                    className="group rounded-2xl border border-primary/10 bg-white/45 p-2 shadow-sm backdrop-blur-xl transition-colors open:bg-white/68"
                   >
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-foreground outline-none transition-colors hover:bg-muted [&::-webkit-details-marker]:hidden">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-bold text-primary outline-none transition-colors hover:bg-primary/10 [&::-webkit-details-marker]:hidden">
                       <span className="flex min-w-0 items-center gap-2">
                         <group.icon aria-hidden="true" className="size-4" />
                         {group.label}
@@ -274,23 +295,46 @@ export default async function AvaLayout({
                       />
                     </summary>
 
-                    <div className="ml-5 mt-1 flex flex-col gap-1 border-l pl-3">
+                    <div className="mt-2 flex flex-col gap-1.5 border-l border-primary/15 pl-3">
                       <Link
                         href={group.href}
-                        className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                        className="rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/10 transition-transform hover:-translate-y-0.5 hover:bg-primary/90"
                       >
                         Painel {group.label}
                       </Link>
-                      {group.links.map((link) => (
-                        <Link
-                          key={`${group.href}-${link.href}-${link.label}`}
-                          href={link.href}
-                          className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                        >
-                          <link.icon aria-hidden="true" className="size-4" />
-                          {link.label}
-                        </Link>
-                      ))}
+                      {group.links.map((link) => {
+                        const shouldShowSection =
+                          "section" in link &&
+                          link.section &&
+                          link.section !== currentSection;
+                        if ("section" in link) {
+                          currentSection = link.section;
+                        }
+
+                        return (
+                          <Fragment key={`${group.href}-${link.href}-${link.label}`}>
+                            {shouldShowSection ? (
+                              <span className="mt-3 px-3 text-[0.66rem] font-bold uppercase tracking-[0.18em] text-primary/50 first:mt-2">
+                                {link.section}
+                              </span>
+                            ) : null}
+                            <Link
+                              href={link.href}
+                              className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-primary/72 transition-all hover:-translate-y-0.5 hover:border-primary/15 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
+                            >
+                              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+                                <link.icon
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                              </span>
+                              <span className="min-w-0 truncate">
+                                {link.label}
+                              </span>
+                            </Link>
+                          </Fragment>
+                        );
+                      })}
                     </div>
                   </details>
                 );
