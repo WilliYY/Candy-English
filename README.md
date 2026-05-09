@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 21 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty e botao de WhatsApp no site/login. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo embutida por Jitsi quando a teacher nao informa link externo, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF e acompanha uso de arquivos em MB.
+FASE 24 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty, botao de WhatsApp no site/login e hero com contraste translucido. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo embutida por Jitsi quando a teacher nao informa link externo, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF, acompanha uso de arquivos em MB e tem atalhos para operacoes da area teacher.
 
 Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
 
@@ -26,7 +26,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
 - O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
-- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos PDF e manutencao sem criar novas rotas.
+- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos PDF e manutencao; tambem mostra atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens na area teacher.
 - As actions de aulas/homeworks/feedback validam role e vinculo de dados no servidor.
 - Usuarios inativos nao conseguem fazer login.
 - Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
@@ -416,7 +416,7 @@ Implementado:
 - Google login opcional com `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`;
 - modo manutencao operacional no admin;
 - favicon com marca Candy English;
-- Catty no canto inferior direito do site e do login, sem aparecer nos paineis logados do AVA;
+- Catty no canto inferior direito do site, do login e dos paineis logados do AVA; WhatsApp continua fora dos paineis logados;
 - animacoes decorativas com video, balas e GIFs removidas por performance e clareza;
 - Docker Compose com reservas e limites de memoria para app, PostgreSQL e ferramentas.
 
@@ -551,6 +551,14 @@ Implementado:
 - quando ha sessao, o botao AVA do header aponta diretamente para a area correta do usuario;
 - `/ava` agora valida o role com `isRole()` antes de redirecionar, reduzindo risco de erro de servidor em sessao inconsistente.
 - se `/ava/student` mostrar erro de servidor apos deploy, confirmar se `docker compose --profile tools run --rm migrate` foi executado, pois a area student depende da migration `20260508090000_student_gender`.
+
+## FASE 24 - Contraste Visual e Atalhos Operacionais
+
+- hero da home ganhou card roxo translucido atras da chamada para leitura sobre video claro;
+- Catty aparece tambem nos paineis logados do AVA por pedido explicito;
+- menu teacher usa "Corrigir homework" abaixo de "Criar homework", com mensagens antes de contratos;
+- menu admin ganhou atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens;
+- cards admin/teacher usam tons roxos suaves, bordas com mais contraste e hover discreto.
 
 ## Ferramentas Locais Recomendadas
 

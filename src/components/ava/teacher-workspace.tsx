@@ -176,8 +176,8 @@ const taskMeta = {
   },
   "corrigir-respostas": {
     description: "Corrija homeworks enviadas e devolva feedback ao aluno.",
-    icon: MessageSquareText,
-    title: "Corrigir respostas",
+    icon: ClipboardCheck,
+    title: "Corrigir homework",
   },
   "criar-aula": {
     description: "Crie uma aula com material e vocabulario inicial.",
@@ -241,7 +241,7 @@ function getAnswerText(answers: unknown) {
 
 function EmptyState({ children }: { children: React.ReactNode }) {
   return (
-    <p className="rounded-lg border border-dashed bg-muted/40 p-6 text-sm text-muted-foreground">
+    <p className="rounded-lg border border-dashed border-primary/25 bg-primary/5 p-6 text-sm text-primary/75">
       {children}
     </p>
   );
@@ -288,7 +288,7 @@ export function TeacherWorkspace({
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
             <GraduationCap aria-hidden="true" />
             Area teacher
           </div>
@@ -306,8 +306,8 @@ export function TeacherWorkspace({
         />
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b bg-muted/30">
+      <Card className="ava-panel-card overflow-hidden">
+        <CardHeader className="border-b border-primary/15 bg-primary/10">
           <div className="flex items-start gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <TaskIcon aria-hidden="true" />
@@ -324,7 +324,7 @@ export function TeacherWorkspace({
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
-                    className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
+                    className="ava-stat-card flex items-center justify-between gap-4 rounded-lg border p-5"
                   >
                     <div className="flex flex-col gap-1">
                       <span className="text-sm text-muted-foreground">
@@ -334,7 +334,7 @@ export function TeacherWorkspace({
                         {stat.value}
                       </strong>
                     </div>
-                    <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                    <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <stat.icon aria-hidden="true" />
                     </span>
                   </div>
@@ -370,7 +370,7 @@ export function TeacherWorkspace({
                 ) : (
                   <div className="grid gap-3">
                     {liveSessions.map((session) => (
-                      <article key={session.id} className="rounded-lg border p-4">
+                      <article key={session.id} className="ava-soft-card rounded-lg border p-4">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                           <div className="flex min-w-0 flex-col gap-2">
                             <span className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
@@ -428,7 +428,7 @@ export function TeacherWorkspace({
             ) : (
               <div className="grid gap-4 lg:grid-cols-2">
                 {lessons.map((lesson) => (
-                  <article key={lesson.id} className="rounded-lg border p-5">
+                  <article key={lesson.id} className="ava-soft-card rounded-lg border p-5">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <h2 className="text-lg font-semibold">
@@ -487,7 +487,7 @@ export function TeacherWorkspace({
                       href={`/ava/contracts/${contract.id}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
+                      className="ava-soft-card flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
                     >
                       <span className="flex min-w-0 items-center gap-3">
                         <FileText aria-hidden="true" />
@@ -526,7 +526,7 @@ export function TeacherWorkspace({
             ) : (
               <div className="grid gap-4 lg:grid-cols-2">
                 {submissions.map((submission) => (
-                  <article key={submission.id} className="rounded-lg border p-5">
+                  <article key={submission.id} className="ava-soft-card rounded-lg border p-5">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">

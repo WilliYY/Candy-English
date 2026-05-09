@@ -136,7 +136,7 @@ Regras:
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
 - Contrato aceita PDF ate 8 MB.
 - Catty e interface visual; IA real ainda nao esta conectada.
-- Catty aparece no site institucional e no login, mas fica oculto nos paineis logados para nao cobrir a operacao do AVA.
+- Catty aparece no site institucional, no login e nos paineis logados do AVA por pedido explicito; WhatsApp continua fora dos paineis logados.
 - As animacoes decorativas com video, balas e GIFs foram removidas para reduzir distracao e consumo de recursos.
 
 ## Sidebar Operacional
@@ -147,8 +147,8 @@ flowchart LR
   B --> C["Grupo ADMIN"]
   B --> D["Grupo TEACHER"]
   B --> E["Grupo STUDENT"]
-  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos, manutencao"]
-  D --> D1["Aula ao vivo, criar aula, criar homework, mensagens, corrigir, contratos"]
+  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, aula ao vivo, criar aula, criar homework, corrigir homework, mensagens, contratos, manutencao"]
+  D --> D1["Aula ao vivo, criar aula, criar homework, corrigir homework, mensagens, contratos"]
   E --> E1["Aula ao vivo, aulas, homeworks, mensagens, contratos, perfil"]
   C --> F["Clique troca a tarefa principal do admin"]
   D --> F
@@ -160,7 +160,7 @@ Regras:
 - A sidebar deve ser o indice principal de operacao do AVA.
 - Grupos como `Admin` e `Teacher` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
 - Para role `STUDENT`, a sidebar fica sempre aberta com botoes roxos porque a area do aluno precisa ser mais direta.
-- No admin, os atalhos usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno`, `?task=contratos` e `?task=editar-site` para mostrar uma tarefa por vez.
+- No admin, os atalhos proprios usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno`, `?task=contratos` e `?task=editar-site`; atalhos operacionais de aula/homework/mensagens apontam para `/ava/teacher?task=...` porque `ADMIN` pode supervisionar a area teacher.
 - Nas areas teacher/student, os atalhos tambem usam `?task=` para mostrar uma tarefa por vez.
 - Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
 - Nao usar uma caixa interna com barra de rolagem para atalhos; se houver muitas opcoes, agrupar por role.

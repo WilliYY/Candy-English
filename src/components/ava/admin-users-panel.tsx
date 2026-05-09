@@ -255,7 +255,7 @@ function getUserHistory(user: AdminUserRow) {
 function UsersByRole({ users }: { users: AdminUserRow[] }) {
   if (users.length === 0) {
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 text-center">
+      <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
         <UsersRound aria-hidden="true" />
         <p className="max-w-sm text-sm text-muted-foreground">
           Nenhum usuario cadastrado ainda. Use as opcoes da lateral para criar o
@@ -280,7 +280,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
         return (
           <details
             key={column.role}
-            className="group min-w-0 rounded-lg border bg-background p-4"
+            className="ava-role-column group min-w-0 rounded-lg border p-4"
             open
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b pb-3 [&::-webkit-details-marker]:hidden">
@@ -316,7 +316,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
 
             <div className="mt-4 flex flex-col gap-3">
               {columnUsers.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-muted/40 p-4 text-sm text-muted-foreground">
+              <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-4 text-sm text-primary/70">
                 {column.empty}
               </p>
             ) : (
@@ -324,7 +324,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                 {columnUsers.map((user) => (
                   <article
                     key={user.id}
-                    className="flex min-w-0 flex-col gap-4 rounded-lg border bg-white p-4 shadow-sm"
+                    className="ava-soft-card flex min-w-0 flex-col gap-4 rounded-lg border p-4"
                   >
                     <div className="flex min-w-0 items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -356,7 +356,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                       {getProfileSummary(user)}
                     </p>
 
-                    <details className="group/history rounded-lg bg-muted/45 p-3">
+                    <details className="group/history rounded-lg border border-primary/10 bg-primary/5 p-3">
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
                         Historico
                         <span className="rounded-full bg-white px-2 py-1 text-[0.68rem] tracking-normal">
@@ -400,7 +400,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
 function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
   if (assignments.length === 0) {
     return (
-      <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 text-center">
+      <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
         <UsersRound aria-hidden="true" />
         <p className="max-w-sm text-sm text-muted-foreground">
           Nenhum aluno vinculado a uma teacher ainda.
@@ -412,7 +412,7 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
       {assignments.map((assignment) => (
-        <div key={assignment.id} className="rounded-lg border bg-background p-4">
+        <div key={assignment.id} className="ava-soft-card rounded-lg border p-4">
           <div className="flex items-center gap-3 text-sm">
             <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
               <GraduationCap aria-hidden="true" />
@@ -436,7 +436,7 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
 function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
   if (contracts.length === 0) {
     return (
-      <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-muted/40 text-center">
+      <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
         <FileText aria-hidden="true" />
         <p className="max-w-sm text-sm text-muted-foreground">
           Nenhum contrato PDF enviado ainda.
@@ -453,7 +453,7 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
           href={`/ava/contracts/${contract.id}`}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center justify-between gap-4 rounded-lg border bg-background p-4 text-sm hover:border-primary"
+          className="ava-soft-card flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
         >
           <span className="flex min-w-0 items-center gap-3">
             <FileText aria-hidden="true" className="size-4 shrink-0" />
@@ -539,7 +539,7 @@ export function AdminUsersPanel({
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-5">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
+          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
             <ShieldCheck aria-hidden="true" />
             Painel protegido por role ADMIN
           </div>
@@ -557,8 +557,8 @@ export function AdminUsersPanel({
         />
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="border-b bg-muted/30">
+      <Card className="ava-panel-card overflow-hidden">
+        <CardHeader className="border-b border-primary/15 bg-primary/10">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex min-w-0 items-start gap-3">
               <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -580,7 +580,7 @@ export function AdminUsersPanel({
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
-                    className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
+                    className="ava-stat-card flex items-center justify-between gap-4 rounded-lg border p-5"
                   >
                     <div className="flex flex-col gap-1">
                       <span className="text-sm text-muted-foreground">
@@ -590,7 +590,7 @@ export function AdminUsersPanel({
                         {stat.value}
                       </strong>
                     </div>
-                    <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                    <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                       <stat.icon aria-hidden="true" />
                     </span>
                   </div>

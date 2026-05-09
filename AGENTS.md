@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 23 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com `public/brand/home.mp4` no hero, video remoto na segunda secao, paginas informativas com `public/brand/informacoes.mp4`, navbar sem Planos, indicador informativo de usuario logado, botao AVA direto por role, Catty e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role com validacao de role.
+FASE 24 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com `public/brand/home.mp4` no hero, video remoto na segunda secao, paginas informativas com `public/brand/informacoes.mp4`, navbar sem Planos, indicador informativo de usuario logado, botao AVA direto por role, Catty no site/login/paineis logados do AVA e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role com validacao de role.
 
 ## Fases implementadas
 
@@ -164,7 +164,7 @@ Orcamento de RAM e refino visual operacional:
 - `app` possui reserva e limite de memoria no Compose;
 - `postgres` possui reserva, limite, `shm_size` e parametros conservadores de PostgreSQL;
 - servicos utilitarios `migrate`, `seed` e `audit-server-smoke` possuem limite proprio porque rodam sob demanda.
-- paineis logados do AVA nao exibem Catty para nao cobrir botoes e formularios;
+- paineis logados do AVA nao exibiam Catty nesta fase; a FASE 24 reativou por pedido explicito do usuario;
 - resumo de usuario no AVA usa card compacto, sem visual de cartao de credito;
 - seletores de role devem evitar colunas estreitas que cortem texto.
 - sidebar do AVA funciona como indice operacional por role, com grupos expansíveis e atalhos profundos para os blocos da pagina.
@@ -281,6 +281,17 @@ Refino home e entrada AVA:
 - `/ava` e `/ava/login` validam role com `isRole()` antes do redirecionamento;
 - se `/ava/student` quebrar apos deploy, rodar migration; a pagina depende de `20260508090000_student_gender`.
 
+### FASE 24
+
+Contraste visual e navegacao operacional:
+
+- hero da home ganhou card roxo translucido atras da chamada para melhorar leitura sobre video claro;
+- Catty aparece tambem nos paineis logados do AVA por pedido explicito do usuario;
+- WhatsApp continua fora dos paineis logados para nao disputar espaco operacional;
+- menu teacher usa "Corrigir homework" abaixo de "Criar homework", com mensagens antes de contratos;
+- menu admin tambem mostra atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens da area teacher;
+- cards admin/teacher usam tons roxos, contraste maior e hover sutil.
+
 ## MVP inicial
 
 1. Login com email e senha
@@ -341,7 +352,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 - `User.isActive=false` deve bloquear login sem apagar dados historicos.
 - Nao registrar nem imprimir `.env`, `DATABASE_URL`, `AUTH_SECRET` ou senhas.
 - Mudancas visuais devem respeitar `docs/design-direcao.md`.
-- Catty deve ficar fora dos paineis logados do AVA, salvo pedido explicito para reavaliar isso.
+- Catty aparece nos paineis logados do AVA por pedido explicito; manter sem WhatsApp interno e cuidar para nao cobrir botoes criticos.
 - Toda nova area importante do AVA deve ganhar `id` de ancora e, quando fizer sentido, atalho na sidebar por role.
 - Nao criar caixa interna com barra de rolagem para atalhos; agrupar opcoes em Admin, Teacher e Student.
 - Upload local deve ficar em `storage/`, que nao deve ser versionado.

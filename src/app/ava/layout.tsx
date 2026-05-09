@@ -56,6 +56,31 @@ const navGroups = [
         label: "Vincular aluno",
       },
       {
+        href: "/ava/teacher?task=aula-ao-vivo",
+        icon: Radio,
+        label: "Aula ao vivo",
+      },
+      {
+        href: "/ava/teacher?task=criar-aula",
+        icon: BookOpen,
+        label: "Criar aula",
+      },
+      {
+        href: "/ava/teacher?task=criar-homework",
+        icon: ClipboardCheck,
+        label: "Criar homework",
+      },
+      {
+        href: "/ava/teacher?task=corrigir-respostas",
+        icon: ClipboardCheck,
+        label: "Corrigir homework",
+      },
+      {
+        href: "/ava/teacher?task=mensagens",
+        icon: MessageSquareText,
+        label: "Mensagens",
+      },
+      {
         href: "/ava/admin?task=contratos",
         icon: FileText,
         label: "Contratos PDF",
@@ -89,14 +114,14 @@ const navGroups = [
         label: "Criar homework",
       },
       {
+        href: "/ava/teacher?task=corrigir-respostas",
+        icon: ClipboardCheck,
+        label: "Corrigir homework",
+      },
+      {
         href: "/ava/teacher?task=mensagens",
         icon: MessageSquareText,
         label: "Mensagens",
-      },
-      {
-        href: "/ava/teacher?task=corrigir-respostas",
-        icon: MessageSquareText,
-        label: "Corrigir respostas",
       },
       {
         href: "/ava/teacher?task=contratos",
@@ -163,13 +188,13 @@ export default async function AvaLayout({
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background">
       <AvaStudentBackdrop />
-      <div className="relative z-10 grid min-h-screen lg:grid-cols-[280px_1fr]">
+      <div className="relative z-10 grid min-h-screen lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="ava-sidebar-glass relative overflow-hidden border-b border-white/45 backdrop-blur-2xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
-          <div className="flex h-full flex-col gap-6 px-5 py-5">
+          <div className="flex h-full flex-col gap-6 px-5 py-5 lg:px-6 lg:py-6">
             <div className="flex items-center justify-between gap-3">
               <BrandLogo
-                className="h-12 w-[170px] sm:h-14 sm:w-[200px]"
-                imageClassName="w-[205px] sm:w-[245px]"
+                className="h-12 w-[180px] sm:h-14 sm:w-[205px]"
+                imageClassName="w-[215px] sm:w-[250px]"
               />
               <Button asChild variant="outline" className="px-3">
                 <Link href="/">
@@ -179,7 +204,7 @@ export default async function AvaLayout({
               </Button>
             </div>
 
-            <div className="rounded-2xl border border-white/50 bg-white/60 p-4 shadow-sm backdrop-blur-xl">
+            <div className="rounded-2xl border border-white/50 bg-white/60 p-4 shadow-sm backdrop-blur-xl lg:p-5">
               <div className="flex items-center gap-3">
                 <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <LayoutDashboard aria-hidden="true" />
@@ -201,7 +226,7 @@ export default async function AvaLayout({
                   return (
                     <div
                       key={group.href}
-                      className="rounded-2xl border border-white/50 bg-white/50 p-3 shadow-lg shadow-primary/5 backdrop-blur-xl"
+                      className="rounded-2xl border border-white/50 bg-white/50 p-3 shadow-lg shadow-primary/5 backdrop-blur-xl lg:p-4"
                     >
                       <div className="mb-2 flex items-center gap-2 px-2 py-1 text-sm font-bold text-primary">
                         <group.icon aria-hidden="true" className="size-4" />
@@ -210,7 +235,7 @@ export default async function AvaLayout({
                       <div className="flex flex-col gap-2">
                         <Link
                           href={group.href}
-                          className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-transform hover:-translate-y-0.5 hover:bg-primary/90"
+                          className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-transform hover:-translate-y-0.5 hover:bg-primary/90 lg:px-5"
                         >
                           Painel Student
                         </Link>
@@ -218,7 +243,7 @@ export default async function AvaLayout({
                           <Link
                             key={`${group.href}-${link.href}-${link.label}`}
                             href={link.href}
-                            className="flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-sm font-semibold text-primary shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/80 hover:shadow-md"
+                            className="flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-sm font-semibold text-primary shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/80 hover:shadow-md lg:px-5"
                           >
                             <link.icon aria-hidden="true" className="size-4" />
                             {link.label}

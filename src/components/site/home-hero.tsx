@@ -38,7 +38,7 @@ export function HomeHero({ content }: HomeHeroProps) {
 
       <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 pb-28 pt-36 text-center sm:pb-36 sm:pt-44 lg:px-8">
         <div className="flex min-w-0 flex-col items-center gap-7">
-          <div className="flex flex-col items-center gap-6">
+          <div className="hero-copy-glass flex max-w-6xl flex-col items-center gap-6 rounded-[2rem] border border-white/20 bg-primary/42 px-5 py-7 text-white shadow-2xl shadow-black/20 backdrop-blur-md sm:px-8 sm:py-8 lg:px-10">
             <p className="animate-fade-rise text-sm font-medium uppercase tracking-[0.24em] text-white/78">
               Candy English
             </p>
