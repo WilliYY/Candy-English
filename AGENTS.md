@@ -324,7 +324,7 @@ npm run audit:avatar-smoke
 ### Deploy Oracle com migration
 
 ```bash
-cd /home/ubuntu/candy-english
+cd /home/ubuntu/projetos/candy-english
 git pull
 docker compose up -d postgres
 docker compose build app migrate audit-server-smoke

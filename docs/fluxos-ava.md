@@ -304,7 +304,7 @@ Regras:
 Use quando `prisma/schema.prisma` ou `prisma/migrations/` mudarem:
 
 ```bash
-cd /home/ubuntu/candy-english
+cd /home/ubuntu/projetos/candy-english
 git pull
 docker compose up -d postgres
 docker compose build app migrate audit-server-smoke

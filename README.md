@@ -255,7 +255,7 @@ O app fica em `http://localhost:3000`. O PostgreSQL nao expoe porta publica; o a
 Rotina curta apos atualizar o repositorio, sem mudanca de banco:
 
 ```bash
-cd /home/ubuntu/candy-english
+cd /home/ubuntu/projetos/candy-english
 git pull
 docker compose build app audit-server-smoke
 docker compose up -d --force-recreate app
@@ -269,7 +269,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 Com alteracao em `prisma/schema.prisma` ou `prisma/migrations/`:
 
 ```bash
-cd /home/ubuntu/candy-english
+cd /home/ubuntu/projetos/candy-english
 git pull
 docker compose up -d postgres
 docker compose build app migrate audit-server-smoke

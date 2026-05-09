@@ -28,6 +28,11 @@ dev-server.*.log
 # local uploaded files
 storage/
 
+# private server files
+private/
+secrets/
+*candy-english-secrets*
+
 # OS/editor
 .DS_Store
 Thumbs.db

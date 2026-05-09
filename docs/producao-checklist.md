@@ -7,7 +7,7 @@ Este checklist adapta para o Candy English os pontos operacionais robustos usado
 Use quando nao houver mudanca no schema do Prisma:
 
 ```bash
-cd /home/ubuntu/candy-english
+cd /home/ubuntu/projetos/candy-english
 git pull
 docker compose build app audit-server-smoke
 docker compose up -d --force-recreate app
@@ -22,7 +22,7 @@ docker compose --profile tools run --rm audit-server-smoke
 Use quando houver alteracao em `prisma/schema.prisma` ou em `prisma/migrations/`:
 
 ```bash
-cd /home/ubuntu/candy-english
+cd /home/ubuntu/projetos/candy-english
 git pull
 docker compose up -d postgres
 docker compose build app migrate audit-server-smoke
