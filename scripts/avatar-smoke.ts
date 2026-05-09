@@ -156,6 +156,33 @@ async function main() {
     throw new Error("Avatar retornou arquivo pequeno demais para a imagem de teste.");
   }
 
+  const uploadImageBuffer = await readFile("public/brand/catty.png");
+  const formData = new FormData();
+  formData.append(
+    "avatar",
+    new NodeFile([uploadImageBuffer], "catty-upload.png", {
+      type: "image/png",
+    }) as unknown as Blob,
+  );
+
+  const uploadResponse = await fetch(buildUrl("/ava/avatar"), {
+    body: formData,
+    headers: { cookie },
+    method: "POST",
+  });
+
+  if (!uploadResponse.ok) {
+    throw new Error(`Upload de avatar retornou HTTP ${uploadResponse.status}`);
+  }
+
+  const uploadBody = (await uploadResponse.json()) as {
+    ok?: boolean;
+  };
+
+  if (!uploadBody.ok) {
+    throw new Error("Upload de avatar nao retornou ok=true.");
+  }
+
   const profileResponse = await fetch(buildUrl("/ava/student?task=perfil"), {
     headers: { cookie },
   });

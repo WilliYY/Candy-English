@@ -14,6 +14,11 @@ export function UserAvatar({
   iconClassName,
   userId,
 }: UserAvatarProps) {
+  const avatarUrl =
+    avatarPath && userId
+      ? `/ava/avatar/${userId}?v=${encodeURIComponent(avatarPath)}`
+      : null;
+
   return (
     <span
       className={cn(
@@ -21,10 +26,10 @@ export function UserAvatar({
         className,
       )}
     >
-      {avatarPath && userId ? (
+      {avatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/ava/avatar/${userId}`}
+          src={avatarUrl}
           alt="Foto do perfil"
           className="h-full w-full object-cover"
         />

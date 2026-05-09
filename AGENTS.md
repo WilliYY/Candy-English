@@ -291,7 +291,7 @@ Contraste visual e navegacao operacional:
 - menu teacher usa "Corrigir homework" abaixo de "Criar homework", com mensagens antes de contratos;
 - menu admin tambem mostra atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens da area teacher;
 - cards admin/teacher usam tons roxos, contraste maior e hover sutil;
-- avatar do usuario aparece no card lateral, no resumo superior e no card de upload;
+- avatar do usuario usa `POST /ava/avatar` para upload e aparece no card lateral, no resumo superior e no card de upload;
 - sidebar do AVA mostra alerta visual local quando aula, homework, mensagem, contrato ou aula ao vivo muda; ao abrir o modulo, o navegador marca como visto.
 
 ## MVP inicial

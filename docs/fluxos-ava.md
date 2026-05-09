@@ -246,7 +246,7 @@ Regras:
 flowchart TD
   A["STUDENT abre /ava/student?task=perfil"] --> B["Edita dados pessoais e contatos"]
   B --> C["Server action atualiza User e StudentProfile"]
-  A --> D["Envia foto PNG/JPG/WebP"]
+  A --> D["Envia foto PNG/JPG/WebP via POST /ava/avatar"]
   D --> E["Arquivo fica em storage/avatars"]
   F["ADMIN abre /ava/admin?task=contratos"] --> G["Seleciona aluno e PDF"]
   G --> H["Arquivo fica em storage/contracts"]
@@ -259,7 +259,7 @@ flowchart TD
 Regras:
 
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
-- A foto atualizada deve refletir no card lateral, no resumo superior e no bloco de upload do perfil.
+- A foto atualizada usa rota dedicada `POST /ava/avatar` e deve refletir no card lateral, no resumo superior e no bloco de upload do perfil.
 - O aluno edita sexo/contatos/dados pessoais, mas nao edita nivel.
 - Teacher/admin atualizam o nivel do aluno na area teacher, com permissao validada por vinculo.
 - Contrato aceita PDF ate 8 MB.

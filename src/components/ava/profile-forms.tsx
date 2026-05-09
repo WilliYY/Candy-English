@@ -3,9 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Camera, LoaderCircle, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
-import { updateMyProfile, uploadMyAvatar } from "@/app/ava/actions";
+import { updateMyProfile } from "@/app/ava/actions";
 import {
   updateProfileSchema,
   type UpdateProfileInput,
@@ -280,31 +280,78 @@ type AvatarUploadFormProps = {
 
 export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) {
   const router = useRouter();
+  const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+
+    const nextPreviewUrl = URL.createObjectURL(file);
+    setPreviewUrl(nextPreviewUrl);
+
+    return () => URL.revokeObjectURL(nextPreviewUrl);
+  }, [file]);
 
   return (
     <form
       className="flex flex-col gap-4 rounded-lg border bg-white p-4 shadow-sm"
-      action={(formData) => {
+      onSubmit={async (event) => {
+        event.preventDefault();
         setMessage(null);
-        startTransition(async () => {
-          const result = await uploadMyAvatar(formData);
-          setMessage(result.message);
 
-          if (result.ok) {
+        if (!file) {
+          setMessage("Selecione uma imagem para enviar.");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("avatar", file);
+        setIsPending(true);
+
+        try {
+          const response = await fetch("/ava/avatar", {
+            body: formData,
+            method: "POST",
+          });
+          const result = (await response.json()) as {
+            message?: string;
+            ok?: boolean;
+          };
+
+          setMessage(result.message ?? "Nao foi possivel enviar a foto.");
+
+          if (response.ok && result.ok) {
+            setFile(null);
             router.refresh();
           }
-        });
+        } catch {
+          setMessage("Nao foi possivel enviar a foto agora.");
+        } finally {
+          setIsPending(false);
+        }
       }}
     >
       <div className="flex items-center gap-4">
-        <UserAvatar
-          avatarPath={avatarPath}
-          className="size-20 rounded-full border bg-muted text-primary"
-          iconClassName="size-9"
-          userId={userId}
-        />
+        {previewUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={previewUrl}
+            alt="Previa da nova foto"
+            className="size-20 shrink-0 rounded-full border bg-muted object-cover"
+          />
+        ) : (
+          <UserAvatar
+            avatarPath={avatarPath}
+            className="size-20 rounded-full border bg-muted text-primary"
+            iconClassName="size-9"
+            userId={userId}
+          />
+        )}
         <div className="min-w-0">
           <h3 className="font-semibold">Foto do perfil</h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -322,6 +369,10 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
           accept="image/png,image/jpeg,image/webp"
           className="cursor-pointer file:cursor-pointer disabled:cursor-not-allowed"
           disabled={isPending}
+          onChange={(event) => {
+            setMessage(null);
+            setFile(event.target.files?.[0] ?? null);
+          }}
         />
         <FieldDescription>PNG, JPG ou WebP ate 2 MB.</FieldDescription>
       </Field>
@@ -332,7 +383,7 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
         </p>
       ) : null}
 
-      <Button type="submit" variant="secondary" disabled={isPending}>
+      <Button type="submit" variant="secondary" disabled={isPending || !file}>
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
         ) : (

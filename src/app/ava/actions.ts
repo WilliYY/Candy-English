@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
-import { saveAvatarImage, saveContractPdf } from "@/lib/storage";
+import { saveContractPdf } from "@/lib/storage";
 import {
   createLiveSessionSchema,
   sendChatMessageSchema,
@@ -205,56 +205,6 @@ export async function updateMyProfile(
   return {
     ok: true,
     message: "Perfil atualizado com sucesso.",
-  };
-}
-
-export async function uploadMyAvatar(formData: FormData) {
-  const actor = await getActor();
-
-  if (!actor) {
-    return {
-      ok: false,
-      message: "Entre no AVA para atualizar sua foto.",
-    };
-  }
-
-  const file = formData.get("avatar");
-
-  if (!(file instanceof File)) {
-    return {
-      ok: false,
-      message: "Selecione uma imagem para enviar.",
-    };
-  }
-
-  try {
-    const avatar = await saveAvatarImage(file);
-    const prisma = getPrisma();
-
-    await prisma.user.update({
-      where: { id: actor.userId },
-      data: {
-        avatarMimeType: avatar.mimeType,
-        avatarPath: avatar.relativePath,
-      },
-    });
-  } catch (error) {
-    return {
-      ok: false,
-      message:
-        error instanceof Error
-          ? error.message
-          : "Nao foi possivel enviar a foto.",
-    };
-  }
-
-  revalidatePath("/ava/student");
-  revalidatePath("/ava/teacher");
-  revalidatePath("/ava/admin");
-
-  return {
-    ok: true,
-    message: "Foto atualizada com sucesso.",
   };
 }
 

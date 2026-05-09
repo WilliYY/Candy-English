@@ -559,7 +559,7 @@ Implementado:
 - menu teacher usa "Corrigir homework" abaixo de "Criar homework", com mensagens antes de contratos;
 - menu admin ganhou atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens;
 - cards admin/teacher usam tons roxos suaves, bordas com mais contraste e hover discreto;
-- foto de perfil aparece no card lateral, no resumo superior e no card de upload apos atualizar;
+- foto de perfil usa `POST /ava/avatar`, aparece no card lateral, no resumo superior e no card de upload apos atualizar;
 - atalhos do AVA possuem indicador visual local para novidades em aulas, homeworks, mensagens, contratos e aula ao vivo; ao abrir o modulo, o indicador e marcado como visto no navegador.
 
 ## Ferramentas Locais Recomendadas
