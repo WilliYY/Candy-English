@@ -31,6 +31,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const activeTask = normalizeAdminTask(requestedTask);
 
   const [
+    currentUser,
     users,
     teachers,
     students,
@@ -39,6 +40,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     maintenanceMode,
     storageUsageBytes,
   ] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        avatarPath: true,
+        email: true,
+        id: true,
+        name: true,
+        role: true,
+      },
+    }),
     prisma.user.findMany({
       orderBy: {
         createdAt: "desc",
@@ -194,7 +205,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         studentName: contract.studentProfile?.user.name ?? null,
         title: contract.title,
       }))}
-      currentUser={session.user}
+      currentUser={currentUser ?? session.user}
       maintenanceMode={maintenanceMode}
       students={students.map((student) => ({
         email: student.user.email,

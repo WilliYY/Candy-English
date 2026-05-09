@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Camera, LoaderCircle, Save, UserRound } from "lucide-react";
+import { Camera, LoaderCircle, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { UserAvatar } from "@/components/ava/user-avatar";
 
 type ProfileFormProps = {
   defaultValues: UpdateProfileInput;
@@ -298,18 +299,12 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
       }}
     >
       <div className="flex items-center gap-4">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-full border bg-muted text-primary">
-          {avatarPath && userId ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`/ava/avatar/${userId}`}
-              alt="Foto atual do perfil"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <UserRound aria-hidden="true" className="size-9" />
-          )}
-        </div>
+        <UserAvatar
+          avatarPath={avatarPath}
+          className="size-20 rounded-full border bg-muted text-primary"
+          iconClassName="size-9"
+          userId={userId}
+        />
         <div className="min-w-0">
           <h3 className="font-semibold">Foto do perfil</h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
@@ -325,6 +320,7 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
           name="avatar"
           type="file"
           accept="image/png,image/jpeg,image/webp"
+          className="cursor-pointer file:cursor-pointer disabled:cursor-not-allowed"
           disabled={isPending}
         />
         <FieldDescription>PNG, JPG ou WebP ate 2 MB.</FieldDescription>

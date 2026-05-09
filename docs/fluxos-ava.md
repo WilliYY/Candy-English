@@ -259,6 +259,7 @@ flowchart TD
 Regras:
 
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
+- A foto atualizada deve refletir no card lateral, no resumo superior e no bloco de upload do perfil.
 - O aluno edita sexo/contatos/dados pessoais, mas nao edita nivel.
 - Teacher/admin atualizam o nivel do aluno na area teacher, com permissao validada por vinculo.
 - Contrato aceita PDF ate 8 MB.
@@ -266,6 +267,13 @@ Regras:
 - Contratos continuam servidos por rota protegida.
 - Material de Canva depende do link permitir visualizacao embutida; se nao permitir, o aluno abre em nova aba.
 - Homework online continua sendo o caminho para responder dentro do site; editor Word embutido fica para fase futura.
+
+## Fluxo de Alertas Visuais do AVA
+
+- A sidebar recebe uma assinatura do ultimo evento relevante por modulo.
+- O navegador guarda localmente a ultima assinatura vista por link.
+- Se a assinatura mudar, o atalho mostra um ponto de alerta.
+- Ao clicar ou abrir o modulo, o alerta e marcado como visto e desaparece.
 
 ## Fluxo Aula Ao Vivo Embutida
 

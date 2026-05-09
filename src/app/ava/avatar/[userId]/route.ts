@@ -32,11 +32,22 @@ export async function GET(
     return new NextResponse("Foto nao encontrada.", { status: 404 });
   }
 
-  const file = await readFile(getStoragePath(user.avatarPath));
+  let file: Buffer;
 
-  return new NextResponse(file, {
+  try {
+    file = await readFile(getStoragePath(user.avatarPath));
+  } catch {
+    return new NextResponse("Foto nao encontrada.", { status: 404 });
+  }
+
+  const body = file.buffer.slice(
+    file.byteOffset,
+    file.byteOffset + file.byteLength,
+  ) as ArrayBuffer;
+
+  return new NextResponse(body, {
     headers: {
-      "Cache-Control": "private, max-age=300",
+      "Cache-Control": "private, no-store",
       "Content-Type": user.avatarMimeType,
       "X-Content-Type-Options": "nosniff",
     },

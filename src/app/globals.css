@@ -187,6 +187,10 @@ a {
   box-shadow: 0 22px 50px rgb(74 39 88 / 0.1);
 }
 
+.ava-task-header {
+  box-shadow: inset 0 -1px 0 rgb(74 39 88 / 0.08);
+}
+
 .ava-stat-card,
 .ava-soft-card,
 .ava-role-column {

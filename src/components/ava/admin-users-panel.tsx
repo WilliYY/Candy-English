@@ -101,7 +101,9 @@ type AdminUsersPanelProps = {
   assignments: AssignmentRow[];
   contracts: AdminContractRow[];
   currentUser: {
+    avatarPath?: string | null;
     email: string;
+    id?: string | null;
     name?: string | null;
     role: Role;
   };
@@ -551,26 +553,23 @@ export function AdminUsersPanel({
         </div>
 
         <UserSummaryPanel
+          avatarPath={currentUser.avatarPath}
           email={currentUser.email}
           name={currentUser.name}
           role={currentUser.role}
+          userId={currentUser.id}
         />
       </div>
 
       <Card className="ava-panel-card overflow-hidden">
-        <CardHeader className="border-b border-primary/15 bg-primary/10">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <TaskIcon aria-hidden="true" />
-              </span>
-              <div className="min-w-0">
-                <CardTitle className="text-xl">{task.title}</CardTitle>
-              </div>
-            </div>
-            <span className="inline-flex w-fit items-center rounded-md border bg-background px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {task.title}
+        <CardHeader className="ava-task-header border-b border-primary/15 bg-primary/10 px-7 py-5">
+          <div className="relative flex min-h-12 items-center justify-center text-center">
+            <span className="absolute left-0 flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <TaskIcon aria-hidden="true" />
             </span>
+            <CardTitle className="px-14 text-center text-xl">
+              {task.title}
+            </CardTitle>
           </div>
         </CardHeader>
         <CardContent className="py-6">
