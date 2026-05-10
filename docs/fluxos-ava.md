@@ -147,7 +147,7 @@ flowchart LR
   B --> C["Grupo ADMIN"]
   B --> D["Grupo TEACHER"]
   B --> E["Grupo STUDENT"]
-  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, aula ao vivo, criar aula, criar homework, corrigir homework, mensagens, contratos, manutencao"]
+  C --> C1["Usuarios, criar admin, criar teacher, criar aluno, vincular aluno, aula ao vivo, criar aula, criar homework, corrigir homework, mensagens, contratos, financeiro, manutencao"]
   D --> D1["Aula ao vivo, criar aula, criar homework, corrigir homework, mensagens, contratos"]
   E --> E1["Aula ao vivo, aulas, homeworks, mensagens, contratos, perfil"]
   C --> F["Clique troca a tarefa principal do admin"]
@@ -160,7 +160,7 @@ Regras:
 - A sidebar deve ser o indice principal de operacao do AVA.
 - Grupos como `Admin` e `Teacher` abrem subcategorias ao clicar, para evitar uma lista longa e poluida.
 - Para role `STUDENT`, a sidebar fica sempre aberta com botoes roxos porque a area do aluno precisa ser mais direta.
-- No admin, os atalhos proprios usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno`, `?task=contratos` e `?task=editar-site`; atalhos operacionais de aula/homework/mensagens apontam para `/ava/teacher?task=...` porque `ADMIN` pode supervisionar a area teacher.
+- No admin, os atalhos proprios usam `?task=usuarios`, `?task=criar-admin`, `?task=criar-teacher`, `?task=criar-aluno`, `?task=vincular-aluno`, `?task=contratos`, `?task=financeiro` e `?task=editar-site`; atalhos operacionais de aula/homework/mensagens apontam para `/ava/teacher?task=...` porque `ADMIN` pode supervisionar a area teacher.
 - Nas areas teacher/student, os atalhos tambem usam `?task=` para mostrar uma tarefa por vez.
 - Os campos e tabelas continuam no painel da direita, mas cada bloco precisa ter um atalho claro quando virar tarefa importante.
 - Nao usar uma caixa interna com barra de rolagem para atalhos; se houver muitas opcoes, agrupar por role.
@@ -179,9 +179,31 @@ flowchart TD
   G --> G1["Seleciona teacher e aluno ativo"]
   A --> H["?task=contratos"]
   H --> H1["Seleciona aluno e envia PDF protegido"]
-  A --> I["?task=editar-site"]
-  I --> I1["Liga ou desliga modo manutencao"]
+  A --> I["?task=financeiro"]
+  I --> I1["Seleciona mes de 2026 e adiciona linhas financeiras"]
+  A --> J["?task=editar-site"]
+  J --> J1["Liga ou desliga modo manutencao"]
 ```
+
+## Fluxo Financeiro Admin
+
+```mermaid
+flowchart TD
+  A["ADMIN abre /ava/admin?task=financeiro"] --> B["Escolhe um mes de 2026"]
+  B --> C["Adiciona linha com nome, valor, dia, data paga e observacao"]
+  C --> D["Sistema salva FinancialEntry como pago se houver data paga, ou pendente por padrao"]
+  D --> E["Linhas aparecem ordenadas pelo dia de pagamento"]
+  E --> F["ADMIN alterna status vermelho pendente / verde pago"]
+  E --> G["ADMIN atualiza data real de pagamento e observacao"]
+```
+
+Regras:
+
+- Apenas `ADMIN` visualiza e grava financeiro.
+- O modulo e controle interno, nao pagamento online.
+- Valores ficam salvos em centavos no banco.
+- Cada mes de 2026 tem sua propria visualizacao.
+- A listagem deve mostrar nome, valor, dia, status, data paga e observacao sem cortar informacao importante.
 
 ## Fluxo Manutencao Candy
 

@@ -110,7 +110,7 @@ export async function getAvaNavAlertSignatures(
   const teacherProfileId = teacherProfile?.id;
   const teacherScoped = role === "TEACHER" && teacherProfileId;
 
-  const [lesson, homework, submission, live, message, contract, user] =
+  const [lesson, homework, submission, live, message, contract, user, finance] =
     await Promise.all([
       prisma.lesson.findFirst({
         where: teacherScoped ? { teacherProfileId } : {},
@@ -166,6 +166,12 @@ export async function getAvaNavAlertSignatures(
             select: { id: true, updatedAt: true },
           })
         : Promise.resolve(null),
+      role === "ADMIN"
+        ? prisma.financialEntry.findFirst({
+            orderBy: { updatedAt: "desc" },
+            select: { id: true, updatedAt: true },
+          })
+        : Promise.resolve(null),
     ]);
 
   alerts["/ava/teacher?task=aula-ao-vivo"] = stamp(live);
@@ -179,6 +185,7 @@ export async function getAvaNavAlertSignatures(
     alerts["/ava/admin?task=usuarios"] = stamp(user);
     alerts["/ava/admin?task=contratos"] = stamp(contract);
     alerts["/ava/admin?task=vincular-aluno"] = stamp(user);
+    alerts["/ava/admin?task=financeiro"] = stamp(finance);
   }
 
   return alerts;

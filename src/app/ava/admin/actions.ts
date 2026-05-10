@@ -10,11 +10,17 @@ import {
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
+  adminFinanceEntrySchema,
+  adminFinanceEntryUpdateSchema,
+  adminFinanceStatusSchema,
   adminSiteContentSchema,
   adminToggleUserStatusSchema,
   type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
+  type AdminFinanceEntryInput,
+  type AdminFinanceEntryUpdateInput,
+  type AdminFinanceStatusInput,
   type AdminSiteContentInput,
   type AdminToggleUserStatusInput,
 } from "@/lib/validations/admin-users";
@@ -404,5 +410,153 @@ export async function toggleMaintenanceMode(
     message: parsed.data.enabled
       ? "Modo manutencao ativado para alunos."
       : "Modo manutencao desativado.",
+  };
+}
+
+export async function createFinancialEntry(
+  input: AdminFinanceEntryInput,
+): Promise<AdminActionResult<AdminFinanceEntryInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para cadastrar financeiro.",
+    };
+  }
+
+  const parsed = adminFinanceEntrySchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinanceEntryInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados do lancamento.",
+    };
+  }
+
+  const prisma = getPrisma();
+
+  await prisma.financialEntry.create({
+    data: {
+      amountCents: parsed.data.amount,
+      isPaid: Boolean(parsed.data.paidAt),
+      month: parsed.data.month,
+      note: parsed.data.note,
+      paidAt: parsed.data.paidAt,
+      payerName: parsed.data.payerName,
+      paymentDay: parsed.data.paymentDay,
+      year: 2026,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Lancamento financeiro adicionado.",
+  };
+}
+
+export async function updateFinancialEntryDetails(
+  input: AdminFinanceEntryUpdateInput,
+): Promise<AdminActionResult<AdminFinanceEntryUpdateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para atualizar financeiro.",
+    };
+  }
+
+  const parsed = adminFinanceEntryUpdateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinanceEntryUpdateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a data e a observacao.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const entry = await prisma.financialEntry.findUnique({
+    where: { id: parsed.data.entryId },
+    select: { id: true },
+  });
+
+  if (!entry) {
+    return {
+      ok: false,
+      message: "Lancamento financeiro nao encontrado.",
+    };
+  }
+
+  await prisma.financialEntry.update({
+    where: { id: entry.id },
+    data: {
+      note: parsed.data.note ?? null,
+      paidAt: parsed.data.paidAt ?? null,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Lancamento financeiro atualizado.",
+  };
+}
+
+export async function toggleFinancialEntryStatus(
+  input: AdminFinanceStatusInput,
+): Promise<AdminActionResult<AdminFinanceStatusInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para atualizar financeiro.",
+    };
+  }
+
+  const parsed = adminFinanceStatusSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinanceStatusInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o status do lancamento.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const entry = await prisma.financialEntry.findUnique({
+    where: { id: parsed.data.entryId },
+    select: { id: true },
+  });
+
+  if (!entry) {
+    return {
+      ok: false,
+      message: "Lancamento financeiro nao encontrado.",
+    };
+  }
+
+  await prisma.financialEntry.update({
+    where: { id: entry.id },
+    data: {
+      isPaid: parsed.data.isPaid,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: parsed.data.isPaid
+      ? "Status marcado como pago."
+      : "Status marcado como pendente.",
   };
 }

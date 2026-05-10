@@ -239,6 +239,23 @@ model ContractDocument {
   @@index([uploadedByUserId])
 }
 
+model FinancialEntry {
+  id          String   @id @default(cuid())
+  year        Int      @default(2026)
+  month       Int
+  payerName   String
+  amountCents Int
+  paymentDay  Int
+  isPaid      Boolean  @default(false)
+  paidAt      DateTime?
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([year, month, paymentDay])
+  @@index([isPaid])
+}
+
 model SitePageContent {
   id          String   @id @default(cuid())
   slug        String   @unique

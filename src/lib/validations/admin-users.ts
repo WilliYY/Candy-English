@@ -10,6 +10,52 @@ function optionalText(maxLength: number, message: string) {
     .transform((value) => (value ? value : undefined));
 }
 
+function parseMoneyToCents(value: string) {
+  const compactValue = value.replace(/\s/g, "").replace(/^R\$/i, "");
+  const normalizedValue = compactValue.includes(",")
+    ? compactValue.replace(/\./g, "").replace(",", ".")
+    : compactValue;
+  const numericValue = Number(normalizedValue);
+
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+
+  return Math.round(numericValue * 100);
+}
+
+const moneySchema = z
+  .string()
+  .trim()
+  .min(1, "Informe o valor pago.")
+  .refine((value) => {
+    const cents = parseMoneyToCents(value);
+
+    return cents !== null && cents > 0;
+  }, "Informe um valor valido maior que zero.")
+  .transform((value) => parseMoneyToCents(value) ?? 0);
+
+const optionalDateSchema = z
+  .string()
+  .optional()
+  .transform((value, ctx) => {
+    if (!value) {
+      return undefined;
+    }
+
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    if (Number.isNaN(date.getTime())) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Informe uma data valida.",
+      });
+      return z.NEVER;
+    }
+
+    return date;
+  });
+
 export const adminCreateUserSchema = z
   .object({
     name: z
@@ -142,9 +188,47 @@ export const adminMaintenanceSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const adminFinanceEntrySchema = z.object({
+  amount: moneySchema,
+  month: z
+    .number()
+    .int("Selecione um mes valido.")
+    .min(1, "Selecione um mes valido.")
+    .max(12, "Selecione um mes valido."),
+  note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
+  paidAt: optionalDateSchema,
+  payerName: z
+    .string()
+    .trim()
+    .min(2, "Informe o nome com pelo menos 2 caracteres.")
+    .max(120, "O nome pode ter no maximo 120 caracteres."),
+  paymentDay: z
+    .number()
+    .int("Informe um dia valido.")
+    .min(1, "O dia precisa estar entre 1 e 31.")
+    .max(31, "O dia precisa estar entre 1 e 31."),
+});
+
+export const adminFinanceEntryUpdateSchema = z.object({
+  entryId: z.string().min(1, "Lancamento invalido."),
+  note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
+  paidAt: optionalDateSchema,
+});
+
+export const adminFinanceStatusSchema = z.object({
+  entryId: z.string().min(1, "Lancamento invalido."),
+  isPaid: z.boolean(),
+});
+
 export type AdminToggleUserStatusInput = z.input<
   typeof adminToggleUserStatusSchema
 >;
 export type AdminAssignTeacherInput = z.input<typeof adminAssignTeacherSchema>;
 export type AdminSiteContentInput = z.input<typeof adminSiteContentSchema>;
 export type AdminMaintenanceInput = z.input<typeof adminMaintenanceSchema>;
+export type AdminFinanceEntryInput = z.input<typeof adminFinanceEntrySchema>;
+export type AdminFinanceEntryData = z.output<typeof adminFinanceEntrySchema>;
+export type AdminFinanceEntryUpdateInput = z.input<
+  typeof adminFinanceEntryUpdateSchema
+>;
+export type AdminFinanceStatusInput = z.input<typeof adminFinanceStatusSchema>;

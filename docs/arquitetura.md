@@ -109,7 +109,7 @@ Foram adaptados para o Candy English apenas os pontos que melhoram a solidez da 
 - checklist de producao em `docs/producao-checklist.md`;
 - seed administrativo que preserva senha existente, redefinindo apenas com `ADMIN_RESET_PASSWORD=true`.
 
-Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem ao Candy English nesta fase, como pagamentos, integracoes financeiras, rotinas avancadas de backup criptografado ou automacoes de dominio financeiro.
+Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem ao Candy English nesta fase, como integracoes de pagamento, rotinas avancadas de backup criptografado ou automacoes externas de dominio financeiro.
 
 ## Decisoes Registradas
 
@@ -139,6 +139,7 @@ Nao foram trazidos elementos especificos do SavePointFinance que nao pertencem a
 - Menus do AVA sao filtrados por role para facilitar uso, mas a protecao real continua nas paginas e server actions.
 - O login rejeita usuario inativo e muitas falhas recentes, reduzindo abuso basico sem depender de servico externo.
 - `next.config.ts` adiciona headers basicos de seguranca: anti-iframe, nosniff, referrer policy e permissao controlada de camera/microfone/display-capture para `meet.jit.si`.
+- O modulo `Financeiro` fica somente no admin em `/ava/admin?task=financeiro`; ele e controle interno de mensalidades, sem gateway, cobranca automatica ou exposicao para teacher/student.
 
 ### Rotas
 
@@ -192,6 +193,7 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - `AppSetting` guarda configuracoes operacionais simples, como modo manutencao.
 - `ChatThread` representa a conversa privada de um vinculo teacher-aluno.
 - `ChatMessage` guarda mensagens do chatbox com `senderUserId`, sempre validado por role e vinculo antes da escrita.
+- `FinancialEntry` guarda linhas financeiras administrativas de 2026 com mes, nome do pagador, valor em centavos, dia de pagamento, status pago/pendente, data real de pagamento e observacao.
 
 ### Docker
 
@@ -409,3 +411,15 @@ A vigesima terceira fase faz refinamentos de entrada e UI sem alterar o banco:
 - a segunda secao da home usa altura minima baseada na proporcao do video remoto para reduzir corte visual;
 - o bloco de apresentacao do AVA usa particulas leves e cards com hover, mantendo conteudo escaneavel.
 - a tela de login tambem valida role antes de redirecionar usuario autenticado.
+
+## FASE 25
+
+A vigesima quinta fase adiciona controle financeiro interno para administradores:
+
+- `/ava/admin?task=financeiro` fica disponivel apenas para `ADMIN`;
+- o menu Admin recebe atalho proprio para Financeiro, separado de contratos e manutencao;
+- `FinancialEntry` guarda as linhas financeiras de 2026 no PostgreSQL, com mes, nome, valor em centavos, dia previsto de pagamento, status, data real de pagamento e observacao;
+- o status padrao e pendente/vermelho quando a linha nasce sem data paga, e pode ser alternado para pago/verde por server action protegida;
+- a listagem e agrupada pelos meses de 2026 e ordenada por `paymentDay` crescente;
+- a interface usa uma grade tipo planilha em desktop e cards completos em telas menores para preservar leitura sem cortar informacoes;
+- esta fase nao implementa pagamento online, gateway, nota fiscal, cobranca automatica ou conciliacao bancaria.

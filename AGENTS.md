@@ -48,6 +48,8 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
+FASE 25 implementada. O admin possui o modulo interno `Financeiro` em `/ava/admin?task=financeiro`, restrito a `ADMIN`, com ano 2026, meses, linhas por nome, valor, dia de pagamento, status pago/pendente, data real de pagamento e observacao. As linhas ficam em `FinancialEntry`, o status padrao e pendente/vermelho quando nao ha data paga, o botao alterna para pago/verde, e a listagem e ordenada por dia de pagamento em ordem crescente.
+
 FASE 24 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com `public/brand/home.mp4` no hero, video remoto na segunda secao, paginas informativas com `public/brand/informacoes.mp4`, navbar sem Planos, indicador informativo de usuario logado, botao AVA direto por role, Catty no site/login/paineis logados do AVA e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role com validacao de role.
 
 ## Fases implementadas
@@ -294,6 +296,17 @@ Contraste visual e navegacao operacional:
 - avatar do usuario usa `POST /ava/avatar` para upload e aparece no card lateral, no resumo superior e no card de upload;
 - sidebar do AVA mostra alerta visual local quando aula, homework, mensagem, contrato ou aula ao vivo muda; ao abrir o modulo, o navegador marca como visto.
 
+### FASE 25
+
+Financeiro admin:
+
+- `/ava/admin?task=financeiro` mostra modulo financeiro apenas para `ADMIN`;
+- `FinancialEntry` guarda linhas financeiras de 2026 com mes, nome, valor em centavos, dia de pagamento, status, data real de pagamento e observacao;
+- status padrao fica pendente/vermelho quando nao ha data paga;
+- botao de status alterna entre pendente/vermelho e pago/verde;
+- meses de 2026 ficam em abas/botoes e linhas sao ordenadas por dia de pagamento crescente;
+- visualizacao deve preservar a planilha completa sem cortar nome, valor, dia, status, data ou observacao.
+
 ## MVP inicial
 
 1. Login com email e senha
@@ -361,3 +374,4 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 - Contratos devem continuar protegidos por rota server-side.
 - Contratos gerais podem ser vistos por alunos logados, mas contrato com aluno definido so pode ser visto pelo proprio aluno, teacher vinculada ou admin.
 - Manter o orcamento de RAM do Docker documentado em `docker-compose.yml`, `.env.example`, README e arquitetura.
+- Financeiro e controle interno do admin; nao tratar como pagamento online ou cobranca automatica sem pedido explicito.

@@ -37,6 +37,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     students,
     assignments,
     contracts,
+    financeEntries,
     maintenanceMode,
     storageUsageBytes,
   ] = await Promise.all([
@@ -183,9 +184,39 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         title: true,
       },
     }),
+    prisma.financialEntry.findMany({
+      where: {
+        year: 2026,
+      },
+      orderBy: [
+        {
+          month: "asc",
+        },
+        {
+          paymentDay: "asc",
+        },
+        {
+          payerName: "asc",
+        },
+      ],
+      select: {
+        amountCents: true,
+        id: true,
+        isPaid: true,
+        month: true,
+        note: true,
+        paidAt: true,
+        payerName: true,
+        paymentDay: true,
+        year: true,
+      },
+    }),
     isMaintenanceModeEnabled(),
     getStorageUsageBytes(),
   ]);
+  const currentDate = new Date();
+  const initialFinanceMonth =
+    currentDate.getFullYear() === 2026 ? currentDate.getMonth() + 1 : 1;
 
   return (
     <AdminUsersPanel
@@ -206,6 +237,18 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         title: contract.title,
       }))}
       currentUser={currentUser ?? session.user}
+      financeEntries={financeEntries.map((entry) => ({
+        amountCents: entry.amountCents,
+        id: entry.id,
+        isPaid: entry.isPaid,
+        month: entry.month,
+        note: entry.note,
+        paidAt: entry.paidAt?.toISOString() ?? null,
+        payerName: entry.payerName,
+        paymentDay: entry.paymentDay,
+        year: entry.year,
+      }))}
+      initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}
       students={students.map((student) => ({
         email: student.user.email,

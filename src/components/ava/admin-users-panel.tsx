@@ -10,9 +10,14 @@ import {
   UserCheck,
   UserRound,
   UsersRound,
+  WalletCards,
   Wrench,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
+import {
+  AdminFinancePanel,
+  type AdminFinanceEntryRow,
+} from "@/components/ava/admin-finance-panel";
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
 import {
   AdminAssignTeacherForm,
@@ -32,6 +37,7 @@ export const adminTaskIds = [
   "criar-aluno",
   "vincular-aluno",
   "contratos",
+  "financeiro",
   "editar-site",
 ] as const;
 
@@ -107,6 +113,8 @@ type AdminUsersPanelProps = {
     name?: string | null;
     role: Role;
   };
+  financeEntries: AdminFinanceEntryRow[];
+  initialFinanceMonth: number;
   maintenanceMode: boolean;
   students: AssignmentOption[];
   storageUsageBytes: number;
@@ -153,6 +161,10 @@ const taskMeta = {
   contratos: {
     icon: FileText,
     title: "Contratos PDF",
+  },
+  financeiro: {
+    icon: WalletCards,
+    title: "Financeiro 2026",
   },
   "editar-site": {
     icon: Wrench,
@@ -483,6 +495,8 @@ export function AdminUsersPanel({
   assignments,
   contracts,
   currentUser,
+  financeEntries,
+  initialFinanceMonth,
   maintenanceMode,
   students,
   storageUsageBytes,
@@ -632,6 +646,13 @@ export function AdminUsersPanel({
                 <ContractsList contracts={contracts} />
               </div>
             </div>
+          ) : null}
+
+          {activeTask === "financeiro" ? (
+            <AdminFinancePanel
+              entries={financeEntries}
+              initialMonth={initialFinanceMonth}
+            />
           ) : null}
 
           {activeTask === "editar-site" ? (

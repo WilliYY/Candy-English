@@ -16,6 +16,7 @@ import {
   UserPlus,
   UserRound,
   UsersRound,
+  WalletCards,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { canAccessRole, isRole, ROLE_LABELS } from "@/lib/roles";
@@ -99,6 +100,12 @@ const navGroups = [
         icon: FileText,
         label: "Contratos PDF",
         section: "Arquivos",
+      },
+      {
+        href: "/ava/admin?task=financeiro",
+        icon: WalletCards,
+        label: "Financeiro",
+        section: "Financeiro",
       },
       {
         href: "/ava/admin?task=editar-site",

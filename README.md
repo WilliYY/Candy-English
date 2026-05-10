@@ -4,9 +4,11 @@ Site institucional e AVA da Candy English.
 
 ## Fase Atual
 
-FASE 24 implementada: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty, botao de WhatsApp no site/login e hero com contraste translucido. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo embutida por Jitsi quando a teacher nao informa link externo, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF, acompanha uso de arquivos em MB e tem atalhos para operacoes da area teacher.
+FASE 25 implementada: o admin possui o modulo interno `Financeiro` em `/ava/admin?task=financeiro`, com meses de 2026, linhas financeiras por nome, valor, dia de pagamento, status pago/pendente, data real de pagamento e observacao.
 
-Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer regras financeiras, pagamentos, backups complexos ou integracoes externas.
+Base anterior: alem do login real, roles, gestao inicial de usuarios, aulas, materiais, homeworks e feedback, o site institucional recebeu direcao visual roxa com logo mais visivel, favicon com marca, Catty, botao de WhatsApp no site/login e hero com contraste translucido. O AVA possui sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo do aluno com foto, contratos PDF embutidos, aula ao vivo embutida por Jitsi quando a teacher nao informa link externo, status ativo/inativo, protecao contra muitas tentativas de login e vinculo direto aluno-teacher. Admin, teacher e student abrem uma tarefa principal por vez. A rota `/ava` nao mostra mais pagina intermediaria: visitante vai direto para `/ava/login`, e usuario logado vai para sua area por role. O admin tambem controla modo manutencao, envia contratos PDF, acompanha uso de arquivos em MB e tem atalhos para operacoes da area teacher.
+
+Depois da FASE 2, a base recebeu uma camada operacional inspirada no repositorio SavePointFinance: healthcheck HTTP, smoke test de servidor, logs Docker rotacionados, bind local da porta do app e checklist de producao. A adaptacao ficou limitada ao que faz sentido para o Candy English agora, sem trazer integracoes de pagamento, backups complexos ou integracoes externas.
 
 Referencia usada: https://github.com/Marks013/SavePointFinance
 
@@ -26,7 +28,7 @@ Referencia usada: https://github.com/Marks013/SavePointFinance
 - A sessao do Auth.js usa estrategia JWT e inclui `id` e `role` do usuario.
 - A autorizacao das areas do AVA e validada no servidor nas paginas protegidas.
 - O cadastro inicial de usuarios do AVA acontece no `/ava/admin` e exige role `ADMIN`.
-- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos PDF e manutencao; tambem mostra atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens na area teacher.
+- O painel admin usa `?task=` para trocar entre usuarios, criar admin, criar teacher, criar aluno, vincular aluno, contratos PDF, financeiro e manutencao; tambem mostra atalhos para aula ao vivo, criar aula, criar homework, corrigir homework e mensagens na area teacher.
 - As actions de aulas/homeworks/feedback validam role e vinculo de dados no servidor.
 - Usuarios inativos nao conseguem fazer login.
 - Tentativas de login com falha ficam registradas em `LoginAttempt` para limitar abuso basico.
@@ -94,6 +96,7 @@ src/
   components/
     ava/
       admin-create-user-form.tsx
+      admin-finance-panel.tsx
       admin-maintenance-panel.tsx
       admin-operations.tsx
       admin-users-panel.tsx
@@ -332,6 +335,7 @@ O schema atual define:
 - `LoginAttempt`
 - `LiveSession`
 - `ContractDocument`
+- `FinancialEntry`
 - `SitePageContent`
 - `AppSetting`
 - `ChatThread`
@@ -562,6 +566,15 @@ Implementado:
 - foto de perfil usa `POST /ava/avatar`, aparece no card lateral, no resumo superior e no card de upload apos atualizar;
 - atalhos do AVA possuem indicador visual local para novidades em aulas, homeworks, mensagens, contratos e aula ao vivo; ao abrir o modulo, o indicador e marcado como visto no navegador.
 
+## FASE 25 - Financeiro Admin
+
+- `/ava/admin?task=financeiro` adiciona um modulo financeiro visivel apenas para `ADMIN`;
+- `FinancialEntry` guarda linhas financeiras de 2026 com mes, nome, valor em centavos, dia de pagamento, status pago/pendente, data real de pagamento e observacao;
+- o status nasce como pendente quando nao ha data paga e pode ser alternado por botao vermelho/verde;
+- a listagem fica separada por meses de 2026, ordenada pelo dia de pagamento em ordem crescente;
+- a visualizacao usa layout tipo planilha em desktop e cards completos em telas menores para nao cortar informacoes;
+- as server actions de financeiro chamam `auth()` e recusam escrita fora da role `ADMIN`.
+
 ## Ferramentas Locais Recomendadas
 
 Instalado neste Windows:
@@ -649,5 +662,5 @@ Ainda nao implementado:
 - Sistema avancado de correcao, notas e relatorios
 - Upload livre de arquivos/material Word
 - MinIO
-- Pagamentos
+- Pagamentos online ou integracoes externas de cobranca
 - Dashboard complexo
