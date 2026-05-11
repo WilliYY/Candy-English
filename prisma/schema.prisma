@@ -48,6 +48,7 @@ model User {
   avatarMimeType    String?
   studentProfile    StudentProfile?
   teacherProfile    TeacherProfile?
+  financialLogs     FinancialLog[]
   sentChatMessages  ChatMessage[]
   uploadedContracts ContractDocument[] @relation("UploadedContracts")
   createdAt         DateTime           @default(now())
@@ -239,21 +240,56 @@ model ContractDocument {
   @@index([uploadedByUserId])
 }
 
-model FinancialEntry {
-  id          String   @id @default(cuid())
-  year        Int      @default(2026)
+model FinancialStudent {
+  id            String             @id @default(cuid())
+  name          String
+  amountCents   Int
+  paymentDay    Int
+  paymentMethod String             @default("PIX")
+  phone         String?
+  cpf           String?
+  email         String?
+  address       String?
+  payments      FinancialPayment[]
+  logs          FinancialLog[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([paymentDay, name])
+}
+
+model FinancialPayment {
+  id          String           @id @default(cuid())
+  year        Int              @default(2026)
   month       Int
-  payerName   String
-  amountCents Int
-  paymentDay  Int
-  isPaid      Boolean  @default(false)
+  studentId   String
+  student     FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  isPaid      Boolean          @default(false)
   paidAt      DateTime?
   note        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  logs        FinancialLog[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  @@index([year, month, paymentDay])
+  @@unique([studentId, year, month])
+  @@index([year, month, isPaid])
   @@index([isPaid])
+}
+
+model FinancialLog {
+  id              String            @id @default(cuid())
+  action          String
+  description     String
+  studentId       String?
+  student         FinancialStudent? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  paymentId       String?
+  payment         FinancialPayment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  createdByUserId String?
+  createdByUser   User?             @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime          @default(now())
+
+  @@index([createdAt])
+  @@index([studentId])
 }
 
 model SitePageContent {

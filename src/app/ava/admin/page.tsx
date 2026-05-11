@@ -37,7 +37,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     students,
     assignments,
     contracts,
-    financeEntries,
+    financeStudents,
+    financeLogs,
     maintenanceMode,
     storageUsageBytes,
   ] = await Promise.all([
@@ -184,32 +185,57 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         title: true,
       },
     }),
-    prisma.financialEntry.findMany({
-      where: {
-        year: 2026,
-      },
+    prisma.financialStudent.findMany({
       orderBy: [
-        {
-          month: "asc",
-        },
         {
           paymentDay: "asc",
         },
         {
-          payerName: "asc",
+          name: "asc",
         },
       ],
       select: {
+        address: true,
         amountCents: true,
+        cpf: true,
+        email: true,
         id: true,
-        isPaid: true,
-        month: true,
-        note: true,
-        paidAt: true,
-        payerName: true,
+        name: true,
+        paymentMethod: true,
         paymentDay: true,
-        year: true,
+        phone: true,
+        payments: {
+          where: {
+            year: 2026,
+          },
+          select: {
+            id: true,
+            isPaid: true,
+            month: true,
+            note: true,
+            paidAt: true,
+            updatedAt: true,
+            year: true,
+          },
+        },
       },
+    }),
+    prisma.financialLog.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        action: true,
+        createdAt: true,
+        description: true,
+        id: true,
+        student: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      take: 30,
     }),
     isMaintenanceModeEnabled(),
     getStorageUsageBytes(),
@@ -237,16 +263,32 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         title: contract.title,
       }))}
       currentUser={currentUser ?? session.user}
-      financeEntries={financeEntries.map((entry) => ({
-        amountCents: entry.amountCents,
-        id: entry.id,
-        isPaid: entry.isPaid,
-        month: entry.month,
-        note: entry.note,
-        paidAt: entry.paidAt?.toISOString() ?? null,
-        payerName: entry.payerName,
-        paymentDay: entry.paymentDay,
-        year: entry.year,
+      financeLogs={financeLogs.map((log) => ({
+        action: log.action,
+        createdAt: log.createdAt.toISOString(),
+        description: log.description,
+        id: log.id,
+        studentName: log.student?.name ?? null,
+      }))}
+      financeStudents={financeStudents.map((student) => ({
+        address: student.address,
+        amountCents: student.amountCents,
+        cpf: student.cpf,
+        email: student.email,
+        id: student.id,
+        name: student.name,
+        paymentDay: student.paymentDay,
+        paymentMethod: student.paymentMethod,
+        payments: student.payments.map((payment) => ({
+          id: payment.id,
+          isPaid: payment.isPaid,
+          month: payment.month,
+          note: payment.note,
+          paidAt: payment.paidAt?.toISOString() ?? null,
+          updatedAt: payment.updatedAt.toISOString(),
+          year: payment.year,
+        })),
+        phone: student.phone,
       }))}
       initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}

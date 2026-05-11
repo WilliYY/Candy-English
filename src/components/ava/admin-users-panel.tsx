@@ -16,7 +16,8 @@ import {
 import type { ComponentType, SVGProps } from "react";
 import {
   AdminFinancePanel,
-  type AdminFinanceEntryRow,
+  type AdminFinanceLogRow,
+  type AdminFinanceStudentRow,
 } from "@/components/ava/admin-finance-panel";
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
 import {
@@ -113,7 +114,8 @@ type AdminUsersPanelProps = {
     name?: string | null;
     role: Role;
   };
-  financeEntries: AdminFinanceEntryRow[];
+  financeLogs: AdminFinanceLogRow[];
+  financeStudents: AdminFinanceStudentRow[];
   initialFinanceMonth: number;
   maintenanceMode: boolean;
   students: AssignmentOption[];
@@ -495,7 +497,8 @@ export function AdminUsersPanel({
   assignments,
   contracts,
   currentUser,
-  financeEntries,
+  financeLogs,
+  financeStudents,
   initialFinanceMonth,
   maintenanceMode,
   students,
@@ -650,7 +653,8 @@ export function AdminUsersPanel({
 
           {activeTask === "financeiro" ? (
             <AdminFinancePanel
-              entries={financeEntries}
+              logs={financeLogs}
+              students={financeStudents}
               initialMonth={initialFinanceMonth}
             />
           ) : null}

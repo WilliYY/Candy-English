@@ -167,9 +167,9 @@ export async function getAvaNavAlertSignatures(
           })
         : Promise.resolve(null),
       role === "ADMIN"
-        ? prisma.financialEntry.findFirst({
-            orderBy: { updatedAt: "desc" },
-            select: { id: true, updatedAt: true },
+        ? prisma.financialLog.findFirst({
+            orderBy: { createdAt: "desc" },
+            select: { createdAt: true, id: true },
           })
         : Promise.resolve(null),
     ]);

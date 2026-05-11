@@ -190,11 +190,18 @@ flowchart TD
 ```mermaid
 flowchart TD
   A["ADMIN abre /ava/admin?task=financeiro"] --> B["Escolhe um mes de 2026"]
-  B --> C["Adiciona linha com nome, valor, dia, data paga e observacao"]
-  C --> D["Sistema salva FinancialEntry como pago se houver data paga, ou pendente por padrao"]
-  D --> E["Linhas aparecem ordenadas pelo dia de pagamento"]
-  E --> F["ADMIN alterna status vermelho pendente / verde pago"]
-  E --> G["ADMIN atualiza data real de pagamento e observacao"]
+  B --> C["Adiciona aluno financeiro com nome, valor, dia e forma de pagamento"]
+  C --> D["Sistema salva FinancialStudent para repetir mes a mes"]
+  D --> E["Sistema cria FinancialPayment do mes se houver data paga ou observacao"]
+  E --> F["Alunos aparecem ordenados pelo dia de pagamento"]
+  F --> G["ADMIN alterna status vermelho pendente / verde pago"]
+  F --> H["ADMIN edita data paga e observacao do mes"]
+  F --> I["ADMIN abre dados extras para telefone, CPF, email, endereco, edicao ou exclusao"]
+  F --> J["ADMIN exporta PDF ou Excel"]
+  G --> K["Sistema registra FinancialLog"]
+  H --> K
+  I --> K
+  J --> K
 ```
 
 Regras:
@@ -202,8 +209,13 @@ Regras:
 - Apenas `ADMIN` visualiza e grava financeiro.
 - O modulo e controle interno, nao pagamento online.
 - Valores ficam salvos em centavos no banco.
-- Cada mes de 2026 tem sua propria visualizacao.
-- A listagem deve mostrar nome, valor, dia, status, data paga e observacao sem cortar informacao importante.
+- Nome, valor, dia de pagamento, forma de pagamento, telefone, CPF, email e endereco ficam no cadastro recorrente do aluno financeiro.
+- Status, data paga e observacao pertencem ao mes selecionado; quando outro mes e aberto, observacao e pagamento comecam vazios ate alguem registrar.
+- Cada mes de 2026 mostra todos os alunos financeiros ativos na ordem crescente do dia de pagamento.
+- A listagem mostra o principal primeiro: nome, valor, dia, status, forma e data paga.
+- Dados extras e observacao ficam recolhidos para evitar poluicao visual.
+- O contador de devedores sobe quando o dia previsto passou e o aluno segue pendente naquele mes.
+- Exportacao PDF/Excel usa os dados do mes aberto e fica registrada no log financeiro.
 
 ## Fluxo Manutencao Candy
 

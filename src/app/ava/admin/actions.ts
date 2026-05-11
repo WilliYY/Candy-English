@@ -10,17 +10,23 @@ import {
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
-  adminFinanceEntrySchema,
-  adminFinanceEntryUpdateSchema,
+  adminFinanceExportLogSchema,
+  adminFinancePaymentUpdateSchema,
   adminFinanceStatusSchema,
+  adminFinanceStudentCreateSchema,
+  adminFinanceStudentDeleteSchema,
+  adminFinanceStudentUpdateSchema,
   adminSiteContentSchema,
   adminToggleUserStatusSchema,
   type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
-  type AdminFinanceEntryInput,
-  type AdminFinanceEntryUpdateInput,
+  type AdminFinanceExportLogInput,
+  type AdminFinancePaymentUpdateInput,
   type AdminFinanceStatusInput,
+  type AdminFinanceStudentCreateInput,
+  type AdminFinanceStudentDeleteInput,
+  type AdminFinanceStudentUpdateInput,
   type AdminSiteContentInput,
   type AdminToggleUserStatusInput,
 } from "@/lib/validations/admin-users";
@@ -413,9 +419,9 @@ export async function toggleMaintenanceMode(
   };
 }
 
-export async function createFinancialEntry(
-  input: AdminFinanceEntryInput,
-): Promise<AdminActionResult<AdminFinanceEntryInput>> {
+export async function createFinancialStudent(
+  input: AdminFinanceStudentCreateInput,
+): Promise<AdminActionResult<AdminFinanceStudentCreateInput>> {
   const session = await requireAdmin();
 
   if (!session) {
@@ -425,11 +431,11 @@ export async function createFinancialEntry(
     };
   }
 
-  const parsed = adminFinanceEntrySchema.safeParse(input);
+  const parsed = adminFinanceStudentCreateSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
-      errors: fieldErrors<AdminFinanceEntryInput>(parsed.error.issues),
+      errors: fieldErrors<AdminFinanceStudentCreateInput>(parsed.error.issues),
       ok: false,
       message: "Revise os dados do lancamento.",
     };
@@ -437,17 +443,43 @@ export async function createFinancialEntry(
 
   const prisma = getPrisma();
 
-  await prisma.financialEntry.create({
-    data: {
-      amountCents: parsed.data.amount,
-      isPaid: Boolean(parsed.data.paidAt),
-      month: parsed.data.month,
-      note: parsed.data.note,
-      paidAt: parsed.data.paidAt,
-      payerName: parsed.data.payerName,
-      paymentDay: parsed.data.paymentDay,
-      year: 2026,
-    },
+  await prisma.$transaction(async (tx) => {
+    const student = await tx.financialStudent.create({
+      data: {
+        address: parsed.data.address,
+        amountCents: parsed.data.amount,
+        cpf: parsed.data.cpf,
+        email: parsed.data.email,
+        name: parsed.data.name,
+        paymentDay: parsed.data.paymentDay,
+        paymentMethod: parsed.data.paymentMethod,
+        phone: parsed.data.phone,
+      },
+    });
+
+    const shouldCreatePayment = Boolean(parsed.data.paidAt || parsed.data.note);
+    const payment = shouldCreatePayment
+      ? await tx.financialPayment.create({
+          data: {
+            isPaid: Boolean(parsed.data.paidAt),
+            month: parsed.data.month,
+            note: parsed.data.note,
+            paidAt: parsed.data.paidAt,
+            studentId: student.id,
+            year: parsed.data.year,
+          },
+        })
+      : null;
+
+    await tx.financialLog.create({
+      data: {
+        action: "CREATE",
+        createdByUserId: session.user.id,
+        description: `Aluno financeiro criado: ${student.name}.`,
+        paymentId: payment?.id,
+        studentId: student.id,
+      },
+    });
   });
 
   revalidatePath("/ava/admin");
@@ -458,9 +490,9 @@ export async function createFinancialEntry(
   };
 }
 
-export async function updateFinancialEntryDetails(
-  input: AdminFinanceEntryUpdateInput,
-): Promise<AdminActionResult<AdminFinanceEntryUpdateInput>> {
+export async function updateFinancialStudent(
+  input: AdminFinanceStudentUpdateInput,
+): Promise<AdminActionResult<AdminFinanceStudentUpdateInput>> {
   const session = await requireAdmin();
 
   if (!session) {
@@ -470,46 +502,151 @@ export async function updateFinancialEntryDetails(
     };
   }
 
-  const parsed = adminFinanceEntryUpdateSchema.safeParse(input);
+  const parsed = adminFinanceStudentUpdateSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
-      errors: fieldErrors<AdminFinanceEntryUpdateInput>(parsed.error.issues),
+      errors: fieldErrors<AdminFinanceStudentUpdateInput>(parsed.error.issues),
       ok: false,
-      message: "Revise a data e a observacao.",
+      message: "Revise os dados do aluno financeiro.",
     };
   }
 
   const prisma = getPrisma();
-  const entry = await prisma.financialEntry.findUnique({
-    where: { id: parsed.data.entryId },
+  const student = await prisma.financialStudent.findUnique({
+    where: { id: parsed.data.studentId },
     select: { id: true },
   });
 
-  if (!entry) {
+  if (!student) {
     return {
       ok: false,
-      message: "Lancamento financeiro nao encontrado.",
+      message: "Aluno financeiro nao encontrado.",
     };
   }
 
-  await prisma.financialEntry.update({
-    where: { id: entry.id },
-    data: {
-      note: parsed.data.note ?? null,
-      paidAt: parsed.data.paidAt ?? null,
-    },
+  await prisma.$transaction(async (tx) => {
+    const updatedStudent = await tx.financialStudent.update({
+      where: { id: student.id },
+      data: {
+        address: parsed.data.address ?? null,
+        amountCents: parsed.data.amount,
+        cpf: parsed.data.cpf ?? null,
+        email: parsed.data.email ?? null,
+        name: parsed.data.name,
+        paymentDay: parsed.data.paymentDay,
+        paymentMethod: parsed.data.paymentMethod,
+        phone: parsed.data.phone ?? null,
+      },
+    });
+
+    await tx.financialLog.create({
+      data: {
+        action: "UPDATE_STUDENT",
+        createdByUserId: session.user.id,
+        description: `Dados financeiros atualizados: ${updatedStudent.name}.`,
+        studentId: updatedStudent.id,
+      },
+    });
   });
 
   revalidatePath("/ava/admin");
 
   return {
     ok: true,
-    message: "Lancamento financeiro atualizado.",
+    message: "Dados do aluno financeiro atualizados.",
   };
 }
 
-export async function toggleFinancialEntryStatus(
+export async function updateFinancialPaymentDetails(
+  input: AdminFinancePaymentUpdateInput,
+): Promise<AdminActionResult<AdminFinancePaymentUpdateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para atualizar financeiro.",
+    };
+  }
+
+  const parsed = adminFinancePaymentUpdateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinancePaymentUpdateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a data e a observacao.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const student = await prisma.financialStudent.findUnique({
+    where: { id: parsed.data.studentId },
+    select: { id: true, name: true },
+  });
+
+  if (!student) {
+    return {
+      ok: false,
+      message: "Aluno financeiro nao encontrado.",
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    const currentPayment = await tx.financialPayment.findUnique({
+      where: {
+        studentId_year_month: {
+          month: parsed.data.month,
+          studentId: student.id,
+          year: parsed.data.year,
+        },
+      },
+      select: { isPaid: true },
+    });
+    const payment = await tx.financialPayment.upsert({
+      where: {
+        studentId_year_month: {
+          month: parsed.data.month,
+          studentId: student.id,
+          year: parsed.data.year,
+        },
+      },
+      create: {
+        isPaid: Boolean(parsed.data.paidAt),
+        month: parsed.data.month,
+        note: parsed.data.note ?? null,
+        paidAt: parsed.data.paidAt ?? null,
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+      update: {
+        isPaid: parsed.data.paidAt ? true : currentPayment?.isPaid ?? false,
+        note: parsed.data.note ?? null,
+        paidAt: parsed.data.paidAt ?? null,
+      },
+    });
+
+    await tx.financialLog.create({
+      data: {
+        action: "UPDATE_PAYMENT",
+        createdByUserId: session.user.id,
+        description: `Pagamento mensal atualizado: ${student.name}.`,
+        paymentId: payment.id,
+        studentId: student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Pagamento mensal atualizado.",
+  };
+}
+
+export async function toggleFinancialPaymentStatus(
   input: AdminFinanceStatusInput,
 ): Promise<AdminActionResult<AdminFinanceStatusInput>> {
   const session = await requireAdmin();
@@ -532,23 +669,63 @@ export async function toggleFinancialEntryStatus(
   }
 
   const prisma = getPrisma();
-  const entry = await prisma.financialEntry.findUnique({
-    where: { id: parsed.data.entryId },
-    select: { id: true },
+  const student = await prisma.financialStudent.findUnique({
+    where: { id: parsed.data.studentId },
+    select: { id: true, name: true },
   });
 
-  if (!entry) {
+  if (!student) {
     return {
       ok: false,
-      message: "Lancamento financeiro nao encontrado.",
+      message: "Aluno financeiro nao encontrado.",
     };
   }
 
-  await prisma.financialEntry.update({
-    where: { id: entry.id },
-    data: {
-      isPaid: parsed.data.isPaid,
-    },
+  await prisma.$transaction(async (tx) => {
+    const currentPayment = await tx.financialPayment.findUnique({
+      where: {
+        studentId_year_month: {
+          month: parsed.data.month,
+          studentId: student.id,
+          year: parsed.data.year,
+        },
+      },
+      select: { paidAt: true },
+    });
+    const payment = await tx.financialPayment.upsert({
+      where: {
+        studentId_year_month: {
+          month: parsed.data.month,
+          studentId: student.id,
+          year: parsed.data.year,
+        },
+      },
+      create: {
+        isPaid: parsed.data.isPaid,
+        month: parsed.data.month,
+        paidAt: parsed.data.isPaid ? new Date() : null,
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+      update: {
+        isPaid: parsed.data.isPaid,
+        paidAt: parsed.data.isPaid
+          ? currentPayment?.paidAt ?? new Date()
+          : null,
+      },
+    });
+
+    await tx.financialLog.create({
+      data: {
+        action: "STATUS",
+        createdByUserId: session.user.id,
+        description: parsed.data.isPaid
+          ? `Status marcado como pago: ${student.name}.`
+          : `Status marcado como pendente: ${student.name}.`,
+        paymentId: payment.id,
+        studentId: student.id,
+      },
+    });
   });
 
   revalidatePath("/ava/admin");
@@ -558,5 +735,102 @@ export async function toggleFinancialEntryStatus(
     message: parsed.data.isPaid
       ? "Status marcado como pago."
       : "Status marcado como pendente.",
+  };
+}
+
+export async function deleteFinancialStudent(
+  input: AdminFinanceStudentDeleteInput,
+): Promise<AdminActionResult<AdminFinanceStudentDeleteInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir financeiro.",
+    };
+  }
+
+  const parsed = adminFinanceStudentDeleteSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinanceStudentDeleteInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o aluno financeiro.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const student = await prisma.financialStudent.findUnique({
+    where: { id: parsed.data.studentId },
+    select: { id: true, name: true },
+  });
+
+  if (!student) {
+    return {
+      ok: false,
+      message: "Aluno financeiro nao encontrado.",
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.financialLog.create({
+      data: {
+        action: "DELETE",
+        createdByUserId: session.user.id,
+        description: `Aluno financeiro excluido: ${student.name}.`,
+        studentId: student.id,
+      },
+    });
+    await tx.financialStudent.delete({
+      where: { id: student.id },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Aluno financeiro excluido.",
+  };
+}
+
+export async function recordFinancialExport(
+  input: AdminFinanceExportLogInput,
+): Promise<AdminActionResult<AdminFinanceExportLogInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para exportar financeiro.",
+    };
+  }
+
+  const parsed = adminFinanceExportLogSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinanceExportLogInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o mes da exportacao.",
+    };
+  }
+
+  const prisma = getPrisma();
+
+  await prisma.financialLog.create({
+    data: {
+      action: "EXPORT",
+      createdByUserId: session.user.id,
+      description: `Exportacao ${parsed.data.format} do financeiro ${parsed.data.year}/${parsed.data.month}.`,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Exportacao registrada no log.",
   };
 }

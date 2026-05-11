@@ -48,7 +48,7 @@ O sistema deve permitir que a teacher crie aulas, materiais, vocabularios, homew
 
 ## Fase atual
 
-FASE 25 implementada. O admin possui o modulo interno `Financeiro` em `/ava/admin?task=financeiro`, restrito a `ADMIN`, com ano 2026, meses, linhas por nome, valor, dia de pagamento, status pago/pendente, data real de pagamento e observacao. As linhas ficam em `FinancialEntry`, o status padrao e pendente/vermelho quando nao ha data paga, o botao alterna para pago/verde, e a listagem e ordenada por dia de pagamento em ordem crescente.
+FASE 26 implementada. O admin possui o modulo interno `Financeiro` em `/ava/admin?task=financeiro`, restrito a `ADMIN`, com alunos financeiros recorrentes para 2026. `FinancialStudent` guarda nome, valor, dia, forma de pagamento, telefone, CPF, email e endereco que permanecem mes a mes; `FinancialPayment` guarda status, data paga e observacao por mes; `FinancialLog` registra criacao, edicao, status, exclusao e exportacao. A UI mostra o principal primeiro, recolhe dados extras/observacao, ordena por dia de pagamento crescente, indica devedores vencidos e exporta PDF/Excel.
 
 FASE 24 implementada. O AVA ja possui login real, roles, admin inicial, cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, aulas, materiais, vocabulario, homework online, feedback inicial, sidebar por role com grupos expansíveis para admin/teacher e botoes sempre abertos para student, perfil completo com foto, contratos PDF, aula ao vivo embutida por Jitsi quando nao ha link externo, modo manutencao e chatbox teacher/aluno. O admin agrupa usuarios por role, permite minimizar historicos, envia contratos PDF e mostra uso aproximado de storage. O student edita dados pessoais e sexo, mas nivel e somente leitura; teacher/admin atualizam nivel pela area teacher. O site institucional tem direcao visual roxa, logo visivel, favicon com bala transparente, home com `public/brand/home.mp4` no hero, video remoto na segunda secao, paginas informativas com `public/brand/informacoes.mp4`, navbar sem Planos, indicador informativo de usuario logado, botao AVA direto por role, Catty no site/login/paineis logados do AVA e WhatsApp no site/login. Admin, teacher e student usam `/ava/...?...task=` para abrir uma tarefa limpa por vez. A rota `/ava` redireciona visitante para `/ava/login` e usuario autenticado para a area correta por role com validacao de role.
 
@@ -301,11 +301,24 @@ Contraste visual e navegacao operacional:
 Financeiro admin:
 
 - `/ava/admin?task=financeiro` mostra modulo financeiro apenas para `ADMIN`;
-- `FinancialEntry` guarda linhas financeiras de 2026 com mes, nome, valor em centavos, dia de pagamento, status, data real de pagamento e observacao;
+- `FinancialEntry` guardava linhas financeiras de 2026 com mes, nome, valor em centavos, dia de pagamento, status, data real de pagamento e observacao;
 - status padrao fica pendente/vermelho quando nao ha data paga;
 - botao de status alterna entre pendente/vermelho e pago/verde;
 - meses de 2026 ficam em abas/botoes e linhas sao ordenadas por dia de pagamento crescente;
 - visualizacao deve preservar a planilha completa sem cortar nome, valor, dia, status, data ou observacao.
+
+### FASE 26
+
+Financeiro recorrente:
+
+- `FinancialStudent` guarda os dados que continuam mes a mes;
+- `FinancialPayment` guarda o status, data paga e observacao de cada mes de 2026;
+- `FinancialLog` registra acoes feitas no financeiro para leitura simples abaixo do painel;
+- dados extras e observacao ficam minimizados ate o admin abrir o aluno;
+- o admin pode editar e excluir alunos financeiros;
+- a tela mostra indicador de devedores quando o dia de pagamento passou e o mes segue pendente;
+- exportacao PDF/Excel parte dos dados do mes selecionado e registra log;
+- server actions continuam restritas a `ADMIN`.
 
 ## MVP inicial
 

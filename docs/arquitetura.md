@@ -193,7 +193,9 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - `AppSetting` guarda configuracoes operacionais simples, como modo manutencao.
 - `ChatThread` representa a conversa privada de um vinculo teacher-aluno.
 - `ChatMessage` guarda mensagens do chatbox com `senderUserId`, sempre validado por role e vinculo antes da escrita.
-- `FinancialEntry` guarda linhas financeiras administrativas de 2026 com mes, nome do pagador, valor em centavos, dia de pagamento, status pago/pendente, data real de pagamento e observacao.
+- `FinancialStudent` guarda os dados recorrentes do financeiro administrativo: nome, valor em centavos, dia de pagamento, forma de pagamento, telefone, CPF, email e endereco.
+- `FinancialPayment` guarda o estado mensal de 2026 para cada aluno financeiro: status pago/pendente, data real de pagamento e observacao do mes.
+- `FinancialLog` guarda um historico simples de acoes no financeiro, incluindo criacao, edicao, mudanca de status, exclusao e exportacao.
 
 ### Docker
 
@@ -205,6 +207,7 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - O servico `seed` pode ser chamado diretamente com `docker compose run --rm seed`; o Compose ativa o servico solicitado mesmo ele estando no perfil `tools`.
 - O app publica a porta `3000` apenas no host definido por `APP_HOST_BIND`, com padrao `127.0.0.1`.
 - O runtime do Next.js no container define `HOSTNAME=0.0.0.0`, permitindo healthcheck interno em `127.0.0.1:3000` e acesso pelo servico `app` na rede Docker.
+- Na inicializacao, o container `app` ajusta a permissao de `/app/storage` para `nextjs:nodejs` e em seguida executa `node server.js` como usuario `nextjs`, evitando falha de upload quando o volume Docker ja recebeu arquivos de ferramentas.
 - Logs de `app` e `postgres` usam driver `json-file` com `max-size=10m` e `max-file=3`.
 - `app`, `postgres` e ferramentas possuem `mem_reservation` e `mem_limit` para manter o runtime proximo da meta de 10% de 24 GB.
 - O PostgreSQL usa parametros conservadores: `shared_buffers=256MB`, `work_mem=8MB`, `maintenance_work_mem=128MB`, `effective_cache_size=768MB` e `max_connections=50`, todos ajustaveis pelo `.env`.
@@ -418,8 +421,20 @@ A vigesima quinta fase adiciona controle financeiro interno para administradores
 
 - `/ava/admin?task=financeiro` fica disponivel apenas para `ADMIN`;
 - o menu Admin recebe atalho proprio para Financeiro, separado de contratos e manutencao;
-- `FinancialEntry` guarda as linhas financeiras de 2026 no PostgreSQL, com mes, nome, valor em centavos, dia previsto de pagamento, status, data real de pagamento e observacao;
+- `FinancialEntry` guardava as linhas financeiras de 2026 no PostgreSQL, com mes, nome, valor em centavos, dia previsto de pagamento, status, data real de pagamento e observacao;
 - o status padrao e pendente/vermelho quando a linha nasce sem data paga, e pode ser alternado para pago/verde por server action protegida;
 - a listagem e agrupada pelos meses de 2026 e ordenada por `paymentDay` crescente;
 - a interface usa uma grade tipo planilha em desktop e cards completos em telas menores para preservar leitura sem cortar informacoes;
 - esta fase nao implementa pagamento online, gateway, nota fiscal, cobranca automatica ou conciliacao bancaria.
+
+## FASE 26
+
+A vigesima sexta fase transforma o Financeiro em uma agenda recorrente de alunos:
+
+- `FinancialStudent` substitui a linha solta como cadastro recorrente do aluno financeiro;
+- `FinancialPayment` separa o que pertence ao mes, permitindo que observacao e data paga zerem naturalmente nos outros meses;
+- `FinancialLog` registra as acoes feitas por admin no financeiro;
+- a migration `20260510203000_recurring_finance_students` preserva linhas antigas de `FinancialEntry` convertendo-as para aluno financeiro e pagamento mensal;
+- a UI mostra nome, valor, dia, status, forma de pagamento e data paga como campos principais, mantendo telefone, CPF, email, endereco e observacao recolhidos;
+- exportacoes PDF/Excel sao feitas no cliente a partir dos dados ja autorizados pela pagina admin e registradas no log por server action;
+- o indicador de devedores compara o dia previsto de pagamento com a data atual e conta alunos pendentes vencidos no mes selecionado.
