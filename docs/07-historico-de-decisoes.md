@@ -121,6 +121,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260511160000_admin_agenda_module`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/components/ava/admin-agenda-panel.tsx`, sidebar do AVA e docs.
 - Riscos/cuidados: agenda e controle interno do admin; nao confundir com aulas/materiais da teacher nem com presenca automatica.
 
+### 2026-05-11 - Agenda e financeiro com painel mais compacto
+
+- Decisao: manter logs recolhidos por padrao, alinhar linhas do financeiro e adicionar acoes rapidas `Certo`/`X` no bloco `Hoje` da agenda.
+- Motivo: reduzir espaco em branco, facilitar cobranca/controle diario e evitar que logs ocupem a tela principal.
+- Impacto: `src/components/ava/admin-finance-panel.tsx`, `src/components/ava/admin-agenda-panel.tsx`, `docs/13-financeiro.md`, `docs/14-agenda.md`.
+- Riscos/cuidados: manter botoes de presenca com validacao server-side em `updateAgendaAttendance`; nao esconder logs permanentemente, apenas recolher.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -6,6 +6,7 @@ import {
   CalendarCheck2,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   Clock,
   LoaderCircle,
   Phone,
@@ -15,7 +16,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   createAgendaMakeup,
@@ -143,12 +144,30 @@ function createDefaultValues(month: number): AdminAgendaScheduleCreateInput {
   };
 }
 
+function clampMonth(month: number) {
+  return Math.min(Math.max(month, 1), 12);
+}
+
+function getAutomaticAgendaMonth(fallbackMonth: number) {
+  const now = new Date();
+
+  if (now.getFullYear() === 2026) {
+    return now.getMonth() + 1;
+  }
+
+  return clampMonth(fallbackMonth);
+}
+
 function toDayKey(date: Date) {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function toInputDate(date: Date) {
-  return date.toISOString().slice(0, 10);
+  return toDayKey(date);
 }
 
 function parseLessonDate(value: string) {
@@ -276,6 +295,74 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
       ) : null}
       {message ? (
         <span className="w-full text-xs text-muted-foreground">{message}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function AgendaTodayQuickActions({ lesson }: { lesson: AdminAgendaLessonRow }) {
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const isAttended =
+    lesson.status === "ATTENDED" || lesson.status === "MAKEUP_ATTENDED";
+  const isMissed = lesson.status === "MISSED";
+
+  function submitStatus(status: AdminAgendaAttendanceInput["status"]) {
+    setMessage(null);
+
+    startTransition(async () => {
+      const result = await updateAgendaAttendance({
+        lessonId: lesson.id,
+        status,
+      });
+
+      setMessage(result.message);
+
+      if (result.ok) {
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-1.5">
+      <Button
+        type="button"
+        size="sm"
+        disabled={isPending}
+        aria-label={`Marcar ${lesson.studentName} como presente`}
+        className={cn(
+          "h-8 border border-emerald-700 bg-emerald-600 px-2.5 text-xs text-white hover:bg-emerald-700",
+          isAttended ? "ring-2 ring-emerald-200" : "",
+        )}
+        onClick={() => submitStatus("ATTENDED")}
+      >
+        {isPending ? (
+          <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        ) : (
+          <CheckCircle2 data-icon="inline-start" />
+        )}
+        Certo
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        disabled={isPending}
+        aria-label={`Marcar ${lesson.studentName} como falta`}
+        className={cn(
+          "h-8 border border-red-700 bg-red-600 px-2.5 text-xs text-white hover:bg-red-700",
+          isMissed ? "ring-2 ring-red-200" : "",
+        )}
+        onClick={() => submitStatus("MISSED")}
+      >
+        <XCircle data-icon="inline-start" />
+        X
+      </Button>
+      {message ? (
+        <span className="sr-only" role="status">
+          {message}
+        </span>
       ) : null}
     </div>
   );
@@ -461,15 +548,18 @@ export function AdminAgendaPanel({
   students,
 }: AdminAgendaPanelProps) {
   const router = useRouter();
-  const [activeMonth, setActiveMonth] = useState(initialMonth);
+  const initialActiveMonth = getAutomaticAgendaMonth(initialMonth);
+  const [activeMonth, setActiveMonth] = useState(initialActiveMonth);
+  const [monthChangedManually, setMonthChangedManually] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const form = useForm<AdminAgendaScheduleCreateInput>({
     resolver: zodResolver(adminAgendaScheduleCreateSchema, undefined, {
       raw: true,
     }),
-    defaultValues: createDefaultValues(initialMonth),
+    defaultValues: createDefaultValues(initialActiveMonth),
   });
+  const { setValue } = form;
 
   const selectedWeekdays = form.watch("weekdays") ?? [];
   const activeMonthLabel =
@@ -545,9 +635,29 @@ export function AdminAgendaPanel({
     }, []);
   }, [activeLessons]);
 
+  useEffect(() => {
+    if (monthChangedManually) {
+      return;
+    }
+
+    const syncCurrentMonth = () => {
+      const nextMonth = getAutomaticAgendaMonth(initialMonth);
+
+      setActiveMonth(nextMonth);
+      setValue("month", nextMonth);
+    };
+
+    syncCurrentMonth();
+
+    const interval = window.setInterval(syncCurrentMonth, 60 * 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, [initialMonth, monthChangedManually, setValue]);
+
   function handleMonthChange(month: number) {
+    setMonthChangedManually(true);
     setActiveMonth(month);
-    form.setValue("month", month);
+    setValue("month", month);
   }
 
   function toggleWeekday(weekday: number) {
@@ -591,7 +701,7 @@ export function AdminAgendaPanel({
 
   return (
     <div className="flex flex-col gap-4 pb-28 lg:pr-20">
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
         <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Hoje</h2>
@@ -605,20 +715,40 @@ export function AdminAgendaPanel({
                 Nenhum aluno agendado para hoje.
               </p>
             ) : (
-              todayLessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm"
-                >
-                  <span className="min-w-0 truncate font-semibold">
-                    {lesson.studentName}
-                  </span>
-                  <span className="inline-flex shrink-0 items-center gap-1 text-primary">
-                    <Clock aria-hidden="true" className="size-4" />
-                    {lesson.time}
-                  </span>
-                </div>
-              ))
+              todayLessons.map((lesson) => {
+                const status = getStatusMeta(lesson.status);
+
+                return (
+                  <div
+                    key={lesson.id}
+                    className="grid min-w-0 gap-2 rounded-lg border border-primary/15 bg-white px-3 py-2 text-sm shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <strong className="min-w-0 truncate">
+                          {lesson.studentName}
+                        </strong>
+                        <span
+                          className={cn(
+                            "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-semibold",
+                            status.className,
+                          )}
+                        >
+                          {status.label}
+                        </span>
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1 text-primary">
+                          <Clock aria-hidden="true" className="size-3.5" />
+                          {lesson.time}
+                        </span>
+                        {lesson.isMakeup ? <span>Reposicao</span> : null}
+                      </div>
+                    </div>
+                    <AgendaTodayQuickActions lesson={lesson} />
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
@@ -634,23 +764,39 @@ export function AdminAgendaPanel({
                 Nenhuma aula nos proximos dias.
               </p>
             ) : (
-              upcomingLessons.map((lesson) => (
-                <div
-                  key={lesson.id}
-                  className="min-w-0 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <strong className="min-w-0 truncate">
-                      {lesson.studentName}
-                    </strong>
-                    <span className="shrink-0 text-primary">{lesson.time}</span>
+              upcomingLessons.map((lesson) => {
+                const status = getStatusMeta(lesson.status);
+
+                return (
+                  <div
+                    key={lesson.id}
+                    className="min-w-0 rounded-lg border border-primary/15 bg-white px-3 py-2 text-sm shadow-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <strong className="min-w-0 truncate">
+                        {lesson.studentName}
+                      </strong>
+                      <span className="shrink-0 font-semibold text-primary">
+                        {lesson.time}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>
+                        {getWeekdayLabel(lesson.weekday)} -{" "}
+                        {formatShortDate(lesson.date)}
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2 py-0.5 font-semibold",
+                          status.className,
+                        )}
+                      >
+                        {lesson.isMakeup ? "Reposicao" : status.label}
+                      </span>
+                    </div>
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {getWeekdayLabel(lesson.weekday)} - {formatShortDate(lesson.date)}
-                    {lesson.isMakeup ? " - reposicao" : ""}
-                  </p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -769,14 +915,23 @@ export function AdminAgendaPanel({
           </Field>
           <details className="group rounded-lg border border-primary/15 bg-primary/5 p-2.5">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
-              Observacao
-              <span className="text-xs text-muted-foreground">abrir</span>
+              <span>Observacao do aluno</span>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <span className="group-open:hidden">abrir</span>
+                <span className="hidden group-open:inline">fechar</span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-3.5 transition-transform group-open:rotate-180"
+                />
+              </span>
             </summary>
             <Field
               className="mt-3"
               data-invalid={Boolean(form.formState.errors.notes)}
             >
-              <FieldLabel htmlFor="agenda-notes">Observacao</FieldLabel>
+              <FieldLabel htmlFor="agenda-notes" className="sr-only">
+                Observacao
+              </FieldLabel>
               <Textarea
                 id="agenda-notes"
                 className="min-h-16 resize-y"
@@ -824,7 +979,7 @@ export function AdminAgendaPanel({
                   return (
                     <article
                       key={lesson.id}
-                      className="grid gap-2 rounded-lg border border-primary/10 bg-primary/5 p-2 xl:grid-cols-[90px_minmax(150px,1fr)_130px_minmax(210px,1.1fr)_160px] xl:items-start"
+                      className="grid gap-2 rounded-lg border border-primary/10 bg-white p-2.5 shadow-sm xl:grid-cols-[90px_minmax(150px,1fr)_130px_minmax(210px,1.1fr)_160px] xl:items-center"
                     >
                       <div className="inline-flex items-center gap-2 font-semibold text-primary">
                         <Clock aria-hidden="true" className="size-4" />
@@ -881,30 +1036,43 @@ export function AdminAgendaPanel({
         )}
       </section>
 
-      <section className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
-        <h2 className="mb-3 text-base font-semibold">Log da agenda</h2>
-        {logs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-            Nenhuma movimentacao registrada ainda.
-          </p>
-        ) : (
-          <ol className="grid gap-2">
-            {logs.map((log) => (
-              <li
-                key={log.id}
-                className="grid gap-1 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)]"
-              >
-                <span className="font-semibold text-primary">
-                  {formatDateTime(log.createdAt)}
-                </span>
-                <span className="min-w-0 break-words text-muted-foreground">
-                  {log.description}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      <details className="group rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="text-base font-semibold">Log da agenda</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {logs.length}
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className="size-4 shrink-0 text-primary transition-transform group-open:rotate-180"
+          />
+        </summary>
+        <div className="mt-3">
+          {logs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+              Nenhuma movimentacao registrada ainda.
+            </p>
+          ) : (
+            <ol className="grid gap-2">
+              {logs.map((log) => (
+                <li
+                  key={log.id}
+                  className="grid gap-1 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)]"
+                >
+                  <span className="font-semibold text-primary">
+                    {formatDateTime(log.createdAt)}
+                  </span>
+                  <span className="min-w-0 break-words text-muted-foreground">
+                    {log.description}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      </details>
     </div>
   );
 }

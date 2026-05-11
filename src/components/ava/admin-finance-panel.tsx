@@ -526,7 +526,11 @@ function FinancePaidDateForm({
   });
 
   return (
-    <form className="flex min-w-0 flex-col gap-1.5" onSubmit={onSubmit} noValidate>
+    <form
+      className="flex min-w-0 flex-col justify-center gap-1.5"
+      onSubmit={onSubmit}
+      noValidate
+    >
       <input type="hidden" {...form.register("studentId")} />
       <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
       <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
@@ -538,10 +542,11 @@ function FinancePaidDateForm({
         >
           Data paga
         </FieldLabel>
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_2.5rem]">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center xl:grid-cols-[minmax(0,1fr)_2.25rem]">
           <Input
             id={`finance-paid-at-${row.id}`}
             type="date"
+            className="h-9 min-w-0 xl:h-8"
             aria-invalid={Boolean(form.formState.errors.paidAt)}
             disabled={isPending}
             {...form.register("paidAt")}
@@ -549,7 +554,7 @@ function FinancePaidDateForm({
           <Button
             type="submit"
             size="sm"
-            className="px-3"
+            className="h-9 px-3 xl:h-8 xl:w-9 xl:px-0"
             disabled={isPending}
           >
             {isPending ? (
@@ -1356,7 +1361,7 @@ export function AdminFinancePanel({
       </form>
 
       <section className="flex flex-col gap-3">
-        <div className="hidden rounded-lg border border-primary/20 bg-primary/10 px-3 py-2.5 text-xs font-bold uppercase text-primary xl:grid xl:grid-cols-[minmax(140px,1.15fr)_minmax(95px,0.72fr)_minmax(55px,0.36fr)_minmax(115px,0.76fr)_minmax(115px,0.7fr)_minmax(180px,0.95fr)_minmax(105px,0.62fr)] xl:gap-3">
+        <div className="hidden rounded-lg border border-primary/20 bg-primary/10 px-3 py-2.5 text-xs font-bold uppercase text-primary xl:grid xl:grid-cols-[minmax(135px,1fr)_112px_50px_118px_78px_minmax(190px,0.9fr)_48px] xl:items-center xl:gap-2.5 2xl:grid-cols-[minmax(160px,1.15fr)_120px_60px_125px_100px_minmax(190px,0.95fr)_112px]">
           <span>Nome</span>
           <span>Valor</span>
           <span>Dia</span>
@@ -1378,31 +1383,33 @@ export function AdminFinancePanel({
             <article
               key={`${row.id}-${activeMonth}-${row.payment?.updatedAt ?? "novo"}`}
               className={cn(
-                "rounded-lg border bg-white p-2.5 shadow-sm transition-colors",
+                "rounded-lg border bg-white p-2 shadow-sm transition-colors",
                 row.isOverdue
                   ? "border-amber-300 shadow-amber-100"
                   : "border-primary/15",
               )}
             >
-              <div className="grid gap-2.5 xl:grid-cols-[minmax(140px,1.15fr)_minmax(95px,0.72fr)_minmax(55px,0.36fr)_minmax(115px,0.76fr)_minmax(115px,0.7fr)_minmax(180px,0.95fr)_minmax(105px,0.62fr)] xl:items-center">
-                <div className="min-w-0 break-words">
+              <div className="grid gap-2.5 xl:min-h-14 xl:grid-cols-[minmax(135px,1fr)_112px_50px_118px_78px_minmax(190px,0.9fr)_48px] xl:items-center 2xl:grid-cols-[minmax(160px,1.15fr)_120px_60px_125px_100px_minmax(190px,0.95fr)_112px]">
+                <div className="min-w-0 break-words xl:flex xl:items-center xl:gap-2">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Nome
                   </span>
-                  <strong className="mt-1 block text-base">{row.name}</strong>
+                  <strong className="mt-1 block text-base xl:mt-0">
+                    {row.name}
+                  </strong>
                   {row.isOverdue ? (
-                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900 xl:mt-0">
                       <AlertTriangle aria-hidden="true" className="size-3.5" />
                       Vencido
                     </span>
                   ) : null}
                 </div>
 
-                <div className="min-w-0">
+                <div className="min-w-0 xl:flex xl:items-center">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Valor
                   </span>
-                  <span className="mt-1 flex items-center gap-2 font-semibold">
+                  <span className="mt-1 flex items-center gap-2 font-semibold xl:mt-0">
                     <CircleDollarSign
                       aria-hidden="true"
                       className="size-4 text-primary"
@@ -1411,11 +1418,11 @@ export function AdminFinancePanel({
                   </span>
                 </div>
 
-                <div className="min-w-0">
+                <div className="min-w-0 xl:flex xl:items-center">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Dia
                   </span>
-                  <span className="mt-1 flex items-center gap-2 font-semibold">
+                  <span className="mt-1 flex items-center gap-2 font-semibold xl:mt-0">
                     <CalendarDays
                       aria-hidden="true"
                       className="size-4 text-primary"
@@ -1426,11 +1433,11 @@ export function AdminFinancePanel({
 
                 <FinanceStatusButton month={activeMonth} row={row} />
 
-                <div className="min-w-0">
+                <div className="min-w-0 xl:flex xl:items-center">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Forma
                   </span>
-                  <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold leading-tight text-primary">
+                  <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold leading-tight text-primary xl:mt-0">
                     <WalletCards aria-hidden="true" className="size-4 shrink-0" />
                     <span className="min-w-0 break-words">
                       {formatPaymentMethod(row.paymentMethod)}
@@ -1444,17 +1451,19 @@ export function AdminFinancePanel({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="justify-between"
+                  aria-label={`Editar dados de ${row.name}`}
+                  title="Editar dados"
+                  className="h-9 justify-between xl:h-8 xl:justify-center xl:px-0 2xl:justify-between 2xl:px-3"
                   onClick={() => toggleRowDetails(row.id)}
                 >
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Pencil aria-hidden="true" className="size-4 shrink-0" />
-                    <span className="truncate">Editar</span>
+                    <span className="truncate xl:hidden 2xl:inline">Editar</span>
                   </span>
                   <ChevronDown
                     aria-hidden="true"
                     className={cn(
-                      "size-4 shrink-0 transition-transform",
+                      "size-4 shrink-0 transition-transform xl:hidden 2xl:block",
                       openRows.has(row.id) ? "rotate-180" : "",
                     )}
                   />
@@ -1502,36 +1511,49 @@ export function AdminFinancePanel({
         )}
       </section>
 
-      <section
+      <details
         id="financeiro-log"
-        className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
+        className="group rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
       >
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold">Log financeiro</h2>
-          <Download aria-hidden="true" className="size-5 text-primary" />
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="text-base font-semibold">Log financeiro</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {logs.length}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2 text-primary">
+            <Download aria-hidden="true" className="size-4" />
+            <ChevronDown
+              aria-hidden="true"
+              className="size-4 transition-transform group-open:rotate-180"
+            />
+          </span>
+        </summary>
+        <div className="mt-3">
+          {logs.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
+              Nenhuma movimentacao registrada ainda.
+            </p>
+          ) : (
+            <ol className="grid gap-2">
+              {logs.map((log) => (
+                <li
+                  key={log.id}
+                  className="grid gap-1 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:items-start"
+                >
+                  <span className="font-semibold text-primary">
+                    {formatDateTime(log.createdAt)}
+                  </span>
+                  <span className="min-w-0 break-words text-muted-foreground">
+                    {log.description}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
         </div>
-        {logs.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-            Nenhuma movimentacao registrada ainda.
-          </p>
-        ) : (
-          <ol className="grid gap-2">
-            {logs.map((log) => (
-              <li
-                key={log.id}
-                className="grid gap-1 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:items-start"
-              >
-                <span className="font-semibold text-primary">
-                  {formatDateTime(log.createdAt)}
-                </span>
-                <span className="min-w-0 break-words text-muted-foreground">
-                  {log.description}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
-      </section>
+      </details>
     </div>
   );
 }

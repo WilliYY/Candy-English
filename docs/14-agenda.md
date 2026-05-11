@@ -47,6 +47,11 @@ Rota:
 - Reposicao confirmada vira `MAKEUP_ATTENDED`.
 - Retirar aluno da agenda inativa ocorrencias recorrentes do mes selecionado em diante.
 - O painel mostra aviso de alunos de hoje e proximas aulas com horario.
+- O bloco `Hoje` permite acao rapida: `Certo` para presenca e `X` para falta, com cores verde/vermelha.
+- A agenda usa o mes atual de 2026 automaticamente enquanto o admin nao escolher um mes manualmente.
+- O calculo de `Hoje` deve usar a data local do navegador para nao adiantar o dia no periodo da noite.
+- A observacao do cadastro fica recolhida por padrao e sem rotulo duplicado ao abrir.
+- O log da agenda fica recolhido por padrao em um card abaixo da agenda.
 - `AgendaLog` registra criacao, presenca, falta, reposicao e retirada.
 
 ## Decisoes tecnicas tomadas
@@ -56,6 +61,7 @@ Rota:
 - Reposicoes sao ocorrencias independentes, ligadas opcionalmente a aula original por `makeupForLessonId`.
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
+- Os cards de hoje, proximas aulas e aulas mensais foram compactados para funcionar como painel operacional de cobranca/agenda, com status visiveis e acoes sempre proximas do aluno.
 
 ## Riscos ao alterar esta parte
 
