@@ -43,6 +43,36 @@ export type AdminActionResult<TInput extends Record<string, unknown>> = {
   ok: boolean;
 };
 
+const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+
+type FinancialSnapshotSource = {
+  address: string | null;
+  amountCents: number;
+  cpf: string | null;
+  email: string | null;
+  name: string;
+  paymentDay: number;
+  paymentMethod: string;
+  phone: string | null;
+};
+
+function getFinanceMonthsFrom(month: number) {
+  return FINANCE_YEAR_MONTHS.filter((candidateMonth) => candidateMonth >= month);
+}
+
+function buildFinancialPaymentSnapshot(student: FinancialSnapshotSource) {
+  return {
+    snapshotAddress: student.address,
+    snapshotAmountCents: student.amountCents,
+    snapshotCpf: student.cpf,
+    snapshotEmail: student.email,
+    snapshotName: student.name,
+    snapshotPaymentDay: student.paymentDay,
+    snapshotPaymentMethod: student.paymentMethod,
+    snapshotPhone: student.phone,
+  };
+}
+
 function isUniqueConstraintError(error: unknown) {
   return (
     typeof error === "object" &&
@@ -457,19 +487,32 @@ export async function createFinancialStudent(
       },
     });
 
-    const shouldCreatePayment = Boolean(parsed.data.paidAt || parsed.data.note);
-    const payment = shouldCreatePayment
-      ? await tx.financialPayment.create({
-          data: {
-            isPaid: Boolean(parsed.data.paidAt),
-            month: parsed.data.month,
-            note: parsed.data.note,
-            paidAt: parsed.data.paidAt,
-            studentId: student.id,
-            year: parsed.data.year,
-          },
-        })
-      : null;
+    const snapshot = buildFinancialPaymentSnapshot(student);
+    const financeMonths = getFinanceMonthsFrom(parsed.data.month);
+
+    await tx.financialPayment.createMany({
+      data: financeMonths.map((month) => ({
+        ...snapshot,
+        isActive: true,
+        isPaid: month === parsed.data.month && Boolean(parsed.data.paidAt),
+        month,
+        note: month === parsed.data.month ? parsed.data.note ?? null : null,
+        paidAt: month === parsed.data.month ? parsed.data.paidAt ?? null : null,
+        studentId: student.id,
+        year: parsed.data.year,
+      })),
+    });
+
+    const payment = await tx.financialPayment.findUnique({
+      where: {
+        studentId_year_month: {
+          month: parsed.data.month,
+          studentId: student.id,
+          year: parsed.data.year,
+        },
+      },
+      select: { id: true },
+    });
 
     await tx.financialLog.create({
       data: {
@@ -539,12 +582,43 @@ export async function updateFinancialStudent(
         phone: parsed.data.phone ?? null,
       },
     });
+    const snapshot = buildFinancialPaymentSnapshot(updatedStudent);
+
+    for (const month of getFinanceMonthsFrom(parsed.data.month)) {
+      const existingPayment = await tx.financialPayment.findUnique({
+        where: {
+          studentId_year_month: {
+            month,
+            studentId: student.id,
+            year: parsed.data.year,
+          },
+        },
+        select: { id: true },
+      });
+
+      if (existingPayment) {
+        await tx.financialPayment.update({
+          where: { id: existingPayment.id },
+          data: snapshot,
+        });
+      } else {
+        await tx.financialPayment.create({
+          data: {
+            ...snapshot,
+            isActive: true,
+            month,
+            studentId: student.id,
+            year: parsed.data.year,
+          },
+        });
+      }
+    }
 
     await tx.financialLog.create({
       data: {
         action: "UPDATE_STUDENT",
         createdByUserId: session.user.id,
-        description: `Dados financeiros atualizados: ${updatedStudent.name}.`,
+        description: `Dados financeiros atualizados a partir do mes ${parsed.data.month}: ${updatedStudent.name}.`,
         studentId: updatedStudent.id,
       },
     });
@@ -583,7 +657,17 @@ export async function updateFinancialPaymentDetails(
   const prisma = getPrisma();
   const student = await prisma.financialStudent.findUnique({
     where: { id: parsed.data.studentId },
-    select: { id: true, name: true },
+    select: {
+      address: true,
+      amountCents: true,
+      cpf: true,
+      email: true,
+      id: true,
+      name: true,
+      paymentDay: true,
+      paymentMethod: true,
+      phone: true,
+    },
   });
 
   if (!student) {
@@ -613,6 +697,8 @@ export async function updateFinancialPaymentDetails(
         },
       },
       create: {
+        ...buildFinancialPaymentSnapshot(student),
+        isActive: true,
         isPaid: Boolean(parsed.data.paidAt),
         month: parsed.data.month,
         note: parsed.data.note ?? null,
@@ -671,7 +757,17 @@ export async function toggleFinancialPaymentStatus(
   const prisma = getPrisma();
   const student = await prisma.financialStudent.findUnique({
     where: { id: parsed.data.studentId },
-    select: { id: true, name: true },
+    select: {
+      address: true,
+      amountCents: true,
+      cpf: true,
+      email: true,
+      id: true,
+      name: true,
+      paymentDay: true,
+      paymentMethod: true,
+      phone: true,
+    },
   });
 
   if (!student) {
@@ -701,6 +797,8 @@ export async function toggleFinancialPaymentStatus(
         },
       },
       create: {
+        ...buildFinancialPaymentSnapshot(student),
+        isActive: true,
         isPaid: parsed.data.isPaid,
         month: parsed.data.month,
         paidAt: parsed.data.isPaid ? new Date() : null,
@@ -778,12 +876,22 @@ export async function deleteFinancialStudent(
       data: {
         action: "DELETE",
         createdByUserId: session.user.id,
-        description: `Aluno financeiro excluido: ${student.name}.`,
+        description: `Aluno financeiro retirado a partir do mes ${parsed.data.month}: ${student.name}.`,
         studentId: student.id,
       },
     });
-    await tx.financialStudent.delete({
-      where: { id: student.id },
+
+    await tx.financialPayment.updateMany({
+      where: {
+        month: {
+          gte: parsed.data.month,
+        },
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+      data: {
+        isActive: false,
+      },
     });
   });
 
@@ -791,7 +899,7 @@ export async function deleteFinancialStudent(
 
   return {
     ok: true,
-    message: "Aluno financeiro excluido.",
+    message: "Aluno retirado deste mes em diante.",
   };
 }
 

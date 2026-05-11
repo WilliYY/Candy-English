@@ -29,6 +29,7 @@ Registra as regras que nao podem ser quebradas ao evoluir o AVA.
 - Contratos e avatar usam rotas protegidas.
 - Modo manutencao bloqueia student.
 - Financeiro e interno do admin.
+- Meses anteriores do financeiro sao historico fechado; edicao/remocao vale do mes selecionado em diante.
 
 ## Decisoes tecnicas ja tomadas
 

@@ -121,8 +121,9 @@ O financeiro e controle interno do admin em `/ava/admin?task=financeiro`.
 
 - Nao tratar como pagamento online sem pedido explicito.
 - `FinancialStudent` guarda dados recorrentes.
-- `FinancialPayment` guarda status, data paga e observacao por mes.
+- `FinancialPayment` guarda o snapshot mensal do aluno, status, data paga, observacao e se a linha segue ativa naquele mes.
 - `FinancialLog` registra acoes simples.
+- Meses anteriores sao historico fechado: editar ou retirar aluno deve afetar apenas o mes selecionado em diante.
 - Mudancas neste modulo devem atualizar `docs/13-financeiro.md`.
 
 ## Banco e migrations

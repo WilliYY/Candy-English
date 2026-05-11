@@ -28,6 +28,7 @@ O banco PostgreSQL guarda usuarios, perfis, vinculos, aulas, materiais, vocabula
 - Prisma 7 com client gerado em `src/generated/prisma`.
 - PostgreSQL 17 no Docker.
 - Uploads ficam em storage/volume; o banco guarda metadados.
+- Financeiro usa snapshots mensais em `FinancialPayment` para preservar meses fechados.
 
 ## Riscos ao alterar esta parte
 

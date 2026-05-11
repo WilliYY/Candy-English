@@ -107,6 +107,13 @@ Cada decisao deve conter:
 - Impacto: `README.md`, `AGENTS.md`, `docs/`.
 - Riscos/cuidados: toda mudanca estrutural precisa atualizar os docs relevantes.
 
+### 2026-05-11 - Financeiro com meses fechados por snapshot
+
+- Decisao: `FinancialPayment` passa a guardar snapshots mensais dos dados do aluno e `isActive`; editar ou retirar aluno afeta apenas o mes selecionado em diante.
+- Motivo: meses anteriores do financeiro precisam funcionar como historico fechado, sem mudancas automaticas quando o admin edita ou retira aluno em meses seguintes.
+- Impacto: `prisma/schema.prisma`, migration `20260511110000_finance_month_snapshots`, `src/app/ava/admin/actions.ts`, `src/components/ava/admin-finance-panel.tsx`, `src/app/ava/admin/page.tsx`, `docs/13-financeiro.md`.
+- Riscos/cuidados: nao fazer hard delete de `FinancialStudent` pela UI; preservar snapshots dos meses anteriores e rodar migration no deploy antes de recriar o app.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

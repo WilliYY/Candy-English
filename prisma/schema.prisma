@@ -79,16 +79,16 @@ model StudentProfile {
 }
 
 model TeacherProfile {
-  id                 String                     @id @default(cuid())
-  userId             String                     @unique
-  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bio                String?
-  studentAssignments StudentTeacherAssignment[] @relation("TeacherAssignments")
-  chatThreads        ChatThread[]
-  lessons            Lesson[]
-  homeworks          Homework[]
+  id                  String                     @id @default(cuid())
+  userId              String                     @unique
+  user                User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                 String?
+  studentAssignments  StudentTeacherAssignment[] @relation("TeacherAssignments")
+  chatThreads         ChatThread[]
+  lessons             Lesson[]
+  homeworks           Homework[]
   reviewedSubmissions HomeworkSubmission[]
-  liveSessions       LiveSession[]
+  liveSessions        LiveSession[]
 }
 
 model StudentTeacherAssignment {
@@ -186,18 +186,18 @@ model HomeworkQuestion {
 }
 
 model HomeworkSubmission {
-  id                        String           @id @default(cuid())
-  homeworkId                String
-  homework                  Homework         @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
-  studentProfileId          String
-  studentProfile            StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  answers                   Json
-  status                    SubmissionStatus @default(SUBMITTED)
-  submittedAt               DateTime         @default(now())
-  feedback                  String?
-  reviewedAt                DateTime?
+  id                         String           @id @default(cuid())
+  homeworkId                 String
+  homework                   Homework         @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  studentProfileId           String
+  studentProfile             StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  answers                    Json
+  status                     SubmissionStatus @default(SUBMITTED)
+  submittedAt                DateTime         @default(now())
+  feedback                   String?
+  reviewedAt                 DateTime?
   reviewedByTeacherProfileId String?
-  reviewedByTeacherProfile   TeacherProfile? @relation(fields: [reviewedByTeacherProfileId], references: [id], onDelete: SetNull)
+  reviewedByTeacherProfile   TeacherProfile?  @relation(fields: [reviewedByTeacherProfileId], references: [id], onDelete: SetNull)
 
   @@unique([homeworkId, studentProfileId])
   @@index([studentProfileId])
@@ -205,18 +205,18 @@ model HomeworkSubmission {
 }
 
 model LiveSession {
-  id               String         @id @default(cuid())
+  id               String          @id @default(cuid())
   title            String
   meetUrl          String
   startsAt         DateTime?
   endsAt           DateTime?
-  isLive           Boolean        @default(true)
+  isLive           Boolean         @default(true)
   teacherProfileId String
-  teacherProfile   TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  teacherProfile   TeacherProfile  @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
   studentProfileId String?
   studentProfile   StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@index([teacherProfileId])
   @@index([studentProfileId])
@@ -259,19 +259,29 @@ model FinancialStudent {
 }
 
 model FinancialPayment {
-  id          String           @id @default(cuid())
-  year        Int              @default(2026)
-  month       Int
-  studentId   String
-  student     FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  isPaid      Boolean          @default(false)
-  paidAt      DateTime?
-  note        String?
-  logs        FinancialLog[]
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id                    String           @id @default(cuid())
+  year                  Int              @default(2026)
+  month                 Int
+  studentId             String
+  student               FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  isActive              Boolean          @default(true)
+  snapshotName          String
+  snapshotAmountCents   Int
+  snapshotPaymentDay    Int
+  snapshotPaymentMethod String           @default("PIX")
+  snapshotPhone         String?
+  snapshotCpf           String?
+  snapshotEmail         String?
+  snapshotAddress       String?
+  isPaid                Boolean          @default(false)
+  paidAt                DateTime?
+  note                  String?
+  logs                  FinancialLog[]
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
 
   @@unique([studentId, year, month])
+  @@index([year, month, isActive])
   @@index([year, month, isPaid])
   @@index([isPaid])
 }

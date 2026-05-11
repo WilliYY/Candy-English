@@ -69,9 +69,10 @@ Actions:
 
 1. Admin abre `/ava/admin?task=financeiro`.
 2. Seleciona um mes de 2026.
-3. Adiciona ou edita aluno financeiro recorrente.
+3. Adiciona aluno financeiro; ele passa a existir do mes selecionado em diante.
 4. Marca status pago/pendente e registra data paga/observacao mensal.
-5. Exporta PDF/Excel e acompanha log.
+5. Edita dados do aluno ou retira aluno sempre do mes selecionado em diante, mantendo meses anteriores fechados.
+6. Exporta PDF/Excel e acompanha log em card separado.
 
 ### Manutencao
 
@@ -94,7 +95,7 @@ Actions:
 - O fluxo `/ava` nao exibe cards publicos; ele redireciona.
 - Google login e opcional e so aceita emails ja cadastrados.
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
-- Financeiro usa estrutura recorrente por aluno, nao planilha solta por mes.
+- Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 
 ## Riscos ao alterar esta parte
 

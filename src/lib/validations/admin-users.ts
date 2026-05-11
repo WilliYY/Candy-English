@@ -242,7 +242,9 @@ export const adminFinanceStudentCreateSchema = financialStudentBaseSchema.extend
 });
 
 export const adminFinanceStudentUpdateSchema = financialStudentBaseSchema.extend({
+  month: financeMonthSchema,
   studentId: z.string().min(1, "Aluno financeiro invalido."),
+  year: year2026Schema,
 });
 
 export const adminFinancePaymentUpdateSchema = z.object({
@@ -261,7 +263,9 @@ export const adminFinanceStatusSchema = z.object({
 });
 
 export const adminFinanceStudentDeleteSchema = z.object({
+  month: financeMonthSchema,
   studentId: z.string().min(1, "Aluno financeiro invalido."),
+  year: year2026Schema,
 });
 
 export const adminFinanceExportLogSchema = z.object({

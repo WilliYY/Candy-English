@@ -60,10 +60,19 @@ type PaymentMethod = (typeof FINANCIAL_PAYMENT_METHODS)[number];
 
 export type AdminFinancePaymentRow = {
   id: string;
+  isActive: boolean;
   isPaid: boolean;
   month: number;
   note: string | null;
   paidAt: string | null;
+  snapshotAddress: string | null;
+  snapshotAmountCents: number;
+  snapshotCpf: string | null;
+  snapshotEmail: string | null;
+  snapshotName: string;
+  snapshotPaymentDay: number;
+  snapshotPaymentMethod: string;
+  snapshotPhone: string | null;
   updatedAt: string;
   year: number;
 };
@@ -94,7 +103,7 @@ type FinanceMonthRow = AdminFinanceStudentRow & {
   isPaid: boolean;
   note: string | null;
   paidAt: string | null;
-  payment: AdminFinancePaymentRow | null;
+  payment: AdminFinancePaymentRow;
 };
 
 type AdminFinancePanelProps = {
@@ -203,12 +212,53 @@ function getDueDate(month: number, paymentDay: number) {
   return new Date(2026, month - 1, safeDay, 23, 59, 59, 999);
 }
 
-function isOverduePayment(row: AdminFinanceStudentRow, month: number) {
-  const payment = row.payments.find(
-    (item) => item.year === 2026 && item.month === month,
-  );
+function isOverduePayment(paymentDay: number, isPaid: boolean, month: number) {
+  return !isPaid && new Date() > getDueDate(month, paymentDay);
+}
 
-  return !payment?.isPaid && new Date() > getDueDate(month, row.paymentDay);
+function buildFinanceMonthRows(
+  students: AdminFinanceStudentRow[],
+  activeMonth: number,
+) {
+  return students
+    .map((student) => {
+      const payment =
+        student.payments.find(
+          (item) => item.year === 2026 && item.month === activeMonth,
+        ) ?? null;
+
+      if (!payment || !payment.isActive) {
+        return null;
+      }
+
+      const paymentDay = payment.snapshotPaymentDay;
+      const isPaid = payment.isPaid;
+
+      return {
+        ...student,
+        address: payment.snapshotAddress,
+        amountCents: payment.snapshotAmountCents,
+        cpf: payment.snapshotCpf,
+        email: payment.snapshotEmail,
+        isOverdue: isOverduePayment(paymentDay, isPaid, activeMonth),
+        isPaid,
+        name: payment.snapshotName,
+        note: payment.note,
+        paidAt: payment.paidAt,
+        payment,
+        paymentDay,
+        paymentMethod: payment.snapshotPaymentMethod,
+        phone: payment.snapshotPhone,
+      };
+    })
+    .filter((row): row is FinanceMonthRow => row !== null)
+    .sort((left, right) => {
+      if (left.paymentDay !== right.paymentDay) {
+        return left.paymentDay - right.paymentDay;
+      }
+
+      return left.name.localeCompare(right.name, "pt-BR");
+    });
 }
 
 function escapeHtml(value: string) {
@@ -393,7 +443,7 @@ function FinanceStatusButton({
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <span className="text-xs font-semibold uppercase text-muted-foreground 2xl:hidden">
+      <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
         Status
       </span>
       <Button
@@ -476,14 +526,14 @@ function FinancePaidDateForm({
   });
 
   return (
-    <form className="flex min-w-0 flex-col gap-2" onSubmit={onSubmit} noValidate>
+    <form className="flex min-w-0 flex-col gap-1.5" onSubmit={onSubmit} noValidate>
       <input type="hidden" {...form.register("studentId")} />
       <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
       <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
       <input type="hidden" {...form.register("note")} />
       <Field data-invalid={Boolean(form.formState.errors.paidAt)}>
         <FieldLabel htmlFor={`finance-paid-at-${row.id}`}>Data paga</FieldLabel>
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] 2xl:grid-cols-1">
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_2.5rem]">
           <Input
             id={`finance-paid-at-${row.id}`}
             type="date"
@@ -491,13 +541,18 @@ function FinancePaidDateForm({
             disabled={isPending}
             {...form.register("paidAt")}
           />
-          <Button type="submit" size="sm" disabled={isPending}>
+          <Button
+            type="submit"
+            size="sm"
+            className="px-3"
+            disabled={isPending}
+          >
             {isPending ? (
               <LoaderCircle data-icon="inline-start" className="animate-spin" />
             ) : (
-              <Save data-icon="inline-start" />
+              <Save aria-hidden="true" className="size-4" />
             )}
-            Salvar
+            <span className="xl:sr-only">Salvar</span>
           </Button>
         </div>
         <span className="text-xs text-muted-foreground">
@@ -602,7 +657,13 @@ function FinanceMonthlyNoteForm({
   );
 }
 
-function FinanceStudentEditForm({ row }: { row: FinanceMonthRow }) {
+function FinanceStudentEditForm({
+  month,
+  row,
+}: {
+  month: number;
+  row: FinanceMonthRow;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -615,11 +676,13 @@ function FinanceStudentEditForm({ row }: { row: FinanceMonthRow }) {
       amount: formatAmountInput(row.amountCents),
       cpf: row.cpf ?? "",
       email: row.email ?? "",
+      month,
       name: row.name,
       paymentDay: row.paymentDay,
       paymentMethod: normalizePaymentMethod(row.paymentMethod),
       phone: row.phone ?? "",
       studentId: row.id,
+      year: 2026,
     },
   });
 
@@ -652,6 +715,8 @@ function FinanceStudentEditForm({ row }: { row: FinanceMonthRow }) {
   return (
     <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
       <input type="hidden" {...form.register("studentId")} />
+      <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
+      <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
       <div className="grid gap-3 lg:grid-cols-3">
         <Field data-invalid={Boolean(form.formState.errors.name)}>
           <FieldLabel htmlFor={`finance-edit-name-${row.id}`}>Nome</FieldLabel>
@@ -788,7 +853,13 @@ function FinanceStudentEditForm({ row }: { row: FinanceMonthRow }) {
   );
 }
 
-function FinanceDeleteButton({ row }: { row: FinanceMonthRow }) {
+function FinanceDeleteButton({
+  month,
+  row,
+}: {
+  month: number;
+  row: FinanceMonthRow;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -797,7 +868,7 @@ function FinanceDeleteButton({ row }: { row: FinanceMonthRow }) {
     setMessage(null);
 
     const confirmed = window.confirm(
-      `Excluir ${row.name} do financeiro? Os pagamentos mensais desse aluno tambem serao removidos.`,
+      `Retirar ${row.name} do financeiro deste mes em diante? Os meses anteriores continuam preservados.`,
     );
 
     if (!confirmed) {
@@ -805,7 +876,9 @@ function FinanceDeleteButton({ row }: { row: FinanceMonthRow }) {
     }
 
     const payload: AdminFinanceStudentDeleteInput = {
+      month,
       studentId: row.id,
+      year: 2026,
     };
 
     startTransition(async () => {
@@ -832,7 +905,7 @@ function FinanceDeleteButton({ row }: { row: FinanceMonthRow }) {
         ) : (
           <Trash2 data-icon="inline-start" />
         )}
-        Excluir aluno
+        Retirar deste mes em diante
       </Button>
       {message ? (
         <span className="text-xs leading-5 text-muted-foreground">
@@ -876,10 +949,11 @@ function FinanceExportButtons({
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row">
+    <div className="flex w-full flex-col gap-2 sm:w-28">
       <Button
         type="button"
         variant="outline"
+        className="w-full justify-start"
         disabled={isPending || rows.length === 0}
         onClick={() => handleExport("PDF")}
       >
@@ -889,6 +963,7 @@ function FinanceExportButtons({
       <Button
         type="button"
         variant="outline"
+        className="w-full justify-start"
         disabled={isPending || rows.length === 0}
         onClick={() => handleExport("EXCEL")}
       >
@@ -916,31 +991,8 @@ export function AdminFinancePanel({
     defaultValues: createDefaultValues(initialMonth),
   });
 
-  const monthRows = useMemo<FinanceMonthRow[]>(
-    () =>
-      students
-        .map((student) => {
-          const payment =
-            student.payments.find(
-              (item) => item.year === 2026 && item.month === activeMonth,
-            ) ?? null;
-
-          return {
-            ...student,
-            isOverdue: isOverduePayment(student, activeMonth),
-            isPaid: payment?.isPaid ?? false,
-            note: payment?.note ?? null,
-            paidAt: payment?.paidAt ?? null,
-            payment,
-          };
-        })
-        .sort((left, right) => {
-          if (left.paymentDay !== right.paymentDay) {
-            return left.paymentDay - right.paymentDay;
-          }
-
-          return left.name.localeCompare(right.name, "pt-BR");
-        }),
+  const monthRows = useMemo(
+    () => buildFinanceMonthRows(students, activeMonth),
     [activeMonth, students],
   );
 
@@ -975,8 +1027,22 @@ export function AdminFinancePanel({
   const overdueCounts = useMemo(
     () =>
       months.reduce<Record<number, number>>((accumulator, month) => {
-        accumulator[month.value] = students.filter((student) =>
-          isOverduePayment(student, month.value),
+        accumulator[month.value] = buildFinanceMonthRows(
+          students,
+          month.value,
+        ).filter((row) => row.isOverdue).length;
+
+        return accumulator;
+      }, {}),
+    [students],
+  );
+
+  const monthCounts = useMemo(
+    () =>
+      months.reduce<Record<number, number>>((accumulator, month) => {
+        accumulator[month.value] = buildFinanceMonthRows(
+          students,
+          month.value,
         ).length;
 
         return accumulator;
@@ -1038,31 +1104,31 @@ export function AdminFinancePanel({
     months.find((month) => month.value === activeMonth)?.label ?? "Mes";
 
   return (
-    <div className="flex flex-col gap-6 pb-28 lg:pr-20">
+    <div className="flex flex-col gap-5 pb-28 lg:pr-20">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-lg border border-primary/20 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
           <span className="text-sm font-medium text-muted-foreground">Ano</span>
-          <strong className="mt-1 block text-3xl font-semibold">2026</strong>
+          <strong className="mt-1 block text-2xl font-semibold">2026</strong>
         </div>
-        <div className="rounded-lg border border-primary/20 bg-white p-4 shadow-sm">
+        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
           <span className="text-sm font-medium text-muted-foreground">Mes</span>
           <strong className="mt-1 block text-2xl font-semibold">
             {activeMonthLabel}
           </strong>
         </div>
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 shadow-sm">
           <span className="text-sm font-medium text-emerald-900">Pago</span>
           <strong className="mt-1 block text-2xl font-semibold text-emerald-700">
             {formatCurrency(monthSummary.paid)}
           </strong>
         </div>
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 shadow-sm">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 shadow-sm">
           <span className="text-sm font-medium text-red-900">Pendente</span>
           <strong className="mt-1 block text-2xl font-semibold text-red-700">
             {formatCurrency(monthSummary.pending)}
           </strong>
         </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
           <span className="flex items-center gap-2 text-sm font-medium text-amber-950">
             <AlertTriangle aria-hidden="true" className="size-4" />
             Devedores
@@ -1073,10 +1139,11 @@ export function AdminFinancePanel({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-12">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_7rem] lg:items-start">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-12">
           {months.map((month) => {
             const overdueCount = overdueCounts[month.value] ?? 0;
+            const studentCount = monthCounts[month.value] ?? 0;
 
             return (
               <button
@@ -1084,7 +1151,7 @@ export function AdminFinancePanel({
                 type="button"
                 onClick={() => handleMonthChange(month.value)}
                 className={cn(
-                  "min-w-0 rounded-lg border px-3 py-3 text-sm font-semibold transition-all",
+                  "min-w-0 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
                   activeMonth === month.value
                     ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
                     : "border-primary/20 bg-white text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
@@ -1092,7 +1159,7 @@ export function AdminFinancePanel({
               >
                 <span className="block">{month.shortLabel}</span>
                 <span className="mt-1 block text-xs opacity-85">
-                  {students.length} aluno(s)
+                  {studentCount} aluno(s)
                 </span>
                 {overdueCount > 0 ? (
                   <span
@@ -1119,11 +1186,11 @@ export function AdminFinancePanel({
 
       <form
         onSubmit={onSubmit}
-        className="rounded-lg border border-primary/20 bg-white p-4 shadow-sm"
+        className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
         noValidate
       >
-        <FieldGroup className="gap-4">
-          <div className="grid gap-4 lg:grid-cols-3 2xl:grid-cols-[minmax(180px,1.3fr)_minmax(120px,0.7fr)_minmax(90px,0.45fr)_minmax(150px,0.8fr)_minmax(150px,0.8fr)_auto] 2xl:items-start">
+        <FieldGroup className="gap-3">
+          <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(170px,1.3fr)_minmax(110px,0.65fr)_minmax(80px,0.45fr)_minmax(150px,0.85fr)_minmax(150px,0.85fr)_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>
               <Input
@@ -1192,7 +1259,7 @@ export function AdminFinancePanel({
 
             <Button
               type="submit"
-              className="lg:mt-6 lg:w-full 2xl:w-auto"
+              className="lg:mt-6 lg:w-full xl:w-auto"
               disabled={isPending}
             >
               {isPending ? (
@@ -1207,12 +1274,12 @@ export function AdminFinancePanel({
             </Button>
           </div>
 
-          <details className="group rounded-lg border border-primary/15 bg-primary/5 p-3">
+          <details className="group rounded-lg border border-primary/15 bg-primary/5 p-2.5">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
               Dados extras e observacao
               <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
             </summary>
-            <div className="mt-4 grid gap-4 lg:grid-cols-4">
+            <div className="mt-3 grid gap-3 lg:grid-cols-4">
               <Field data-invalid={Boolean(form.formState.errors.phone)}>
                 <FieldLabel htmlFor="finance-phone">Telefone</FieldLabel>
                 <Input
@@ -1284,7 +1351,7 @@ export function AdminFinancePanel({
       </form>
 
       <section className="flex flex-col gap-3">
-        <div className="hidden rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-xs font-bold uppercase text-primary 2xl:grid 2xl:grid-cols-[minmax(170px,1.25fr)_minmax(100px,0.7fr)_minmax(70px,0.45fr)_minmax(130px,0.75fr)_minmax(150px,0.85fr)_minmax(170px,0.9fr)_minmax(120px,0.65fr)] 2xl:gap-4">
+        <div className="hidden rounded-lg border border-primary/20 bg-primary/10 px-3 py-2.5 text-xs font-bold uppercase text-primary xl:grid xl:grid-cols-[minmax(140px,1.15fr)_minmax(95px,0.72fr)_minmax(55px,0.36fr)_minmax(115px,0.76fr)_minmax(115px,0.7fr)_minmax(180px,0.95fr)_minmax(105px,0.62fr)] xl:gap-3">
           <span>Nome</span>
           <span>Valor</span>
           <span>Dia</span>
@@ -1306,15 +1373,15 @@ export function AdminFinancePanel({
             <article
               key={`${row.id}-${activeMonth}-${row.payment?.updatedAt ?? "novo"}`}
               className={cn(
-                "rounded-lg border bg-white p-4 shadow-sm transition-colors",
+                "rounded-lg border bg-white p-3 shadow-sm transition-colors",
                 row.isOverdue
                   ? "border-amber-300 shadow-amber-100"
                   : "border-primary/15",
               )}
             >
-              <div className="grid gap-4 2xl:grid-cols-[minmax(170px,1.25fr)_minmax(100px,0.7fr)_minmax(70px,0.45fr)_minmax(130px,0.75fr)_minmax(150px,0.85fr)_minmax(170px,0.9fr)_minmax(120px,0.65fr)] 2xl:items-start">
+              <div className="grid gap-3 xl:grid-cols-[minmax(140px,1.15fr)_minmax(95px,0.72fr)_minmax(55px,0.36fr)_minmax(115px,0.76fr)_minmax(115px,0.7fr)_minmax(180px,0.95fr)_minmax(105px,0.62fr)] xl:items-start">
                 <div className="min-w-0 break-words">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground 2xl:hidden">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Nome
                   </span>
                   <strong className="mt-1 block text-base">{row.name}</strong>
@@ -1327,7 +1394,7 @@ export function AdminFinancePanel({
                 </div>
 
                 <div className="min-w-0">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground 2xl:hidden">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Valor
                   </span>
                   <span className="mt-1 flex items-center gap-2 font-semibold">
@@ -1340,7 +1407,7 @@ export function AdminFinancePanel({
                 </div>
 
                 <div className="min-w-0">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground 2xl:hidden">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Dia
                   </span>
                   <span className="mt-1 flex items-center gap-2 font-semibold">
@@ -1355,7 +1422,7 @@ export function AdminFinancePanel({
                 <FinanceStatusButton month={activeMonth} row={row} />
 
                 <div className="min-w-0">
-                  <span className="text-xs font-semibold uppercase text-muted-foreground 2xl:hidden">
+                  <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Forma
                   </span>
                   <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold leading-tight text-primary">
@@ -1416,11 +1483,11 @@ export function AdminFinancePanel({
                     </span>
                   </div>
 
-                  <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_minmax(300px,0.8fr)]">
-                    <FinanceStudentEditForm row={row} />
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(260px,0.72fr)]">
+                    <FinanceStudentEditForm month={activeMonth} row={row} />
                     <div className="grid gap-4">
                       <FinanceMonthlyNoteForm month={activeMonth} row={row} />
-                      <FinanceDeleteButton row={row} />
+                      <FinanceDeleteButton month={activeMonth} row={row} />
                     </div>
                   </div>
                 </div>
@@ -1430,9 +1497,12 @@ export function AdminFinancePanel({
         )}
       </section>
 
-      <section className="rounded-lg border border-primary/20 bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold">Log financeiro</h2>
+      <section
+        id="financeiro-log"
+        className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-base font-semibold">Log financeiro</h2>
           <Download aria-hidden="true" className="size-5 text-primary" />
         </div>
         {logs.length === 0 ? (

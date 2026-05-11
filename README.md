@@ -22,7 +22,7 @@ Ja existe:
 - student com aulas, homework, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
-- financeiro admin recorrente para 2026 com `FinancialStudent`, `FinancialPayment` e `FinancialLog`;
+- financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
 Nao existe ainda: pagamento online, IA real, jogos, upload livre de materiais, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.

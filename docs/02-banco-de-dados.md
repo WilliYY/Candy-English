@@ -72,7 +72,7 @@ Enums:
 - `HomeworkSubmission` possui chave unica por homework/aluno.
 - Contratos podem ser gerais ou vinculados a um aluno.
 - Chat deve sempre estar preso ao vinculo teacher/aluno.
-- Financeiro guarda dados recorrentes em `FinancialStudent` e dados mensais em `FinancialPayment`.
+- Financeiro guarda cadastro/base em `FinancialStudent` e snapshots mensais ativos/inativos em `FinancialPayment`.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
 
 ## Decisoes tecnicas tomadas
@@ -82,6 +82,7 @@ Enums:
 - Seed usa `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` e respeita `ADMIN_RESET_PASSWORD`.
 - Uploads nao ficam no banco; o banco guarda metadados e caminhos.
 - Migration `20260510203000_recurring_finance_students` converteu `FinancialEntry` em estrutura recorrente.
+- Migration `20260511110000_finance_month_snapshots` adicionou snapshots mensais em `FinancialPayment` para preservar meses fechados.
 
 ## Riscos ao alterar esta parte
 
@@ -90,6 +91,7 @@ Enums:
 - Remover constraints unicas pode criar duplicidade em vinculos, respostas ou pagamentos mensais.
 - Expor `DATABASE_URL` ou senha em docs/logs compromete o ambiente.
 - Alterar cascade/set null sem revisar contratos, chat e financeiro pode apagar historico indevidamente.
+- Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar linhas mensais futuras.
 
 ## Pendencias
 
