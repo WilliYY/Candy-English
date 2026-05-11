@@ -38,6 +38,7 @@ Servicos Docker:
 - `ADMIN` pode supervisionar area teacher/student, mas dados sensiveis ainda exigem validacao.
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
+- Financeiro e agenda sao modulos internos do `ADMIN`.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
 
 ## Decisoes tecnicas tomadas
@@ -47,6 +48,7 @@ Servicos Docker:
 - Escritas sensiveis ficam em server actions.
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.
+- Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
 - Docker final usa `output: "standalone"`.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
 - Headers basicos de seguranca ficam em `next.config.ts`.

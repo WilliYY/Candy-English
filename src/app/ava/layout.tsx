@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import {
   BookOpen,
+  CalendarCheck2,
   ChevronDown,
   ClipboardCheck,
   FileText,
@@ -105,6 +106,12 @@ const navGroups = [
         href: "/ava/admin?task=financeiro",
         icon: WalletCards,
         label: "Financeiro",
+        section: "Financeiro",
+      },
+      {
+        href: "/ava/admin?task=agenda",
+        icon: CalendarCheck2,
+        label: "Agenda",
         section: "Financeiro",
       },
       {

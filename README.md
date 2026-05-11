@@ -6,23 +6,24 @@ Site institucional e AVA da Candy English.
 
 O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional e AVA com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
 
-O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, materiais, vocabulario, homework online, feedback, contratos PDF protegidos, aula ao vivo e financeiro interno do administrador.
+O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, materiais, vocabulario, homework online, feedback, contratos PDF protegidos, aula ao vivo, financeiro interno e agenda administrativa.
 
 ## Status atual
 
-Fase atual documentada: FASE 26.
+Fase atual documentada: FASE 27.
 
 Ja existe:
 
 - login real com Auth.js/NextAuth v5, JWT e senha com `bcryptjs`;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
-- admin com cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao e financeiro;
+- admin com cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
 - teacher com aulas, materiais, vocabulario, homework, feedback, aula ao vivo, contratos e mensagens;
 - student com aulas, homework, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
+- agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
 Nao existe ainda: pagamento online, IA real, jogos, upload livre de materiais, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.
@@ -58,6 +59,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/08-autenticacao-e-permissoes.md`: autenticacao, roles e autorizacao.
 - `docs/09-deploy-e-ambiente.md`: ambientes, Docker e Oracle.
 - `docs/13-financeiro.md`: modulo financeiro admin.
+- `docs/14-agenda.md`: modulo agenda admin.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.
 

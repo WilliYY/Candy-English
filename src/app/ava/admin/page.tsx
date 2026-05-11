@@ -39,6 +39,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     contracts,
     financeStudents,
     financeLogs,
+    agendaStudents,
+    agendaLessons,
+    agendaLogs,
     maintenanceMode,
     storageUsageBytes,
   ] = await Promise.all([
@@ -246,16 +249,105 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
       take: 30,
     }),
+    prisma.agendaStudent.findMany({
+      orderBy: {
+        name: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+      },
+    }),
+    prisma.agendaLesson.findMany({
+      orderBy: [
+        {
+          date: "asc",
+        },
+        {
+          time: "asc",
+        },
+      ],
+      where: {
+        year: 2026,
+      },
+      select: {
+        date: true,
+        id: true,
+        isActive: true,
+        isMakeup: true,
+        makeupForLessonId: true,
+        month: true,
+        notes: true,
+        status: true,
+        studentId: true,
+        student: {
+          select: {
+            name: true,
+            notes: true,
+            phone: true,
+          },
+        },
+        time: true,
+        weekday: true,
+        year: true,
+      },
+    }),
+    prisma.agendaLog.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        createdAt: true,
+        description: true,
+        id: true,
+        student: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      take: 30,
+    }),
     isMaintenanceModeEnabled(),
     getStorageUsageBytes(),
   ]);
   const currentDate = new Date();
   const initialFinanceMonth =
     currentDate.getFullYear() === 2026 ? currentDate.getMonth() + 1 : 1;
+  const initialAgendaMonth = initialFinanceMonth;
 
   return (
     <AdminUsersPanel
       activeTask={activeTask}
+      agendaLessons={agendaLessons.map((lesson) => ({
+        date: lesson.date.toISOString(),
+        id: lesson.id,
+        isActive: lesson.isActive,
+        isMakeup: lesson.isMakeup,
+        makeupForLessonId: lesson.makeupForLessonId,
+        month: lesson.month,
+        notes: lesson.notes,
+        status: lesson.status,
+        studentId: lesson.studentId,
+        studentName: lesson.student.name,
+        studentNotes: lesson.student.notes,
+        studentPhone: lesson.student.phone,
+        time: lesson.time,
+        weekday: lesson.weekday,
+        year: lesson.year,
+      }))}
+      agendaLogs={agendaLogs.map((log) => ({
+        createdAt: log.createdAt.toISOString(),
+        description: log.description,
+        id: log.id,
+        studentName: log.student?.name ?? null,
+      }))}
+      agendaStudents={agendaStudents.map((student) => ({
+        id: student.id,
+        name: student.name,
+        phone: student.phone,
+      }))}
       assignments={assignments.map((assignment) => ({
         createdAt: assignment.createdAt,
         id: assignment.id,
@@ -308,6 +400,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         })),
         phone: student.phone,
       }))}
+      initialAgendaMonth={initialAgendaMonth}
       initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}
       students={students.map((student) => ({

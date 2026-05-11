@@ -56,6 +56,12 @@ Financeiro:
 - `FinancialPayment`
 - `FinancialLog`
 
+Agenda:
+
+- `AgendaStudent`
+- `AgendaLesson`
+- `AgendaLog`
+
 Enums:
 
 - `Role`
@@ -63,6 +69,7 @@ Enums:
 - `MaterialType`
 - `HomeworkStatus`
 - `SubmissionStatus`
+- `AgendaLessonStatus`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -74,6 +81,8 @@ Enums:
 - Chat deve sempre estar preso ao vinculo teacher/aluno.
 - Financeiro guarda cadastro/base em `FinancialStudent` e snapshots mensais ativos/inativos em `FinancialPayment`.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
+- Agenda guarda alunos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`.
+- Reposicoes da agenda usam `AgendaLesson.isMakeup=true` e podem apontar para a aula original por `makeupForLessonId`.
 
 ## Decisoes tecnicas tomadas
 
@@ -83,6 +92,7 @@ Enums:
 - Uploads nao ficam no banco; o banco guarda metadados e caminhos.
 - Migration `20260510203000_recurring_finance_students` converteu `FinancialEntry` em estrutura recorrente.
 - Migration `20260511110000_finance_month_snapshots` adicionou snapshots mensais em `FinancialPayment` para preservar meses fechados.
+- Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 
 ## Riscos ao alterar esta parte
 
@@ -91,7 +101,8 @@ Enums:
 - Remover constraints unicas pode criar duplicidade em vinculos, respostas ou pagamentos mensais.
 - Expor `DATABASE_URL` ou senha em docs/logs compromete o ambiente.
 - Alterar cascade/set null sem revisar contratos, chat e financeiro pode apagar historico indevidamente.
-- Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar linhas mensais futuras.
+- Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar apenas a linha mensal escolhida pela UI.
+- Fazer hard delete de `AgendaStudent` apaga ocorrencias da agenda por cascade; a UI deve retirar agenda por `isActive=false`.
 
 ## Pendencias
 

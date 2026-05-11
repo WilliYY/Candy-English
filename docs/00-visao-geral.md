@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework, feedback, contratos, aula ao vivo, mensagens e financeiro interno.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework, feedback, contratos, aula ao vivo, mensagens, financeiro interno e agenda administrativa.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -37,6 +37,7 @@ Rotas principais:
 - Teacher trabalha com alunos vinculados por `StudentTeacherAssignment`.
 - Contratos e avatares sao protegidos por rotas server-side.
 - Financeiro e modulo interno do admin, sem pagamento online.
+- Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
 
 ## Decisoes tecnicas tomadas
 
@@ -60,6 +61,7 @@ Rotas principais:
 - `08-autenticacao-e-permissoes.md`: Auth.js, roles e autorizacao.
 - `09-deploy-e-ambiente.md`: ambientes e operacao.
 - `13-financeiro.md`: modulo financeiro.
+- `14-agenda.md`: modulo agenda.
 
 ## Riscos ao alterar esta parte
 

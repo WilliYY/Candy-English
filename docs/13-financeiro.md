@@ -17,6 +17,7 @@ Arquivos:
 - `src/lib/ava-nav-alerts.ts`
 - `prisma/schema.prisma`
 - `prisma/migrations/20260510203000_recurring_finance_students/migration.sql`
+- `prisma/migrations/20260511110000_finance_month_snapshots/migration.sql`
 
 Tabelas:
 
@@ -36,7 +37,7 @@ Rota:
 - Observacao e pagamento sao por mes; ao trocar mes, esses campos nao devem carregar automaticamente de outro mes.
 - Ao criar aluno em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
 - Ao editar dados recorrentes em um mes, a edicao vale do mes selecionado em diante; meses anteriores ficam preservados.
-- Ao retirar aluno em um mes, ele fica inativo daquele mes em diante; meses anteriores continuam visiveis e exportaveis.
+- Ao retirar aluno em um mes, apenas a linha daquele mes fica inativa; os outros meses continuam seguindo os registros ativos ja criados.
 - Alunos ativos no mes aparecem ordenados por dia de pagamento crescente.
 - Status padrao e pendente/vermelho.
 - Ao marcar como pago, o status fica verde e pode receber data paga.
@@ -47,7 +48,7 @@ Rota:
 
 - A estrutura recorrente substituiu `FinancialEntry`.
 - `FinancialPayment` passou a guardar snapshots mensais para impedir que alteracoes futuras reescrevam meses ja fechados.
-- Remocao de aluno financeiro e soft remove mensal com `isActive=false`, nao hard delete imediato.
+- Remocao de aluno financeiro e soft remove da linha mensal atual com `isActive=false`, nao hard delete.
 - Exportacao PDF/Excel acontece no cliente com os dados ja carregados na pagina autorizada.
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
@@ -58,7 +59,7 @@ Rota:
 
 - Misturar dados recorrentes e mensais pode fazer observacoes ou alteracoes de aluno vazarem para meses errados.
 - Remover ordenacao por `paymentDay` prejudica uso tipo planilha.
-- Apagar fisicamente `FinancialStudent` remove pagamentos mensais por cascade; a UI deve retirar aluno por `isActive=false` do mes selecionado em diante.
+- Apagar fisicamente `FinancialStudent` remove pagamentos mensais por cascade; a UI deve retirar apenas a linha mensal atual por `isActive=false`.
 - Transformar exportacao em endpoint publico pode vazar dados financeiros.
 - Alterar calculo de devedores sem considerar ano/mes pode gerar alerta errado.
 - Editar snapshots de meses anteriores por engano quebra o conceito de mes fechado.

@@ -20,6 +20,7 @@ Componentes:
 - `src/components/ava/ava-dashboard.tsx`
 - `src/components/ava/admin-users-panel.tsx`
 - `src/components/ava/admin-finance-panel.tsx`
+- `src/components/ava/admin-agenda-panel.tsx`
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/chat-thread-panel.tsx`
@@ -71,8 +72,18 @@ Actions:
 2. Seleciona um mes de 2026.
 3. Adiciona aluno financeiro; ele passa a existir do mes selecionado em diante.
 4. Marca status pago/pendente e registra data paga/observacao mensal.
-5. Edita dados do aluno ou retira aluno sempre do mes selecionado em diante, mantendo meses anteriores fechados.
-6. Exporta PDF/Excel e acompanha log em card separado.
+5. Edita dados do aluno do mes selecionado em diante, mantendo meses anteriores fechados.
+6. Retira aluno apenas do mes atual; o proximo mes continua puxando as linhas ativas ja existentes.
+7. Exporta PDF/Excel e acompanha log em card separado.
+
+### Agenda
+
+1. Admin abre `/ava/admin?task=agenda`.
+2. Cadastra aluno, telefone opcional, dias da semana e horario.
+3. O sistema cria ocorrencias de aula do mes selecionado ate dezembro de 2026.
+4. Admin marca se o aluno foi, faltou ou reseta a presenca.
+5. Quando o aluno falta, admin pode cadastrar uma reposicao com data e horario.
+6. A tela mostra alunos do dia e proximas aulas com horario.
 
 ### Manutencao
 
@@ -89,6 +100,7 @@ Actions:
 - Aula ao vivo usa Jitsi embutido se nao houver link externo.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
+- Agenda e financeiro sao internos do admin.
 
 ## Decisoes tecnicas tomadas
 
@@ -96,6 +108,7 @@ Actions:
 - Google login e opcional e so aceita emails ja cadastrados.
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
+- Agenda usa ocorrencias por data para facilitar presenca e reposicao.
 
 ## Riscos ao alterar esta parte
 

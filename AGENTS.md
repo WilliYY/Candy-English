@@ -4,7 +4,7 @@ Este arquivo e a primeira leitura obrigatoria para qualquer conversa futura do C
 
 ## Objetivo do projeto
 
-Candy English e um site institucional com AVA proprio em `/ava`. O AVA possui areas para `ADMIN`, `TEACHER` e `STUDENT`, com login real, controle de permissao, aulas, materiais, homework, feedback, contratos, aula ao vivo, chat interno e financeiro administrativo.
+Candy English e um site institucional com AVA proprio em `/ava`. O AVA possui areas para `ADMIN`, `TEACHER` e `STUDENT`, com login real, controle de permissao, aulas, materiais, homework, feedback, contratos, aula ao vivo, chat interno, financeiro administrativo e agenda administrativa.
 
 ## Leitura obrigatoria antes de alterar arquivos
 
@@ -69,7 +69,7 @@ Leitura minima recomendada:
 
 ## Roles
 
-- `ADMIN`: administra usuarios, vinculos, contratos, manutencao e financeiro; tambem pode supervisionar areas teacher/student.
+- `ADMIN`: administra usuarios, vinculos, contratos, manutencao, financeiro e agenda; tambem pode supervisionar areas teacher/student.
 - `TEACHER`: gerencia aulas, materiais, homework, feedback, mensagens, contratos e aula ao vivo para alunos vinculados.
 - `STUDENT`: acessa aulas, homework, mensagens, contratos, perfil e aula ao vivo permitida.
 
@@ -123,8 +123,18 @@ O financeiro e controle interno do admin em `/ava/admin?task=financeiro`.
 - `FinancialStudent` guarda dados recorrentes.
 - `FinancialPayment` guarda o snapshot mensal do aluno, status, data paga, observacao e se a linha segue ativa naquele mes.
 - `FinancialLog` registra acoes simples.
-- Meses anteriores sao historico fechado: editar ou retirar aluno deve afetar apenas o mes selecionado em diante.
+- Meses anteriores sao historico fechado: editar aluno pode valer do mes selecionado em diante, mas retirar aluno financeiro remove apenas o mes atual.
 - Mudancas neste modulo devem atualizar `docs/13-financeiro.md`.
+
+## Agenda
+
+A agenda e controle interno do admin em `/ava/admin?task=agenda`.
+
+- Nao substituir o modulo de aulas teacher/student sem pedido explicito.
+- `AgendaStudent` guarda aluno cadastrado na agenda.
+- `AgendaLesson` guarda ocorrencias de 2026, status de presenca, reposicoes e retirada futura.
+- `AgendaLog` registra acoes simples.
+- Mudancas neste modulo devem atualizar `docs/14-agenda.md`.
 
 ## Banco e migrations
 

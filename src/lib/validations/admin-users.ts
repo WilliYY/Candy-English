@@ -83,6 +83,17 @@ const financeMonthSchema = z
   .min(1, "Selecione um mes valido.")
   .max(12, "Selecione um mes valido.");
 
+const agendaWeekdaySchema = z
+  .number()
+  .int("Selecione um dia valido.")
+  .min(0, "Selecione um dia valido.")
+  .max(6, "Selecione um dia valido.");
+
+const agendaTimeSchema = z
+  .string()
+  .trim()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Informe um horario valido.");
+
 const financialStudentBaseSchema = z.object({
   address: optionalText(240, "O endereco pode ter no maximo 240 caracteres."),
   amount: moneySchema,
@@ -274,6 +285,56 @@ export const adminFinanceExportLogSchema = z.object({
   year: year2026Schema,
 });
 
+export const adminAgendaScheduleCreateSchema = z.object({
+  month: financeMonthSchema,
+  name: z
+    .string()
+    .trim()
+    .min(2, "Informe o nome com pelo menos 2 caracteres.")
+    .max(120, "O nome pode ter no maximo 120 caracteres."),
+  notes: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
+  phone: optionalText(40, "O telefone pode ter no maximo 40 caracteres."),
+  time: agendaTimeSchema,
+  weekdays: z
+    .array(agendaWeekdaySchema)
+    .min(1, "Selecione pelo menos um dia da semana.")
+    .max(7, "Selecione dias validos."),
+  year: year2026Schema,
+});
+
+export const adminAgendaAttendanceSchema = z.object({
+  lessonId: z.string().min(1, "Aula da agenda invalida."),
+  status: z.enum(["SCHEDULED", "ATTENDED", "MISSED", "MAKEUP_ATTENDED"]),
+});
+
+export const adminAgendaMakeupSchema = z.object({
+  date: z
+    .string()
+    .min(1, "Informe a data da reposicao.")
+    .transform((value, ctx) => {
+      const date = new Date(`${value}T12:00:00.000Z`);
+
+      if (Number.isNaN(date.getTime()) || date.getUTCFullYear() !== 2026) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Informe uma data valida em 2026.",
+        });
+        return z.NEVER;
+      }
+
+      return date;
+    }),
+  lessonId: z.string().min(1, "Aula da agenda invalida."),
+  notes: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
+  time: agendaTimeSchema,
+});
+
+export const adminAgendaRemoveStudentSchema = z.object({
+  month: financeMonthSchema,
+  studentId: z.string().min(1, "Aluno da agenda invalido."),
+  year: year2026Schema,
+});
+
 export type AdminToggleUserStatusInput = z.input<
   typeof adminToggleUserStatusSchema
 >;
@@ -295,4 +356,14 @@ export type AdminFinanceStudentDeleteInput = z.input<
 >;
 export type AdminFinanceExportLogInput = z.input<
   typeof adminFinanceExportLogSchema
+>;
+export type AdminAgendaScheduleCreateInput = z.input<
+  typeof adminAgendaScheduleCreateSchema
+>;
+export type AdminAgendaAttendanceInput = z.input<
+  typeof adminAgendaAttendanceSchema
+>;
+export type AdminAgendaMakeupInput = z.input<typeof adminAgendaMakeupSchema>;
+export type AdminAgendaRemoveStudentInput = z.input<
+  typeof adminAgendaRemoveStudentSchema
 >;

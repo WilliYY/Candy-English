@@ -29,6 +29,7 @@ As pendencias podem afetar:
 - IA real conectada ao Catty.
 - Jogos.
 - Pagamento online ou integracao externa de cobranca.
+- Exportacao/importacao em massa da agenda.
 
 ## Pendencias tecnicas
 
@@ -38,6 +39,7 @@ As pendencias podem afetar:
 - Normalizacao case-insensitive mais robusta para email.
 - Testes automatizados amplos por modulo.
 - Auditoria administrativa geral fora do financeiro.
+- Auditoria da agenda ainda e log simples, nao relatorio completo.
 - Observabilidade externa e alertas de producao.
 
 ## Pendencias de documentacao

@@ -1,4 +1,5 @@
 import {
+  CalendarCheck2,
   CalendarDays,
   FileText,
   GraduationCap,
@@ -14,6 +15,12 @@ import {
   Wrench,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
+import {
+  AdminAgendaPanel,
+  type AdminAgendaLessonRow,
+  type AdminAgendaLogRow,
+  type AdminAgendaStudentRow,
+} from "@/components/ava/admin-agenda-panel";
 import {
   AdminFinancePanel,
   type AdminFinanceLogRow,
@@ -39,6 +46,7 @@ export const adminTaskIds = [
   "vincular-aluno",
   "contratos",
   "financeiro",
+  "agenda",
   "editar-site",
 ] as const;
 
@@ -105,6 +113,9 @@ type AdminContractRow = {
 
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
+  agendaLessons: AdminAgendaLessonRow[];
+  agendaLogs: AdminAgendaLogRow[];
+  agendaStudents: AdminAgendaStudentRow[];
   assignments: AssignmentRow[];
   contracts: AdminContractRow[];
   currentUser: {
@@ -116,6 +127,7 @@ type AdminUsersPanelProps = {
   };
   financeLogs: AdminFinanceLogRow[];
   financeStudents: AdminFinanceStudentRow[];
+  initialAgendaMonth: number;
   initialFinanceMonth: number;
   maintenanceMode: boolean;
   students: AssignmentOption[];
@@ -167,6 +179,10 @@ const taskMeta = {
   financeiro: {
     icon: WalletCards,
     title: "Financeiro 2026",
+  },
+  agenda: {
+    icon: CalendarCheck2,
+    title: "Agenda 2026",
   },
   "editar-site": {
     icon: Wrench,
@@ -494,11 +510,15 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
 
 export function AdminUsersPanel({
   activeTask,
+  agendaLessons,
+  agendaLogs,
+  agendaStudents,
   assignments,
   contracts,
   currentUser,
   financeLogs,
   financeStudents,
+  initialAgendaMonth,
   initialFinanceMonth,
   maintenanceMode,
   students,
@@ -656,6 +676,15 @@ export function AdminUsersPanel({
               logs={financeLogs}
               students={financeStudents}
               initialMonth={initialFinanceMonth}
+            />
+          ) : null}
+
+          {activeTask === "agenda" ? (
+            <AdminAgendaPanel
+              initialMonth={initialAgendaMonth}
+              lessons={agendaLessons}
+              logs={agendaLogs}
+              students={agendaStudents}
             />
           ) : null}
 

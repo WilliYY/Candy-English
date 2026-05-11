@@ -531,8 +531,13 @@ function FinancePaidDateForm({
       <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
       <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
       <input type="hidden" {...form.register("note")} />
-      <Field data-invalid={Boolean(form.formState.errors.paidAt)}>
-        <FieldLabel htmlFor={`finance-paid-at-${row.id}`}>Data paga</FieldLabel>
+      <Field className="gap-1.5" data-invalid={Boolean(form.formState.errors.paidAt)}>
+        <FieldLabel
+          htmlFor={`finance-paid-at-${row.id}`}
+          className="xl:sr-only"
+        >
+          Data paga
+        </FieldLabel>
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:grid-cols-[minmax(0,1fr)_2.5rem]">
           <Input
             id={`finance-paid-at-${row.id}`}
@@ -555,7 +560,7 @@ function FinancePaidDateForm({
             <span className="xl:sr-only">Salvar</span>
           </Button>
         </div>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground xl:hidden">
           {formatDate(row.paidAt)}
         </span>
         <FieldError errors={[form.formState.errors.paidAt]} />
@@ -868,7 +873,7 @@ function FinanceDeleteButton({
     setMessage(null);
 
     const confirmed = window.confirm(
-      `Retirar ${row.name} do financeiro deste mes em diante? Os meses anteriores continuam preservados.`,
+      `Retirar ${row.name} somente deste mes? Os outros meses continuam seguindo os alunos ativos.`,
     );
 
     if (!confirmed) {
@@ -905,7 +910,7 @@ function FinanceDeleteButton({
         ) : (
           <Trash2 data-icon="inline-start" />
         )}
-        Retirar deste mes em diante
+        Retirar deste mes
       </Button>
       {message ? (
         <span className="text-xs leading-5 text-muted-foreground">
@@ -1373,13 +1378,13 @@ export function AdminFinancePanel({
             <article
               key={`${row.id}-${activeMonth}-${row.payment?.updatedAt ?? "novo"}`}
               className={cn(
-                "rounded-lg border bg-white p-3 shadow-sm transition-colors",
+                "rounded-lg border bg-white p-2.5 shadow-sm transition-colors",
                 row.isOverdue
                   ? "border-amber-300 shadow-amber-100"
                   : "border-primary/15",
               )}
             >
-              <div className="grid gap-3 xl:grid-cols-[minmax(140px,1.15fr)_minmax(95px,0.72fr)_minmax(55px,0.36fr)_minmax(115px,0.76fr)_minmax(115px,0.7fr)_minmax(180px,0.95fr)_minmax(105px,0.62fr)] xl:items-start">
+              <div className="grid gap-2.5 xl:grid-cols-[minmax(140px,1.15fr)_minmax(95px,0.72fr)_minmax(55px,0.36fr)_minmax(115px,0.76fr)_minmax(115px,0.7fr)_minmax(180px,0.95fr)_minmax(105px,0.62fr)] xl:items-center">
                 <div className="min-w-0 break-words">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Nome

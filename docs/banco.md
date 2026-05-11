@@ -29,6 +29,7 @@ O banco PostgreSQL guarda usuarios, perfis, vinculos, aulas, materiais, vocabula
 - PostgreSQL 17 no Docker.
 - Uploads ficam em storage/volume; o banco guarda metadados.
 - Financeiro usa snapshots mensais em `FinancialPayment` para preservar meses fechados.
+- Agenda usa `AgendaStudent`, `AgendaLesson` e `AgendaLog` para presenca e reposicao.
 
 ## Riscos ao alterar esta parte
 

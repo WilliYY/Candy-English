@@ -109,10 +109,17 @@ Cada decisao deve conter:
 
 ### 2026-05-11 - Financeiro com meses fechados por snapshot
 
-- Decisao: `FinancialPayment` passa a guardar snapshots mensais dos dados do aluno e `isActive`; editar ou retirar aluno afeta apenas o mes selecionado em diante.
+- Decisao: `FinancialPayment` passa a guardar snapshots mensais dos dados do aluno e `isActive`; editar aluno pode atualizar meses futuros, mas retirar aluno financeiro inativa apenas o mes atual.
 - Motivo: meses anteriores do financeiro precisam funcionar como historico fechado, sem mudancas automaticas quando o admin edita ou retira aluno em meses seguintes.
 - Impacto: `prisma/schema.prisma`, migration `20260511110000_finance_month_snapshots`, `src/app/ava/admin/actions.ts`, `src/components/ava/admin-finance-panel.tsx`, `src/app/ava/admin/page.tsx`, `docs/13-financeiro.md`.
 - Riscos/cuidados: nao fazer hard delete de `FinancialStudent` pela UI; preservar snapshots dos meses anteriores e rodar migration no deploy antes de recriar o app.
+
+### 2026-05-11 - Agenda administrativa 2026
+
+- Decisao: criar modulo `Agenda` em `/ava/admin?task=agenda` com `AgendaStudent`, `AgendaLesson` e `AgendaLog`.
+- Motivo: substituir controle em sheets por uma tela interna para dias/horarios dos alunos, presenca, faltas e reposicao.
+- Impacto: `prisma/schema.prisma`, migration `20260511160000_admin_agenda_module`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/components/ava/admin-agenda-panel.tsx`, sidebar do AVA e docs.
+- Riscos/cuidados: agenda e controle interno do admin; nao confundir com aulas/materiais da teacher nem com presenca automatica.
 
 ## Regras de negocio que precisam ser preservadas
 

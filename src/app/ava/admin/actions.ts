@@ -7,6 +7,10 @@ import { setMaintenanceMode } from "@/lib/app-settings";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 import {
+  adminAgendaAttendanceSchema,
+  adminAgendaMakeupSchema,
+  adminAgendaRemoveStudentSchema,
+  adminAgendaScheduleCreateSchema,
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
@@ -18,6 +22,10 @@ import {
   adminFinanceStudentUpdateSchema,
   adminSiteContentSchema,
   adminToggleUserStatusSchema,
+  type AdminAgendaAttendanceInput,
+  type AdminAgendaMakeupInput,
+  type AdminAgendaRemoveStudentInput,
+  type AdminAgendaScheduleCreateInput,
   type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
@@ -44,6 +52,7 @@ export type AdminActionResult<TInput extends Record<string, unknown>> = {
 };
 
 const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+const AGENDA_YEAR = 2026;
 
 type FinancialSnapshotSource = {
   address: string | null;
@@ -71,6 +80,33 @@ function buildFinancialPaymentSnapshot(student: FinancialSnapshotSource) {
     snapshotPaymentMethod: student.paymentMethod,
     snapshotPhone: student.phone,
   };
+}
+
+function getAgendaDateParts(date: Date) {
+  return {
+    month: date.getUTCMonth() + 1,
+    weekday: date.getUTCDay(),
+    year: date.getUTCFullYear(),
+  };
+}
+
+function getAgendaRecurringDates(startMonth: number, weekdays: number[]) {
+  const selectedWeekdays = new Set(weekdays);
+  const dates: Date[] = [];
+
+  for (let month = startMonth; month <= 12; month += 1) {
+    const lastDay = new Date(Date.UTC(AGENDA_YEAR, month, 0)).getUTCDate();
+
+    for (let day = 1; day <= lastDay; day += 1) {
+      const date = new Date(Date.UTC(AGENDA_YEAR, month - 1, day, 12));
+
+      if (selectedWeekdays.has(date.getUTCDay())) {
+        dates.push(date);
+      }
+    }
+  }
+
+  return dates;
 }
 
 function isUniqueConstraintError(error: unknown) {
@@ -876,16 +912,14 @@ export async function deleteFinancialStudent(
       data: {
         action: "DELETE",
         createdByUserId: session.user.id,
-        description: `Aluno financeiro retirado a partir do mes ${parsed.data.month}: ${student.name}.`,
+        description: `Aluno financeiro retirado do mes ${parsed.data.month}: ${student.name}.`,
         studentId: student.id,
       },
     });
 
     await tx.financialPayment.updateMany({
       where: {
-        month: {
-          gte: parsed.data.month,
-        },
+        month: parsed.data.month,
         studentId: student.id,
         year: parsed.data.year,
       },
@@ -899,7 +933,7 @@ export async function deleteFinancialStudent(
 
   return {
     ok: true,
-    message: "Aluno retirado deste mes em diante.",
+    message: "Aluno retirado deste mes.",
   };
 }
 
@@ -940,5 +974,324 @@ export async function recordFinancialExport(
   return {
     ok: true,
     message: "Exportacao registrada no log.",
+  };
+}
+
+export async function createAgendaSchedule(
+  input: AdminAgendaScheduleCreateInput,
+): Promise<AdminActionResult<AdminAgendaScheduleCreateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para cadastrar agenda.",
+    };
+  }
+
+  const parsed = adminAgendaScheduleCreateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminAgendaScheduleCreateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados da agenda.",
+    };
+  }
+
+  const dates = getAgendaRecurringDates(
+    parsed.data.month,
+    parsed.data.weekdays,
+  );
+
+  if (dates.length === 0) {
+    return {
+      ok: false,
+      message: "Nenhum dia encontrado para essa agenda.",
+    };
+  }
+
+  const prisma = getPrisma();
+
+  await prisma.$transaction(async (tx) => {
+    const student = await tx.agendaStudent.create({
+      data: {
+        name: parsed.data.name,
+        notes: parsed.data.notes ?? null,
+        phone: parsed.data.phone ?? null,
+      },
+    });
+
+    await tx.agendaLesson.createMany({
+      data: dates.map((date) => {
+        const parts = getAgendaDateParts(date);
+
+        return {
+          date,
+          isActive: true,
+          isMakeup: false,
+          month: parts.month,
+          status: "SCHEDULED",
+          studentId: student.id,
+          time: parsed.data.time,
+          weekday: parts.weekday,
+          year: parsed.data.year,
+        };
+      }),
+    });
+
+    await tx.agendaLog.create({
+      data: {
+        action: "CREATE_SCHEDULE",
+        createdByUserId: session.user.id,
+        description: `Agenda criada para ${student.name}: ${dates.length} aula(s) ate dezembro.`,
+        studentId: student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Aluno adicionado na agenda.",
+  };
+}
+
+export async function updateAgendaAttendance(
+  input: AdminAgendaAttendanceInput,
+): Promise<AdminActionResult<AdminAgendaAttendanceInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para atualizar agenda.",
+    };
+  }
+
+  const parsed = adminAgendaAttendanceSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminAgendaAttendanceInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a presenca da agenda.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const lesson = await prisma.agendaLesson.findUnique({
+    where: { id: parsed.data.lessonId },
+    select: {
+      id: true,
+      isMakeup: true,
+      student: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!lesson) {
+    return {
+      ok: false,
+      message: "Aula da agenda nao encontrada.",
+    };
+  }
+
+  const status =
+    parsed.data.status === "ATTENDED" && lesson.isMakeup
+      ? "MAKEUP_ATTENDED"
+      : parsed.data.status;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.agendaLesson.update({
+      where: { id: lesson.id },
+      data: {
+        status,
+      },
+    });
+
+    await tx.agendaLog.create({
+      data: {
+        action: "ATTENDANCE",
+        createdByUserId: session.user.id,
+        description:
+          status === "ATTENDED" || status === "MAKEUP_ATTENDED"
+            ? `Presenca confirmada: ${lesson.student.name}.`
+            : status === "MISSED"
+              ? `Falta registrada: ${lesson.student.name}.`
+              : `Presenca resetada: ${lesson.student.name}.`,
+        lessonId: lesson.id,
+        studentId: lesson.student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Agenda atualizada.",
+  };
+}
+
+export async function createAgendaMakeup(
+  input: AdminAgendaMakeupInput,
+): Promise<AdminActionResult<AdminAgendaMakeupInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para criar reposicao.",
+    };
+  }
+
+  const parsed = adminAgendaMakeupSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminAgendaMakeupInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a reposicao.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const lesson = await prisma.agendaLesson.findUnique({
+    where: { id: parsed.data.lessonId },
+    select: {
+      id: true,
+      student: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  if (!lesson) {
+    return {
+      ok: false,
+      message: "Aula original nao encontrada.",
+    };
+  }
+
+  const dateParts = getAgendaDateParts(parsed.data.date);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.agendaLesson.update({
+      where: { id: lesson.id },
+      data: {
+        notes: parsed.data.notes ?? null,
+        status: "MISSED",
+      },
+    });
+
+    const makeupLesson = await tx.agendaLesson.create({
+      data: {
+        date: parsed.data.date,
+        isActive: true,
+        isMakeup: true,
+        makeupForLessonId: lesson.id,
+        month: dateParts.month,
+        notes: parsed.data.notes ?? null,
+        status: "MAKEUP_SCHEDULED",
+        studentId: lesson.student.id,
+        time: parsed.data.time,
+        weekday: dateParts.weekday,
+        year: dateParts.year,
+      },
+    });
+
+    await tx.agendaLog.create({
+      data: {
+        action: "MAKEUP",
+        createdByUserId: session.user.id,
+        description: `Reposicao criada para ${lesson.student.name}.`,
+        lessonId: makeupLesson.id,
+        studentId: lesson.student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Reposicao criada.",
+  };
+}
+
+export async function removeAgendaStudentFromMonth(
+  input: AdminAgendaRemoveStudentInput,
+): Promise<AdminActionResult<AdminAgendaRemoveStudentInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para retirar aluno da agenda.",
+    };
+  }
+
+  const parsed = adminAgendaRemoveStudentSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminAgendaRemoveStudentInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o aluno da agenda.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const student = await prisma.agendaStudent.findUnique({
+    where: { id: parsed.data.studentId },
+    select: { id: true, name: true },
+  });
+
+  if (!student) {
+    return {
+      ok: false,
+      message: "Aluno da agenda nao encontrado.",
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.agendaLesson.updateMany({
+      where: {
+        isMakeup: false,
+        month: {
+          gte: parsed.data.month,
+        },
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+      data: {
+        isActive: false,
+      },
+    });
+
+    await tx.agendaLog.create({
+      data: {
+        action: "REMOVE_STUDENT",
+        createdByUserId: session.user.id,
+        description: `Aluno retirado da agenda a partir do mes ${parsed.data.month}: ${student.name}.`,
+        studentId: student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Aluno retirado da agenda deste mes em diante.",
   };
 }

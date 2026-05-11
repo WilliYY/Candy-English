@@ -35,6 +35,14 @@ enum SubmissionStatus {
   REVIEWED
 }
 
+enum AgendaLessonStatus {
+  SCHEDULED
+  ATTENDED
+  MISSED
+  MAKEUP_SCHEDULED
+  MAKEUP_ATTENDED
+}
+
 model User {
   id                String             @id @default(cuid())
   name              String
@@ -49,6 +57,7 @@ model User {
   studentProfile    StudentProfile?
   teacherProfile    TeacherProfile?
   financialLogs     FinancialLog[]
+  agendaLogs        AgendaLog[]
   sentChatMessages  ChatMessage[]
   uploadedContracts ContractDocument[] @relation("UploadedContracts")
   createdAt         DateTime           @default(now())
@@ -297,6 +306,61 @@ model FinancialLog {
   createdByUserId String?
   createdByUser   User?             @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
   createdAt       DateTime          @default(now())
+
+  @@index([createdAt])
+  @@index([studentId])
+}
+
+model AgendaStudent {
+  id        String         @id @default(cuid())
+  name      String
+  phone     String?
+  notes     String?
+  lessons   AgendaLesson[]
+  logs      AgendaLog[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([name])
+}
+
+model AgendaLesson {
+  id                String             @id @default(cuid())
+  year              Int                @default(2026)
+  month             Int
+  date              DateTime
+  weekday           Int
+  time              String
+  studentId         String
+  student           AgendaStudent      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  isActive          Boolean            @default(true)
+  isMakeup          Boolean            @default(false)
+  makeupForLessonId String?
+  makeupForLesson   AgendaLesson?      @relation("AgendaMakeup", fields: [makeupForLessonId], references: [id], onDelete: SetNull)
+  makeupLessons     AgendaLesson[]     @relation("AgendaMakeup")
+  status            AgendaLessonStatus @default(SCHEDULED)
+  notes             String?
+  logs              AgendaLog[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([year, month, date])
+  @@index([studentId, year, month])
+  @@index([isActive, date])
+  @@index([makeupForLessonId])
+}
+
+model AgendaLog {
+  id              String         @id @default(cuid())
+  action          String
+  description     String
+  studentId       String?
+  student         AgendaStudent? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  lessonId        String?
+  lesson          AgendaLesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  createdByUserId String?
+  createdByUser   User?          @relation(fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now())
 
   @@index([createdAt])
   @@index([studentId])
