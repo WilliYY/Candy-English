@@ -47,7 +47,9 @@ Rota:
 - Reposicao confirmada vira `MAKEUP_ATTENDED`.
 - Retirar aluno da agenda inativa ocorrencias recorrentes do mes selecionado em diante.
 - O painel mostra aviso de alunos de hoje e proximas aulas com horario.
-- O bloco `Hoje` permite acao rapida: `Certo` para presenca e `X` para falta, com cores verde/vermelha.
+- O bloco `Hoje` permite acoes rapidas por icone: confirmar presenca em verde, registrar falta em vermelho e abrir `Reagendar`.
+- Alunos exibidos em `Hoje` e `Proximas aulas` sao clicaveis e rolam ate a linha mensal correspondente.
+- Aulas de hoje sem nenhuma acao somem da fila `Hoje` depois de 2 horas do horario agendado, sem apagar a ocorrencia do mes.
 - A agenda usa o mes atual de 2026 automaticamente enquanto o admin nao escolher um mes manualmente.
 - O calculo de `Hoje` deve usar a data local do navegador para nao adiantar o dia no periodo da noite.
 - A observacao do cadastro fica recolhida por padrao e sem rotulo duplicado ao abrir.
@@ -62,6 +64,7 @@ Rota:
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
 - Os cards de hoje, proximas aulas e aulas mensais foram compactados para funcionar como painel operacional de cobranca/agenda, com status visiveis e acoes sempre proximas do aluno.
+- Bordas dos cards da agenda usam contraste maior que o restante do AVA para facilitar leitura rapida em rotina de atendimento.
 
 ## Riscos ao alterar esta parte
 

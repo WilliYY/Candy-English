@@ -84,7 +84,9 @@ Actions:
 4. Admin marca se o aluno foi, faltou ou reseta a presenca.
 5. Quando o aluno falta, admin pode cadastrar uma reposicao com data e horario.
 6. A tela mostra alunos do dia e proximas aulas com horario.
-7. No bloco `Hoje`, admin pode confirmar presenca rapidamente em `Certo` ou registrar falta em `X`.
+7. No bloco `Hoje`, admin pode confirmar presenca rapidamente pelo icone verde, registrar falta pelo icone vermelho ou abrir `Reagendar`.
+8. Ao clicar no nome do aluno em `Hoje` ou `Proximas aulas`, a tela rola ate a linha mensal daquele aluno.
+9. Aulas de hoje sem acao saem da fila visual depois de 2 horas do horario previsto, sem apagar o registro.
 
 ### Manutencao
 

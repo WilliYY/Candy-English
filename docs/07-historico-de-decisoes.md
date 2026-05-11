@@ -128,6 +128,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/ava/admin-finance-panel.tsx`, `src/components/ava/admin-agenda-panel.tsx`, `docs/13-financeiro.md`, `docs/14-agenda.md`.
 - Riscos/cuidados: manter botoes de presenca com validacao server-side em `updateAgendaAttendance`; nao esconder logs permanentemente, apenas recolher.
 
+### 2026-05-11 - Fila diaria da agenda
+
+- Decisao: tornar nomes de alunos clicaveis, adicionar atalho `Reagendar`, usar acoes por icone em `Hoje` e ocultar da fila diaria aulas sem acao depois de 2 horas do horario previsto.
+- Motivo: a fila `Hoje` precisa priorizar quem ainda exige atencao e permitir chegar rapidamente ao detalhe mensal do aluno.
+- Impacto: `src/components/ava/admin-agenda-panel.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/14-agenda.md`.
+- Riscos/cuidados: a ocultacao em 2 horas e apenas visual; nao deve apagar `AgendaLesson` nem marcar falta automaticamente.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

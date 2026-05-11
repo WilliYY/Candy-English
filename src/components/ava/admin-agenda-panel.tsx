@@ -132,6 +132,8 @@ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
+const TODAY_QUEUE_RETENTION_MS = 2 * 60 * 60 * 1000;
+
 function createDefaultValues(month: number): AdminAgendaScheduleCreateInput {
   return {
     month,
@@ -190,30 +192,59 @@ function getWeekdayLabel(value: number) {
   return weekdays.find((weekday) => weekday.value === value)?.label ?? "Dia";
 }
 
+function getLessonElementId(lessonId: string) {
+  return `agenda-lesson-${lessonId}`;
+}
+
+function getLessonDateTime(lesson: AdminAgendaLessonRow) {
+  const date = parseLessonDate(lesson.date);
+  const [hour = "0", minute = "0"] = lesson.time.split(":");
+
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    Number(hour),
+    Number(minute),
+  );
+}
+
+function hasAttendanceAction(status: AdminAgendaLessonStatus) {
+  return status !== "SCHEDULED" && status !== "MAKEUP_SCHEDULED";
+}
+
+function shouldShowInTodayQueue(lesson: AdminAgendaLessonRow, now: Date) {
+  const elapsedTime = now.getTime() - getLessonDateTime(lesson).getTime();
+
+  return (
+    hasAttendanceAction(lesson.status) || elapsedTime <= TODAY_QUEUE_RETENTION_MS
+  );
+}
+
 function getStatusMeta(status: AdminAgendaLessonStatus) {
   if (status === "ATTENDED" || status === "MAKEUP_ATTENDED") {
     return {
-      className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      className: "border-emerald-300 bg-emerald-50 text-emerald-800",
       label: status === "MAKEUP_ATTENDED" ? "Reposicao feita" : "Confirmado",
     };
   }
 
   if (status === "MISSED") {
     return {
-      className: "border-red-200 bg-red-50 text-red-800",
+      className: "border-red-300 bg-red-50 text-red-800",
       label: "Faltou",
     };
   }
 
   if (status === "MAKEUP_SCHEDULED") {
     return {
-      className: "border-amber-200 bg-amber-50 text-amber-900",
+      className: "border-amber-300 bg-amber-50 text-amber-900",
       label: "Reposicao",
     };
   }
 
   return {
-    className: "border-primary/15 bg-primary/5 text-primary",
+    className: "border-primary/30 bg-primary/5 text-primary",
     label: "Previsto",
   };
 }
@@ -300,7 +331,13 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
   );
 }
 
-function AgendaTodayQuickActions({ lesson }: { lesson: AdminAgendaLessonRow }) {
+function AgendaTodayQuickActions({
+  lesson,
+  onReschedule,
+}: {
+  lesson: AdminAgendaLessonRow;
+  onReschedule: () => void;
+}) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -332,8 +369,9 @@ function AgendaTodayQuickActions({ lesson }: { lesson: AdminAgendaLessonRow }) {
         size="sm"
         disabled={isPending}
         aria-label={`Marcar ${lesson.studentName} como presente`}
+        title="Confirmar presenca"
         className={cn(
-          "h-8 border border-emerald-700 bg-emerald-600 px-2.5 text-xs text-white hover:bg-emerald-700",
+          "h-8 w-8 border border-emerald-700 bg-emerald-600 p-0 text-white hover:bg-emerald-700",
           isAttended ? "ring-2 ring-emerald-200" : "",
         )}
         onClick={() => submitStatus("ATTENDED")}
@@ -343,22 +381,33 @@ function AgendaTodayQuickActions({ lesson }: { lesson: AdminAgendaLessonRow }) {
         ) : (
           <CheckCircle2 data-icon="inline-start" />
         )}
-        Certo
       </Button>
       <Button
         type="button"
         size="sm"
         disabled={isPending}
         aria-label={`Marcar ${lesson.studentName} como falta`}
+        title="Registrar falta"
         className={cn(
-          "h-8 border border-red-700 bg-red-600 px-2.5 text-xs text-white hover:bg-red-700",
+          "h-8 w-8 border border-red-700 bg-red-600 p-0 text-white hover:bg-red-700",
           isMissed ? "ring-2 ring-red-200" : "",
         )}
         onClick={() => submitStatus("MISSED")}
       >
         <XCircle data-icon="inline-start" />
-        X
       </Button>
+      {!lesson.isMakeup ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="h-8 border-amber-300 px-2 text-xs font-semibold text-amber-900 hover:bg-amber-50 hover:text-amber-950"
+          onClick={onReschedule}
+        >
+          <RotateCcw data-icon="inline-start" />
+          Reagendar
+        </Button>
+      ) : null}
       {message ? (
         <span className="sr-only" role="status">
           {message}
@@ -421,14 +470,14 @@ function AgendaMakeupForm({ lesson }: { lesson: AdminAgendaLessonRow }) {
 
   return (
     <form
-      className="grid gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2 md:grid-cols-[minmax(130px,0.7fr)_minmax(100px,0.45fr)_minmax(160px,1fr)_auto]"
+      className="grid gap-2 rounded-lg border border-amber-300 bg-amber-50 p-2 md:grid-cols-[minmax(130px,0.7fr)_minmax(100px,0.45fr)_minmax(160px,1fr)_auto]"
       onSubmit={onSubmit}
       noValidate
     >
       <input type="hidden" {...form.register("lessonId")} />
       <Field data-invalid={Boolean(form.formState.errors.date)}>
         <FieldLabel htmlFor={`agenda-makeup-date-${lesson.id}`}>
-          Reposicao
+          Nova data
         </FieldLabel>
         <Input
           id={`agenda-makeup-date-${lesson.id}`}
@@ -550,7 +599,14 @@ export function AdminAgendaPanel({
   const router = useRouter();
   const initialActiveMonth = getAutomaticAgendaMonth(initialMonth);
   const [activeMonth, setActiveMonth] = useState(initialActiveMonth);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
   const [monthChangedManually, setMonthChangedManually] = useState(false);
+  const [openMakeupLessonId, setOpenMakeupLessonId] = useState<string | null>(
+    null,
+  );
+  const [pendingScrollLessonId, setPendingScrollLessonId] = useState<
+    string | null
+  >(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const form = useForm<AdminAgendaScheduleCreateInput>({
@@ -590,31 +646,32 @@ export function AdminAgendaPanel({
       }, {}),
     [lessons],
   );
-  const todayKey = toDayKey(new Date());
+  const todayKey = toDayKey(currentTime);
   const todayLessons = useMemo(
     () =>
       lessons
         .filter(
           (lesson) =>
-            lesson.isActive && toDayKey(parseLessonDate(lesson.date)) === todayKey,
+            lesson.isActive &&
+            toDayKey(parseLessonDate(lesson.date)) === todayKey &&
+            shouldShowInTodayQueue(lesson, currentTime),
         )
         .sort(sortLessons),
-    [lessons, todayKey],
+    [currentTime, lessons, todayKey],
   );
   const upcomingLessons = useMemo(() => {
-    const now = new Date();
-    const end = new Date();
-    end.setDate(now.getDate() + 7);
+    const end = new Date(currentTime);
+    end.setDate(currentTime.getDate() + 7);
 
     return lessons
       .filter((lesson) => {
-        const date = parseLessonDate(lesson.date);
+        const date = getLessonDateTime(lesson);
 
-        return lesson.isActive && date >= now && date <= end;
+        return lesson.isActive && date >= currentTime && date <= end;
       })
       .sort(sortLessons)
       .slice(0, 8);
-  }, [lessons]);
+  }, [currentTime, lessons]);
   const lessonsByDay = useMemo(() => {
     return activeLessons.reduce<
       { date: string; lessons: AdminAgendaLessonRow[]; weekday: number }[]
@@ -654,10 +711,50 @@ export function AdminAgendaPanel({
     return () => window.clearInterval(interval);
   }, [initialMonth, monthChangedManually, setValue]);
 
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60 * 1000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingScrollLessonId) {
+      return;
+    }
+
+    const element = document.getElementById(
+      getLessonElementId(pendingScrollLessonId),
+    );
+
+    if (!element) {
+      return;
+    }
+
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    element.focus({ preventScroll: true });
+    setPendingScrollLessonId(null);
+  }, [activeLessons, pendingScrollLessonId]);
+
   function handleMonthChange(month: number) {
     setMonthChangedManually(true);
     setActiveMonth(month);
     setValue("month", month);
+  }
+
+  function goToLesson(
+    lesson: AdminAgendaLessonRow,
+    options?: { openMakeup?: boolean },
+  ) {
+    setMonthChangedManually(true);
+    setActiveMonth(lesson.month);
+    setValue("month", lesson.month);
+    setPendingScrollLessonId(lesson.id);
+
+    if (options?.openMakeup) {
+      setOpenMakeupLessonId(lesson.id);
+    }
   }
 
   function toggleWeekday(weekday: number) {
@@ -701,8 +798,8 @@ export function AdminAgendaPanel({
 
   return (
     <div className="flex flex-col gap-4 pb-28 lg:pr-20">
-      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+      <div className="grid items-stretch gap-3 xl:grid-cols-[minmax(350px,0.95fr)_minmax(0,1.05fr)]">
+        <div className="rounded-lg border border-primary/35 bg-white p-3 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Hoje</h2>
             <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
@@ -711,7 +808,7 @@ export function AdminAgendaPanel({
           </div>
           <div className="mt-3 grid gap-2">
             {todayLessons.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-primary/15 bg-primary/5 p-3 text-sm text-muted-foreground">
+              <p className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
                 Nenhum aluno agendado para hoje.
               </p>
             ) : (
@@ -721,13 +818,18 @@ export function AdminAgendaPanel({
                 return (
                   <div
                     key={lesson.id}
-                    className="grid min-w-0 gap-2 rounded-lg border border-primary/15 bg-white px-3 py-2 text-sm shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                    className="grid min-w-0 gap-2 rounded-lg border border-primary/30 bg-white px-3 py-2 text-sm shadow-sm sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                   >
                     <div className="min-w-0">
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <strong className="min-w-0 truncate">
+                        <button
+                          type="button"
+                          className="min-w-0 truncate text-left font-semibold text-primary underline-offset-4 hover:underline"
+                          title="Ir para este aluno na lista mensal"
+                          onClick={() => goToLesson(lesson)}
+                        >
                           {lesson.studentName}
-                        </strong>
+                        </button>
                         <span
                           className={cn(
                             "inline-flex shrink-0 items-center rounded-full border px-2 py-0.5 text-xs font-semibold",
@@ -745,7 +847,12 @@ export function AdminAgendaPanel({
                         {lesson.isMakeup ? <span>Reposicao</span> : null}
                       </div>
                     </div>
-                    <AgendaTodayQuickActions lesson={lesson} />
+                    <AgendaTodayQuickActions
+                      lesson={lesson}
+                      onReschedule={() =>
+                        goToLesson(lesson, { openMakeup: true })
+                      }
+                    />
                   </div>
                 );
               })
@@ -753,14 +860,14 @@ export function AdminAgendaPanel({
           </div>
         </div>
 
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+        <div className="rounded-lg border border-primary/35 bg-white p-3 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold">Proximas aulas</h2>
             <CalendarDays aria-hidden="true" className="size-5 text-primary" />
           </div>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {upcomingLessons.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-primary/15 bg-primary/5 p-3 text-sm text-muted-foreground sm:col-span-2">
+              <p className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground sm:col-span-2">
                 Nenhuma aula nos proximos dias.
               </p>
             ) : (
@@ -770,12 +877,17 @@ export function AdminAgendaPanel({
                 return (
                   <div
                     key={lesson.id}
-                    className="min-w-0 rounded-lg border border-primary/15 bg-white px-3 py-2 text-sm shadow-sm"
+                    className="min-w-0 rounded-lg border border-primary/30 bg-white px-3 py-2 text-sm shadow-sm"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <strong className="min-w-0 truncate">
+                      <button
+                        type="button"
+                        className="min-w-0 truncate text-left font-semibold text-primary underline-offset-4 hover:underline"
+                        title="Ir para este aluno na lista mensal"
+                        onClick={() => goToLesson(lesson)}
+                      >
                         {lesson.studentName}
-                      </strong>
+                      </button>
                       <span className="shrink-0 font-semibold text-primary">
                         {lesson.time}
                       </span>
@@ -803,15 +915,15 @@ export function AdminAgendaPanel({
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+        <div className="rounded-lg border border-primary/30 bg-white p-3 shadow-sm">
           <span className="text-sm text-muted-foreground">Ano</span>
           <strong className="mt-1 block text-2xl">2026</strong>
         </div>
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+        <div className="rounded-lg border border-primary/30 bg-white p-3 shadow-sm">
           <span className="text-sm text-muted-foreground">Mes</span>
           <strong className="mt-1 block text-2xl">{activeMonthLabel}</strong>
         </div>
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+        <div className="rounded-lg border border-primary/30 bg-white p-3 shadow-sm">
           <span className="text-sm text-muted-foreground">Alunos agenda</span>
           <strong className="mt-1 block text-2xl">{students.length}</strong>
         </div>
@@ -827,7 +939,7 @@ export function AdminAgendaPanel({
               "rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
               activeMonth === month.value
                 ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
-                : "border-primary/20 bg-white text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
+                : "border-primary/30 bg-white text-primary hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/10",
             )}
           >
             <span className="block">{month.shortLabel}</span>
@@ -840,7 +952,7 @@ export function AdminAgendaPanel({
 
       <form
         onSubmit={onSubmit}
-        className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
+        className="rounded-lg border border-primary/30 bg-white p-3 shadow-sm"
         noValidate
       >
         <FieldGroup className="gap-3">
@@ -903,7 +1015,7 @@ export function AdminAgendaPanel({
                       "rounded-lg border px-2.5 py-2 text-sm font-semibold transition-colors",
                       checked
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10",
+                        : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/10",
                     )}
                   >
                     {weekday.label}
@@ -913,7 +1025,7 @@ export function AdminAgendaPanel({
             </div>
             <FieldError errors={[form.formState.errors.weekdays]} />
           </Field>
-          <details className="group rounded-lg border border-primary/15 bg-primary/5 p-2.5">
+          <details className="group rounded-lg border border-primary/30 bg-primary/5 p-2.5">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
               <span>Observacao do aluno</span>
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -952,7 +1064,7 @@ export function AdminAgendaPanel({
 
       <section className="flex flex-col gap-3">
         {lessonsByDay.length === 0 ? (
-          <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
+          <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/35 bg-primary/5 text-center">
             <CalendarCheck2 aria-hidden="true" />
             <p className="max-w-sm text-sm text-muted-foreground">
               Nenhum aluno agendado para este mes.
@@ -962,9 +1074,9 @@ export function AdminAgendaPanel({
           lessonsByDay.map((group) => (
             <div
               key={group.date}
-              className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm"
+              className="rounded-lg border border-primary/30 bg-white p-3 shadow-sm"
             >
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-primary/10 pb-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-primary/20 pb-2">
                 <h3 className="text-base font-semibold">
                   {getWeekdayLabel(group.weekday)} - {formatDate(group.date)}
                 </h3>
@@ -979,7 +1091,9 @@ export function AdminAgendaPanel({
                   return (
                     <article
                       key={lesson.id}
-                      className="grid gap-2 rounded-lg border border-primary/10 bg-white p-2.5 shadow-sm xl:grid-cols-[90px_minmax(150px,1fr)_130px_minmax(210px,1.1fr)_160px] xl:items-center"
+                      id={getLessonElementId(lesson.id)}
+                      tabIndex={-1}
+                      className="scroll-mt-28 grid gap-2 rounded-lg border border-primary/25 bg-white p-2.5 shadow-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 xl:grid-cols-[90px_minmax(150px,1fr)_130px_minmax(210px,1.1fr)_160px] xl:items-center"
                     >
                       <div className="inline-flex items-center gap-2 font-semibold text-primary">
                         <Clock aria-hidden="true" className="size-4" />
@@ -1019,10 +1133,18 @@ export function AdminAgendaPanel({
                         studentName={lesson.studentName}
                       />
                       {!lesson.isMakeup ? (
-                        <details className="group xl:col-span-5">
+                        <details
+                          open={openMakeupLessonId === lesson.id}
+                          onToggle={(event) => {
+                            setOpenMakeupLessonId(
+                              event.currentTarget.open ? lesson.id : null,
+                            );
+                          }}
+                          className="group xl:col-span-5"
+                        >
                           <summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-primary [&::-webkit-details-marker]:hidden">
                             <RotateCcw aria-hidden="true" className="size-3.5" />
-                            Reposicao
+                            Reagendar
                           </summary>
                           <AgendaMakeupForm lesson={lesson} />
                         </details>
@@ -1036,7 +1158,7 @@ export function AdminAgendaPanel({
         )}
       </section>
 
-      <details className="group rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
+      <details className="group rounded-lg border border-primary/30 bg-white p-3 shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
           <span className="flex min-w-0 items-center gap-2">
             <span className="text-base font-semibold">Log da agenda</span>
@@ -1051,7 +1173,7 @@ export function AdminAgendaPanel({
         </summary>
         <div className="mt-3">
           {logs.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 text-sm text-muted-foreground">
               Nenhuma movimentacao registrada ainda.
             </p>
           ) : (
@@ -1059,7 +1181,7 @@ export function AdminAgendaPanel({
               {logs.map((log) => (
                 <li
                   key={log.id}
-                  className="grid gap-1 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)]"
+                  className="grid gap-1 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)]"
                 >
                   <span className="font-semibold text-primary">
                     {formatDateTime(log.createdAt)}
