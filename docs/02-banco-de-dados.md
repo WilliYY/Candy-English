@@ -1,0 +1,106 @@
+# 02 - Banco de Dados
+
+## O que esta parte do sistema faz
+
+Este documento descreve o banco PostgreSQL e o schema Prisma atual. Deve ser atualizado sempre que `prisma/schema.prisma` ou `prisma/migrations/` mudar.
+
+## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
+
+Arquivos:
+
+- `prisma/schema.prisma`
+- `prisma/migrations/`
+- `prisma/seed.ts`
+- `prisma.config.ts`
+- `src/generated/prisma/`
+- `src/lib/prisma.ts`
+- `docker-compose.yml`
+
+Servicos:
+
+- `postgres`: banco PostgreSQL 17.
+- `migrate`: aplica migrations com `prisma migrate deploy`.
+- `seed`: cria ou atualiza o admin inicial.
+
+## Modelos atuais
+
+Perfis e auth:
+
+- `User`
+- `StudentProfile`
+- `TeacherProfile`
+- `LoginAttempt`
+
+Relacionamentos escolares:
+
+- `StudentTeacherAssignment`
+- `Lesson`
+- `LessonMaterial`
+- `VocabularyItem`
+- `Homework`
+- `HomeworkQuestion`
+- `HomeworkSubmission`
+
+Operacao do AVA:
+
+- `LiveSession`
+- `ContractDocument`
+- `ChatThread`
+- `ChatMessage`
+- `AppSetting`
+- `SitePageContent`
+
+Financeiro:
+
+- `FinancialStudent`
+- `FinancialPayment`
+- `FinancialLog`
+
+Enums:
+
+- `Role`
+- `LessonStatus`
+- `MaterialType`
+- `HomeworkStatus`
+- `SubmissionStatus`
+
+## Regras de negocio que precisam ser preservadas
+
+- `User.email` e unico.
+- `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
+- `StudentTeacherAssignment` possui chave unica por teacher/aluno.
+- `HomeworkSubmission` possui chave unica por homework/aluno.
+- Contratos podem ser gerais ou vinculados a um aluno.
+- Chat deve sempre estar preso ao vinculo teacher/aluno.
+- Financeiro guarda dados recorrentes em `FinancialStudent` e dados mensais em `FinancialPayment`.
+- `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
+
+## Decisoes tecnicas tomadas
+
+- PostgreSQL nao publica porta `5432`.
+- Prisma Client e gerado em `src/generated/prisma`.
+- Seed usa `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` e respeita `ADMIN_RESET_PASSWORD`.
+- Uploads nao ficam no banco; o banco guarda metadados e caminhos.
+- Migration `20260510203000_recurring_finance_students` converteu `FinancialEntry` em estrutura recorrente.
+
+## Riscos ao alterar esta parte
+
+- Alterar campos sem migration quebra deploy.
+- Apagar migrations antigas quebra bancos novos.
+- Remover constraints unicas pode criar duplicidade em vinculos, respostas ou pagamentos mensais.
+- Expor `DATABASE_URL` ou senha em docs/logs compromete o ambiente.
+- Alterar cascade/set null sem revisar contratos, chat e financeiro pode apagar historico indevidamente.
+
+## Pendencias
+
+- Falta rotina formal de backup/restore.
+- Falta revogacao imediata de JWT quando role muda.
+- Falta normalizacao case-insensitive mais robusta para email.
+- Falta auditoria geral fora do financeiro.
+
+## Como pode evoluir
+
+- Documentar diagrama ER quando o schema crescer.
+- Criar politica de backup e restore.
+- Adicionar logs/auditoria para areas administrativas sensiveis.
+- Avaliar indices novos conforme volume real de aulas, mensagens e financeiro.

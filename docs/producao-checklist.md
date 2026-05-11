@@ -1,5 +1,7 @@
 # Checklist de Producao
 
+> Documento operacional complementar. A referencia oficial e evolutiva de ambiente/deploy fica em `docs/09-deploy-e-ambiente.md`.
+
 Este checklist adapta para o Candy English os pontos operacionais robustos usados como referencia no SavePointFinance: healthcheck, logs rotacionados, smoke test, deploy com migration e verificacao pos-deploy.
 
 ## Deploy Padrao

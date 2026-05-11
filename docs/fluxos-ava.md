@@ -1,5 +1,7 @@
 # Fluxos do AVA Candy English
 
+> Documento historico e complementar. A referencia oficial e evolutiva de fluxos fica em `docs/03-fluxos-do-sistema.md`.
+
 Este documento explica, em portugues simples, como funcionam as FASES 4, 5 e 6 do AVA Candy English.
 
 ## Papeis

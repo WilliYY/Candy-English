@@ -1,5 +1,7 @@
 # Direcao Visual - Candy English
 
+> Documento especializado de design. Use junto com `docs/01-arquitetura.md` e `docs/04-padroes-de-codigo.md`.
+
 Este documento registra a direcao visual usada a partir da FASE 7.
 
 ## Referencias

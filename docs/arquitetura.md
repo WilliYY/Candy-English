@@ -1,5 +1,7 @@
 # Arquitetura - Candy English
 
+> Documento historico. A referencia oficial e evolutiva de arquitetura fica em `docs/01-arquitetura.md`.
+
 ## FASE 1
 
 A primeira fase criou uma base limpa e funcional para o site institucional da Candy English e para o AVA em `/ava`.
