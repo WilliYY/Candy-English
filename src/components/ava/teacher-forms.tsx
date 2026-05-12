@@ -7,7 +7,6 @@ import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   allowHomeworkRedo,
-  createHomework,
   createInteractiveHomework,
   createLesson,
   reviewHomeworkSubmission,
@@ -17,10 +16,8 @@ import {
   type InteractiveHomeworkEditorRow,
 } from "@/components/ava/interactive-homework-editor";
 import {
-  createHomeworkSchema,
   createLessonSchema,
   reviewSubmissionSchema,
-  type CreateHomeworkInput,
   type CreateLessonInput,
   type ReviewSubmissionInput,
 } from "@/lib/validations/learning";
@@ -53,15 +50,6 @@ const emptyLesson: CreateLessonInput = {
   vocabularyExample: "",
   vocabularyTerm: "",
   vocabularyTranslation: "",
-};
-
-const emptyHomework: CreateHomeworkInput = {
-  dueDate: "",
-  expectedAnswer: "",
-  instructions: "",
-  lessonId: "",
-  questionPrompt: "",
-  title: "",
 };
 
 export function CreateLessonForm({
@@ -299,7 +287,13 @@ export function CreateLessonForm({
   );
 }
 
-function InteractiveHomeworkUploadForm({ lessons }: { lessons: Option[] }) {
+function InteractiveHomeworkUploadForm({
+  students,
+  teachers,
+}: {
+  students: Option[];
+  teachers: Option[];
+}) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -333,21 +327,39 @@ function InteractiveHomeworkUploadForm({ lessons }: { lessons: Option[] }) {
         <FileUp aria-hidden="true" />
         Homework do Canva
       </div>
-      <div className="grid gap-3 lg:grid-cols-[1fr_1fr_0.7fr]">
+      <div className="grid gap-3 lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
         <Field>
-          <FieldLabel htmlFor="interactive-homework-lesson">Aula</FieldLabel>
+          <FieldLabel htmlFor="interactive-homework-teacher">Teacher</FieldLabel>
           <NativeSelect
-            id="interactive-homework-lesson"
-            name="lessonId"
-            disabled={isPending || lessons.length === 0}
+            id="interactive-homework-teacher"
+            name="teacherProfileId"
+            disabled={isPending || teachers.length === 0}
             required
           >
-            {lessons.length === 0 ? (
-              <option value="">Crie uma aula primeiro</option>
+            {teachers.length === 0 ? (
+              <option value="">Cadastre uma teacher</option>
             ) : null}
-            {lessons.map((lesson) => (
-              <option key={lesson.id} value={lesson.id}>
-                {lesson.label}
+            {teachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.label}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="interactive-homework-student">Aluno</FieldLabel>
+          <NativeSelect
+            id="interactive-homework-student"
+            name="studentProfileId"
+            disabled={isPending || students.length === 0}
+            required
+          >
+            {students.length === 0 ? (
+              <option value="">Cadastre ou vincule um aluno</option>
+            ) : null}
+            {students.map((student) => (
+              <option key={student.id} value={student.id}>
+                {student.label}
               </option>
             ))}
           </NativeSelect>
@@ -397,7 +409,10 @@ function InteractiveHomeworkUploadForm({ lessons }: { lessons: Option[] }) {
             required
           />
         </Field>
-        <Button type="submit" disabled={isPending || lessons.length === 0}>
+        <Button
+          type="submit"
+          disabled={isPending || students.length === 0 || teachers.length === 0}
+        >
           {isPending ? (
             <LoaderCircle data-icon="inline-start" className="animate-spin" />
           ) : (
@@ -418,152 +433,16 @@ function InteractiveHomeworkUploadForm({ lessons }: { lessons: Option[] }) {
 
 export function CreateHomeworkForm({
   interactiveHomeworks = [],
-  lessons,
+  students,
+  teachers,
 }: {
   interactiveHomeworks?: InteractiveHomeworkEditorRow[];
-  lessons: Option[];
+  students: Option[];
+  teachers: Option[];
 }) {
-  const router = useRouter();
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const form = useForm<CreateHomeworkInput>({
-    resolver: zodResolver(createHomeworkSchema, undefined, { raw: true }),
-    defaultValues: {
-      ...emptyHomework,
-      lessonId: lessons[0]?.id ?? "",
-    },
-  });
-
-  const onSubmit = form.handleSubmit((values) => {
-    setMessage(null);
-    startTransition(async () => {
-      const result = await createHomework(values);
-
-      if (!result.ok) {
-        Object.entries(result.errors ?? {}).forEach(([field, fieldMessage]) => {
-          if (fieldMessage) {
-            form.setError(field as keyof CreateHomeworkInput, {
-              message: fieldMessage,
-            });
-          }
-        });
-        setMessage(result.message);
-        return;
-      }
-
-      form.reset({ ...emptyHomework, lessonId: lessons[0]?.id ?? "" });
-      setMessage(result.message);
-      router.refresh();
-    });
-  });
-
   return (
     <div className="flex flex-col gap-6">
-      <InteractiveHomeworkUploadForm lessons={lessons} />
-
-      <details className="rounded-lg border bg-background/80">
-        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
-          Homework simples
-        </summary>
-        <form
-          onSubmit={onSubmit}
-          className="flex flex-col gap-5 border-t p-4"
-          noValidate
-        >
-          <FieldGroup>
-        <Field data-invalid={Boolean(form.formState.errors.lessonId)}>
-          <FieldLabel htmlFor="homework-lesson">Aula</FieldLabel>
-          <NativeSelect
-            id="homework-lesson"
-            aria-invalid={Boolean(form.formState.errors.lessonId)}
-            disabled={isPending || lessons.length === 0}
-            {...form.register("lessonId")}
-          >
-            {lessons.length === 0 ? (
-              <option value="">Crie uma aula primeiro</option>
-            ) : null}
-            {lessons.map((lesson) => (
-              <option key={lesson.id} value={lesson.id}>
-                {lesson.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldError errors={[form.formState.errors.lessonId]} />
-        </Field>
-        <Field data-invalid={Boolean(form.formState.errors.title)}>
-          <FieldLabel htmlFor="homework-title">Titulo</FieldLabel>
-          <Input
-            id="homework-title"
-            aria-invalid={Boolean(form.formState.errors.title)}
-            disabled={isPending}
-            placeholder="Ex: Practice simple past"
-            {...form.register("title")}
-          />
-          <FieldError errors={[form.formState.errors.title]} />
-        </Field>
-        <Field data-invalid={Boolean(form.formState.errors.instructions)}>
-          <FieldLabel htmlFor="homework-instructions">Instrucoes</FieldLabel>
-          <Textarea
-            id="homework-instructions"
-            aria-invalid={Boolean(form.formState.errors.instructions)}
-            disabled={isPending}
-            placeholder="Explique o que o aluno deve fazer."
-            {...form.register("instructions")}
-          />
-          <FieldError errors={[form.formState.errors.instructions]} />
-        </Field>
-        <Field data-invalid={Boolean(form.formState.errors.dueDate)}>
-          <FieldLabel htmlFor="homework-due-date">Prazo</FieldLabel>
-          <Input
-            id="homework-due-date"
-            type="date"
-            aria-invalid={Boolean(form.formState.errors.dueDate)}
-            disabled={isPending}
-            {...form.register("dueDate")}
-          />
-          <FieldError errors={[form.formState.errors.dueDate]} />
-        </Field>
-        <Field data-invalid={Boolean(form.formState.errors.questionPrompt)}>
-          <FieldLabel htmlFor="question-prompt">Pergunta</FieldLabel>
-          <Textarea
-            id="question-prompt"
-            aria-invalid={Boolean(form.formState.errors.questionPrompt)}
-            disabled={isPending}
-            placeholder="Escreva a pergunta principal da homework."
-            {...form.register("questionPrompt")}
-          />
-          <FieldError errors={[form.formState.errors.questionPrompt]} />
-        </Field>
-        <Field data-invalid={Boolean(form.formState.errors.expectedAnswer)}>
-          <FieldLabel htmlFor="expected-answer">Resposta esperada</FieldLabel>
-          <Textarea
-            id="expected-answer"
-            aria-invalid={Boolean(form.formState.errors.expectedAnswer)}
-            disabled={isPending}
-            placeholder="Opcional: use como guia interno de correcao."
-            {...form.register("expectedAnswer")}
-          />
-          <FieldError errors={[form.formState.errors.expectedAnswer]} />
-        </Field>
-      </FieldGroup>
-
-      {message ? (
-        <p className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">
-          {message}
-        </p>
-      ) : null}
-
-      <Button type="submit" disabled={isPending || lessons.length === 0}>
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : (
-          <Plus data-icon="inline-start" />
-        )}
-        Criar homework
-      </Button>
-        </form>
-      </details>
-
+      <InteractiveHomeworkUploadForm students={students} teachers={teachers} />
       <InteractiveHomeworkEditor homeworks={interactiveHomeworks} />
     </div>
   );

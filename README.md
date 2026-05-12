@@ -18,13 +18,13 @@ Ja existe:
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - admin com cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
-- teacher com aulas, materiais, vocabulario, homework simples, homework interativo por upload do Canva, feedback, aula ao vivo, contratos e mensagens;
-- student com aulas, homework simples/interativo com autosave, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
+- teacher com aulas, materiais, vocabulario, homework interativo por upload do Canva, feedback, aula ao vivo, contratos e mensagens;
+- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
-- homework interativo com arquivo PDF/imagem protegido, campos editaveis sobre o arquivo, autosave e deteccao opcional por OpenAI;
+- homework interativo com arquivo PDF/imagem protegido, campos editaveis sobre o arquivo, autosave, selecao direta de aluno e deteccao opcional por OpenAI;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
 Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora do homework, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.

@@ -149,6 +149,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/homework-ocr.ts`, `.env.example`, `src/app/ava/teacher/actions.ts`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: nao versionar chave; revisar custo/limites antes de uso em volume; manter controle manual porque OCR pode errar campos em PDFs ou layouts complexos.
 
+### 2026-05-12 - Criacao de homework por aluno no modo interativo
+
+- Decisao: remover o formulario de criacao de homework simples da tela e criar homework interativo selecionando teacher e aluno diretamente.
+- Motivo: a operacao real passa a ser upload de arquivo do Canva; exigir uma aula criada antes bloqueava o fluxo e confundia a teacher/admin.
+- Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/teacher-forms.tsx`, `src/components/ava/teacher-workspace.tsx`, `src/lib/validations/learning.ts`, `README.md`, `AGENTS.md`, `docs/00-visao-geral.md`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: homeworks `TEXT` antigas continuam como legado; nao apagar dados antigos nem remover exibicao/correcao sem migration e decisao especifica.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -4,7 +4,7 @@
 
 O homework interativo permite que a teacher envie um PDF ou imagem exportado do Canva, ajuste campos de resposta sobre o arquivo e deixe o aluno responder online dentro do AVA. O aluno escreve por cima do arquivo, o rascunho e salvo automaticamente e a entrega vira evento novo para teacher/admin corrigirem.
 
-O fluxo nao substitui o homework simples de pergunta/resposta; ele adiciona um segundo modo para atividades visuais.
+O fluxo interativo e o modo de criacao usado na interface atual. O homework simples de pergunta/resposta fica apenas como legado para atividades antigas ja existentes.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -45,8 +45,9 @@ Tabelas e enums:
 
 ## Regras de negocio que precisam ser preservadas
 
-- Apenas `ADMIN` ou `TEACHER` dona da aula pode criar e ajustar homework interativo.
-- Homework interativo precisa estar ligado a uma aula com aluno definido.
+- Apenas `ADMIN` ou `TEACHER` vinculada ao aluno pode criar e ajustar homework interativo.
+- A criacao seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para manter o vinculo de permissao do homework.
+- Homework interativo precisa continuar ligado a uma aula com aluno definido, mesmo quando essa aula for criada automaticamente.
 - O arquivo fica em `storage/homework-assets` ou no volume Docker equivalente, nunca no Git.
 - O tamanho maximo aceito pela UI/storage e 14 MB; `next.config.ts` usa 15 MB para a Server Action receber o arquivo com folga.
 - O acesso ao arquivo passa por rota protegida; student so abre arquivo da propria homework.
@@ -60,6 +61,7 @@ Tabelas e enums:
 ## Decisoes tecnicas tomadas
 
 - O modo do homework fica em `Homework.kind`, com `TEXT` como padrao para preservar o comportamento antigo.
+- A interface de criacao nova removeu o formulario `TEXT`; esse modo permanece no banco apenas para compatibilidade com registros antigos.
 - Metadados do arquivo ficam no proprio `Homework` para evitar tabela extra nesta fase.
 - Campos interativos ficam em `HomeworkInteractiveField`, com cascade quando a homework for apagada futuramente.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.

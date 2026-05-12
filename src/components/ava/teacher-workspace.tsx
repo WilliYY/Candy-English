@@ -309,10 +309,6 @@ export function TeacherWorkspace({
   submissions,
   teachers,
 }: TeacherWorkspaceProps) {
-  const lessonOptions = lessons.map((lesson) => ({
-    id: lesson.id,
-    label: `${lesson.title}${lesson.studentProfile ? ` - ${lesson.studentProfile.user.name}` : ""}`,
-  }));
   const interactiveHomeworks = lessons.flatMap((lesson) =>
     lesson.homeworks
       .filter((homework) => homework.kind === "INTERACTIVE")
@@ -489,7 +485,8 @@ export function TeacherWorkspace({
           {activeTask === "criar-homework" ? (
             <CreateHomeworkForm
               interactiveHomeworks={interactiveHomeworks}
-              lessons={lessonOptions}
+              students={students}
+              teachers={teachers}
             />
           ) : null}
 

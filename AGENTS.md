@@ -140,7 +140,8 @@ A agenda e controle interno do admin em `/ava/admin?task=agenda`.
 
 O homework interativo usa upload de PDF/imagem exportado do Canva na area teacher em `/ava/teacher?task=criar-homework`.
 
-- Nao substituir o homework simples sem pedido explicito.
+- A criacao nova de homework usa o fluxo interativo do Canva; homework simples fica apenas como legado para atividades antigas.
+- A criacao interativa seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para vincular permissao, arquivo e entrega.
 - Arquivos ficam em `storage/homework-assets` e sao servidos apenas por rota protegida.
 - `Homework.kind=INTERACTIVE` diferencia arquivos interativos de perguntas simples.
 - `HomeworkInteractiveField` guarda os campos editaveis sobre o arquivo.

@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework simples/interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno e agenda administrativa.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno e agenda administrativa.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 

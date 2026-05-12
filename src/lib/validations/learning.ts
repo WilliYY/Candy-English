@@ -65,31 +65,9 @@ export const createLessonSchema = z.object({
   ),
 });
 
-export const createHomeworkSchema = z.object({
-  lessonId: z.string().min(1, "Selecione uma aula."),
-  title: z
-    .string()
-    .trim()
-    .min(3, "Informe um titulo com pelo menos 3 caracteres.")
-    .max(160, "O titulo pode ter no maximo 160 caracteres."),
-  instructions: optionalText(
-    2000,
-    "As instrucoes podem ter no maximo 2000 caracteres.",
-  ),
-  dueDate: optionalDate,
-  questionPrompt: z
-    .string()
-    .trim()
-    .min(3, "Informe a pergunta da homework.")
-    .max(2000, "A pergunta pode ter no maximo 2000 caracteres."),
-  expectedAnswer: optionalText(
-    2000,
-    "A resposta esperada pode ter no maximo 2000 caracteres.",
-  ),
-});
-
 export const createInteractiveHomeworkSchema = z.object({
-  lessonId: z.string().min(1, "Selecione uma aula."),
+  studentProfileId: z.string().min(1, "Selecione um aluno."),
+  teacherProfileId: optionalText(80, "Selecione uma teacher valida."),
   title: z
     .string()
     .trim()
@@ -171,7 +149,6 @@ export const homeworkSubmissionIdSchema = z.object({
 });
 
 export type CreateLessonInput = z.input<typeof createLessonSchema>;
-export type CreateHomeworkInput = z.input<typeof createHomeworkSchema>;
 export type CreateInteractiveHomeworkInput = z.input<
   typeof createInteractiveHomeworkSchema
 >;
