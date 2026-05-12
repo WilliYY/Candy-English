@@ -1,15 +1,21 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, LoaderCircle, Plus } from "lucide-react";
+import { CheckCircle2, FileUp, LoaderCircle, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
+  allowHomeworkRedo,
   createHomework,
+  createInteractiveHomework,
   createLesson,
   reviewHomeworkSubmission,
 } from "@/app/ava/teacher/actions";
+import {
+  InteractiveHomeworkEditor,
+  type InteractiveHomeworkEditorRow,
+} from "@/components/ava/interactive-homework-editor";
 import {
   createHomeworkSchema,
   createLessonSchema,
@@ -293,7 +299,130 @@ export function CreateLessonForm({
   );
 }
 
-export function CreateHomeworkForm({ lessons }: { lessons: Option[] }) {
+function InteractiveHomeworkUploadForm({ lessons }: { lessons: Option[] }) {
+  const router = useRouter();
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const currentForm = event.currentTarget;
+    const formData = new FormData(currentForm);
+
+    setMessage(null);
+    startTransition(async () => {
+      const result = await createInteractiveHomework(formData);
+
+      setMessage(result.message);
+
+      if (result.ok) {
+        formRef.current?.reset();
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <form
+      ref={formRef}
+      onSubmit={onSubmit}
+      className="rounded-lg border-2 border-primary/20 bg-white p-4 shadow-sm"
+    >
+      <div className="mb-4 flex items-center gap-2 font-semibold">
+        <FileUp aria-hidden="true" />
+        Homework do Canva
+      </div>
+      <div className="grid gap-3 lg:grid-cols-[1fr_1fr_0.7fr]">
+        <Field>
+          <FieldLabel htmlFor="interactive-homework-lesson">Aula</FieldLabel>
+          <NativeSelect
+            id="interactive-homework-lesson"
+            name="lessonId"
+            disabled={isPending || lessons.length === 0}
+            required
+          >
+            {lessons.length === 0 ? (
+              <option value="">Crie uma aula primeiro</option>
+            ) : null}
+            {lessons.map((lesson) => (
+              <option key={lesson.id} value={lesson.id}>
+                {lesson.label}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="interactive-homework-title">Titulo</FieldLabel>
+          <Input
+            id="interactive-homework-title"
+            name="title"
+            disabled={isPending}
+            placeholder="Ex: Canva unit 4"
+            required
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="interactive-homework-due-date">Prazo</FieldLabel>
+          <Input
+            id="interactive-homework-due-date"
+            name="dueDate"
+            type="date"
+            disabled={isPending}
+          />
+        </Field>
+      </div>
+      <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_0.8fr_auto] lg:items-end">
+        <Field>
+          <FieldLabel htmlFor="interactive-homework-instructions">
+            Instrucoes
+          </FieldLabel>
+          <Textarea
+            id="interactive-homework-instructions"
+            name="instructions"
+            disabled={isPending}
+            placeholder="O que o aluno deve completar."
+          />
+        </Field>
+        <Field>
+          <FieldLabel htmlFor="interactive-homework-asset">
+            Arquivo PDF ou imagem
+          </FieldLabel>
+          <Input
+            id="interactive-homework-asset"
+            name="asset"
+            type="file"
+            accept="application/pdf,image/png,image/jpeg,image/webp"
+            disabled={isPending}
+            required
+          />
+        </Field>
+        <Button type="submit" disabled={isPending || lessons.length === 0}>
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Plus data-icon="inline-start" />
+          )}
+          Criar interativa
+        </Button>
+      </div>
+
+      {message ? (
+        <p className="mt-3 rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">
+          {message}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+export function CreateHomeworkForm({
+  interactiveHomeworks = [],
+  lessons,
+}: {
+  interactiveHomeworks?: InteractiveHomeworkEditorRow[];
+  lessons: Option[];
+}) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -329,8 +458,19 @@ export function CreateHomeworkForm({ lessons }: { lessons: Option[] }) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <FieldGroup>
+    <div className="flex flex-col gap-6">
+      <InteractiveHomeworkUploadForm lessons={lessons} />
+
+      <details className="rounded-lg border bg-background/80">
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+          Homework simples
+        </summary>
+        <form
+          onSubmit={onSubmit}
+          className="flex flex-col gap-5 border-t p-4"
+          noValidate
+        >
+          <FieldGroup>
         <Field data-invalid={Boolean(form.formState.errors.lessonId)}>
           <FieldLabel htmlFor="homework-lesson">Aula</FieldLabel>
           <NativeSelect
@@ -421,7 +561,11 @@ export function CreateHomeworkForm({ lessons }: { lessons: Option[] }) {
         )}
         Criar homework
       </Button>
-    </form>
+        </form>
+      </details>
+
+      <InteractiveHomeworkEditor homeworks={interactiveHomeworks} />
+    </div>
   );
 }
 
@@ -488,5 +632,48 @@ export function ReviewSubmissionForm({
         Enviar feedback
       </Button>
     </form>
+  );
+}
+
+export function AllowHomeworkRedoButton({
+  submissionId,
+}: {
+  submissionId: string;
+}) {
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function onClick() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await allowHomeworkRedo({ submissionId });
+
+      setMessage(result.message);
+
+      if (result.ok) {
+        router.refresh();
+      }
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={isPending}
+        onClick={onClick}
+      >
+        {isPending ? (
+          <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        ) : null}
+        Liberar refazer
+      </Button>
+      {message ? (
+        <p className="text-xs text-muted-foreground">{message}</p>
+      ) : null}
+    </div>
   );
 }

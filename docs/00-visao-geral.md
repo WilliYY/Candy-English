@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework, feedback, contratos, aula ao vivo, mensagens, financeiro interno e agenda administrativa.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework simples/interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno e agenda administrativa.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -26,6 +26,7 @@ Rotas principais:
 - `/ava`, `/ava/login`, `/ava/admin`, `/ava/teacher`, `/ava/student`
 - `/ava/avatar`, `/ava/avatar/[userId]`
 - `/ava/contracts/[contractId]`
+- `/ava/homework-assets/[homeworkId]`
 - `/api/auth/[...nextauth]`, `/api/health`
 
 ## Regras de negocio que precisam ser preservadas
@@ -38,6 +39,7 @@ Rotas principais:
 - Contratos e avatares sao protegidos por rotas server-side.
 - Financeiro e modulo interno do admin, sem pagamento online.
 - Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
+- Homework interativo deve manter arquivo e campos protegidos por permissao de aluno/teacher/admin.
 
 ## Decisoes tecnicas tomadas
 
@@ -48,6 +50,7 @@ Rotas principais:
 - Prisma 7 usa client gerado em `src/generated/prisma`.
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.
+- Homework interativo usa OpenAI apenas quando `OPENAI_API_KEY` estiver configurada; sem chave, o sistema cria campos iniciais para ajuste manual.
 
 ## Mapa da documentacao oficial
 
@@ -62,6 +65,7 @@ Rotas principais:
 - `09-deploy-e-ambiente.md`: ambientes e operacao.
 - `13-financeiro.md`: modulo financeiro.
 - `14-agenda.md`: modulo agenda.
+- `15-homework-interativo.md`: upload do Canva, campos sobre o arquivo, autosave e IA/OCR opcional.
 
 ## Riscos ao alterar esta parte
 

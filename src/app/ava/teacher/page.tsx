@@ -57,11 +57,18 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   const submissionWhere =
     session.user.role === "TEACHER"
       ? {
+          status: {
+            not: "DRAFT" as const,
+          },
           homework: {
             teacherProfileId: teacherProfileIdForFiltering,
           },
         }
-      : {};
+      : {
+          status: {
+            not: "DRAFT" as const,
+          },
+        };
   const chatThreadWhere =
     session.user.role === "TEACHER"
       ? { teacherProfileId: teacherProfileIdForFiltering }
@@ -134,7 +141,32 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         description: true,
         homeworks: {
           select: {
+            assetFileName: true,
+            assetMimeType: true,
+            assetSizeBytes: true,
+            dueDate: true,
+            fieldDetectionSource: true,
             id: true,
+            instructions: true,
+            interactiveFields: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+              select: {
+                height: true,
+                id: true,
+                label: true,
+                page: true,
+                placeholder: true,
+                required: true,
+                sortOrder: true,
+                type: true,
+                width: true,
+                x: true,
+                y: true,
+              },
+            },
+            kind: true,
             submissions: {
               select: {
                 id: true,
@@ -197,6 +229,21 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         feedback: true,
         homework: {
           select: {
+            assetFileName: true,
+            assetMimeType: true,
+            id: true,
+            interactiveFields: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+              select: {
+                id: true,
+                label: true,
+                sortOrder: true,
+                type: true,
+              },
+            },
+            kind: true,
             lesson: {
               select: {
                 title: true,

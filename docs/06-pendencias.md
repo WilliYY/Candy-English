@@ -22,11 +22,12 @@ As pendencias podem afetar:
 - Edicao completa de usuarios existentes.
 - Edicao/delecao de aulas, materiais e homeworks.
 - Multiplas perguntas por homework na interface.
+- Editor multipagina avancado para PDFs de homework interativo.
 - Upload livre de materiais de aula.
 - Editor ou visualizador Word embutido.
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.
-- IA real conectada ao Catty.
+- IA conversacional real conectada ao Catty.
 - Jogos.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
@@ -40,6 +41,7 @@ As pendencias podem afetar:
 - Testes automatizados amplos por modulo.
 - Auditoria administrativa geral fora do financeiro.
 - Auditoria da agenda ainda e log simples, nao relatorio completo.
+- OCR/IA do homework interativo depende de `OPENAI_API_KEY`; sem chave, apenas fallback manual.
 - Observabilidade externa e alertas de producao.
 
 ## Pendencias de documentacao
@@ -56,6 +58,7 @@ As pendencias podem afetar:
 ## Regras de negocio que precisam ser preservadas
 
 - Nao implementar IA, jogos, pagamentos online, MinIO ou integracoes externas sem pedido explicito.
+- Nao enviar arquivos de homework para servicos externos sem configuracao explicita de chave/API.
 - Nao transformar financeiro interno em gateway de pagamento sem decisao nova.
 - Nao abrir dados globais de alunos para teacher sem permissao por vinculo.
 - Nao expor arquivos privados sem rota protegida.

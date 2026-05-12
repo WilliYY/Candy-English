@@ -2,19 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { detectHomeworkFields } from "@/lib/homework-ocr";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
+import { saveHomeworkAsset } from "@/lib/storage";
 import {
   createHomeworkSchema,
+  createInteractiveHomeworkSchema,
   createLessonSchema,
+  homeworkSubmissionIdSchema,
+  saveInteractiveHomeworkFieldsSchema,
   reviewSubmissionSchema,
   type CreateHomeworkInput,
+  type CreateInteractiveHomeworkInput,
   type CreateLessonInput,
+  type HomeworkSubmissionIdInput,
   type ReviewSubmissionInput,
+  type SaveInteractiveHomeworkFieldsInput,
 } from "@/lib/validations/learning";
 
 type ActionResult<TInput extends Record<string, unknown>> = {
   errors?: Partial<Record<keyof TInput, string>>;
+  message: string;
+  ok: boolean;
+};
+
+type FormActionResult = {
+  errors?: Partial<Record<keyof CreateInteractiveHomeworkInput | "asset", string>>;
+  homeworkId?: string;
   message: string;
   ok: boolean;
 };
@@ -34,6 +49,11 @@ function fieldErrors<TInput extends Record<string, unknown>>(
     },
     {},
   );
+}
+
+function formText(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return typeof value === "string" ? value : "";
 }
 
 async function getTeacherActor() {
@@ -297,6 +317,242 @@ export async function createHomework(
   };
 }
 
+export async function createInteractiveHomework(
+  formData: FormData,
+): Promise<FormActionResult> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para criar homeworks.",
+    };
+  }
+
+  const parsed = createInteractiveHomeworkSchema.safeParse({
+    dueDate: formText(formData, "dueDate"),
+    instructions: formText(formData, "instructions"),
+    lessonId: formText(formData, "lessonId"),
+    title: formText(formData, "title"),
+  });
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<CreateInteractiveHomeworkInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados da homework interativa.",
+    };
+  }
+
+  const asset = formData.get("asset");
+
+  if (!(asset instanceof File)) {
+    return {
+      errors: { asset: "Envie o arquivo exportado do Canva." },
+      ok: false,
+      message: "Envie o arquivo da homework.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const data = parsed.data;
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: data.lessonId },
+    select: {
+      id: true,
+      studentProfileId: true,
+      teacherProfileId: true,
+    },
+  });
+
+  if (!lesson) {
+    return {
+      errors: { lessonId: "Aula nao encontrada." },
+      ok: false,
+      message: "Aula nao encontrada.",
+    };
+  }
+
+  if (!lesson.studentProfileId) {
+    return {
+      errors: { lessonId: "Escolha uma aula vinculada a um aluno." },
+      ok: false,
+      message: "Homework interativa precisa estar ligada a um aluno.",
+    };
+  }
+
+  if (!actor.isAdmin && lesson.teacherProfileId !== actor.teacherProfileId) {
+    return {
+      ok: false,
+      message: "Voce so pode criar homework para suas aulas.",
+    };
+  }
+
+  let savedAsset: Awaited<ReturnType<typeof saveHomeworkAsset>>;
+  let assetBuffer: Buffer;
+
+  try {
+    assetBuffer = Buffer.from(await asset.arrayBuffer());
+    savedAsset = await saveHomeworkAsset(asset);
+  } catch (error) {
+    return {
+      errors: {
+        asset: error instanceof Error ? error.message : "Arquivo invalido.",
+      },
+      ok: false,
+      message: "Nao foi possivel salvar o arquivo da homework.",
+    };
+  }
+
+  const detection = await detectHomeworkFields({
+    buffer: assetBuffer,
+    fileName: savedAsset.originalName,
+    mimeType: savedAsset.mimeType,
+  });
+
+  const homework = await prisma.homework.create({
+    data: {
+      assetFileName: savedAsset.originalName,
+      assetMimeType: savedAsset.mimeType,
+      assetPageCount: 1,
+      assetSizeBytes: savedAsset.sizeBytes,
+      assetStoragePath: savedAsset.relativePath,
+      dueDate: data.dueDate,
+      fieldDetectionSource: detection.source,
+      instructions: data.instructions,
+      kind: "INTERACTIVE",
+      lessonId: lesson.id,
+      teacherProfileId: lesson.teacherProfileId,
+      title: data.title,
+      interactiveFields: {
+        create: detection.fields.map((field, index) => ({
+          height: field.height,
+          label: field.label,
+          page: field.page,
+          placeholder: field.placeholder,
+          required: field.required,
+          sortOrder: index,
+          type: field.type,
+          width: field.width,
+          x: field.x,
+          y: field.y,
+        })),
+      },
+      questions: {
+        create: {
+          prompt: "Complete a atividade interativa no arquivo anexado.",
+        },
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    homeworkId: homework.id,
+    ok: true,
+    message:
+      detection.source === "openai"
+        ? "Homework interativa criada com campos detectados pela IA."
+        : "Homework interativa criada com campos iniciais para ajuste manual.",
+  };
+}
+
+export async function saveInteractiveHomeworkFields(
+  input: SaveInteractiveHomeworkFieldsInput,
+): Promise<ActionResult<SaveInteractiveHomeworkFieldsInput>> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para editar homeworks.",
+    };
+  }
+
+  const parsed = saveInteractiveHomeworkFieldsSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<SaveInteractiveHomeworkFieldsInput>(
+        parsed.error.issues,
+      ),
+      ok: false,
+      message: "Revise os campos da homework.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const homework = await prisma.homework.findUnique({
+    where: { id: parsed.data.homeworkId },
+    select: {
+      id: true,
+      kind: true,
+      teacherProfileId: true,
+    },
+  });
+
+  if (!homework || homework.kind !== "INTERACTIVE") {
+    return {
+      ok: false,
+      message: "Homework interativa nao encontrada.",
+    };
+  }
+
+  if (!actor.isAdmin && homework.teacherProfileId !== actor.teacherProfileId) {
+    return {
+      ok: false,
+      message: "Voce so pode editar homeworks das suas aulas.",
+    };
+  }
+
+  await prisma.$transaction([
+    prisma.homeworkInteractiveField.deleteMany({
+      where: { homeworkId: homework.id },
+    }),
+    prisma.homeworkInteractiveField.createMany({
+      data: parsed.data.fields.map((field, index) => {
+        const x = Math.min(field.x, 96);
+        const y = Math.min(field.y, 96);
+        const width = Math.max(4, Math.min(field.width, 100 - x));
+        const height = Math.max(4, Math.min(field.height, 100 - y));
+
+        return {
+          height,
+          homeworkId: homework.id,
+          label: field.label,
+          page: field.page,
+          placeholder: field.placeholder,
+          required: field.required,
+          sortOrder: index,
+          type: field.type,
+          width,
+          x,
+          y,
+        };
+      }),
+    }),
+    prisma.homework.update({
+      where: { id: homework.id },
+      data: {
+        fieldDetectionSource: "manual",
+      },
+    }),
+  ]);
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message: "Campos da homework salvos.",
+  };
+}
+
 export async function reviewHomeworkSubmission(
   input: ReviewSubmissionInput,
 ): Promise<ActionResult<ReviewSubmissionInput>> {
@@ -367,5 +623,83 @@ export async function reviewHomeworkSubmission(
   return {
     ok: true,
     message: "Feedback enviado com sucesso.",
+  };
+}
+
+export async function allowHomeworkRedo(
+  input: HomeworkSubmissionIdInput,
+): Promise<ActionResult<HomeworkSubmissionIdInput>> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para liberar refazer.",
+    };
+  }
+
+  const parsed = homeworkSubmissionIdSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<HomeworkSubmissionIdInput>(parsed.error.issues),
+      ok: false,
+      message: "Resposta invalida.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const submission = await prisma.homeworkSubmission.findUnique({
+    where: { id: parsed.data.submissionId },
+    select: {
+      homework: {
+        select: {
+          teacherProfileId: true,
+        },
+      },
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!submission) {
+    return {
+      ok: false,
+      message: "Resposta nao encontrada.",
+    };
+  }
+
+  if (
+    !actor.isAdmin &&
+    submission.homework.teacherProfileId !== actor.teacherProfileId
+  ) {
+    return {
+      ok: false,
+      message: "Voce so pode liberar homeworks das suas aulas.",
+    };
+  }
+
+  if (submission.status === "DRAFT") {
+    return {
+      ok: false,
+      message: "O aluno ainda esta editando esta homework.",
+    };
+  }
+
+  await prisma.homeworkSubmission.update({
+    where: { id: submission.id },
+    data: {
+      reviewedAt: null,
+      reviewedByTeacherProfileId: null,
+      status: "RETURNED",
+    },
+  });
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message: "Homework liberada para refazer.",
   };
 }

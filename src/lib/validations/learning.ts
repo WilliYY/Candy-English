@@ -88,6 +88,52 @@ export const createHomeworkSchema = z.object({
   ),
 });
 
+export const createInteractiveHomeworkSchema = z.object({
+  lessonId: z.string().min(1, "Selecione uma aula."),
+  title: z
+    .string()
+    .trim()
+    .min(3, "Informe um titulo com pelo menos 3 caracteres.")
+    .max(160, "O titulo pode ter no maximo 160 caracteres."),
+  instructions: optionalText(
+    2000,
+    "As instrucoes podem ter no maximo 2000 caracteres.",
+  ),
+  dueDate: optionalDate,
+});
+
+const homeworkFieldTypeSchema = z.enum(["SHORT_TEXT", "LONG_TEXT", "CHECKBOX"]);
+
+export const interactiveHomeworkFieldSchema = z.object({
+  height: z.coerce.number().min(4, "Altura minima 4%.").max(100),
+  id: z.string().optional(),
+  label: z
+    .string()
+    .trim()
+    .max(80, "O rotulo pode ter no maximo 80 caracteres.")
+    .optional(),
+  page: z.coerce.number().int().min(1).max(20),
+  placeholder: z
+    .string()
+    .trim()
+    .max(120, "O placeholder pode ter no maximo 120 caracteres.")
+    .optional(),
+  required: z.boolean().default(false),
+  sortOrder: z.coerce.number().int().min(0).max(200).default(0),
+  type: homeworkFieldTypeSchema,
+  width: z.coerce.number().min(4, "Largura minima 4%.").max(100),
+  x: z.coerce.number().min(0).max(100),
+  y: z.coerce.number().min(0).max(100),
+});
+
+export const saveInteractiveHomeworkFieldsSchema = z.object({
+  fields: z
+    .array(interactiveHomeworkFieldSchema)
+    .min(1, "Mantenha pelo menos um campo de resposta.")
+    .max(40, "Use no maximo 40 campos por homework."),
+  homeworkId: z.string().min(1, "Homework invalida."),
+});
+
 export const submitHomeworkSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
   answer: z
@@ -95,6 +141,20 @@ export const submitHomeworkSchema = z.object({
     .trim()
     .min(1, "Escreva sua resposta antes de enviar.")
     .max(6000, "A resposta pode ter no maximo 6000 caracteres."),
+});
+
+export const interactiveHomeworkAnswerSchema = z.object({
+  answers: z
+    .array(
+      z.object({
+        fieldId: z.string().min(1, "Campo invalido."),
+        value: z
+          .string()
+          .max(6000, "Cada resposta pode ter no maximo 6000 caracteres."),
+      }),
+    )
+    .max(80, "Use no maximo 80 respostas por homework."),
+  homeworkId: z.string().min(1, "Homework invalida."),
 });
 
 export const reviewSubmissionSchema = z.object({
@@ -106,7 +166,26 @@ export const reviewSubmissionSchema = z.object({
     .max(6000, "O feedback pode ter no maximo 6000 caracteres."),
 });
 
+export const homeworkSubmissionIdSchema = z.object({
+  submissionId: z.string().min(1, "Resposta invalida."),
+});
+
 export type CreateLessonInput = z.input<typeof createLessonSchema>;
 export type CreateHomeworkInput = z.input<typeof createHomeworkSchema>;
+export type CreateInteractiveHomeworkInput = z.input<
+  typeof createInteractiveHomeworkSchema
+>;
+export type InteractiveHomeworkFieldInput = z.input<
+  typeof interactiveHomeworkFieldSchema
+>;
+export type SaveInteractiveHomeworkFieldsInput = z.input<
+  typeof saveInteractiveHomeworkFieldsSchema
+>;
 export type SubmitHomeworkInput = z.input<typeof submitHomeworkSchema>;
+export type InteractiveHomeworkAnswerInput = z.input<
+  typeof interactiveHomeworkAnswerSchema
+>;
 export type ReviewSubmissionInput = z.input<typeof reviewSubmissionSchema>;
+export type HomeworkSubmissionIdInput = z.input<
+  typeof homeworkSubmissionIdSchema
+>;

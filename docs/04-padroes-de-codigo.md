@@ -25,6 +25,7 @@ Pontos de referencia:
 - Formularios com escrita relevante devem usar Zod.
 - Nao mover regra sensivel apenas para o client.
 - Nao versionar uploads, `.env`, backups ou segredos.
+- Homeworks interativos devem validar acesso ao arquivo e ignorar `DRAFT` em alertas/fila de correcao.
 
 ## Decisoes tecnicas tomadas
 
@@ -35,6 +36,7 @@ Pontos de referencia:
 - Componentes visuais devem reaproveitar shadcn/ui e padroes locais.
 - Tailwind CSS 4 e tokens globais em `src/app/globals.css`.
 - Rotas protegidas usam `requireAvaRole`.
+- Uploads pedagogicos protegidos devem seguir o padrao de `src/lib/storage.ts` + rota server-side autenticada.
 
 ## Padroes praticos
 

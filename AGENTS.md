@@ -136,6 +136,19 @@ A agenda e controle interno do admin em `/ava/admin?task=agenda`.
 - `AgendaLog` registra acoes simples.
 - Mudancas neste modulo devem atualizar `docs/14-agenda.md`.
 
+## Homework interativo
+
+O homework interativo usa upload de PDF/imagem exportado do Canva na area teacher em `/ava/teacher?task=criar-homework`.
+
+- Nao substituir o homework simples sem pedido explicito.
+- Arquivos ficam em `storage/homework-assets` e sao servidos apenas por rota protegida.
+- `Homework.kind=INTERACTIVE` diferencia arquivos interativos de perguntas simples.
+- `HomeworkInteractiveField` guarda os campos editaveis sobre o arquivo.
+- `HomeworkSubmission.status=DRAFT` e usado para autosave do aluno; apenas `SUBMITTED` deve gerar evento novo para teacher/admin.
+- `RETURNED` libera o aluno para refazer; `REVIEWED` bloqueia reenvio.
+- A deteccao por IA e opcional com `OPENAI_API_KEY`; sem chave, manter fallback manual.
+- Mudancas neste modulo devem atualizar `docs/15-homework-interativo.md`.
+
 ## Banco e migrations
 
 - Toda alteracao em `prisma/schema.prisma` precisa de migration.

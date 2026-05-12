@@ -15,6 +15,7 @@ Arquivos:
 - `src/lib/validations/auth.ts`
 - `src/app/api/auth/[...nextauth]/route.ts`
 - `src/app/ava/login/page.tsx`
+- `src/app/ava/homework-assets/[homeworkId]/route.ts`
 - `src/components/ava/login-form.tsx`
 
 Tabelas:
@@ -32,6 +33,7 @@ Rotas protegidas:
 - `/ava/student`
 - `/ava/avatar/[userId]`
 - `/ava/contracts/[contractId]`
+- `/ava/homework-assets/[homeworkId]`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -42,6 +44,7 @@ Rotas protegidas:
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Google login so aceita email ja cadastrado e ativo.
+- Arquivos de homework interativo exigem `ADMIN`, `TEACHER` dona da aula ou `STUDENT` dono da homework.
 
 ## Decisoes tecnicas tomadas
 
@@ -58,6 +61,7 @@ Rotas protegidas:
 - Confiar apenas no menu do client vaza dados.
 - Alterar callbacks JWT/session pode quebrar redirecionamento por role.
 - Usar dados sem verificar vinculo teacher/aluno pode expor informacoes.
+- Servir arquivo de homework direto de `storage/` sem checar role/vinculo vaza material privado.
 
 ## Pendencias
 

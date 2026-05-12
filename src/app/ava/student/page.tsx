@@ -112,9 +112,30 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             createdAt: "desc",
           },
           select: {
+            assetFileName: true,
+            assetMimeType: true,
             dueDate: true,
             id: true,
             instructions: true,
+            interactiveFields: {
+              orderBy: {
+                sortOrder: "asc",
+              },
+              select: {
+                height: true,
+                id: true,
+                label: true,
+                page: true,
+                placeholder: true,
+                required: true,
+                sortOrder: true,
+                type: true,
+                width: true,
+                x: true,
+                y: true,
+              },
+            },
+            kind: true,
             questions: {
               orderBy: {
                 sortOrder: "asc",

@@ -36,6 +36,7 @@ Servidor oficial:
 - Uploads persistem no volume `app-storage`.
 - `private/secrets` e `private/backups` ficam fora do Git quando existirem.
 - Deploy com migration deve aplicar migration antes de recriar o app.
+- `OPENAI_API_KEY` e opcional e so deve ser configurada no ambiente real se o OCR do homework interativo for usado.
 
 ## Decisoes tecnicas tomadas
 
@@ -44,7 +45,9 @@ Servidor oficial:
 - Docker usa healthcheck em `/api/health`.
 - Logs Docker usam rotacao `max-size=10m` e `max-file=3`.
 - Containers possuem limites/reservas de memoria.
+- `next.config.ts` define Server Actions com limite de 15 MB para upload de homework interativo.
 - O app corrige permissao de `/app/storage` no boot e roda Next como `nextjs`.
+- Homework interativo usa o mesmo volume `app-storage` para `storage/homework-assets`.
 
 ## Riscos ao alterar esta parte
 
@@ -52,6 +55,7 @@ Servidor oficial:
 - Apagar volumes remove banco ou uploads.
 - Rodar `seed` com `ADMIN_RESET_PASSWORD=true` sem intencao pode trocar senha.
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
+- Configurar OpenAI sem revisar custo/uso pode gerar despesa por upload de homework.
 - Alterar headers pode afetar Jitsi ou seguranca basica.
 
 ## Pendencias

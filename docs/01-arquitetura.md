@@ -19,6 +19,7 @@ Camadas principais:
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
+- `src/lib/homework-ocr.ts`: deteccao opcional de campos de homework por OpenAI com fallback manual.
 - `src/lib/validations/`: schemas Zod.
 - `prisma/schema.prisma`: modelo relacional.
 - `Dockerfile` e `docker-compose.yml`: runtime, banco e ferramentas.
@@ -39,6 +40,7 @@ Servicos Docker:
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
 - Financeiro e agenda sao modulos internos do `ADMIN`.
+- Homework interativo usa arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
 
 ## Decisoes tecnicas tomadas
@@ -49,7 +51,9 @@ Servicos Docker:
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
+- Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
 - Docker final usa `output: "standalone"`.
+- Server Actions aceitam upload ate 15 MB para suportar homework interativo exportado do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
 - Headers basicos de seguranca ficam em `next.config.ts`.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
@@ -60,6 +64,7 @@ Servicos Docker:
 - Colocar Prisma em middleware Edge pode quebrar runtime.
 - Criar leitura global para teacher pode vazar dados de alunos.
 - Mudar permissao do storage pode quebrar avatar e contratos.
+- Expor assets de homework fora de rota protegida pode vazar atividades e respostas de alunos.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
 
 ## Pendencias

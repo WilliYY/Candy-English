@@ -21,6 +21,8 @@ Componentes:
 - `src/components/ava/admin-users-panel.tsx`
 - `src/components/ava/admin-finance-panel.tsx`
 - `src/components/ava/admin-agenda-panel.tsx`
+- `src/components/ava/interactive-homework-editor.tsx`
+- `src/components/ava/interactive-homework-student.tsx`
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/chat-thread-panel.tsx`
@@ -54,17 +56,28 @@ Actions:
 
 1. Teacher entra em `/ava/teacher`.
 2. Ve alunos vinculados.
-3. Cria aula, material, vocabulario e homework.
+3. Cria aula, material, vocabulario, homework simples e homework interativo por arquivo do Canva.
 4. Corrige respostas e envia feedback.
 5. Pode abrir aula ao vivo e mensagens.
 
 ### Student
 
 1. Student entra em `/ava/student`.
-2. Ve aulas, materiais, homework, mensagens, contratos, perfil e aula ao vivo.
-3. Responde homework online.
+2. Ve aulas, materiais, homework simples/interativo, mensagens, contratos, perfil e aula ao vivo.
+3. Responde homework online; no modo interativo escreve sobre o arquivo e o rascunho e salvo automaticamente.
 4. Visualiza feedback.
 5. Edita dados pessoais permitidos, mas nao o nivel.
+
+### Homework interativo
+
+1. Teacher abre `/ava/teacher?task=criar-homework`.
+2. Seleciona uma aula vinculada a um aluno, informa titulo/instrucoes e envia PDF/imagem exportado do Canva.
+3. O arquivo e salvo em `storage/homework-assets` e servido por `/ava/homework-assets/[homeworkId]`.
+4. Se `OPENAI_API_KEY` estiver configurada, o servidor chama a OpenAI para sugerir campos editaveis; sem chave, cria campos iniciais de fallback.
+5. Teacher pode ajustar manualmente campos, tamanho e posicao antes de o aluno responder.
+6. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e escreve sobre o arquivo.
+7. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
+8. Teacher corrige com feedback (`REVIEWED`) ou libera `RETURNED` para o aluno refazer.
 
 ### Financeiro
 
@@ -100,6 +113,8 @@ Actions:
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem.
 - Student tem botoes sempre visiveis.
 - Homework corrigida nao deve ser reenviada.
+- Draft de homework interativo nao deve aparecer como resposta entregue para teacher.
+- Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.
 - Aula ao vivo usa Jitsi embutido se nao houver link externo.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
@@ -112,6 +127,7 @@ Actions:
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
+- Homework interativo usa arquivo protegido, campos percentuais e IA/OCR opcional com fallback manual.
 
 ## Riscos ao alterar esta parte
 
@@ -124,6 +140,7 @@ Actions:
 
 - Edicao/delecao completa de aulas, materiais e homeworks ainda nao existe.
 - Homework ainda nao possui multiplas perguntas completas por interface.
+- Homework interativo ainda nao possui editor multipagina avancado para PDFs longos.
 - Upload livre de materiais e editor Word embutido ainda nao existem.
 - Notificacoes por email/WhatsApp ainda nao existem.
 

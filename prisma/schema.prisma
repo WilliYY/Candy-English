@@ -30,8 +30,21 @@ enum HomeworkStatus {
   ARCHIVED
 }
 
+enum HomeworkKind {
+  TEXT
+  INTERACTIVE
+}
+
+enum HomeworkFieldType {
+  SHORT_TEXT
+  LONG_TEXT
+  CHECKBOX
+}
+
 enum SubmissionStatus {
+  DRAFT
   SUBMITTED
+  RETURNED
   REVIEWED
 }
 
@@ -163,23 +176,52 @@ model VocabularyItem {
 }
 
 model Homework {
-  id               String               @id @default(cuid())
-  lessonId         String
-  lesson           Lesson               @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  teacherProfileId String
-  teacherProfile   TeacherProfile       @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
-  title            String
-  instructions     String?
-  dueDate          DateTime?
-  status           HomeworkStatus       @default(PUBLISHED)
-  questions        HomeworkQuestion[]
-  submissions      HomeworkSubmission[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                   String                     @id @default(cuid())
+  lessonId             String
+  lesson               Lesson                     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherProfileId     String
+  teacherProfile       TeacherProfile             @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  title                String
+  instructions         String?
+  dueDate              DateTime?
+  kind                 HomeworkKind               @default(TEXT)
+  assetFileName        String?
+  assetStoragePath     String?
+  assetMimeType        String?
+  assetSizeBytes       Int?
+  assetPageCount       Int                        @default(1)
+  fieldDetectionSource String?
+  interactiveFields    HomeworkInteractiveField[]
+  status               HomeworkStatus             @default(PUBLISHED)
+  questions            HomeworkQuestion[]
+  submissions          HomeworkSubmission[]
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
 
   @@index([lessonId])
   @@index([teacherProfileId])
+  @@index([kind])
   @@index([status])
+}
+
+model HomeworkInteractiveField {
+  id          String            @id @default(cuid())
+  homeworkId  String
+  homework    Homework          @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  type        HomeworkFieldType @default(LONG_TEXT)
+  label       String?
+  placeholder String?
+  page        Int               @default(1)
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  required    Boolean           @default(false)
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([homeworkId])
 }
 
 model HomeworkQuestion {

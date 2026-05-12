@@ -135,6 +135,20 @@ Cada decisao deve conter:
 - Impacto: `src/components/ava/admin-agenda-panel.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/14-agenda.md`.
 - Riscos/cuidados: a ocultacao em 2 horas e apenas visual; nao deve apagar `AgendaLesson` nem marcar falta automaticamente.
 
+### 2026-05-12 - Homework interativo com arquivo do Canva
+
+- Decisao: adicionar modo `INTERACTIVE` ao homework, com upload protegido de PDF/imagem, campos percentuais editaveis, autosave como `DRAFT`, entrega como `SUBMITTED`, refazer como `RETURNED` e correcao como `REVIEWED`.
+- Motivo: permitir que a teacher suba atividades feitas no Canva e que o aluno responda online dentro do AVA, escrevendo sobre o arquivo.
+- Impacto: `prisma/schema.prisma`, migration `20260512120000_interactive_homework`, `src/app/ava/teacher/actions.ts`, `src/app/ava/student/actions.ts`, `src/app/ava/homework-assets/[homeworkId]/route.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `src/components/ava/teacher-workspace.tsx`, `src/components/ava/student-workspace.tsx`, `.env.example`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: drafts nao devem gerar alerta de correcao; arquivos precisam continuar protegidos por role e vinculo; PDFs longos podem exigir ajuste manual de campos ate existir renderizacao multipagina dedicada.
+
+### 2026-05-12 - IA/OCR opcional para sugerir campos de homework
+
+- Decisao: usar OpenAI Responses API apenas quando `OPENAI_API_KEY` estiver configurada; sem chave, criar campos iniciais de fallback para ajuste manual.
+- Motivo: entregar fluidez com deteccao automatica sem tornar a IA obrigatoria nem quebrar ambientes locais/Oracle sem segredo configurado.
+- Impacto: `src/lib/homework-ocr.ts`, `.env.example`, `src/app/ava/teacher/actions.ts`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: nao versionar chave; revisar custo/limites antes de uso em volume; manter controle manual porque OCR pode errar campos em PDFs ou layouts complexos.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

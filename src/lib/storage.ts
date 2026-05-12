@@ -7,8 +7,15 @@ const STORAGE_ROOT = process.env.AVA_STORAGE_DIR ?? path.join(process.cwd(), "st
 
 export const CONTRACT_MAX_BYTES = 8 * 1024 * 1024;
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+export const HOMEWORK_ASSET_MAX_BYTES = 14 * 1024 * 1024;
 
 const allowedAvatarTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+const allowedHomeworkAssetTypes = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 export function getStoragePath(relativePath: string) {
   const normalized = path.normalize(relativePath);
@@ -108,5 +115,33 @@ export async function saveAvatarImage(file: File) {
   return {
     mimeType: file.type,
     relativePath,
+  };
+}
+
+export async function saveHomeworkAsset(file: File) {
+  if (!allowedHomeworkAssetTypes.has(file.type)) {
+    throw new Error("Envie um PDF ou imagem PNG, JPG ou WebP.");
+  }
+
+  if (file.size <= 0 || file.size > HOMEWORK_ASSET_MAX_BYTES) {
+    throw new Error("O arquivo da homework precisa ter ate 14 MB.");
+  }
+
+  const extension =
+    file.type === "application/pdf"
+      ? ".pdf"
+      : file.type === "image/png"
+        ? ".png"
+        : file.type === "image/webp"
+          ? ".webp"
+          : ".jpg";
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const relativePath = await saveFileBuffer("homework-assets", extension, buffer);
+
+  return {
+    mimeType: file.type,
+    originalName: file.name,
+    relativePath,
+    sizeBytes: file.size,
   };
 }

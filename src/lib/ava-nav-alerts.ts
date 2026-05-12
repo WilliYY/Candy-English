@@ -67,9 +67,12 @@ export async function getAvaNavAlertSignatures(
           select: { id: true, updatedAt: true },
         }),
         prisma.homeworkSubmission.findFirst({
-          where: { status: "REVIEWED", studentProfileId: profile.id },
-          orderBy: { reviewedAt: "desc" },
-          select: { id: true, reviewedAt: true },
+          where: {
+            status: { in: ["REVIEWED", "RETURNED"] },
+            studentProfileId: profile.id,
+          },
+          orderBy: { submittedAt: "desc" },
+          select: { id: true, reviewedAt: true, submittedAt: true },
         }),
         prisma.chatMessage.findFirst({
           where: {
@@ -133,8 +136,8 @@ export async function getAvaNavAlertSignatures(
       }),
       prisma.homeworkSubmission.findFirst({
         where: teacherScoped
-          ? { homework: { teacherProfileId } }
-          : {},
+          ? { homework: { teacherProfileId }, status: "SUBMITTED" }
+          : { status: "SUBMITTED" },
         orderBy: { submittedAt: "desc" },
         select: { id: true, submittedAt: true },
       }),

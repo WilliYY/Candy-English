@@ -10,7 +10,7 @@ O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, mat
 
 ## Status atual
 
-Fase atual documentada: FASE 27.
+Fase atual documentada: FASE 28.
 
 Ja existe:
 
@@ -18,15 +18,16 @@ Ja existe:
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - admin com cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
-- teacher com aulas, materiais, vocabulario, homework, feedback, aula ao vivo, contratos e mensagens;
-- student com aulas, homework, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
+- teacher com aulas, materiais, vocabulario, homework simples, homework interativo por upload do Canva, feedback, aula ao vivo, contratos e mensagens;
+- student com aulas, homework simples/interativo com autosave, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
+- homework interativo com arquivo PDF/imagem protegido, campos editaveis sobre o arquivo, autosave e deteccao opcional por OpenAI;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, IA real, jogos, upload livre de materiais, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.
+Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora do homework, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.
 
 ## Stack
 
@@ -60,6 +61,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/09-deploy-e-ambiente.md`: ambientes, Docker e Oracle.
 - `docs/13-financeiro.md`: modulo financeiro admin.
 - `docs/14-agenda.md`: modulo agenda admin.
+- `docs/15-homework-interativo.md`: homework com upload do Canva, campos editaveis, autosave e IA/OCR opcional.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.
 
@@ -105,6 +107,8 @@ Variaveis principais:
 - `AUTH_URL` e `NEXTAUTH_URL`: URL publica do app.
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
 - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
+- `OPENAI_API_KEY`: ativa deteccao por IA/OCR no upload de homework interativo.
+- `OPENAI_HOMEWORK_OCR_MODEL`: modelo usado na deteccao opcional, exemplo `gpt-4.1-mini`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: admin inicial do seed.
 - `ADMIN_RESET_PASSWORD`: redefine senha do admin apenas quando `true`.
 - `AUDIT_BASE_URL`: base URL usada pelos smoke tests.

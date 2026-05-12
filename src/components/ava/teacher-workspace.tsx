@@ -26,6 +26,7 @@ import {
   ProfileForm,
 } from "@/components/ava/profile-forms";
 import {
+  AllowHomeworkRedoButton,
   CreateHomeworkForm,
   CreateLessonForm,
   ReviewSubmissionForm,
@@ -59,7 +60,27 @@ type TeacherLesson = {
   createdAt: Date;
   description: string | null;
   homeworks: {
+    assetFileName: string | null;
+    assetMimeType: string | null;
+    assetSizeBytes: number | null;
+    dueDate: Date | null;
+    fieldDetectionSource: string | null;
     id: string;
+    instructions: string | null;
+    interactiveFields: {
+      height: number;
+      id: string;
+      label: string | null;
+      page: number;
+      placeholder: string | null;
+      required: boolean;
+      sortOrder: number;
+      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+      width: number;
+      x: number;
+      y: number;
+    }[];
+    kind: string;
     submissions: {
       id: string;
       status: string;
@@ -95,6 +116,16 @@ type TeacherSubmission = {
   answers: unknown;
   feedback: string | null;
   homework: {
+    assetFileName: string | null;
+    assetMimeType: string | null;
+    id: string;
+    interactiveFields: {
+      id: string;
+      label: string | null;
+      sortOrder: number;
+      type: string;
+    }[];
+    kind: string;
     lesson: {
       title: string;
     };
@@ -225,6 +256,26 @@ function getAnswerText(answers: unknown) {
     return "Resposta registrada.";
   }
 
+  const interactiveAnswers = answers
+    .map((answer) => {
+      if (
+        typeof answer === "object" &&
+        answer !== null &&
+        "value" in answer &&
+        typeof answer.value === "string" &&
+        answer.value.trim()
+      ) {
+        return answer.value.trim();
+      }
+
+      return null;
+    })
+    .filter(Boolean);
+
+  if (interactiveAnswers.length > 0) {
+    return interactiveAnswers.join(" | ");
+  }
+
   const first = answers[0];
 
   if (
@@ -262,6 +313,21 @@ export function TeacherWorkspace({
     id: lesson.id,
     label: `${lesson.title}${lesson.studentProfile ? ` - ${lesson.studentProfile.user.name}` : ""}`,
   }));
+  const interactiveHomeworks = lessons.flatMap((lesson) =>
+    lesson.homeworks
+      .filter((homework) => homework.kind === "INTERACTIVE")
+      .map((homework) => ({
+        assetFileName: homework.assetFileName,
+        assetMimeType: homework.assetMimeType,
+        assetSizeBytes: homework.assetSizeBytes,
+        fieldDetectionSource: homework.fieldDetectionSource,
+        fields: homework.interactiveFields,
+        id: homework.id,
+        lessonTitle: lesson.title,
+        studentName: lesson.studentProfile?.user.name ?? null,
+        title: homework.title,
+      })),
+  );
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "SUBMITTED",
   ).length;
@@ -421,7 +487,10 @@ export function TeacherWorkspace({
           ) : null}
 
           {activeTask === "criar-homework" ? (
-            <CreateHomeworkForm lessons={lessonOptions} />
+            <CreateHomeworkForm
+              interactiveHomeworks={interactiveHomeworks}
+              lessons={lessonOptions}
+            />
           ) : null}
 
           {activeTask === "aulas" ? (
@@ -535,6 +604,8 @@ export function TeacherWorkspace({
                           <CheckCircle2 aria-hidden="true" />
                           {submission.status === "REVIEWED"
                             ? "Corrigida"
+                            : submission.status === "RETURNED"
+                              ? "Liberada para refazer"
                             : "Aguardando feedback"}
                         </div>
                         <h2 className="font-semibold">
@@ -546,9 +617,15 @@ export function TeacherWorkspace({
                         </p>
                       </div>
                       <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
-                        <strong>Pergunta:</strong>{" "}
-                        {submission.homework.questions[0]?.prompt ??
-                          "Resposta livre"}
+                        <strong>
+                          {submission.homework.kind === "INTERACTIVE"
+                            ? "Homework interativa:"
+                            : "Pergunta:"}
+                        </strong>{" "}
+                        {submission.homework.kind === "INTERACTIVE"
+                          ? `${submission.homework.interactiveFields.length} campo(s) no arquivo ${submission.homework.assetFileName ?? ""}`
+                          : submission.homework.questions[0]?.prompt ??
+                            "Resposta livre"}
                       </div>
                       <div className="rounded-lg bg-background p-3 text-sm leading-6">
                         <strong>Resposta:</strong>{" "}
@@ -563,6 +640,10 @@ export function TeacherWorkspace({
                         </div>
                       ) : null}
                       <ReviewSubmissionForm submissionId={submission.id} />
+                      {submission.status !== "DRAFT" &&
+                      submission.status !== "RETURNED" ? (
+                        <AllowHomeworkRedoButton submissionId={submission.id} />
+                      ) : null}
                     </div>
                   </article>
                 ))}

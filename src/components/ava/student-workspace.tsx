@@ -19,6 +19,7 @@ import {
   ProfileForm,
 } from "@/components/ava/profile-forms";
 import { LiveClassRoom } from "@/components/ava/live-class-room";
+import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,9 +40,25 @@ export type StudentTask = (typeof studentTaskIds)[number];
 type StudentLesson = {
   description: string | null;
   homeworks: {
+    assetFileName: string | null;
+    assetMimeType: string | null;
     dueDate: Date | null;
     id: string;
     instructions: string | null;
+    interactiveFields: {
+      height: number;
+      id: string;
+      label: string | null;
+      page: number;
+      placeholder: string | null;
+      required: boolean;
+      sortOrder: number;
+      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+      width: number;
+      x: number;
+      y: number;
+    }[];
+    kind: string;
     questions: {
       id: string;
       prompt: string;
@@ -541,22 +558,58 @@ export function StudentWorkspace({
             homeworkCount === 0 ? (
               <EmptyState>Nenhuma homework disponivel no momento.</EmptyState>
             ) : (
-              <div className="grid gap-4 lg:grid-cols-2">
+              <div className="grid gap-3">
                 {lessons.flatMap((lesson) =>
                   lesson.homeworks.map((homework) => {
                     const submission = homework.submissions[0];
 
+                    if (homework.kind === "INTERACTIVE") {
+                      return (
+                        <InteractiveHomeworkStudent
+                          key={homework.id}
+                          homework={{
+                            assetFileName: homework.assetFileName,
+                            assetMimeType: homework.assetMimeType,
+                            dueDate: homework.dueDate,
+                            fields: homework.interactiveFields,
+                            id: homework.id,
+                            instructions: homework.instructions,
+                            submission,
+                            title: homework.title,
+                          }}
+                        />
+                      );
+                    }
+
                     return (
-                      <article key={homework.id} className="rounded-lg border p-5">
-                        <div className="flex flex-col gap-4">
-                          <div className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs text-secondary-foreground">
+                      <details
+                        key={homework.id}
+                        className="group rounded-lg border-2 border-primary/20 bg-white shadow-sm"
+                      >
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
+                          <span className="flex min-w-0 items-center gap-3">
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                              <ClipboardCheck aria-hidden="true" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold">
+                                {homework.title}
+                              </span>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                Homework simples
+                              </span>
+                            </span>
+                          </span>
+                          <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/20 bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
                             <CheckCircle2 aria-hidden="true" />
                             {submission?.status === "REVIEWED"
                               ? "Corrigida"
                               : submission
                                 ? "Enviada"
                                 : "Pendente"}
-                          </div>
+                          </span>
+                        </summary>
+                        <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
                           <div>
                             <h3 className="font-semibold">{homework.title}</h3>
                             <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -579,7 +632,7 @@ export function StudentWorkspace({
                             </div>
                           ) : null}
                         </div>
-                      </article>
+                      </details>
                     );
                   }),
                 )}
