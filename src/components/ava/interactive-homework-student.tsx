@@ -243,26 +243,26 @@ export function InteractiveHomeworkStudent({
           </span>
         </div>
 
-        <div className="relative aspect-[4/3] min-h-[480px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner">
+        <div className="relative isolate aspect-[4/3] min-h-[480px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner">
           {homework.assetMimeType?.startsWith("image/") ? (
             <img
               alt={`Homework ${homework.title}`}
-              className="absolute inset-0 size-full object-contain"
+              className="absolute inset-0 z-0 size-full object-contain"
               src={assetUrl}
             />
           ) : (
             <object
               aria-label={`Homework ${homework.title}`}
-              className="absolute inset-0 size-full bg-white"
+              className="absolute inset-0 z-0 size-full bg-white"
               data={`${assetUrl}#toolbar=0&navpanes=0&view=FitH`}
               type={homework.assetMimeType ?? "application/pdf"}
             />
           )}
 
-          <div className="absolute inset-0">
+          <div className="pointer-events-none absolute inset-0 z-10">
             {homework.fields.map((field, index) => {
               const commonClass =
-                "absolute rounded-md border-2 border-primary/45 bg-white/92 px-2 py-1 text-sm font-medium shadow-lg outline-none transition focus:border-primary focus:ring-4 focus:ring-primary/20 disabled:bg-muted/80";
+                "pointer-events-auto absolute rounded-[3px] border border-transparent bg-transparent px-1 text-sm font-semibold text-primary/95 shadow-none outline-none transition placeholder:text-transparent focus:border-primary/70 focus:bg-white/25 focus:ring-2 focus:ring-primary/15 focus:placeholder:text-primary/35 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
               const style = {
                 height: `${field.height}%`,
                 left: `${field.x}%`,
@@ -274,7 +274,7 @@ export function InteractiveHomeworkStudent({
                 return (
                   <label
                     key={field.id}
-                    className={`${commonClass} flex items-center justify-center`}
+                    className="pointer-events-auto absolute flex items-center justify-center rounded-[3px] border border-transparent bg-transparent transition focus-within:border-primary/70 focus-within:bg-white/25 focus-within:ring-2 focus-within:ring-primary/15"
                     style={style}
                   >
                     <input
@@ -315,7 +315,7 @@ export function InteractiveHomeworkStudent({
                 <textarea
                   key={field.id}
                   aria-label={field.label ?? `Campo ${index + 1}`}
-                  className={`${commonClass} resize-none leading-5`}
+                  className={`${commonClass} resize-none overflow-hidden py-1 leading-5`}
                   disabled={isLocked}
                   onChange={(event) => updateValue(field.id, event.target.value)}
                   placeholder={field.placeholder ?? "Resposta"}

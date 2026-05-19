@@ -23,26 +23,26 @@ type DetectionResult = {
 
 const fallbackFields: DetectedHomeworkField[] = [
   {
-    height: 12,
+    height: 5,
     label: "Resposta 1",
     page: 1,
-    placeholder: "Escreva aqui",
+    placeholder: "",
     required: true,
-    type: "LONG_TEXT",
-    width: 82,
-    x: 9,
-    y: 58,
+    type: "SHORT_TEXT",
+    width: 32,
+    x: 34,
+    y: 44,
   },
   {
-    height: 12,
+    height: 5,
     label: "Resposta 2",
     page: 1,
-    placeholder: "Escreva aqui",
+    placeholder: "",
     required: false,
-    type: "LONG_TEXT",
-    width: 82,
-    x: 9,
-    y: 73,
+    type: "SHORT_TEXT",
+    width: 32,
+    x: 34,
+    y: 54,
   },
 ];
 
@@ -63,8 +63,22 @@ function normalizeField(value: unknown, index: number): DetectedHomeworkField {
     field.type === "SHORT_TEXT" || field.type === "CHECKBOX"
       ? field.type
       : "LONG_TEXT";
-  const width = Math.max(8, clampPercent(field.width, type === "CHECKBOX" ? 8 : 36));
-  const height = Math.max(5, clampPercent(field.height, type === "CHECKBOX" ? 6 : 10));
+  const widthFallback =
+    type === "CHECKBOX" ? 5 : type === "SHORT_TEXT" ? 24 : 48;
+  const heightFallback =
+    type === "CHECKBOX" ? 5 : type === "SHORT_TEXT" ? 4 : 8;
+  const widthMax =
+    type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 42 : 92;
+  const heightMax =
+    type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 7 : 18;
+  const width = Math.max(
+    type === "CHECKBOX" ? 4 : 6,
+    Math.min(widthMax, clampPercent(field.width, widthFallback)),
+  );
+  const height = Math.max(
+    4,
+    Math.min(heightMax, clampPercent(field.height, heightFallback)),
+  );
   const x = Math.min(100 - width, clampPercent(field.x, 8));
   const y = Math.min(100 - height, clampPercent(field.y, 18 + index * 12));
 
@@ -177,10 +191,15 @@ export async function detectHomeworkFields({
               content,
               {
                 text:
-                  "Analise esta homework da Candy English e localize areas onde o aluno deve escrever, marcar ou responder. " +
-                  "Retorne campos em porcentagem do canvas visual: x, y, width, height de 0 a 100. " +
-                  "Prefira LONG_TEXT para linhas grandes, SHORT_TEXT para respostas pequenas e CHECKBOX para caixas de marcar. " +
-                  "Ignore titulos, instrucoes e imagens decorativas. Use no maximo 16 campos e considere apenas a pagina 1.",
+                  "Analise o PDF ou imagem original da homework da Candy English sem redesenhar nem alterar o arquivo. " +
+                  "Sua tarefa e apenas sugerir campos HTML transparentes onde o aluno deve digitar, marcar ou responder por cima do arquivo visivel. " +
+                  "Retorne coordenadas em porcentagem do retangulo visual da primeira pagina: x, y, width, height de 0 a 100. " +
+                  "Crie campos somente sobre espacos em branco, lacunas com underscores, linhas de resposta, caixas vazias ou checkboxes. " +
+                  "Nao cubra enunciados, instrucoes, titulos, frases impressas, imagens decorativas ou texto que ja esteja respondido no PDF. " +
+                  "Se uma frase tiver uma lacuna como 'I work __ home', posicione o campo apenas sobre a lacuna, nunca sobre a frase inteira. " +
+                  "Campos de linha devem ser baixos e justos; use SHORT_TEXT para lacunas pequenas, LONG_TEXT apenas para areas grandes vazias e CHECKBOX para caixas de marcar. " +
+                  "Use rotulos curtos como 'Resposta 1' e deixe placeholder vazio quando o texto do PDF ja indicar o que responder. " +
+                  "Use no maximo 16 campos e considere apenas a pagina 1.",
                 type: "input_text",
               },
             ],

@@ -52,6 +52,8 @@ Tabelas e enums:
 - O tamanho maximo aceito pela UI/storage e 14 MB; `next.config.ts` usa 15 MB para a Server Action receber o arquivo com folga.
 - O acesso ao arquivo passa por rota protegida; student so abre arquivo da propria homework.
 - Campos usam coordenadas percentuais (`x`, `y`, `width`, `height`) para se adaptar ao tamanho da tela.
+- O PDF/imagem original deve permanecer visivel como fundo; campos de resposta sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
+- A IA deve sugerir campos apenas sobre lacunas, linhas de resposta, caixas vazias ou checkboxes, evitando enunciados, instrucoes, titulos e texto impresso.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.
 - `SUBMITTED` e entrega oficial e gera evento para teacher/admin.
 - `RETURNED` libera o aluno para refazer.
@@ -65,9 +67,9 @@ Tabelas e enums:
 - Metadados do arquivo ficam no proprio `Homework` para evitar tabela extra nesta fase.
 - Campos interativos ficam em `HomeworkInteractiveField`, com cascade quando a homework for apagada futuramente.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
-- A deteccao usa OpenAI Responses API quando `OPENAI_API_KEY` existe e retorna JSON estruturado.
+- A deteccao usa OpenAI Responses API quando `OPENAI_API_KEY` existe e retorna JSON estruturado com posicoes de campos transparentes.
 - Sem chave OpenAI ou em caso de erro, o sistema cria campos iniciais de fallback e permite ajuste manual.
-- A primeira versao renderiza PDF/imagem em um canvas visual com overlay HTML; PDFs longos podem exigir ajuste manual.
+- A primeira versao renderiza PDF/imagem em um canvas visual com overlay HTML transparente; PDFs longos podem exigir ajuste manual.
 
 ## Riscos ao alterar esta parte
 

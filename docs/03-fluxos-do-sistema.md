@@ -74,8 +74,8 @@ Actions:
 2. Seleciona teacher e aluno, informa titulo/instrucoes e envia PDF/imagem exportado do Canva.
 3. O sistema cria uma aula interna automaticamente para vincular a homework ao aluno e a teacher.
 4. O arquivo e salvo em `storage/homework-assets` e servido por `/ava/homework-assets/[homeworkId]`.
-5. Se `OPENAI_API_KEY` estiver configurada, o servidor chama a OpenAI para sugerir campos editaveis; sem chave, cria campos iniciais de fallback.
-6. Teacher pode ajustar manualmente campos, tamanho e posicao antes de o aluno responder.
+5. Se `OPENAI_API_KEY` estiver configurada, o servidor chama a OpenAI para sugerir campos transparentes apenas sobre lacunas, linhas de resposta, caixas vazias ou checkboxes; sem chave, cria campos iniciais de fallback.
+6. Teacher pode ajustar manualmente campos, tamanho e posicao antes de o aluno responder, mantendo o PDF/imagem original visivel como fundo.
 7. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e escreve sobre o arquivo.
 8. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
 9. Teacher corrige com feedback (`REVIEWED`) ou libera `RETURNED` para o aluno refazer.

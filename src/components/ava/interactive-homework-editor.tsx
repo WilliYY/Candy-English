@@ -75,35 +75,34 @@ function AssetPreview({
   const assetUrl = `/ava/homework-assets/${homework.id}`;
 
   return (
-    <div className="relative aspect-[4/3] min-h-72 overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner">
+    <div className="relative isolate aspect-[4/3] min-h-72 overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner">
       {homework.assetMimeType?.startsWith("image/") ? (
         <img
           alt={`Previa da homework ${homework.title}`}
-          className="absolute inset-0 size-full object-contain"
+          className="absolute inset-0 z-0 size-full object-contain"
           src={assetUrl}
         />
       ) : (
         <object
           aria-label={`Previa da homework ${homework.title}`}
-          className="absolute inset-0 size-full bg-white"
+          className="absolute inset-0 z-0 size-full bg-white"
           data={`${assetUrl}#toolbar=0&navpanes=0&view=FitH`}
           type={homework.assetMimeType ?? "application/pdf"}
         />
       )}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0 z-10">
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="absolute flex items-start rounded-md border-2 border-emerald-700 bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-emerald-950 shadow-sm"
+            className="absolute rounded-[3px] border border-dashed border-primary/65 bg-primary/[0.035] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]"
             style={{
               height: `${field.height}%`,
               left: `${field.x}%`,
               top: `${field.y}%`,
               width: `${field.width}%`,
             }}
-          >
-            {field.label || `Campo ${index + 1}`}
-          </div>
+            title={field.label || `Campo ${index + 1}`}
+          />
         ))}
       </div>
     </div>

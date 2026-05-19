@@ -156,6 +156,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/teacher-forms.tsx`, `src/components/ava/teacher-workspace.tsx`, `src/lib/validations/learning.ts`, `README.md`, `AGENTS.md`, `docs/00-visao-geral.md`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: homeworks `TEXT` antigas continuam como legado; nao apagar dados antigos nem remover exibicao/correcao sem migration e decisao especifica.
 
+### 2026-05-19 - Homework interativo preserva o arquivo original
+
+- Decisao: manter PDF/imagem como fundo visivel e tratar IA apenas como sugestora de campos transparentes sobre lacunas, linhas de resposta, caixas vazias ou checkboxes.
+- Motivo: o aluno deve responder no arquivo original, sem que o sistema cubra enunciados ou redesenhe a atividade enviada pela teacher.
+- Impacto: `src/lib/homework-ocr.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: a deteccao automatica ainda pode errar em PDFs complexos; manter ajuste manual e revisar atividades antigas que ja tenham campos largos salvos.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
