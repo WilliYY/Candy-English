@@ -22,7 +22,8 @@ As pendencias podem afetar:
 - Edicao completa de usuarios existentes.
 - Edicao/delecao completa de aulas e materiais; homework interativa ja pode ser excluida na tela de criacao.
 - Multiplas perguntas por homework na interface.
-- Editor multipagina avancado para PDFs de homework interativo.
+- Reposicionamento por arrastar nos campos do homework interativo.
+- Exportacao de homework interativo preenchido como PDF final.
 - Upload livre de materiais de aula.
 - Editor ou visualizador Word embutido.
 - Notificacoes por email ou WhatsApp.

@@ -81,7 +81,8 @@ Enums:
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
 - `HomeworkSubmission` possui chave unica por homework/aluno.
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
-- `HomeworkInteractiveField` guarda posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
+- `HomeworkInteractiveField` guarda tipo, pagina e posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
+- `HomeworkFieldType` aceita `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` e `DRAWING`; respostas de desenho ficam no JSON de `HomeworkSubmission.answers` como tracos normalizados.
 - Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.
 - `SubmissionStatus.DRAFT` e autosave do aluno e nao deve disparar evento novo para teacher/admin; `SUBMITTED` e entrega, `RETURNED` e refazer liberado, `REVIEWED` e correcao final.
 - Contratos podem ser gerais ou vinculados a um aluno.
@@ -101,6 +102,7 @@ Enums:
 - Migration `20260511110000_finance_month_snapshots` adicionou snapshots mensais em `FinancialPayment` para preservar meses fechados.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
+- Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
 
 ## Riscos ao alterar esta parte
 
@@ -111,7 +113,7 @@ Enums:
 - Alterar cascade/set null sem revisar contratos, chat e financeiro pode apagar historico indevidamente.
 - Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar apenas a linha mensal escolhida pela UI.
 - Fazer hard delete de `AgendaStudent` apaga ocorrencias da agenda por cascade; a UI deve retirar agenda por `isActive=false`.
-- Alterar `HomeworkInteractiveField` sem manter coordenadas percentuais pode desalinha respostas sobre o PDF/imagem.
+- Alterar `HomeworkInteractiveField` sem manter coordenadas percentuais por pagina pode desalinhar respostas sobre o PDF/imagem.
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
 
 ## Pendencias
@@ -120,7 +122,7 @@ Enums:
 - Falta revogacao imediata de JWT quando role muda.
 - Falta normalizacao case-insensitive mais robusta para email.
 - Falta auditoria geral fora do financeiro.
-- Falta renderizacao multipagina avancada para PDF interativo; a primeira versao usa campos percentuais e ajuste manual.
+- Falta exportacao do PDF final preenchido com respostas e desenhos do aluno.
 
 ## Como pode evoluir
 

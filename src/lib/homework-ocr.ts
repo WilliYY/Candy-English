@@ -4,7 +4,7 @@ export type DetectedHomeworkField = {
   page: number;
   placeholder: string;
   required: boolean;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
   width: number;
   x: number;
   y: number;
@@ -60,7 +60,9 @@ function normalizeField(value: unknown, index: number): DetectedHomeworkField {
       ? (value as Partial<DetectedHomeworkField>)
       : {};
   const type =
-    field.type === "SHORT_TEXT" || field.type === "CHECKBOX"
+    field.type === "SHORT_TEXT" ||
+    field.type === "CHECKBOX" ||
+    field.type === "DRAWING"
       ? field.type
       : "LONG_TEXT";
   const widthFallback =
@@ -70,7 +72,7 @@ function normalizeField(value: unknown, index: number): DetectedHomeworkField {
   const widthMax =
     type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 42 : 92;
   const heightMax =
-    type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 7 : 18;
+    type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 7 : 24;
   const width = Math.max(
     type === "CHECKBOX" ? 4 : 6,
     Math.min(widthMax, clampPercent(field.width, widthFallback)),
@@ -88,7 +90,10 @@ function normalizeField(value: unknown, index: number): DetectedHomeworkField {
       typeof field.label === "string" && field.label.trim()
         ? field.label.trim().slice(0, 80)
         : `Campo ${index + 1}`,
-    page: 1,
+    page:
+      typeof field.page === "number" && Number.isFinite(field.page)
+        ? Math.min(20, Math.max(1, Math.floor(field.page)))
+        : 1,
     placeholder:
       typeof field.placeholder === "string"
         ? field.placeholder.trim().slice(0, 120)
@@ -193,13 +198,13 @@ export async function detectHomeworkFields({
                 text:
                   "Analise o PDF ou imagem original da homework da Candy English sem redesenhar nem alterar o arquivo. " +
                   "Sua tarefa e apenas sugerir campos HTML transparentes onde o aluno deve digitar, marcar ou responder por cima do arquivo visivel. " +
-                  "Retorne coordenadas em porcentagem do retangulo visual da primeira pagina: x, y, width, height de 0 a 100. " +
+                  "Retorne coordenadas em porcentagem do retangulo real de cada pagina do PDF ou imagem: x, y, width, height de 0 a 100, com page iniciando em 1. " +
                   "Crie campos somente sobre espacos em branco, lacunas com underscores, linhas de resposta, caixas vazias ou checkboxes. " +
                   "Nao cubra enunciados, instrucoes, titulos, frases impressas, imagens decorativas ou texto que ja esteja respondido no PDF. " +
                   "Se uma frase tiver uma lacuna como 'I work __ home', posicione o campo apenas sobre a lacuna, nunca sobre a frase inteira. " +
-                  "Campos de linha devem ser baixos e justos; use SHORT_TEXT para lacunas pequenas, LONG_TEXT apenas para areas grandes vazias e CHECKBOX para caixas de marcar. " +
+                  "Campos de linha devem ser baixos e justos; use SHORT_TEXT para lacunas pequenas, LONG_TEXT para areas grandes vazias, CHECKBOX para caixas de marcar e DRAWING para areas de desenho ou resposta manuscrita. " +
                   "Use rotulos curtos como 'Resposta 1' e deixe placeholder vazio quando o texto do PDF ja indicar o que responder. " +
-                  "Use no maximo 16 campos e considere apenas a pagina 1.",
+                  "Use no maximo 16 campos e preserve a pagina correta de cada campo.",
                 type: "input_text",
               },
             ],
@@ -224,7 +229,7 @@ export async function detectHomeworkFields({
                       placeholder: { type: "string" },
                       required: { type: "boolean" },
                       type: {
-                        enum: ["SHORT_TEXT", "LONG_TEXT", "CHECKBOX"],
+                        enum: ["SHORT_TEXT", "LONG_TEXT", "CHECKBOX", "DRAWING"],
                         type: "string",
                       },
                       width: { maximum: 100, minimum: 1, type: "number" },

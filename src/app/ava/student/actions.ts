@@ -119,6 +119,21 @@ function normalizeInteractiveAnswers(
     }));
 }
 
+function hasDrawingContent(value: string) {
+  try {
+    const parsed = JSON.parse(value) as { strokes?: unknown };
+
+    return (
+      Array.isArray(parsed.strokes) &&
+      parsed.strokes.some(
+        (stroke) => Array.isArray(stroke) && stroke.length > 0,
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function submitHomework(
   input: SubmitHomeworkInput,
 ): Promise<SubmitHomeworkResult> {
@@ -431,7 +446,16 @@ export async function submitInteractiveHomework(
     }
 
     const value = answerMap.get(field.id) ?? "";
-    return field.type === "CHECKBOX" ? value !== "true" : !value.trim();
+
+    if (field.type === "CHECKBOX") {
+      return value !== "true";
+    }
+
+    if (field.type === "DRAWING") {
+      return !hasDrawingContent(value);
+    }
+
+    return !value.trim();
   });
 
   if (hasMissingRequired) {

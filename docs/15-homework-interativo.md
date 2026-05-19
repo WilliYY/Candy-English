@@ -18,7 +18,9 @@ Arquivos principais:
 - `src/components/ava/teacher-forms.tsx`
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
+- `src/components/ava/interactive-homework-document.tsx`
 - `src/components/ava/interactive-homework-editor.tsx`
+- `src/components/ava/interactive-homework-review.tsx`
 - `src/components/ava/interactive-homework-student.tsx`
 - `src/lib/homework-ocr.ts`
 - `src/lib/storage.ts`
@@ -26,6 +28,7 @@ Arquivos principais:
 - `next.config.ts`
 - `prisma/schema.prisma`
 - `prisma/migrations/20260512120000_interactive_homework/migration.sql`
+- `prisma/migrations/20260519033000_interactive_homework_drawing_field/migration.sql`
 
 Rotas:
 
@@ -51,9 +54,10 @@ Tabelas e enums:
 - O arquivo fica em `storage/homework-assets` ou no volume Docker equivalente, nunca no Git.
 - O tamanho maximo aceito pela UI/storage e 14 MB; `next.config.ts` usa 15 MB para a Server Action receber o arquivo com folga.
 - O acesso ao arquivo passa por rota protegida; student so abre arquivo da propria homework.
-- Campos usam coordenadas percentuais (`x`, `y`, `width`, `height`) para se adaptar ao tamanho da tela.
+- Campos usam coordenadas percentuais (`page`, `x`, `y`, `width`, `height`) relativas a pagina real do PDF/imagem para se adaptar ao tamanho da tela.
 - O PDF/imagem original deve permanecer visivel como fundo; campos de resposta sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
 - A IA deve sugerir campos apenas sobre lacunas, linhas de resposta, caixas vazias ou checkboxes, evitando enunciados, instrucoes, titulos e texto impresso.
+- Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.
@@ -70,9 +74,10 @@ Tabelas e enums:
 - Campos interativos ficam em `HomeworkInteractiveField`, com cascade quando a homework for apagada futuramente.
 - A exclusao de homework interativa usa server action com validacao de role/dono e tenta remover o arquivo fisico de `storage/homework-assets` apos apagar os registros.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
-- A deteccao usa OpenAI Responses API quando `OPENAI_API_KEY` existe e retorna JSON estruturado com posicoes de campos transparentes.
+- A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
+- A deteccao usa OpenAI Responses API quando `OPENAI_API_KEY` existe e retorna JSON estruturado com posicoes de campos transparentes por pagina.
 - Sem chave OpenAI ou em caso de erro, o sistema cria campos iniciais de fallback e permite ajuste manual.
-- A primeira versao renderiza PDF/imagem em um canvas visual com overlay HTML transparente; PDFs longos podem exigir ajuste manual.
+- Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.
 
 ## Riscos ao alterar esta parte
 
@@ -85,7 +90,6 @@ Tabelas e enums:
 
 ## Pendencias
 
-- Editor multipagina dedicado para PDFs longos.
 - Reposicionamento por arrastar ainda nao existe; o ajuste manual atual usa campos numericos.
 - Nao ha importacao em lote de homeworks do Canva.
 - Nao ha exportacao da resposta preenchida como PDF final.
@@ -94,7 +98,6 @@ Tabelas e enums:
 ## Como pode evoluir no futuro
 
 - Adicionar drag-and-drop para mover campos.
-- Renderizar cada pagina do PDF como pagina separada com campos por pagina.
 - Exportar resposta do aluno preenchida em PDF.
 - Permitir anexos extras por homework.
 - Adicionar historico visual de entregas e refacoes.

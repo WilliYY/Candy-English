@@ -80,7 +80,12 @@ export const createInteractiveHomeworkSchema = z.object({
   dueDate: optionalDate,
 });
 
-const homeworkFieldTypeSchema = z.enum(["SHORT_TEXT", "LONG_TEXT", "CHECKBOX"]);
+const homeworkFieldTypeSchema = z.enum([
+  "SHORT_TEXT",
+  "LONG_TEXT",
+  "CHECKBOX",
+  "DRAWING",
+]);
 
 export const interactiveHomeworkFieldSchema = z.object({
   height: z.coerce.number().min(4, "Altura minima 4%.").max(100),
@@ -132,7 +137,7 @@ export const interactiveHomeworkAnswerSchema = z.object({
         fieldId: z.string().min(1, "Campo invalido."),
         value: z
           .string()
-          .max(6000, "Cada resposta pode ter no maximo 6000 caracteres."),
+          .max(50000, "Cada resposta pode ter no maximo 50000 caracteres."),
       }),
     )
     .max(80, "Use no maximo 80 respostas por homework."),

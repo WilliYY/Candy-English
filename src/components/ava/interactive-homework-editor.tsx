@@ -14,6 +14,7 @@ import {
   deleteInteractiveHomework,
   saveInteractiveHomeworkFields,
 } from "@/app/ava/teacher/actions";
+import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -26,7 +27,7 @@ export type EditableHomeworkField = {
   placeholder: string | null;
   required: boolean;
   sortOrder: number;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
   width: number;
   x: number;
   y: number;
@@ -35,6 +36,7 @@ export type EditableHomeworkField = {
 export type InteractiveHomeworkEditorRow = {
   assetFileName: string | null;
   assetMimeType: string | null;
+  assetPageCount: number | null;
   assetSizeBytes: number | null;
   fieldDetectionSource: string | null;
   fields: EditableHomeworkField[];
@@ -78,47 +80,38 @@ function AssetPreview({
   const assetUrl = `/ava/homework-assets/${homework.id}`;
 
   return (
-    <div className="relative isolate aspect-[4/3] min-h-72 overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner">
-      {homework.assetMimeType?.startsWith("image/") ? (
-        <img
-          alt={`Previa da homework ${homework.title}`}
-          className="absolute inset-0 z-0 size-full object-contain"
-          src={assetUrl}
-        />
-      ) : (
-        <object
-          aria-label={`Previa da homework ${homework.title}`}
-          className="absolute inset-0 z-0 size-full bg-white"
-          data={`${assetUrl}#toolbar=0&navpanes=0&view=FitH`}
-          type={homework.assetMimeType ?? "application/pdf"}
+    <InteractiveHomeworkDocument
+      assetMimeType={homework.assetMimeType}
+      assetUrl={assetUrl}
+      expectedPageCount={homework.assetPageCount}
+      fields={fields}
+      pageClassName="max-w-[680px]"
+      renderField={(field, index, style) => (
+        <div
+          key={field.id}
+          className="pointer-events-none absolute rounded-[3px] border border-dashed border-primary/65 bg-primary/[0.035] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]"
+          style={style}
+          title={field.label || `Campo ${index + 1}`}
         />
       )}
-      <div className="pointer-events-none absolute inset-0 z-10">
-        {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className="absolute rounded-[3px] border border-dashed border-primary/65 bg-primary/[0.035] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]"
-            style={{
-              height: `${field.height}%`,
-              left: `${field.x}%`,
-              top: `${field.y}%`,
-              width: `${field.width}%`,
-            }}
-            title={field.label || `Campo ${index + 1}`}
-          />
-        ))}
-      </div>
-    </div>
+      title={homework.title}
+    />
   );
 }
 
 function NumberInput({
   label,
+  max = 100,
+  min = 0,
   onChange,
+  step = 1,
   value,
 }: {
   label: string;
+  max?: number;
+  min?: number;
   onChange: (value: number) => void;
+  step?: number;
   value: number;
 }) {
   return (
@@ -126,9 +119,10 @@ function NumberInput({
       {label}
       <Input
         className="h-9"
-        max={100}
-        min={0}
+        max={max}
+        min={min}
         onChange={(event) => onChange(Number(event.target.value))}
+        step={step}
         type="number"
         value={value}
       />
@@ -345,6 +339,7 @@ function InteractiveHomeworkEditorItem({
                       <option value="LONG_TEXT">Texto longo</option>
                       <option value="SHORT_TEXT">Texto curto</option>
                       <option value="CHECKBOX">Marcar</option>
+                      <option value="DRAWING">Desenho</option>
                     </NativeSelect>
                   </label>
                   <label className="flex h-full min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-muted-foreground">
@@ -360,6 +355,17 @@ function InteractiveHomeworkEditorItem({
                     />
                     Obrigatorio
                   </label>
+                  <NumberInput
+                    label="Pagina"
+                    min={1}
+                    max={20}
+                    value={field.page}
+                    onChange={(value) =>
+                      updateField(field.id, {
+                        page: Math.max(1, Math.floor(value || 1)),
+                      })
+                    }
+                  />
                   <NumberInput
                     label="X %"
                     value={field.x}

@@ -3,18 +3,28 @@
 import {
   CheckCircle2,
   ClipboardCheck,
+  Eraser,
   LoaderCircle,
   RotateCcw,
   Save,
   Send,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
 import {
   reopenInteractiveHomeworkDraft,
   saveInteractiveHomeworkDraft,
   submitInteractiveHomework,
 } from "@/app/ava/student/actions";
+import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { Button } from "@/components/ui/button";
 
 export type StudentInteractiveField = {
@@ -25,7 +35,7 @@ export type StudentInteractiveField = {
   placeholder: string | null;
   required: boolean;
   sortOrder: number;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
   width: number;
   x: number;
   y: number;
@@ -42,6 +52,7 @@ export type StudentInteractiveSubmission = {
 export type StudentInteractiveHomework = {
   assetFileName: string | null;
   assetMimeType: string | null;
+  assetPageCount: number | null;
   dueDate: Date | null;
   fields: StudentInteractiveField[];
   id: string;
@@ -107,6 +118,238 @@ function statusClass(status?: string) {
   }
 
   return "border-red-700 bg-red-600 text-white";
+}
+
+type DrawingPoint = [number, number];
+type DrawingStroke = DrawingPoint[];
+
+function roundPoint(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function parseDrawingValue(value?: string): DrawingStroke[] {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as { strokes?: unknown };
+
+    if (!Array.isArray(parsed.strokes)) {
+      return [];
+    }
+
+    return parsed.strokes
+      .slice(0, 30)
+      .map((stroke) => {
+        if (!Array.isArray(stroke)) {
+          return [];
+        }
+
+        return stroke
+          .slice(0, 160)
+          .map((point) => {
+            if (
+              !Array.isArray(point) ||
+              typeof point[0] !== "number" ||
+              typeof point[1] !== "number"
+            ) {
+              return null;
+            }
+
+            return [
+              Math.min(100, Math.max(0, roundPoint(point[0]))),
+              Math.min(100, Math.max(0, roundPoint(point[1]))),
+            ] satisfies DrawingPoint;
+          })
+          .filter((point): point is DrawingPoint => Boolean(point));
+      })
+      .filter((stroke) => stroke.length > 0);
+  } catch {
+    return [];
+  }
+}
+
+function serializeDrawingValue(strokes: DrawingStroke[]) {
+  return JSON.stringify({
+    strokes,
+    v: 1,
+  });
+}
+
+function drawingPath(stroke: DrawingStroke) {
+  return stroke
+    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`)
+    .join(" ");
+}
+
+function pointDistance(a: DrawingPoint, b: DrawingPoint) {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+function totalDrawingPoints(strokes: DrawingStroke[]) {
+  return strokes.reduce((total, stroke) => total + stroke.length, 0);
+}
+
+function pointerToDrawingPoint(
+  element: SVGSVGElement,
+  event: PointerEvent<SVGSVGElement>,
+): DrawingPoint {
+  const rect = element.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / Math.max(1, rect.width)) * 100;
+  const y = ((event.clientY - rect.top) / Math.max(1, rect.height)) * 100;
+
+  return [
+    Math.min(100, Math.max(0, roundPoint(x))),
+    Math.min(100, Math.max(0, roundPoint(y))),
+  ];
+}
+
+function DrawingField({
+  ariaLabel,
+  disabled,
+  onChange,
+  style,
+  value,
+}: {
+  ariaLabel: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+  style: CSSProperties;
+  value: string;
+}) {
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const isDrawing = useRef(false);
+  const [strokes, setStrokes] = useState<DrawingStroke[]>(() =>
+    parseDrawingValue(value),
+  );
+
+  useEffect(() => {
+    setStrokes(parseDrawingValue(value));
+  }, [value]);
+
+  function commit(nextStrokes: DrawingStroke[]) {
+    onChange(serializeDrawingValue(nextStrokes));
+    return nextStrokes;
+  }
+
+  function startStroke(event: PointerEvent<SVGSVGElement>) {
+    if (disabled || !svgRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    isDrawing.current = true;
+    const point = pointerToDrawingPoint(svgRef.current, event);
+
+    setStrokes((current) => commit([...current, [point]]));
+  }
+
+  function continueStroke(event: PointerEvent<SVGSVGElement>) {
+    if (disabled || !isDrawing.current || !svgRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    const point = pointerToDrawingPoint(svgRef.current, event);
+
+    setStrokes((current) => {
+      if (totalDrawingPoints(current) >= 420) {
+        return current;
+      }
+
+      const lastStroke = current[current.length - 1];
+
+      if (!lastStroke) {
+        return commit([[point]]);
+      }
+
+      const lastPoint = lastStroke[lastStroke.length - 1];
+
+      if (lastPoint && pointDistance(lastPoint, point) < 0.8) {
+        return current;
+      }
+
+      const nextStrokes = current.map((stroke, index) =>
+        index === current.length - 1 ? [...stroke, point] : stroke,
+      );
+
+      return commit(nextStrokes);
+    });
+  }
+
+  function endStroke(event: PointerEvent<SVGSVGElement>) {
+    isDrawing.current = false;
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function undoStroke() {
+    setStrokes((current) => commit(current.slice(0, -1)));
+  }
+
+  function clearDrawing() {
+    setStrokes(() => commit([]));
+  }
+
+  return (
+    <div
+      className="pointer-events-auto group absolute rounded-[3px] border border-transparent bg-transparent transition focus-within:border-primary/70 focus-within:bg-white/20 focus-within:ring-2 focus-within:ring-primary/15"
+      style={style}
+    >
+      <svg
+        ref={svgRef}
+        aria-label={ariaLabel}
+        className="size-full touch-none rounded-[3px] outline-none"
+        onPointerCancel={endStroke}
+        onPointerDown={startStroke}
+        onPointerMove={continueStroke}
+        onPointerUp={endStroke}
+        role="img"
+        tabIndex={disabled ? -1 : 0}
+        viewBox="0 0 100 100"
+      >
+        {strokes.map((stroke, index) => (
+          <path
+            key={`${index}-${stroke.length}`}
+            d={drawingPath(stroke)}
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2.4"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+      {!disabled ? (
+        <span className="absolute right-1 top-1 flex gap-1 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+          <button
+            aria-label="Desfazer desenho"
+            className="flex size-6 items-center justify-center rounded bg-white/90 text-primary shadow-sm hover:bg-white"
+            onClick={undoStroke}
+            type="button"
+          >
+            <RotateCcw aria-hidden="true" className="size-3.5" />
+          </button>
+          <button
+            aria-label="Limpar desenho"
+            className="flex size-6 items-center justify-center rounded bg-white/90 text-primary shadow-sm hover:bg-white"
+            onClick={clearDrawing}
+            type="button"
+          >
+            <Eraser aria-hidden="true" className="size-3.5" />
+          </button>
+        </span>
+      ) : null}
+    </div>
+  );
 }
 
 export function InteractiveHomeworkStudent({
@@ -243,32 +486,15 @@ export function InteractiveHomeworkStudent({
           </span>
         </div>
 
-        <div className="relative isolate aspect-[4/3] min-h-[480px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner">
-          {homework.assetMimeType?.startsWith("image/") ? (
-            <img
-              alt={`Homework ${homework.title}`}
-              className="absolute inset-0 z-0 size-full object-contain"
-              src={assetUrl}
-            />
-          ) : (
-            <object
-              aria-label={`Homework ${homework.title}`}
-              className="absolute inset-0 z-0 size-full bg-white"
-              data={`${assetUrl}#toolbar=0&navpanes=0&view=FitH`}
-              type={homework.assetMimeType ?? "application/pdf"}
-            />
-          )}
-
-          <div className="pointer-events-none absolute inset-0 z-10">
-            {homework.fields.map((field, index) => {
+        <InteractiveHomeworkDocument
+          assetMimeType={homework.assetMimeType}
+          assetUrl={assetUrl}
+          expectedPageCount={homework.assetPageCount}
+          fields={homework.fields}
+          pageClassName="max-w-[980px]"
+          renderField={(field, index, style) => {
               const commonClass =
                 "pointer-events-auto absolute rounded-[3px] border border-transparent bg-transparent px-1 text-sm font-semibold text-primary/95 shadow-none outline-none transition placeholder:text-transparent focus:border-primary/70 focus:bg-white/25 focus:ring-2 focus:ring-primary/15 focus:placeholder:text-primary/35 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
-              const style = {
-                height: `${field.height}%`,
-                left: `${field.x}%`,
-                top: `${field.y}%`,
-                width: `${field.width}%`,
-              };
 
               if (field.type === "CHECKBOX") {
                 return (
@@ -291,6 +517,19 @@ export function InteractiveHomeworkStudent({
                       type="checkbox"
                     />
                   </label>
+                );
+              }
+
+              if (field.type === "DRAWING") {
+                return (
+                  <DrawingField
+                    key={field.id}
+                    ariaLabel={field.label ?? `Campo ${index + 1}`}
+                    disabled={isLocked}
+                    onChange={(value) => updateValue(field.id, value)}
+                    style={style}
+                    value={values[field.id] ?? ""}
+                  />
                 );
               }
 
@@ -323,9 +562,9 @@ export function InteractiveHomeworkStudent({
                   value={values[field.id] ?? ""}
                 />
               );
-            })}
-          </div>
-        </div>
+          }}
+          title={homework.title}
+        />
 
         {homework.submission?.feedback ? (
           <div className="mt-4 rounded-lg border border-primary/20 bg-secondary p-3 text-sm leading-6">

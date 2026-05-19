@@ -39,6 +39,7 @@ enum HomeworkFieldType {
   SHORT_TEXT
   LONG_TEXT
   CHECKBOX
+  DRAWING
 }
 
 enum SubmissionStatus {

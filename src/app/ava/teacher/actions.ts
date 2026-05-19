@@ -57,6 +57,17 @@ function formText(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function estimateAssetPageCount(buffer: Buffer, mimeType: string) {
+  if (mimeType !== "application/pdf") {
+    return 1;
+  }
+
+  const pdfText = buffer.toString("latin1");
+  const pageMatches = pdfText.match(/\/Type\s*\/Page\b/g);
+
+  return Math.max(1, pageMatches?.length ?? 1);
+}
+
 async function getTeacherActor() {
   const session = await auth();
 
@@ -402,7 +413,7 @@ export async function createInteractiveHomework(
       data: {
         assetFileName: savedAsset.originalName,
         assetMimeType: savedAsset.mimeType,
-        assetPageCount: 1,
+        assetPageCount: estimateAssetPageCount(assetBuffer, savedAsset.mimeType),
         assetSizeBytes: savedAsset.sizeBytes,
         assetStoragePath: savedAsset.relativePath,
         dueDate: data.dueDate,

@@ -163,6 +163,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/homework-ocr.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: a deteccao automatica ainda pode errar em PDFs complexos; manter ajuste manual e revisar atividades antigas que ja tenham campos largos salvos.
 
+### 2026-05-19 - PDF de homework renderizado por pagina com overlay
+
+- Decisao: renderizar PDFs interativos no client com `pdfjs-dist`, pagina a pagina, e aplicar campos HTML/SVG transparentes usando coordenadas percentuais relativas a pagina real; adicionar `DRAWING` ao enum de campos.
+- Motivo: o PDF precisa aparecer inteiro e sem distorcao, enquanto a IA/manual criam apenas areas invisiveis para digitar, marcar ou desenhar.
+- Impacto: `package.json`, `package-lock.json`, `prisma/schema.prisma`, migration `20260519033000_interactive_homework_drawing_field`, `src/components/ava/interactive-homework-document.tsx`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `src/components/ava/interactive-homework-review.tsx`, `src/lib/homework-ocr.ts`, `src/lib/validations/learning.ts`, docs de banco e fluxos.
+- Riscos/cuidados: PDF.js roda no navegador e depende da rota protegida continuar retornando o arquivo inline; desenhos ficam serializados no JSON da submissao e devem ser considerados em futuras exportacoes para PDF final.
+
 ### 2026-05-19 - Exclusao de homework interativa pela teacher/admin
 
 - Decisao: permitir excluir homeworks interativas na tela `/ava/teacher?task=criar-homework`, com confirmacao no client e server action validando admin ou teacher dona da homework.

@@ -143,6 +143,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           select: {
             assetFileName: true,
             assetMimeType: true,
+            assetPageCount: true,
             assetSizeBytes: true,
             dueDate: true,
             fieldDetectionSource: true,
@@ -231,16 +232,24 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           select: {
             assetFileName: true,
             assetMimeType: true,
+            assetPageCount: true,
             id: true,
             interactiveFields: {
               orderBy: {
                 sortOrder: "asc",
               },
               select: {
+                height: true,
                 id: true,
                 label: true,
+                page: true,
+                placeholder: true,
+                required: true,
                 sortOrder: true,
                 type: true,
+                width: true,
+                x: true,
+                y: true,
               },
             },
             kind: true,

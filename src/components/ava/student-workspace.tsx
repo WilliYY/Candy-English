@@ -42,6 +42,7 @@ type StudentLesson = {
   homeworks: {
     assetFileName: string | null;
     assetMimeType: string | null;
+    assetPageCount: number | null;
     dueDate: Date | null;
     id: string;
     instructions: string | null;
@@ -53,7 +54,7 @@ type StudentLesson = {
       placeholder: string | null;
       required: boolean;
       sortOrder: number;
-      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
       width: number;
       x: number;
       y: number;
@@ -570,6 +571,7 @@ export function StudentWorkspace({
                           homework={{
                             assetFileName: homework.assetFileName,
                             assetMimeType: homework.assetMimeType,
+                            assetPageCount: homework.assetPageCount,
                             dueDate: homework.dueDate,
                             fields: homework.interactiveFields,
                             id: homework.id,

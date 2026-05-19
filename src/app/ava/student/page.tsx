@@ -114,6 +114,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
           select: {
             assetFileName: true,
             assetMimeType: true,
+            assetPageCount: true,
             dueDate: true,
             id: true,
             instructions: true,

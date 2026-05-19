@@ -26,6 +26,10 @@ import {
   ProfileForm,
 } from "@/components/ava/profile-forms";
 import {
+  InteractiveHomeworkReview,
+  type ReviewInteractiveField,
+} from "@/components/ava/interactive-homework-review";
+import {
   AllowHomeworkRedoButton,
   CreateHomeworkForm,
   CreateLessonForm,
@@ -62,6 +66,7 @@ type TeacherLesson = {
   homeworks: {
     assetFileName: string | null;
     assetMimeType: string | null;
+    assetPageCount: number | null;
     assetSizeBytes: number | null;
     dueDate: Date | null;
     fieldDetectionSource: string | null;
@@ -75,7 +80,7 @@ type TeacherLesson = {
       placeholder: string | null;
       required: boolean;
       sortOrder: number;
-      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX";
+      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
       width: number;
       x: number;
       y: number;
@@ -118,12 +123,20 @@ type TeacherSubmission = {
   homework: {
     assetFileName: string | null;
     assetMimeType: string | null;
+    assetPageCount: number | null;
     id: string;
     interactiveFields: {
+      height: number;
       id: string;
       label: string | null;
+      page: number;
+      placeholder: string | null;
+      required: boolean;
       sortOrder: number;
-      type: string;
+      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+      width: number;
+      x: number;
+      y: number;
     }[];
     kind: string;
     lesson: {
@@ -251,21 +264,39 @@ export function normalizeTeacherTask(value: unknown): TeacherTask {
     : "resumo";
 }
 
-function getAnswerText(answers: unknown) {
+function getAnswerText(
+  answers: unknown,
+  fields: {
+    id: string;
+    label: string | null;
+    type: string;
+  }[] = [],
+) {
   if (!Array.isArray(answers)) {
     return "Resposta registrada.";
   }
 
+  const fieldsById = new Map(fields.map((field) => [field.id, field]));
   const interactiveAnswers = answers
     .map((answer) => {
       if (
         typeof answer === "object" &&
         answer !== null &&
+        "fieldId" in answer &&
         "value" in answer &&
+        typeof answer.fieldId === "string" &&
         typeof answer.value === "string" &&
         answer.value.trim()
       ) {
-        return answer.value.trim();
+        const field = fieldsById.get(answer.fieldId);
+
+        if (field?.type === "DRAWING") {
+          return `${field.label ?? "Desenho"}: desenho enviado`;
+        }
+
+        return field?.label
+          ? `${field.label}: ${answer.value.trim()}`
+          : answer.value.trim();
       }
 
       return null;
@@ -315,6 +346,7 @@ export function TeacherWorkspace({
       .map((homework) => ({
         assetFileName: homework.assetFileName,
         assetMimeType: homework.assetMimeType,
+        assetPageCount: homework.assetPageCount,
         assetSizeBytes: homework.assetSizeBytes,
         fieldDetectionSource: homework.fieldDetectionSource,
         fields: homework.interactiveFields,
@@ -627,9 +659,25 @@ export function TeacherWorkspace({
                       <div className="rounded-lg bg-background p-3 text-sm leading-6">
                         <strong>Resposta:</strong>{" "}
                         <span className="text-muted-foreground">
-                          {getAnswerText(submission.answers)}
+                          {getAnswerText(
+                            submission.answers,
+                            submission.homework.interactiveFields,
+                          )}
                         </span>
                       </div>
+                      {submission.homework.kind === "INTERACTIVE" ? (
+                        <InteractiveHomeworkReview
+                          answers={submission.answers}
+                          assetMimeType={submission.homework.assetMimeType}
+                          assetPageCount={submission.homework.assetPageCount}
+                          fields={
+                            submission.homework
+                              .interactiveFields as ReviewInteractiveField[]
+                          }
+                          homeworkId={submission.homework.id}
+                          title={submission.homework.title}
+                        />
+                      ) : null}
                       {submission.feedback ? (
                         <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
                           <strong>Feedback enviado:</strong>{" "}
