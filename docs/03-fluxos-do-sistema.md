@@ -76,9 +76,10 @@ Actions:
 4. O arquivo e salvo em `storage/homework-assets` e servido por `/ava/homework-assets/[homeworkId]`.
 5. Se `OPENAI_API_KEY` estiver configurada, o servidor chama a OpenAI para sugerir campos transparentes apenas sobre lacunas, linhas de resposta, caixas vazias ou checkboxes; sem chave, cria campos iniciais de fallback.
 6. Teacher pode ajustar manualmente campos, tamanho e posicao antes de o aluno responder, mantendo o PDF/imagem original visivel como fundo.
-7. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e escreve sobre o arquivo.
-8. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
-9. Teacher corrige com feedback (`REVIEWED`) ou libera `RETURNED` para o aluno refazer.
+7. Teacher ou admin pode excluir uma homework interativa na lista de criacao; a exclusao remove campos, perguntas, respostas e a aula interna automatica quando ela ficou vazia.
+8. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e escreve sobre o arquivo.
+9. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
+10. Teacher corrige com feedback (`REVIEWED`) ou libera `RETURNED` para o aluno refazer.
 
 ### Financeiro
 
@@ -115,6 +116,7 @@ Actions:
 - Student tem botoes sempre visiveis.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.
+- Excluir homework interativa exige permissao server-side de admin ou teacher dona da homework.
 - Draft de homework interativo nao deve aparecer como resposta entregue para teacher.
 - Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.
 - Aula ao vivo usa Jitsi embutido se nao houver link externo.
@@ -140,7 +142,7 @@ Actions:
 
 ## Pendencias
 
-- Edicao/delecao completa de aulas, materiais e homeworks ainda nao existe.
+- Edicao/delecao completa de aulas e materiais ainda nao existe; homework interativa ja pode ser excluida na tela de criacao.
 - Homework interativo ainda nao possui editor multipagina avancado para PDFs longos.
 - Upload livre de materiais e editor Word embutido ainda nao existem.
 - Notificacoes por email/WhatsApp ainda nao existem.

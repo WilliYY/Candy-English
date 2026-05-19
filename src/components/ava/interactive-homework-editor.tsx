@@ -10,7 +10,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { saveInteractiveHomeworkFields } from "@/app/ava/teacher/actions";
+import {
+  deleteInteractiveHomework,
+  saveInteractiveHomeworkFields,
+} from "@/app/ava/teacher/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -140,7 +143,8 @@ function InteractiveHomeworkEditorItem({
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const [isSaving, startSaveTransition] = useTransition();
   const [fields, setFields] = useState<EditableHomeworkField[]>(
     homework.fields.length > 0 ? homework.fields : [fieldTemplate()],
   );
@@ -173,7 +177,7 @@ function InteractiveHomeworkEditorItem({
 
   function saveFields() {
     setMessage(null);
-    startTransition(async () => {
+    startSaveTransition(async () => {
       const result = await saveInteractiveHomeworkFields({
         fields: fields.map((field, index) => ({
           ...field,
@@ -189,6 +193,33 @@ function InteractiveHomeworkEditorItem({
       if (result.ok) {
         router.refresh();
       }
+    });
+  }
+
+  function deleteHomework() {
+    setMessage(null);
+
+    const confirmed = window.confirm(
+      `Excluir a homework "${homework.title}"? As respostas e campos desta atividade tambem serao removidos.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    startDeleteTransition(async () => {
+      const result = await deleteInteractiveHomework({
+        homeworkId: homework.id,
+      });
+
+      setMessage(result.message);
+
+      if (!result.ok) {
+        window.alert(result.message);
+        return;
+      }
+
+      router.refresh();
     });
   }
 
@@ -208,13 +239,31 @@ function InteractiveHomeworkEditorItem({
             </span>
           </span>
         </span>
-        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+        <span className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
           <span className="rounded-full border border-primary/20 px-2 py-1">
             {fields.length} campo(s)
           </span>
           <span className="rounded-full border border-primary/20 px-2 py-1">
             {homework.fieldDetectionSource === "openai" ? "IA" : "Manual"}
           </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="destructive"
+            disabled={isDeleting || isSaving}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              deleteHomework();
+            }}
+          >
+            {isDeleting ? (
+              <LoaderCircle data-icon="inline-start" className="animate-spin" />
+            ) : (
+              <Trash2 data-icon="inline-start" />
+            )}
+            Excluir
+          </Button>
         </span>
       </summary>
 
@@ -346,8 +395,8 @@ function InteractiveHomeworkEditorItem({
             </p>
           ) : null}
 
-          <Button type="button" onClick={saveFields} disabled={isPending}>
-            {isPending ? (
+          <Button type="button" onClick={saveFields} disabled={isSaving || isDeleting}>
+            {isSaving ? (
               <LoaderCircle data-icon="inline-start" className="animate-spin" />
             ) : (
               <Save data-icon="inline-start" />

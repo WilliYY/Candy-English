@@ -20,7 +20,7 @@ As pendencias podem afetar:
 
 - Reset de senha pela interface admin.
 - Edicao completa de usuarios existentes.
-- Edicao/delecao de aulas, materiais e homeworks.
+- Edicao/delecao completa de aulas e materiais; homework interativa ja pode ser excluida na tela de criacao.
 - Multiplas perguntas por homework na interface.
 - Editor multipagina avancado para PDFs de homework interativo.
 - Upload livre de materiais de aula.

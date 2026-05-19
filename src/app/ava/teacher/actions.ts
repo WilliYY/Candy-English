@@ -1,19 +1,22 @@
 "use server";
 
+import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { detectHomeworkFields } from "@/lib/homework-ocr";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { saveHomeworkAsset } from "@/lib/storage";
+import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
 import {
   createInteractiveHomeworkSchema,
   createLessonSchema,
+  deleteInteractiveHomeworkSchema,
   homeworkSubmissionIdSchema,
   saveInteractiveHomeworkFieldsSchema,
   reviewSubmissionSchema,
   type CreateInteractiveHomeworkInput,
   type CreateLessonInput,
+  type DeleteInteractiveHomeworkInput,
   type HomeworkSubmissionIdInput,
   type ReviewSubmissionInput,
   type SaveInteractiveHomeworkFieldsInput,
@@ -534,6 +537,97 @@ export async function saveInteractiveHomeworkFields(
   return {
     ok: true,
     message: "Campos da homework salvos.",
+  };
+}
+
+export async function deleteInteractiveHomework(
+  input: DeleteInteractiveHomeworkInput,
+): Promise<ActionResult<DeleteInteractiveHomeworkInput>> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir homeworks.",
+    };
+  }
+
+  const parsed = deleteInteractiveHomeworkSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<DeleteInteractiveHomeworkInput>(parsed.error.issues),
+      ok: false,
+      message: "Homework invalida.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const homework = await prisma.homework.findUnique({
+    where: { id: parsed.data.homeworkId },
+    select: {
+      assetStoragePath: true,
+      id: true,
+      kind: true,
+      lesson: {
+        select: {
+          _count: {
+            select: {
+              homeworks: true,
+              materials: true,
+              vocabularyItems: true,
+            },
+          },
+          id: true,
+          title: true,
+        },
+      },
+      teacherProfileId: true,
+    },
+  });
+
+  if (!homework || homework.kind !== "INTERACTIVE") {
+    return {
+      ok: false,
+      message: "Homework interativa nao encontrada.",
+    };
+  }
+
+  if (!actor.isAdmin && homework.teacherProfileId !== actor.teacherProfileId) {
+    return {
+      ok: false,
+      message: "Voce so pode excluir homeworks das suas aulas.",
+    };
+  }
+
+  const shouldDeleteInternalLesson =
+    homework.lesson.title.startsWith("Homework - ") &&
+    homework.lesson._count.homeworks === 1 &&
+    homework.lesson._count.materials === 0 &&
+    homework.lesson._count.vocabularyItems === 0;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.homework.delete({
+      where: { id: homework.id },
+    });
+
+    if (shouldDeleteInternalLesson) {
+      await tx.lesson.delete({
+        where: { id: homework.lesson.id },
+      });
+    }
+  });
+
+  if (homework.assetStoragePath) {
+    await unlink(getStoragePath(homework.assetStoragePath)).catch(() => undefined);
+  }
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message: "Homework excluida com sucesso.",
   };
 }
 

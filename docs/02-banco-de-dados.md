@@ -82,6 +82,7 @@ Enums:
 - `HomeworkSubmission` possui chave unica por homework/aluno.
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
 - `HomeworkInteractiveField` guarda posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
+- Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.
 - `SubmissionStatus.DRAFT` e autosave do aluno e nao deve disparar evento novo para teacher/admin; `SUBMITTED` e entrega, `RETURNED` e refazer liberado, `REVIEWED` e correcao final.
 - Contratos podem ser gerais ou vinculados a um aluno.
 - Chat deve sempre estar preso ao vinculo teacher/aluno.

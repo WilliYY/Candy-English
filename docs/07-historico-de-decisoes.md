@@ -163,6 +163,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/homework-ocr.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: a deteccao automatica ainda pode errar em PDFs complexos; manter ajuste manual e revisar atividades antigas que ja tenham campos largos salvos.
 
+### 2026-05-19 - Exclusao de homework interativa pela teacher/admin
+
+- Decisao: permitir excluir homeworks interativas na tela `/ava/teacher?task=criar-homework`, com confirmacao no client e server action validando admin ou teacher dona da homework.
+- Motivo: teachers precisam remover atividades criadas por engano sem depender de acesso direto ao banco.
+- Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/lib/validations/learning.ts`, `docs/03-fluxos-do-sistema.md`, `docs/06-pendencias.md`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: excluir homework remove campos, perguntas e respostas por cascade; revisar antes de confirmar quando ja houver entrega de aluno.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

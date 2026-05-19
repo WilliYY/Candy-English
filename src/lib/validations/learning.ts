@@ -112,6 +112,10 @@ export const saveInteractiveHomeworkFieldsSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
 });
 
+export const deleteInteractiveHomeworkSchema = z.object({
+  homeworkId: z.string().min(1, "Homework invalida."),
+});
+
 export const submitHomeworkSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
   answer: z
@@ -157,6 +161,9 @@ export type InteractiveHomeworkFieldInput = z.input<
 >;
 export type SaveInteractiveHomeworkFieldsInput = z.input<
   typeof saveInteractiveHomeworkFieldsSchema
+>;
+export type DeleteInteractiveHomeworkInput = z.input<
+  typeof deleteInteractiveHomeworkSchema
 >;
 export type SubmitHomeworkInput = z.input<typeof submitHomeworkSchema>;
 export type InteractiveHomeworkAnswerInput = z.input<
