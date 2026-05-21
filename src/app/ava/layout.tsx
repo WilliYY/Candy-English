@@ -206,6 +206,15 @@ const navGroups = [
   },
 ];
 
+const navPanelLinkClassName =
+  "flex items-center gap-2 rounded-xl border border-primary/15 bg-white/75 px-3 py-2.5 text-sm font-semibold text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-secondary/80 hover:shadow-md";
+const navPanelActiveClassName =
+  "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90";
+const navItemLinkClassName =
+  "group/nav-item flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-primary/75 transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary/10 hover:text-primary hover:shadow-sm";
+const navItemActiveClassName =
+  "border-primary/40 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:text-primary-foreground [&_[data-nav-icon]]:bg-white/15 [&_[data-nav-icon]]:text-primary-foreground";
+
 export default async function AvaLayout({
   children,
 }: Readonly<{
@@ -238,7 +247,7 @@ export default async function AvaLayout({
     <div className="relative min-h-screen overflow-x-hidden bg-background">
       <AvaStudentBackdrop />
       <div className="relative z-10 grid min-h-screen lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="ava-sidebar-glass relative overflow-hidden border-b border-white/45 backdrop-blur-2xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
+        <aside className="ava-sidebar-glass relative overflow-hidden border-b border-primary/15 backdrop-blur-2xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-primary/20">
           <div className="flex h-full flex-col gap-6 px-5 py-5 lg:px-6 lg:py-6">
             <div className="flex items-center justify-between gap-3">
               <BrandLogo
@@ -253,7 +262,7 @@ export default async function AvaLayout({
               </Button>
             </div>
 
-            <div className="rounded-2xl border border-white/50 bg-white/60 p-4 shadow-sm backdrop-blur-xl lg:p-5">
+            <div className="rounded-[1.25rem] border border-primary/15 bg-white/80 p-4 shadow-[0_14px_34px_rgb(44_19_56_/_0.08)] backdrop-blur-xl lg:p-5">
               <div className="flex items-center gap-3">
                 <UserAvatar
                   avatarPath={currentUser?.avatarPath}
@@ -272,13 +281,20 @@ export default async function AvaLayout({
               </div>
             </div>
 
-            <nav className="flex flex-col gap-2" aria-label="Navegacao do AVA">
+            <div className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-primary/60">
+              Area de trabalho
+            </div>
+
+            <nav
+              className="flex flex-col gap-2 rounded-[1.35rem] border border-primary/15 bg-white/60 p-2 shadow-[0_20px_44px_rgb(44_19_56_/_0.09)]"
+              aria-label="Navegacao do AVA"
+            >
               {visibleGroups.map((group) => {
                 if (role === "STUDENT" && group.label === "Student") {
                   return (
                     <div
                       key={group.href}
-                      className="rounded-2xl border border-white/50 bg-white/50 p-3 shadow-lg shadow-primary/5 backdrop-blur-xl lg:p-4"
+                      className="rounded-[1.15rem] border border-primary/15 bg-white/75 p-3 shadow-sm backdrop-blur-xl lg:p-4"
                     >
                       <div className="mb-2 flex items-center gap-2 px-2 py-1 text-sm font-bold text-primary">
                         <group.icon aria-hidden="true" className="size-4" />
@@ -288,8 +304,10 @@ export default async function AvaLayout({
                         <AvaNavAlertLink
                           href={group.href}
                           signature={navAlertSignatures[group.href]}
-                          className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition-transform hover:-translate-y-0.5 hover:bg-primary/90 lg:px-5"
+                          className={navPanelLinkClassName}
+                          activeClassName={navPanelActiveClassName}
                         >
+                          <group.icon aria-hidden="true" className="size-4" />
                           Painel Student
                         </AvaNavAlertLink>
                         {group.links.map((link) => (
@@ -297,10 +315,21 @@ export default async function AvaLayout({
                             key={`${group.href}-${link.href}-${link.label}`}
                             href={link.href}
                             signature={navAlertSignatures[link.href]}
-                            className="flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-sm font-semibold text-primary shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-secondary/80 hover:shadow-md lg:px-5"
+                            className={navItemLinkClassName}
+                            activeClassName={navItemActiveClassName}
                           >
-                            <link.icon aria-hidden="true" className="size-4" />
-                            {link.label}
+                            <span
+                              data-nav-icon
+                              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
+                            >
+                              <link.icon
+                                aria-hidden="true"
+                                className="size-4"
+                              />
+                            </span>
+                            <span className="min-w-0 truncate">
+                              {link.label}
+                            </span>
                           </AvaNavAlertLink>
                         ))}
                       </div>
@@ -309,6 +338,9 @@ export default async function AvaLayout({
                 }
 
                 let currentSection: string | undefined;
+                const panelHasTaskLink = group.links.some(
+                  (link) => link.href === group.href,
+                );
 
                 return (
                   <details
@@ -317,9 +349,9 @@ export default async function AvaLayout({
                       (group.label === "Admin" && role === "ADMIN") ||
                       (group.label === "Student" && role === "STUDENT")
                     }
-                    className="group rounded-2xl border border-primary/10 bg-white/45 p-2 shadow-sm backdrop-blur-xl transition-colors open:bg-white/68"
+                    className="group rounded-[1.15rem] border border-primary/15 bg-white/70 p-2 shadow-sm backdrop-blur-xl transition-colors open:border-primary/30 open:bg-white/85"
                   >
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-bold text-primary outline-none transition-colors hover:bg-primary/10 [&::-webkit-details-marker]:hidden">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-3 text-sm font-bold text-primary outline-none transition-colors hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
                       <span className="flex min-w-0 items-center gap-2">
                         <group.icon aria-hidden="true" className="size-4" />
                         {group.label}
@@ -334,8 +366,12 @@ export default async function AvaLayout({
                       <AvaNavAlertLink
                         href={group.href}
                         signature={navAlertSignatures[group.href]}
-                        className="rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm shadow-primary/10 transition-transform hover:-translate-y-0.5 hover:bg-primary/90"
+                        className={navPanelLinkClassName}
+                        activeClassName={
+                          panelHasTaskLink ? undefined : navPanelActiveClassName
+                        }
                       >
+                        <group.icon aria-hidden="true" className="size-4" />
                         Painel {group.label}
                       </AvaNavAlertLink>
                       {group.links.map((link) => {
@@ -357,9 +393,13 @@ export default async function AvaLayout({
                             <AvaNavAlertLink
                               href={link.href}
                               signature={navAlertSignatures[link.href]}
-                              className="flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-medium text-primary/72 transition-all hover:-translate-y-0.5 hover:border-primary/15 hover:bg-primary/10 hover:text-primary hover:shadow-sm"
+                              className={navItemLinkClassName}
+                              activeClassName={navItemActiveClassName}
                             >
-                              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+                              <span
+                                data-nav-icon
+                                className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
+                              >
                                 <link.icon
                                   aria-hidden="true"
                                   className="size-4"

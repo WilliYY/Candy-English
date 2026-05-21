@@ -147,11 +147,16 @@ a {
 
 .ava-sidebar-glass {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(255 255 255 / 0.6)),
-    linear-gradient(135deg, rgb(229 124 216 / 0.1), transparent 46%);
+    linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.94),
+      rgb(250 243 252 / 0.9) 48%,
+      rgb(244 232 252 / 0.86)
+    ),
+    linear-gradient(135deg, rgb(229 124 216 / 0.14), transparent 46%);
   box-shadow:
-    inset -1px 0 0 rgb(255 255 255 / 0.45),
-    18px 0 44px rgb(44 19 56 / 0.08);
+    inset -1px 0 0 rgb(65 42 76 / 0.16),
+    24px 0 54px rgb(44 19 56 / 0.12);
   -webkit-backdrop-filter: blur(20px) saturate(135%);
   backdrop-filter: blur(20px) saturate(135%);
 }
@@ -160,7 +165,7 @@ a {
   background: linear-gradient(
     90deg,
     transparent,
-    rgb(255 255 255 / 0.2),
+    rgb(65 42 76 / 0.22),
     transparent
   );
   content: "";

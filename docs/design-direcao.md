@@ -80,6 +80,7 @@ Cuidados:
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.
 - Secoes de produto, como o bloco do AVA na home, podem usar particulas discretas e hover em cards para dar vida sem poluir a leitura.
 - Cards de admin/teacher devem usar contraste roxo suave, sem ficar em branco puro quando a tela precisar de hierarquia.
+- A barra lateral do AVA deve parecer uma area de trabalho clara: contraste maior que o fundo, grupos com borda suave e item ativo marcado com roxo solido.
 
 ## Fluxo Visual Do Site
 
