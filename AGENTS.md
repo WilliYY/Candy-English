@@ -69,7 +69,7 @@ Leitura minima recomendada:
 
 ## Roles
 
-- `ADMIN`: administra usuarios, vinculos, contratos, manutencao, financeiro e agenda; tambem pode supervisionar areas teacher/student.
+- `ADMIN`: administra usuarios, redefine senhas, vinculos, contratos, manutencao, financeiro e agenda; tambem pode supervisionar areas teacher/student.
 - `TEACHER`: gerencia aulas, materiais, homework, feedback, mensagens, contratos e aula ao vivo para alunos vinculados.
 - `STUDENT`: acessa aulas, homework, mensagens, contratos, perfil e aula ao vivo permitida.
 
@@ -91,6 +91,7 @@ Leitura minima recomendada:
 - Contratos gerais podem ser vistos por alunos logados; contratos com aluno definido exigem proprio aluno, teacher vinculada ou admin.
 - Modo manutencao bloqueia `STUDENT`, mas nao `ADMIN` nem `TEACHER`.
 - `User.isActive=false` deve bloquear login sem apagar historico.
+- Redefinicao de senha pela interface admin deve validar role `ADMIN` no servidor e gravar apenas hash, nunca a senha em texto puro.
 
 ## Padroes de implementacao
 

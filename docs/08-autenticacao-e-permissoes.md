@@ -13,8 +13,11 @@ Arquivos:
 - `src/lib/roles.ts`
 - `src/types/next-auth.d.ts`
 - `src/lib/validations/auth.ts`
+- `src/lib/validations/admin-users.ts`
+- `src/app/ava/admin/actions.ts`
 - `src/app/api/auth/[...nextauth]/route.ts`
 - `src/app/ava/login/page.tsx`
+- `src/components/ava/admin-operations.tsx`
 - `src/app/ava/homework-assets/[homeworkId]/route.ts`
 - `src/components/ava/login-form.tsx`
 
@@ -44,6 +47,8 @@ Rotas protegidas:
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Google login so aceita email ja cadastrado e ativo.
+- Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
+- Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
 - Arquivos de homework interativo exigem `ADMIN`, `TEACHER` dona da aula ou `STUDENT` dono da homework.
 
 ## Decisoes tecnicas tomadas
@@ -54,6 +59,7 @@ Rotas protegidas:
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.
 - O token/session recebe `id` e `role`.
+- A action admin de redefinicao de senha atualiza `User.passwordHash`; sessoes JWT ja abertas nao sao revogadas imediatamente nesta fase.
 
 ## Riscos ao alterar esta parte
 
@@ -66,13 +72,11 @@ Rotas protegidas:
 ## Pendencias
 
 - Revogacao imediata de sessoes JWT apos mudanca de role ou desativacao.
-- Reset de senha pela interface.
 - Politica mais forte de rate limit por IP.
 - Registro/auditoria ampliada de acoes administrativas.
 
 ## Como pode evoluir
 
-- Adicionar tela de reset de senha admin.
 - Adicionar invalidacao de sessao por versao de usuario.
 - Adicionar testes automatizados de permissoes por action.
 - Documentar fluxo de OAuth Google quando credenciais finais estiverem ativas.

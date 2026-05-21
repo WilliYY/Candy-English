@@ -51,7 +51,7 @@ Actions:
 
 1. Admin abre `/ava/admin`.
 2. A tarefa padrao e `usuarios`.
-3. Admin pode criar usuarios, ativar/desativar, vincular aluno-teacher, enviar contratos, controlar manutencao e gerenciar financeiro.
+3. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, controlar manutencao e gerenciar financeiro.
 4. Admin tambem tem atalhos para tarefas da area teacher.
 
 ### Teacher
@@ -151,7 +151,6 @@ Actions:
 
 ## Como pode evoluir
 
-- Criar fluxos dedicados para reset de senha.
 - Adicionar importacao em massa de alunos.
 - Expandir homework para multiplas perguntas e anexos.
 - Criar auditoria administrativa mais ampla.

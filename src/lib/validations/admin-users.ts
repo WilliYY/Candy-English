@@ -221,6 +221,14 @@ export const adminToggleUserStatusSchema = z.object({
   userId: z.string().min(1, "Usuario invalido."),
 });
 
+export const adminResetUserPasswordSchema = z.object({
+  newPassword: z
+    .string()
+    .min(8, "A nova senha precisa ter pelo menos 8 caracteres.")
+    .max(120, "A nova senha pode ter no maximo 120 caracteres."),
+  userId: z.string().min(1, "Usuario invalido."),
+});
+
 export const adminAssignTeacherSchema = z.object({
   studentProfileId: z.string().min(1, "Selecione um aluno."),
   teacherProfileId: z.string().min(1, "Selecione uma teacher."),
@@ -337,6 +345,9 @@ export const adminAgendaRemoveStudentSchema = z.object({
 
 export type AdminToggleUserStatusInput = z.input<
   typeof adminToggleUserStatusSchema
+>;
+export type AdminResetUserPasswordInput = z.input<
+  typeof adminResetUserPasswordSchema
 >;
 export type AdminAssignTeacherInput = z.input<typeof adminAssignTeacherSchema>;
 export type AdminSiteContentInput = z.input<typeof adminSiteContentSchema>;

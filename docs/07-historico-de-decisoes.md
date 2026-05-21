@@ -191,6 +191,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/ava/interactive-homework-student.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`, `AGENTS.md`.
 - Riscos/cuidados: a teacher precisa posicionar areas pequenas e precisas no editor; em desenho, manter a acao de desfazer ultimo traco para evitar apagar tudo por engano.
 
+### 2026-05-21 - Redefinicao de senha pelo admin
+
+- Decisao: admins podem redefinir a senha de qualquer usuario pela lista de usuarios em `/ava/admin?task=usuarios`.
+- Motivo: suporte interno precisa recuperar acesso de alunos, teachers e admins sem mexer direto no banco ou seed.
+- Impacto: `src/app/ava/admin/actions.ts`, `src/components/ava/admin-operations.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/lib/validations/admin-users.ts`, docs de fluxo e autenticacao.
+- Riscos/cuidados: a nova senha deve ser enviada ao usuario por canal seguro; sessoes JWT ja abertas nao sao revogadas imediatamente nesta fase.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
@@ -203,7 +210,7 @@ Cada decisao deve conter:
 
 ## Pendencias
 
-- Adicionar decisoes futuras sobre backup, reset de senha, testes e auditoria quando forem implementadas.
+- Adicionar decisoes futuras sobre backup, testes e auditoria quando forem implementadas.
 
 ## Como pode evoluir
 

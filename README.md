@@ -17,7 +17,7 @@ Ja existe:
 - login real com Auth.js/NextAuth v5, JWT e senha com `bcryptjs`;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
-- admin com cadastro de usuarios, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
+- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
 - teacher com aulas, materiais, vocabulario, homework interativo por upload do Canva, feedback, aula ao vivo, contratos e mensagens;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
@@ -27,7 +27,7 @@ Ja existe:
 - homework interativo com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora do homework, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.
+Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora do homework, editor Word embutido, relatorios avancados e dashboard complexo.
 
 ## Stack
 

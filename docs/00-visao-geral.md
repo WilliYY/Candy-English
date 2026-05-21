@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno e agenda administrativa.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa e controle de acessos.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -34,6 +34,7 @@ Rotas principais:
 - O AVA deve permanecer em `/ava`.
 - `ADMIN`, `TEACHER` e `STUDENT` sao os perfis atuais.
 - Areas protegidas devem validar permissao no servidor.
+- Admins podem criar usuarios, ativar/desativar acessos e redefinir senhas pela interface protegida.
 - O aluno so acessa dados do proprio perfil.
 - Teacher trabalha com alunos vinculados por `StudentTeacherAssignment`.
 - Contratos e avatares sao protegidos por rotas server-side.
@@ -46,7 +47,7 @@ Rotas principais:
 - Aplicacao propria em Next.js, nao WordPress.
 - PostgreSQL roda no Docker sem porta publica.
 - Auth.js usa JWT e Credentials Provider; Google e opcional.
-- Senhas ficam com hash `bcryptjs`.
+- Senhas ficam com hash `bcryptjs`, inclusive quando redefinidas por admin.
 - Prisma 7 usa client gerado em `src/generated/prisma`.
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.

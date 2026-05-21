@@ -18,7 +18,6 @@ As pendencias podem afetar:
 
 ## Pendencias de produto
 
-- Reset de senha pela interface admin.
 - Edicao completa de usuarios existentes.
 - Edicao/delecao completa de aulas e materiais; homework interativa ja pode ser excluida na tela de criacao.
 - Multiplas perguntas por homework na interface.
@@ -35,7 +34,7 @@ As pendencias podem afetar:
 ## Pendencias tecnicas
 
 - Rotina formal de backup e restore do PostgreSQL.
-- Revogacao imediata de sessoes JWT apos mudanca de role ou desativacao.
+- Revogacao imediata de sessoes JWT apos mudanca de role, desativacao ou redefinicao de senha.
 - Throttling mais forte por IP ou servico dedicado.
 - Normalizacao case-insensitive mais robusta para email.
 - Testes automatizados amplos por modulo.

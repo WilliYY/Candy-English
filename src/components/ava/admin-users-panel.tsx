@@ -29,6 +29,7 @@ import {
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
 import {
   AdminAssignTeacherForm,
+  AdminUserPasswordResetForm,
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
@@ -416,6 +417,10 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                     <AdminUserStatusButton
                       isActive={user.isActive}
                       userId={user.id}
+                    />
+                    <AdminUserPasswordResetForm
+                      userId={user.id}
+                      userName={user.name}
                     />
                   </article>
                 ))}

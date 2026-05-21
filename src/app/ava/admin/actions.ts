@@ -20,6 +20,7 @@ import {
   adminFinanceStudentCreateSchema,
   adminFinanceStudentDeleteSchema,
   adminFinanceStudentUpdateSchema,
+  adminResetUserPasswordSchema,
   adminSiteContentSchema,
   adminToggleUserStatusSchema,
   type AdminAgendaAttendanceInput,
@@ -35,6 +36,7 @@ import {
   type AdminFinanceStudentCreateInput,
   type AdminFinanceStudentDeleteInput,
   type AdminFinanceStudentUpdateInput,
+  type AdminResetUserPasswordInput,
   type AdminSiteContentInput,
   type AdminToggleUserStatusInput,
 } from "@/lib/validations/admin-users";
@@ -326,6 +328,61 @@ export async function toggleAvaUserStatus(
     message: parsed.data.isActive
       ? "Usuario reativado com sucesso."
       : "Usuario desativado com sucesso.",
+  };
+}
+
+export async function resetAvaUserPassword(
+  input: AdminResetUserPasswordInput,
+): Promise<AdminActionResult<AdminResetUserPasswordInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para redefinir senhas.",
+    };
+  }
+
+  const parsed = adminResetUserPasswordSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminResetUserPasswordInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a nova senha.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  if (!user) {
+    return {
+      ok: false,
+      message: "Usuario nao encontrado.",
+    };
+  }
+
+  const passwordHash = await hash(parsed.data.newPassword, 12);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: `Senha redefinida para ${user.name}.`,
   };
 }
 
