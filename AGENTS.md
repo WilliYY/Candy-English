@@ -148,6 +148,8 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 - `HomeworkSubmission.status=DRAFT` e usado para autosave do aluno; apenas `SUBMITTED` deve gerar evento novo para teacher/admin.
 - `RETURNED` libera o aluno para refazer; `REVIEWED` bloqueia reenvio.
 - O editor manual por arrastar e o fluxo padrao: a teacher desenha, move, redimensiona e exclui areas diretamente sobre o PDF/imagem.
+- Na tela do aluno, areas de resposta devem ser invisiveis; somente texto digitado, marca selecionada ou tracos desenhados aparecem.
+- Campos de desenho precisam funcionar com mouse e dedo e permitir desfazer o ultimo traco sem limpar tudo.
 - IA/OCR para sugerir campos e opcional/futuro e nao deve criar campos automaticamente sem pedido explicito.
 - Mudancas neste modulo devem atualizar `docs/15-homework-interativo.md`.
 

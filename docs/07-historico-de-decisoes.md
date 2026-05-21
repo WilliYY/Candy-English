@@ -184,6 +184,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/interactive-homework-document.tsx`, `src/components/ava/interactive-homework-editor.tsx`, `.env.example`, `AGENTS.md`, `README.md`, `docs/00-visao-geral.md`, `docs/01-arquitetura.md`, `docs/03-fluxos-do-sistema.md`, `docs/06-pendencias.md`, `docs/09-deploy-e-ambiente.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: homeworks antigas podem manter campos ja detectados por IA; a teacher pode usar `Limpar` e salvar novas areas manuais antes de liberar ao aluno.
 
+### 2026-05-21 - Resposta interativa com areas invisiveis
+
+- Decisao: na tela do aluno, campos de texto, checkbox e desenho ficam invisiveis como zonas clicaveis; aparecem apenas texto digitado, marca selecionada ou tracos do aluno.
+- Motivo: o PDF/imagem ja possui linhas, parenteses e espacos visuais; caixas HTML visiveis duplicavam o layout e deixavam a atividade poluida.
+- Impacto: `src/components/ava/interactive-homework-student.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`, `AGENTS.md`.
+- Riscos/cuidados: a teacher precisa posicionar areas pequenas e precisas no editor; em desenho, manter a acao de desfazer ultimo traco para evitar apagar tudo por engano.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

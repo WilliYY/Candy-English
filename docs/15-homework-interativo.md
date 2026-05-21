@@ -56,9 +56,10 @@ Tabelas e enums:
 - O acesso ao arquivo passa por rota protegida; student so abre arquivo da propria homework.
 - Campos usam coordenadas percentuais (`page`, `x`, `y`, `width`, `height`) relativas a pagina real do PDF/imagem para se adaptar ao tamanho da tela.
 - O PDF/imagem original deve permanecer visivel como fundo; areas editaveis sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
+- Na tela do aluno, as areas de escrita, checkbox e desenho nao devem mostrar borda, fundo, placeholder ou caixa HTML propria; apenas a resposta digitada, a marca selecionada ou os tracos desenhados devem aparecer.
 - A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
-- Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas.
+- Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas e deve permitir desfazer o ultimo traco sem apagar todo o desenho.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.

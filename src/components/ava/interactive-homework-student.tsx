@@ -3,7 +3,6 @@
 import {
   CheckCircle2,
   ClipboardCheck,
-  Eraser,
   LoaderCircle,
   RotateCcw,
   Save,
@@ -242,6 +241,7 @@ function DrawingField({
     }
 
     event.preventDefault();
+    event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
     isDrawing.current = true;
     const point = pointerToDrawingPoint(svgRef.current, event);
@@ -294,13 +294,9 @@ function DrawingField({
     setStrokes((current) => commit(current.slice(0, -1)));
   }
 
-  function clearDrawing() {
-    setStrokes(() => commit([]));
-  }
-
   return (
     <div
-      className="pointer-events-auto group absolute rounded-[3px] border border-transparent bg-transparent transition focus-within:border-primary/70 focus-within:bg-white/20 focus-within:ring-2 focus-within:ring-primary/15"
+      className="pointer-events-auto group absolute bg-transparent"
       style={style}
     >
       <svg
@@ -328,23 +324,16 @@ function DrawingField({
           />
         ))}
       </svg>
-      {!disabled ? (
-        <span className="absolute right-1 top-1 flex gap-1 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+      {!disabled && strokes.length > 0 ? (
+        <span className="absolute right-0 top-0 flex gap-1">
           <button
-            aria-label="Desfazer desenho"
+            aria-label="Desfazer ultimo desenho"
             className="flex size-6 items-center justify-center rounded bg-white/90 text-primary shadow-sm hover:bg-white"
             onClick={undoStroke}
+            onPointerDown={(event) => event.stopPropagation()}
             type="button"
           >
             <RotateCcw aria-hidden="true" className="size-3.5" />
-          </button>
-          <button
-            aria-label="Limpar desenho"
-            className="flex size-6 items-center justify-center rounded bg-white/90 text-primary shadow-sm hover:bg-white"
-            onClick={clearDrawing}
-            type="button"
-          >
-            <Eraser aria-hidden="true" className="size-3.5" />
           </button>
         </span>
       ) : null}
@@ -494,19 +483,19 @@ export function InteractiveHomeworkStudent({
           pageClassName="max-w-[980px]"
           renderField={(field, index, style) => {
               const commonClass =
-                "pointer-events-auto absolute rounded-[3px] border border-transparent bg-transparent px-1 text-sm font-semibold text-primary/95 shadow-none outline-none transition placeholder:text-transparent focus:border-primary/70 focus:bg-white/25 focus:ring-2 focus:ring-primary/15 focus:placeholder:text-primary/35 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
+                "pointer-events-auto absolute appearance-none border-0 bg-transparent px-1 text-sm font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
 
               if (field.type === "CHECKBOX") {
                 return (
                   <label
                     key={field.id}
-                    className="pointer-events-auto absolute flex items-center justify-center rounded-[3px] border border-transparent bg-transparent transition focus-within:border-primary/70 focus-within:bg-white/25 focus-within:ring-2 focus-within:ring-primary/15"
+                    className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-lg font-bold leading-none text-primary"
                     style={style}
                   >
                     <input
                       aria-label={field.label ?? `Campo ${index + 1}`}
                       checked={values[field.id] === "true"}
-                      className="size-5 accent-primary"
+                      className="sr-only"
                       disabled={isLocked}
                       onChange={(event) =>
                         updateValue(
@@ -516,6 +505,9 @@ export function InteractiveHomeworkStudent({
                       }
                       type="checkbox"
                     />
+                    {values[field.id] === "true" ? (
+                      <span aria-hidden="true">X</span>
+                    ) : null}
                   </label>
                 );
               }

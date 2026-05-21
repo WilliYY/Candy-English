@@ -79,9 +79,10 @@ Actions:
 5. A homework nasce sem campos automaticos: a teacher escolhe o tipo de area (`Texto curto`, `Texto longo`, `Marcar` ou `Desenho`) e desenha diretamente sobre o PDF/imagem.
 6. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar, mantendo o PDF/imagem original visivel como fundo.
 7. Teacher ou admin pode excluir uma homework interativa na lista de criacao; a exclusao remove campos, perguntas, respostas e a aula interna automatica quando ela ficou vazia.
-8. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina.
-9. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
-10. Teacher pode abrir uma previa da resposta sobre o arquivo, corrige com feedback (`REVIEWED`) ou libera `RETURNED` para o aluno refazer.
+8. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina e as areas de resposta ficam invisiveis ate receberem texto, marca ou desenho.
+9. Em areas `DRAWING`, o aluno pode desenhar com mouse ou dedo e desfazer o ultimo traco sem limpar todo o desenho.
+10. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
+11. Teacher pode abrir uma previa da resposta sobre o arquivo, corrige com feedback (`REVIEWED`) ou libera `RETURNED` para o aluno refazer.
 
 ### Financeiro
 
