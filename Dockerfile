@@ -23,6 +23,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY . .
+RUN npm run prisma:generate
 
 CMD ["npm", "run", "prisma:deploy"]
 

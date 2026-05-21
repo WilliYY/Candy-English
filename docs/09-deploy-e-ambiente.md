@@ -48,6 +48,7 @@ Servidor oficial:
 - `next.config.ts` define Server Actions com limite de 15 MB para upload de homework interativo.
 - O app corrige permissao de `/app/storage` no boot e roda Next como `nextjs`.
 - Homework interativo usa o mesmo volume `app-storage` para `storage/homework-assets`.
+- A imagem de ferramentas (`migrate`, `seed`, `audit-server-smoke`) gera o Prisma Client no build para que scripts de smoke e seed encontrem `src/generated/prisma/client`.
 
 ## Riscos ao alterar esta parte
 
