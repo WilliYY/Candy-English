@@ -18,6 +18,7 @@ import {
 import {
   createLessonSchema,
   reviewSubmissionSchema,
+  type CreateInteractiveHomeworkInput,
   type CreateLessonInput,
   type ReviewSubmissionInput,
 } from "@/lib/validations/learning";
@@ -37,6 +38,10 @@ type Option = {
   id: string;
   label: string;
 };
+
+type InteractiveHomeworkFormErrors = Partial<
+  Record<keyof CreateInteractiveHomeworkInput | "asset", string>
+>;
 
 const emptyLesson: CreateLessonInput = {
   description: "",
@@ -296,6 +301,7 @@ function InteractiveHomeworkUploadForm({
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
+  const [errors, setErrors] = useState<InteractiveHomeworkFormErrors>({});
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -303,16 +309,52 @@ function InteractiveHomeworkUploadForm({
     event.preventDefault();
     const currentForm = event.currentTarget;
     const formData = new FormData(currentForm);
+    const asset = formData.get("asset");
+    const nextErrors: InteractiveHomeworkFormErrors = {};
+    const title = String(formData.get("title") ?? "").trim();
+    const teacherProfileId = String(formData.get("teacherProfileId") ?? "");
+    const studentProfileId = String(formData.get("studentProfileId") ?? "");
 
+    if (!teacherProfileId) {
+      nextErrors.teacherProfileId = "Selecione uma teacher.";
+    }
+
+    if (!studentProfileId) {
+      nextErrors.studentProfileId = "Selecione um aluno.";
+    }
+
+    if (title.length < 3) {
+      nextErrors.title = "Informe um titulo com pelo menos 3 caracteres.";
+    }
+
+    if (!(asset instanceof File) || asset.size <= 0) {
+      nextErrors.asset = "Escolha um PDF ou imagem antes de criar.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      setMessage("Revise os campos destacados para criar a homework.");
+      return;
+    }
+
+    setErrors({});
     setMessage(null);
     startTransition(async () => {
-      const result = await createInteractiveHomework(formData);
+      try {
+        const result = await createInteractiveHomework(formData);
 
-      setMessage(result.message);
+        setMessage(result.message);
+        setErrors(result.errors ?? {});
 
-      if (result.ok) {
-        formRef.current?.reset();
-        router.refresh();
+        if (result.ok) {
+          formRef.current?.reset();
+          setErrors({});
+          router.refresh();
+        }
+      } catch {
+        setMessage(
+          "A pagina estava desatualizada depois de uma publicacao. Atualize a pagina e tente enviar novamente.",
+        );
       }
     });
   }
@@ -322,19 +364,20 @@ function InteractiveHomeworkUploadForm({
       ref={formRef}
       onSubmit={onSubmit}
       className="rounded-lg border-2 border-primary/20 bg-white p-4 shadow-sm"
+      noValidate
     >
       <div className="mb-4 flex items-center gap-2 font-semibold">
         <FileUp aria-hidden="true" />
         Homework do Canva
       </div>
       <div className="grid gap-3 lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
-        <Field>
+        <Field data-invalid={Boolean(errors.teacherProfileId)}>
           <FieldLabel htmlFor="interactive-homework-teacher">Teacher</FieldLabel>
           <NativeSelect
             id="interactive-homework-teacher"
             name="teacherProfileId"
+            aria-invalid={Boolean(errors.teacherProfileId)}
             disabled={isPending || teachers.length === 0}
-            required
           >
             {teachers.length === 0 ? (
               <option value="">Cadastre uma teacher</option>
@@ -345,14 +388,15 @@ function InteractiveHomeworkUploadForm({
               </option>
             ))}
           </NativeSelect>
+          <FieldError errors={[{ message: errors.teacherProfileId }]} />
         </Field>
-        <Field>
+        <Field data-invalid={Boolean(errors.studentProfileId)}>
           <FieldLabel htmlFor="interactive-homework-student">Aluno</FieldLabel>
           <NativeSelect
             id="interactive-homework-student"
             name="studentProfileId"
+            aria-invalid={Boolean(errors.studentProfileId)}
             disabled={isPending || students.length === 0}
-            required
           >
             {students.length === 0 ? (
               <option value="">Cadastre ou vincule um aluno</option>
@@ -363,40 +407,46 @@ function InteractiveHomeworkUploadForm({
               </option>
             ))}
           </NativeSelect>
+          <FieldError errors={[{ message: errors.studentProfileId }]} />
         </Field>
-        <Field>
+        <Field data-invalid={Boolean(errors.title)}>
           <FieldLabel htmlFor="interactive-homework-title">Titulo</FieldLabel>
           <Input
             id="interactive-homework-title"
             name="title"
+            aria-invalid={Boolean(errors.title)}
             disabled={isPending}
             placeholder="Ex: Canva unit 4"
-            required
           />
+          <FieldError errors={[{ message: errors.title }]} />
         </Field>
-        <Field>
+        <Field data-invalid={Boolean(errors.dueDate)}>
           <FieldLabel htmlFor="interactive-homework-due-date">Prazo</FieldLabel>
           <Input
             id="interactive-homework-due-date"
             name="dueDate"
             type="date"
+            aria-invalid={Boolean(errors.dueDate)}
             disabled={isPending}
           />
+          <FieldError errors={[{ message: errors.dueDate }]} />
         </Field>
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_0.8fr_auto] lg:items-end">
-        <Field>
+        <Field data-invalid={Boolean(errors.instructions)}>
           <FieldLabel htmlFor="interactive-homework-instructions">
             Instrucoes
           </FieldLabel>
           <Textarea
             id="interactive-homework-instructions"
             name="instructions"
+            aria-invalid={Boolean(errors.instructions)}
             disabled={isPending}
             placeholder="O que o aluno deve completar."
           />
+          <FieldError errors={[{ message: errors.instructions }]} />
         </Field>
-        <Field>
+        <Field data-invalid={Boolean(errors.asset)}>
           <FieldLabel htmlFor="interactive-homework-asset">
             Arquivo PDF ou imagem
           </FieldLabel>
@@ -405,9 +455,10 @@ function InteractiveHomeworkUploadForm({
             name="asset"
             type="file"
             accept="application/pdf,image/png,image/jpeg,image/webp"
+            aria-invalid={Boolean(errors.asset)}
             disabled={isPending}
-            required
           />
+          <FieldError errors={[{ message: errors.asset }]} />
         </Field>
         <Button
           type="submit"
