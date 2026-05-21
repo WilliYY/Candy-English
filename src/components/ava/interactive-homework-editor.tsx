@@ -1,23 +1,34 @@
 "use client";
 
 import {
+  AlignLeft,
+  CheckSquare,
   FileText,
   LoaderCircle,
-  Plus,
+  Pencil,
   Save,
   Trash2,
+  Type,
   Wand2,
+  type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type Dispatch,
+  type PointerEvent as ReactPointerEvent,
+  type SetStateAction,
+} from "react";
 import {
   deleteInteractiveHomework,
   saveInteractiveHomeworkFields,
 } from "@/app/ava/teacher/actions";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { cn } from "@/lib/utils";
 
 export type EditableHomeworkField = {
   height: number;
@@ -46,19 +57,124 @@ export type InteractiveHomeworkEditorRow = {
   title: string;
 };
 
-function fieldTemplate(): EditableHomeworkField {
+type FieldTool = EditableHomeworkField["type"];
+
+type FieldToolMeta = {
+  Icon: LucideIcon;
+  defaultHeight: number;
+  defaultWidth: number;
+  label: string;
+  minHeight: number;
+  minWidth: number;
+  placeholder: string | null;
+};
+
+type PagePoint = {
+  x: number;
+  y: number;
+};
+
+type PageRect = {
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+};
+
+type FieldGeometry = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+type EditorAction =
+  | {
+      current: PagePoint;
+      kind: "create";
+      page: number;
+      pageRect: PageRect;
+      start: PagePoint;
+    }
+  | {
+      fieldId: string;
+      kind: "move";
+      original: EditableHomeworkField;
+      pageRect: PageRect;
+      start: PagePoint;
+    }
+  | {
+      fieldId: string;
+      kind: "resize";
+      original: EditableHomeworkField;
+      pageRect: PageRect;
+      start: PagePoint;
+    };
+
+const FIELD_TOOL_OPTIONS: FieldTool[] = [
+  "SHORT_TEXT",
+  "LONG_TEXT",
+  "CHECKBOX",
+  "DRAWING",
+];
+
+const FIELD_TOOL_META: Record<FieldTool, FieldToolMeta> = {
+  CHECKBOX: {
+    Icon: CheckSquare,
+    defaultHeight: 5,
+    defaultWidth: 5,
+    label: "Marcar",
+    minHeight: 4,
+    minWidth: 4,
+    placeholder: null,
+  },
+  DRAWING: {
+    Icon: Pencil,
+    defaultHeight: 14,
+    defaultWidth: 34,
+    label: "Desenho",
+    minHeight: 6,
+    minWidth: 8,
+    placeholder: null,
+  },
+  LONG_TEXT: {
+    Icon: AlignLeft,
+    defaultHeight: 9,
+    defaultWidth: 36,
+    label: "Texto longo",
+    minHeight: 5,
+    minWidth: 10,
+    placeholder: "Resposta",
+  },
+  SHORT_TEXT: {
+    Icon: Type,
+    defaultHeight: 5,
+    defaultWidth: 24,
+    label: "Texto curto",
+    minHeight: 4,
+    minWidth: 8,
+    placeholder: "Resposta curta",
+  },
+};
+
+function clampNumber(value: number, min: number, max: number) {
+  if (!Number.isFinite(value)) {
+    return min;
+  }
+
+  return Math.min(max, Math.max(min, value));
+}
+
+function roundPercent(value: number) {
+  return Math.round(value * 10) / 10;
+}
+
+function cleanGeometry(geometry: FieldGeometry): FieldGeometry {
   return {
-    height: 10,
-    id: `new-${crypto.randomUUID()}`,
-    label: "Novo campo",
-    page: 1,
-    placeholder: "Escreva aqui",
-    required: false,
-    sortOrder: 0,
-    type: "LONG_TEXT",
-    width: 36,
-    x: 8,
-    y: 22,
+    height: roundPercent(geometry.height),
+    width: roundPercent(geometry.width),
+    x: roundPercent(geometry.x),
+    y: roundPercent(geometry.y),
   };
 }
 
@@ -70,14 +186,331 @@ function formatSize(sizeBytes?: number | null) {
   return `${Math.ceil(sizeBytes / 1024)} KB`;
 }
 
-function AssetPreview({
+function getPageRect(element: Element): PageRect | null {
+  const pageElement = element.closest("[data-homework-page]");
+
+  if (!(pageElement instanceof HTMLElement)) {
+    return null;
+  }
+
+  const rect = pageElement.getBoundingClientRect();
+
+  if (rect.width <= 0 || rect.height <= 0) {
+    return null;
+  }
+
+  return {
+    height: rect.height,
+    left: rect.left,
+    top: rect.top,
+    width: rect.width,
+  };
+}
+
+function pagePointFromEvent(
+  event: { clientX: number; clientY: number },
+  pageRect: PageRect,
+): PagePoint {
+  return {
+    x: clampNumber(((event.clientX - pageRect.left) / pageRect.width) * 100, 0, 100),
+    y: clampNumber(((event.clientY - pageRect.top) / pageRect.height) * 100, 0, 100),
+  };
+}
+
+function defaultGeometryFromPoint(type: FieldTool, point: PagePoint) {
+  const meta = FIELD_TOOL_META[type];
+  const width = meta.defaultWidth;
+  const height = meta.defaultHeight;
+
+  return cleanGeometry({
+    height,
+    width,
+    x: clampNumber(point.x, 0, 100 - width),
+    y: clampNumber(point.y, 0, 100 - height),
+  });
+}
+
+function geometryFromPoints(
+  type: FieldTool,
+  start: PagePoint,
+  current: PagePoint,
+) {
+  const meta = FIELD_TOOL_META[type];
+  const rawWidth = Math.abs(current.x - start.x);
+  const rawHeight = Math.abs(current.y - start.y);
+
+  if (rawWidth < 1.5 && rawHeight < 1.5) {
+    return defaultGeometryFromPoint(type, start);
+  }
+
+  const width = Math.min(100, Math.max(meta.minWidth, rawWidth));
+  const height = Math.min(100, Math.max(meta.minHeight, rawHeight));
+  const x = clampNumber(Math.min(start.x, current.x), 0, 100 - width);
+  const y = clampNumber(Math.min(start.y, current.y), 0, 100 - height);
+
+  return cleanGeometry({
+    height,
+    width,
+    x,
+    y,
+  });
+}
+
+function moveFieldGeometry(
+  field: EditableHomeworkField,
+  start: PagePoint,
+  current: PagePoint,
+) {
+  const width = clampNumber(field.width, 4, 100);
+  const height = clampNumber(field.height, 4, 100);
+  const deltaX = current.x - start.x;
+  const deltaY = current.y - start.y;
+
+  return cleanGeometry({
+    height,
+    width,
+    x: clampNumber(field.x + deltaX, 0, 100 - width),
+    y: clampNumber(field.y + deltaY, 0, 100 - height),
+  });
+}
+
+function resizeFieldGeometry(field: EditableHomeworkField, current: PagePoint) {
+  const meta = FIELD_TOOL_META[field.type];
+  const x = clampNumber(field.x, 0, 96);
+  const y = clampNumber(field.y, 0, 96);
+
+  return cleanGeometry({
+    height: clampNumber(current.y - y, meta.minHeight, 100 - y),
+    width: clampNumber(current.x - x, meta.minWidth, 100 - x),
+    x,
+    y,
+  });
+}
+
+function createEditableField({
+  geometry,
+  id,
+  page,
+  sortOrder,
+  type,
+}: {
+  geometry: FieldGeometry;
+  id: string;
+  page: number;
+  sortOrder: number;
+  type: FieldTool;
+}): EditableHomeworkField {
+  const meta = FIELD_TOOL_META[type];
+
+  return {
+    height: geometry.height,
+    id,
+    label: `${meta.label} ${sortOrder + 1}`,
+    page,
+    placeholder: meta.placeholder,
+    required: type !== "CHECKBOX",
+    sortOrder,
+    type,
+    width: geometry.width,
+    x: geometry.x,
+    y: geometry.y,
+  };
+}
+
+function InteractiveHomeworkCanvasEditor({
   fields,
   homework,
+  selectedFieldId,
+  selectedTool,
+  setFields,
+  setSelectedFieldId,
 }: {
   fields: EditableHomeworkField[];
   homework: InteractiveHomeworkEditorRow;
+  selectedFieldId: string | null;
+  selectedTool: FieldTool;
+  setFields: Dispatch<SetStateAction<EditableHomeworkField[]>>;
+  setSelectedFieldId: Dispatch<SetStateAction<string | null>>;
 }) {
   const assetUrl = `/ava/homework-assets/${homework.id}`;
+  const [activeAction, setActiveAction] = useState<EditorAction | null>(null);
+
+  const draftGeometry = useMemo(() => {
+    if (!activeAction || activeAction.kind !== "create") {
+      return null;
+    }
+
+    return geometryFromPoints(
+      selectedTool,
+      activeAction.start,
+      activeAction.current,
+    );
+  }, [activeAction, selectedTool]);
+
+  function beginCreate(
+    event: ReactPointerEvent<HTMLDivElement>,
+    pageNumber: number,
+  ) {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const pageRect = getPageRect(event.currentTarget);
+
+    if (!pageRect) {
+      return;
+    }
+
+    event.preventDefault();
+    const start = pagePointFromEvent(event.nativeEvent, pageRect);
+
+    setSelectedFieldId(null);
+    setActiveAction({
+      current: start,
+      kind: "create",
+      page: pageNumber,
+      pageRect,
+      start,
+    });
+  }
+
+  function beginMove(
+    event: ReactPointerEvent<HTMLDivElement>,
+    field: EditableHomeworkField,
+  ) {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const pageRect = getPageRect(event.currentTarget);
+
+    if (!pageRect) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    setSelectedFieldId(field.id);
+    setActiveAction({
+      fieldId: field.id,
+      kind: "move",
+      original: field,
+      pageRect,
+      start: pagePointFromEvent(event.nativeEvent, pageRect),
+    });
+  }
+
+  function beginResize(
+    event: ReactPointerEvent<HTMLButtonElement>,
+    field: EditableHomeworkField,
+  ) {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const pageRect = getPageRect(event.currentTarget);
+
+    if (!pageRect) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    setSelectedFieldId(field.id);
+    setActiveAction({
+      fieldId: field.id,
+      kind: "resize",
+      original: field,
+      pageRect,
+      start: pagePointFromEvent(event.nativeEvent, pageRect),
+    });
+  }
+
+  useEffect(() => {
+    if (!activeAction) {
+      return undefined;
+    }
+
+    const action = activeAction;
+
+    function handlePointerMove(event: PointerEvent) {
+      event.preventDefault();
+      const current = pagePointFromEvent(event, action.pageRect);
+
+      if (action.kind === "create") {
+        setActiveAction({
+          ...action,
+          current,
+        });
+        return;
+      }
+
+      if (action.kind === "move") {
+        const geometry = moveFieldGeometry(
+          action.original,
+          action.start,
+          current,
+        );
+
+        setFields((currentFields) =>
+          currentFields.map((field) =>
+            field.id === action.fieldId
+              ? { ...field, ...geometry }
+              : field,
+          ),
+        );
+        return;
+      }
+
+      const geometry = resizeFieldGeometry(action.original, current);
+
+      setFields((currentFields) =>
+        currentFields.map((field) =>
+          field.id === action.fieldId ? { ...field, ...geometry } : field,
+        ),
+      );
+    }
+
+    function finishPointerAction(event: PointerEvent) {
+      event.preventDefault();
+
+      if (action.kind === "create") {
+        const current = pagePointFromEvent(event, action.pageRect);
+        const geometry = geometryFromPoints(
+          selectedTool,
+          action.start,
+          current,
+        );
+        const fieldId = `new-${crypto.randomUUID()}`;
+
+        setFields((currentFields) => [
+          ...currentFields,
+          createEditableField({
+            geometry,
+            id: fieldId,
+            page: action.page,
+            sortOrder: currentFields.length,
+            type: selectedTool,
+          }),
+        ]);
+        setSelectedFieldId(fieldId);
+      }
+
+      setActiveAction(null);
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", finishPointerAction);
+    window.addEventListener("pointercancel", finishPointerAction);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", finishPointerAction);
+      window.removeEventListener("pointercancel", finishPointerAction);
+    };
+  }, [activeAction, selectedTool, setFields, setSelectedFieldId]);
 
   return (
     <InteractiveHomeworkDocument
@@ -85,48 +518,59 @@ function AssetPreview({
       assetUrl={assetUrl}
       expectedPageCount={homework.assetPageCount}
       fields={fields}
-      pageClassName="max-w-[680px]"
-      renderField={(field, index, style) => (
+      pageClassName="max-w-[860px]"
+      renderPageOverlay={(pageNumber) => (
         <div
-          key={field.id}
-          className="pointer-events-none absolute rounded-[3px] border border-dashed border-primary/65 bg-primary/[0.035] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]"
-          style={style}
-          title={field.label || `Campo ${index + 1}`}
-        />
+          className="absolute inset-0 z-0 cursor-crosshair touch-none"
+          onPointerDown={(event) => beginCreate(event, pageNumber)}
+        >
+          {activeAction?.kind === "create" &&
+          activeAction.page === pageNumber &&
+          draftGeometry ? (
+            <div
+              className="absolute rounded-[3px] border-2 border-primary bg-primary/10 shadow-[0_0_0_1px_rgba(65,42,76,0.16)]"
+              style={{
+                height: `${draftGeometry.height}%`,
+                left: `${draftGeometry.x}%`,
+                top: `${draftGeometry.y}%`,
+                width: `${draftGeometry.width}%`,
+              }}
+            />
+          ) : null}
+        </div>
       )}
+      renderField={(field, index, style) => {
+        const meta = FIELD_TOOL_META[field.type];
+        const Icon = meta.Icon;
+        const selected = selectedFieldId === field.id;
+
+        return (
+          <div
+            key={field.id}
+            className={cn(
+              "absolute z-10 cursor-move touch-none rounded-[3px] border-2 bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
+              selected
+                ? "border-primary ring-2 ring-primary/25"
+                : "border-dashed border-primary/55 hover:border-primary",
+            )}
+            onPointerDown={(event) => beginMove(event, field)}
+            style={style}
+            title={field.label || `Area ${index + 1}`}
+          >
+            <span className="absolute left-1 top-1 flex size-5 items-center justify-center rounded bg-white/90 text-primary shadow-sm">
+              <Icon aria-hidden="true" className="size-3" />
+            </span>
+            <button
+              aria-label="Redimensionar area"
+              className="absolute -bottom-2 -right-2 size-5 cursor-nwse-resize rounded-full border border-primary/30 bg-white text-primary shadow-sm"
+              onPointerDown={(event) => beginResize(event, field)}
+              type="button"
+            />
+          </div>
+        );
+      }}
       title={homework.title}
     />
-  );
-}
-
-function NumberInput({
-  label,
-  max = 100,
-  min = 0,
-  onChange,
-  step = 1,
-  value,
-}: {
-  label: string;
-  max?: number;
-  min?: number;
-  onChange: (value: number) => void;
-  step?: number;
-  value: number;
-}) {
-  return (
-    <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-muted-foreground">
-      {label}
-      <Input
-        className="h-9"
-        max={max}
-        min={min}
-        onChange={(event) => onChange(Number(event.target.value))}
-        step={step}
-        type="number"
-        value={value}
-      />
-    </label>
   );
 }
 
@@ -139,38 +583,38 @@ function InteractiveHomeworkEditorItem({
   const [message, setMessage] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
-  const [fields, setFields] = useState<EditableHomeworkField[]>(
-    homework.fields.length > 0 ? homework.fields : [fieldTemplate()],
+  const [fields, setFields] = useState<EditableHomeworkField[]>(homework.fields);
+  const [selectedTool, setSelectedTool] = useState<FieldTool>("SHORT_TEXT");
+  const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
+    homework.fields[0]?.id ?? null,
   );
 
-  function updateField(
-    fieldId: string,
-    patch: Partial<EditableHomeworkField>,
-  ) {
+  function removeSelectedField() {
+    if (!selectedFieldId) {
+      return;
+    }
+
     setFields((current) =>
-      current.map((field) =>
-        field.id === fieldId ? { ...field, ...patch } : field,
-      ),
+      current.filter((field) => field.id !== selectedFieldId),
     );
+    setSelectedFieldId(null);
+    setMessage("Area removida. Salve para aplicar a mudanca.");
   }
 
-  function removeField(fieldId: string) {
-    setFields((current) =>
-      current.length <= 1
-        ? current
-        : current.filter((field) => field.id !== fieldId),
-    );
-  }
-
-  function addField() {
-    setFields((current) => [
-      ...current,
-      { ...fieldTemplate(), sortOrder: current.length, y: 18 + current.length * 8 },
-    ]);
+  function clearFields() {
+    setFields([]);
+    setSelectedFieldId(null);
+    setMessage("Areas removidas. Desenhe novas areas no PDF e salve.");
   }
 
   function saveFields() {
     setMessage(null);
+
+    if (fields.length === 0) {
+      setMessage("Desenhe pelo menos uma area antes de salvar.");
+      return;
+    }
+
     startSaveTransition(async () => {
       const result = await saveInteractiveHomeworkFields({
         fields: fields.map((field, index) => ({
@@ -235,21 +679,18 @@ function InteractiveHomeworkEditorItem({
         </span>
         <span className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
           <span className="rounded-full border border-primary/20 px-2 py-1">
-            {fields.length} campo(s)
-          </span>
-          <span className="rounded-full border border-primary/20 px-2 py-1">
-            {homework.fieldDetectionSource === "openai" ? "IA" : "Manual"}
+            {fields.length} area(s)
           </span>
           <Button
-            type="button"
-            size="sm"
-            variant="destructive"
             disabled={isDeleting || isSaving}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
               deleteHomework();
             }}
+            size="sm"
+            type="button"
+            variant="destructive"
           >
             {isDeleting ? (
               <LoaderCircle data-icon="inline-start" className="animate-spin" />
@@ -261,138 +702,81 @@ function InteractiveHomeworkEditorItem({
         </span>
       </summary>
 
-      <div className="grid gap-4 border-t border-primary/15 p-4 xl:grid-cols-[minmax(360px,0.95fr)_1.05fr]">
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="inline-flex items-center gap-2 font-semibold">
-              <Wand2 aria-hidden="true" />
-              {homework.assetFileName ?? "Arquivo da homework"}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {formatSize(homework.assetSizeBytes)}
-            </span>
-          </div>
-          <AssetPreview fields={fields} homework={homework} />
-        </div>
+      <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
+        <div className="flex flex-col gap-3 rounded-lg border border-primary/15 bg-muted/10 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 text-sm">
+              <Wand2 aria-hidden="true" className="size-4 shrink-0 text-primary" />
+              <span className="min-w-0 truncate font-semibold">
+                {homework.assetFileName ?? "Arquivo da homework"}
+              </span>
+              <span className="shrink-0 text-xs text-muted-foreground">
+                {formatSize(homework.assetSizeBytes)}
+              </span>
+            </div>
 
-        <div className="flex min-w-0 flex-col gap-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <strong className="text-sm">Campos de resposta</strong>
-            <Button type="button" size="sm" variant="outline" onClick={addField}>
-              <Plus data-icon="inline-start" />
-              Campo
-            </Button>
-          </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {FIELD_TOOL_OPTIONS.map((tool) => {
+                const meta = FIELD_TOOL_META[tool];
+                const Icon = meta.Icon;
 
-          <div className="grid max-h-[520px] gap-3 overflow-auto pr-1">
-            {fields.map((field, index) => (
-              <div
-                key={field.id}
-                className="rounded-lg border border-primary/20 bg-muted/20 p-3"
-              >
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <strong className="text-sm">Campo {index + 1}</strong>
+                return (
                   <Button
+                    aria-pressed={selectedTool === tool}
+                    key={tool}
+                    onClick={() => setSelectedTool(tool)}
+                    size="sm"
+                    title={meta.label}
                     type="button"
-                    size="icon"
-                    variant="outline"
-                    aria-label="Remover campo"
-                    onClick={() => removeField(field.id)}
+                    variant={selectedTool === tool ? "default" : "outline"}
                   >
-                    <Trash2 aria-hidden="true" />
+                    <Icon data-icon="inline-start" />
+                    {meta.label}
                   </Button>
-                </div>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-muted-foreground">
-                    Rotulo
-                    <Input
-                      className="h-9"
-                      onChange={(event) =>
-                        updateField(field.id, { label: event.target.value })
-                      }
-                      value={field.label ?? ""}
-                    />
-                  </label>
-                  <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-muted-foreground">
-                    Placeholder
-                    <Input
-                      className="h-9"
-                      onChange={(event) =>
-                        updateField(field.id, {
-                          placeholder: event.target.value,
-                        })
-                      }
-                      value={field.placeholder ?? ""}
-                    />
-                  </label>
-                  <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-muted-foreground">
-                    Tipo
-                    <NativeSelect
-                      className="h-9"
-                      onChange={(event) =>
-                        updateField(field.id, {
-                          type: event.target.value as EditableHomeworkField["type"],
-                        })
-                      }
-                      value={field.type}
-                    >
-                      <option value="LONG_TEXT">Texto longo</option>
-                      <option value="SHORT_TEXT">Texto curto</option>
-                      <option value="CHECKBOX">Marcar</option>
-                      <option value="DRAWING">Desenho</option>
-                    </NativeSelect>
-                  </label>
-                  <label className="flex h-full min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2 text-xs font-semibold text-muted-foreground">
-                    <input
-                      checked={field.required}
-                      className="size-4 accent-primary"
-                      onChange={(event) =>
-                        updateField(field.id, {
-                          required: event.target.checked,
-                        })
-                      }
-                      type="checkbox"
-                    />
-                    Obrigatorio
-                  </label>
-                  <NumberInput
-                    label="Pagina"
-                    min={1}
-                    max={20}
-                    value={field.page}
-                    onChange={(value) =>
-                      updateField(field.id, {
-                        page: Math.max(1, Math.floor(value || 1)),
-                      })
-                    }
+                );
+              })}
+
+              <Button
+                disabled={!selectedFieldId || isSaving || isDeleting}
+                onClick={removeSelectedField}
+                size="sm"
+                title="Excluir area selecionada"
+                type="button"
+                variant="outline"
+              >
+                <Trash2 data-icon="inline-start" />
+                Excluir area
+              </Button>
+
+              <Button
+                disabled={fields.length === 0 || isSaving || isDeleting}
+                onClick={clearFields}
+                size="sm"
+                title="Remover todas as areas"
+                type="button"
+                variant="outline"
+              >
+                <Trash2 data-icon="inline-start" />
+                Limpar
+              </Button>
+
+              <Button
+                disabled={isSaving || isDeleting}
+                onClick={saveFields}
+                size="sm"
+                type="button"
+              >
+                {isSaving ? (
+                  <LoaderCircle
+                    data-icon="inline-start"
+                    className="animate-spin"
                   />
-                  <NumberInput
-                    label="X %"
-                    value={field.x}
-                    onChange={(value) => updateField(field.id, { x: value })}
-                  />
-                  <NumberInput
-                    label="Y %"
-                    value={field.y}
-                    onChange={(value) => updateField(field.id, { y: value })}
-                  />
-                  <NumberInput
-                    label="Largura %"
-                    value={field.width}
-                    onChange={(value) =>
-                      updateField(field.id, { width: value })
-                    }
-                  />
-                  <NumberInput
-                    label="Altura %"
-                    value={field.height}
-                    onChange={(value) =>
-                      updateField(field.id, { height: value })
-                    }
-                  />
-                </div>
-              </div>
-            ))}
+                ) : (
+                  <Save data-icon="inline-start" />
+                )}
+                Salvar areas
+              </Button>
+            </div>
           </div>
 
           {message ? (
@@ -400,16 +784,16 @@ function InteractiveHomeworkEditorItem({
               {message}
             </p>
           ) : null}
-
-          <Button type="button" onClick={saveFields} disabled={isSaving || isDeleting}>
-            {isSaving ? (
-              <LoaderCircle data-icon="inline-start" className="animate-spin" />
-            ) : (
-              <Save data-icon="inline-start" />
-            )}
-            Salvar campos
-          </Button>
         </div>
+
+        <InteractiveHomeworkCanvasEditor
+          fields={fields}
+          homework={homework}
+          selectedFieldId={selectedFieldId}
+          selectedTool={selectedTool}
+          setFields={setFields}
+          setSelectedFieldId={setSelectedFieldId}
+        />
       </div>
     </details>
   );

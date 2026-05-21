@@ -22,7 +22,6 @@ As pendencias podem afetar:
 - Edicao completa de usuarios existentes.
 - Edicao/delecao completa de aulas e materiais; homework interativa ja pode ser excluida na tela de criacao.
 - Multiplas perguntas por homework na interface.
-- Reposicionamento por arrastar nos campos do homework interativo.
 - Exportacao de homework interativo preenchido como PDF final.
 - Upload livre de materiais de aula.
 - Editor ou visualizador Word embutido.
@@ -42,7 +41,7 @@ As pendencias podem afetar:
 - Testes automatizados amplos por modulo.
 - Auditoria administrativa geral fora do financeiro.
 - Auditoria da agenda ainda e log simples, nao relatorio completo.
-- OCR/IA do homework interativo depende de `OPENAI_API_KEY`; sem chave, apenas fallback manual.
+- OCR/IA do homework interativo esta fora do fluxo padrao manual; reativar sugestao automatica exige decisao explicita e revisao de custo/privacidade.
 - Observabilidade externa e alertas de producao.
 
 ## Pendencias de documentacao

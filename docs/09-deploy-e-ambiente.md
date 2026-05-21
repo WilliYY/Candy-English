@@ -36,7 +36,7 @@ Servidor oficial:
 - Uploads persistem no volume `app-storage`.
 - `private/secrets` e `private/backups` ficam fora do Git quando existirem.
 - Deploy com migration deve aplicar migration antes de recriar o app.
-- `OPENAI_API_KEY` e opcional e so deve ser configurada no ambiente real se o OCR do homework interativo for usado.
+- `OPENAI_API_KEY` e opcional/reservada; o fluxo padrao de homework interativo e manual e nao depende de OCR.
 
 ## Decisoes tecnicas tomadas
 
@@ -55,7 +55,7 @@ Servidor oficial:
 - Apagar volumes remove banco ou uploads.
 - Rodar `seed` com `ADMIN_RESET_PASSWORD=true` sem intencao pode trocar senha.
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
-- Configurar OpenAI sem revisar custo/uso pode gerar despesa por upload de homework.
+- Reativar OCR/OpenAI sem revisar custo, privacidade e volume pode gerar despesa por upload de homework.
 - Alterar headers pode afetar Jitsi ou seguranca basica.
 
 ## Pendencias

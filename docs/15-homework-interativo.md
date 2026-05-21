@@ -2,7 +2,7 @@
 
 ## O que esta parte do sistema faz
 
-O homework interativo permite que a teacher envie um PDF ou imagem exportado do Canva, ajuste campos de resposta sobre o arquivo e deixe o aluno responder online dentro do AVA. O aluno escreve por cima do arquivo, o rascunho e salvo automaticamente e a entrega vira evento novo para teacher/admin corrigirem.
+O homework interativo permite que a teacher envie um PDF ou imagem exportado do Canva, desenhe areas editaveis diretamente sobre o arquivo e deixe o aluno responder online dentro do AVA. O aluno escreve, marca ou desenha por cima do arquivo original, o rascunho e salvo automaticamente e a entrega vira evento novo para teacher/admin corrigirem.
 
 O fluxo interativo e o modo de criacao usado na interface atual. O homework simples de pergunta/resposta fica apenas como legado para atividades antigas ja existentes.
 
@@ -55,8 +55,9 @@ Tabelas e enums:
 - O tamanho maximo aceito pela UI/storage e 14 MB; `next.config.ts` usa 15 MB para a Server Action receber o arquivo com folga.
 - O acesso ao arquivo passa por rota protegida; student so abre arquivo da propria homework.
 - Campos usam coordenadas percentuais (`page`, `x`, `y`, `width`, `height`) relativas a pagina real do PDF/imagem para se adaptar ao tamanho da tela.
-- O PDF/imagem original deve permanecer visivel como fundo; campos de resposta sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
-- A IA deve sugerir campos apenas sobre lacunas, linhas de resposta, caixas vazias ou checkboxes, evitando enunciados, instrucoes, titulos e texto impresso.
+- O PDF/imagem original deve permanecer visivel como fundo; areas editaveis sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
+- A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
+- O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
 - Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
@@ -64,7 +65,7 @@ Tabelas e enums:
 - `SUBMITTED` e entrega oficial e gera evento para teacher/admin.
 - `RETURNED` libera o aluno para refazer.
 - `REVIEWED` bloqueia nova entrega e preserva feedback.
-- OCR/IA e opcional; controle manual sempre deve existir.
+- OCR/IA e opcional/futuro; o fluxo padrao atual e manual e nao deve enviar o arquivo para servicos externos sem decisao explicita.
 
 ## Decisoes tecnicas tomadas
 
@@ -75,8 +76,9 @@ Tabelas e enums:
 - A exclusao de homework interativa usa server action com validacao de role/dono e tenta remover o arquivo fisico de `storage/homework-assets` apos apagar os registros.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
 - A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
-- A deteccao usa OpenAI Responses API quando `OPENAI_API_KEY` existe e retorna JSON estruturado com posicoes de campos transparentes por pagina.
-- Sem chave OpenAI ou em caso de erro, o sistema cria campos iniciais de fallback e permite ajuste manual.
+- A criacao interativa grava `fieldDetectionSource` como `manual` e nao cria `HomeworkInteractiveField` automaticamente.
+- O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
+- O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.
 
 ## Riscos ao alterar esta parte
@@ -84,20 +86,18 @@ Tabelas e enums:
 - Expor arquivo direto por URL publica quebra a privacidade do AVA.
 - Excluir uma homework remove tambem respostas ja enviadas; a UI deve manter confirmacao antes da server action.
 - Contabilizar `DRAFT` como entrega pode poluir alertas e fila de correcao.
-- Remover fallback manual deixa o fluxo dependente de IA e pode travar ambientes sem chave.
+- Reintroduzir criacao automatica por IA pode recriar caixas indevidas sobre o PDF e precisa de controle explicito da teacher.
 - Mudar coordenadas para pixels fixos prejudica responsividade.
-- A OpenAI pode ter custo por uso; validar modelo, limites e volume antes de uso intenso.
+- A OpenAI pode ter custo por uso; validar modelo, limites, privacidade e volume antes de reativar OCR em uploads reais.
 
 ## Pendencias
 
-- Reposicionamento por arrastar ainda nao existe; o ajuste manual atual usa campos numericos.
 - Nao ha importacao em lote de homeworks do Canva.
 - Nao ha exportacao da resposta preenchida como PDF final.
 - Nao ha auditoria especifica de cada autosave.
 
 ## Como pode evoluir no futuro
 
-- Adicionar drag-and-drop para mover campos.
 - Exportar resposta do aluno preenchida em PDF.
 - Permitir anexos extras por homework.
 - Adicionar historico visual de entregas e refacoes.

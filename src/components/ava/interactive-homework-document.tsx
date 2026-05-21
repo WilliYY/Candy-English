@@ -40,6 +40,7 @@ type InteractiveHomeworkDocumentProps<
   expectedPageCount?: number | null;
   fields: TField[];
   pageClassName?: string;
+  renderPageOverlay?: (pageNumber: number) => ReactNode;
   renderField: (
     field: TField,
     index: number,
@@ -92,9 +93,13 @@ function groupFieldsByPage<TField extends InteractiveHomeworkDocumentField>(
 
 function PageOverlay<TField extends InteractiveHomeworkDocumentField>({
   fields,
+  pageNumber,
+  renderPageOverlay,
   renderField,
 }: {
   fields: IndexedField<TField>[];
+  pageNumber: number;
+  renderPageOverlay?: (pageNumber: number) => ReactNode;
   renderField: (
     field: TField,
     index: number,
@@ -103,6 +108,7 @@ function PageOverlay<TField extends InteractiveHomeworkDocumentField>({
 }) {
   return (
     <div className="absolute inset-0 z-10">
+      {renderPageOverlay?.(pageNumber)}
       {fields.map(({ field, index }) =>
         renderField(field, index, fieldStyle(field)),
       )}
@@ -115,6 +121,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
   className,
   fieldsByPage,
   pageClassName,
+  renderPageOverlay,
   renderField,
   title,
 }: {
@@ -122,6 +129,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
   className?: string;
   fieldsByPage: Map<number, IndexedField<TField>[]>;
   pageClassName?: string;
+  renderPageOverlay?: (pageNumber: number) => ReactNode;
   renderField: (
     field: TField,
     index: number,
@@ -134,6 +142,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
   return (
     <div className={cn("flex w-full justify-center", className)}>
       <div
+        data-homework-page="1"
         className={cn(
           "relative isolate w-full max-w-[920px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner",
           pageClassName,
@@ -160,6 +169,8 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
         />
         <PageOverlay
           fields={fieldsByPage.get(1) ?? []}
+          pageNumber={1}
+          renderPageOverlay={renderPageOverlay}
           renderField={renderField}
         />
       </div>
@@ -172,12 +183,14 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
   pageClassName,
   pageNumber,
   pdf,
+  renderPageOverlay,
   renderField,
 }: {
   fields: IndexedField<TField>[];
   pageClassName?: string;
   pageNumber: number;
   pdf: PDFDocumentProxy;
+  renderPageOverlay?: (pageNumber: number) => ReactNode;
   renderField: (
     field: TField,
     index: number,
@@ -272,6 +285,7 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
   return (
     <div
       ref={pageRef}
+      data-homework-page={pageNumber}
       className={cn(
         "relative isolate mx-auto w-full max-w-[920px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner",
         pageClassName,
@@ -295,7 +309,12 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
           Nao foi possivel renderizar esta pagina.
         </div>
       ) : null}
-      <PageOverlay fields={fields} renderField={renderField} />
+      <PageOverlay
+        fields={fields}
+        pageNumber={pageNumber}
+        renderPageOverlay={renderPageOverlay}
+        renderField={renderField}
+      />
     </div>
   );
 }
@@ -306,6 +325,7 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
   expectedPageCount,
   fieldsByPage,
   pageClassName,
+  renderPageOverlay,
   renderField,
 }: {
   assetUrl: string;
@@ -313,6 +333,7 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
   expectedPageCount?: number | null;
   fieldsByPage: Map<number, IndexedField<TField>[]>;
   pageClassName?: string;
+  renderPageOverlay?: (pageNumber: number) => ReactNode;
   renderField: (
     field: TField,
     index: number,
@@ -399,6 +420,7 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
           pageClassName={pageClassName}
           pageNumber={pageNumber}
           pdf={pdf}
+          renderPageOverlay={renderPageOverlay}
           renderField={renderField}
         />
       ))}
@@ -415,6 +437,7 @@ export function InteractiveHomeworkDocument<
   expectedPageCount,
   fields,
   pageClassName,
+  renderPageOverlay,
   renderField,
   title,
 }: InteractiveHomeworkDocumentProps<TField>) {
@@ -427,6 +450,7 @@ export function InteractiveHomeworkDocument<
         className={className}
         fieldsByPage={fieldsByPage}
         pageClassName={pageClassName}
+        renderPageOverlay={renderPageOverlay}
         renderField={renderField}
         title={title}
       />
@@ -440,6 +464,7 @@ export function InteractiveHomeworkDocument<
       expectedPageCount={expectedPageCount}
       fieldsByPage={fieldsByPage}
       pageClassName={pageClassName}
+      renderPageOverlay={renderPageOverlay}
       renderField={renderField}
     />
   );

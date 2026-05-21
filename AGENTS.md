@@ -147,7 +147,8 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 - `HomeworkInteractiveField` guarda os campos editaveis sobre o arquivo.
 - `HomeworkSubmission.status=DRAFT` e usado para autosave do aluno; apenas `SUBMITTED` deve gerar evento novo para teacher/admin.
 - `RETURNED` libera o aluno para refazer; `REVIEWED` bloqueia reenvio.
-- A deteccao por IA e opcional com `OPENAI_API_KEY`; sem chave, manter fallback manual.
+- O editor manual por arrastar e o fluxo padrao: a teacher desenha, move, redimensiona e exclui areas diretamente sobre o PDF/imagem.
+- IA/OCR para sugerir campos e opcional/futuro e nao deve criar campos automaticamente sem pedido explicito.
 - Mudancas neste modulo devem atualizar `docs/15-homework-interativo.md`.
 
 ## Banco e migrations

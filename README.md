@@ -24,7 +24,7 @@ Ja existe:
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
-- homework interativo com arquivo PDF/imagem protegido, campos editaveis sobre o arquivo, autosave, selecao direta de aluno e deteccao opcional por OpenAI;
+- homework interativo com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
 Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora do homework, editor Word embutido, reset de senha pela interface, relatorios avancados e dashboard complexo.
@@ -61,7 +61,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/09-deploy-e-ambiente.md`: ambientes, Docker e Oracle.
 - `docs/13-financeiro.md`: modulo financeiro admin.
 - `docs/14-agenda.md`: modulo agenda admin.
-- `docs/15-homework-interativo.md`: homework com upload do Canva, campos editaveis, autosave e IA/OCR opcional.
+- `docs/15-homework-interativo.md`: homework com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.
 
@@ -107,8 +107,8 @@ Variaveis principais:
 - `AUTH_URL` e `NEXTAUTH_URL`: URL publica do app.
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
 - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
-- `OPENAI_API_KEY`: ativa deteccao por IA/OCR no upload de homework interativo.
-- `OPENAI_HOMEWORK_OCR_MODEL`: modelo usado na deteccao opcional, exemplo `gpt-4.1-mini`.
+- `OPENAI_API_KEY`: reservada para OCR opcional/futuro; o fluxo padrao de homework interativo e manual e nao envia o arquivo para IA.
+- `OPENAI_HOMEWORK_OCR_MODEL`: modelo para OCR opcional caso essa sugestao seja reativada, exemplo `gpt-4.1-mini`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: admin inicial do seed.
 - `ADMIN_RESET_PASSWORD`: redefine senha do admin apenas quando `true`.
 - `AUDIT_BASE_URL`: base URL usada pelos smoke tests.

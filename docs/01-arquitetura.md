@@ -19,7 +19,7 @@ Camadas principais:
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
-- `src/lib/homework-ocr.ts`: deteccao opcional de campos de homework por OpenAI com fallback manual.
+- `src/lib/homework-ocr.ts`: helper reservado para OCR opcional de campos de homework; o fluxo padrao atual e manual.
 - `src/lib/validations/`: schemas Zod.
 - `prisma/schema.prisma`: modelo relacional.
 - `Dockerfile` e `docker-compose.yml`: runtime, banco e ferramentas.

@@ -177,6 +177,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/lib/validations/learning.ts`, `docs/03-fluxos-do-sistema.md`, `docs/06-pendencias.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: excluir homework remove campos, perguntas e respostas por cascade; revisar antes de confirmar quando ja houver entrega de aluno.
 
+### 2026-05-21 - Editor manual de areas no PDF
+
+- Decisao: criar homeworks interativas sem campos automaticos e fazer a teacher desenhar, mover, redimensionar, excluir ou limpar areas diretamente sobre o PDF/imagem.
+- Motivo: a deteccao automatica gerava caixas em lugares errados; o fluxo manual preserva o arquivo original e da controle visual imediato para a teacher.
+- Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/interactive-homework-document.tsx`, `src/components/ava/interactive-homework-editor.tsx`, `.env.example`, `AGENTS.md`, `README.md`, `docs/00-visao-geral.md`, `docs/01-arquitetura.md`, `docs/03-fluxos-do-sistema.md`, `docs/06-pendencias.md`, `docs/09-deploy-e-ambiente.md`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: homeworks antigas podem manter campos ja detectados por IA; a teacher pode usar `Limpar` e salvar novas areas manuais antes de liberar ao aluno.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -50,7 +50,7 @@ Rotas principais:
 - Prisma 7 usa client gerado em `src/generated/prisma`.
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.
-- Homework interativo usa OpenAI apenas quando `OPENAI_API_KEY` estiver configurada; sem chave, o sistema cria campos iniciais para ajuste manual.
+- Homework interativo usa editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
 
 ## Mapa da documentacao oficial
 
@@ -65,7 +65,7 @@ Rotas principais:
 - `09-deploy-e-ambiente.md`: ambientes e operacao.
 - `13-financeiro.md`: modulo financeiro.
 - `14-agenda.md`: modulo agenda.
-- `15-homework-interativo.md`: upload do Canva, campos sobre o arquivo, autosave e IA/OCR opcional.
+- `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave.
 
 ## Riscos ao alterar esta parte
 

@@ -76,8 +76,8 @@ Actions:
 2. Seleciona teacher e aluno, informa titulo/instrucoes e envia PDF/imagem exportado do Canva.
 3. O sistema cria uma aula interna automaticamente para vincular a homework ao aluno e a teacher.
 4. O arquivo e salvo em `storage/homework-assets` e servido por `/ava/homework-assets/[homeworkId]`.
-5. Se `OPENAI_API_KEY` estiver configurada, o servidor chama a OpenAI para sugerir campos transparentes por pagina apenas sobre lacunas, linhas de resposta, areas de desenho, caixas vazias ou checkboxes; sem chave, cria campos iniciais de fallback.
-6. Teacher pode ajustar manualmente pagina, tipo, tamanho e posicao antes de o aluno responder, mantendo o PDF/imagem original visivel como fundo.
+5. A homework nasce sem campos automaticos: a teacher escolhe o tipo de area (`Texto curto`, `Texto longo`, `Marcar` ou `Desenho`) e desenha diretamente sobre o PDF/imagem.
+6. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar, mantendo o PDF/imagem original visivel como fundo.
 7. Teacher ou admin pode excluir uma homework interativa na lista de criacao; a exclusao remove campos, perguntas, respostas e a aula interna automatica quando ela ficou vazia.
 8. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina.
 9. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
@@ -133,7 +133,7 @@ Actions:
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
-- Homework interativo usa arquivo protegido, renderizacao fiel do PDF/imagem, campos percentuais por pagina e IA/OCR opcional com fallback manual.
+- Homework interativo usa arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
 
 ## Riscos ao alterar esta parte
 
@@ -145,7 +145,6 @@ Actions:
 ## Pendencias
 
 - Edicao/delecao completa de aulas e materiais ainda nao existe; homework interativa ja pode ser excluida na tela de criacao.
-- Homework interativo ainda nao possui reposicionamento por arrastar; o ajuste fino usa numeros.
 - Upload livre de materiais e editor Word embutido ainda nao existem.
 - Notificacoes por email/WhatsApp ainda nao existem.
 

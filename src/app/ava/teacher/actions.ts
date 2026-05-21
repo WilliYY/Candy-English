@@ -3,7 +3,6 @@
 import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { detectHomeworkFields } from "@/lib/homework-ocr";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
@@ -374,12 +373,6 @@ export async function createInteractiveHomework(
     };
   }
 
-  const detection = await detectHomeworkFields({
-    buffer: assetBuffer,
-    fileName: savedAsset.originalName,
-    mimeType: savedAsset.mimeType,
-  });
-
   const homework = await prisma.$transaction(async (tx) => {
     if (actor.isAdmin) {
       await tx.studentTeacherAssignment.upsert({
@@ -417,26 +410,12 @@ export async function createInteractiveHomework(
         assetSizeBytes: savedAsset.sizeBytes,
         assetStoragePath: savedAsset.relativePath,
         dueDate: data.dueDate,
-        fieldDetectionSource: detection.source,
+        fieldDetectionSource: "manual",
         instructions: data.instructions,
         kind: "INTERACTIVE",
         lessonId: lesson.id,
         teacherProfileId,
         title: data.title,
-        interactiveFields: {
-          create: detection.fields.map((field, index) => ({
-            height: field.height,
-            label: field.label,
-            page: field.page,
-            placeholder: field.placeholder,
-            required: field.required,
-            sortOrder: index,
-            type: field.type,
-            width: field.width,
-            x: field.x,
-            y: field.y,
-          })),
-        },
         questions: {
           create: {
             prompt: "Complete a atividade interativa no arquivo anexado.",
@@ -453,10 +432,7 @@ export async function createInteractiveHomework(
   return {
     homeworkId: homework.id,
     ok: true,
-    message:
-      detection.source === "openai"
-        ? "Homework interativa criada com campos detectados pela IA."
-        : "Homework interativa criada com campos iniciais para ajuste manual.",
+    message: "Homework interativa criada. Desenhe as areas no PDF e salve.",
   };
 }
 
