@@ -40,7 +40,7 @@ Servicos Docker:
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
 - Financeiro e agenda sao modulos internos do `ADMIN`.
-- Homework interativo usa arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
+- Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
 
 ## Decisoes tecnicas tomadas
@@ -53,7 +53,7 @@ Servicos Docker:
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
 - Docker final usa `output: "standalone"`.
-- Server Actions aceitam upload ate 15 MB para suportar homework interativo exportado do Canva.
+- Server Actions aceitam upload ate 15 MB para suportar homework/aula interativa exportados do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
 - Headers basicos de seguranca ficam em `next.config.ts`.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.

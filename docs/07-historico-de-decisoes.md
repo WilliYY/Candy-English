@@ -205,6 +205,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/ava/interactive-homework-editor.tsx`, `src/app/ava/teacher/actions.ts`, `src/lib/validations/learning.ts`, `AGENTS.md`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: na tela do aluno as areas continuam invisiveis; campos `CHECKBOX` agora podem ser menores e quadrados, entao manter validacao server-side coerente com o editor.
 
+### 2026-05-21 - Criar aula com o mesmo motor interativo
+
+- Decisao: a aba `/ava/teacher?task=criar-aula` passa a criar aula por PDF/imagem do Canva usando o mesmo editor manual de campos do homework interativo.
+- Motivo: a operacao real de aula precisa das mesmas ferramentas de selecionar area, escrever, marcar e desenhar antes de existir um modulo separado de materiais interativos.
+- Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/teacher-forms.tsx`, `src/components/ava/teacher-workspace.tsx`, `src/components/ava/interactive-homework-editor.tsx`, `src/lib/validations/learning.ts`, docs oficiais.
+- Riscos/cuidados: aula interativa reutiliza `Homework.kind=INTERACTIVE` e usa `fieldDetectionSource=lesson-manual` para separacao visual; futuramente pode virar modelo proprio se aulas interativas precisarem de regras diferentes de entrega/correcao.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

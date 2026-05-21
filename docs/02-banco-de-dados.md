@@ -81,6 +81,7 @@ Enums:
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
 - `HomeworkSubmission` possui chave unica por homework/aluno.
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
+- `Homework.fieldDetectionSource=manual` identifica homework interativo criado pela aba de homework; `lesson-manual` identifica aula interativa criada pela aba de aula usando o mesmo motor.
 - `HomeworkInteractiveField` guarda tipo, pagina e posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
 - `HomeworkFieldType` aceita `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` e `DRAWING`; respostas de desenho ficam no JSON de `HomeworkSubmission.answers` como tracos normalizados.
 - Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.

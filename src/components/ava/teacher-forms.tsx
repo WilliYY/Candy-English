@@ -1,14 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CheckCircle2, FileUp, LoaderCircle, Plus } from "lucide-react";
+import { FileUp, LoaderCircle, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   allowHomeworkRedo,
   createInteractiveHomework,
-  createLesson,
+  createInteractiveLesson,
   reviewHomeworkSubmission,
 } from "@/app/ava/teacher/actions";
 import {
@@ -16,20 +16,13 @@ import {
   type InteractiveHomeworkEditorRow,
 } from "@/components/ava/interactive-homework-editor";
 import {
-  createLessonSchema,
   reviewSubmissionSchema,
   type CreateInteractiveHomeworkInput,
-  type CreateLessonInput,
+  type CreateInteractiveLessonInput,
   type ReviewSubmissionInput,
 } from "@/lib/validations/learning";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,269 +32,68 @@ type Option = {
   label: string;
 };
 
-type InteractiveHomeworkFormErrors = Partial<
-  Record<keyof CreateInteractiveHomeworkInput | "asset", string>
+type InteractiveAssetFormErrors = Partial<
+  Record<
+    | keyof CreateInteractiveHomeworkInput
+    | keyof CreateInteractiveLessonInput
+    | "asset",
+    string
+  >
 >;
 
-const emptyLesson: CreateLessonInput = {
-  description: "",
-  materialContent: "",
-  materialTitle: "",
-  materialUrl: "",
-  scheduledAt: "",
-  studentProfileId: "",
-  teacherProfileId: "",
-  title: "",
-  vocabularyExample: "",
-  vocabularyTerm: "",
-  vocabularyTranslation: "",
-};
+type InteractiveAssetMode = "homework" | "lesson";
 
-export function CreateLessonForm({
+const interactiveAssetCopy = {
+  homework: {
+    buttonLabel: "Criar interativa",
+    dateField: "dueDate",
+    dateLabel: "Prazo",
+    formTitle: "Homework do Canva",
+    instructionsLabel: "Instrucoes",
+    instructionsPlaceholder: "O que o aluno deve completar.",
+    invalidMessage: "Revise os campos destacados para criar a homework.",
+    titleLabel: "Titulo",
+    titlePlaceholder: "Ex: Canva unit 4",
+  },
+  lesson: {
+    buttonLabel: "Criar aula interativa",
+    dateField: "scheduledAt",
+    dateLabel: "Data da aula",
+    formTitle: "Aula do Canva",
+    instructionsLabel: "Resumo",
+    instructionsPlaceholder: "Objetivo da aula e pontos trabalhados.",
+    invalidMessage: "Revise os campos destacados para criar a aula.",
+    titleLabel: "Titulo da aula",
+    titlePlaceholder: "Ex: Simple past in conversation",
+  },
+} as const satisfies Record<
+  InteractiveAssetMode,
+  {
+    buttonLabel: string;
+    dateField: "dueDate" | "scheduledAt";
+    dateLabel: string;
+    formTitle: string;
+    instructionsLabel: string;
+    instructionsPlaceholder: string;
+    invalidMessage: string;
+    titleLabel: string;
+    titlePlaceholder: string;
+  }
+>;
+
+function InteractiveAssetUploadForm({
+  mode,
   students,
   teachers,
 }: {
+  mode: InteractiveAssetMode;
   students: Option[];
   teachers: Option[];
 }) {
   const router = useRouter();
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const form = useForm<CreateLessonInput>({
-    resolver: zodResolver(createLessonSchema, undefined, { raw: true }),
-    defaultValues: {
-      ...emptyLesson,
-      teacherProfileId: teachers[0]?.id ?? "",
-    },
-  });
-
-  const onSubmit = form.handleSubmit((values) => {
-    setMessage(null);
-    startTransition(async () => {
-      const result = await createLesson(values);
-
-      if (!result.ok) {
-        Object.entries(result.errors ?? {}).forEach(([field, fieldMessage]) => {
-          if (fieldMessage) {
-            form.setError(field as keyof CreateLessonInput, {
-              message: fieldMessage,
-            });
-          }
-        });
-        setMessage(result.message);
-        return;
-      }
-
-      form.reset({
-        ...emptyLesson,
-        teacherProfileId: teachers[0]?.id ?? "",
-      });
-      setMessage(result.message);
-      router.refresh();
-    });
-  });
-
-  return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <FieldGroup>
-        <Field data-invalid={Boolean(form.formState.errors.teacherProfileId)}>
-          <FieldLabel htmlFor="lesson-teacher">Teacher</FieldLabel>
-          <NativeSelect
-            id="lesson-teacher"
-            aria-invalid={Boolean(form.formState.errors.teacherProfileId)}
-            disabled={isPending || teachers.length <= 1}
-            {...form.register("teacherProfileId")}
-          >
-            {teachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldError errors={[form.formState.errors.teacherProfileId]} />
-        </Field>
-
-        <Field data-invalid={Boolean(form.formState.errors.studentProfileId)}>
-          <FieldLabel htmlFor="lesson-student">Aluno</FieldLabel>
-          <NativeSelect
-            id="lesson-student"
-            aria-invalid={Boolean(form.formState.errors.studentProfileId)}
-            disabled={isPending}
-            {...form.register("studentProfileId")}
-          >
-            <option value="">Sem aluno especifico</option>
-            {students.map((student) => (
-              <option key={student.id} value={student.id}>
-                {student.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldDescription>
-            Ao escolher um aluno, a aula aparece na area student dele.
-          </FieldDescription>
-          <FieldError errors={[form.formState.errors.studentProfileId]} />
-        </Field>
-
-        <Field data-invalid={Boolean(form.formState.errors.title)}>
-          <FieldLabel htmlFor="lesson-title">Titulo da aula</FieldLabel>
-          <Input
-            id="lesson-title"
-            aria-invalid={Boolean(form.formState.errors.title)}
-            disabled={isPending}
-            placeholder="Ex: Simple past in conversation"
-            {...form.register("title")}
-          />
-          <FieldError errors={[form.formState.errors.title]} />
-        </Field>
-
-        <Field data-invalid={Boolean(form.formState.errors.description)}>
-          <FieldLabel htmlFor="lesson-description">Resumo</FieldLabel>
-          <Textarea
-            id="lesson-description"
-            aria-invalid={Boolean(form.formState.errors.description)}
-            disabled={isPending}
-            placeholder="Objetivo da aula e pontos trabalhados."
-            {...form.register("description")}
-          />
-          <FieldError errors={[form.formState.errors.description]} />
-        </Field>
-
-        <Field data-invalid={Boolean(form.formState.errors.scheduledAt)}>
-          <FieldLabel htmlFor="lesson-date">Data da aula</FieldLabel>
-          <Input
-            id="lesson-date"
-            type="date"
-            aria-invalid={Boolean(form.formState.errors.scheduledAt)}
-            disabled={isPending}
-            {...form.register("scheduledAt")}
-          />
-          <FieldError errors={[form.formState.errors.scheduledAt]} />
-        </Field>
-
-        <div className="rounded-lg border bg-muted/40 p-4">
-          <div className="mb-4 flex items-center gap-2 font-medium">
-            <CheckCircle2 aria-hidden="true" />
-            Primeiro material e vocabulario
-          </div>
-          <div className="grid gap-4">
-            <Field data-invalid={Boolean(form.formState.errors.materialTitle)}>
-              <FieldLabel htmlFor="material-title">Titulo do material</FieldLabel>
-              <Input
-                id="material-title"
-                aria-invalid={Boolean(form.formState.errors.materialTitle)}
-                disabled={isPending}
-                placeholder="Ex: Notes from class"
-                {...form.register("materialTitle")}
-              />
-              <FieldError errors={[form.formState.errors.materialTitle]} />
-            </Field>
-            <Field data-invalid={Boolean(form.formState.errors.materialContent)}>
-              <FieldLabel htmlFor="material-content">Conteudo</FieldLabel>
-              <Textarea
-                id="material-content"
-                aria-invalid={Boolean(form.formState.errors.materialContent)}
-                disabled={isPending}
-                placeholder="Texto, instrucoes ou resumo do material."
-                {...form.register("materialContent")}
-              />
-              <FieldError errors={[form.formState.errors.materialContent]} />
-            </Field>
-            <Field data-invalid={Boolean(form.formState.errors.materialUrl)}>
-              <FieldLabel htmlFor="material-url">
-                Link opcional do material
-              </FieldLabel>
-              <Input
-                id="material-url"
-                aria-invalid={Boolean(form.formState.errors.materialUrl)}
-                disabled={isPending}
-                placeholder="https://www.canva.com/..."
-                {...form.register("materialUrl")}
-              />
-              <FieldDescription>
-                Cole links compartilhados do Canva, PDF externo ou pagina de
-                apoio. O aluno ve a previa no AVA quando o site permite.
-              </FieldDescription>
-              <FieldError errors={[form.formState.errors.materialUrl]} />
-            </Field>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field
-                data-invalid={Boolean(form.formState.errors.vocabularyTerm)}
-              >
-                <FieldLabel htmlFor="vocab-term">Termo</FieldLabel>
-                <Input
-                  id="vocab-term"
-                  aria-invalid={Boolean(form.formState.errors.vocabularyTerm)}
-                  disabled={isPending}
-                  placeholder="Ex: catch up"
-                  {...form.register("vocabularyTerm")}
-                />
-                <FieldError errors={[form.formState.errors.vocabularyTerm]} />
-              </Field>
-              <Field
-                data-invalid={Boolean(
-                  form.formState.errors.vocabularyTranslation,
-                )}
-              >
-                <FieldLabel htmlFor="vocab-translation">Traducao</FieldLabel>
-                <Input
-                  id="vocab-translation"
-                  aria-invalid={Boolean(
-                    form.formState.errors.vocabularyTranslation,
-                  )}
-                  disabled={isPending}
-                  placeholder="Ex: colocar em dia"
-                  {...form.register("vocabularyTranslation")}
-                />
-                <FieldError
-                  errors={[form.formState.errors.vocabularyTranslation]}
-                />
-              </Field>
-            </div>
-            <Field
-              data-invalid={Boolean(form.formState.errors.vocabularyExample)}
-            >
-              <FieldLabel htmlFor="vocab-example">Exemplo</FieldLabel>
-              <Input
-                id="vocab-example"
-                aria-invalid={Boolean(form.formState.errors.vocabularyExample)}
-                disabled={isPending}
-                placeholder="I need to catch up on my homework."
-                {...form.register("vocabularyExample")}
-              />
-              <FieldError errors={[form.formState.errors.vocabularyExample]} />
-            </Field>
-          </div>
-        </div>
-      </FieldGroup>
-
-      {message ? (
-        <p className="rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">
-          {message}
-        </p>
-      ) : null}
-
-      <Button type="submit" disabled={isPending}>
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : (
-          <Plus data-icon="inline-start" />
-        )}
-        Criar aula
-      </Button>
-    </form>
-  );
-}
-
-function InteractiveHomeworkUploadForm({
-  students,
-  teachers,
-}: {
-  students: Option[];
-  teachers: Option[];
-}) {
-  const router = useRouter();
+  const copy = interactiveAssetCopy[mode];
   const formRef = useRef<HTMLFormElement | null>(null);
-  const [errors, setErrors] = useState<InteractiveHomeworkFormErrors>({});
+  const [errors, setErrors] = useState<InteractiveAssetFormErrors>({});
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -310,7 +102,7 @@ function InteractiveHomeworkUploadForm({
     const currentForm = event.currentTarget;
     const formData = new FormData(currentForm);
     const asset = formData.get("asset");
-    const nextErrors: InteractiveHomeworkFormErrors = {};
+    const nextErrors: InteractiveAssetFormErrors = {};
     const title = String(formData.get("title") ?? "").trim();
     const teacherProfileId = String(formData.get("teacherProfileId") ?? "");
     const studentProfileId = String(formData.get("studentProfileId") ?? "");
@@ -333,7 +125,7 @@ function InteractiveHomeworkUploadForm({
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      setMessage("Revise os campos destacados para criar a homework.");
+      setMessage(copy.invalidMessage);
       return;
     }
 
@@ -341,7 +133,10 @@ function InteractiveHomeworkUploadForm({
     setMessage(null);
     startTransition(async () => {
       try {
-        const result = await createInteractiveHomework(formData);
+        const result =
+          mode === "lesson"
+            ? await createInteractiveLesson(formData)
+            : await createInteractiveHomework(formData);
 
         setMessage(result.message);
         setErrors(result.errors ?? {});
@@ -368,13 +163,15 @@ function InteractiveHomeworkUploadForm({
     >
       <div className="mb-4 flex items-center gap-2 font-semibold">
         <FileUp aria-hidden="true" />
-        Homework do Canva
+        {copy.formTitle}
       </div>
       <div className="grid gap-3 lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
         <Field data-invalid={Boolean(errors.teacherProfileId)}>
-          <FieldLabel htmlFor="interactive-homework-teacher">Teacher</FieldLabel>
+          <FieldLabel htmlFor={`interactive-${mode}-teacher`}>
+            Teacher
+          </FieldLabel>
           <NativeSelect
-            id="interactive-homework-teacher"
+            id={`interactive-${mode}-teacher`}
             name="teacherProfileId"
             aria-invalid={Boolean(errors.teacherProfileId)}
             disabled={isPending || teachers.length === 0}
@@ -391,9 +188,9 @@ function InteractiveHomeworkUploadForm({
           <FieldError errors={[{ message: errors.teacherProfileId }]} />
         </Field>
         <Field data-invalid={Boolean(errors.studentProfileId)}>
-          <FieldLabel htmlFor="interactive-homework-student">Aluno</FieldLabel>
+          <FieldLabel htmlFor={`interactive-${mode}-student`}>Aluno</FieldLabel>
           <NativeSelect
-            id="interactive-homework-student"
+            id={`interactive-${mode}-student`}
             name="studentProfileId"
             aria-invalid={Boolean(errors.studentProfileId)}
             disabled={isPending || students.length === 0}
@@ -410,48 +207,69 @@ function InteractiveHomeworkUploadForm({
           <FieldError errors={[{ message: errors.studentProfileId }]} />
         </Field>
         <Field data-invalid={Boolean(errors.title)}>
-          <FieldLabel htmlFor="interactive-homework-title">Titulo</FieldLabel>
+          <FieldLabel htmlFor={`interactive-${mode}-title`}>
+            {copy.titleLabel}
+          </FieldLabel>
           <Input
-            id="interactive-homework-title"
+            id={`interactive-${mode}-title`}
             name="title"
             aria-invalid={Boolean(errors.title)}
             disabled={isPending}
-            placeholder="Ex: Canva unit 4"
+            placeholder={copy.titlePlaceholder}
           />
           <FieldError errors={[{ message: errors.title }]} />
         </Field>
-        <Field data-invalid={Boolean(errors.dueDate)}>
-          <FieldLabel htmlFor="interactive-homework-due-date">Prazo</FieldLabel>
+        <Field
+          data-invalid={Boolean(
+            copy.dateField === "dueDate" ? errors.dueDate : errors.scheduledAt,
+          )}
+        >
+          <FieldLabel htmlFor={`interactive-${mode}-date`}>
+            {copy.dateLabel}
+          </FieldLabel>
           <Input
-            id="interactive-homework-due-date"
-            name="dueDate"
+            id={`interactive-${mode}-date`}
+            name={copy.dateField}
             type="date"
-            aria-invalid={Boolean(errors.dueDate)}
+            aria-invalid={Boolean(
+              copy.dateField === "dueDate"
+                ? errors.dueDate
+                : errors.scheduledAt,
+            )}
             disabled={isPending}
           />
-          <FieldError errors={[{ message: errors.dueDate }]} />
+          <FieldError
+            errors={[
+              {
+                message:
+                  copy.dateField === "dueDate"
+                    ? errors.dueDate
+                    : errors.scheduledAt,
+              },
+            ]}
+          />
         </Field>
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_0.8fr_auto] lg:items-end">
         <Field data-invalid={Boolean(errors.instructions)}>
-          <FieldLabel htmlFor="interactive-homework-instructions">
-            Instrucoes
+          <FieldLabel htmlFor={`interactive-${mode}-instructions`}>
+            {copy.instructionsLabel}
           </FieldLabel>
           <Textarea
-            id="interactive-homework-instructions"
+            id={`interactive-${mode}-instructions`}
             name="instructions"
             aria-invalid={Boolean(errors.instructions)}
             disabled={isPending}
-            placeholder="O que o aluno deve completar."
+            placeholder={copy.instructionsPlaceholder}
           />
           <FieldError errors={[{ message: errors.instructions }]} />
         </Field>
         <Field data-invalid={Boolean(errors.asset)}>
-          <FieldLabel htmlFor="interactive-homework-asset">
+          <FieldLabel htmlFor={`interactive-${mode}-asset`}>
             Arquivo PDF ou imagem
           </FieldLabel>
           <Input
-            id="interactive-homework-asset"
+            id={`interactive-${mode}-asset`}
             name="asset"
             type="file"
             accept="application/pdf,image/png,image/jpeg,image/webp"
@@ -469,7 +287,7 @@ function InteractiveHomeworkUploadForm({
           ) : (
             <Plus data-icon="inline-start" />
           )}
-          Criar interativa
+          {copy.buttonLabel}
         </Button>
       </div>
 
@@ -479,6 +297,30 @@ function InteractiveHomeworkUploadForm({
         </p>
       ) : null}
     </form>
+  );
+}
+
+export function CreateLessonForm({
+  interactiveLessons = [],
+  students,
+  teachers,
+}: {
+  interactiveLessons?: InteractiveHomeworkEditorRow[];
+  students: Option[];
+  teachers: Option[];
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      <InteractiveAssetUploadForm
+        mode="lesson"
+        students={students}
+        teachers={teachers}
+      />
+      <InteractiveHomeworkEditor
+        heading="Aulas interativas"
+        homeworks={interactiveLessons}
+      />
+    </div>
   );
 }
 
@@ -493,7 +335,11 @@ export function CreateHomeworkForm({
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <InteractiveHomeworkUploadForm students={students} teachers={teachers} />
+      <InteractiveAssetUploadForm
+        mode="homework"
+        students={students}
+        teachers={teachers}
+      />
       <InteractiveHomeworkEditor homeworks={interactiveHomeworks} />
     </div>
   );

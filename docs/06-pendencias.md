@@ -19,10 +19,10 @@ As pendencias podem afetar:
 ## Pendencias de produto
 
 - Edicao completa de usuarios existentes.
-- Edicao/delecao completa de aulas e materiais; homework interativa ja pode ser excluida na tela de criacao.
+- Edicao/delecao completa de aulas e materiais; aula/homework interativa ja podem ser excluidas nas telas de criacao.
 - Multiplas perguntas por homework na interface.
 - Exportacao de homework interativo preenchido como PDF final.
-- Upload livre de materiais de aula.
+- Upload livre de materiais de aula fora dos fluxos interativos.
 - Editor ou visualizador Word embutido.
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.

@@ -18,16 +18,16 @@ Ja existe:
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
-- teacher com aulas, materiais, vocabulario, homework interativo por upload do Canva, feedback, aula ao vivo, contratos e mensagens;
+- teacher com aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos e mensagens;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
-- homework interativo com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
+- homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora do homework, editor Word embutido, relatorios avancados e dashboard complexo.
+Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados e dashboard complexo.
 
 ## Stack
 
@@ -61,7 +61,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/09-deploy-e-ambiente.md`: ambientes, Docker e Oracle.
 - `docs/13-financeiro.md`: modulo financeiro admin.
 - `docs/14-agenda.md`: modulo agenda admin.
-- `docs/15-homework-interativo.md`: homework com upload do Canva, editor manual de areas, autosave e arquivo protegido.
+- `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.
 

@@ -2,7 +2,7 @@
 
 ## O que esta parte do sistema faz
 
-O homework interativo permite que a teacher envie um PDF ou imagem exportado do Canva, desenhe areas editaveis diretamente sobre o arquivo e deixe o aluno responder online dentro do AVA. O aluno escreve, marca ou desenha por cima do arquivo original, o rascunho e salvo automaticamente e a entrega vira evento novo para teacher/admin corrigirem.
+O homework interativo permite que a teacher envie um PDF ou imagem exportado do Canva, desenhe areas editaveis diretamente sobre o arquivo e deixe o aluno responder online dentro do AVA. A criacao de aula interativa reutiliza o mesmo motor por enquanto: cria uma `Lesson` real e uma atividade interativa vinculada a ela. O aluno escreve, marca ou desenha por cima do arquivo original, o rascunho e salvo automaticamente e a entrega vira evento novo para teacher/admin corrigirem.
 
 O fluxo interativo e o modo de criacao usado na interface atual. O homework simples de pergunta/resposta fica apenas como legado para atividades antigas ja existentes.
 
@@ -33,6 +33,7 @@ Arquivos principais:
 Rotas:
 
 - `/ava/teacher?task=criar-homework`
+- `/ava/teacher?task=criar-aula`
 - `/ava/teacher?task=corrigir-respostas`
 - `/ava/student?task=homeworks`
 - `/ava/homework-assets/[homeworkId]`
@@ -49,7 +50,9 @@ Tabelas e enums:
 ## Regras de negocio que precisam ser preservadas
 
 - Apenas `ADMIN` ou `TEACHER` vinculada ao aluno pode criar e ajustar homework interativo.
-- A criacao seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para manter o vinculo de permissao do homework.
+- A aba `Criar aula` usa a mesma base tecnica do homework interativo, mas marca a atividade como `fieldDetectionSource=lesson-manual` para separar a lista de aulas interativas da lista de homeworks interativas.
+- A criacao de homework seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para manter o vinculo de permissao do homework.
+- Na criacao de aula interativa, o sistema cria uma aula real com titulo/resumo/data e vincula uma atividade `Homework.kind=INTERACTIVE` a ela.
 - Homework interativo precisa continuar ligado a uma aula com aluno definido, mesmo quando essa aula for criada automaticamente.
 - O arquivo fica em `storage/homework-assets` ou no volume Docker equivalente, nunca no Git.
 - O tamanho maximo aceito pela UI/storage e 14 MB; `next.config.ts` usa 15 MB para a Server Action receber o arquivo com folga.
@@ -79,6 +82,7 @@ Tabelas e enums:
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
 - A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
 - A criacao interativa grava `fieldDetectionSource` como `manual` e nao cria `HomeworkInteractiveField` automaticamente.
+- A criacao de aula interativa grava `fieldDetectionSource` como `lesson-manual` e tambem nasce sem `HomeworkInteractiveField`.
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
 - Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.

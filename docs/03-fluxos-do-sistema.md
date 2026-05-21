@@ -58,7 +58,7 @@ Actions:
 
 1. Teacher entra em `/ava/teacher`.
 2. Ve alunos vinculados.
-3. Cria aula, material, vocabulario e homework interativo por arquivo do Canva.
+3. Cria aula interativa e homework interativo por arquivo do Canva.
 4. Corrige respostas e envia feedback.
 5. Pode abrir aula ao vivo e mensagens.
 
@@ -69,6 +69,15 @@ Actions:
 3. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
 4. Visualiza feedback.
 5. Edita dados pessoais permitidos, mas nao o nivel.
+
+### Aula interativa
+
+1. Teacher abre `/ava/teacher?task=criar-aula`.
+2. Seleciona teacher e aluno, informa titulo/resumo/data e envia PDF/imagem exportado do Canva.
+3. O sistema cria uma `Lesson` real para o aluno e uma atividade `Homework.kind=INTERACTIVE` vinculada a essa aula, marcada com `fieldDetectionSource=lesson-manual`.
+4. A aula aparece na lista de aulas, e a atividade interativa usa o mesmo editor manual de areas do homework.
+5. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar.
+6. Student responde essa atividade pela area de homeworks, com campos invisiveis sobre o arquivo e autosave.
 
 ### Homework interativo
 
@@ -119,6 +128,7 @@ Actions:
 - Student tem botoes sempre visiveis.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.
+- A interface de criacao nova de aula usa o mesmo fluxo interativo de PDF/imagem por enquanto, criando uma aula real com atividade interativa vinculada.
 - Excluir homework interativa exige permissao server-side de admin ou teacher dona da homework.
 - Draft de homework interativo nao deve aparecer como resposta entregue para teacher.
 - Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.
@@ -134,7 +144,7 @@ Actions:
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
-- Homework interativo usa arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
+- Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
 
 ## Riscos ao alterar esta parte
 
@@ -145,8 +155,8 @@ Actions:
 
 ## Pendencias
 
-- Edicao/delecao completa de aulas e materiais ainda nao existe; homework interativa ja pode ser excluida na tela de criacao.
-- Upload livre de materiais e editor Word embutido ainda nao existem.
+- Edicao/delecao completa de aulas e materiais ainda nao existe; aula/homework interativa ja podem ser excluidas nas telas de criacao.
+- Upload livre de materiais fora dos fluxos interativos e editor Word embutido ainda nao existem.
 - Notificacoes por email/WhatsApp ainda nao existem.
 
 ## Como pode evoluir

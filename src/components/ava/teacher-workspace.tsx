@@ -224,7 +224,7 @@ const taskMeta = {
     title: "Corrigir homework",
   },
   "criar-aula": {
-    description: "Crie uma aula com material e vocabulario inicial.",
+    description: "Crie uma aula interativa por PDF ou imagem do Canva.",
     icon: BookOpen,
     title: "Criar aula",
   },
@@ -340,7 +340,7 @@ export function TeacherWorkspace({
   submissions,
   teachers,
 }: TeacherWorkspaceProps) {
-  const interactiveHomeworks = lessons.flatMap((lesson) =>
+  const interactiveItems = lessons.flatMap((lesson) =>
     lesson.homeworks
       .filter((homework) => homework.kind === "INTERACTIVE")
       .map((homework) => ({
@@ -352,9 +352,19 @@ export function TeacherWorkspace({
         fields: homework.interactiveFields,
         id: homework.id,
         lessonTitle: lesson.title,
+        source:
+          homework.fieldDetectionSource === "lesson-manual"
+            ? ("LESSON" as const)
+            : ("HOMEWORK" as const),
         studentName: lesson.studentProfile?.user.name ?? null,
         title: homework.title,
       })),
+  );
+  const interactiveLessons = interactiveItems.filter(
+    (homework) => homework.source === "LESSON",
+  );
+  const interactiveHomeworks = interactiveItems.filter(
+    (homework) => homework.source === "HOMEWORK",
   );
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "SUBMITTED",
@@ -511,7 +521,11 @@ export function TeacherWorkspace({
           ) : null}
 
           {activeTask === "criar-aula" ? (
-            <CreateLessonForm students={students} teachers={teachers} />
+            <CreateLessonForm
+              interactiveLessons={interactiveLessons}
+              students={students}
+              teachers={teachers}
+            />
           ) : null}
 
           {activeTask === "criar-homework" ? (

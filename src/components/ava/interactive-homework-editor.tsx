@@ -53,6 +53,7 @@ export type InteractiveHomeworkEditorRow = {
   fields: EditableHomeworkField[];
   id: string;
   lessonTitle: string;
+  source?: "HOMEWORK" | "LESSON";
   studentName: string | null;
   title: string;
 };
@@ -712,6 +713,8 @@ function InteractiveHomeworkEditorItem({
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     homework.fields[0]?.id ?? null,
   );
+  const isInteractiveLesson = homework.source === "LESSON";
+  const entityLabel = isInteractiveLesson ? "aula interativa" : "homework";
 
   function removeSelectedField() {
     if (!selectedFieldId) {
@@ -762,7 +765,7 @@ function InteractiveHomeworkEditorItem({
     setMessage(null);
 
     const confirmed = window.confirm(
-      `Excluir a homework "${homework.title}"? As respostas e campos desta atividade tambem serao removidos.`,
+      `Excluir a ${entityLabel} "${homework.title}"? As respostas e campos desta atividade tambem serao removidos.`,
     );
 
     if (!confirmed) {
@@ -832,7 +835,8 @@ function InteractiveHomeworkEditorItem({
             <div className="flex min-w-0 items-center gap-2 text-sm">
               <Wand2 aria-hidden="true" className="size-4 shrink-0 text-primary" />
               <span className="min-w-0 truncate font-semibold">
-                {homework.assetFileName ?? "Arquivo da homework"}
+                {homework.assetFileName ??
+                  (isInteractiveLesson ? "Arquivo da aula" : "Arquivo da homework")}
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {formatSize(homework.assetSizeBytes)}
@@ -924,8 +928,10 @@ function InteractiveHomeworkEditorItem({
 }
 
 export function InteractiveHomeworkEditor({
+  heading = "Homeworks interativas",
   homeworks,
 }: {
+  heading?: string;
   homeworks: InteractiveHomeworkEditorRow[];
 }) {
   if (homeworks.length === 0) {
@@ -935,7 +941,7 @@ export function InteractiveHomeworkEditor({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">Homeworks interativas</h2>
+        <h2 className="text-base font-semibold">{heading}</h2>
         <span className="rounded-full border border-primary/20 px-3 py-1 text-xs font-semibold text-muted-foreground">
           {homeworks.length}
         </span>

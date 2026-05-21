@@ -8,12 +8,14 @@ import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
 import {
   createInteractiveHomeworkSchema,
+  createInteractiveLessonSchema,
   createLessonSchema,
   deleteInteractiveHomeworkSchema,
   homeworkSubmissionIdSchema,
   saveInteractiveHomeworkFieldsSchema,
   reviewSubmissionSchema,
   type CreateInteractiveHomeworkInput,
+  type CreateInteractiveLessonInput,
   type CreateLessonInput,
   type DeleteInteractiveHomeworkInput,
   type HomeworkSubmissionIdInput,
@@ -27,8 +29,15 @@ type ActionResult<TInput extends Record<string, unknown>> = {
   ok: boolean;
 };
 
+type InteractiveAssetFormErrors = Partial<
+  Record<
+    keyof CreateInteractiveHomeworkInput | keyof CreateInteractiveLessonInput | "asset",
+    string
+  >
+>;
+
 type FormActionResult = {
-  errors?: Partial<Record<keyof CreateInteractiveHomeworkInput | "asset", string>>;
+  errors?: InteractiveAssetFormErrors;
   homeworkId?: string;
   message: string;
   ok: boolean;
@@ -436,6 +445,184 @@ export async function createInteractiveHomework(
   };
 }
 
+export async function createInteractiveLesson(
+  formData: FormData,
+): Promise<FormActionResult> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para criar aulas.",
+    };
+  }
+
+  const parsed = createInteractiveLessonSchema.safeParse({
+    instructions: formText(formData, "instructions"),
+    scheduledAt: formText(formData, "scheduledAt"),
+    studentProfileId: formText(formData, "studentProfileId"),
+    teacherProfileId: formText(formData, "teacherProfileId"),
+    title: formText(formData, "title"),
+  });
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<CreateInteractiveLessonInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados da aula interativa.",
+    };
+  }
+
+  const asset = formData.get("asset");
+
+  if (!(asset instanceof File)) {
+    return {
+      errors: { asset: "Envie o arquivo exportado do Canva." },
+      ok: false,
+      message: "Envie o arquivo da aula.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const data = parsed.data;
+  const teacherProfileId = actor.isAdmin
+    ? data.teacherProfileId
+    : actor.teacherProfileId;
+
+  if (!teacherProfileId) {
+    return {
+      errors: { teacherProfileId: "Selecione uma teacher." },
+      ok: false,
+      message: "Selecione uma teacher para criar a aula.",
+    };
+  }
+
+  const [teacher, student] = await Promise.all([
+    prisma.teacherProfile.findUnique({
+      where: { id: teacherProfileId },
+      select: { id: true },
+    }),
+    prisma.studentProfile.findUnique({
+      where: { id: data.studentProfileId },
+      select: { id: true },
+    }),
+  ]);
+
+  if (!teacher) {
+    return {
+      errors: { teacherProfileId: "Teacher nao encontrada." },
+      ok: false,
+      message: "Teacher nao encontrada.",
+    };
+  }
+
+  if (!student) {
+    return {
+      errors: { studentProfileId: "Aluno nao encontrado." },
+      ok: false,
+      message: "Aluno nao encontrado.",
+    };
+  }
+
+  if (!actor.isAdmin) {
+    const assignment = await prisma.studentTeacherAssignment.findUnique({
+      where: {
+        teacherProfileId_studentProfileId: {
+          studentProfileId: student.id,
+          teacherProfileId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!assignment) {
+      return {
+        errors: {
+          studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
+        },
+        ok: false,
+        message: "Voce so pode criar aulas para alunos vinculados a voce.",
+      };
+    }
+  }
+
+  let savedAsset: Awaited<ReturnType<typeof saveHomeworkAsset>>;
+  let assetBuffer: Buffer;
+
+  try {
+    assetBuffer = Buffer.from(await asset.arrayBuffer());
+    savedAsset = await saveHomeworkAsset(asset);
+  } catch (error) {
+    return {
+      errors: {
+        asset: error instanceof Error ? error.message : "Arquivo invalido.",
+      },
+      ok: false,
+      message: "Nao foi possivel salvar o arquivo da aula.",
+    };
+  }
+
+  const homework = await prisma.$transaction(async (tx) => {
+    if (actor.isAdmin) {
+      await tx.studentTeacherAssignment.upsert({
+        where: {
+          teacherProfileId_studentProfileId: {
+            studentProfileId: student.id,
+            teacherProfileId,
+          },
+        },
+        create: {
+          studentProfileId: student.id,
+          teacherProfileId,
+        },
+        update: {},
+      });
+    }
+
+    const lesson = await tx.lesson.create({
+      data: {
+        description: data.instructions,
+        scheduledAt: data.scheduledAt,
+        studentProfileId: student.id,
+        teacherProfileId,
+        title: data.title,
+      },
+      select: { id: true },
+    });
+
+    return tx.homework.create({
+      data: {
+        assetFileName: savedAsset.originalName,
+        assetMimeType: savedAsset.mimeType,
+        assetPageCount: estimateAssetPageCount(assetBuffer, savedAsset.mimeType),
+        assetSizeBytes: savedAsset.sizeBytes,
+        assetStoragePath: savedAsset.relativePath,
+        fieldDetectionSource: "lesson-manual",
+        instructions: data.instructions,
+        kind: "INTERACTIVE",
+        lessonId: lesson.id,
+        teacherProfileId,
+        title: data.title,
+        questions: {
+          create: {
+            prompt: "Complete a atividade interativa da aula.",
+          },
+        },
+      },
+      select: { id: true },
+    });
+  });
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    homeworkId: homework.id,
+    ok: true,
+    message: "Aula interativa criada. Desenhe as areas no PDF e salve.",
+  };
+}
+
 export async function saveInteractiveHomeworkFields(
   input: SaveInteractiveHomeworkFieldsInput,
 ): Promise<ActionResult<SaveInteractiveHomeworkFieldsInput>> {
@@ -464,6 +651,7 @@ export async function saveInteractiveHomeworkFields(
   const homework = await prisma.homework.findUnique({
     where: { id: parsed.data.homeworkId },
     select: {
+      fieldDetectionSource: true,
       id: true,
       kind: true,
       teacherProfileId: true,
@@ -514,7 +702,10 @@ export async function saveInteractiveHomeworkFields(
     prisma.homework.update({
       where: { id: homework.id },
       data: {
-        fieldDetectionSource: "manual",
+        fieldDetectionSource:
+          homework.fieldDetectionSource === "lesson-manual"
+            ? "lesson-manual"
+            : "manual",
       },
     }),
   ]);
@@ -555,6 +746,7 @@ export async function deleteInteractiveHomework(
     where: { id: parsed.data.homeworkId },
     select: {
       assetStoragePath: true,
+      fieldDetectionSource: true,
       id: true,
       kind: true,
       lesson: {
@@ -588,8 +780,10 @@ export async function deleteInteractiveHomework(
     };
   }
 
+  const isInteractiveLesson =
+    homework.fieldDetectionSource === "lesson-manual";
   const shouldDeleteInternalLesson =
-    homework.lesson.title.startsWith("Homework - ") &&
+    (homework.lesson.title.startsWith("Homework - ") || isInteractiveLesson) &&
     homework.lesson._count.homeworks === 1 &&
     homework.lesson._count.materials === 0 &&
     homework.lesson._count.vocabularyItems === 0;
@@ -615,7 +809,9 @@ export async function deleteInteractiveHomework(
 
   return {
     ok: true,
-    message: "Homework excluida com sucesso.",
+    message: isInteractiveLesson
+      ? "Aula interativa excluida com sucesso."
+      : "Homework excluida com sucesso.",
   };
 }
 
