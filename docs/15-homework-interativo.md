@@ -58,6 +58,7 @@ Tabelas e enums:
 - O PDF/imagem original deve permanecer visivel como fundo; areas editaveis sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
 - Na tela do aluno, as areas de escrita, checkbox e desenho nao devem mostrar borda, fundo, placeholder ou caixa HTML propria; apenas a resposta digitada, a marca selecionada ou os tracos desenhados devem aparecer.
 - A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
+- No editor da teacher, cada area manual deve exibir uma previa discreta do resultado final (`x` centralizado, texto exemplo alinhado como a resposta do aluno ou area de desenho) para deixar claro onde a resposta aparecera.
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
 - Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas e deve permitir desfazer o ultimo traco sem apagar todo o desenho.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
@@ -79,6 +80,7 @@ Tabelas e enums:
 - A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
 - A criacao interativa grava `fieldDetectionSource` como `manual` e nao cria `HomeworkInteractiveField` automaticamente.
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
+- Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.
 

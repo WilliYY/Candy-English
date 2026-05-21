@@ -198,6 +198,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/admin/actions.ts`, `src/components/ava/admin-operations.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/lib/validations/admin-users.ts`, docs de fluxo e autenticacao.
 - Riscos/cuidados: a nova senha deve ser enviada ao usuario por canal seguro; sessoes JWT ja abertas nao sao revogadas imediatamente nesta fase.
 
+### 2026-05-21 - Previa de resposta no editor de homework
+
+- Decisao: o editor manual de homework passa a mostrar dentro da area uma previa discreta do resultado do aluno: `x` centralizado para marcar, texto exemplo alinhado como input/textarea e indicacao de area de desenho.
+- Motivo: a teacher precisa saber exatamente onde o `x` e a escrita vao aparecer antes de salvar, sem depender de tentativa na tela do aluno.
+- Impacto: `src/components/ava/interactive-homework-editor.tsx`, `src/app/ava/teacher/actions.ts`, `src/lib/validations/learning.ts`, `AGENTS.md`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
+- Riscos/cuidados: na tela do aluno as areas continuam invisiveis; campos `CHECKBOX` agora podem ser menores e quadrados, entao manter validacao server-side coerente com o editor.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

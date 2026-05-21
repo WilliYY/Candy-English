@@ -490,10 +490,11 @@ export async function saveInteractiveHomeworkFields(
     }),
     prisma.homeworkInteractiveField.createMany({
       data: parsed.data.fields.map((field, index) => {
-        const x = Math.min(field.x, 96);
-        const y = Math.min(field.y, 96);
-        const width = Math.max(4, Math.min(field.width, 100 - x));
-        const height = Math.max(4, Math.min(field.height, 100 - y));
+        const minSize = field.type === "CHECKBOX" ? 2 : 4;
+        const x = Math.min(field.x, 100 - minSize);
+        const y = Math.min(field.y, 100 - minSize);
+        const width = Math.max(minSize, Math.min(field.width, 100 - x));
+        const height = Math.max(minSize, Math.min(field.height, 100 - y));
 
         return {
           height,

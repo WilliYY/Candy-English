@@ -77,7 +77,7 @@ Actions:
 3. O sistema cria uma aula interna automaticamente para vincular a homework ao aluno e a teacher.
 4. O arquivo e salvo em `storage/homework-assets` e servido por `/ava/homework-assets/[homeworkId]`.
 5. A homework nasce sem campos automaticos: a teacher escolhe o tipo de area (`Texto curto`, `Texto longo`, `Marcar` ou `Desenho`) e desenha diretamente sobre o PDF/imagem.
-6. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar, mantendo o PDF/imagem original visivel como fundo.
+6. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar; o editor mostra uma previa do `x`, do texto exemplo ou da area de desenho para facilitar o posicionamento exato.
 7. Teacher ou admin pode excluir uma homework interativa na lista de criacao; a exclusao remove campos, perguntas, respostas e a aula interna automatica quando ela ficou vazia.
 8. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina e as areas de resposta ficam invisiveis ate receberem texto, marca ou desenho.
 9. Em areas `DRAWING`, o aluno pode desenhar com mouse ou dedo e desfazer o ultimo traco sem limpar todo o desenho.

@@ -62,11 +62,14 @@ type FieldTool = EditableHomeworkField["type"];
 type FieldToolMeta = {
   Icon: LucideIcon;
   defaultHeight: number;
+  defaultPixelSize?: number;
   defaultWidth: number;
   label: string;
   minHeight: number;
+  minPixelSize?: number;
   minWidth: number;
   placeholder: string | null;
+  resizeMode?: "free" | "square";
 };
 
 type PagePoint = {
@@ -121,12 +124,15 @@ const FIELD_TOOL_OPTIONS: FieldTool[] = [
 const FIELD_TOOL_META: Record<FieldTool, FieldToolMeta> = {
   CHECKBOX: {
     Icon: CheckSquare,
-    defaultHeight: 5,
-    defaultWidth: 5,
+    defaultHeight: 2.4,
+    defaultPixelSize: 24,
+    defaultWidth: 2.4,
     label: "Marcar",
-    minHeight: 4,
-    minWidth: 4,
+    minHeight: 2,
+    minPixelSize: 18,
+    minWidth: 2,
     placeholder: null,
+    resizeMode: "square",
   },
   DRAWING: {
     Icon: Pencil,
@@ -217,8 +223,39 @@ function pagePointFromEvent(
   };
 }
 
-function defaultGeometryFromPoint(type: FieldTool, point: PagePoint) {
+function geometryFromPixelSize(
+  type: FieldTool,
+  point: PagePoint,
+  pageRect: PageRect,
+  sizePixels: number,
+) {
   const meta = FIELD_TOOL_META[type];
+  const width = clampNumber((sizePixels / pageRect.width) * 100, meta.minWidth, 100);
+  const height = clampNumber(
+    (sizePixels / pageRect.height) * 100,
+    meta.minHeight,
+    100,
+  );
+
+  return cleanGeometry({
+    height,
+    width,
+    x: clampNumber(point.x - width / 2, 0, 100 - width),
+    y: clampNumber(point.y - height / 2, 0, 100 - height),
+  });
+}
+
+function defaultGeometryFromPoint(
+  type: FieldTool,
+  point: PagePoint,
+  pageRect?: PageRect,
+) {
+  const meta = FIELD_TOOL_META[type];
+
+  if (meta.resizeMode === "square" && pageRect && meta.defaultPixelSize) {
+    return geometryFromPixelSize(type, point, pageRect, meta.defaultPixelSize);
+  }
+
   const width = meta.defaultWidth;
   const height = meta.defaultHeight;
 
@@ -234,13 +271,37 @@ function geometryFromPoints(
   type: FieldTool,
   start: PagePoint,
   current: PagePoint,
+  pageRect: PageRect,
 ) {
   const meta = FIELD_TOOL_META[type];
   const rawWidth = Math.abs(current.x - start.x);
   const rawHeight = Math.abs(current.y - start.y);
 
   if (rawWidth < 1.5 && rawHeight < 1.5) {
-    return defaultGeometryFromPoint(type, start);
+    return defaultGeometryFromPoint(type, start, pageRect);
+  }
+
+  if (meta.resizeMode === "square") {
+    const rawWidthPixels = (rawWidth / 100) * pageRect.width;
+    const rawHeightPixels = (rawHeight / 100) * pageRect.height;
+    const sizePixels = Math.max(
+      meta.minPixelSize ?? 18,
+      rawWidthPixels,
+      rawHeightPixels,
+    );
+    const width = clampNumber((sizePixels / pageRect.width) * 100, meta.minWidth, 100);
+    const height = clampNumber(
+      (sizePixels / pageRect.height) * 100,
+      meta.minHeight,
+      100,
+    );
+
+    return cleanGeometry({
+      height,
+      width,
+      x: clampNumber(Math.min(start.x, current.x), 0, 100 - width),
+      y: clampNumber(Math.min(start.y, current.y), 0, 100 - height),
+    });
   }
 
   const width = Math.min(100, Math.max(meta.minWidth, rawWidth));
@@ -274,10 +335,39 @@ function moveFieldGeometry(
   });
 }
 
-function resizeFieldGeometry(field: EditableHomeworkField, current: PagePoint) {
+function resizeFieldGeometry(
+  field: EditableHomeworkField,
+  current: PagePoint,
+  pageRect: PageRect,
+) {
   const meta = FIELD_TOOL_META[field.type];
-  const x = clampNumber(field.x, 0, 96);
-  const y = clampNumber(field.y, 0, 96);
+  const minWidth = meta.resizeMode === "square" ? meta.minWidth : 4;
+  const minHeight = meta.resizeMode === "square" ? meta.minHeight : 4;
+  const x = clampNumber(field.x, 0, 100 - minWidth);
+  const y = clampNumber(field.y, 0, 100 - minHeight);
+
+  if (meta.resizeMode === "square") {
+    const rawWidthPixels = Math.max(0, ((current.x - x) / 100) * pageRect.width);
+    const rawHeightPixels = Math.max(0, ((current.y - y) / 100) * pageRect.height);
+    const sizePixels = Math.max(
+      meta.minPixelSize ?? 18,
+      rawWidthPixels,
+      rawHeightPixels,
+    );
+    const width = clampNumber((sizePixels / pageRect.width) * 100, minWidth, 100 - x);
+    const height = clampNumber(
+      (sizePixels / pageRect.height) * 100,
+      minHeight,
+      100 - y,
+    );
+
+    return cleanGeometry({
+      height,
+      width,
+      x,
+      y,
+    });
+  }
 
   return cleanGeometry({
     height: clampNumber(current.y - y, meta.minHeight, 100 - y),
@@ -285,6 +375,36 @@ function resizeFieldGeometry(field: EditableHomeworkField, current: PagePoint) {
     x,
     y,
   });
+}
+
+function FieldAnswerPreview({ field }: { field: EditableHomeworkField }) {
+  if (field.type === "CHECKBOX") {
+    return (
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold leading-none text-primary/85">
+        x
+      </span>
+    );
+  }
+
+  if (field.type === "SHORT_TEXT") {
+    return (
+      <span className="pointer-events-none absolute inset-0 flex items-center overflow-hidden px-1 text-sm font-semibold text-primary/70">
+        texto
+      </span>
+    );
+  }
+
+  if (field.type === "LONG_TEXT") {
+    return (
+      <span className="pointer-events-none absolute inset-0 overflow-hidden px-1 py-1 text-sm font-semibold leading-5 text-primary/70">
+        texto
+      </span>
+    );
+  }
+
+  return (
+    <span className="pointer-events-none absolute inset-2 rounded border border-dashed border-primary/25" />
+  );
 }
 
 function createEditableField({
@@ -344,6 +464,7 @@ function InteractiveHomeworkCanvasEditor({
       selectedTool,
       activeAction.start,
       activeAction.current,
+      activeAction.pageRect,
     );
   }, [activeAction, selectedTool]);
 
@@ -464,7 +585,11 @@ function InteractiveHomeworkCanvasEditor({
         return;
       }
 
-      const geometry = resizeFieldGeometry(action.original, current);
+      const geometry = resizeFieldGeometry(
+        action.original,
+        current,
+        action.pageRect,
+      );
 
       setFields((currentFields) =>
         currentFields.map((field) =>
@@ -482,6 +607,7 @@ function InteractiveHomeworkCanvasEditor({
           selectedTool,
           action.start,
           current,
+          action.pageRect,
         );
         const fieldId = `new-${crypto.randomUUID()}`;
 
@@ -540,8 +666,6 @@ function InteractiveHomeworkCanvasEditor({
         </div>
       )}
       renderField={(field, index, style) => {
-        const meta = FIELD_TOOL_META[field.type];
-        const Icon = meta.Icon;
         const selected = selectedFieldId === field.id;
 
         return (
@@ -557,15 +681,15 @@ function InteractiveHomeworkCanvasEditor({
             style={style}
             title={field.label || `Area ${index + 1}`}
           >
-            <span className="absolute left-1 top-1 flex size-5 items-center justify-center rounded bg-white/90 text-primary shadow-sm">
-              <Icon aria-hidden="true" className="size-3" />
-            </span>
-            <button
-              aria-label="Redimensionar area"
-              className="absolute -bottom-2 -right-2 size-5 cursor-nwse-resize rounded-full border border-primary/30 bg-white text-primary shadow-sm"
-              onPointerDown={(event) => beginResize(event, field)}
-              type="button"
-            />
+            <FieldAnswerPreview field={field} />
+            {selected ? (
+              <button
+                aria-label="Redimensionar area"
+                className="absolute -bottom-2 -right-2 size-5 cursor-nwse-resize rounded-full border border-primary/30 bg-white text-primary shadow-sm"
+                onPointerDown={(event) => beginResize(event, field)}
+                type="button"
+              />
+            ) : null}
           </div>
         );
       }}
