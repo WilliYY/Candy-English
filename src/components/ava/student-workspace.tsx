@@ -360,29 +360,44 @@ export function StudentWorkspace({
 
           {activeTask === "aula-ao-vivo" ? (
             liveSessions.some((session) => session.isLive) ? (
-              <div className="grid gap-5">
+              <div className="mx-auto grid w-full max-w-6xl gap-5">
                 {liveSessions
                   .filter((session) => session.isLive)
                   .map((session) => (
                     <article
                       key={session.id}
-                      className="flex flex-col gap-4 rounded-2xl border border-primary/10 bg-white/80 p-4 shadow-sm backdrop-blur"
+                      className="overflow-hidden rounded-2xl border border-primary/10 bg-white/90 text-foreground shadow-sm backdrop-blur"
                     >
-                      <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-                        <Radio aria-hidden="true" />
-                        Ao vivo agora
-                      </span>
-                      <div className="flex flex-col gap-1">
-                        <strong>{session.title}</strong>
-                        <span className="text-sm text-muted-foreground">
-                          Teacher: {session.teacherName}
+                      <div className="flex flex-col gap-2 border-b border-primary/10 bg-primary/5 p-4 md:flex-row md:items-center md:justify-between">
+                        <div className="flex min-w-0 flex-col gap-2">
+                          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
+                            <Radio aria-hidden="true" />
+                            Ao vivo agora
+                          </span>
+                          <div>
+                            <strong className="block truncate">
+                              {session.title}
+                            </strong>
+                            <span className="text-sm text-muted-foreground">
+                              Teacher: {session.teacherName}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                          <CalendarDays aria-hidden="true" className="size-4" />
+                          {session.startsAt
+                            ? dateFormatter.format(session.startsAt)
+                            : "Aberta agora"}
                         </span>
                       </div>
-                      <LiveClassRoom
-                        displayName={currentUser.name ?? currentUser.email}
-                        meetingUrl={session.meetUrl}
-                        title={session.title}
-                      />
+                      <div className="bg-primary/[0.03] p-4 md:p-6">
+                        <LiveClassRoom
+                          className="max-w-5xl"
+                          displayName={currentUser.name ?? currentUser.email}
+                          meetingUrl={session.meetUrl}
+                          title={session.title}
+                        />
+                      </div>
                     </article>
                   ))}
               </div>

@@ -467,56 +467,91 @@ export function TeacherWorkspace({
           ) : null}
 
           {activeTask === "aula-ao-vivo" ? (
-            <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-              <LiveSessionForm students={students} teachers={teachers} />
-              <div className="flex flex-col gap-3">
-                <h2 className="text-lg font-semibold">Salas ao vivo</h2>
+            <div className="flex flex-col gap-6">
+              <section className="ava-soft-card rounded-xl border p-5">
+                <div className="mb-5 flex flex-col gap-1">
+                  <h2 className="text-lg font-semibold">
+                    Configurar aula ao vivo
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Escolha a teacher, o alcance da sala e inicie a chamada.
+                  </p>
+                </div>
+                <LiveSessionForm students={students} teachers={teachers} />
+              </section>
+
+              <section className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-semibold">Salas ao vivo</h2>
+                  <p className="text-sm text-muted-foreground">
+                    A chamada ativa aparece centralizada abaixo das opcoes da sala.
+                  </p>
+                </div>
                 {liveSessions.length === 0 ? (
                   <EmptyState>Nenhuma sala ao vivo aberta ainda.</EmptyState>
                 ) : (
-                  <div className="grid gap-3">
+                  <div className="grid gap-5">
                     {liveSessions.map((session) => (
-                      <article key={session.id} className="ava-soft-card rounded-lg border p-4">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <article
+                        key={session.id}
+                        className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-sm"
+                      >
+                        <div className="flex flex-col gap-3 border-b border-primary/10 bg-primary/5 p-4 lg:flex-row lg:items-center lg:justify-between">
                           <div className="flex min-w-0 flex-col gap-2">
-                            <span className="inline-flex w-fit items-center gap-2 rounded-md bg-secondary px-2 py-1 text-xs font-semibold text-secondary-foreground">
-                              <Radio aria-hidden="true" />
-                              {session.isLive ? "Ao vivo" : "Encerrada"}
-                            </span>
-                            <h2 className="font-semibold">{session.title}</h2>
-                            <p className="text-sm text-muted-foreground">
-                              Teacher: {session.teacherName}
-                              {session.studentName
-                                ? ` - Aluno: ${session.studentName}`
-                                : " - Turma geral"}
-                            </p>
-                            {session.isLive ? (
-                              <LiveClassRoom
-                                displayName={currentUser.name ?? currentUser.email}
-                                meetingUrl={session.meetUrl}
-                                title={session.title}
-                              />
-                            ) : (
-                              <Link
-                                href={session.meetUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="text-sm font-medium text-primary underline"
-                              >
-                                Abrir sala em nova aba
-                              </Link>
-                            )}
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+                                <Radio aria-hidden="true" />
+                                {session.isLive ? "Ao vivo" : "Encerrada"}
+                              </span>
+                              {session.startsAt ? (
+                                <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                                  <CalendarDays
+                                    aria-hidden="true"
+                                    className="size-3.5"
+                                  />
+                                  {dateFormatter.format(session.startsAt)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div>
+                              <h2 className="font-semibold">{session.title}</h2>
+                              <p className="text-sm text-muted-foreground">
+                                Teacher: {session.teacherName}
+                                {session.studentName
+                                  ? ` - Aluno: ${session.studentName}`
+                                  : " - Turma geral"}
+                              </p>
+                            </div>
                           </div>
                           <ToggleLiveSessionButton
                             isLive={session.isLive}
                             liveSessionId={session.id}
                           />
                         </div>
+                        <div className="bg-primary/[0.03] p-4 md:p-6">
+                          {session.isLive ? (
+                            <LiveClassRoom
+                              className="max-w-5xl"
+                              displayName={currentUser.name ?? currentUser.email}
+                              meetingUrl={session.meetUrl}
+                              title={session.title}
+                            />
+                          ) : (
+                            <Link
+                              href={session.meetUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex rounded-full border bg-white px-4 py-2 text-sm font-semibold text-primary"
+                            >
+                              Abrir sala em nova aba
+                            </Link>
+                          )}
+                        </div>
                       </article>
                     ))}
                   </div>
                 )}
-              </div>
+              </section>
             </div>
           ) : null}
 

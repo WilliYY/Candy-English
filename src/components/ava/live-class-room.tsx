@@ -124,7 +124,7 @@ export function LiveClassRoom({
     return (
       <div
         className={cn(
-          "rounded-2xl border border-white/20 bg-white/90 p-5 shadow-sm",
+          "mx-auto w-full rounded-2xl border border-white/20 bg-white/90 p-5 shadow-sm",
           className,
         )}
       >
@@ -157,7 +157,7 @@ export function LiveClassRoom({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-white/20 bg-white/90 shadow-xl shadow-primary/10",
+        "mx-auto w-full overflow-hidden rounded-2xl border border-white/20 bg-white/90 shadow-xl shadow-primary/10",
         className,
       )}
     >
@@ -178,7 +178,7 @@ export function LiveClassRoom({
           <ExternalLink aria-hidden="true" className="size-3.5" />
         </Link>
       </div>
-      <div className="relative h-[520px] min-h-[60vh] bg-primary">
+      <div className="relative h-[520px] bg-primary md:h-[620px]">
         {status !== "ready" ? (
           <div className="absolute inset-0 flex items-center justify-center text-primary-foreground">
             {status === "loading" ? (

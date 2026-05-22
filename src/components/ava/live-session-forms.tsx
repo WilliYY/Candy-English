@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { cn } from "@/lib/utils";
 
 type Option = {
   id: string;
@@ -36,9 +37,11 @@ const emptyLiveSession: CreateLiveSessionInput = {
 };
 
 export function LiveSessionForm({
+  className,
   students,
   teachers,
 }: {
+  className?: string;
   students: Option[];
   teachers: Option[];
 }) {
@@ -81,8 +84,12 @@ export function LiveSessionForm({
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <FieldGroup>
+    <form
+      onSubmit={onSubmit}
+      className={cn("flex flex-col gap-5", className)}
+      noValidate
+    >
+      <FieldGroup className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Field data-invalid={Boolean(form.formState.errors.teacherProfileId)}>
           <FieldLabel htmlFor="live-teacher">Teacher</FieldLabel>
           <NativeSelect
@@ -121,7 +128,10 @@ export function LiveSessionForm({
           <FieldError errors={[form.formState.errors.studentProfileId]} />
         </Field>
 
-        <Field data-invalid={Boolean(form.formState.errors.title)}>
+        <Field
+          className="xl:col-span-2"
+          data-invalid={Boolean(form.formState.errors.title)}
+        >
           <FieldLabel htmlFor="live-title">Titulo</FieldLabel>
           <Input
             id="live-title"
@@ -133,7 +143,10 @@ export function LiveSessionForm({
           <FieldError errors={[form.formState.errors.title]} />
         </Field>
 
-        <Field data-invalid={Boolean(form.formState.errors.meetUrl)}>
+        <Field
+          className="md:col-span-2"
+          data-invalid={Boolean(form.formState.errors.meetUrl)}
+        >
           <FieldLabel htmlFor="live-meet-url">
             Link externo opcional
           </FieldLabel>
@@ -151,7 +164,7 @@ export function LiveSessionForm({
           <FieldError errors={[form.formState.errors.meetUrl]} />
         </Field>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:col-span-2 md:grid-cols-2">
           <Field data-invalid={Boolean(form.formState.errors.startsAt)}>
             <FieldLabel htmlFor="live-starts-at">Inicio</FieldLabel>
             <Input
@@ -178,20 +191,22 @@ export function LiveSessionForm({
         </div>
       </FieldGroup>
 
-      {message ? (
-        <p className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground">
-          {message}
-        </p>
-      ) : null}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {message ? (
+          <p className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground">
+            {message}
+          </p>
+        ) : null}
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : (
-          <Radio data-icon="inline-start" />
-        )}
-        Iniciar aula ao vivo
-      </Button>
+        <Button className="sm:ml-auto" type="submit" disabled={isPending}>
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Radio data-icon="inline-start" />
+          )}
+          Iniciar aula ao vivo
+        </Button>
+      </div>
     </form>
   );
 }

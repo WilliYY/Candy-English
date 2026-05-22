@@ -70,6 +70,16 @@ Actions:
 4. Visualiza feedback.
 5. Edita dados pessoais permitidos, mas nao o nivel.
 
+### Aula ao vivo
+
+1. Teacher abre `/ava/teacher?task=aula-ao-vivo`.
+2. Configura teacher, aluno ou turma geral, titulo, link externo opcional e datas opcionais no bloco superior.
+3. Se o link externo ficar vazio, o AVA cria automaticamente uma sala Jitsi Meet embutida.
+4. Se o link for Google Meet, a sala fica registrada e abre em nova aba; se for `meet.jit.si`, o AVA tenta embutir a sala.
+5. A sala ativa aparece abaixo das opcoes, com o video centralizado como superficie principal.
+6. Student abre `/ava/student?task=aula-ao-vivo` e entra na mesma sala ativa liberada para ele.
+7. Teacher encerra ou reabre a sala pelo botao no topo do card da propria aula ao vivo.
+
 ### Aula interativa
 
 1. Teacher abre `/ava/teacher?task=criar-aula`.
@@ -132,7 +142,7 @@ Actions:
 - Excluir homework interativa exige permissao server-side de admin ou teacher dona da homework.
 - Draft de homework interativo nao deve aparecer como resposta entregue para teacher.
 - Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.
-- Aula ao vivo usa Jitsi embutido se nao houver link externo.
+- Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
 - Agenda e financeiro sao internos do admin.
