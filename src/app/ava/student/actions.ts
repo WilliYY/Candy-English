@@ -76,6 +76,7 @@ async function getInteractiveHomeworkForStudent(
     },
     select: {
       id: true,
+      fieldDetectionSource: true,
       interactiveFields: {
         orderBy: {
           sortOrder: "asc",
@@ -105,6 +106,12 @@ async function getInteractiveHomeworkForStudent(
       },
     },
   });
+}
+
+function interactiveEntityLabel(homework: { fieldDetectionSource: string | null }) {
+  return homework.fieldDetectionSource === "lesson-manual"
+    ? "atividade da aula"
+    : "homework";
 }
 
 function normalizeInteractiveAnswers(
@@ -302,7 +309,7 @@ export async function saveInteractiveHomeworkDraft(
   if (!studentProfile) {
     return {
       ok: false,
-      message: "Use uma conta de aluno para salvar a homework.",
+      message: "Use uma conta de aluno para salvar a atividade.",
     };
   }
 
@@ -329,14 +336,16 @@ export async function saveInteractiveHomeworkDraft(
   ) {
     return {
       ok: false,
-      message: "Homework interativa indisponivel.",
+      message: "Atividade interativa indisponivel.",
     };
   }
+
+  const entityLabel = interactiveEntityLabel(homework);
 
   if (homework.lesson.studentProfileId !== studentProfile.id) {
     return {
       ok: false,
-      message: "Esta homework nao esta vinculada ao seu perfil.",
+      message: `Esta ${entityLabel} nao esta vinculada ao seu perfil.`,
     };
   }
 
@@ -348,7 +357,7 @@ export async function saveInteractiveHomeworkDraft(
   ) {
     return {
       ok: false,
-      message: "Esta homework ja foi entregue.",
+      message: `Esta ${entityLabel} ja foi entregue.`,
     };
   }
 
@@ -390,7 +399,7 @@ export async function submitInteractiveHomework(
   if (!studentProfile) {
     return {
       ok: false,
-      message: "Use uma conta de aluno para entregar a homework.",
+      message: "Use uma conta de aluno para entregar a atividade.",
     };
   }
 
@@ -417,14 +426,16 @@ export async function submitInteractiveHomework(
   ) {
     return {
       ok: false,
-      message: "Homework interativa indisponivel.",
+      message: "Atividade interativa indisponivel.",
     };
   }
+
+  const entityLabel = interactiveEntityLabel(homework);
 
   if (homework.lesson.studentProfileId !== studentProfile.id) {
     return {
       ok: false,
-      message: "Esta homework nao esta vinculada ao seu perfil.",
+      message: `Esta ${entityLabel} nao esta vinculada ao seu perfil.`,
     };
   }
 
@@ -433,7 +444,7 @@ export async function submitInteractiveHomework(
   if (existingSubmission?.status === "REVIEWED") {
     return {
       ok: false,
-      message: "Esta homework ja foi corrigida.",
+      message: `Esta ${entityLabel} ja foi corrigida.`,
     };
   }
 
@@ -495,7 +506,10 @@ export async function submitInteractiveHomework(
 
   return {
     ok: true,
-    message: "Homework entregue com sucesso.",
+    message:
+      entityLabel === "atividade da aula"
+        ? "Atividade da aula entregue com sucesso."
+        : "Homework entregue com sucesso.",
   };
 }
 
@@ -507,7 +521,7 @@ export async function reopenInteractiveHomeworkDraft(
   if (!studentProfile) {
     return {
       ok: false,
-      message: "Use uma conta de aluno para refazer a homework.",
+      message: "Use uma conta de aluno para refazer a atividade.",
     };
   }
 
@@ -528,6 +542,7 @@ export async function reopenInteractiveHomeworkDraft(
     studentProfile.id,
   );
   const existingSubmission = homework?.submissions[0];
+  const entityLabel = homework ? interactiveEntityLabel(homework) : "atividade";
 
   if (
     !homework ||
@@ -538,7 +553,7 @@ export async function reopenInteractiveHomeworkDraft(
   ) {
     return {
       ok: false,
-      message: "Esta homework nao pode ser reaberta.",
+      message: `Esta ${entityLabel} nao pode ser reaberta.`,
     };
   }
 
@@ -556,6 +571,9 @@ export async function reopenInteractiveHomeworkDraft(
 
   return {
     ok: true,
-    message: "Homework reaberta para edicao.",
+    message:
+      entityLabel === "atividade da aula"
+        ? "Atividade da aula reaberta para edicao."
+        : "Homework reaberta para edicao.",
   };
 }

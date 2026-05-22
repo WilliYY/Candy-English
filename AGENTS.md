@@ -144,6 +144,7 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 - A criacao nova de homework usa o fluxo interativo do Canva; homework simples fica apenas como legado para atividades antigas.
 - A criacao nova de aula tambem pode usar PDF/imagem do Canva, criando uma aula real com uma atividade interativa vinculada para reaproveitar as mesmas ferramentas.
 - A criacao interativa seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para vincular permissao, arquivo e entrega.
+- Atividades criadas por `Criar aula` aparecem para o aluno em `Aulas e materiais`; somente atividades criadas por `Criar homework` aparecem em `Responder homework`.
 - Arquivos ficam em `storage/homework-assets` e sao servidos apenas por rota protegida.
 - `Homework.kind=INTERACTIVE` diferencia arquivos interativos de perguntas simples.
 - `Homework.fieldDetectionSource=lesson-manual` identifica atividades interativas criadas pelo fluxo de aula; `manual` segue sendo o fluxo de homework.

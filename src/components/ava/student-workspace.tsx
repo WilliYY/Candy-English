@@ -44,6 +44,7 @@ type StudentLesson = {
     assetMimeType: string | null;
     assetPageCount: number | null;
     dueDate: Date | null;
+    fieldDetectionSource: string | null;
     id: string;
     instructions: string | null;
     interactiveFields: {
@@ -95,6 +96,7 @@ type StudentLesson = {
     translation: string;
   }[];
 };
+type StudentHomework = StudentLesson["homeworks"][number];
 
 type StudentWorkspaceProps = {
   activeTask: StudentTask;
@@ -243,6 +245,23 @@ function canPreviewUrl(url?: string | null) {
   }
 }
 
+function isInteractiveLessonHomework(homework: StudentHomework) {
+  return (
+    homework.kind === "INTERACTIVE" &&
+    homework.fieldDetectionSource === "lesson-manual"
+  );
+}
+
+function isInternalHomeworkLesson(lesson: StudentLesson) {
+  return (
+    lesson.title.startsWith("Homework - ") &&
+    lesson.materials.length === 0 &&
+    lesson.vocabularyItems.length === 0 &&
+    lesson.homeworks.length > 0 &&
+    lesson.homeworks.every((homework) => !isInteractiveLessonHomework(homework))
+  );
+}
+
 export function StudentWorkspace({
   activeTask,
   chatThreads,
@@ -254,10 +273,15 @@ export function StudentWorkspace({
   studentProfile,
   teachers,
 }: StudentWorkspaceProps) {
-  const homeworkCount = lessons.reduce(
-    (total, lesson) => total + lesson.homeworks.length,
-    0,
+  const visibleLessons = lessons.filter(
+    (lesson) => !isInternalHomeworkLesson(lesson),
   );
+  const homeworkItems = lessons.flatMap((lesson) =>
+    lesson.homeworks
+      .filter((homework) => !isInteractiveLessonHomework(homework))
+      .map((homework) => ({ homework, lesson })),
+  );
+  const homeworkCount = homeworkItems.length;
   const reviewedCount = lessons.reduce(
     (total, lesson) =>
       total +
@@ -269,7 +293,7 @@ export function StudentWorkspace({
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
   const stats = [
-    { icon: BookOpen, label: "Aulas", value: lessons.length },
+    { icon: BookOpen, label: "Aulas", value: visibleLessons.length },
     { icon: ClipboardCheck, label: "Homeworks", value: homeworkCount },
     { icon: MessageSquareText, label: "Feedbacks", value: reviewedCount },
   ];
@@ -464,93 +488,123 @@ export function StudentWorkspace({
           ) : null}
 
           {activeTask === "aulas" ? (
-            lessons.length === 0 ? (
+            visibleLessons.length === 0 ? (
               <EmptyState>Nenhuma aula foi vinculada ao seu perfil ainda.</EmptyState>
             ) : (
               <div className="grid gap-5">
-                {lessons.map((lesson) => (
-                  <article key={lesson.id} className="rounded-lg border p-5">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <h2 className="text-lg font-semibold">
-                          {lesson.title}
-                        </h2>
-                        <p className="text-sm leading-6 text-muted-foreground">
-                          {lesson.description ?? "Sem resumo cadastrado."}
-                        </p>
-                      </div>
-                      <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
-                        <span>Teacher: {lesson.teacherProfile.user.name}</span>
-                        <span className="inline-flex items-center gap-2">
-                          <CalendarDays aria-hidden="true" />
-                          {lesson.scheduledAt
-                            ? dateFormatter.format(lesson.scheduledAt)
-                            : "Sem data"}
-                        </span>
-                      </div>
-                      <div className="grid gap-4 lg:grid-cols-2">
-                        <div className="rounded-lg bg-muted/50 p-4">
-                          <strong className="text-sm">Materiais</strong>
-                          <ul className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground">
-                            {lesson.materials.length === 0 ? (
-                              <li>Nenhum material cadastrado.</li>
-                            ) : (
-                              lesson.materials.map((material) => (
-                                <li key={material.id} className="leading-6">
-                                  <span className="font-medium text-foreground">
-                                    {material.title}
-                                  </span>
-                                  {material.content ? (
-                                    <p>{material.content}</p>
-                                  ) : null}
-                                  {material.url ? (
-                                    <div className="mt-3 flex flex-col gap-2">
-                                      {canPreviewUrl(material.url) ? (
-                                        <iframe
-                                          src={material.url}
-                                          title={`Previa do material ${material.title}`}
-                                          sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
-                                          referrerPolicy="no-referrer"
-                                          className="h-64 w-full rounded-md border bg-white"
-                                        />
-                                      ) : null}
-                                      <a
-                                        className="font-medium text-primary underline"
-                                        href={material.url}
-                                        rel="noreferrer"
-                                        target="_blank"
-                                      >
-                                        Abrir material em nova aba
-                                      </a>
-                                    </div>
-                                  ) : null}
-                                </li>
-                              ))
-                            )}
-                          </ul>
+                {visibleLessons.map((lesson) => {
+                  const lessonActivities = lesson.homeworks.filter(
+                    isInteractiveLessonHomework,
+                  );
+
+                  return (
+                    <article key={lesson.id} className="rounded-lg border p-5">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-2">
+                          <h2 className="text-lg font-semibold">
+                            {lesson.title}
+                          </h2>
+                          <p className="text-sm leading-6 text-muted-foreground">
+                            {lesson.description ?? "Sem resumo cadastrado."}
+                          </p>
                         </div>
-                        <div className="rounded-lg bg-muted/50 p-4">
-                          <strong className="text-sm">Vocabulario</strong>
-                          <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
-                            {lesson.vocabularyItems.length === 0 ? (
-                              <li>Nenhum vocabulario cadastrado.</li>
-                            ) : (
-                              lesson.vocabularyItems.map((item) => (
-                                <li key={item.id} className="leading-6">
-                                  <span className="font-medium text-foreground">
-                                    {item.term}
-                                  </span>{" "}
-                                  - {item.translation}
-                                  {item.example ? <p>{item.example}</p> : null}
-                                </li>
-                              ))
-                            )}
-                          </ul>
+                        <div className="grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                          <span>Teacher: {lesson.teacherProfile.user.name}</span>
+                          <span className="inline-flex items-center gap-2">
+                            <CalendarDays aria-hidden="true" />
+                            {lesson.scheduledAt
+                              ? dateFormatter.format(lesson.scheduledAt)
+                              : "Sem data"}
+                          </span>
                         </div>
+                        <div className="grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-lg bg-muted/50 p-4">
+                            <strong className="text-sm">Materiais</strong>
+                            <ul className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground">
+                              {lesson.materials.length === 0 ? (
+                                <li>Nenhum material cadastrado.</li>
+                              ) : (
+                                lesson.materials.map((material) => (
+                                  <li key={material.id} className="leading-6">
+                                    <span className="font-medium text-foreground">
+                                      {material.title}
+                                    </span>
+                                    {material.content ? (
+                                      <p>{material.content}</p>
+                                    ) : null}
+                                    {material.url ? (
+                                      <div className="mt-3 flex flex-col gap-2">
+                                        {canPreviewUrl(material.url) ? (
+                                          <iframe
+                                            src={material.url}
+                                            title={`Previa do material ${material.title}`}
+                                            sandbox="allow-forms allow-popups allow-same-origin allow-scripts"
+                                            referrerPolicy="no-referrer"
+                                            className="h-64 w-full rounded-md border bg-white"
+                                          />
+                                        ) : null}
+                                        <a
+                                          className="font-medium text-primary underline"
+                                          href={material.url}
+                                          rel="noreferrer"
+                                          target="_blank"
+                                        >
+                                          Abrir material em nova aba
+                                        </a>
+                                      </div>
+                                    ) : null}
+                                  </li>
+                                ))
+                              )}
+                            </ul>
+                          </div>
+                          <div className="rounded-lg bg-muted/50 p-4">
+                            <strong className="text-sm">Vocabulario</strong>
+                            <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
+                              {lesson.vocabularyItems.length === 0 ? (
+                                <li>Nenhum vocabulario cadastrado.</li>
+                              ) : (
+                                lesson.vocabularyItems.map((item) => (
+                                  <li key={item.id} className="leading-6">
+                                    <span className="font-medium text-foreground">
+                                      {item.term}
+                                    </span>{" "}
+                                    - {item.translation}
+                                    {item.example ? <p>{item.example}</p> : null}
+                                  </li>
+                                ))
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                        {lessonActivities.length > 0 ? (
+                          <div className="flex flex-col gap-3 rounded-lg bg-secondary/45 p-4">
+                            <strong className="text-sm">
+                              Atividade da aula
+                            </strong>
+                            {lessonActivities.map((homework) => (
+                              <InteractiveHomeworkStudent
+                                key={homework.id}
+                                context="lesson"
+                                homework={{
+                                  assetFileName: homework.assetFileName,
+                                  assetMimeType: homework.assetMimeType,
+                                  assetPageCount: homework.assetPageCount,
+                                  dueDate: homework.dueDate,
+                                  fields: homework.interactiveFields,
+                                  id: homework.id,
+                                  instructions: homework.instructions,
+                                  submission: homework.submissions[0],
+                                  title: homework.title,
+                                }}
+                              />
+                            ))}
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
-                  </article>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             )
           ) : null}
@@ -560,8 +614,7 @@ export function StudentWorkspace({
               <EmptyState>Nenhuma homework disponivel no momento.</EmptyState>
             ) : (
               <div className="grid gap-3">
-                {lessons.flatMap((lesson) =>
-                  lesson.homeworks.map((homework) => {
+                {homeworkItems.map(({ homework }) => {
                     const submission = homework.submissions[0];
 
                     if (homework.kind === "INTERACTIVE") {
@@ -636,8 +689,7 @@ export function StudentWorkspace({
                         </div>
                       </details>
                     );
-                  }),
-                )}
+                  })}
               </div>
             )
           ) : null}

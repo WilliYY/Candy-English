@@ -116,6 +116,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
             assetMimeType: true,
             assetPageCount: true,
             dueDate: true,
+            fieldDetectionSource: true,
             id: true,
             instructions: true,
             interactiveFields: {

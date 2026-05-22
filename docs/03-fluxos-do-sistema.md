@@ -77,7 +77,7 @@ Actions:
 3. O sistema cria uma `Lesson` real para o aluno e uma atividade `Homework.kind=INTERACTIVE` vinculada a essa aula, marcada com `fieldDetectionSource=lesson-manual`.
 4. A aula aparece na lista de aulas, e a atividade interativa usa o mesmo editor manual de areas do homework.
 5. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar.
-6. Student responde essa atividade pela area de homeworks, com campos invisiveis sobre o arquivo e autosave.
+6. Student responde essa atividade dentro de `/ava/student?task=aulas`, no card da propria aula, com campos invisiveis sobre o arquivo e autosave.
 
 ### Homework interativo
 
@@ -128,7 +128,7 @@ Actions:
 - Student tem botoes sempre visiveis.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.
-- A interface de criacao nova de aula usa o mesmo fluxo interativo de PDF/imagem por enquanto, criando uma aula real com atividade interativa vinculada.
+- A interface de criacao nova de aula usa o mesmo fluxo interativo de PDF/imagem por enquanto, criando uma aula real com atividade interativa vinculada que aparece em `Aulas e materiais`, nao em `Responder homework`.
 - Excluir homework interativa exige permissao server-side de admin ou teacher dona da homework.
 - Draft de homework interativo nao deve aparecer como resposta entregue para teacher.
 - Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.

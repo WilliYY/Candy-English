@@ -342,8 +342,10 @@ function DrawingField({
 }
 
 export function InteractiveHomeworkStudent({
+  context = "homework",
   homework,
 }: {
+  context?: "homework" | "lesson";
   homework: StudentInteractiveHomework;
 }) {
   const router = useRouter();
@@ -362,6 +364,12 @@ export function InteractiveHomeworkStudent({
   const isLocked = status === "SUBMITTED" || status === "REVIEWED";
   const canReopen = status === "SUBMITTED";
   const assetUrl = `/ava/homework-assets/${homework.id}`;
+  const fallbackAssetLabel =
+    context === "lesson" ? "Atividade interativa da aula" : "Homework interativa";
+  const fallbackInstructions =
+    context === "lesson"
+      ? "Complete a atividade da aula e entregue."
+      : "Complete a atividade e entregue.";
 
   useEffect(() => {
     setValues(initialValues);
@@ -447,7 +455,7 @@ export function InteractiveHomeworkStudent({
               {homework.title}
             </span>
             <span className="block truncate text-xs text-muted-foreground">
-              {homework.assetFileName ?? "Homework interativa"}
+              {homework.assetFileName ?? fallbackAssetLabel}
             </span>
           </span>
         </span>
@@ -463,7 +471,7 @@ export function InteractiveHomeworkStudent({
       <div className="border-t border-primary/15 p-4">
         <div className="mb-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-start">
           <p className="leading-6">
-            {homework.instructions ?? "Complete a atividade e entregue."}
+            {homework.instructions ?? fallbackInstructions}
           </p>
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 px-3 py-1 text-xs font-semibold">
             <Save aria-hidden="true" />

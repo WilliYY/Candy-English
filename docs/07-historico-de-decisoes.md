@@ -212,6 +212,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/teacher/actions.ts`, `src/components/ava/teacher-forms.tsx`, `src/components/ava/teacher-workspace.tsx`, `src/components/ava/interactive-homework-editor.tsx`, `src/lib/validations/learning.ts`, docs oficiais.
 - Riscos/cuidados: aula interativa reutiliza `Homework.kind=INTERACTIVE` e usa `fieldDetectionSource=lesson-manual` para separacao visual; futuramente pode virar modelo proprio se aulas interativas precisarem de regras diferentes de entrega/correcao.
 
+### 2026-05-21 - Aula interativa fica na area de aulas do aluno
+
+- Decisao: atividades marcadas com `fieldDetectionSource=lesson-manual` aparecem para o aluno em `/ava/student?task=aulas`, dentro do card da propria aula, e deixam de aparecer em `/ava/student?task=homeworks`.
+- Motivo: a criacao por `Criar aula` nao deve parecer homework para o aluno, mesmo reutilizando o motor tecnico de resposta interativa.
+- Impacto: `src/app/ava/student/page.tsx`, `src/components/ava/student-workspace.tsx`, `src/components/ava/interactive-homework-student.tsx`, docs oficiais.
+- Riscos/cuidados: a camada tecnica ainda usa `HomeworkSubmission` para autosave/correcao; futuras separacoes de modelo devem preservar permissao por aluno/teacher.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
