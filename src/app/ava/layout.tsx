@@ -180,7 +180,7 @@ const navGroups = [
       {
         href: "/ava/student?task=aulas",
         icon: BookOpen,
-        label: "Aulas e materiais",
+        label: "Aulas e Materiais",
       },
       {
         href: "/ava/student?task=homeworks",

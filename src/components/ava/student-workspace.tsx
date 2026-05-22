@@ -158,7 +158,7 @@ const taskMeta = {
   aulas: {
     description: "Veja materiais, links e vocabulario das suas aulas.",
     icon: BookOpen,
-    title: "Aulas e materiais",
+    title: "Aulas e Materiais",
   },
   contratos: {
     description: "Abra contratos PDF liberados para seu perfil.",
@@ -491,15 +491,18 @@ export function StudentWorkspace({
             visibleLessons.length === 0 ? (
               <EmptyState>Nenhuma aula foi vinculada ao seu perfil ainda.</EmptyState>
             ) : (
-              <div className="grid gap-5">
+              <div className="mx-auto grid w-full max-w-6xl gap-6">
                 {visibleLessons.map((lesson) => {
                   const lessonActivities = lesson.homeworks.filter(
                     isInteractiveLessonHomework,
                   );
 
                   return (
-                    <article key={lesson.id} className="rounded-lg border p-5">
-                      <div className="flex flex-col gap-4">
+                    <article
+                      key={lesson.id}
+                      className="rounded-xl border border-primary/15 bg-white/90 p-5 shadow-sm md:p-7"
+                    >
+                      <div className="flex flex-col gap-5">
                         <div className="flex flex-col gap-2">
                           <h2 className="text-lg font-semibold">
                             {lesson.title}
@@ -578,9 +581,9 @@ export function StudentWorkspace({
                           </div>
                         </div>
                         {lessonActivities.length > 0 ? (
-                          <div className="flex flex-col gap-3 rounded-lg bg-secondary/45 p-4">
+                          <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 rounded-xl border border-primary/15 bg-white p-4 shadow-sm md:p-5">
                             <strong className="text-sm">
-                              Atividade da aula
+                              Aulas
                             </strong>
                             {lessonActivities.map((homework) => (
                               <InteractiveHomeworkStudent

@@ -110,8 +110,12 @@ async function getInteractiveHomeworkForStudent(
 
 function interactiveEntityLabel(homework: { fieldDetectionSource: string | null }) {
   return homework.fieldDetectionSource === "lesson-manual"
-    ? "atividade da aula"
+    ? "aula"
     : "homework";
+}
+
+function isInteractiveLessonEntity(homework: { fieldDetectionSource: string | null }) {
+  return homework.fieldDetectionSource === "lesson-manual";
 }
 
 function normalizeInteractiveAnswers(
@@ -341,6 +345,7 @@ export async function saveInteractiveHomeworkDraft(
   }
 
   const entityLabel = interactiveEntityLabel(homework);
+  const isLessonEntity = isInteractiveLessonEntity(homework);
 
   if (homework.lesson.studentProfileId !== studentProfile.id) {
     return {
@@ -357,7 +362,9 @@ export async function saveInteractiveHomeworkDraft(
   ) {
     return {
       ok: false,
-      message: `Esta ${entityLabel} ja foi entregue.`,
+      message: isLessonEntity
+        ? "Esta aula ja foi concluida."
+        : `Esta ${entityLabel} ja foi entregue.`,
     };
   }
 
@@ -431,6 +438,7 @@ export async function submitInteractiveHomework(
   }
 
   const entityLabel = interactiveEntityLabel(homework);
+  const isLessonEntity = isInteractiveLessonEntity(homework);
 
   if (homework.lesson.studentProfileId !== studentProfile.id) {
     return {
@@ -471,9 +479,15 @@ export async function submitInteractiveHomework(
 
   if (hasMissingRequired) {
     return {
-      errors: { answers: "Preencha os campos obrigatorios antes de entregar." },
+      errors: {
+        answers: isLessonEntity
+          ? "Preencha os campos obrigatorios antes de concluir."
+          : "Preencha os campos obrigatorios antes de entregar.",
+      },
       ok: false,
-      message: "Preencha os campos obrigatorios antes de entregar.",
+      message: isLessonEntity
+        ? "Preencha os campos obrigatorios antes de concluir."
+        : "Preencha os campos obrigatorios antes de entregar.",
     };
   }
 
@@ -506,10 +520,9 @@ export async function submitInteractiveHomework(
 
   return {
     ok: true,
-    message:
-      entityLabel === "atividade da aula"
-        ? "Atividade da aula entregue com sucesso."
-        : "Homework entregue com sucesso.",
+    message: isLessonEntity
+      ? "Aula concluida com sucesso."
+      : "Homework entregue com sucesso.",
   };
 }
 
@@ -543,6 +556,7 @@ export async function reopenInteractiveHomeworkDraft(
   );
   const existingSubmission = homework?.submissions[0];
   const entityLabel = homework ? interactiveEntityLabel(homework) : "atividade";
+  const isLessonEntity = homework ? isInteractiveLessonEntity(homework) : false;
 
   if (
     !homework ||
@@ -571,9 +585,8 @@ export async function reopenInteractiveHomeworkDraft(
 
   return {
     ok: true,
-    message:
-      entityLabel === "atividade da aula"
-        ? "Atividade da aula reaberta para edicao."
-        : "Homework reaberta para edicao.",
+    message: isLessonEntity
+      ? "Aula reaberta para edicao."
+      : "Homework reaberta para edicao.",
   };
 }

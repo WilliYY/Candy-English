@@ -119,6 +119,10 @@ function statusClass(status?: string) {
   return "border-red-700 bg-red-600 text-white";
 }
 
+function isCompleteStatus(status?: string) {
+  return status === "SUBMITTED" || status === "REVIEWED";
+}
+
 type DrawingPoint = [number, number];
 type DrawingStroke = DrawingPoint[];
 
@@ -363,13 +367,19 @@ export function InteractiveHomeworkStudent({
   const status = homework.submission?.status;
   const isLocked = status === "SUBMITTED" || status === "REVIEWED";
   const canReopen = status === "SUBMITTED";
+  const isLessonContext = context === "lesson";
+  const isComplete = isCompleteStatus(status);
   const assetUrl = `/ava/homework-assets/${homework.id}`;
   const fallbackAssetLabel =
-    context === "lesson" ? "Atividade interativa da aula" : "Homework interativa";
+    context === "lesson" ? "Aula interativa" : "Homework interativa";
   const fallbackInstructions =
     context === "lesson"
-      ? "Complete a atividade da aula e entregue."
+      ? "Complete a aula e marque como concluido."
       : "Complete a atividade e entregue.";
+  const lessonStatusClass = isComplete
+    ? "border-emerald-500/40 bg-emerald-50 text-emerald-900"
+    : "border-red-500/40 bg-red-50 text-red-900";
+  const lessonStatusDotClass = isComplete ? "bg-emerald-500" : "bg-red-600";
 
   useEffect(() => {
     setValues(initialValues);
@@ -444,14 +454,38 @@ export function InteractiveHomeworkStudent({
   }
 
   return (
-    <details className="group rounded-lg border-2 border-primary/20 bg-white shadow-sm">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
+    <details
+      className={
+        isLessonContext
+          ? "group overflow-hidden rounded-xl border border-primary/15 bg-white shadow-md shadow-primary/10"
+          : "group rounded-lg border-2 border-primary/20 bg-white shadow-sm"
+      }
+    >
+      <summary
+        className={
+          isLessonContext
+            ? "flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 hover:bg-primary/5 md:px-6 [&::-webkit-details-marker]:hidden"
+            : "flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden"
+        }
+      >
         <span className="flex min-w-0 items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+          <span
+            className={
+              isLessonContext
+                ? "flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                : "flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
+            }
+          >
             <ClipboardCheck aria-hidden="true" />
           </span>
           <span className="min-w-0">
-            <span className="block truncate font-semibold">
+            <span
+              className={
+                isLessonContext
+                  ? "block truncate text-base font-semibold"
+                  : "block truncate font-semibold"
+              }
+            >
               {homework.title}
             </span>
             <span className="block truncate text-xs text-muted-foreground">
@@ -459,16 +493,34 @@ export function InteractiveHomeworkStudent({
             </span>
           </span>
         </span>
-        <span
-          className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(
-            status,
-          )}`}
-        >
-          {statusLabel(status)}
-        </span>
+        {isLessonContext ? (
+          <span
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${lessonStatusClass}`}
+          >
+            <span
+              aria-hidden="true"
+              className={`size-2.5 rounded-full ${lessonStatusDotClass}`}
+            />
+            {isComplete ? "Concluido" : "Nao concluido"}
+          </span>
+        ) : (
+          <span
+            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(
+              status,
+            )}`}
+          >
+            {statusLabel(status)}
+          </span>
+        )}
       </summary>
 
-      <div className="border-t border-primary/15 p-4">
+      <div
+        className={
+          isLessonContext
+            ? "border-t border-primary/15 p-5 md:p-6"
+            : "border-t border-primary/15 p-4"
+        }
+      >
         <div className="mb-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-start">
           <p className="leading-6">
             {homework.instructions ?? fallbackInstructions}
@@ -488,7 +540,7 @@ export function InteractiveHomeworkStudent({
           assetUrl={assetUrl}
           expectedPageCount={homework.assetPageCount}
           fields={homework.fields}
-          pageClassName="max-w-[980px]"
+          pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
           renderField={(field, index, style) => {
               const commonClass =
                 "pointer-events-auto absolute appearance-none border-0 bg-transparent px-1 text-sm font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
@@ -578,14 +630,27 @@ export function InteractiveHomeworkStudent({
           </p>
         ) : null}
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Button type="button" onClick={submit} disabled={isPending || isLocked}>
+        <div
+          className={
+            isLessonContext
+              ? "mt-5 flex flex-wrap items-center justify-center gap-2 sm:justify-start"
+              : "mt-4 flex flex-wrap items-center gap-2"
+          }
+        >
+          <Button
+            type="button"
+            onClick={submit}
+            disabled={isPending || isLocked}
+            className={isLessonContext ? "h-10 px-5" : undefined}
+          >
             {isPending ? (
               <LoaderCircle data-icon="inline-start" className="animate-spin" />
+            ) : isLessonContext ? (
+              <CheckCircle2 data-icon="inline-start" />
             ) : (
               <Send data-icon="inline-start" />
             )}
-            Entregar
+            {isLessonContext ? "Concluido" : "Entregar"}
           </Button>
           {canReopen ? (
             <Button

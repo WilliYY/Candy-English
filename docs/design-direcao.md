@@ -81,6 +81,7 @@ Cuidados:
 - Secoes de produto, como o bloco do AVA na home, podem usar particulas discretas e hover em cards para dar vida sem poluir a leitura.
 - Cards de admin/teacher devem usar contraste roxo suave, sem ficar em branco puro quando a tela precisar de hierarquia.
 - A barra lateral do AVA deve parecer uma area de trabalho clara: contraste maior que o fundo, grupos com borda suave e item ativo marcado com roxo solido.
+- A area `Aulas e Materiais` do student deve centralizar as aulas em uma superficie ampla; aulas interativas usam status simples de conclusao com bolinha verde/vermelha.
 
 ## Fluxo Visual Do Site
 
