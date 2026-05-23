@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { getLiveClassJitsiOrigin } from "@/lib/live-class";
 import { getPrisma } from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
 import { saveContractPdf } from "@/lib/storage";
@@ -120,7 +121,7 @@ function createJitsiMeetUrl(title: string) {
     .slice(0, 48);
   const suffix = randomBytes(6).toString("hex");
 
-  return `https://meet.jit.si/CandyEnglish-${slug || "aula"}-${suffix}`;
+  return `${getLiveClassJitsiOrigin()}/CandyEnglish-${slug || "aula"}-${suffix}`;
 }
 
 export async function updateMyProfile(

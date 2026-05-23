@@ -16,6 +16,7 @@ Camadas principais:
 - `src/components/ui/`: componentes base shadcn/ui.
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
+- `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
@@ -57,6 +58,7 @@ Servicos Docker:
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
 - Headers basicos de seguranca ficam em `next.config.ts`.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
+- O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 
 ## Riscos ao alterar esta parte
 
@@ -79,4 +81,4 @@ Servicos Docker:
 - Criar docs especificos para painel administrativo, seguranca e testes.
 - Separar submodulos grandes do AVA se as telas crescerem.
 - Adicionar observabilidade, logs estruturados e monitoramento externo.
-- Avaliar LiveKit/Jitsi dedicado se aula ao vivo precisar de maior controle.
+- Configurar Jitsi dedicado ou JaaS para aula ao vivo sem conta externa de teacher/aluno e com maior controle de embed.

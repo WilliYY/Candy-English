@@ -106,6 +106,7 @@ Variaveis principais:
 - `AUTH_SECRET`: segredo do Auth.js.
 - `AUTH_URL` e `NEXTAUTH_URL`: URL publica do app.
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
+- `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
 - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
 - `OPENAI_API_KEY`: reservada para OCR opcional/futuro; o fluxo padrao de homework interativo e manual e nao envia o arquivo para IA.
 - `OPENAI_HOMEWORK_OCR_MODEL`: modelo para OCR opcional caso essa sugestao seja reativada, exemplo `gpt-4.1-mini`.

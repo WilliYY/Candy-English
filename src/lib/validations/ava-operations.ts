@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isLiveClassJitsiHost } from "@/lib/live-class";
 
 const optionalText = (max: number, message: string) =>
   z
@@ -107,15 +108,22 @@ export const createLiveSessionSchema = z.object({
           return true;
         }
 
-        const host = new URL(url).hostname.toLowerCase();
+        let host = "";
+
+        try {
+          host = new URL(url).hostname.toLowerCase();
+        } catch {
+          return false;
+        }
+
         return (
           host === "meet.google.com" ||
           host.endsWith(".meet.google.com") ||
-          host === "meet.jit.si"
+          isLiveClassJitsiHost(host)
         );
       },
       {
-        message: "Use um link do Google Meet ou Jitsi Meet.",
+        message: "Use um link do Google Meet ou do Jitsi configurado.",
       },
     ),
   startsAt: optionalDateTime,

@@ -37,6 +37,7 @@ Servidor oficial:
 - `private/secrets` e `private/backups` ficam fora do Git quando existirem.
 - Deploy com migration deve aplicar migration antes de recriar o app.
 - `OPENAI_API_KEY` e opcional/reservada; o fluxo padrao de homework interativo e manual e nao depende de OCR.
+- `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
 
 ## Decisoes tecnicas tomadas
 
@@ -49,6 +50,7 @@ Servidor oficial:
 - O app corrige permissao de `/app/storage` no boot e roda Next como `nextjs`.
 - Homework interativo usa o mesmo volume `app-storage` para `storage/homework-assets`.
 - A imagem de ferramentas (`migrate`, `seed`, `audit-server-smoke`) gera o Prisma Client no build para que scripts de smoke e seed encontrem `src/generated/prisma/client`.
+- Aula ao vivo usa `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` para montar novas salas e liberar camera/microfone/display capture no `Permissions-Policy`.
 
 ## Riscos ao alterar esta parte
 
@@ -58,6 +60,7 @@ Servidor oficial:
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
 - Reativar OCR/OpenAI sem revisar custo, privacidade e volume pode gerar despesa por upload de homework.
 - Alterar headers pode afetar Jitsi ou seguranca basica.
+- Usar `meet.jit.si` publico em embed pode exigir login do criador e limitar a chamada; para producao sem conta externa, configurar Jitsi dedicado/JaaS e atualizar o dominio no ambiente.
 
 ## Pendencias
 

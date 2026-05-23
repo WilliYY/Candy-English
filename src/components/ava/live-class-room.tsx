@@ -3,6 +3,7 @@
 import { ExternalLink, LoaderCircle, Radio } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { isLiveClassJitsiHost } from "@/lib/live-class";
 import { cn } from "@/lib/utils";
 
 type JitsiApi = {
@@ -25,30 +26,35 @@ type LiveClassRoomProps = {
   title: string;
 };
 
-function getJitsiRoomName(meetingUrl: string) {
+function getJitsiMeeting(meetingUrl: string) {
   try {
     const url = new URL(meetingUrl);
 
-    if (url.hostname.toLowerCase() !== "meet.jit.si") {
+    if (!isLiveClassJitsiHost(url.hostname)) {
       return null;
     }
 
-    return decodeURIComponent(url.pathname.replace(/^\/+/, "")).trim() || null;
+    const roomName =
+      decodeURIComponent(url.pathname.replace(/^\/+/, "")).trim() || null;
+
+    return roomName ? { domain: url.hostname.toLowerCase(), roomName } : null;
   } catch {
     return null;
   }
 }
 
-function loadJitsiScript() {
+function loadJitsiScript(domain: string) {
   return new Promise<void>((resolve, reject) => {
-    if (window.JitsiMeetExternalAPI) {
+    const scriptUrl = `https://${domain}/external_api.js`;
+
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      `script[src="${scriptUrl}"]`,
+    );
+
+    if (existingScript && window.JitsiMeetExternalAPI) {
       resolve();
       return;
     }
-
-    const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[src="https://meet.jit.si/external_api.js"]',
-    );
 
     if (existingScript) {
       existingScript.addEventListener("load", () => resolve(), { once: true });
@@ -58,7 +64,7 @@ function loadJitsiScript() {
 
     const script = document.createElement("script");
     script.async = true;
-    script.src = "https://meet.jit.si/external_api.js";
+    script.src = scriptUrl;
     script.onload = () => resolve();
     script.onerror = reject;
     document.body.appendChild(script);
@@ -72,13 +78,13 @@ export function LiveClassRoom({
   title,
 }: LiveClassRoomProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const roomName = useMemo(() => getJitsiRoomName(meetingUrl), [meetingUrl]);
+  const meeting = useMemo(() => getJitsiMeeting(meetingUrl), [meetingUrl]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">(
-    roomName ? "loading" : "ready",
+    meeting ? "loading" : "ready",
   );
 
   useEffect(() => {
-    if (!roomName || !containerRef.current) {
+    if (!meeting || !containerRef.current) {
       return;
     }
 
@@ -87,13 +93,13 @@ export function LiveClassRoom({
 
     setStatus("loading");
 
-    loadJitsiScript()
+    loadJitsiScript(meeting.domain)
       .then(() => {
         if (disposed || !containerRef.current || !window.JitsiMeetExternalAPI) {
           return;
         }
 
-        api = new window.JitsiMeetExternalAPI("meet.jit.si", {
+        api = new window.JitsiMeetExternalAPI(meeting.domain, {
           configOverwrite: {
             disableDeepLinking: true,
             prejoinPageEnabled: true,
@@ -104,7 +110,7 @@ export function LiveClassRoom({
             DEFAULT_BACKGROUND: "#2d1038",
           },
           parentNode: containerRef.current,
-          roomName,
+          roomName: meeting.roomName,
           userInfo: {
             displayName: displayName ?? "Candy English",
           },
@@ -118,9 +124,9 @@ export function LiveClassRoom({
       disposed = true;
       api?.dispose();
     };
-  }, [displayName, roomName]);
+  }, [displayName, meeting]);
 
-  if (!roomName) {
+  if (!meeting) {
     return (
       <div
         className={cn(

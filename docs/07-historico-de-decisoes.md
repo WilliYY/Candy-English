@@ -72,6 +72,13 @@ Cada decisao deve conter:
 - Impacto: `LiveSession`, `src/components/ava/live-class-room.tsx`, `next.config.ts`.
 - Riscos/cuidados: revisar Permissions-Policy se trocar provedor.
 
+### 2026-05-22 - Dominio Jitsi configuravel para aula ao vivo
+
+- Decisao: parametrizar o dominio Jitsi por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`, mantendo `meet.jit.si` como fallback/local.
+- Motivo: o `meet.jit.si` publico exige autenticacao para criacao de sala e nao deve ser embed de producao; a Candy precisa migrar para Jitsi dedicado/JaaS para teacher e aluno entrarem apenas pelo AVA.
+- Impacto: `src/lib/live-class.ts`, `src/app/ava/actions.ts`, `src/components/ava/live-class-room.tsx`, `src/lib/validations/ava-operations.ts`, `next.config.ts`, `.env.example`.
+- Riscos/cuidados: trocar o dominio exige DNS/HTTPS/Jitsi funcionando e rebuild do app; sem JWT ou secure domain, qualquer pessoa com o link direto da sala pode tentar entrar.
+
 ### 2026-05 - AVA por tarefa com `?task=`
 
 - Decisao: admin, teacher e student exibem uma tarefa principal por vez.

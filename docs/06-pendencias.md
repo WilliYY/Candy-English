@@ -30,6 +30,7 @@ As pendencias podem afetar:
 - Jogos.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
+- Jitsi dedicado ou JaaS para aula ao vivo sem conta externa e sem limite de embed do `meet.jit.si` publico.
 
 ## Pendencias tecnicas
 
@@ -42,6 +43,7 @@ As pendencias podem afetar:
 - Auditoria da agenda ainda e log simples, nao relatorio completo.
 - OCR/IA do homework interativo esta fora do fluxo padrao manual; reativar sugestao automatica exige decisao explicita e revisao de custo/privacidade.
 - Observabilidade externa e alertas de producao.
+- DNS/infra do dominio de aula ao vivo dedicado, por exemplo `meet.candyenglish.com.br`, ainda precisa ser configurado antes de trocar `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` em producao.
 
 ## Pendencias de documentacao
 

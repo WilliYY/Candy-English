@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import { getLiveClassJitsiOrigins } from "./src/lib/live-class";
+
+const liveClassJitsiPermissionOrigins = getLiveClassJitsiOrigins()
+  .map((origin) => `"${origin}"`)
+  .join(" ");
 
 const nextConfig: NextConfig = {
   experimental: {
@@ -25,7 +30,7 @@ const nextConfig: NextConfig = {
           {
             key: "Permissions-Policy",
             value:
-              'camera=(self "https://meet.jit.si"), microphone=(self "https://meet.jit.si"), display-capture=(self "https://meet.jit.si"), geolocation=()',
+              `camera=(self ${liveClassJitsiPermissionOrigins}), microphone=(self ${liveClassJitsiPermissionOrigins}), display-capture=(self ${liveClassJitsiPermissionOrigins}), geolocation=()`,
           },
         ],
         source: "/(.*)",
