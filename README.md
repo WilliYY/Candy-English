@@ -17,7 +17,7 @@ Ja existe:
 - login real com Auth.js/NextAuth v5, JWT e senha com `bcryptjs`;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
-- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro e agenda;
+- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda e cofre de APIs/senhas;
 - teacher com aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos e mensagens;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar e aula ao vivo;
 - chat interno teacher/aluno validado por vinculo;
@@ -105,6 +105,7 @@ Variaveis principais:
 - `DATABASE_URL`: URL interna do PostgreSQL no Docker.
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`: banco do container.
 - `AUTH_SECRET`: segredo do Auth.js.
+- `ADMIN_CREDENTIALS_SECRET`: segredo opcional para criptografar APIs/senhas salvas no admin; se ficar vazio, `AUTH_SECRET` e usado.
 - `AUTH_URL` e `NEXTAUTH_URL`: URL publica do app.
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
@@ -117,6 +118,7 @@ Variaveis principais:
 - `AUDIT_BASE_URL`: base URL usada pelos smoke tests.
 
 O arquivo `.env.example` contem apenas exemplos e placeholders.
+O painel `/ava/admin?task=apis-senhas` sincroniza para o banco, de forma criptografada, apenas integracoes externas configuradas no `.env` como OpenAI, Google OAuth e dominio Jitsi. Segredos internos como `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres e senha seed do admin nao sao importados para a tela.
 
 ## Instalacao local
 

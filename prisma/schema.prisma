@@ -57,25 +57,41 @@ enum AgendaLessonStatus {
   MAKEUP_ATTENDED
 }
 
+enum AdminCredentialKind {
+  API_KEY
+  PASSWORD
+  TOKEN
+  CONFIG
+  URL
+  OTHER
+}
+
+enum AdminCredentialSource {
+  MANUAL
+  ENV
+}
+
 model User {
-  id                String             @id @default(cuid())
-  name              String
-  email             String             @unique
-  passwordHash      String
-  role              Role               @default(STUDENT)
-  isActive          Boolean            @default(true)
-  phone             String?
-  address           String?
-  avatarPath        String?
-  avatarMimeType    String?
-  studentProfile    StudentProfile?
-  teacherProfile    TeacherProfile?
-  financialLogs     FinancialLog[]
-  agendaLogs        AgendaLog[]
-  sentChatMessages  ChatMessage[]
-  uploadedContracts ContractDocument[] @relation("UploadedContracts")
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                 String             @id @default(cuid())
+  name               String
+  email              String             @unique
+  passwordHash       String
+  role               Role               @default(STUDENT)
+  isActive           Boolean            @default(true)
+  phone              String?
+  address            String?
+  avatarPath         String?
+  avatarMimeType     String?
+  studentProfile     StudentProfile?
+  teacherProfile     TeacherProfile?
+  financialLogs      FinancialLog[]
+  agendaLogs         AgendaLog[]
+  createdCredentials AdminCredential[]  @relation("AdminCredentialCreatedBy")
+  updatedCredentials AdminCredential[]  @relation("AdminCredentialUpdatedBy")
+  sentChatMessages   ChatMessage[]
+  uploadedContracts  ContractDocument[] @relation("UploadedContracts")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([isActive])
 }
@@ -424,6 +440,32 @@ model AppSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AdminCredential {
+  id               String                @id @default(cuid())
+  label            String
+  service          String
+  kind             AdminCredentialKind   @default(API_KEY)
+  username         String?
+  url              String?
+  notes            String?
+  secretCiphertext String
+  secretDigest     String
+  secretPreview    String
+  source           AdminCredentialSource @default(MANUAL)
+  sourceKey        String?               @unique
+  createdByUserId  String?
+  createdByUser    User?                 @relation("AdminCredentialCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUserId  String?
+  updatedByUser    User?                 @relation("AdminCredentialUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([service])
+  @@index([kind])
+  @@index([source])
+  @@index([createdAt])
 }
 
 model ChatThread {

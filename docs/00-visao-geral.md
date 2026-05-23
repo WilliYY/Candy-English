@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa e controle de acessos.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas e controle de acessos.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -35,6 +35,7 @@ Rotas principais:
 - `ADMIN`, `TEACHER` e `STUDENT` sao os perfis atuais.
 - Areas protegidas devem validar permissao no servidor.
 - Admins podem criar usuarios, ativar/desativar acessos e redefinir senhas pela interface protegida.
+- Admins podem registrar APIs/senhas em `/ava/admin?task=apis-senhas`; os valores ficam criptografados e so devem ser revelados pela UI protegida.
 - O aluno so acessa dados do proprio perfil.
 - Teacher trabalha com alunos vinculados por `StudentTeacherAssignment`.
 - Contratos e avatares sao protegidos por rotas server-side.
@@ -53,6 +54,7 @@ Rotas principais:
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.
 - Homework e aula interativa usam editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
 - Catty usa OpenAI pelo servidor quando `OPENAI_API_KEY` existe e fallback local quando nao existe.
+- O cofre admin importa apenas integracoes externas do `.env` quando existem; segredos internos de banco, Auth e seed nao entram na tela.
 
 ## Mapa da documentacao oficial
 

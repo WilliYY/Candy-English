@@ -8,6 +8,7 @@ import {
   FileText,
   GraduationCap,
   Home,
+  KeyRound,
   Link2,
   LockKeyhole,
   MessageSquareText,
@@ -113,6 +114,12 @@ const navGroups = [
         icon: CalendarCheck2,
         label: "Agenda",
         section: "Financeiro",
+      },
+      {
+        href: "/ava/admin?task=apis-senhas",
+        icon: KeyRound,
+        label: "APIs e senhas",
+        section: "Sistema",
       },
       {
         href: "/ava/admin?task=editar-site",

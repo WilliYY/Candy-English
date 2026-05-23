@@ -92,6 +92,8 @@ Leitura minima recomendada:
 - Modo manutencao bloqueia `STUDENT`, mas nao `ADMIN` nem `TEACHER`.
 - `User.isActive=false` deve bloquear login sem apagar historico.
 - Redefinicao de senha pela interface admin deve validar role `ADMIN` no servidor e gravar apenas hash, nunca a senha em texto puro.
+- O cofre admin de APIs e senhas em `/ava/admin?task=apis-senhas` deve validar role `ADMIN` no servidor, criptografar valores em `AdminCredential.secretCiphertext` e nunca registrar valores revelados em logs, docs ou respostas.
+- O cofre admin pode sincronizar integracoes externas do `.env` como OpenAI, Google OAuth e dominio Jitsi; nunca importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin para a UI.
 
 ## Padroes de implementacao
 

@@ -4,6 +4,7 @@ import {
   FileText,
   GraduationCap,
   HardDrive,
+  KeyRound,
   Link2,
   Mail,
   Power,
@@ -21,6 +22,10 @@ import {
   type AdminAgendaLogRow,
   type AdminAgendaStudentRow,
 } from "@/components/ava/admin-agenda-panel";
+import {
+  AdminCredentialsPanel,
+  type AdminCredentialRow,
+} from "@/components/ava/admin-credentials-panel";
 import {
   AdminFinancePanel,
   type AdminFinanceLogRow,
@@ -48,6 +53,7 @@ export const adminTaskIds = [
   "contratos",
   "financeiro",
   "agenda",
+  "apis-senhas",
   "editar-site",
 ] as const;
 
@@ -114,6 +120,7 @@ type AdminContractRow = {
 
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
+  adminCredentials: AdminCredentialRow[];
   agendaLessons: AdminAgendaLessonRow[];
   agendaLogs: AdminAgendaLogRow[];
   agendaStudents: AdminAgendaStudentRow[];
@@ -184,6 +191,10 @@ const taskMeta = {
   agenda: {
     icon: CalendarCheck2,
     title: "Agenda 2026",
+  },
+  "apis-senhas": {
+    icon: KeyRound,
+    title: "APIs e senhas",
   },
   "editar-site": {
     icon: Wrench,
@@ -515,6 +526,7 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
 
 export function AdminUsersPanel({
   activeTask,
+  adminCredentials,
   agendaLessons,
   agendaLogs,
   agendaStudents,
@@ -691,6 +703,10 @@ export function AdminUsersPanel({
               logs={agendaLogs}
               students={agendaStudents}
             />
+          ) : null}
+
+          {activeTask === "apis-senhas" ? (
+            <AdminCredentialsPanel credentials={adminCredentials} />
           ) : null}
 
           {activeTask === "editar-site" ? (

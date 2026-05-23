@@ -71,6 +71,7 @@ Cuidados:
 - Teacher e student devem abrir uma tarefa por vez com `?task=`, como o admin.
 - Resumo do usuario no AVA usa card compacto, com email truncado e botoes dentro da propria caixa.
 - Admin deve listar usuarios por role em colunas separadas para reduzir confusao visual.
+- O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.

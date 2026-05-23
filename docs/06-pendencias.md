@@ -40,6 +40,7 @@ As pendencias podem afetar:
 - Normalizacao case-insensitive mais robusta para email.
 - Testes automatizados amplos por modulo.
 - Auditoria administrativa geral fora do financeiro.
+- Auditoria detalhada de revelacao/copia no cofre admin de APIs e senhas.
 - Auditoria da agenda ainda e log simples, nao relatorio completo.
 - OCR/IA do homework interativo esta fora do fluxo padrao manual; reativar sugestao automatica exige decisao explicita e revisao de custo/privacidade.
 - Observabilidade externa e alertas de producao.
@@ -76,6 +77,7 @@ As pendencias podem afetar:
 - Implementar pendencias grandes sem decompor pode gerar regressao no AVA.
 - Confundir pendencia com funcionalidade existente pode criar documentacao falsa.
 - Adicionar integracao externa sem plano de seguranca pode expor dados ou custos; a Catty deve continuar limitada ao texto digitado no widget.
+- Transformar o cofre admin em exposicao automatica de segredos aumenta risco operacional; manter revelacao manual, role `ADMIN` e sem logs do valor em claro.
 
 ## Como pode evoluir
 

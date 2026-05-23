@@ -3,6 +3,7 @@ import {
   AdminUsersPanel,
   normalizeAdminTask,
 } from "@/components/ava/admin-users-panel";
+import { syncEnvironmentAdminCredentials } from "@/lib/admin-credentials";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
@@ -30,6 +31,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
 
+  await syncEnvironmentAdminCredentials(session.user.id);
+
   const [
     currentUser,
     users,
@@ -44,6 +47,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     agendaLogs,
     maintenanceMode,
     storageUsageBytes,
+    adminCredentials,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
@@ -311,6 +315,33 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     }),
     isMaintenanceModeEnabled(),
     getStorageUsageBytes(),
+    prisma.adminCredential.findMany({
+      orderBy: [
+        {
+          source: "asc",
+        },
+        {
+          service: "asc",
+        },
+        {
+          label: "asc",
+        },
+      ],
+      select: {
+        createdAt: true,
+        id: true,
+        kind: true,
+        label: true,
+        notes: true,
+        secretPreview: true,
+        service: true,
+        source: true,
+        sourceKey: true,
+        updatedAt: true,
+        url: true,
+        username: true,
+      },
+    }),
   ]);
   const currentDate = new Date();
   const initialFinanceMonth =
@@ -320,6 +351,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   return (
     <AdminUsersPanel
       activeTask={activeTask}
+      adminCredentials={adminCredentials.map((credential) => ({
+        createdAt: credential.createdAt.toISOString(),
+        id: credential.id,
+        kind: credential.kind,
+        label: credential.label,
+        notes: credential.notes,
+        secretPreview: credential.secretPreview,
+        service: credential.service,
+        source: credential.source,
+        sourceKey: credential.sourceKey,
+        updatedAt: credential.updatedAt.toISOString(),
+        url: credential.url,
+        username: credential.username,
+      }))}
       agendaLessons={agendaLessons.map((lesson) => ({
         date: lesson.date.toISOString(),
         id: lesson.id,

@@ -20,6 +20,7 @@ Componentes:
 
 - `src/components/ava/ava-dashboard.tsx`
 - `src/components/ava/admin-users-panel.tsx`
+- `src/components/ava/admin-credentials-panel.tsx`
 - `src/components/ava/admin-finance-panel.tsx`
 - `src/components/ava/admin-agenda-panel.tsx`
 - `src/components/ava/interactive-homework-document.tsx`
@@ -53,8 +54,16 @@ Actions:
 
 1. Admin abre `/ava/admin`.
 2. A tarefa padrao e `usuarios`.
-3. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, controlar manutencao e gerenciar financeiro.
+3. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro.
 4. Admin tambem tem atalhos para tarefas da area teacher.
+
+### APIs e senhas
+
+1. Admin abre `/ava/admin?task=apis-senhas`.
+2. A pagina sincroniza para `AdminCredential`, de forma criptografada, integracoes externas existentes no `.env` como OpenAI, Google OAuth e dominio Jitsi.
+3. Admin pode registrar credenciais manuais com rotulo, servico, tipo, usuario, URL, notas e valor sensivel.
+4. O valor sensivel fica oculto por padrao; para copiar ou conferir, admin precisa clicar em `Revelar`.
+5. Credenciais manuais podem ser editadas ou excluidas; credenciais vindas do `.env` devem ser alteradas no servidor.
 
 ### Teacher
 
@@ -155,6 +164,7 @@ Actions:
 - Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - `meet.jit.si` publico exige conta para quem cria sala e nao deve ser tratado como embed de producao; para teacher/aluno sem conta Jitsi, usar dominio Jitsi dedicado/JaaS configurado no ambiente.
 - Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
+- APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
 - Agenda e financeiro sao internos do admin.
@@ -168,6 +178,7 @@ Actions:
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
 - Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`.
+- O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 
 ## Riscos ao alterar esta parte
 
@@ -176,6 +187,7 @@ Actions:
 - Remover validacao server-side pode vazar dados.
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
 - Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget.
+- Revelar credenciais na tela deve ser uma acao consciente do admin; nao adicionar exibicao automatica nem logs do valor em claro.
 
 ## Pendencias
 

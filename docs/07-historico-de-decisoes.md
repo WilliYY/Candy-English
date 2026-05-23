@@ -240,6 +240,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/student/page.tsx`, `src/components/ava/student-workspace.tsx`, `src/components/ava/interactive-homework-student.tsx`, docs oficiais.
 - Riscos/cuidados: a camada tecnica ainda usa `HomeworkSubmission` para autosave/correcao; futuras separacoes de modelo devem preservar permissao por aluno/teacher.
 
+### 2026-05-23 - Cofre admin de APIs e senhas
+
+- Decisao: criar `/ava/admin?task=apis-senhas` com `AdminCredential` para registrar APIs, tokens, senhas e configuracoes sensiveis de uso administrativo.
+- Motivo: a Candy precisa consultar e organizar chaves de integracoes sem depender de arquivos soltos ou acesso direto ao servidor.
+- Impacto: `prisma/schema.prisma`, migration `20260523120000_admin_credentials`, `src/lib/admin-credentials.ts`, `src/lib/validations/admin-credentials.ts`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/components/ava/admin-credentials-panel.tsx`, sidebar do AVA, `.env.example` e docs oficiais.
+- Riscos/cuidados: os valores ficam criptografados com `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; nao importar segredos internos como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed; revelar valores apenas por acao consciente do `ADMIN`.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

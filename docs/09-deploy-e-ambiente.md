@@ -39,6 +39,8 @@ Servidor oficial:
 - `OPENAI_API_KEY` e opcional; quando existe, ativa a Catty com OpenAI e tambem pode ser usada pelo OCR opcional de homework. Sem a chave, a Catty usa fallback local e homework segue manual.
 - `OPENAI_CATTY_MODEL` define o modelo da Catty, com fallback para `gpt-5.4-nano`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
+- `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
+- O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: OpenAI, Google OAuth e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Decisoes tecnicas tomadas
 
@@ -53,6 +55,7 @@ Servidor oficial:
 - A imagem de ferramentas (`migrate`, `seed`, `audit-server-smoke`) gera o Prisma Client no build para que scripts de smoke e seed encontrem `src/generated/prisma/client`.
 - Aula ao vivo usa `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` para montar novas salas e liberar camera/microfone/display capture no `Permissions-Policy`.
 - Catty chama OpenAI apenas pelo servidor em `/api/catty/chat`; a chave nunca deve ir para o client.
+- O painel `/ava/admin?task=apis-senhas` salva valores em `AdminCredential` criptografados no banco; a revelacao acontece apenas por server action protegida.
 
 ## Riscos ao alterar esta parte
 
@@ -61,6 +64,7 @@ Servidor oficial:
 - Rodar `seed` com `ADMIN_RESET_PASSWORD=true` sem intencao pode trocar senha.
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
 - Ativar OpenAI sem revisar custo, privacidade e volume pode gerar despesa; Catty tem limite simples por IP, mas volume alto pede rate limit dedicado.
+- Perder ou trocar `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` pode impedir leitura de credenciais ja criptografadas.
 - Alterar headers pode afetar Jitsi ou seguranca basica.
 - Usar `meet.jit.si` publico em embed pode exigir login do criador e limitar a chamada; para producao sem conta externa, configurar Jitsi dedicado/JaaS e atualizar o dominio no ambiente.
 

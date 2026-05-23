@@ -50,6 +50,7 @@ Operacao do AVA:
 - `ChatMessage`
 - `AppSetting`
 - `SitePageContent`
+- `AdminCredential`
 
 Financeiro:
 
@@ -73,6 +74,8 @@ Enums:
 - `HomeworkFieldType`
 - `SubmissionStatus`
 - `AgendaLessonStatus`
+- `AdminCredentialKind`
+- `AdminCredentialSource`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -92,6 +95,9 @@ Enums:
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
 - Agenda guarda alunos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`.
 - Reposicoes da agenda usam `AgendaLesson.isMakeup=true` e podem apontar para a aula original por `makeupForLessonId`.
+- `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
+- `AdminCredential.source=ENV` identifica credenciais sincronizadas de integracoes externas do `.env`; a UI nao deve permitir excluir ou alterar o valor sensivel desses registros pelo banco.
+- `AdminCredential.sourceKey` e unico para evitar duplicar a mesma variavel de ambiente.
 
 ## Decisoes tecnicas tomadas
 
@@ -104,6 +110,7 @@ Enums:
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
+- Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 
 ## Riscos ao alterar esta parte
 
@@ -111,6 +118,8 @@ Enums:
 - Apagar migrations antigas quebra bancos novos.
 - Remover constraints unicas pode criar duplicidade em vinculos, respostas ou pagamentos mensais.
 - Expor `DATABASE_URL` ou senha em docs/logs compromete o ambiente.
+- Expor `AdminCredential.secretCiphertext` ou valores revelados do cofre em logs/respostas compromete integracoes externas.
+- Trocar a chave `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` sem plano de rotacao pode tornar credenciais antigas ilegíveis.
 - Alterar cascade/set null sem revisar contratos, chat e financeiro pode apagar historico indevidamente.
 - Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar apenas a linha mensal escolhida pela UI.
 - Fazer hard delete de `AgendaStudent` apaga ocorrencias da agenda por cascade; a UI deve retirar agenda por `isActive=false`.
@@ -123,6 +132,7 @@ Enums:
 - Falta revogacao imediata de JWT quando role muda.
 - Falta normalizacao case-insensitive mais robusta para email.
 - Falta auditoria geral fora do financeiro.
+- Falta trilha de auditoria detalhada para revelar/copiar credenciais do cofre admin.
 - Falta exportacao do PDF final preenchido com respostas e desenhos do aluno.
 
 ## Como pode evoluir

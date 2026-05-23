@@ -3,9 +3,23 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import {
+  decryptAdminCredentialSecret,
+  encryptAdminCredentialSecret,
+  getAdminCredentialSecretDigest,
+  getAdminCredentialSecretPreview,
+} from "@/lib/admin-credentials";
 import { setMaintenanceMode } from "@/lib/app-settings";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
+import {
+  adminCredentialCreateSchema,
+  adminCredentialIdSchema,
+  adminCredentialUpdateSchema,
+  type AdminCredentialCreateInput,
+  type AdminCredentialIdInput,
+  type AdminCredentialUpdateInput,
+} from "@/lib/validations/admin-credentials";
 import {
   adminAgendaAttendanceSchema,
   adminAgendaMakeupSchema,
@@ -51,6 +65,12 @@ export type AdminActionResult<TInput extends Record<string, unknown>> = {
   errors?: Partial<Record<keyof TInput, string>>;
   message: string;
   ok: boolean;
+};
+
+export type AdminRevealCredentialResult = {
+  message: string;
+  ok: boolean;
+  secret?: string;
 };
 
 const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
@@ -149,6 +169,235 @@ function fieldErrors<TInput extends Record<string, unknown>>(
     },
     {},
   );
+}
+
+export async function createAdminCredential(
+  input: AdminCredentialCreateInput,
+): Promise<AdminActionResult<AdminCredentialCreateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para registrar APIs e senhas.",
+    };
+  }
+
+  const parsed = adminCredentialCreateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminCredentialCreateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados da credencial.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const secretCiphertext = encryptAdminCredentialSecret(parsed.data.secret);
+
+  await prisma.adminCredential.create({
+    data: {
+      createdByUserId: session.user.id,
+      kind: parsed.data.kind,
+      label: parsed.data.label,
+      notes: parsed.data.notes ?? null,
+      secretCiphertext,
+      secretDigest: getAdminCredentialSecretDigest(parsed.data.secret),
+      secretPreview: getAdminCredentialSecretPreview(parsed.data.secret),
+      service: parsed.data.service,
+      source: "MANUAL",
+      updatedByUserId: session.user.id,
+      url: parsed.data.url ?? null,
+      username: parsed.data.username ?? null,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Credencial registrada com seguranca.",
+  };
+}
+
+export async function updateAdminCredential(
+  input: AdminCredentialUpdateInput,
+): Promise<AdminActionResult<AdminCredentialUpdateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para alterar APIs e senhas.",
+    };
+  }
+
+  const parsed = adminCredentialUpdateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminCredentialUpdateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados da credencial.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const credential = await prisma.adminCredential.findUnique({
+    where: { id: parsed.data.credentialId },
+    select: { id: true, source: true },
+  });
+
+  if (!credential) {
+    return {
+      ok: false,
+      message: "Credencial nao encontrada.",
+    };
+  }
+
+  if (credential.source === "ENV" && parsed.data.secret) {
+    return {
+      errors: {
+        secret: "Valores vindos do .env precisam ser alterados no servidor.",
+      },
+      ok: false,
+      message: "Essa credencial vem do ambiente do servidor.",
+    };
+  }
+
+  const secretData = parsed.data.secret
+    ? {
+        secretCiphertext: encryptAdminCredentialSecret(parsed.data.secret),
+        secretDigest: getAdminCredentialSecretDigest(parsed.data.secret),
+        secretPreview: getAdminCredentialSecretPreview(parsed.data.secret),
+      }
+    : {};
+
+  await prisma.adminCredential.update({
+    where: { id: credential.id },
+    data: {
+      ...secretData,
+      kind: parsed.data.kind,
+      label: parsed.data.label,
+      notes: parsed.data.notes ?? null,
+      service: parsed.data.service,
+      updatedByUserId: session.user.id,
+      url: parsed.data.url ?? null,
+      username: parsed.data.username ?? null,
+    },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Credencial atualizada.",
+  };
+}
+
+export async function deleteAdminCredential(
+  input: AdminCredentialIdInput,
+): Promise<AdminActionResult<AdminCredentialIdInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir APIs e senhas.",
+    };
+  }
+
+  const parsed = adminCredentialIdSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminCredentialIdInput>(parsed.error.issues),
+      ok: false,
+      message: "Credencial invalida.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const credential = await prisma.adminCredential.findUnique({
+    where: { id: parsed.data.credentialId },
+    select: { id: true, source: true },
+  });
+
+  if (!credential) {
+    return {
+      ok: false,
+      message: "Credencial nao encontrada.",
+    };
+  }
+
+  if (credential.source === "ENV") {
+    return {
+      ok: false,
+      message: "Credenciais vindas do .env devem ser removidas no servidor.",
+    };
+  }
+
+  await prisma.adminCredential.delete({
+    where: { id: credential.id },
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Credencial excluida.",
+  };
+}
+
+export async function revealAdminCredential(
+  input: AdminCredentialIdInput,
+): Promise<AdminRevealCredentialResult> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para revelar APIs e senhas.",
+    };
+  }
+
+  const parsed = adminCredentialIdSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Credencial invalida.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const credential = await prisma.adminCredential.findUnique({
+    where: { id: parsed.data.credentialId },
+    select: {
+      secretCiphertext: true,
+    },
+  });
+
+  if (!credential) {
+    return {
+      ok: false,
+      message: "Credencial nao encontrada.",
+    };
+  }
+
+  try {
+    return {
+      ok: true,
+      message: "Valor revelado apenas nesta tela.",
+      secret: decryptAdminCredentialSecret(credential.secretCiphertext),
+    };
+  } catch {
+    return {
+      ok: false,
+      message: "Nao foi possivel descriptografar esta credencial.",
+    };
+  }
 }
 
 export async function createAvaUser(
