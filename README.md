@@ -25,6 +25,7 @@ Ja existe:
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
+- Catty como assistente visual com respostas guiadas, incentivo de estudo e pratica simples em ingles;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
 Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados e dashboard complexo.

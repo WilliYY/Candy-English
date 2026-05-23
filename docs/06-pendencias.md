@@ -26,7 +26,7 @@ As pendencias podem afetar:
 - Editor ou visualizador Word embutido.
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.
-- IA conversacional real conectada ao Catty.
+- IA conversacional real conectada ao Catty; hoje ela usa respostas guiadas locais, incentivo de estudo e pratica simples em ingles.
 - Jogos.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
@@ -69,7 +69,7 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty e visual/interface; IA real nao esta implementada.
+- Catty e visual/interface com respostas guiadas; IA real nao esta implementada.
 
 ## Riscos ao alterar esta parte
 

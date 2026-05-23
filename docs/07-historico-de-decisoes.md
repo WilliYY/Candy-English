@@ -93,6 +93,13 @@ Cada decisao deve conter:
 - Impacto: layout do AVA, `catty-widget`.
 - Riscos/cuidados: garantir que nao cubra botoes criticos.
 
+### 2026-05-23 - Catty com voz de estudo
+
+- Decisao: Catty passa a ter respostas guiadas com tom fofo, incentivo para estudar ingles e resposta em ingles quando a mensagem do usuario esta em ingles.
+- Motivo: a assistente precisa parecer parte da Candy English, nao um chatbot generico, enquanto a IA real ainda nao esta conectada.
+- Impacto: `src/components/site/catty-widget.tsx`, `docs/design-direcao.md`, `README.md`, `docs/06-pendencias.md`.
+- Riscos/cuidados: respostas continuam locais/scriptadas; nao apresentar Catty como IA real nem usar para dados sensiveis.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.
