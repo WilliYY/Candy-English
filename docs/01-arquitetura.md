@@ -11,12 +11,14 @@ Camadas principais:
 - `src/app/(site)/`: site institucional.
 - `src/app/ava/`: areas logadas do AVA.
 - `src/app/api/`: Auth.js e healthcheck.
+- `src/app/api/catty/chat/route.ts`: endpoint server-side da Catty com OpenAI opcional e fallback local.
 - `src/components/site/`: header, footer, home, paginas institucionais, Catty e WhatsApp.
 - `src/components/ava/`: paineis e formularios do AVA.
 - `src/components/ui/`: componentes base shadcn/ui.
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
+- `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto da Catty.
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
@@ -43,6 +45,7 @@ Servicos Docker:
 - Financeiro e agenda sao modulos internos do `ADMIN`.
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
+- Catty so envia para OpenAI a conversa digitada no widget, sem dados de sessao, senha, banco ou informacoes internas do AVA.
 
 ## Decisoes tecnicas tomadas
 
@@ -59,6 +62,7 @@ Servicos Docker:
 - Headers basicos de seguranca ficam em `next.config.ts`.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
+- Catty usa a OpenAI Responses API quando `OPENAI_API_KEY` esta configurada, com `OPENAI_CATTY_MODEL` opcional; se a chave ou a chamada falhar, responde pelo fallback local.
 
 ## Riscos ao alterar esta parte
 
@@ -68,6 +72,7 @@ Servicos Docker:
 - Mudar permissao do storage pode quebrar avatar e contratos.
 - Expor assets de homework fora de rota protegida pode vazar atividades e respostas de alunos.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
+- Remover fallback ou limite de uso da Catty pode quebrar ambientes sem chave OpenAI ou aumentar custo em producao.
 
 ## Pendencias
 

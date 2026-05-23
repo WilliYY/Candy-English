@@ -14,6 +14,7 @@ Rotas:
 - `/ava/student?task=...`
 - `/ava/avatar`
 - `/ava/contracts/[contractId]`
+- `/api/catty/chat`
 
 Componentes:
 
@@ -30,6 +31,7 @@ Componentes:
 - `src/components/ava/chat-thread-panel.tsx`
 - `src/components/ava/live-session-forms.tsx`
 - `src/components/ava/profile-forms.tsx`
+- `src/components/site/catty-widget.tsx`
 
 Actions:
 
@@ -69,6 +71,14 @@ Actions:
 3. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
 4. Visualiza feedback.
 5. Edita dados pessoais permitidos, mas nao o nivel.
+
+### Catty
+
+1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA.
+2. Widget envia apenas a mensagem atual e ate 8 mensagens recentes para `/api/catty/chat`.
+3. A rota valida o payload com Zod, aplica limite simples por IP e usa OpenAI Responses API quando `OPENAI_API_KEY` existe.
+4. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+5. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
 
 ### Aula ao vivo
 
@@ -144,6 +154,7 @@ Actions:
 - Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.
 - Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - `meet.jit.si` publico exige conta para quem cria sala e nao deve ser tratado como embed de producao; para teacher/aluno sem conta Jitsi, usar dominio Jitsi dedicado/JaaS configurado no ambiente.
+- Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
 - Agenda e financeiro sao internos do admin.
@@ -156,6 +167,7 @@ Actions:
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
+- Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`.
 
 ## Riscos ao alterar esta parte
 
@@ -163,6 +175,7 @@ Actions:
 - Mostrar mais de uma tarefa grande por tela pode poluir o AVA.
 - Remover validacao server-side pode vazar dados.
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
+- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget.
 
 ## Pendencias
 

@@ -100,6 +100,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/site/catty-widget.tsx`, `docs/design-direcao.md`, `README.md`, `docs/06-pendencias.md`.
 - Riscos/cuidados: respostas continuam locais/scriptadas; nao apresentar Catty como IA real nem usar para dados sensiveis.
 
+### 2026-05-23 - Catty com IA opcional via OpenAI
+
+- Decisao: Catty passa a chamar `/api/catty/chat`, que usa OpenAI Responses API quando `OPENAI_API_KEY` esta configurada e fallback local quando a chave ou a chamada nao existem.
+- Motivo: permitir conversa real, respostas em ingles quando o aluno escreve em ingles e manter a experiencia funcionando em ambientes sem segredo configurado.
+- Impacto: `src/app/api/catty/chat/route.ts`, `src/lib/catty.ts`, `src/lib/validations/catty.ts`, `src/components/site/catty-widget.tsx`, `.env.example`, docs oficiais.
+- Riscos/cuidados: nao enviar dados internos do AVA nem segredos para a Catty; monitorar custo/limites da OpenAI; futuro RAG/base de conhecimento exige nova decisao.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

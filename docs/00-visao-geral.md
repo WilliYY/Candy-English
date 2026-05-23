@@ -27,7 +27,7 @@ Rotas principais:
 - `/ava/avatar`, `/ava/avatar/[userId]`
 - `/ava/contracts/[contractId]`
 - `/ava/homework-assets/[homeworkId]`
-- `/api/auth/[...nextauth]`, `/api/health`
+- `/api/auth/[...nextauth]`, `/api/health`, `/api/catty/chat`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -52,6 +52,7 @@ Rotas principais:
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.
 - Homework e aula interativa usam editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
+- Catty usa OpenAI pelo servidor quando `OPENAI_API_KEY` existe e fallback local quando nao existe.
 
 ## Mapa da documentacao oficial
 

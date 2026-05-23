@@ -83,7 +83,7 @@ Cuidados:
 - A barra lateral do AVA deve parecer uma area de trabalho clara: contraste maior que o fundo, grupos com borda suave e item ativo marcado com roxo solido.
 - A area `Aulas e Materiais` do student deve usar aulas recolhidas por padrao, como lista operacional limpa; ao abrir uma aula, a atividade interativa ganha uma superficie ampla com status simples de conclusao em bolinha verde/vermelha.
 - A area `Aula ao vivo` deve tratar a chamada como palco central: configuracao e opcoes ficam acima, e o video aparece largo, centralizado e sem coluna lateral estreita.
-- Catty deve soar como uma study buddy fofa da Candy: encoraja estudar ingles em metas pequenas, responde em ingles quando a pessoa escreve em ingles e evita frases genericas de chatbot.
+- Catty deve soar como uma study buddy fofa da Candy: encoraja estudar ingles em metas pequenas, responde em ingles quando a pessoa escreve em ingles, evita frases genericas de chatbot e mantem essa voz tanto na IA via OpenAI quanto no fallback local.
 
 ## Fluxo Visual Do Site
 

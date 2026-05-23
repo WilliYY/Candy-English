@@ -26,7 +26,7 @@ As pendencias podem afetar:
 - Editor ou visualizador Word embutido.
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.
-- IA conversacional real conectada ao Catty; hoje ela usa respostas guiadas locais, incentivo de estudo e pratica simples em ingles.
+- Base de conhecimento propria/RAG para Catty responder sobre conteudos internos da Candy sem depender apenas da conversa digitada.
 - Jogos.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
@@ -36,7 +36,7 @@ As pendencias podem afetar:
 
 - Rotina formal de backup e restore do PostgreSQL.
 - Revogacao imediata de sessoes JWT apos mudanca de role, desativacao ou redefinicao de senha.
-- Throttling mais forte por IP ou servico dedicado.
+- Throttling mais forte por IP ou servico dedicado, inclusive para a Catty com OpenAI.
 - Normalizacao case-insensitive mais robusta para email.
 - Testes automatizados amplos por modulo.
 - Auditoria administrativa geral fora do financeiro.
@@ -58,7 +58,7 @@ As pendencias podem afetar:
 
 ## Regras de negocio que precisam ser preservadas
 
-- Nao implementar IA, jogos, pagamentos online, MinIO ou integracoes externas sem pedido explicito.
+- Nao implementar novas IAs alem da Catty/OpenAI e OCR opcional documentados, jogos, pagamentos online, MinIO ou integracoes externas sem pedido explicito.
 - Nao enviar arquivos de homework para servicos externos sem configuracao explicita de chave/API.
 - Nao transformar financeiro interno em gateway de pagamento sem decisao nova.
 - Nao abrir dados globais de alunos para teacher sem permissao por vinculo.
@@ -69,13 +69,13 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty e visual/interface com respostas guiadas; IA real nao esta implementada.
+- Catty usa OpenAI quando `OPENAI_API_KEY` esta configurada e fallback local quando nao esta; ainda nao possui base de conhecimento propria nem historico persistente.
 
 ## Riscos ao alterar esta parte
 
 - Implementar pendencias grandes sem decompor pode gerar regressao no AVA.
 - Confundir pendencia com funcionalidade existente pode criar documentacao falsa.
-- Adicionar integracao externa sem plano de seguranca pode expor dados ou custos.
+- Adicionar integracao externa sem plano de seguranca pode expor dados ou custos; a Catty deve continuar limitada ao texto digitado no widget.
 
 ## Como pode evoluir
 

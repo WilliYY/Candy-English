@@ -9,14 +9,13 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-type CattyMessage = {
-  from: "catty" | "user";
-  text: string;
-};
+import {
+  buildFallbackCattyReply,
+  type CattyMessage,
+} from "@/lib/catty";
 
 const quickReplies = [
   {
@@ -37,133 +36,14 @@ const quickReplies = [
   },
 ];
 
-const portugueseSignals = [
-  "aula",
-  "como",
-  "contrato",
-  "dever",
-  "estudar",
-  "faco",
-  "falar",
-  "homework",
-  "ingles",
-  "mensagem",
-  "senha",
-  "teacher",
-  "voce",
-];
-
-const englishSignals = [
-  "am",
-  "are",
-  "can",
-  "could",
-  "do",
-  "does",
-  "english",
-  "good",
-  "grammar",
-  "hello",
-  "help",
-  "hi",
-  "how",
-  "is",
-  "learn",
-  "mean",
-  "practice",
-  "say",
-  "sentence",
-  "should",
-  "study",
-  "what",
-  "why",
-  "word",
-];
-
-function normalizeText(text: string) {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
-}
-
-function hasAny(text: string, terms: string[]) {
-  return terms.some((term) => text.includes(term));
-}
-
-function isEnglishMessage(text: string) {
-  const normalized = normalizeText(text);
-  const englishMatches = englishSignals.filter((term) =>
-    normalized.includes(term),
-  ).length;
-  const portugueseMatches = portugueseSignals.filter((term) =>
-    normalized.includes(term),
-  ).length;
-  const onlySimpleLatin = /^[a-z0-9\s?'".,!:-]+$/.test(normalized);
-
-  return englishMatches > 0 && (englishMatches >= portugueseMatches || onlySimpleLatin);
-}
-
-function buildEnglishReply(text: string) {
-  const normalized = normalizeText(text);
-
-  if (hasAny(normalized, ["how are you", "hello", "hi"])) {
-    return "Hi, sweet learner. I am ready to study with you. Try this: I can learn a little English every day.";
+function readReply(payload: unknown) {
+  if (typeof payload !== "object" || payload === null) {
+    return "";
   }
 
-  if (hasAny(normalized, ["practice", "study", "learn", "english"])) {
-    return "Yes. Let us practice gently. Say this out loud: I am getting better at English one step at a time.";
-  }
+  const reply = (payload as { reply?: unknown }).reply;
 
-  if (hasAny(normalized, ["what does", "mean", "word"])) {
-    return "Send me the word and I will help with a simple meaning. Small words, big progress.";
-  }
-
-  if (hasAny(normalized, ["grammar", "sentence", "say"])) {
-    return "Send one sentence and I will help make it clearer. You are already practicing, and that counts.";
-  }
-
-  return "I like that you wrote in English. Keep going. Try one more sentence and make it a tiny bit clearer.";
-}
-
-function buildPortugueseReply(text: string) {
-  const normalized = normalizeText(text);
-
-  if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
-    return "Quando a teacher abrir a aula ao vivo, ela aparece no AVA. Entre por ali, permita camera e microfone, e pronto.";
-  }
-
-  if (hasAny(normalized, ["homework", "atividade", "dever"])) {
-    return "Abra Responder homework, escolha a atividade e faca um pedacinho por vez. Sem pressa: consistencia ganha de correria.";
-  }
-
-  if (hasAny(normalized, ["senha", "login", "entrar"])) {
-    return "Se o acesso travar, peca para o admin redefinir sua senha. Depois volte com calma para continuar estudando.";
-  }
-
-  if (hasAny(normalized, ["contrato", "contratos"])) {
-    return "Os contratos ficam em Meus contratos dentro do AVA. Se algo nao aparecer, avise a Candy para conferir seu cadastro.";
-  }
-
-  if (hasAny(normalized, ["plano", "planos", "preco", "valor"])) {
-    return "Para planos e valores, o melhor caminho e falar direto com a Candy. Eu fico aqui cuidando do seu animo de estudo.";
-  }
-
-  if (hasAny(normalized, ["anima", "estudar", "ingles", "ringles", "cansad"])) {
-    return "Combinado: hoje vale uma meta pequena. Leia uma frase em ingles, repita em voz alta e comemore. Pequeno tambem e progresso.";
-  }
-
-  if (hasAny(normalized, ["teacher", "prof", "mensagem", "falar"])) {
-    return "Para falar com a teacher, use Mensagens no AVA. Escreva simples e direto; a parte dificil voce ja fez: pediu ajuda.";
-  }
-
-  return "Estou aqui para deixar o estudo mais leve. Me pergunte sobre homework, aula ao vivo ou mande uma frase em ingles para praticar.";
-}
-
-function buildCattyReply(text: string) {
-  return isEnglishMessage(text)
-    ? buildEnglishReply(text)
-    : buildPortugueseReply(text);
+  return typeof reply === "string" ? reply.trim() : "";
 }
 
 export function CattyWidget() {
@@ -175,21 +55,59 @@ export function CattyWidget() {
     },
   ]);
   const [draft, setDraft] = useState("");
+  const [isThinking, setIsThinking] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  function sendMessage(text: string) {
+  useEffect(() => {
+    if (!open) return;
+
+    messagesEndRef.current?.scrollIntoView({ block: "end" });
+  }, [isThinking, messages, open]);
+
+  async function sendMessage(text: string) {
     const clean = text.trim();
 
-    if (!clean) return;
+    if (!clean || isThinking) return;
 
-    setMessages((current) => [
-      ...current,
-      { from: "user", text: clean },
-      {
-        from: "catty",
-        text: buildCattyReply(clean),
-      },
-    ]);
+    const userMessage: CattyMessage = { from: "user", text: clean };
+    const outgoingHistory = [...messages, userMessage].slice(-8);
+
+    setMessages((current) => [...current, userMessage]);
     setDraft("");
+    setIsThinking(true);
+
+    try {
+      const response = await fetch("/api/catty/chat", {
+        body: JSON.stringify({
+          history: outgoingHistory,
+          message: clean,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+      const reply = readReply(payload) || buildFallbackCattyReply(clean);
+
+      setMessages((current) => [
+        ...current,
+        {
+          from: "catty",
+          text: reply,
+        },
+      ]);
+    } catch {
+      setMessages((current) => [
+        ...current,
+        {
+          from: "catty",
+          text: buildFallbackCattyReply(clean),
+        },
+      ]);
+    } finally {
+      setIsThinking(false);
+    }
   }
 
   return (
@@ -244,6 +162,7 @@ export function CattyWidget() {
 
           <div
             className="flex flex-col gap-3 overflow-y-auto bg-[#fff8fb] p-4"
+            aria-busy={isThinking}
             aria-live="polite"
           >
             {messages.map((message, index) => (
@@ -258,6 +177,12 @@ export function CattyWidget() {
                 {message.text}
               </p>
             ))}
+            {isThinking ? (
+              <p className="max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+                Catty esta pensando numa resposta docinha para voce...
+              </p>
+            ) : null}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="flex flex-col gap-3 border-t bg-white p-4">
@@ -269,7 +194,10 @@ export function CattyWidget() {
                   variant="secondary"
                   size="sm"
                   className="h-auto justify-start whitespace-normal rounded-xl px-3 py-2 text-left text-xs leading-5"
-                  onClick={() => sendMessage(reply.text)}
+                  disabled={isThinking}
+                  onClick={() => {
+                    void sendMessage(reply.text);
+                  }}
                 >
                   {reply.label}
                 </Button>
@@ -279,7 +207,7 @@ export function CattyWidget() {
               className="flex gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
-                sendMessage(draft);
+                void sendMessage(draft);
               }}
             >
               <Input
@@ -287,8 +215,15 @@ export function CattyWidget() {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Portugues ou English"
                 className="rounded-xl"
+                disabled={isThinking}
+                maxLength={600}
               />
-              <Button type="submit" size="icon" className="shrink-0 rounded-xl">
+              <Button
+                type="submit"
+                size="icon"
+                className="shrink-0 rounded-xl"
+                disabled={isThinking}
+              >
                 <Send aria-hidden="true" />
                 <span className="sr-only">Enviar</span>
               </Button>

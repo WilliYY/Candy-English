@@ -36,7 +36,8 @@ Servidor oficial:
 - Uploads persistem no volume `app-storage`.
 - `private/secrets` e `private/backups` ficam fora do Git quando existirem.
 - Deploy com migration deve aplicar migration antes de recriar o app.
-- `OPENAI_API_KEY` e opcional/reservada; o fluxo padrao de homework interativo e manual e nao depende de OCR.
+- `OPENAI_API_KEY` e opcional; quando existe, ativa a Catty com OpenAI e tambem pode ser usada pelo OCR opcional de homework. Sem a chave, a Catty usa fallback local e homework segue manual.
+- `OPENAI_CATTY_MODEL` define o modelo da Catty, com fallback para `gpt-5.4-nano`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
 
 ## Decisoes tecnicas tomadas
@@ -51,6 +52,7 @@ Servidor oficial:
 - Homework interativo usa o mesmo volume `app-storage` para `storage/homework-assets`.
 - A imagem de ferramentas (`migrate`, `seed`, `audit-server-smoke`) gera o Prisma Client no build para que scripts de smoke e seed encontrem `src/generated/prisma/client`.
 - Aula ao vivo usa `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` para montar novas salas e liberar camera/microfone/display capture no `Permissions-Policy`.
+- Catty chama OpenAI apenas pelo servidor em `/api/catty/chat`; a chave nunca deve ir para o client.
 
 ## Riscos ao alterar esta parte
 
@@ -58,7 +60,7 @@ Servidor oficial:
 - Apagar volumes remove banco ou uploads.
 - Rodar `seed` com `ADMIN_RESET_PASSWORD=true` sem intencao pode trocar senha.
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
-- Reativar OCR/OpenAI sem revisar custo, privacidade e volume pode gerar despesa por upload de homework.
+- Ativar OpenAI sem revisar custo, privacidade e volume pode gerar despesa; Catty tem limite simples por IP, mas volume alto pede rate limit dedicado.
 - Alterar headers pode afetar Jitsi ou seguranca basica.
 - Usar `meet.jit.si` publico em embed pode exigir login do criador e limitar a chamada; para producao sem conta externa, configurar Jitsi dedicado/JaaS e atualizar o dominio no ambiente.
 

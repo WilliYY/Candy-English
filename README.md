@@ -25,10 +25,10 @@ Ja existe:
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
-- Catty como assistente visual com respostas guiadas, incentivo de estudo e pratica simples em ingles;
+- Catty como assistente visual com IA opcional via OpenAI, fallback local, incentivo de estudo e pratica simples em ingles;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, IA conversacional real no Catty, jogos, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados e dashboard complexo.
+Nao existe ainda: pagamento online, jogos, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e base de conhecimento propria/RAG para a Catty.
 
 ## Stack
 
@@ -109,7 +109,8 @@ Variaveis principais:
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
 - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
-- `OPENAI_API_KEY`: reservada para OCR opcional/futuro; o fluxo padrao de homework interativo e manual e nao envia o arquivo para IA.
+- `OPENAI_API_KEY`: chave opcional usada pela Catty com IA e pelo OCR opcional de homework; sem chave, a Catty usa fallback local e homework segue manual.
+- `OPENAI_CATTY_MODEL`: modelo usado pela Catty quando `OPENAI_API_KEY` existe, exemplo `gpt-5.4-nano`.
 - `OPENAI_HOMEWORK_OCR_MODEL`: modelo para OCR opcional caso essa sugestao seja reativada, exemplo `gpt-4.1-mini`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: admin inicial do seed.
 - `ADMIN_RESET_PASSWORD`: redefine senha do admin apenas quando `true`.
