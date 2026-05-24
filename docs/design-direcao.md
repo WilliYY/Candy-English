@@ -30,7 +30,7 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 
 ## Assets
 
-- Favicon: `public/favicon.svg`, usando a bala original da Candy com fundo branco circular para evitar caixa branca quadrada na aba do navegador.
+- Favicon: `public/favicon.svg`, usando a bala original da Candy centralizada sobre fundo branco circular para evitar caixa branca quadrada na aba do navegador.
 - Logo principal no header: `public/brand/logo-2.svg`, horizontal, maior e sem caixa de fundo.
 - Logo alternativa: `public/brand/logo-1.svg`
 - Logo hero: `public/brand/logo-3.svg`
