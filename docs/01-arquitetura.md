@@ -62,7 +62,7 @@ Servicos Docker:
 - Docker final usa `output: "standalone"`.
 - Server Actions aceitam upload ate 15 MB para suportar homework/aula interativa exportados do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
-- Headers basicos de seguranca ficam em `next.config.ts`.
+- Headers basicos de seguranca ficam em `next.config.ts`; `X-Frame-Options=SAMEORIGIN` permite previews internos protegidos, como contratos PDF no AVA, sem liberar embed por sites externos.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty usa a OpenAI Responses API quando `OPENAI_API_KEY` esta configurada, com `OPENAI_CATTY_MODEL` opcional; se a chave ou a chamada falhar, responde pelo fallback local.
