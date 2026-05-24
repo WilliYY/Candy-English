@@ -18,7 +18,7 @@ Camadas principais:
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
-- `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto da Catty.
+- `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
 - `src/lib/admin-credentials.ts`: criptografia e sincronizacao de credenciais administrativas vindas de integracoes externas do ambiente.
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
@@ -47,7 +47,7 @@ Servicos Docker:
 - APIs e senhas ficam em modulo interno do `ADMIN`, com valor criptografado e revelacao explicita na UI.
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
-- Catty so envia para OpenAI a conversa digitada no widget, sem dados de sessao, senha, banco ou informacoes internas do AVA.
+- Catty so envia para OpenAI a conversa digitada no widget e contexto leve de rota/tarefa, sem dados de sessao, senha, banco ou informacoes internas do AVA.
 
 ## Decisoes tecnicas tomadas
 
@@ -66,6 +66,7 @@ Servicos Docker:
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty usa a OpenAI Responses API quando `OPENAI_API_KEY` esta configurada, com `OPENAI_CATTY_MODEL` opcional; se a chave ou a chamada falhar, responde pelo fallback local.
+- Catty usa o contexto de `area` e `task` apenas para ajustar atalhos e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
 - `AdminCredential.secretCiphertext` e criptografado com AES-256-GCM usando `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; o painel sincroniza apenas OpenAI, Google OAuth e dominio Jitsi do `.env`, nunca `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Riscos ao alterar esta parte
@@ -76,7 +77,7 @@ Servicos Docker:
 - Mudar permissao do storage pode quebrar avatar e contratos.
 - Expor assets de homework fora de rota protegida pode vazar atividades e respostas de alunos.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
-- Remover fallback ou limite de uso da Catty pode quebrar ambientes sem chave OpenAI ou aumentar custo em producao.
+- Remover fallback, limite de uso ou restricao de contexto da Catty pode quebrar ambientes sem chave OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.
 
 ## Pendencias

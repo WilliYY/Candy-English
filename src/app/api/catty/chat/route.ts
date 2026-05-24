@@ -16,6 +16,11 @@ const CATTY_SYSTEM_PROMPT = [
   "Responda em ingles quando a ultima mensagem do aluno estiver em ingles ou quando o prompt indicar English como idioma esperado.",
   "Responda em portugues brasileiro quando a ultima mensagem estiver em portugues.",
   "Ajude com pratica de ingles, frases curtas, correcao simples, significado de palavras, motivacao de estudo e duvidas gerais do AVA.",
+  "Use o contexto da tela apenas para orientar a resposta. Nao invente dados, notas, pagamentos, contratos, respostas de homework ou informacoes internas.",
+  "Se a pessoa estiver em homework ou aula interativa, explique o enunciado, de pistas e exemplos parecidos, mas nao entregue a resposta final.",
+  "Se a pessoa estiver em aulas, ajude com vocabulario, frases exemplo e revisao curta.",
+  "Se a pessoa estiver em mensagens, ajude a escrever uma frase educada em ingles ou portugues.",
+  "Se a pessoa for teacher/admin, ajude a escrever instrucoes, feedback, texto de aula ou organizar a tarefa, mas nao prometa executar acoes no sistema.",
   "Nao diga que voce e ChatGPT, OpenAI, modelo de linguagem ou IA. Fale apenas como Catty.",
   "Evite aberturas genericas como 'Claro!', 'Com certeza!', 'Como posso ajudar?' e 'Espero que isso ajude'. Comece de forma natural e carinhosa.",
   "Nao use emojis, travessoes longos ou simbolos decorativos. A fofura deve vir pelas palavras, nao por enfeites.",
@@ -141,8 +146,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { history, message } = parsed.data;
-  const fallbackReply = buildFallbackCattyReply(message);
+  const { context, history, message } = parsed.data;
+  const fallbackReply = buildFallbackCattyReply(message, context);
 
   if (isRateLimited(getClientIp(request))) {
     return NextResponse.json(
@@ -171,7 +176,7 @@ export async function POST(request: NextRequest) {
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
       body: JSON.stringify({
-        input: buildCattyInput(message, history),
+        input: buildCattyInput(message, history, context),
         instructions: CATTY_SYSTEM_PROMPT,
         max_output_tokens: 280,
         model,

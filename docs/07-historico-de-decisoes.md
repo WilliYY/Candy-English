@@ -247,6 +247,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260523120000_admin_credentials`, `src/lib/admin-credentials.ts`, `src/lib/validations/admin-credentials.ts`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/components/ava/admin-credentials-panel.tsx`, sidebar do AVA, `.env.example` e docs oficiais.
 - Riscos/cuidados: os valores ficam criptografados com `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; nao importar segredos internos como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed; revelar valores apenas por acao consciente do `ADMIN`.
 
+### 2026-05-23 - Catty contextual com atalhos de estudo
+
+- Decisao: a Catty passa a detectar contexto leve de tela (`area` e `task`), exibir cabecalho/atalhos de estudo por contexto e enviar esse contexto para `/api/catty/chat`.
+- Motivo: a assistente precisa orientar homework, aulas, mensagens, teacher e admin de forma mais util, mantendo tom fofo e sem parecer chatbot generico.
+- Impacto: `src/components/site/catty-widget.tsx`, `src/app/api/catty/chat/route.ts`, `src/lib/catty.ts`, `src/lib/validations/catty.ts`, `src/app/globals.css`, `AGENTS.md`, `README.md` e docs oficiais.
+- Riscos/cuidados: o contexto deve continuar limitado a rota/tarefa; Catty nao deve receber dados internos do AVA nem entregar respostas prontas de homework.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -84,10 +84,12 @@ Actions:
 ### Catty
 
 1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA.
-2. Widget envia apenas a mensagem atual e ate 8 mensagens recentes para `/api/catty/chat`.
-3. A rota valida o payload com Zod, aplica limite simples por IP e usa OpenAI Responses API quando `OPENAI_API_KEY` existe.
-4. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
-5. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+2. Widget identifica apenas contexto leve da tela atual (`area` e `task`) para adaptar titulo, texto de apoio e atalhos de estudo.
+3. Widget envia a mensagem atual, ate 8 mensagens recentes e esse contexto leve para `/api/catty/chat`.
+4. A rota valida o payload com Zod, aplica limite simples por IP e usa OpenAI Responses API quando `OPENAI_API_KEY` existe.
+5. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+6. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+7. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 
@@ -164,6 +166,7 @@ Actions:
 - Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - `meet.jit.si` publico exige conta para quem cria sala e nao deve ser tratado como embed de producao; para teacher/aluno sem conta Jitsi, usar dominio Jitsi dedicado/JaaS configurado no ambiente.
 - Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
+- Catty pode usar `area` e `task` da URL para orientar atalhos e linguagem, mas nao pode receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
 - APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
@@ -177,7 +180,7 @@ Actions:
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
-- Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`.
+- Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`, com atalhos de estudo e resposta contextual por tela.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 
 ## Riscos ao alterar esta parte
@@ -186,7 +189,7 @@ Actions:
 - Mostrar mais de uma tarefa grande por tela pode poluir o AVA.
 - Remover validacao server-side pode vazar dados.
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
-- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget.
+- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget e ao contexto leve de `area`/`task`.
 - Revelar credenciais na tela deve ser uma acao consciente do admin; nao adicionar exibicao automatica nem logs do valor em claro.
 
 ## Pendencias

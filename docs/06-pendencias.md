@@ -70,13 +70,13 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty usa OpenAI quando `OPENAI_API_KEY` esta configurada e fallback local quando nao esta; ainda nao possui base de conhecimento propria nem historico persistente.
+- Catty usa OpenAI quando `OPENAI_API_KEY` esta configurada e fallback local quando nao esta; possui contexto leve de tela/tarefa, mas ainda nao possui base de conhecimento propria nem historico persistente.
 
 ## Riscos ao alterar esta parte
 
 - Implementar pendencias grandes sem decompor pode gerar regressao no AVA.
 - Confundir pendencia com funcionalidade existente pode criar documentacao falsa.
-- Adicionar integracao externa sem plano de seguranca pode expor dados ou custos; a Catty deve continuar limitada ao texto digitado no widget.
+- Adicionar integracao externa sem plano de seguranca pode expor dados ou custos; a Catty deve continuar limitada ao texto digitado no widget e ao contexto leve de rota/tarefa.
 - Transformar o cofre admin em exposicao automatica de segredos aumenta risco operacional; manter revelacao manual, role `ADMIN` e sem logs do valor em claro.
 
 ## Como pode evoluir
