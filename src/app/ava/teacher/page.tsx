@@ -267,10 +267,21 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
               },
               take: 1,
             },
+            teacherProfile: {
+              select: {
+                user: {
+                  select: {
+                    email: true,
+                    name: true,
+                  },
+                },
+              },
+            },
             title: true,
           },
         },
         id: true,
+        reviewedAt: true,
         status: true,
         studentProfile: {
           select: {

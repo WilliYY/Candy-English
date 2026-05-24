@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { cn } from "@/lib/utils";
 
 export type ReviewInteractiveField = {
   height: number;
@@ -21,8 +22,10 @@ type InteractiveHomeworkReviewProps = {
   answers: unknown;
   assetMimeType: string | null;
   assetPageCount: number | null;
+  className?: string;
   fields: ReviewInteractiveField[];
   homeworkId: string;
+  pageClassName?: string;
   title: string;
 };
 
@@ -100,89 +103,90 @@ export function InteractiveHomeworkReview({
   answers,
   assetMimeType,
   assetPageCount,
+  className,
   fields,
   homeworkId,
+  pageClassName = "max-w-[760px]",
   title,
 }: InteractiveHomeworkReviewProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const assetUrl = `/ava/homework-assets/${homeworkId}`;
   const values = useMemo(() => answersToMap(answers), [answers]);
 
   return (
-    <details
-      className="overflow-hidden rounded-lg border border-primary/20 bg-white"
-      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+    <div
+      className={cn(
+        "overflow-hidden rounded-lg border border-primary/15 bg-white",
+        className,
+      )}
     >
-      <summary className="cursor-pointer list-none px-3 py-2 text-sm font-semibold text-primary hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
-        Visualizar resposta no arquivo
-      </summary>
-      {isOpen ? (
-        <div className="border-t border-primary/10 bg-muted/20 p-3">
-          <InteractiveHomeworkDocument
-            assetMimeType={assetMimeType}
-            assetUrl={assetUrl}
-            expectedPageCount={assetPageCount}
-            fields={fields}
-            pageClassName="max-w-[760px]"
-            renderField={(field, index, style) => {
-              const value = values[field.id] ?? "";
+      <div className="border-b border-primary/10 px-3 py-2 text-sm font-semibold text-primary">
+        Entrega marcada no arquivo
+      </div>
+      <div className="bg-muted/20 p-3">
+        <InteractiveHomeworkDocument
+          assetMimeType={assetMimeType}
+          assetUrl={assetUrl}
+          expectedPageCount={assetPageCount}
+          fields={fields}
+          pageClassName={pageClassName}
+          renderField={(field, index, style) => {
+            const value = values[field.id] ?? "";
 
-              if (field.type === "CHECKBOX") {
-                return (
-                  <div
-                    key={field.id}
-                    aria-label={field.label ?? `Campo ${index + 1}`}
-                    className="absolute flex items-center justify-center rounded-[3px] text-lg font-bold text-primary"
-                    style={style}
-                  >
-                    {value === "true" ? "X" : null}
-                  </div>
-                );
-              }
-
-              if (field.type === "DRAWING") {
-                const strokes = parseDrawingValue(value);
-
-                return (
-                  <svg
-                    key={field.id}
-                    aria-label={field.label ?? `Campo ${index + 1}`}
-                    className="absolute text-primary"
-                    role="img"
-                    style={style}
-                    viewBox="0 0 100 100"
-                  >
-                    {strokes.map((stroke, strokeIndex) => (
-                      <path
-                        key={`${strokeIndex}-${stroke.length}`}
-                        d={drawingPath(stroke)}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.4"
-                        vectorEffect="non-scaling-stroke"
-                      />
-                    ))}
-                  </svg>
-                );
-              }
-
+            if (field.type === "CHECKBOX") {
               return (
                 <div
                   key={field.id}
                   aria-label={field.label ?? `Campo ${index + 1}`}
-                  className="absolute overflow-hidden whitespace-pre-wrap rounded-[3px] px-1 text-sm font-semibold leading-5 text-primary"
+                  className="absolute flex items-center justify-center rounded-[3px] text-lg font-bold text-primary"
                   style={style}
                 >
-                  {value}
+                  {value === "true" ? "X" : null}
                 </div>
               );
-            }}
-            title={title}
-          />
-        </div>
-      ) : null}
-    </details>
+            }
+
+            if (field.type === "DRAWING") {
+              const strokes = parseDrawingValue(value);
+
+              return (
+                <svg
+                  key={field.id}
+                  aria-label={field.label ?? `Campo ${index + 1}`}
+                  className="absolute text-primary"
+                  role="img"
+                  style={style}
+                  viewBox="0 0 100 100"
+                >
+                  {strokes.map((stroke, strokeIndex) => (
+                    <path
+                      key={`${strokeIndex}-${stroke.length}`}
+                      d={drawingPath(stroke)}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.4"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                </svg>
+              );
+            }
+
+            return (
+              <div
+                key={field.id}
+                aria-label={field.label ?? `Campo ${index + 1}`}
+                className="absolute overflow-hidden whitespace-pre-wrap rounded-[3px] px-1 text-sm font-semibold leading-5 text-primary"
+                style={style}
+              >
+                {value}
+              </div>
+            );
+          }}
+          title={title}
+        />
+      </div>
+    </div>
   );
 }

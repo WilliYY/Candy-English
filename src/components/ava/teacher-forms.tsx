@@ -346,8 +346,10 @@ export function CreateHomeworkForm({
 }
 
 export function ReviewSubmissionForm({
+  defaultFeedback = "",
   submissionId,
 }: {
+  defaultFeedback?: string;
   submissionId: string;
 }) {
   const router = useRouter();
@@ -356,7 +358,7 @@ export function ReviewSubmissionForm({
   const form = useForm<ReviewSubmissionInput>({
     resolver: zodResolver(reviewSubmissionSchema, undefined, { raw: true }),
     defaultValues: {
-      feedback: "",
+      feedback: defaultFeedback,
       submissionId,
     },
   });
@@ -388,12 +390,14 @@ export function ReviewSubmissionForm({
     <form onSubmit={onSubmit} className="flex flex-col gap-3" noValidate>
       <input type="hidden" {...form.register("submissionId")} />
       <Field data-invalid={Boolean(form.formState.errors.feedback)}>
-        <FieldLabel htmlFor={`feedback-${submissionId}`}>Feedback</FieldLabel>
+        <FieldLabel htmlFor={`feedback-${submissionId}`}>
+          Nota/feedback para o aluno
+        </FieldLabel>
         <Textarea
           id={`feedback-${submissionId}`}
           aria-invalid={Boolean(form.formState.errors.feedback)}
           disabled={isPending}
-          placeholder="Escreva o feedback para o aluno."
+          placeholder="Escreva a nota que o aluno vai ver no homework."
           {...form.register("feedback")}
         />
         <FieldError errors={[form.formState.errors.feedback]} />
@@ -405,7 +409,7 @@ export function ReviewSubmissionForm({
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
         ) : null}
-        Enviar feedback
+        Enviar avaliacao
       </Button>
     </form>
   );

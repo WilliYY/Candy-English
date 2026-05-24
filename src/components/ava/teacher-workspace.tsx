@@ -1,7 +1,6 @@
 import {
   BookOpen,
   CalendarDays,
-  CheckCircle2,
   ClipboardCheck,
   FileText,
   GraduationCap,
@@ -26,14 +25,12 @@ import {
   ProfileForm,
 } from "@/components/ava/profile-forms";
 import {
-  InteractiveHomeworkReview,
-  type ReviewInteractiveField,
-} from "@/components/ava/interactive-homework-review";
+  HomeworkCorrectionTabs,
+  type HomeworkCorrectionSubmission,
+} from "@/components/ava/homework-correction-tabs";
 import {
-  AllowHomeworkRedoButton,
   CreateHomeworkForm,
   CreateLessonForm,
-  ReviewSubmissionForm,
 } from "@/components/ava/teacher-forms";
 import { StudentLevelForm } from "@/components/ava/student-level-form";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
@@ -145,9 +142,16 @@ type TeacherSubmission = {
     questions: {
       prompt: string;
     }[];
+    teacherProfile: {
+      user: {
+        email: string;
+        name: string;
+      };
+    };
     title: string;
   };
   id: string;
+  reviewedAt: Date | null;
   status: string;
   studentProfile: {
     user: {
@@ -264,63 +268,6 @@ export function normalizeTeacherTask(value: unknown): TeacherTask {
     : "resumo";
 }
 
-function getAnswerText(
-  answers: unknown,
-  fields: {
-    id: string;
-    label: string | null;
-    type: string;
-  }[] = [],
-) {
-  if (!Array.isArray(answers)) {
-    return "Resposta registrada.";
-  }
-
-  const fieldsById = new Map(fields.map((field) => [field.id, field]));
-  const interactiveAnswers = answers
-    .map((answer) => {
-      if (
-        typeof answer === "object" &&
-        answer !== null &&
-        "fieldId" in answer &&
-        "value" in answer &&
-        typeof answer.fieldId === "string" &&
-        typeof answer.value === "string" &&
-        answer.value.trim()
-      ) {
-        const field = fieldsById.get(answer.fieldId);
-
-        if (field?.type === "DRAWING") {
-          return `${field.label ?? "Desenho"}: desenho enviado`;
-        }
-
-        return field?.label
-          ? `${field.label}: ${answer.value.trim()}`
-          : answer.value.trim();
-      }
-
-      return null;
-    })
-    .filter(Boolean);
-
-  if (interactiveAnswers.length > 0) {
-    return interactiveAnswers.join(" | ");
-  }
-
-  const first = answers[0];
-
-  if (
-    typeof first === "object" &&
-    first !== null &&
-    "answer" in first &&
-    typeof first.answer === "string"
-  ) {
-    return first.answer;
-  }
-
-  return "Resposta registrada.";
-}
-
 function EmptyState({ children }: { children: React.ReactNode }) {
   return (
     <p className="rounded-lg border border-dashed border-primary/25 bg-primary/5 p-6 text-sm text-primary/75">
@@ -369,6 +316,18 @@ export function TeacherWorkspace({
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "SUBMITTED",
   ).length;
+  const correctionSubmissions: HomeworkCorrectionSubmission[] = submissions.map(
+    (submission) => ({
+      answers: submission.answers,
+      feedback: submission.feedback,
+      homework: submission.homework,
+      id: submission.id,
+      reviewedAt: submission.reviewedAt?.toISOString() ?? null,
+      status: submission.status,
+      studentProfile: submission.studentProfile,
+      submittedAt: submission.submittedAt.toISOString(),
+    }),
+  );
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
   const stats = [
@@ -673,75 +632,10 @@ export function TeacherWorkspace({
             submissions.length === 0 ? (
               <EmptyState>Nenhuma resposta enviada ainda.</EmptyState>
             ) : (
-              <div className="grid gap-4 lg:grid-cols-2">
-                {submissions.map((submission) => (
-                  <article key={submission.id} className="ava-soft-card rounded-lg border p-5">
-                    <div className="flex flex-col gap-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <CheckCircle2 aria-hidden="true" />
-                          {submission.status === "REVIEWED"
-                            ? "Corrigida"
-                            : submission.status === "RETURNED"
-                              ? "Liberada para refazer"
-                            : "Aguardando feedback"}
-                        </div>
-                        <h2 className="font-semibold">
-                          {submission.homework.title}
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                          {submission.studentProfile.user.name} -{" "}
-                          {submission.studentProfile.user.email}
-                        </p>
-                      </div>
-                      <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
-                        <strong>
-                          {submission.homework.kind === "INTERACTIVE"
-                            ? "Homework interativa:"
-                            : "Pergunta:"}
-                        </strong>{" "}
-                        {submission.homework.kind === "INTERACTIVE"
-                          ? `${submission.homework.interactiveFields.length} campo(s) no arquivo ${submission.homework.assetFileName ?? ""}`
-                          : submission.homework.questions[0]?.prompt ??
-                            "Resposta livre"}
-                      </div>
-                      <div className="rounded-lg bg-background p-3 text-sm leading-6">
-                        <strong>Resposta:</strong>{" "}
-                        <span className="text-muted-foreground">
-                          {getAnswerText(
-                            submission.answers,
-                            submission.homework.interactiveFields,
-                          )}
-                        </span>
-                      </div>
-                      {submission.homework.kind === "INTERACTIVE" ? (
-                        <InteractiveHomeworkReview
-                          answers={submission.answers}
-                          assetMimeType={submission.homework.assetMimeType}
-                          assetPageCount={submission.homework.assetPageCount}
-                          fields={
-                            submission.homework
-                              .interactiveFields as ReviewInteractiveField[]
-                          }
-                          homeworkId={submission.homework.id}
-                          title={submission.homework.title}
-                        />
-                      ) : null}
-                      {submission.feedback ? (
-                        <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
-                          <strong>Feedback enviado:</strong>{" "}
-                          {submission.feedback}
-                        </div>
-                      ) : null}
-                      <ReviewSubmissionForm submissionId={submission.id} />
-                      {submission.status !== "DRAFT" &&
-                      submission.status !== "RETURNED" ? (
-                        <AllowHomeworkRedoButton submissionId={submission.id} />
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
+              <HomeworkCorrectionTabs
+                isAdmin={currentUser.role === "ADMIN"}
+                submissions={correctionSubmissions}
+              />
             )
           ) : null}
         </CardContent>

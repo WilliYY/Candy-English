@@ -16,6 +16,7 @@ Arquivos principais:
 - `src/app/ava/student/page.tsx`
 - `src/app/ava/homework-assets/[homeworkId]/route.ts`
 - `src/components/ava/teacher-forms.tsx`
+- `src/components/ava/homework-correction-tabs.tsx`
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/interactive-homework-document.tsx`
@@ -73,6 +74,9 @@ Tabelas e enums:
 - `SUBMITTED` e entrega oficial e gera evento para teacher/admin.
 - `RETURNED` libera o aluno para refazer.
 - `REVIEWED` bloqueia nova entrega e preserva feedback.
+- A tela de correcao separa entregas `SUBMITTED` em `Aguardando correcao` e entregas `REVIEWED`/`RETURNED` em `Corrigidos`.
+- Na correcao de homework interativo, o PDF/imagem com as respostas do aluno deve aparecer aberto como superficie principal, com texto, marcas e desenhos sobrepostos ao arquivo original.
+- O painel lateral da correcao mostra aluno, professor responsavel, aula e o campo de nota/feedback que aparece para o aluno.
 - OCR/IA e opcional/futuro; o fluxo padrao atual e manual e nao deve enviar o arquivo para servicos externos sem decisao explicita.
 
 ## Decisoes tecnicas tomadas
@@ -84,6 +88,7 @@ Tabelas e enums:
 - A exclusao de homework interativa usa server action com validacao de role/dono e tenta remover o arquivo fisico de `storage/homework-assets` apos apagar os registros.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
 - A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
+- A revisao do arquivo entregue reutiliza a mesma renderizacao fiel e mostra os valores da submissao sobre os campos percentuais salvos.
 - A criacao interativa grava `fieldDetectionSource` como `manual` e nao cria `HomeworkInteractiveField` automaticamente.
 - A criacao de aula interativa grava `fieldDetectionSource` como `lesson-manual` e tambem nasce sem `HomeworkInteractiveField`.
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
