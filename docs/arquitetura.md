@@ -404,7 +404,7 @@ A vigesima segunda fase reorganiza a camada institucional sem alterar regras do 
 - paginas institucionais baseadas em `InstitutionalPage` usam `public/brand/informacoes.mp4` como fundo em loop com overlay para leitura;
 - `SiteLayout` chama `auth()` e passa o role para `SiteHeader`, permitindo mostrar estado logado no topo do site;
 - `Planos` foi removido da navegacao principal e do rodape, mas a rota `/planos` continua existindo para compatibilidade e edicao futura;
-- os pontos de contato visiveis usam `candyenglishbr@gmail.com` e WhatsApp com icone dedicado.
+- os pontos de contato visiveis usam `candyenglishbr@gmail.com`, WhatsApp com icone dedicado e Instagram oficial `@candyenglish.oficial`; Facebook nao aparece mais na home.
 
 ## FASE 23
 

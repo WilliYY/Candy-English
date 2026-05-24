@@ -4,7 +4,6 @@ import {
   BookOpen,
   CheckCircle2,
   ClipboardCheck,
-  Facebook,
   GraduationCap,
   Instagram,
   Mail,
@@ -69,16 +68,10 @@ const contactLinks = [
     label: "WhatsApp",
   },
   {
-    detail: "@candyenglish",
-    href: "/contato",
+    detail: "@candyenglish.oficial",
+    href: "https://www.instagram.com/candyenglish.oficial/",
     icon: Instagram,
     label: "Instagram",
-  },
-  {
-    detail: "Candy English",
-    href: "/contato",
-    icon: Facebook,
-    label: "Facebook",
   },
   {
     detail: "candyenglishbr@gmail.com",
