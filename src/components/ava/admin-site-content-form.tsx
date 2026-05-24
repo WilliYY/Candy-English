@@ -41,7 +41,7 @@ const defaults: Record<AdminSiteContentInput["slug"], SiteContentRow> = {
     description:
       "Aulas personalizadas com materiais, vocabulario, homework online e feedback em um AVA proprio.",
     slug: "home",
-    title: "Fale ingles com clareza, rotina e feedback.",
+    title: "Fale ingles com aulas personalizadas e no seu estilo!",
   },
   metodologia: {
     ctaLabel: "Conhecer planos",

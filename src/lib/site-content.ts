@@ -11,7 +11,7 @@ export const SITE_PAGE_DEFAULTS = {
     ctaLabel: "Comecar conversa",
     description:
       "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo.",
-    title: "Fale ingles com clareza, rotina e feedback.",
+    title: "Fale ingles com aulas personalizadas e no seu estilo!",
   },
   metodologia: {
     ctaLabel: "Falar com a Candy",

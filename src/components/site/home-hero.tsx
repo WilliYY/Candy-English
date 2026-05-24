@@ -16,7 +16,8 @@ type HomeHeroProps = {
 };
 
 export function HomeHero({ content }: HomeHeroProps) {
-  const title = content?.title ?? "Fale ingles com clareza, rotina e feedback.";
+  const title =
+    content?.title ?? "Fale ingles com aulas personalizadas e no seu estilo!";
   const description =
     content?.description ??
     "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo.";
