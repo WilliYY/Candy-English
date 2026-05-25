@@ -74,7 +74,7 @@ Tabelas e enums:
 - `SUBMITTED` e entrega oficial e gera evento para teacher/admin.
 - `RETURNED` libera o aluno para refazer.
 - `REVIEWED` bloqueia nova entrega e preserva feedback.
-- A tela de correcao separa entregas `SUBMITTED` em `Aguardando correcao` e entregas `REVIEWED`/`RETURNED` em `Corrigidos`.
+- A tela de correcao separa entregas `SUBMITTED` em `Aguardando correcao` e entregas `REVIEWED`/`RETURNED` em `Corrigidos`; cada entrega fica recolhida por padrao para reduzir poluicao visual.
 - Na correcao de homework interativo, o PDF/imagem com as respostas do aluno deve aparecer aberto como superficie principal, com texto, marcas e desenhos sobrepostos ao arquivo original.
 - O painel lateral da correcao mostra aluno, professor responsavel, aula e o campo de nota/feedback que aparece para o aluno.
 - OCR/IA e opcional/futuro; o fluxo padrao atual e manual e nao deve enviar o arquivo para servicos externos sem decisao explicita.

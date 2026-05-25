@@ -131,8 +131,9 @@ Actions:
 9. Em areas `DRAWING`, o aluno pode desenhar com mouse ou dedo e desfazer o ultimo traco sem limpar todo o desenho.
 10. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
 11. Teacher ou admin corrige em uma tela com abas: `Aguardando correcao` para `SUBMITTED` e `Corrigidos` para `REVIEWED`/`RETURNED`.
-12. Na correcao, o PDF/imagem aparece aberto com texto, marcas e desenhos entregues pelo aluno sobrepostos ao arquivo; no painel lateral ficam aluno, professor responsavel, aula e nota/feedback para o aluno.
-13. A avaliacao salva a entrega como `REVIEWED` e aparece para o aluno; a acao de refazer salva `RETURNED` e libera nova tentativa.
+12. Cada entrega da fila fica recolhida por padrao; ao abrir, o PDF/imagem aparece com texto, marcas e desenhos entregues pelo aluno sobrepostos ao arquivo.
+13. No painel lateral da entrega aberta ficam aluno, professor responsavel, aula e nota/feedback para o aluno.
+14. A avaliacao salva a entrega como `REVIEWED` e aparece para o aluno; a acao de refazer salva `RETURNED` e libera nova tentativa.
 
 ### Financeiro
 

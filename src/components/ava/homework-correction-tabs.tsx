@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
+  ChevronDown,
   ClipboardCheck,
   FileText,
   RotateCcw,
@@ -163,8 +164,8 @@ function ReviewSubmissionCard({
   const teacherEmail = submission.homework.teacherProfile.user.email;
 
   return (
-    <article className="overflow-hidden rounded-lg border border-primary/15 bg-white shadow-sm">
-      <header className="flex flex-col gap-4 border-b border-primary/10 px-4 py-4 lg:flex-row lg:items-start lg:justify-between">
+    <details className="group overflow-hidden rounded-lg border border-primary/15 bg-white shadow-sm">
+      <summary className="flex cursor-pointer list-none flex-col gap-4 px-4 py-4 hover:bg-primary/5 lg:flex-row lg:items-start lg:justify-between [&::-webkit-details-marker]:hidden">
         <div className="flex min-w-0 gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FileText aria-hidden="true" className="size-5" />
@@ -191,18 +192,28 @@ function ReviewSubmissionCard({
             </p>
           </div>
         </div>
-        <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 lg:min-w-[300px]">
-          <span>Enviada: {formatDateTime(submission.submittedAt)}</span>
-          <span>
-            Arquivo: {submission.homework.assetFileName ?? "sem arquivo"}
+        <div className="flex shrink-0 flex-col gap-3 text-sm text-muted-foreground lg:min-w-[360px]">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <span>Enviada: {formatDateTime(submission.submittedAt)}</span>
+            <span className="truncate">
+              Arquivo: {submission.homework.assetFileName ?? "sem arquivo"}
+            </span>
+            {submission.reviewedAt ? (
+              <span>Corrigida: {formatDateTime(submission.reviewedAt)}</span>
+            ) : null}
+          </div>
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-background px-3 py-1 text-xs font-semibold text-primary transition group-open:bg-primary group-open:text-primary-foreground">
+            <span className="group-open:hidden">Abrir correcao</span>
+            <span className="hidden group-open:inline">Fechar correcao</span>
+            <ChevronDown
+              aria-hidden="true"
+              className="size-3.5 transition group-open:rotate-180"
+            />
           </span>
-          {submission.reviewedAt ? (
-            <span>Corrigida: {formatDateTime(submission.reviewedAt)}</span>
-          ) : null}
         </div>
-      </header>
+      </summary>
 
-      <div className="grid min-h-[520px] xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid min-h-[520px] border-t border-primary/10 xl:grid-cols-[minmax(0,1fr)_380px]">
         <section className="min-w-0 bg-muted/10 p-3 sm:p-4">
           {isInteractive ? (
             <InteractiveHomeworkReview
@@ -285,7 +296,7 @@ function ReviewSubmissionCard({
           </div>
         </aside>
       </div>
-    </article>
+    </details>
   );
 }
 
