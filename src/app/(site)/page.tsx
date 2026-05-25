@@ -62,18 +62,21 @@ const whatsappUrl =
 
 const contactLinks = [
   {
+    description: "Canal principal para tirar duvidas e combinar proximos passos.",
     detail: "+55 44 99738-2355",
     href: whatsappUrl,
     icon: WhatsAppIcon,
     label: "WhatsApp",
   },
   {
+    description: "Rotina da escola, avisos e bastidores das aulas.",
     detail: "@candyenglish.oficial",
     href: "https://www.instagram.com/candyenglish.oficial/",
     icon: Instagram,
     label: "Instagram",
   },
   {
+    description: "Melhor para propostas, documentos e assuntos mais longos.",
     detail: "candyenglishbr@gmail.com",
     href: "mailto:candyenglishbr@gmail.com",
     icon: Mail,
@@ -187,49 +190,122 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-b bg-white">
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:px-8">
-          <div className="flex flex-col gap-5">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border bg-muted px-3 py-2 text-sm font-medium text-primary">
+      <section className="relative isolate overflow-hidden border-b bg-[#fef7f3]">
+        <div className="candy-particle-field absolute inset-0 opacity-35" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch lg:px-8 lg:py-24">
+          <div className="flex flex-col justify-center gap-6">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/10 bg-white/82 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
               <WhatsAppIcon className="size-4" />
               Contatos Candy English
             </span>
-            <h2 className="max-w-xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
+            <h2 className="max-w-xl text-4xl font-semibold leading-tight tracking-normal md:text-6xl">
               Fale com a Candy por onde for mais facil.
             </h2>
-            <p className="max-w-xl text-base leading-8 text-muted-foreground">
+            <p className="max-w-lg text-base leading-8 text-muted-foreground md:text-lg">
               WhatsApp para conversa rapida e canais sociais para acompanhar
               avisos, rotina de aulas e novidades da escola.
             </p>
-            <Button asChild className="w-fit">
-              <a href={whatsappUrl} target="_blank" rel="noreferrer">
-                Falar no WhatsApp
-                <ArrowRight data-icon="inline-end" />
-              </a>
-            </Button>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {contactLinks.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                target={item.href.startsWith("http") ? "_blank" : undefined}
-                rel={
-                  item.href.startsWith("http") ? "noreferrer" : undefined
-                }
-                className="group flex min-h-28 items-center gap-4 rounded-lg border bg-background p-5 transition-all hover:-translate-y-1 hover:border-primary/35 hover:shadow-sm"
+            <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+              <Button
+                asChild
+                size="lg"
+                className="w-fit rounded-full px-7 shadow-lg shadow-primary/15"
               >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform group-hover:scale-105">
-                  <item.icon aria-hidden="true" className="size-5" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-semibold">{item.label}</span>
-                  <span className="mt-1 block truncate text-sm text-muted-foreground">
-                    {item.detail}
+                <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                  Falar no WhatsApp
+                  <ArrowRight data-icon="inline-end" />
+                </a>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="w-fit rounded-full border-primary/20 bg-white/72 px-7 text-primary hover:bg-white"
+              >
+                <a href="mailto:candyenglishbr@gmail.com">
+                  Enviar email
+                  <Mail aria-hidden="true" className="size-4" />
+                </a>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.05fr_0.95fr]">
+            <a
+              href={contactLinks[0].href}
+              target="_blank"
+              rel="noreferrer"
+              className="group relative min-h-80 overflow-hidden rounded-lg bg-primary p-6 text-primary-foreground shadow-2xl shadow-primary/20 transition-all duration-300 hover:-translate-y-1 hover:shadow-primary/25"
+            >
+              <span className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-accent via-white/70 to-secondary" />
+              <span className="absolute bottom-0 right-0 h-28 w-28 translate-x-10 translate-y-10 rounded-tl-full border-l border-t border-white/10 bg-white/5" />
+              <span className="relative flex h-full flex-col justify-between gap-10">
+                <span className="flex items-start justify-between gap-4">
+                  <span className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-white/12 ring-1 ring-white/16 transition-transform duration-300 group-hover:scale-105">
+                    <WhatsAppIcon aria-hidden="true" className="size-7" />
+                  </span>
+                  <span className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
+                    principal
                   </span>
                 </span>
-              </a>
-            ))}
+
+                <span>
+                  <span className="text-sm font-semibold uppercase tracking-[0.22em] text-white/60">
+                    resposta rapida
+                  </span>
+                  <span className="mt-3 block text-3xl font-semibold">
+                    WhatsApp
+                  </span>
+                  <span className="mt-4 block max-w-sm text-sm leading-7 text-white/75">
+                    {contactLinks[0].description}
+                  </span>
+                </span>
+
+                <span className="flex items-center justify-between gap-4 rounded-lg border border-white/15 bg-white/10 p-4 text-sm font-semibold backdrop-blur transition-colors group-hover:bg-white/14">
+                  <span className="break-words">{contactLinks[0].detail}</span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="size-5 shrink-0 transition-transform group-hover:translate-x-1"
+                  />
+                </span>
+              </span>
+            </a>
+
+            <div className="grid gap-4">
+              {contactLinks.slice(1).map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target={item.href.startsWith("http") ? "_blank" : undefined}
+                  rel={
+                    item.href.startsWith("http") ? "noreferrer" : undefined
+                  }
+                  className="group flex min-h-36 flex-col justify-between gap-5 rounded-lg border border-primary/12 bg-white/88 p-5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-primary/28 hover:bg-white hover:shadow-xl hover:shadow-primary/10"
+                >
+                  <span className="flex items-start justify-between gap-4">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
+                      <item.icon aria-hidden="true" className="size-5" />
+                    </span>
+                    <ArrowRight
+                      aria-hidden="true"
+                      className="size-4 text-primary/35 transition-all group-hover:translate-x-1 group-hover:text-primary"
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-lg font-semibold">
+                      {item.label}
+                    </span>
+                    <span className="mt-2 block text-sm leading-6 text-muted-foreground">
+                      {item.description}
+                    </span>
+                    <span className="mt-3 block break-words text-sm font-medium text-primary">
+                      {item.detail}
+                    </span>
+                  </span>
+                </a>
+              ))}
+            </div>
           </div>
         </div>
       </section>
