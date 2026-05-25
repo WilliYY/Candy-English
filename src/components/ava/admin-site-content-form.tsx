@@ -60,9 +60,9 @@ const defaults: Record<AdminSiteContentInput["slug"], SiteContentRow> = {
   sobre: {
     ctaLabel: "Falar com a Candy",
     description:
-      "A Candy English une aula humana, organizacao digital e acompanhamento proximo.",
+      "A Candy English combina aulas personalizadas para o objetivo, ritmo e rotina de cada aluno com um AVA proprio que organiza materiais, vocabulario, homework e feedback.",
     slug: "sobre",
-    title: "Uma escola digital pequena, humana e organizada.",
+    title: "Ingles personalizado, com foco no aluno e apoio entre aulas.",
   },
 };
 

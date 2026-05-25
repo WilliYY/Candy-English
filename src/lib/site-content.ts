@@ -28,8 +28,8 @@ export const SITE_PAGE_DEFAULTS = {
   sobre: {
     ctaLabel: "Falar com a Candy",
     description:
-      "A Candy English une aulas proximas, materiais organizados e acompanhamento continuo para que o aluno evolua com clareza.",
-    title: "Uma escola de ingles com cuidado humano e base digital propria.",
+      "A Candy English combina aulas personalizadas para o objetivo, ritmo e rotina de cada aluno com um AVA proprio que organiza materiais, vocabulario, homework e feedback para o estudo continuar depois da aula.",
+    title: "Ingles personalizado, com foco no aluno e apoio entre aulas.",
   },
 } as const;
 

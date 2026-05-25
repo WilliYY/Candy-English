@@ -20,23 +20,23 @@ export default async function SobrePage() {
       ctaLabel={content.ctaLabel}
       sections={[
         {
-          title: "Ensino proximo",
-          text: "Cada aluno tem objetivos, ritmo e necessidades diferentes. A aula parte dessa realidade e transforma o estudo em um caminho possivel.",
+          title: "Foco no aluno",
+          text: "Cada aula parte do nivel, objetivo, rotina e dificuldade real do aluno. O caminho de estudo se adapta a pessoa, nao o contrario.",
           icon: HeartHandshake,
         },
         {
-          title: "Organizacao entre aulas",
-          text: "Materiais, vocabulario, homework e feedback ficam conectados no AVA, evitando que o aprendizado se espalhe em arquivos soltos.",
+          title: "Aula personalizada",
+          text: "Conversacao, vocabulario, gramatica e pratica entram na medida certa para o que o aluno precisa agora, com ritmo humano e metas possiveis.",
           icon: BookOpen,
         },
         {
-          title: "Base propria",
-          text: "O projeto nao usa WordPress, nao depende da HostGator e roda em uma estrutura propria no servidor Oracle Ubuntu.",
+          title: "AVA para estudar melhor",
+          text: "Aulas, materiais, vocabulario, homework e feedback ficam organizados no AVA, para revisar com clareza sem perder conteudo em mensagens soltas.",
           icon: ShieldCheck,
         },
         {
-          title: "Experiencia viva",
-          text: "O site usa movimento com intencao: mostrar ritmo, progresso e energia sem atrapalhar a leitura.",
+          title: "Continuidade entre aulas",
+          text: "Depois de cada encontro, o aluno sabe o que revisar, o que praticar e qual e o proximo passo para evoluir com mais seguranca.",
           icon: Sparkles,
         },
       ]}
