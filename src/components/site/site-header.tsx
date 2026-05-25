@@ -63,22 +63,36 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
           className="hidden items-center gap-3 md:flex"
           aria-label="Navegacao principal"
         >
-          {navItems.map((item) => (
-            <Button
-              key={item.href}
-              asChild
-              variant="ghost"
-              size="default"
-              className={cn(
-                "px-4 text-base font-semibold transition-colors",
-                isHome
-                  ? "text-primary/75 hover:bg-primary/5 hover:text-primary"
-                  : "text-foreground",
-              )}
-            >
-              <Link href={item.href}>{item.label}</Link>
-            </Button>
-          ))}
+          {navItems.map((item) => {
+            const isActive =
+              item.href === "/"
+                ? pathname === item.href
+                : pathname.startsWith(item.href);
+
+            return (
+              <Button
+                key={item.href}
+                asChild
+                variant="ghost"
+                size="default"
+                className={cn(
+                  "px-4 text-base font-semibold transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/15 hover:bg-primary hover:text-primary-foreground"
+                    : isHome
+                      ? "text-primary/75 hover:bg-primary/5 hover:text-primary"
+                      : "text-foreground hover:bg-primary/5 hover:text-primary",
+                )}
+              >
+                <Link
+                  aria-current={isActive ? "page" : undefined}
+                  href={item.href}
+                >
+                  {item.label}
+                </Link>
+              </Button>
+            );
+          })}
         </nav>
         <div className="flex shrink-0 items-center gap-4 lg:gap-6">
           {loggedLabel ? (

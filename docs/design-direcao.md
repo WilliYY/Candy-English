@@ -75,6 +75,7 @@ Cuidados:
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
+- O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
 - O video da home deve ser o elemento visual principal, sem blobs ou decoracoes extras.
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
 - O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
