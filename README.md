@@ -63,6 +63,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/13-financeiro.md`: modulo financeiro admin.
 - `docs/14-agenda.md`: modulo agenda admin.
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
+- `docs/99-contexto-rapido-codex.md`: prompt minimo e memoria curta para continuar o projeto em outro chat.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.
 

@@ -70,6 +70,7 @@ Rotas principais:
 - `13-financeiro.md`: modulo financeiro.
 - `14-agenda.md`: modulo agenda.
 - `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave para homework/aula interativa.
+- `99-contexto-rapido-codex.md`: prompt minimo e contexto curto para retomar o projeto em outro chat.
 
 ## Riscos ao alterar esta parte
 

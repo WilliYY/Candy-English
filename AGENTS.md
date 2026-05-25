@@ -14,6 +14,8 @@ Antes de alterar qualquer arquivo, sempre ler:
 2. `README.md`
 3. os arquivos relevantes em `docs/`
 
+Para continuar o projeto em outro chat com prompt curto, leia tambem `docs/99-contexto-rapido-codex.md`.
+
 Leitura minima recomendada:
 
 - `docs/00-visao-geral.md`
@@ -194,6 +196,14 @@ Projeto oficial:
 
 - Windows/Codex: `C:\Projetos\candy-english`
 - Oracle: `/home/ubuntu/projetos/candy-english`
+
+Prompt minimo para outro chat:
+
+```text
+Estou no projeto Candy English em C:\Projetos\candy-english.
+Leia AGENTS.md, README.md e docs/99-contexto-rapido-codex.md.
+Depois execute meu pedido seguindo os padroes do projeto: [meu pedido aqui]
+```
 
 ## Como responder ao finalizar
 
