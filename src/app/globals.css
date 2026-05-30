@@ -297,6 +297,40 @@ a {
   animation: candy-particle-drift 28s linear infinite;
 }
 
+.candy-footer {
+  background:
+    radial-gradient(circle at 18% 0%, rgb(229 124 216 / 0.22), transparent 26rem),
+    radial-gradient(circle at 82% 12%, rgb(252 229 216 / 0.14), transparent 24rem),
+    linear-gradient(135deg, #2c1338 0%, #412a4c 52%, #2c1338 100%);
+}
+
+.candy-footer-bubbles {
+  filter: url("#candy-footer-blob");
+  inset: -1rem 0 auto;
+  height: 8rem;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.candy-footer-bubble {
+  animation:
+    candy-footer-bubble-rise var(--time) var(--delay) ease-in infinite,
+    candy-footer-bubble-shrink var(--time) var(--delay) ease-in infinite;
+  background:
+    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.55), transparent 28%),
+    linear-gradient(135deg, #ff6f9f, #e57cd8 58%, #c83268);
+  border-radius: 9999px;
+  bottom: -4rem;
+  height: var(--size);
+  left: var(--position);
+  opacity: 0.9;
+  position: absolute;
+  transform: translateX(-50%);
+  width: var(--size);
+}
+
 .home-method-video-section {
   min-height: 760px;
 }
@@ -437,6 +471,29 @@ a {
       60px -60px,
       84px 0,
       0 84px;
+  }
+}
+
+@keyframes candy-footer-bubble-rise {
+  from {
+    bottom: -4rem;
+  }
+
+  to {
+    bottom: var(--distance);
+  }
+}
+
+@keyframes candy-footer-bubble-shrink {
+  0%,
+  58% {
+    height: var(--size);
+    width: var(--size);
+  }
+
+  100% {
+    height: 0;
+    width: 0;
   }
 }
 
