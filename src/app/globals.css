@@ -301,8 +301,6 @@ a {
   --footer-background: #412a4c;
   background:
     linear-gradient(180deg, transparent 0, transparent 6rem, var(--footer-background) 6rem),
-    radial-gradient(circle at 18% 0%, rgb(229 124 216 / 0.2), transparent 24rem),
-    radial-gradient(circle at 82% 0%, rgb(252 229 216 / 0.12), transparent 22rem),
     #fefbfa;
   min-height: 12rem;
 }
@@ -322,11 +320,11 @@ a {
   animation:
     candy-footer-bubble-size var(--time) var(--delay) ease-in infinite,
     candy-footer-bubble-move var(--time) var(--delay) ease-in infinite;
-  background: linear-gradient(135deg, #fce5d8 0%, #e57cd8 45%, #d9559c 100%);
+  background: var(--footer-background);
   border-radius: 9999px;
   bottom: -4rem;
+  box-shadow: inset 0 0.55rem 1.2rem rgb(255 255 255 / 0.08);
   left: var(--position);
-  opacity: 0.9;
   position: absolute;
   transform: translate(-50%, 100%);
 }
