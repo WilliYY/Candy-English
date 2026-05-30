@@ -298,17 +298,21 @@ a {
 }
 
 .candy-footer {
+  --footer-background: #412a4c;
   background:
-    radial-gradient(circle at 18% 0%, rgb(229 124 216 / 0.22), transparent 26rem),
-    radial-gradient(circle at 82% 12%, rgb(252 229 216 / 0.14), transparent 24rem),
-    linear-gradient(135deg, #2c1338 0%, #412a4c 52%, #2c1338 100%);
+    linear-gradient(180deg, transparent 0, transparent 6rem, var(--footer-background) 6rem),
+    radial-gradient(circle at 18% 0%, rgb(229 124 216 / 0.2), transparent 24rem),
+    radial-gradient(circle at 82% 0%, rgb(252 229 216 / 0.12), transparent 22rem),
+    #fefbfa;
+  min-height: 12rem;
 }
 
 .candy-footer-bubbles {
+  background: var(--footer-background);
   filter: url("#candy-footer-blob");
-  inset: -1rem 0 auto;
-  height: 8rem;
-  overflow: hidden;
+  height: 1rem;
+  inset: 6rem 0 auto;
+  overflow: visible;
   pointer-events: none;
   position: absolute;
   z-index: 0;
@@ -316,19 +320,22 @@ a {
 
 .candy-footer-bubble {
   animation:
-    candy-footer-bubble-rise var(--time) var(--delay) ease-in infinite,
-    candy-footer-bubble-shrink var(--time) var(--delay) ease-in infinite;
-  background:
-    radial-gradient(circle at 32% 28%, rgb(255 255 255 / 0.55), transparent 28%),
-    linear-gradient(135deg, #ff6f9f, #e57cd8 58%, #c83268);
+    candy-footer-bubble-size var(--time) var(--delay) ease-in infinite,
+    candy-footer-bubble-move var(--time) var(--delay) ease-in infinite;
+  background: linear-gradient(135deg, #fce5d8 0%, #e57cd8 45%, #d9559c 100%);
   border-radius: 9999px;
   bottom: -4rem;
-  height: var(--size);
   left: var(--position);
   opacity: 0.9;
   position: absolute;
-  transform: translateX(-50%);
-  width: var(--size);
+  transform: translate(-50%, 100%);
+}
+
+.candy-footer-content {
+  background:
+    radial-gradient(circle at 18% 0%, rgb(229 124 216 / 0.14), transparent 24rem),
+    linear-gradient(135deg, var(--footer-background) 0%, #2c1338 100%);
+  margin-top: 6rem;
 }
 
 .home-method-video-section {
@@ -474,7 +481,7 @@ a {
   }
 }
 
-@keyframes candy-footer-bubble-rise {
+@keyframes candy-footer-bubble-move {
   from {
     bottom: -4rem;
   }
@@ -484,9 +491,9 @@ a {
   }
 }
 
-@keyframes candy-footer-bubble-shrink {
+@keyframes candy-footer-bubble-size {
   0%,
-  58% {
+  75% {
     height: var(--size);
     width: var(--size);
   }

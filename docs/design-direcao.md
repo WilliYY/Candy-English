@@ -74,7 +74,7 @@ Cuidados:
 - O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
-- Footer pode usar efeito gooey/lava lamp no topo, com bolhas em rosa/coral sobre roxo profundo atras do conteudo, preservando textos e links.
+- Footer pode usar efeito gooey/lava lamp no topo, com uma faixa fina de bolhas em rosa/coral subindo sobre o roxo profundo, preservando textos e links.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
 - O video da home deve ser o elemento visual principal, sem blobs ou decoracoes extras.
