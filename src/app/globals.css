@@ -323,16 +323,19 @@ a {
   background: var(--footer-background);
   border-radius: 9999px;
   bottom: -4rem;
-  box-shadow: inset 0 0.55rem 1.2rem rgb(255 255 255 / 0.08);
   left: var(--position);
   position: absolute;
   transform: translate(-50%, 100%);
 }
 
 .candy-footer-content {
-  background:
-    radial-gradient(circle at 18% 0%, rgb(229 124 216 / 0.14), transparent 24rem),
-    linear-gradient(135deg, var(--footer-background) 0%, #2c1338 100%);
+  background: linear-gradient(
+    180deg,
+    var(--footer-background) 0,
+    var(--footer-background) 4rem,
+    #392044 68%,
+    #2c1338 100%
+  );
   margin-top: 6rem;
 }
 
