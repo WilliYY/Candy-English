@@ -71,9 +71,20 @@ export async function GET(
     }
   }
 
-  const file = await readFile(getStoragePath(contract.storagePath));
+  let file: Buffer;
 
-  return new NextResponse(file, {
+  try {
+    file = await readFile(getStoragePath(contract.storagePath));
+  } catch {
+    return new NextResponse("Contrato nao encontrado.", { status: 404 });
+  }
+
+  const body = file.buffer.slice(
+    file.byteOffset,
+    file.byteOffset + file.byteLength,
+  ) as ArrayBuffer;
+
+  return new NextResponse(body, {
     headers: {
       "Content-Disposition": `inline; filename="${encodeURIComponent(contract.fileName)}"`,
       "Content-Type": contract.mimeType,

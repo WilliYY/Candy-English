@@ -68,9 +68,20 @@ export async function GET(
     }
   }
 
-  const file = await readFile(getStoragePath(homework.assetStoragePath));
+  let file: Buffer;
 
-  return new NextResponse(file, {
+  try {
+    file = await readFile(getStoragePath(homework.assetStoragePath));
+  } catch {
+    return new NextResponse("Arquivo nao encontrado.", { status: 404 });
+  }
+
+  const body = file.buffer.slice(
+    file.byteOffset,
+    file.byteOffset + file.byteLength,
+  ) as ArrayBuffer;
+
+  return new NextResponse(body, {
     headers: {
       "Content-Disposition": `inline; filename="${encodeURIComponent(
         homework.assetFileName ?? "homework",
