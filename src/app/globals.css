@@ -320,21 +320,35 @@ a {
 
 .candy-footer {
   --footer-background: #412a4c;
-  background:
-    linear-gradient(180deg, transparent 0, transparent 6rem, var(--footer-background) 6rem),
-    #fefbfa;
+  background: transparent;
   min-height: 12rem;
 }
 
-.candy-footer-bubbles {
-  background: var(--footer-background);
-  filter: url("#candy-footer-blob");
-  height: 1rem;
-  inset: 6rem 0 auto;
-  overflow: visible;
+.candy-footer::before {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(65 42 76 / 0.08) 34%,
+    rgb(65 42 76 / 0.74) 78%,
+    var(--footer-background) 100%
+  );
+  content: "";
+  height: 9rem;
+  inset: 0 0 auto;
   pointer-events: none;
   position: absolute;
   z-index: 0;
+}
+
+.candy-footer-bubbles {
+  background: transparent;
+  filter: url("#candy-footer-blob");
+  height: 8rem;
+  inset: 0 0 auto;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
 }
 
 .candy-footer-bubble {
@@ -357,7 +371,9 @@ a {
     #392044 68%,
     #2c1338 100%
   );
-  margin-top: 6rem;
+  margin-top: 7rem;
+  position: relative;
+  z-index: 2;
 }
 
 .home-method-video-section {

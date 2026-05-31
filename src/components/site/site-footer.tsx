@@ -19,7 +19,7 @@ const footerBubbles = Array.from({ length: 72 }, (_, index) => {
 
 export function SiteFooter() {
   return (
-    <footer className="candy-footer relative isolate -mt-24 overflow-hidden text-white">
+    <footer className="candy-footer relative isolate -mt-36 overflow-hidden text-white md:-mt-40 lg:-mt-44">
       <svg className="hidden" aria-hidden="true" focusable="false">
         <defs>
           <filter id="candy-footer-blob">
