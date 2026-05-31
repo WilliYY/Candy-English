@@ -208,7 +208,6 @@ export default async function HomePage() {
           />
         </video>
         <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(254,247,243,0.88),rgba(254,247,243,0.68)_48%,rgba(254,247,243,0.9))]" />
-        <div className="absolute inset-x-0 bottom-0 z-[2] h-64 bg-gradient-to-b from-transparent via-[#fef7f3]/45 to-[#412a4c]" />
         <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch lg:px-8 lg:py-24">
           <div className="flex flex-col justify-center gap-6">
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/10 bg-white/82 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">

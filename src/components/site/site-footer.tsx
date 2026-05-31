@@ -2,15 +2,17 @@ import Link from "next/link";
 import type { CSSProperties } from "react";
 
 const footerBubbles = Array.from({ length: 72 }, (_, index) => {
-  const size = 2 + ((index * 17) % 40) / 10;
-  const distance = 6 + ((index * 23) % 40) / 10;
-  const position = -5 + ((index * 37) % 110);
-  const time = 2 + ((index * 19) % 20) / 10;
-  const delay = -1 * (2 + ((index * 29) % 20) / 10);
+  const size = 2.4 + ((index * 17) % 48) / 10;
+  const distance = 6.5 + ((index * 23) % 62) / 10;
+  const position = -6 + ((index * 37) % 112);
+  const time = 3.2 + ((index * 19) % 28) / 10;
+  const delay = -1 * (1.8 + ((index * 29) % 32) / 10);
 
   return {
     "--size": `${size.toFixed(1)}rem`,
     "--distance": `${distance.toFixed(1)}rem`,
+    "--lift-mid": `-${(distance * 0.55).toFixed(1)}rem`,
+    "--lift": `-${distance.toFixed(1)}rem`,
     "--position": `${position}%`,
     "--time": `${time.toFixed(1)}s`,
     "--delay": `${delay.toFixed(1)}s`,
@@ -19,7 +21,7 @@ const footerBubbles = Array.from({ length: 72 }, (_, index) => {
 
 export function SiteFooter() {
   return (
-    <footer className="candy-footer relative isolate -mt-36 overflow-hidden text-white md:-mt-40 lg:-mt-44">
+    <footer className="candy-footer relative isolate -mt-40 overflow-hidden text-white md:-mt-44 lg:-mt-48">
       <svg className="hidden" aria-hidden="true" focusable="false">
         <defs>
           <filter id="candy-footer-blob">

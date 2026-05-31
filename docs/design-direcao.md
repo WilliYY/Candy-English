@@ -47,7 +47,7 @@ Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo c
 Movimentos permitidos nesta fase:
 
 - hero da home com fundo claro, limpo e sem video em loop para reduzir ruido visual e custo inicial;
-- video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa ou linha divisoria dura;
+- video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa, linha divisoria dura ou degradê de transicao;
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura;
 - video fullscreen em loop no login do AVA, mantendo overlay roxo para foco no formulario;
@@ -78,7 +78,7 @@ Cuidados:
 - Footer pode usar efeito gooey/lava lamp no topo, com bolhas no mesmo roxo do footer para parecer uma superficie unica, preservando textos e links.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
-- O hero da home deve ficar limpo e legivel; o video local `public/brand/home.mp4` aparece no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo sem criar linha dura antes do rodape.
+- O hero da home deve ficar limpo e legivel; o video local `public/brand/home.mp4` aparece no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degradê de transicao antes do rodape.
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
 - O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.
