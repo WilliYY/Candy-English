@@ -199,8 +199,29 @@ a {
 
 .hero-copy-glass {
   background:
-    linear-gradient(135deg, rgb(74 39 88 / 0.74), rgb(74 39 88 / 0.42)),
+    linear-gradient(135deg, rgb(74 39 88 / 0.88), rgb(74 39 88 / 0.72)),
     linear-gradient(180deg, rgb(255 255 255 / 0.12), transparent);
+}
+
+.candy-home-clean {
+  background:
+    linear-gradient(180deg, #fce5d8 0%, #fefbfa 34%, #fff7f3 62%, #fce5d8 100%);
+}
+
+.candy-home-clean-field {
+  background-image:
+    linear-gradient(rgb(65 42 76 / 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(65 42 76 / 0.055) 1px, transparent 1px),
+    linear-gradient(135deg, rgb(229 124 216 / 0.16), transparent 42%, rgb(65 42 76 / 0.08));
+  background-position:
+    center,
+    center,
+    center;
+  background-size:
+    72px 72px,
+    72px 72px,
+    cover;
+  mask-image: linear-gradient(to bottom, black, black 76%, transparent);
 }
 
 .ava-panel-card {
@@ -345,6 +366,11 @@ a {
 
 .home-method-video {
   object-position: center 82%;
+}
+
+.home-final-video {
+  object-position: center 42%;
+  opacity: 0.82;
 }
 
 .animate-fade-rise {
@@ -512,6 +538,10 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-final-video {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {

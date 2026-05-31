@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 
-const footerBubbles = Array.from({ length: 128 }, (_, index) => {
+const footerBubbles = Array.from({ length: 72 }, (_, index) => {
   const size = 2 + ((index * 17) % 40) / 10;
   const distance = 6 + ((index * 23) % 40) / 10;
   const position = -5 + ((index * 37) % 110);
@@ -19,7 +19,7 @@ const footerBubbles = Array.from({ length: 128 }, (_, index) => {
 
 export function SiteFooter() {
   return (
-    <footer className="candy-footer relative isolate overflow-hidden border-t border-[#e57cd8]/25 text-white">
+    <footer className="candy-footer relative isolate -mt-24 overflow-hidden text-white">
       <svg className="hidden" aria-hidden="true" focusable="false">
         <defs>
           <filter id="candy-footer-blob">
