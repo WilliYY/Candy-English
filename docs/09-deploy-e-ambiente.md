@@ -29,6 +29,12 @@ Servidor oficial:
 
 - `/home/ubuntu/projetos/candy-english`
 
+Operacao por agente:
+
+- Quando uma mudanca ja estiver em commit/push e precisar aparecer em producao, o Codex deve tentar fazer o pull/deploy no Oracle por conta propria se houver acesso operacional disponivel.
+- Se o ambiente atual nao tiver SSH, chave, sessao remota ou permissao para acessar o Oracle, o Codex deve reportar esse bloqueio exato e deixar os comandos PuTTY de deploy.
+- Nao considerar deploy concluido sem validar o pull/recreate e, quando possivel, conferir a pagina ou smoke correspondente.
+
 ## Regras de negocio que precisam ser preservadas
 
 - `.env` real nunca deve ir para o Git.

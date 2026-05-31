@@ -65,6 +65,8 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 
 ## Deploy Oracle sem migration
 
+Regra operacional: quando houver acesso remoto disponivel, o Codex deve executar este pull/deploy no Oracle por conta propria. Se nao houver SSH, chave, sessao remota ou permissao no ambiente atual, reportar o bloqueio exato e deixar estes comandos para PuTTY.
+
 ```bash
 cd /home/ubuntu/projetos/candy-english
 git pull
@@ -78,6 +80,8 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 ```
 
 ## Deploy Oracle com migration
+
+Regra operacional: usar este fluxo quando `prisma/migrations/` mudar. Quando houver acesso remoto disponivel, o Codex deve executar o pull/deploy no Oracle por conta propria; se nao houver acesso, reportar o bloqueio e deixar estes comandos para PuTTY.
 
 ```bash
 cd /home/ubuntu/projetos/candy-english

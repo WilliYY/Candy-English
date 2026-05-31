@@ -25,8 +25,9 @@ Ao receber o prompt minimo, o agente deve:
 5. Atualizar documentacao quando houver mudanca de fluxo, regra, permissao, layout importante, banco, deploy ou integracao.
 6. Rodar validacoes proporcionais ao risco.
 7. Fazer commit e push quando a implementacao estiver concluida, salvo pedido contrario.
-8. Fazer deploy Oracle quando a mudanca precisar ir para producao e o contexto operacional permitir.
-9. Finalizar em portugues com arquivos alterados, docs, comandos, validacoes, pendencias, riscos, commit/push e deploy.
+8. Fazer pull/deploy Oracle por conta propria quando a mudanca precisar ir para producao e houver acesso operacional.
+9. Se nao houver SSH, chave, sessao remota ou permissao para acessar o Oracle, informar o bloqueio exato e deixar os comandos PuTTY de deploy.
+10. Finalizar em portugues com arquivos alterados, docs, comandos, validacoes, pendencias, riscos, commit/push e deploy.
 
 ## Estado atual resumido
 

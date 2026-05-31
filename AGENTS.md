@@ -190,7 +190,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 
 ## Git e entrega
 
-Preferencia operacional atual do projeto: quando uma tarefa de implementacao for concluida, fazer commit no Git e enviar para o GitHub quando possivel. Ao final, informar tambem o prompt/comandos para PuTTY quando a mudanca precisar ir ao servidor Oracle.
+Preferencia operacional atual do projeto: quando uma tarefa de implementacao for concluida, fazer commit no Git e enviar para o GitHub quando possivel. Quando a mudanca precisar aparecer em producao, o Codex deve tentar fazer o pull/deploy no servidor Oracle por conta propria sempre que houver acesso operacional disponivel. Se o ambiente atual nao tiver SSH, chave, sessao remota ou permissao para acessar o Oracle, informar o bloqueio exato, deixar os comandos PuTTY de deploy e nao afirmar que producao foi atualizada sem verificar.
 
 Projeto oficial:
 
