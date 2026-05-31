@@ -327,9 +327,9 @@ a {
 .candy-footer-bubbles {
   background: transparent;
   filter: url("#candy-footer-blob");
-  height: 10rem;
-  inset: -1rem 0 auto;
-  overflow: visible;
+  height: 14rem;
+  inset: -5rem 0 auto;
+  overflow: hidden;
   pointer-events: none;
   position: absolute;
   z-index: 1;
