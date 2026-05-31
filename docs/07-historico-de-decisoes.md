@@ -37,6 +37,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/auth.ts`, `src/types/next-auth.d.ts`, `/api/auth`.
 - Riscos/cuidados: proteger `AUTH_SECRET`; revisar revogacao de sessao no futuro.
 
+### 2026-05-30 - Revogacao de sessao por versao de usuario
+
+- Decisao: adicionar `User.sessionVersion` e guardar essa versao no JWT.
+- Motivo: sessoes abertas devem perder validade quando o admin desativa/reativa usuario, redefine senha ou quando a role no banco diverge da role do token.
+- Impacto: `prisma/schema.prisma`, migration `20260530183000_user_session_version`, `src/lib/auth.ts`, `src/types/next-auth.d.ts`, `src/app/ava/admin/actions.ts`, `prisma/seed.ts`.
+- Riscos/cuidados: futuras actions que mudarem role ou outros dados de acesso devem incrementar `sessionVersion`; callbacks JWT agora consultam o banco para manter a sessao alinhada ao usuario ativo.
+
 ### 2026-05 - Google login opcional
 
 - Decisao: Google so fica ativo quando `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` existem.

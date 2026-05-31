@@ -567,6 +567,9 @@ export async function toggleAvaUserStatus(
     where: { id: user.id },
     data: {
       isActive: parsed.data.isActive,
+      sessionVersion: {
+        increment: 1,
+      },
     },
   });
 
@@ -624,6 +627,9 @@ export async function resetAvaUserPassword(
     where: { id: user.id },
     data: {
       passwordHash,
+      sessionVersion: {
+        increment: 1,
+      },
     },
   });
 

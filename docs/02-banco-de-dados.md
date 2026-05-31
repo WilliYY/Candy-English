@@ -80,6 +80,7 @@ Enums:
 ## Regras de negocio que precisam ser preservadas
 
 - `User.email` e unico.
+- `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
 - `HomeworkSubmission` possui chave unica por homework/aluno.
@@ -111,6 +112,7 @@ Enums:
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
+- Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 
 ## Riscos ao alterar esta parte
 
@@ -129,7 +131,6 @@ Enums:
 ## Pendencias
 
 - Falta rotina formal de backup/restore.
-- Falta revogacao imediata de JWT quando role muda.
 - Falta normalizacao case-insensitive mais robusta para email.
 - Falta auditoria geral fora do financeiro.
 - Falta trilha de auditoria detalhada para revelar/copiar credenciais do cofre admin.

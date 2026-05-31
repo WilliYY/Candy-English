@@ -76,6 +76,7 @@ model User {
   name               String
   email              String             @unique
   passwordHash       String
+  sessionVersion     Int                @default(0)
   role               Role               @default(STUDENT)
   isActive           Boolean            @default(true)
   phone              String?

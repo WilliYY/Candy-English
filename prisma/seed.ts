@@ -50,7 +50,12 @@ async function main() {
         name: seedConfig.adminName,
         role: "ADMIN",
         ...(adminResetPassword
-          ? { passwordHash: await hash(seedConfig.adminPassword, 12) }
+          ? {
+              passwordHash: await hash(seedConfig.adminPassword, 12),
+              sessionVersion: {
+                increment: 1,
+              },
+            }
           : {}),
       },
     });

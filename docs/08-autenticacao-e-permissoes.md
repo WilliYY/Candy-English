@@ -67,7 +67,8 @@ Rotas protegidas:
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.
 - O token/session recebe `id` e `role`.
-- A action admin de redefinicao de senha atualiza `User.passwordHash`; sessoes JWT ja abertas nao sao revogadas imediatamente nesta fase.
+- O token/session recebe `sessionVersion`; o callback JWT consulta o usuario ativo e invalida sessoes antigas quando a versao muda, o usuario fica inativo ou a role do banco diverge da role do token.
+- A action admin de redefinicao de senha atualiza `User.passwordHash` e incrementa `User.sessionVersion`, forçando novo login em sessoes ja abertas daquele usuario.
 - Actions do cofre admin chamam `auth()`, validam role `ADMIN`, validam payload com Zod e bloqueiam alteracao/exclusao direta de valores vindos do `.env`.
 
 ## Riscos ao alterar esta parte
@@ -81,7 +82,6 @@ Rotas protegidas:
 
 ## Pendencias
 
-- Revogacao imediata de sessoes JWT apos mudanca de role ou desativacao.
 - Politica mais forte de rate limit por IP.
 - Registro/auditoria ampliada de acoes administrativas.
 - Auditoria especifica para revelacao/copia de credenciais administrativas.

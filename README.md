@@ -14,7 +14,7 @@ Fase atual documentada: FASE 28.
 
 Ja existe:
 
-- login real com Auth.js/NextAuth v5, JWT e senha com `bcryptjs`;
+- login real com Auth.js/NextAuth v5, JWT, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda e cofre de APIs/senhas;

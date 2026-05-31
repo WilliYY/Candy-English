@@ -1,5 +1,6 @@
 import { compare } from "bcryptjs";
 import NextAuth, { type NextAuthConfig } from "next-auth";
+import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
@@ -59,8 +60,31 @@ async function getActiveUserByEmail(email: string) {
       isActive: true,
       name: true,
       role: true,
+      sessionVersion: true,
     },
   });
+}
+
+async function getSessionUserById(id: string) {
+  const prisma = getPrisma();
+
+  return prisma.user.findUnique({
+    where: { id },
+    select: {
+      email: true,
+      id: true,
+      isActive: true,
+      name: true,
+      role: true,
+      sessionVersion: true,
+    },
+  });
+}
+
+function revokeToken(token: JWT) {
+  delete token.id;
+  delete token.role;
+  delete token.sessionVersion;
 }
 
 const providers: NextAuthConfig["providers"] = [
@@ -116,6 +140,7 @@ const providers: NextAuthConfig["providers"] = [
         name: user.name,
         email: user.email,
         role: user.role,
+        sessionVersion: user.sessionVersion,
       };
     },
   }),
@@ -165,6 +190,7 @@ export const authConfig = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.sessionVersion = user.sessionVersion;
       }
 
       if (account?.provider && account.provider !== "credentials") {
@@ -178,8 +204,36 @@ export const authConfig = {
             token.name = existingUser.name;
             token.email = existingUser.email;
             token.role = existingUser.role;
+            token.sessionVersion = existingUser.sessionVersion;
           }
         }
+      }
+
+      if (typeof token.id === "string") {
+        const sessionUser = await getSessionUserById(token.id);
+
+        if (!sessionUser?.isActive) {
+          revokeToken(token);
+          return token;
+        }
+
+        const tokenSessionVersion =
+          typeof token.sessionVersion === "number"
+            ? token.sessionVersion
+            : sessionUser.sessionVersion;
+
+        if (
+          tokenSessionVersion !== sessionUser.sessionVersion ||
+          token.role !== sessionUser.role
+        ) {
+          revokeToken(token);
+          return token;
+        }
+
+        token.name = sessionUser.name;
+        token.email = sessionUser.email;
+        token.role = sessionUser.role;
+        token.sessionVersion = sessionUser.sessionVersion;
       }
 
       return token;
