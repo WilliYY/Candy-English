@@ -30,6 +30,7 @@ Componentes:
 - `src/components/ava/homework-correction-tabs.tsx`
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
+- `src/components/ava/student-xp-card.tsx`
 - `src/components/ava/chat-thread-panel.tsx`
 - `src/components/ava/live-session-forms.tsx`
 - `src/components/ava/profile-forms.tsx`
@@ -41,6 +42,10 @@ Actions:
 - `src/app/ava/teacher/actions.ts`
 - `src/app/ava/student/actions.ts`
 - `src/app/ava/actions.ts`
+
+Helpers:
+
+- `src/lib/candy-xp.ts`
 
 ## Fluxos principais
 
@@ -77,10 +82,19 @@ Actions:
 ### Student
 
 1. Student entra em `/ava/student`.
-2. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e aula ao vivo.
-3. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
-4. Visualiza feedback.
-5. Edita dados pessoais permitidos, mas nao o nivel.
+2. No resumo, ve o card Candy XP com nivel, barra amarela de progresso, fontes de XP, proximas metas e roadmap de jogos.
+3. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e aula ao vivo.
+4. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
+5. Visualiza feedback.
+6. Edita dados pessoais permitidos, mas nao o nivel.
+
+### Candy XP e jogos
+
+1. O card aparece em `/ava/student?task=resumo`.
+2. A pontuacao e calculada no servidor a partir dos dados do proprio aluno ja carregados para a tela: atividades de aula entregues, homeworks entregues/devolvidas/corrigidas, feedbacks `REVIEWED` e perfil basico pronto.
+3. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para estudo: requisito inicial menor, crescimento gradual e barra amarela.
+4. O roadmap mostra a fase atual do XP, missoes de estudo, card de jogos, conquistas e temporadas.
+5. O bloco `Jogos Candy` e um slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
 
 ### Contratos
 
@@ -168,6 +182,7 @@ Actions:
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem.
 - Student tem botoes sempre visiveis.
+- Candy XP deve continuar derivado/read-only ate existir decisao de persistencia no banco; nao criar ranking publico sem decisao nova.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.
 - A interface de criacao nova de aula usa o mesmo fluxo interativo de PDF/imagem por enquanto, criando uma aula real com atividade interativa vinculada que aparece em `Aulas e Materiais`, nao em `Responder homework`.
@@ -193,6 +208,7 @@ Actions:
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
 - Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`, com atalhos de estudo e resposta contextual por tela.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
+- Candy XP fica no resumo do aluno como gamificacao leve e prepara o espaco visual dos jogos sem alterar o fluxo de aula/homework.
 
 ## Riscos ao alterar esta parte
 

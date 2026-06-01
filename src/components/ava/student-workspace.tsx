@@ -22,8 +22,10 @@ import {
 import { LiveClassRoom } from "@/components/ava/live-class-room";
 import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
+import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildCandyStudentXpSnapshot } from "@/lib/candy-xp";
 import type { Role } from "@/lib/roles";
 
 export const studentTaskIds = [
@@ -282,6 +284,9 @@ export function StudentWorkspace({
       .filter((homework) => !isInteractiveLessonHomework(homework))
       .map((homework) => ({ homework, lesson })),
   );
+  const lessonActivityItems = visibleLessons.flatMap((lesson) =>
+    lesson.homeworks.filter(isInteractiveLessonHomework),
+  );
   const homeworkCount = homeworkItems.length;
   const reviewedCount = lessons.reduce(
     (total, lesson) =>
@@ -293,6 +298,20 @@ export function StudentWorkspace({
   );
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
+  const xpSnapshot = buildCandyStudentXpSnapshot({
+    homeworks: homeworkItems.map(({ homework }) => ({
+      status: homework.submissions[0]?.status,
+    })),
+    lessonActivities: lessonActivityItems.map((homework) => ({
+      status: homework.submissions[0]?.status,
+    })),
+    profileReady: Boolean(
+      currentUser.avatarPath ||
+        currentUser.phone ||
+        studentProfile.level ||
+        studentProfile.studentPhone,
+    ),
+  });
   const stats = [
     { icon: BookOpen, label: "Aulas", value: visibleLessons.length },
     { icon: ClipboardCheck, label: "Homeworks", value: homeworkCount },
@@ -336,25 +355,28 @@ export function StudentWorkspace({
         </CardHeader>
         <CardContent className="py-6">
           {activeTask === "resumo" ? (
-            <div className="grid gap-4 md:grid-cols-3">
-              {stats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-muted-foreground">
-                      {stat.label}
+            <div className="grid gap-5">
+              <StudentXpCard xp={xpSnapshot} />
+              <div className="grid gap-4 md:grid-cols-3">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="flex items-center justify-between gap-4 rounded-lg border bg-background p-5"
+                  >
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-muted-foreground">
+                        {stat.label}
+                      </span>
+                      <strong className="text-3xl font-semibold">
+                        {stat.value}
+                      </strong>
+                    </div>
+                    <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                      <stat.icon aria-hidden="true" />
                     </span>
-                    <strong className="text-3xl font-semibold">
-                      {stat.value}
-                    </strong>
                   </div>
-                  <span className="flex size-11 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                    <stat.icon aria-hidden="true" />
-                  </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           ) : null}
 

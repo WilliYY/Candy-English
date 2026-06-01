@@ -261,6 +261,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/site/catty-widget.tsx`, `src/app/api/catty/chat/route.ts`, `src/lib/catty.ts`, `src/lib/validations/catty.ts`, `src/app/globals.css`, `AGENTS.md`, `README.md` e docs oficiais.
 - Riscos/cuidados: o contexto deve continuar limitado a rota/tarefa; Catty nao deve receber dados internos do AVA nem entregar respostas prontas de homework.
 
+### 2026-06-01 - Candy XP no resumo student
+
+- Decisao: adicionar um card Candy XP em `/ava/student?task=resumo`, com nivel, barra amarela de progresso, fontes de XP, proximas metas, roadmap e slot visual para `Jogos Candy`.
+- Motivo: iniciar a gamificacao da Candy inspirada no card XP do projeto Wimifarma, mas adaptada para estudo de ingles e sem mudar banco nesta fase.
+- Impacto: `src/lib/candy-xp.ts`, `src/components/ava/student-xp-card.tsx`, `src/components/ava/student-workspace.tsx`, `src/app/globals.css`, `README.md`, `docs/00-visao-geral.md`, `docs/03-fluxos-do-sistema.md`, `docs/06-pendencias.md`, `docs/design-direcao.md`.
+- Riscos/cuidados: XP e read-only/derivado dos dados do proprio aluno; persistencia, streaks, badges reais, ranking ou jogos executaveis exigem nova decisao, schema e validacao de permissoes.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
