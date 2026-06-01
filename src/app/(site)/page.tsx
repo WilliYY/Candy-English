@@ -1,14 +1,10 @@
-import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
-  CheckCircle2,
   ClipboardCheck,
-  GraduationCap,
   Instagram,
   Mail,
   MessageSquareText,
-  Sparkles,
 } from "lucide-react";
 import {
   HomeHero,
@@ -36,25 +32,6 @@ const workflow = [
     title: "Feedback fecha o ciclo",
     description: "A correcao fica salva para orientar a proxima etapa.",
     icon: MessageSquareText,
-  },
-];
-
-const promises = [
-  {
-    title: "Plano entre aulas",
-    text: "O aluno sabe o que revisar, praticar e levar para a proxima aula.",
-  },
-  {
-    title: "Material sempre acessivel",
-    text: "Aulas, links e vocabulario ficam organizados no AVA.",
-  },
-  {
-    title: "Homework com feedback",
-    text: "A teacher corrige e deixa a devolutiva registrada para consulta.",
-  },
-  {
-    title: "Base propria",
-    text: "Sem WordPress e sem dependencia de hospedagem compartilhada.",
   },
 ];
 
@@ -136,56 +113,6 @@ export default async function HomePage() {
                   </p>
                 </div>
               </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="relative isolate overflow-hidden border-b bg-[#fce5d8]">
-        <div className="candy-particle-field absolute inset-0 opacity-70" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/25 to-transparent" />
-        <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[0.82fr_1.18fr] lg:items-center lg:px-8 lg:py-28">
-          <div className="flex flex-col gap-6">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
-              <GraduationCap aria-hidden="true" />
-              Teacher, student e admin
-            </div>
-            <h2 className="max-w-xl text-4xl font-semibold leading-tight tracking-normal md:text-6xl">
-              Um AVA claro para ensinar, praticar e corrigir.
-            </h2>
-            <p className="max-w-lg text-base leading-8 text-muted-foreground md:text-lg">
-              Uma base organizada para aula, material, homework, feedback e
-              acompanhamento, sem espalhar tudo em mensagens soltas.
-            </p>
-            <Button asChild size="lg" className="candy-ava-button w-fit px-8">
-              <Link href="/ava">
-                Acessar AVA
-                <ArrowRight data-icon="inline-end" />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            {promises.map((item, index) => (
-              <div
-                key={item.title}
-                className="group relative min-h-44 overflow-hidden rounded-lg border border-white/70 bg-white/82 p-6 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-2 hover:border-primary/25 hover:bg-white hover:shadow-2xl hover:shadow-primary/10"
-              >
-                <span className="absolute right-5 top-4 text-xs font-bold uppercase tracking-[0.22em] text-primary/20 transition-colors group-hover:text-primary/35">
-                  0{index + 1}
-                </span>
-                <span className="mb-7 flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                  {index === 0 ? (
-                    <Sparkles aria-hidden="true" className="size-5" />
-                  ) : (
-                    <CheckCircle2 aria-hidden="true" className="size-5" />
-                  )}
-                </span>
-                <h3 className="text-xl font-semibold">{item.title}</h3>
-                <p className="mt-3 leading-7 text-muted-foreground">
-                  {item.text}
-                </p>
-              </div>
             ))}
           </div>
         </div>

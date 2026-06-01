@@ -82,7 +82,7 @@ Cuidados:
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
 - O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.
-- Secoes de produto, como o bloco do AVA na home, podem usar particulas discretas e hover em cards para dar vida sem poluir a leitura.
+- A home nao usa mais o bloco intermediario do AVA; as entradas para o AVA ficam no header, hero, footer e rotas dedicadas.
 - Cards de admin/teacher devem usar contraste roxo suave, sem ficar em branco puro quando a tela precisar de hierarquia.
 - A barra lateral do AVA deve parecer uma area de trabalho clara: contraste maior que o fundo, grupos com borda suave e item ativo marcado com roxo solido.
 - A area `Aulas e Materiais` do student deve usar aulas recolhidas por padrao, como lista operacional limpa; ao abrir uma aula, a atividade interativa ganha uma superficie ampla com status simples de conclusao em bolinha verde/vermelha.
