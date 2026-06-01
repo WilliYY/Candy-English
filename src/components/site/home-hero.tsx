@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { HomeVideoCard } from "@/components/site/home-video-card";
 import { Button } from "@/components/ui/button";
 
 export const homeMethodVideoUrl =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4";
 
 export const homeLoopVideoUrl = "/brand/home.mp4";
+export const homeHeroVideoUrl = "/brand/home-candy.mp4";
 
 type HomeHeroProps = {
   content?: {
@@ -23,28 +25,42 @@ export function HomeHero({ content }: HomeHeroProps) {
     "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo.";
 
   return (
-    <section className="candy-home-clean relative isolate flex min-h-screen overflow-hidden text-white">
+    <section className="candy-home-clean relative isolate flex min-h-screen overflow-hidden text-primary">
       <div className="candy-home-clean-field absolute inset-0 z-0" />
-      <div className="absolute inset-x-0 top-0 z-[1] h-44 bg-gradient-to-b from-[#fce5d8]/70 to-transparent" />
+      <div className="absolute inset-x-0 top-0 z-[1] h-44 bg-gradient-to-b from-[#fce5d8]/60 to-transparent" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center justify-center px-6 pb-28 pt-36 text-center sm:pb-36 sm:pt-44 lg:px-8">
-        <div className="flex min-w-0 flex-col items-center gap-7">
-          <div className="hero-copy-glass flex max-w-6xl flex-col items-center gap-6 rounded-[2rem] border border-white/20 bg-primary/42 px-5 py-7 text-white shadow-2xl shadow-black/20 backdrop-blur-md sm:px-8 sm:py-8 lg:px-10">
-            <p className="animate-fade-rise text-sm font-medium uppercase tracking-[0.24em] text-white/78">
-              Candy English
-            </p>
-            <h1
-              className="animate-fade-rise max-w-6xl break-words text-5xl font-bold leading-[1.02] tracking-normal text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.34)] sm:text-6xl md:text-7xl lg:text-8xl"
-              style={{ fontFamily: "var(--font-display-rounded)" }}
-            >
-              {title}
-            </h1>
-            <p className="animate-fade-rise-delay mt-2 max-w-2xl break-words text-base font-medium leading-relaxed text-white/80 sm:text-lg">
-              {description}
-            </p>
-          </div>
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pb-20 pt-32 sm:px-6 sm:pb-24 sm:pt-40 lg:px-8">
+        <h1 className="sr-only">{title}</h1>
+        <p className="sr-only">{description}</p>
 
-          <div className="animate-fade-rise-delay-2 mt-5 flex flex-col gap-3 sm:flex-row">
+        <div className="home-mockup-stage relative mx-auto aspect-video w-full max-w-[70rem] overflow-visible rounded-[2rem] shadow-2xl shadow-primary/15">
+          <video
+            aria-label="Fundo animado Candy English"
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="home-candy-video-bg h-full w-full rounded-[2rem] object-contain"
+          >
+            <source src={homeHeroVideoUrl} type="video/mp4" />
+          </video>
+          <HomeVideoCard
+            label="Intro Candy English 2"
+            src="/brand/intro-2.mp4"
+            className="left-[9.4%] top-[20.4%] h-[29.2%] w-[27.7%]"
+            controlsClassName="top-[calc(100%+0.6rem)] w-[104%]"
+          />
+          <HomeVideoCard
+            label="Intro Candy English 1"
+            src="/brand/intro-1.mp4"
+            className="left-[46.5%] top-[26.2%] h-[31.2%] w-[29%]"
+            controlsClassName="top-[calc(100%+0.55rem)] w-[103%]"
+          />
+        </div>
+
+        <div className="mt-4 flex justify-center sm:mt-5">
+          <div className="animate-fade-rise-delay-2 flex flex-col gap-3 sm:flex-row">
             <Button
               asChild
               size="lg"

@@ -208,6 +208,14 @@ a {
     linear-gradient(180deg, #fce5d8 0%, #fefbfa 34%, #fff7f3 62%, #fce5d8 100%);
 }
 
+.home-candy-video-bg {
+  object-position: center center;
+}
+
+.home-mockup-stage {
+  background: #fefbfa;
+}
+
 .candy-home-clean-field {
   background-image:
     linear-gradient(rgb(65 42 76 / 0.055) 1px, transparent 1px),
@@ -543,6 +551,10 @@ main:has(.site-institutional-page) + .candy-footer {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-candy-video-bg {
+    display: none;
+  }
+
   .home-final-video {
     display: none;
   }
