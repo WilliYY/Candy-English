@@ -41,7 +41,7 @@ export function HomeHeroLoopVideo({ label, src }: HomeHeroLoopVideoProps) {
       muted
       playsInline
       preload="auto"
-      className="home-candy-video-bg aspect-video h-full w-full rounded-[1.5rem] bg-white object-cover"
+      className="home-candy-video-bg block h-full min-h-[inherit] w-full flex-1 rounded-[1.5rem] bg-white object-contain"
     >
       <source src={src} type="video/mp4" />
     </video>

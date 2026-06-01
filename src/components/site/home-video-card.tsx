@@ -77,11 +77,11 @@ export function HomeVideoCard({
   return (
     <article
       className={cn(
-        "group overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/[0.78] p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-primary/20",
+        "group flex min-h-0 flex-col overflow-hidden rounded-[1.75rem] border border-white/80 bg-white/[0.86] p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-primary/25 hover:shadow-primary/20 lg:h-full",
         className,
       )}
     >
-      <div className="overflow-hidden rounded-[1.25rem] border border-primary/15 bg-white">
+      <div className="aspect-video overflow-hidden rounded-[1.25rem] border border-primary/15 bg-white lg:aspect-auto lg:min-h-0 lg:flex-1">
         <video
           ref={videoRef}
           aria-label={label}
@@ -90,7 +90,7 @@ export function HomeVideoCard({
           muted={isMuted}
           playsInline
           preload="auto"
-          className="aspect-video h-full w-full bg-white object-cover object-center"
+          className="block h-full w-full bg-white object-contain object-center"
         >
           <source src={src} type="video/mp4" />
         </video>

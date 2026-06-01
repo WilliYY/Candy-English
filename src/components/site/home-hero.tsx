@@ -30,16 +30,16 @@ export function HomeHero({ content }: HomeHeroProps) {
       <div className="candy-home-clean-field absolute inset-0 z-0" />
       <div className="absolute inset-x-0 top-0 z-[1] h-44 bg-gradient-to-b from-[#fce5d8]/60 to-transparent" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-[92rem] flex-col justify-center px-3 pb-20 pt-28 sm:px-5 sm:pb-24 sm:pt-36 lg:px-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-[98rem] flex-col justify-center px-3 pb-20 pt-28 sm:px-5 sm:pb-24 sm:pt-32 lg:px-8">
         <h1 className="sr-only">{title}</h1>
         <p className="sr-only">{description}</p>
 
-        <div className="mx-auto grid w-full max-w-[86rem] gap-5 lg:grid-cols-[0.84fr_1.16fr] lg:items-stretch">
-          <div className="animate-fade-rise overflow-hidden rounded-[2rem] border border-white/80 bg-white/[0.72] p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm">
+        <div className="mx-auto grid w-full max-w-[94rem] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_minmax(21rem,26rem)] xl:gap-5">
+          <div className="animate-fade-rise flex min-h-[18rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:min-h-[24rem] lg:min-h-[31rem] xl:min-h-[34rem]">
             <HomeHeroLoopVideo label="Home Candy English" src={homeHeroVideoUrl} />
           </div>
 
-          <div className="animate-fade-rise-delay grid gap-4 md:grid-cols-2 lg:min-h-full">
+          <div className="animate-fade-rise-delay grid gap-4 sm:grid-cols-2 lg:min-h-[31rem] lg:grid-cols-1 lg:grid-rows-2 xl:min-h-[34rem]">
             <HomeVideoCard
               label="Intro Candy English 1"
               src="/brand/intro-1.mp4"
@@ -54,11 +54,11 @@ export function HomeHero({ content }: HomeHeroProps) {
         </div>
 
         <div className="mt-4 flex justify-center sm:mt-5">
-          <div className="animate-fade-rise-delay-2 flex flex-col gap-3 sm:flex-row">
+          <div className="animate-fade-rise-delay-2 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
             <Button
               asChild
               size="lg"
-              className="rounded-full bg-white px-14 py-5 text-base font-semibold text-primary shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-white/90"
+              className="w-full rounded-full bg-white px-10 py-5 text-base font-semibold text-primary shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-white/90 sm:w-auto sm:px-14"
             >
               <Link href="/contato">
                 {content?.ctaLabel ?? "Comecar conversa"}
@@ -69,7 +69,7 @@ export function HomeHero({ content }: HomeHeroProps) {
               asChild
               size="lg"
               variant="outline"
-              className="rounded-full border-white/70 bg-[#14071b] px-10 py-5 text-base font-semibold text-white shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-[#21102a] hover:text-white"
+              className="w-full rounded-full border-white/70 bg-[#14071b] px-10 py-5 text-base font-semibold text-white shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-[#21102a] hover:text-white sm:w-auto"
             >
               <Link href="/ava">Entrar no AVA</Link>
             </Button>
