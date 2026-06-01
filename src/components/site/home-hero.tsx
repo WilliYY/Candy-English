@@ -48,14 +48,14 @@ export function HomeHero({ content }: HomeHeroProps) {
           <HomeVideoCard
             label="Intro Candy English 2"
             src="/brand/intro-2.mp4"
-            className="left-[4.7%] top-[12.4%] h-[37.8%] w-[30.4%] rotate-[1.4deg]"
-            controlsClassName="left-[-9%] top-[131%] w-[100%]"
+            className="left-[1.9%] top-[10.4%] h-[50.8%] w-[39.2%] rotate-[1.4deg]"
+            controlsClassName="left-0 top-[100%] w-[78%]"
           />
           <HomeVideoCard
             label="Intro Candy English 1"
             src="/brand/intro-1.mp4"
-            className="left-[40.8%] top-[24.3%] h-[38.4%] w-[31.8%] rotate-[-1deg]"
-            controlsClassName="left-[-21%] top-[143%] w-[122%]"
+            className="left-[43.7%] top-[22.7%] h-[46%] w-[34.6%] rotate-[-1deg]"
+            controlsClassName="left-0 top-[121%] w-[105%]"
           />
         </div>
 

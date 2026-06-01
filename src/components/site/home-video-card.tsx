@@ -10,6 +10,9 @@ type HomeVideoCardProps = {
   src: string;
 };
 
+const controlButtonClass =
+  "relative cursor-pointer rounded-[1.35rem] border border-white/75 bg-white/50 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_0.45rem_1.1rem_rgba(44,19,56,0.18)] ring-1 ring-primary/15 backdrop-blur-[1px] outline-none transition hover:-translate-y-0.5 hover:bg-white/75 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_0.6rem_1.25rem_rgba(44,19,56,0.24)] hover:ring-primary/35 active:translate-y-0 active:scale-95 active:shadow-[inset_0_0.2rem_0.45rem_rgba(44,19,56,0.22)] focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary";
+
 export function HomeVideoCard({
   className,
   controlsClassName,
@@ -79,7 +82,7 @@ export function HomeVideoCard({
         <video
           ref={videoRef}
           aria-label={label}
-          className="h-full w-full bg-white object-contain object-center"
+          className="h-full w-full bg-white object-cover object-center"
           muted={isMuted}
           playsInline
           preload="metadata"
@@ -98,7 +101,7 @@ export function HomeVideoCard({
           type="button"
           aria-label={`Pausar ${label}`}
           onClick={pauseVideo}
-          className="rounded-full bg-transparent outline-none transition focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary"
+          className={controlButtonClass}
         >
           <span className="sr-only">Stop</span>
         </button>
@@ -107,7 +110,7 @@ export function HomeVideoCard({
           aria-label={`Iniciar ${label}`}
           aria-pressed={isPlaying}
           onClick={playVideo}
-          className="rounded-full bg-transparent outline-none transition focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary"
+          className={cn(controlButtonClass, isPlaying && "bg-secondary/80")}
         >
           <span className="sr-only">Play</span>
         </button>
@@ -116,7 +119,7 @@ export function HomeVideoCard({
           aria-label={isMuted ? "Liberar som" : "Bloquear som"}
           title={isMuted ? "Liberar som" : "Bloquear som"}
           onClick={toggleMuted}
-          className="rounded-full bg-transparent outline-none transition focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary"
+          className={cn(controlButtonClass, !isMuted && "bg-secondary/80")}
         >
           <span className="sr-only">
             {isMuted ? "Liberar som" : "Bloquear som"}
