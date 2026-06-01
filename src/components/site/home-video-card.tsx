@@ -95,10 +95,11 @@ export function HomeVideoCard({
     >
       <div
         className={cn(
-          "aspect-video overflow-hidden border border-primary/15 bg-white",
+          "overflow-hidden border border-primary/15 bg-white",
           isEmbedded
-            ? "rounded-[0.9rem]"
+            ? "h-48 rounded-[0.9rem] sm:h-56 lg:h-64 xl:h-72"
             : "rounded-[1.25rem] lg:aspect-auto lg:min-h-0 lg:flex-1",
+          !isEmbedded && "aspect-video",
         )}
       >
         <video
