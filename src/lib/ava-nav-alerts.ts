@@ -43,7 +43,7 @@ export async function getAvaNavAlertSignatures(
       return alerts;
     }
 
-    const [live, lesson, homework, reviewed, message, contract] =
+    const [live, lesson, homework, reviewed, message, contract, candyXp] =
       await Promise.all([
         prisma.liveSession.findFirst({
           where: {
@@ -89,6 +89,17 @@ export async function getAvaNavAlertSignatures(
           orderBy: { createdAt: "desc" },
           select: { createdAt: true, id: true },
         }),
+        prisma.candyXpActivity.findFirst({
+          where: {
+            status: "PUBLISHED",
+            OR: [
+              { assignments: { none: {} } },
+              { assignments: { some: { studentProfileId: profile.id } } },
+            ],
+          },
+          orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+          select: { createdAt: true, id: true, updatedAt: true },
+        }),
       ]);
 
     alerts["/ava/student?task=aula-ao-vivo"] = stamp(live);
@@ -99,6 +110,7 @@ export async function getAvaNavAlertSignatures(
     );
     alerts["/ava/student?task=mensagens"] = stamp(message);
     alerts["/ava/student?task=contratos"] = stamp(contract);
+    alerts["/ava/student?task=candy-xp"] = stamp(candyXp);
 
     return alerts;
   }
@@ -123,6 +135,7 @@ export async function getAvaNavAlertSignatures(
     user,
     finance,
     agenda,
+    candyXp,
   ] = await Promise.all([
       prisma.lesson.findFirst({
         where: teacherScoped ? { teacherProfileId } : {},
@@ -190,6 +203,13 @@ export async function getAvaNavAlertSignatures(
             select: { createdAt: true, id: true },
           })
         : Promise.resolve(null),
+      role === "ADMIN"
+        ? prisma.candyXpActivitySubmission.findFirst({
+            where: { status: "SUBMITTED" },
+            orderBy: { submittedAt: "desc" },
+            select: { id: true, submittedAt: true },
+          })
+        : Promise.resolve(null),
     ]);
 
   alerts["/ava/teacher?task=aula-ao-vivo"] = stamp(live);
@@ -205,6 +225,7 @@ export async function getAvaNavAlertSignatures(
     alerts["/ava/admin?task=vincular-aluno"] = stamp(user);
     alerts["/ava/admin?task=financeiro"] = stamp(finance);
     alerts["/ava/admin?task=agenda"] = stamp(agenda);
+    alerts["/ava/admin?task=candy-xp"] = stamp(candyXp);
   }
 
   return alerts;

@@ -8,6 +8,7 @@ import type { Role } from "@/lib/roles";
 export type CandyXpEventKind =
   | "ADMIN_ROUTINE"
   | "BADGE_AWARDED"
+  | "CANDY_XP_ACTIVITY_COMPLETED"
   | "FEEDBACK_REVIEWED"
   | "HOMEWORK_SUBMITTED"
   | "LESSON_ACTIVITY_SUBMITTED"
@@ -92,6 +93,15 @@ const CANDY_BADGE_DEFINITIONS: readonly CandyBadgeSeed[] = [
     requiredEventKind: "HOMEWORK_SUBMITTED",
     role: "STUDENT",
     title: "Ritmo de estudo",
+  },
+  {
+    description: "Concluiu 3 missoes Candy XP com historia e perguntas.",
+    icon: "sparkles",
+    key: "student-candy-xp-missions",
+    requiredEventCount: 3,
+    requiredEventKind: "CANDY_XP_ACTIVITY_COMPLETED",
+    role: "STUDENT",
+    title: "Missao Candy",
   },
   {
     description: "Manteve uma sequencia de 3 dias com XP.",
@@ -181,6 +191,16 @@ const CANDY_MISSIONS: readonly CandyMissionSeed[] = [
     sortOrder: 30,
     title: "Jogo de vocabulario",
     xpReward: 25,
+  },
+  {
+    description: "Concluir uma historia Candy XP publicada pelo admin.",
+    key: "student-candy-xp-story",
+    kind: "REVIEW",
+    repeatable: true,
+    role: "STUDENT",
+    sortOrder: 35,
+    title: "Historia Candy XP",
+    xpReward: 80,
   },
   {
     description: "Criar uma aula interativa para aluno vinculado.",

@@ -97,8 +97,14 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     );
   }
 
-  const [lessons, liveSessions, contracts, teacherAssignments, chatThreads] =
-    await Promise.all([
+  const [
+    lessons,
+    liveSessions,
+    contracts,
+    teacherAssignments,
+    chatThreads,
+    candyXpActivities,
+  ] = await Promise.all([
     prisma.lesson.findMany({
       where: {
         status: "PUBLISHED",
@@ -324,6 +330,70 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         teacherProfileId: true,
       },
     }),
+    prisma.candyXpActivity.findMany({
+      where: {
+        status: "PUBLISHED",
+        OR: [
+          {
+            assignments: {
+              none: {},
+            },
+          },
+          {
+            assignments: {
+              some: {
+                studentProfileId: studentProfile.id,
+              },
+            },
+          },
+        ],
+      },
+      orderBy: [
+        {
+          publishedAt: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+      select: {
+        assetFileName: true,
+        category: true,
+        description: true,
+        id: true,
+        level: true,
+        questions: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+          select: {
+            id: true,
+            options: true,
+            prompt: true,
+            required: true,
+            sortOrder: true,
+            type: true,
+          },
+        },
+        submissions: {
+          where: {
+            studentProfileId: studentProfile.id,
+          },
+          select: {
+            answers: true,
+            autoScorePercent: true,
+            awardedXp: true,
+            feedback: true,
+            id: true,
+            status: true,
+            submittedAt: true,
+          },
+          take: 1,
+        },
+        title: true,
+        xpReward: true,
+      },
+    }),
   ]);
   const profileReady = Boolean(
     studentProfile.user.avatarPath ||
@@ -389,6 +459,35 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   return (
     <StudentWorkspace
       activeTask={activeTask}
+      candyXpActivities={candyXpActivities.map((activity) => ({
+        assetFileName: activity.assetFileName,
+        category: activity.category,
+        description: activity.description,
+        id: activity.id,
+        level: activity.level,
+        questions: activity.questions.map((question) => ({
+          id: question.id,
+          options: question.options,
+          prompt: question.prompt,
+          required: question.required,
+          sortOrder: question.sortOrder,
+          type: question.type,
+        })),
+        submission: activity.submissions[0]
+          ? {
+              answers: activity.submissions[0].answers,
+              autoScorePercent: activity.submissions[0].autoScorePercent,
+              awardedXp: activity.submissions[0].awardedXp,
+              feedback: activity.submissions[0].feedback,
+              id: activity.submissions[0].id,
+              status: activity.submissions[0].status,
+              submittedAt:
+                activity.submissions[0].submittedAt?.toISOString() ?? null,
+            }
+          : null,
+        title: activity.title,
+        xpReward: activity.xpReward,
+      }))}
       candyXpPersistence={candyXpPersistence}
       chatThreads={chatThreads.map((thread) => ({
         id: thread.id,

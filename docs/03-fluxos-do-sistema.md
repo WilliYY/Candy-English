@@ -14,6 +14,7 @@ Rotas:
 - `/ava/student?task=...`
 - `/ava/avatar`
 - `/ava/contracts/[contractId]`
+- `/ava/candy-xp-assets/[activityId]`
 - `/api/catty/chat`
 
 Componentes:
@@ -31,6 +32,8 @@ Componentes:
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/student-xp-card.tsx`
+- `src/components/ava/admin-candy-xp-panel.tsx`
+- `src/components/ava/student-candy-xp-activities-panel.tsx`
 - `src/components/ava/chat-thread-panel.tsx`
 - `src/components/ava/live-session-forms.tsx`
 - `src/components/ava/profile-forms.tsx`
@@ -41,11 +44,13 @@ Actions:
 - `src/app/ava/admin/actions.ts`
 - `src/app/ava/teacher/actions.ts`
 - `src/app/ava/student/actions.ts`
+- `src/app/ava/candy-xp/actions.ts`
 - `src/app/ava/actions.ts`
 
 Helpers:
 
 - `src/lib/candy-xp.ts`
+- `src/lib/candy-xp-activities.ts`
 
 ## Fluxos principais
 
@@ -99,7 +104,21 @@ Helpers:
 5. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
 6. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
 7. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
-8. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo, mas as telas de jogos e missoes executaveis ainda precisam ser criadas em fase propria.
+8. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
+
+### Atividades Candy XP
+
+1. Admin abre `/ava/admin?task=candy-xp`.
+2. Admin cadastra titulo, descricao, nivel, categoria, XP, status, liberacao para todos ou um aluno especifico e envia PDF/imagem exportado do Canva.
+3. Admin monta perguntas do tipo resposta curta, resposta longa, multipla escolha, checkbox ou matching.
+4. Alternativas objetivas podem ter resposta correta cadastrada; matching usa pares `esquerda = direita`.
+5. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
+6. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
+7. Aluno responde, pode salvar progresso como `DRAFT` e depois enviar.
+8. Se a atividade for toda objetiva e estiver correta, o sistema marca `REVIEWED` e concede XP automaticamente.
+9. Se a atividade objetiva tiver erro, o sistema devolve como `RETURNED` para o aluno revisar.
+10. Se houver resposta escrita, a submissao fica `SUBMITTED` para o admin corrigir manualmente.
+11. Ao aprovar manualmente, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
 
 ### Contratos
 
@@ -189,6 +208,9 @@ Helpers:
 - Student tem botoes sempre visiveis.
 - Candy XP deve continuar sem ranking publico; XP, streaks, badges e missoes sao persistidos por usuario e nao podem vazar dados de outras roles.
 - Toda nova tarefa que conceder XP deve gravar por server action/rota protegida e usar `sourceKey` estavel para evitar abuso ou pontuacao duplicada.
+- Atividades Candy XP so podem ser criadas/corrigidas por `ADMIN`; `STUDENT` acessa apenas atividades publicadas e liberadas para o proprio perfil.
+- Arquivos Candy XP devem ser servidos apenas por `/ava/candy-xp-assets/[activityId]`, nunca por caminho direto do storage.
+- Respostas escritas de Candy XP nao devem liberar XP automatico; precisam de revisao manual.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.
 - A interface de criacao nova de aula usa o mesmo fluxo interativo de PDF/imagem por enquanto, criando uma aula real com atividade interativa vinculada que aparece em `Aulas e Materiais`, nao em `Responder homework`.
@@ -215,6 +237,7 @@ Helpers:
 - Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`, com atalhos de estudo e resposta contextual por tela.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
+- Atividades Candy XP usam modelos proprios para historia/PDF/perguntas/progresso e reaproveitam o ledger Candy XP para pontuar conclusoes.
 
 ## Riscos ao alterar esta parte
 
@@ -224,12 +247,14 @@ Helpers:
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
 - Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget e ao contexto leve de `area`/`task`.
 - Revelar credenciais na tela deve ser uma acao consciente do admin; nao adicionar exibicao automatica nem logs do valor em claro.
+- Alterar resposta correta de atividade Candy XP publicada pode mudar o criterio de novas tentativas; manter cuidado com atividades ja respondidas.
 
 ## Pendencias
 
 - Edicao/delecao completa de aulas e materiais ainda nao existe; aula/homework interativa ja podem ser excluidas nas telas de criacao.
 - Upload livre de materiais fora dos fluxos interativos e editor Word embutido ainda nao existem.
 - Notificacoes por email/WhatsApp ainda nao existem.
+- Editor completo para alterar perguntas Candy XP apos a criacao ainda nao existe.
 
 ## Como pode evoluir
 

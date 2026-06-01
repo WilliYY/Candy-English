@@ -60,6 +60,10 @@ Gamificacao Candy XP:
 - `CandyUserBadge`
 - `CandyMission`
 - `CandyMissionAttempt`
+- `CandyXpActivity`
+- `CandyXpActivityQuestion`
+- `CandyXpActivityAssignment`
+- `CandyXpActivitySubmission`
 
 Financeiro:
 
@@ -87,6 +91,9 @@ Enums:
 - `AdminCredentialSource`
 - `CandyXpEventKind`
 - `CandyMissionKind`
+- `CandyXpActivityStatus`
+- `CandyXpQuestionType`
+- `CandyXpSubmissionStatus`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -114,6 +121,12 @@ Enums:
 - `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
 - `CandyBadgeDefinition` guarda criterios simples de badge por role, nivel, streak ou contagem de evento; `CandyUserBadge` possui chave unica por usuario/badge.
 - `CandyMission` e o catalogo base para tarefas estilo Duolingo; `CandyMissionAttempt.attemptKey` evita repetir a mesma tentativa/evento de jogo no futuro.
+- `CandyXpActivity` guarda historias/atividades com titulo, descricao, nivel, categoria, XP, status e metadados do PDF/imagem do Canva.
+- `CandyXpActivityQuestion` guarda perguntas ordenadas e configuracao em JSON para alternativas, respostas corretas e pares de matching.
+- `CandyXpActivityAssignment` libera uma atividade para alunos especificos; quando uma atividade publicada nao possui assignments, ela fica liberada para todos os alunos ativos.
+- `CandyXpActivitySubmission` guarda progresso individual por aluno, respostas em JSON, status, nota automatica/manual, feedback, revisor e XP concedido.
+- `CandyXpActivitySubmission` possui chave unica por atividade/aluno; `DRAFT` e progresso salvo, `SUBMITTED` aguarda correcao manual, `RETURNED` libera refazer e `REVIEWED` conclui a atividade.
+- Atividades Candy XP concedem XP pelo ledger `CandyXpEvent` com origem `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` por submissao, evitando pontos duplicados.
 
 ## Decisoes tecnicas tomadas
 
@@ -129,6 +142,7 @@ Enums:
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
+- Migration `20260601193000_candy_xp_activities` adiciona atividades Candy XP com PDF/imagem, perguntas, liberacao por aluno, progresso/submissao e evento de XP por atividade concluida.
 
 ## Riscos ao alterar esta parte
 
@@ -145,6 +159,8 @@ Enums:
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
 - Criar XP sem `sourceKey` estavel pode duplicar pontos; toda missao/tarefa deve definir uma origem unica por usuario.
 - Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.
+- Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
+- Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
 
 ## Pendencias
 
@@ -154,6 +170,8 @@ Enums:
 - Falta trilha de auditoria detalhada para revelar/copiar credenciais do cofre admin.
 - Falta exportacao do PDF final preenchido com respostas e desenhos do aluno.
 - Falta tela completa para aluno/teacher/admin explorarem badges, missoes, streaks e temporadas fora do card XP.
+- Falta editor completo de perguntas Candy XP depois que a atividade ja foi criada.
+- Falta exportacao/relatorio detalhado das respostas Candy XP.
 
 ## Como pode evoluir
 

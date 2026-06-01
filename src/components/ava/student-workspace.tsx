@@ -7,6 +7,7 @@ import {
   FileText,
   MessageSquareText,
   Radio,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -22,6 +23,10 @@ import {
 import { LiveClassRoom } from "@/components/ava/live-class-room";
 import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
+import {
+  StudentCandyXpActivitiesPanel,
+  type StudentCandyXpActivity,
+} from "@/components/ava/student-candy-xp-activities-panel";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +42,7 @@ export const studentTaskIds = [
   "aula-ao-vivo",
   "aulas",
   "homeworks",
+  "candy-xp",
   "mensagens",
   "contratos",
   "perfil",
@@ -108,6 +114,7 @@ type StudentHomework = StudentLesson["homeworks"][number];
 type StudentWorkspaceProps = {
   activeTask: StudentTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  candyXpActivities: StudentCandyXpActivity[];
   chatThreads: ChatThreadRow[];
   contracts: {
     createdAt: Date;
@@ -172,6 +179,11 @@ const taskMeta = {
     description: "Abra contratos PDF liberados para seu perfil.",
     icon: FileText,
     title: "Meus contratos",
+  },
+  "candy-xp": {
+    description: "Historias e missoes para ganhar XP.",
+    icon: Sparkles,
+    title: "Candy XP",
   },
   homeworks: {
     description: "Responda atividades online e acompanhe feedbacks.",
@@ -273,6 +285,7 @@ function isInternalHomeworkLesson(lesson: StudentLesson) {
 export function StudentWorkspace({
   activeTask,
   candyXpPersistence,
+  candyXpActivities,
   chatThreads,
   contracts,
   currentUser,
@@ -306,6 +319,9 @@ export function StudentWorkspace({
   const TaskIcon = task.icon;
   const xpSnapshot = applyCandyXpPersistence(
     buildCandyStudentXpSnapshot({
+      candyXpActivities: candyXpActivities.map((activity) => ({
+        status: activity.submission?.status,
+      })),
       homeworks: homeworkItems.map(({ homework }) => ({
         status: homework.submissions[0]?.status,
       })),
@@ -324,6 +340,7 @@ export function StudentWorkspace({
   const stats = [
     { icon: BookOpen, label: "Aulas", value: visibleLessons.length },
     { icon: ClipboardCheck, label: "Homeworks", value: homeworkCount },
+    { icon: Sparkles, label: "Candy XP", value: candyXpActivities.length },
     { icon: MessageSquareText, label: "Feedbacks", value: reviewedCount },
   ];
 
@@ -366,7 +383,7 @@ export function StudentWorkspace({
           {activeTask === "resumo" ? (
             <div className="grid gap-5">
               <StudentXpCard xp={xpSnapshot} />
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-4">
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
@@ -794,6 +811,10 @@ export function StudentWorkspace({
                   })}
               </div>
             )
+          ) : null}
+
+          {activeTask === "candy-xp" ? (
+            <StudentCandyXpActivitiesPanel activities={candyXpActivities} />
           ) : null}
         </CardContent>
       </Card>

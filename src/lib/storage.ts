@@ -145,3 +145,31 @@ export async function saveHomeworkAsset(file: File) {
     sizeBytes: file.size,
   };
 }
+
+export async function saveCandyXpAsset(file: File) {
+  if (!allowedHomeworkAssetTypes.has(file.type)) {
+    throw new Error("Envie um PDF ou imagem PNG, JPG ou WebP.");
+  }
+
+  if (file.size <= 0 || file.size > HOMEWORK_ASSET_MAX_BYTES) {
+    throw new Error("O arquivo Candy XP precisa ter ate 14 MB.");
+  }
+
+  const extension =
+    file.type === "application/pdf"
+      ? ".pdf"
+      : file.type === "image/png"
+        ? ".png"
+        : file.type === "image/webp"
+          ? ".webp"
+          : ".jpg";
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const relativePath = await saveFileBuffer("candy-xp-assets", extension, buffer);
+
+  return {
+    mimeType: file.type,
+    originalName: file.name,
+    relativePath,
+    sizeBytes: file.size,
+  };
+}

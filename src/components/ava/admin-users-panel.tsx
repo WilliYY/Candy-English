@@ -9,6 +9,7 @@ import {
   Mail,
   Power,
   ShieldCheck,
+  Sparkles,
   UserCheck,
   UserRound,
   UsersRound,
@@ -22,6 +23,11 @@ import {
   type AdminAgendaLogRow,
   type AdminAgendaStudentRow,
 } from "@/components/ava/admin-agenda-panel";
+import {
+  AdminCandyXpPanel,
+  type AdminCandyXpActivityRow,
+  type CandyXpStudentOption,
+} from "@/components/ava/admin-candy-xp-panel";
 import {
   AdminCredentialsPanel,
   type AdminCredentialRow,
@@ -56,6 +62,7 @@ export const adminTaskIds = [
   "criar-teacher",
   "criar-aluno",
   "vincular-aluno",
+  "candy-xp",
   "contratos",
   "financeiro",
   "agenda",
@@ -127,6 +134,7 @@ type AdminContractRow = {
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
+  candyXpActivities: AdminCandyXpActivityRow[];
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   agendaLessons: AdminAgendaLessonRow[];
   agendaLogs: AdminAgendaLogRow[];
@@ -145,7 +153,7 @@ type AdminUsersPanelProps = {
   initialAgendaMonth: number;
   initialFinanceMonth: number;
   maintenanceMode: boolean;
-  students: AssignmentOption[];
+  students: CandyXpStudentOption[];
   storageUsageBytes: number;
   teachers: AssignmentOption[];
   users: AdminUserRow[];
@@ -202,6 +210,10 @@ const taskMeta = {
   "apis-senhas": {
     icon: KeyRound,
     title: "APIs e senhas",
+  },
+  "candy-xp": {
+    icon: Sparkles,
+    title: "Candy XP",
   },
   "editar-site": {
     icon: Wrench,
@@ -534,6 +546,7 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
 export function AdminUsersPanel({
   activeTask,
   adminCredentials,
+  candyXpActivities,
   candyXpPersistence,
   agendaLessons,
   agendaLogs,
@@ -745,6 +758,13 @@ export function AdminUsersPanel({
                 <ContractsList contracts={contracts} />
               </div>
             </div>
+          ) : null}
+
+          {activeTask === "candy-xp" ? (
+            <AdminCandyXpPanel
+              activities={candyXpActivities}
+              students={students}
+            />
           ) : null}
 
           {activeTask === "financeiro" ? (

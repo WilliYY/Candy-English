@@ -53,6 +53,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     maintenanceMode,
     storageUsageBytes,
     adminCredentials,
+    candyXpActivities,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
@@ -347,6 +348,76 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         username: true,
       },
     }),
+    prisma.candyXpActivity.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        assignments: {
+          select: {
+            studentProfile: {
+              select: {
+                user: {
+                  select: {
+                    email: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        assetFileName: true,
+        category: true,
+        createdAt: true,
+        description: true,
+        id: true,
+        level: true,
+        publishedAt: true,
+        questions: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+          select: {
+            correctAnswer: true,
+            id: true,
+            options: true,
+            prompt: true,
+            required: true,
+            sortOrder: true,
+            type: true,
+          },
+        },
+        status: true,
+        submissions: {
+          orderBy: {
+            updatedAt: "desc",
+          },
+          select: {
+            answers: true,
+            autoScorePercent: true,
+            awardedXp: true,
+            feedback: true,
+            id: true,
+            reviewedAt: true,
+            status: true,
+            studentProfile: {
+              select: {
+                user: {
+                  select: {
+                    email: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+            submittedAt: true,
+          },
+        },
+        title: true,
+        xpReward: true,
+      },
+    }),
   ]);
   const currentDate = new Date();
   const initialFinanceMonth =
@@ -475,6 +546,43 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         updatedAt: credential.updatedAt.toISOString(),
         url: credential.url,
         username: credential.username,
+      }))}
+      candyXpActivities={candyXpActivities.map((activity) => ({
+        assignments: activity.assignments.map((assignment) => ({
+          studentEmail: assignment.studentProfile.user.email,
+          studentName: assignment.studentProfile.user.name,
+        })),
+        assetFileName: activity.assetFileName,
+        category: activity.category,
+        createdAt: activity.createdAt.toISOString(),
+        description: activity.description,
+        id: activity.id,
+        level: activity.level,
+        publishedAt: activity.publishedAt?.toISOString() ?? null,
+        questions: activity.questions.map((question) => ({
+          correctAnswer: question.correctAnswer,
+          id: question.id,
+          options: question.options,
+          prompt: question.prompt,
+          required: question.required,
+          sortOrder: question.sortOrder,
+          type: question.type,
+        })),
+        status: activity.status,
+        submissions: activity.submissions.map((submission) => ({
+          answers: submission.answers,
+          autoScorePercent: submission.autoScorePercent,
+          awardedXp: submission.awardedXp,
+          feedback: submission.feedback,
+          id: submission.id,
+          reviewedAt: submission.reviewedAt?.toISOString() ?? null,
+          status: submission.status,
+          studentEmail: submission.studentProfile.user.email,
+          studentName: submission.studentProfile.user.name,
+          submittedAt: submission.submittedAt?.toISOString() ?? null,
+        })),
+        title: activity.title,
+        xpReward: activity.xpReward,
       }))}
       candyXpPersistence={candyXpPersistence}
       agendaLessons={agendaLessons.map((lesson) => ({

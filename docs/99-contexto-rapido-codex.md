@@ -38,6 +38,8 @@ Ao receber o prompt minimo, o agente deve:
 - Student acessa aulas, homework, mensagens, contratos, perfil, avatar e aula ao vivo.
 - Admin, teacher e student veem Candy XP persistente nos seus paineis: nivel, barra amarela, fontes de XP, trilha infinita, streak, badges, ultimos eventos, roadmap e slot visual para jogos/missoes futuras.
 - Candy XP usa `src/lib/candy-xp.ts` para curva infinita e `src/lib/candy-xp-persistence.ts` para eventos `CandyXpEvent`, perfil/cache `CandyXpProfile`, badges e catalogo inicial de missoes com `sourceKey` anti-duplicacao.
+- Atividades Candy XP existem em `/ava/admin?task=candy-xp` e `/ava/student?task=candy-xp`: admin cria historia com PDF/imagem do Canva, perguntas e XP; student salva progresso, envia e pode ganhar XP automaticamente em atividades objetivas corretas ou apos correcao manual em respostas escritas.
+- Arquivos de atividades Candy XP sao servidos por `/ava/candy-xp-assets/[activityId]` com permissao por role/publicacao/assignment.
 - Homework e aula interativa usam PDF/imagem original como fundo protegido.
 - Teacher desenha campos manualmente sobre o arquivo.
 - Campos do aluno ficam invisiveis; aparecem apenas texto, marcacoes e desenhos preenchidos.
@@ -68,6 +70,7 @@ Ao receber o prompt minimo, o agente deve:
 - Agenda: `docs/14-agenda.md`
 - Homework/aula interativa: `docs/15-homework-interativo.md`
 - Candy XP/gamificacao: `docs/16-candy-xp.md`
+- Atividades Candy XP: `docs/17-candy-xp-atividades.md`
 - Direcao visual: `docs/design-direcao.md`
 
 ## Comandos locais preferidos

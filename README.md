@@ -10,26 +10,26 @@ O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, mat
 
 ## Status atual
 
-Fase atual documentada: FASE 31.
+Fase atual documentada: FASE 32.
 
 Ja existe:
 
 - login real com Auth.js/NextAuth v5, JWT, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
-- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas e card Admin XP persistente;
+- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva;
 - teacher com aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos, mensagens e card Teacher XP persistente;
-- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, aula ao vivo e card Student XP persistente no resumo;
+- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, aula ao vivo, card Student XP persistente no resumo e area Candy XP com missoes de historia, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
 - Catty como assistente visual contextual com IA opcional via OpenAI, fallback local, atalhos de estudo, incentivo e pratica simples em ingles;
-- Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges e catalogo inicial de missoes;
+- Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges, catalogo inicial de missoes e atividades de historias com XP automatico/manual;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, jogos executaveis, tela completa de missoes/badges/temporadas, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e base de conhecimento propria/RAG para a Catty.
+Nao existe ainda: pagamento online, minijogos executaveis de vocabulario/listening/speaking, tela completa de badges/temporadas, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e base de conhecimento propria/RAG para a Catty.
 
 ## Stack
 
@@ -65,6 +65,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/14-agenda.md`: modulo agenda admin.
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
+- `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
 - `docs/99-contexto-rapido-codex.md`: prompt minimo e memoria curta para continuar o projeto em outro chat.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.

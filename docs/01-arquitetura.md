@@ -21,6 +21,7 @@ Camadas principais:
 - `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
 - `src/lib/candy-xp.ts`: motor puro de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/candy-xp-persistence.ts`: ledger server-side do Candy XP, catalogo de badges/missoes, streaks e gravacao idempotente por `sourceKey`.
+- `src/lib/candy-xp-activities.ts`: avaliacao automatica e helpers das atividades Candy XP com PDF/perguntas.
 - `src/lib/admin-credentials.ts`: criptografia e sincronizacao de credenciais administrativas vindas de integracoes externas do ambiente.
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
@@ -61,6 +62,7 @@ Servicos Docker:
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
+- Atividades Candy XP usam rota server-side protegida para PDF/imagem e server actions para criacao, progresso, envio e correcao.
 - Docker final usa `output: "standalone"`.
 - Server Actions aceitam upload ate 15 MB para suportar homework/aula interativa exportados do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
@@ -71,6 +73,7 @@ Servicos Docker:
 - Catty usa o contexto de `area` e `task` apenas para ajustar atalhos e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
 - Candy XP grava eventos persistidos por usuario em `CandyXpEvent`, recalcula `CandyXpProfile` por soma de eventos e aplica a curva sem teto fixo em `requiredForCandyLevel`.
 - Cada evento de XP usa `@@unique([userId, sourceKey])` para impedir pontuacao duplicada da mesma tarefa, homework, feedback, aula, rotina ou missao.
+- Atividades Candy XP ficam em modelos proprios (`CandyXpActivity`, perguntas, assignments e submissions), mas concedem pontos pelo ledger Candy XP para manter anti-duplicacao e historico centralizado.
 - `AdminCredential.secretCiphertext` e criptografado com AES-256-GCM usando `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; o painel sincroniza apenas OpenAI, Google OAuth e dominio Jitsi do `.env`, nunca `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Riscos ao alterar esta parte
@@ -80,6 +83,7 @@ Servicos Docker:
 - Criar leitura global para teacher pode vazar dados de alunos.
 - Mudar permissao do storage pode quebrar avatar e contratos.
 - Expor assets de homework fora de rota protegida pode vazar atividades e respostas de alunos.
+- Expor assets Candy XP fora de rota protegida pode vazar historias publicadas apenas para alunos especificos.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
 - Remover fallback, limite de uso ou restricao de contexto da Catty pode quebrar ambientes sem chave OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.

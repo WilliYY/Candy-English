@@ -14,6 +14,7 @@ export const CANDY_XP_REWARDS = {
     teacher: 30,
   },
   student: {
+    candyXpActivityCompleted: 80,
     feedbackReviewed: 25,
     homeworkSubmitted: 50,
     lessonActivitySubmitted: 40,
@@ -108,6 +109,7 @@ export type CandyXpSnapshot = {
 };
 
 export type BuildCandyStudentXpSnapshotInput = {
+  candyXpActivities?: CandyXpActivityInput[];
   homeworks: CandyXpActivityInput[];
   lessonActivities: CandyXpActivityInput[];
   profileReady: boolean;
@@ -377,13 +379,21 @@ export function applyCandyXpPersistence(
 }
 
 function getStudentNextGoals(input: BuildCandyStudentXpSnapshotInput) {
+  const candyXpActivities = input.candyXpActivities ?? [];
   const pendingHomeworks = input.homeworks.filter(
     (homework) => !isSubmittedLike(homework.status),
   ).length;
   const pendingLessonActivities = input.lessonActivities.filter(
     (activity) => !isSubmittedLike(activity.status),
   ).length;
+  const pendingCandyXpActivities = candyXpActivities.filter(
+    (activity) => !isReviewed(activity.status),
+  ).length;
   const goals: string[] = [];
+
+  if (pendingCandyXpActivities > 0) {
+    goals.push("Concluir uma missao Candy XP publicada.");
+  }
 
   if (pendingLessonActivities > 0) {
     goals.push("Concluir uma atividade em Aulas e Materiais.");
@@ -459,6 +469,10 @@ function getAdminNextGoals(input: BuildCandyAdminXpSnapshotInput) {
 export function buildCandyStudentXpSnapshot(
   input: BuildCandyStudentXpSnapshotInput,
 ): CandyXpSnapshot {
+  const candyXpActivities = input.candyXpActivities ?? [];
+  const completedCandyXpActivities = candyXpActivities.filter((activity) =>
+    isReviewed(activity.status),
+  ).length;
   const submittedLessonActivities = input.lessonActivities.filter((activity) =>
     isSubmittedLike(activity.status),
   ).length;
@@ -472,6 +486,14 @@ export function buildCandyStudentXpSnapshot(
     ? CANDY_XP_REWARDS.student.profileReady
     : 0;
   const sources: CandyXpSource[] = [
+    {
+      description: "Historias e missoes Candy XP concluidas.",
+      label: "Candy XP",
+      value: completedCandyXpActivities,
+      xp:
+        completedCandyXpActivities *
+        CANDY_XP_REWARDS.student.candyXpActivityCompleted,
+    },
     {
       description: "Atividades respondidas dentro das aulas.",
       label: "Aulas finalizadas",

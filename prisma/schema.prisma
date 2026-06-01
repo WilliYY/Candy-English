@@ -16,6 +16,7 @@ enum Role {
 enum CandyXpEventKind {
   ADMIN_ROUTINE
   BADGE_AWARDED
+  CANDY_XP_ACTIVITY_COMPLETED
   FEEDBACK_REVIEWED
   HOMEWORK_SUBMITTED
   LESSON_ACTIVITY_SUBMITTED
@@ -36,6 +37,27 @@ enum CandyMissionKind {
   REVIEW
   SPEAKING
   VOCABULARY
+}
+
+enum CandyXpActivityStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CandyXpQuestionType {
+  SHORT_TEXT
+  LONG_TEXT
+  MULTIPLE_CHOICE
+  CHECKBOX
+  MATCHING
+}
+
+enum CandyXpSubmissionStatus {
+  DRAFT
+  SUBMITTED
+  RETURNED
+  REVIEWED
 }
 
 enum LessonStatus {
@@ -114,6 +136,8 @@ model User {
   agendaLogs           AgendaLog[]
   createdCredentials   AdminCredential[]     @relation("AdminCredentialCreatedBy")
   updatedCredentials   AdminCredential[]     @relation("AdminCredentialUpdatedBy")
+  createdCandyXpActivities CandyXpActivity[] @relation("CandyXpActivityCreatedBy")
+  reviewedCandyXpSubmissions CandyXpActivitySubmission[] @relation("CandyXpSubmissionReviewedBy")
   candyXpProfile       CandyXpProfile?
   candyXpEvents        CandyXpEvent[]
   candyBadges          CandyUserBadge[]
@@ -143,6 +167,8 @@ model StudentProfile {
   teacherAssignments StudentTeacherAssignment[] @relation("StudentAssignments")
   lessons            Lesson[]
   submissions        HomeworkSubmission[]
+  candyXpAssignments CandyXpActivityAssignment[]
+  candyXpSubmissions CandyXpActivitySubmission[]
   contracts          ContractDocument[]
   liveSessions       LiveSession[]
 }
@@ -610,6 +636,86 @@ model CandyMissionAttempt {
 
   @@index([missionId, userId])
   @@index([userId, completedAt])
+}
+
+model CandyXpActivity {
+  id               String                     @id @default(cuid())
+  title            String
+  description      String?
+  level            String
+  category         String
+  xpReward         Int
+  status           CandyXpActivityStatus      @default(DRAFT)
+  assetFileName    String?
+  assetStoragePath String?
+  assetMimeType    String?
+  assetSizeBytes   Int?
+  assetPageCount   Int                        @default(1)
+  publishedAt      DateTime?
+  createdByUserId  String?
+  createdByUser    User?                      @relation("CandyXpActivityCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  questions        CandyXpActivityQuestion[]
+  assignments      CandyXpActivityAssignment[]
+  submissions      CandyXpActivitySubmission[]
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
+
+  @@index([status, category])
+  @@index([level])
+  @@index([createdByUserId])
+}
+
+model CandyXpActivityQuestion {
+  id            String               @id @default(cuid())
+  activityId    String
+  activity      CandyXpActivity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  type          CandyXpQuestionType
+  prompt        String
+  options       Json?
+  correctAnswer Json?
+  required      Boolean              @default(true)
+  sortOrder     Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([activityId, sortOrder])
+}
+
+model CandyXpActivityAssignment {
+  id               String           @id @default(cuid())
+  activityId       String
+  activity         CandyXpActivity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  assignedAt       DateTime         @default(now())
+
+  @@unique([activityId, studentProfileId])
+  @@index([studentProfileId])
+}
+
+model CandyXpActivitySubmission {
+  id                 String                  @id @default(cuid())
+  activityId         String
+  activity           CandyXpActivity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  studentProfileId   String
+  studentProfile     StudentProfile          @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  answers            Json
+  status             CandyXpSubmissionStatus @default(DRAFT)
+  autoScorePercent   Int?
+  feedback           String?
+  awardedXp          Int?
+  xpEventId          String?
+  submittedAt        DateTime?
+  reviewedAt         DateTime?
+  reviewedByUserId   String?
+  reviewedByUser     User?                   @relation("CandyXpSubmissionReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@unique([activityId, studentProfileId])
+  @@index([studentProfileId, status])
+  @@index([activityId, status])
+  @@index([reviewedByUserId])
 }
 
 model ChatThread {

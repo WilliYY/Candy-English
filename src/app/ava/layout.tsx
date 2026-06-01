@@ -15,6 +15,7 @@ import {
   PencilLine,
   Radio,
   Settings,
+  Sparkles,
   UserPlus,
   UserRound,
   UsersRound,
@@ -83,6 +84,12 @@ const navGroups = [
         href: "/ava/teacher?task=criar-homework",
         icon: ClipboardCheck,
         label: "Criar homework",
+        section: "Aulas",
+      },
+      {
+        href: "/ava/admin?task=candy-xp",
+        icon: Sparkles,
+        label: "Candy XP",
         section: "Aulas",
       },
       {
@@ -193,6 +200,11 @@ const navGroups = [
         href: "/ava/student?task=homeworks",
         icon: ClipboardCheck,
         label: "Responder homework",
+      },
+      {
+        href: "/ava/student?task=candy-xp",
+        icon: Sparkles,
+        label: "Candy XP",
       },
       {
         href: "/ava/student?task=mensagens",

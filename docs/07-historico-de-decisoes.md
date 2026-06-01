@@ -282,6 +282,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260601170000_candy_xp_persistence`, `src/lib/candy-xp.ts`, `src/lib/candy-xp-persistence.ts`, paginas admin/teacher/student e docs oficiais.
 - Riscos/cuidados: toda nova fonte de XP precisa de `sourceKey` estavel por usuario, validacao server-side de role/permissao e criterio claro de conclusao; jogos executaveis ainda exigem fase propria.
 
+### 2026-06-01 - Atividades Candy XP com PDF e perguntas
+
+- Decisao: criar o modulo `/ava/admin?task=candy-xp` e `/ava/student?task=candy-xp` para atividades gamificadas de historia com PDF/imagem do Canva, perguntas, progresso por aluno, correcao automatica de questoes objetivas e correcao manual de respostas escritas.
+- Motivo: transformar a base Candy XP em uma primeira experiencia jogavel/operacional, permitindo que o admin cadastre respostas corretas e o aluno ganhe XP ao concluir sem criar ainda minijogos em tempo real.
+- Impacto: `prisma/schema.prisma`, migration `20260601193000_candy_xp_activities`, `src/app/ava/candy-xp/actions.ts`, `src/app/ava/candy-xp-assets/[activityId]/route.ts`, `src/components/ava/admin-candy-xp-panel.tsx`, `src/components/ava/student-candy-xp-activities-panel.tsx`, `src/lib/candy-xp-activities.ts`, `src/lib/validations/candy-xp-activities.ts`, `src/lib/storage.ts`, paginas admin/student e docs oficiais.
+- Riscos/cuidados: editar perguntas ja respondidas pode invalidar historico; arquivos devem continuar protegidos pela rota server-side; XP deve ser concedido apenas pelo servidor com `sourceKey` unica por submissao.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
