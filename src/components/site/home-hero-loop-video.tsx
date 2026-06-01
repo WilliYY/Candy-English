@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 type HomeHeroLoopVideoProps = {
+  className?: string;
   label: string;
   src: string;
 };
 
-export function HomeHeroLoopVideo({ label, src }: HomeHeroLoopVideoProps) {
+export function HomeHeroLoopVideo({
+  className,
+  label,
+  src,
+}: HomeHeroLoopVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -41,7 +47,10 @@ export function HomeHeroLoopVideo({ label, src }: HomeHeroLoopVideoProps) {
       muted
       playsInline
       preload="auto"
-      className="home-candy-video-bg block h-full min-h-[inherit] w-full flex-1 rounded-[1.5rem] bg-white object-contain"
+      className={cn(
+        "home-candy-video-bg block h-full min-h-[inherit] w-full flex-1 bg-white object-contain",
+        className,
+      )}
     >
       <source src={src} type="video/mp4" />
     </video>

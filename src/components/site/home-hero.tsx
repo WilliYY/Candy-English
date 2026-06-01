@@ -34,22 +34,32 @@ export function HomeHero({ content }: HomeHeroProps) {
         <h1 className="sr-only">{title}</h1>
         <p className="sr-only">{description}</p>
 
-        <div className="mx-auto grid w-full max-w-[94rem] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] lg:items-stretch xl:grid-cols-[minmax(0,1fr)_minmax(21rem,26rem)] xl:gap-5">
-          <div className="animate-fade-rise flex min-h-[18rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:min-h-[24rem] lg:min-h-[31rem] xl:min-h-[34rem]">
-            <HomeHeroLoopVideo label="Home Candy English" src={homeHeroVideoUrl} />
-          </div>
+        <div className="mx-auto w-full max-w-[92rem]">
+          <div className="animate-fade-rise relative isolate min-h-[25rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:min-h-[31rem] lg:min-h-[37rem]">
+            <div className="absolute inset-2 overflow-hidden rounded-[1.5rem] bg-white">
+              <HomeHeroLoopVideo
+                label="Home Candy English"
+                src={homeHeroVideoUrl}
+                className="absolute inset-0 rounded-[1.5rem]"
+              />
+            </div>
 
-          <div className="animate-fade-rise-delay grid gap-4 sm:grid-cols-2 lg:min-h-[31rem] lg:grid-cols-1 lg:grid-rows-2 xl:min-h-[34rem]">
-            <HomeVideoCard
-              label="Intro Candy English 1"
-              src="/brand/intro-1.mp4"
-              title="Intro 1"
-            />
-            <HomeVideoCard
-              label="Intro Candy English 2"
-              src="/brand/intro-2.mp4"
-              title="Intro 2"
-            />
+            <div className="pointer-events-none absolute inset-2 z-[1] rounded-[1.5rem] bg-[linear-gradient(90deg,rgba(255,255,255,0.14),transparent_35%,rgba(255,255,255,0.18))]" />
+
+            <div className="animate-fade-rise-delay relative z-10 grid min-h-[23.75rem] content-end gap-3 p-3 pt-36 sm:min-h-[29.75rem] sm:grid-cols-2 sm:p-5 sm:pt-44 lg:absolute lg:left-[14%] lg:top-[29%] lg:min-h-0 lg:w-[54%] lg:max-w-[46rem] lg:p-0 xl:left-[16%] xl:top-[30%] xl:w-[52%]">
+              <HomeVideoCard
+                label="Intro Candy English 1"
+                src="/brand/intro-1.mp4"
+                title="Intro 1"
+                variant="embedded"
+              />
+              <HomeVideoCard
+                label="Intro Candy English 2"
+                src="/brand/intro-2.mp4"
+                title="Intro 2"
+                variant="embedded"
+              />
+            </div>
           </div>
         </div>
 
