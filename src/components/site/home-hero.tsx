@@ -34,19 +34,19 @@ export function HomeHero({ content }: HomeHeroProps) {
         <h1 className="sr-only">{title}</h1>
         <p className="sr-only">{description}</p>
 
-        <div className="mx-auto w-full max-w-[86rem]">
-          <div className="animate-fade-rise relative isolate min-h-[25rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-1.5 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:min-h-[31rem] lg:min-h-[39rem]">
+        <div className="mx-auto w-full max-w-[82rem]">
+          <div className="animate-fade-rise relative isolate aspect-[4/5] min-h-[34rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-1.5 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:aspect-[16/11] sm:min-h-[43rem] lg:aspect-[16/9] lg:min-h-0">
             <div className="absolute inset-2 overflow-hidden rounded-[1.5rem] bg-white">
               <HomeHeroLoopVideo
                 label="Home Candy English"
                 src={homeHeroVideoUrl}
-                className="absolute inset-0 rounded-[1.5rem] scale-[1.1] sm:scale-[1.13] lg:scale-[1.18] xl:scale-[1.2]"
+                className="absolute inset-0 rounded-[1.5rem] object-top scale-[1.01] sm:scale-[1.025] lg:scale-[1.035]"
               />
             </div>
 
             <div className="pointer-events-none absolute inset-2 z-[1] rounded-[1.5rem] bg-[linear-gradient(90deg,rgba(255,255,255,0.14),transparent_35%,rgba(255,255,255,0.18))]" />
 
-            <div className="animate-fade-rise-delay relative z-10 grid min-h-[23.75rem] content-end gap-3 p-3 pt-36 sm:min-h-[29.75rem] sm:grid-cols-2 sm:p-5 sm:pt-44 lg:absolute lg:left-[13%] lg:top-[30%] lg:min-h-0 lg:w-[55%] lg:max-w-[45rem] lg:p-0 xl:left-[14.5%] xl:top-[31%] xl:w-[54%]">
+            <div className="animate-fade-rise-delay relative z-10 grid min-h-[32rem] content-end gap-3 p-3 pt-44 sm:min-h-[41rem] sm:grid-cols-2 sm:p-5 sm:pt-56 lg:absolute lg:bottom-[17%] lg:left-[12.5%] lg:min-h-0 lg:w-[47%] lg:max-w-[38rem] lg:p-0 xl:bottom-[18%] xl:left-[13.5%] xl:w-[45%]">
               <HomeVideoCard
                 label="Intro Candy English 1"
                 src="/brand/intro-1.mp4"
