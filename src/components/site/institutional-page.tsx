@@ -29,7 +29,7 @@ export function InstitutionalPage({
   title,
 }: InstitutionalPageProps) {
   return (
-    <div className="relative isolate overflow-hidden bg-primary text-white">
+    <div className="site-institutional-page relative isolate overflow-hidden bg-primary text-white">
       <video
         aria-label="Fundo em video das informacoes Candy English"
         autoPlay
@@ -69,7 +69,7 @@ export function InstitutionalPage({
       </section>
 
       <section className="relative border-y border-white/15 bg-white/10 backdrop-blur-sm">
-        <div className="relative z-20 mx-auto grid w-full max-w-7xl gap-5 px-6 py-16 md:grid-cols-2 lg:px-8">
+        <div className="relative z-20 mx-auto grid w-full max-w-7xl gap-5 px-6 pb-56 pt-16 md:grid-cols-2 md:pb-60 lg:px-8 lg:pb-64">
           {sections.map((section, index) => (
             <article
               key={section.title}

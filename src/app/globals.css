@@ -373,6 +373,22 @@ a {
   z-index: -1;
 }
 
+main:has(.site-institutional-page) + .candy-footer {
+  margin-top: -6rem;
+}
+
+@media (min-width: 768px) {
+  main:has(.site-institutional-page) + .candy-footer {
+    margin-top: -6.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  main:has(.site-institutional-page) + .candy-footer {
+    margin-top: -7rem;
+  }
+}
+
 .home-method-video-section {
   min-height: 760px;
 }

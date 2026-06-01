@@ -76,6 +76,7 @@ Cuidados:
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
 - Footer pode usar efeito gooey/lava lamp no topo, com bolhas no mesmo roxo do footer para parecer uma superficie unica, preservando textos e links.
+- Nas paginas informativas (`/sobre`, `/metodologia`, `/contato`), o footer deve invadir menos e o grid de cards deve reservar respiro inferior suficiente para nao esconder conteudo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
 - O hero da home deve ficar limpo e legivel; o video local `public/brand/home.mp4` aparece no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degradê de transicao antes do rodape.
