@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Play, Square, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type HomeVideoCardProps = {
@@ -75,17 +74,12 @@ export function HomeVideoCard({
   };
 
   return (
-    <article
-      className={cn(
-        "absolute overflow-visible",
-        className,
-      )}
-    >
+    <article className={cn("absolute overflow-visible", className)}>
       <div className="h-full w-full overflow-hidden bg-white">
         <video
           ref={videoRef}
           aria-label={label}
-          className="h-full w-full bg-white object-contain object-center"
+          className="h-full w-full bg-white object-cover object-center"
           muted={isMuted}
           playsInline
           preload="metadata"
@@ -96,39 +90,37 @@ export function HomeVideoCard({
 
       <div
         className={cn(
-          "absolute left-1/2 top-[calc(100%+0.75rem)] grid w-[114%] -translate-x-1/2 grid-cols-[1fr_1fr_auto] items-center gap-2",
+          "absolute left-1/2 grid h-[20%] w-full -translate-x-1/2 grid-cols-[1fr_1fr_0.7fr] gap-2",
           controlsClassName,
         )}
       >
         <button
           type="button"
+          aria-label={`Pausar ${label}`}
           onClick={pauseVideo}
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-white px-2 text-sm font-bold text-primary shadow-md ring-1 ring-primary/10 transition hover:-translate-y-0.5 hover:bg-secondary md:h-10 md:gap-2 md:px-3"
+          className="rounded-full bg-transparent outline-none transition focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <Square aria-hidden="true" className="size-4 fill-current" />
-          <span className="hidden sm:inline">Stop</span>
+          <span className="sr-only">Stop</span>
         </button>
         <button
           type="button"
+          aria-label={`Iniciar ${label}`}
           aria-pressed={isPlaying}
           onClick={playVideo}
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-2 text-sm font-bold text-primary-foreground shadow-md transition hover:-translate-y-0.5 hover:bg-primary/90 md:h-10 md:gap-2 md:px-3"
+          className="rounded-full bg-transparent outline-none transition focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <Play aria-hidden="true" className="size-4 fill-current" />
-          <span className="hidden sm:inline">Play</span>
+          <span className="sr-only">Play</span>
         </button>
         <button
           type="button"
           aria-label={isMuted ? "Liberar som" : "Bloquear som"}
           title={isMuted ? "Liberar som" : "Bloquear som"}
           onClick={toggleMuted}
-          className="inline-flex size-9 items-center justify-center rounded-full bg-white text-primary shadow-md ring-1 ring-primary/10 transition hover:-translate-y-0.5 hover:bg-secondary md:size-10"
+          className="rounded-full bg-transparent outline-none transition focus-visible:bg-white/80 focus-visible:ring-2 focus-visible:ring-primary"
         >
-          {isMuted ? (
-            <VolumeX aria-hidden="true" className="size-5" />
-          ) : (
-            <Volume2 aria-hidden="true" className="size-5" />
-          )}
+          <span className="sr-only">
+            {isMuted ? "Liberar som" : "Bloquear som"}
+          </span>
         </button>
       </div>
     </article>

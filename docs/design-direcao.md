@@ -48,7 +48,7 @@ Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo c
 
 Movimentos permitidos nesta fase:
 
-- hero da home com video local leve `public/brand/home-candy.mp4` em loop, muted/autoplay, e dois videos de intro encaixados nos espacos do mockup, pausados por padrao para evitar custo inicial alto;
+- hero da home com video local leve `public/brand/home-candy.mp4` em loop, muted/autoplay, e dois videos de intro encaixados nos espacos do mockup; os controles desenhados no mockup recebem hotspots invisiveis de play/stop/volume, com os videos pausados por padrao para evitar custo inicial alto;
 - video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa, linha divisoria dura ou degradê de transicao;
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura;
@@ -81,7 +81,7 @@ Cuidados:
 - Nas paginas informativas (`/sobre`, `/metodologia`, `/contato`), o footer deve invadir menos e o grid de cards deve reservar respiro inferior suficiente para nao esconder conteudo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
-- O hero da home usa `public/brand/home-candy.mp4` como palco em loop leve; `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` ficam encaixados nos espacos do mockup com play/stop/volume, sem autoplay nem loop. O video local `public/brand/home.mp4` continua no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degradê de transicao antes do rodape.
+- O hero da home usa `public/brand/home-candy.mp4` como palco em loop leve; `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` ficam encaixados nos espacos do mockup com hotspots invisiveis sobre os botoes desenhados de play/stop/volume, sem autoplay nem loop. O video local `public/brand/home.mp4` continua no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degradê de transicao antes do rodape.
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
 - O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.
