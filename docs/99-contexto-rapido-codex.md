@@ -36,7 +36,7 @@ Ao receber o prompt minimo, o agente deve:
 - Admin gerencia usuarios, redefinicao de senha, vinculos, contratos, financeiro, agenda, manutencao e cofre de APIs/senhas.
 - Teacher cria aulas, homework interativo, materiais, feedback, mensagens, contratos e aula ao vivo.
 - Student acessa aulas, homework, mensagens, contratos, perfil, avatar e aula ao vivo.
-- Student ve Candy XP no resumo: nivel, barra amarela, fontes de XP, roadmap e slot visual para jogos futuros, calculado de forma derivada/read-only em `src/lib/candy-xp.ts`.
+- Admin, teacher e student veem Candy XP nos seus paineis: nivel, barra amarela, fontes de XP, trilha infinita, roadmap e slot visual para jogos/missoes futuras, calculado de forma derivada/read-only em `src/lib/candy-xp.ts`.
 - Homework e aula interativa usam PDF/imagem original como fundo protegido.
 - Teacher desenha campos manualmente sobre o arquivo.
 - Campos do aluno ficam invisiveis; aparecem apenas texto, marcacoes e desenhos preenchidos.

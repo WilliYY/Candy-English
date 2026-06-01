@@ -2,13 +2,24 @@ import {
   CheckCircle2,
   Flag,
   Gamepad2,
+  GraduationCap,
   Lock,
+  ShieldCheck,
   Sparkles,
   Star,
   Trophy,
   Zap,
 } from "lucide-react";
 import type { CandyXpSnapshot } from "@/lib/candy-xp";
+import { cn } from "@/lib/utils";
+
+type CandyXpCardProps = {
+  badgeLabel?: string;
+  className?: string;
+  description: string;
+  title: string;
+  xp: CandyXpSnapshot;
+};
 
 type StudentXpCardProps = {
   xp: CandyXpSnapshot;
@@ -16,13 +27,30 @@ type StudentXpCardProps = {
 
 const xpFormatter = new Intl.NumberFormat("pt-BR");
 
-export function StudentXpCard({ xp }: StudentXpCardProps) {
+const spotlightIcons = {
+  admin: ShieldCheck,
+  student: Gamepad2,
+  teacher: GraduationCap,
+} as const;
+
+export function CandyXpCard({
+  badgeLabel = "Candy XP",
+  className,
+  description,
+  title,
+  xp,
+}: CandyXpCardProps) {
   const missingXp = Math.max(0, xp.requiredXp - xp.progressXp);
+  const titleId = `candy-xp-title-${xp.role}`;
+  const SpotlightIcon = spotlightIcons[xp.role];
 
   return (
     <section
-      aria-labelledby="student-xp-title"
-      className="overflow-hidden rounded-lg border border-primary/15 bg-[linear-gradient(135deg,#fffdfa_0%,#fff4fb_46%,#f6e7ff_100%)] shadow-xl shadow-primary/10"
+      aria-labelledby={titleId}
+      className={cn(
+        "overflow-hidden rounded-lg border border-primary/15 bg-[linear-gradient(135deg,#fffdfa_0%,#fff4fb_46%,#f6e7ff_100%)] shadow-xl shadow-primary/10",
+        className,
+      )}
     >
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
         <div className="relative isolate overflow-hidden p-5 sm:p-6">
@@ -32,17 +60,16 @@ export function StudentXpCard({ xp }: StudentXpCardProps) {
               <div className="min-w-0">
                 <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/80 bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-900 shadow-sm">
                   <Zap aria-hidden="true" className="size-3.5" />
-                  Candy XP
+                  {badgeLabel}
                 </span>
                 <h2
-                  id="student-xp-title"
+                  id={titleId}
                   className="mt-3 text-2xl font-semibold tracking-normal text-primary sm:text-3xl"
                 >
-                  Nivel {xp.level} de estudo
+                  {title}
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                  Ganhe XP ao concluir aulas, entregar homeworks e receber
-                  feedback da teacher.
+                  {description}
                 </p>
               </div>
 
@@ -87,6 +114,32 @@ export function StudentXpCard({ xp }: StudentXpCardProps) {
                 <span>{xpFormatter.format(xp.progressXp)} XP</span>
                 <span>{xpFormatter.format(xp.requiredXp)} XP</span>
               </div>
+              <div className="mt-4 grid grid-cols-7 gap-2">
+                {xp.track.map((item) => (
+                  <div
+                    key={item.level}
+                    className={cn(
+                      "flex min-h-14 flex-col items-center justify-center rounded-md border px-1 text-center",
+                      item.status === "done" &&
+                        "border-emerald-300 bg-emerald-50 text-emerald-800",
+                      item.status === "current" &&
+                        "border-amber-300 bg-amber-100 text-amber-950 shadow-sm",
+                      item.status === "next" &&
+                        "border-primary/10 bg-muted/50 text-muted-foreground",
+                    )}
+                  >
+                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.1em]">
+                      Nv
+                    </span>
+                    <strong className="text-sm leading-none">
+                      {item.level}
+                    </strong>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                A trilha nao tem teto: cada novo nivel recalcula uma meta maior.
+              </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -121,22 +174,24 @@ export function StudentXpCard({ xp }: StudentXpCardProps) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-11 shrink-0 items-center justify-center rounded-md bg-amber-500 text-white shadow-md shadow-amber-600/20">
-                    <Gamepad2 aria-hidden="true" />
+                    <SpotlightIcon aria-hidden="true" />
                   </span>
                   <div className="min-w-0">
-                    <h3 className="font-semibold">Jogos Candy</h3>
+                    <h3 className="font-semibold">{xp.spotlightCard.title}</h3>
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
-                      {xp.gamesCard.status}
+                      {xp.spotlightCard.status}
                     </p>
                   </div>
                 </div>
-                {xp.gamesCard.unlocked ? (
+                {xp.spotlightCard.unlocked ? (
                   <CheckCircle2 aria-hidden="true" className="size-5" />
                 ) : (
                   <Lock aria-hidden="true" className="size-5" />
                 )}
               </div>
-              <p className="mt-3 text-sm leading-6">{xp.gamesCard.description}</p>
+              <p className="mt-3 text-sm leading-6">
+                {xp.spotlightCard.description}
+              </p>
             </div>
 
             <div className="rounded-lg border border-primary/15 bg-white/78 p-4 shadow-sm">
@@ -218,5 +273,15 @@ export function StudentXpCard({ xp }: StudentXpCardProps) {
         </aside>
       </div>
     </section>
+  );
+}
+
+export function StudentXpCard({ xp }: StudentXpCardProps) {
+  return (
+    <CandyXpCard
+      description="Ganhe XP ao concluir aulas, entregar homeworks e receber feedback da teacher."
+      title={`Nivel ${xp.level} de estudo`}
+      xp={xp}
+    />
   );
 }

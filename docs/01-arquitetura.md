@@ -19,6 +19,7 @@ Camadas principais:
 - `src/lib/authorization.ts`: guard de roles para paginas.
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
 - `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
+- `src/lib/candy-xp.ts`: motor read-only de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/admin-credentials.ts`: criptografia e sincronizacao de credenciais administrativas vindas de integracoes externas do ambiente.
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
@@ -67,6 +68,7 @@ Servicos Docker:
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty usa a OpenAI Responses API quando `OPENAI_API_KEY` esta configurada, com `OPENAI_CATTY_MODEL` opcional; se a chave ou a chamada falhar, responde pelo fallback local.
 - Catty usa o contexto de `area` e `task` apenas para ajustar atalhos e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
+- Candy XP calcula progresso em memoria a partir de dados ja carregados e autorizados para cada painel; a curva nao tem teto fixo e cresce por formula em `requiredForCandyLevel`.
 - `AdminCredential.secretCiphertext` e criptografado com AES-256-GCM usando `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; o painel sincroniza apenas OpenAI, Google OAuth e dominio Jitsi do `.env`, nunca `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Riscos ao alterar esta parte

@@ -39,8 +39,10 @@ import {
 } from "@/components/ava/admin-operations";
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
 import { ContractUploadForm } from "@/components/ava/contract-upload-form";
+import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildCandyAdminXpSnapshot } from "@/lib/candy-xp";
 import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
@@ -590,6 +592,48 @@ export function AdminUsersPanel({
   ];
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
+  const paidPaymentsCount = financeStudents.reduce(
+    (total, student) =>
+      total +
+      student.payments.filter((payment) => payment.isActive && payment.isPaid)
+        .length,
+    0,
+  );
+  const unpaidPaymentsCount = financeStudents.reduce(
+    (total, student) =>
+      total +
+      student.payments.filter(
+        (payment) =>
+          payment.isActive &&
+          !payment.isPaid &&
+          payment.year === 2026 &&
+          payment.month === initialFinanceMonth,
+      ).length,
+    0,
+  );
+  const agendaHandledLessonsCount = agendaLessons.filter(
+    (lesson) =>
+      lesson.isActive &&
+      ["ATTENDED", "MAKEUP_ATTENDED", "MISSED"].includes(lesson.status),
+  ).length;
+  const agendaPendingLessonsCount = agendaLessons.filter(
+    (lesson) => lesson.isActive && lesson.status === "SCHEDULED",
+  ).length;
+  const xpSnapshot = buildCandyAdminXpSnapshot({
+    activeUsersCount: totals.active,
+    agendaHandledLessonsCount,
+    agendaPendingLessonsCount,
+    assignmentsCount: assignments.length,
+    contractsCount: contracts.length,
+    credentialsCount: adminCredentials.length,
+    financeStudentsCount: financeStudents.length,
+    paidPaymentsCount,
+    profileReady: Boolean(currentUser.avatarPath),
+    studentsCount: totals.STUDENT,
+    teachersCount: totals.TEACHER,
+    unpaidPaymentsCount,
+    usersCount: totals.total,
+  });
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
@@ -629,6 +673,12 @@ export function AdminUsersPanel({
         <CardContent className="py-6">
           {activeTask === "usuarios" ? (
             <div className="flex flex-col gap-6">
+              <CandyXpCard
+                badgeLabel="Admin XP"
+                description="Ganhe XP mantendo usuarios ativos, vinculos, contratos, financeiro, agenda e cofre em ordem."
+                title={`Nivel ${xpSnapshot.level} admin`}
+                xp={xpSnapshot}
+              />
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                 {stats.map((stat) => (
                   <div

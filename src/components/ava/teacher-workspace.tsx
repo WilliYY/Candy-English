@@ -33,8 +33,10 @@ import {
   CreateLessonForm,
 } from "@/components/ava/teacher-forms";
 import { StudentLevelForm } from "@/components/ava/student-level-form";
+import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { buildCandyTeacherXpSnapshot } from "@/lib/candy-xp";
 import type { Role } from "@/lib/roles";
 
 export const teacherTaskIds = [
@@ -316,6 +318,9 @@ export function TeacherWorkspace({
   const pendingSubmissions = submissions.filter(
     (submission) => submission.status === "SUBMITTED",
   ).length;
+  const reviewedSubmissions = submissions.filter(
+    (submission) => submission.status === "REVIEWED",
+  ).length;
   const correctionSubmissions: HomeworkCorrectionSubmission[] = submissions.map(
     (submission) => ({
       answers: submission.answers,
@@ -330,15 +335,25 @@ export function TeacherWorkspace({
   );
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
+  const homeworkTotal = lessons.reduce(
+    (total, lesson) => total + lesson.homeworks.length,
+    0,
+  );
+  const xpSnapshot = buildCandyTeacherXpSnapshot({
+    homeworksCount: homeworkTotal,
+    lessonsCount: lessons.length,
+    liveSessionsCount: liveSessions.length,
+    pendingSubmissionsCount: pendingSubmissions,
+    profileReady: Boolean(currentUser.avatarPath || currentUser.phone),
+    reviewedSubmissionsCount: reviewedSubmissions,
+    studentsCount: students.length,
+  });
   const stats = [
     { icon: BookOpen, label: "Aulas", value: lessons.length },
     {
       icon: ClipboardCheck,
       label: "Homeworks",
-      value: lessons.reduce(
-        (total, lesson) => total + lesson.homeworks.length,
-        0,
-      ),
+      value: homeworkTotal,
     },
     {
       icon: MessageSquareText,
@@ -385,6 +400,12 @@ export function TeacherWorkspace({
         <CardContent className="py-6">
           {activeTask === "resumo" ? (
             <div className="flex flex-col gap-5">
+              <CandyXpCard
+                badgeLabel="Teacher XP"
+                description="Ganhe XP ao vincular alunos, criar aulas, preparar homeworks, abrir salas e corrigir respostas."
+                title={`Nivel ${xpSnapshot.level} teacher`}
+                xp={xpSnapshot}
+              />
               <div className="grid gap-4 md:grid-cols-3">
                 {stats.map((stat) => (
                   <div

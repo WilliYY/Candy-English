@@ -268,6 +268,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/candy-xp.ts`, `src/components/ava/student-xp-card.tsx`, `src/components/ava/student-workspace.tsx`, `src/app/globals.css`, `README.md`, `docs/00-visao-geral.md`, `docs/03-fluxos-do-sistema.md`, `docs/06-pendencias.md`, `docs/design-direcao.md`.
 - Riscos/cuidados: XP e read-only/derivado dos dados do proprio aluno; persistencia, streaks, badges reais, ranking ou jogos executaveis exigem nova decisao, schema e validacao de permissoes.
 
+### 2026-06-01 - Candy XP por role com niveis infinitos
+
+- Decisao: generalizar o motor Candy XP para admin, teacher e student, mantendo a curva `requiredForCandyLevel` sem teto fixo e mostrando trilha visual ao redor do nivel atual.
+- Motivo: estruturar a gamificacao antes de jogos executaveis, permitindo evolucao por role sem criar persistencia prematura nem ranking publico.
+- Impacto: `src/lib/candy-xp.ts`, `src/components/ava/student-xp-card.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/components/ava/teacher-workspace.tsx`, docs oficiais.
+- Riscos/cuidados: XP continua derivado/read-only; persistencia historica, badges, streaks, temporada competitiva ou jogos reais exigem schema, permissoes e estrategia anti-abuso.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

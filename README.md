@@ -10,16 +10,16 @@ O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, mat
 
 ## Status atual
 
-Fase atual documentada: FASE 29.
+Fase atual documentada: FASE 30.
 
 Ja existe:
 
 - login real com Auth.js/NextAuth v5, JWT, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
-- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda e cofre de APIs/senhas;
-- teacher com aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos e mensagens;
-- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, aula ao vivo e card Candy XP no resumo;
+- admin com cadastro de usuarios, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas e card Admin XP;
+- teacher com aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos, mensagens e card Teacher XP;
+- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, aula ao vivo e card Student XP no resumo;
 - chat interno teacher/aluno validado por vinculo;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
@@ -28,7 +28,7 @@ Ja existe:
 - Catty como assistente visual contextual com IA opcional via OpenAI, fallback local, atalhos de estudo, incentivo e pratica simples em ingles;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, jogos executaveis, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e base de conhecimento propria/RAG para a Catty.
+Nao existe ainda: pagamento online, jogos executaveis, persistencia historica de XP/streaks/badges, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e base de conhecimento propria/RAG para a Catty.
 
 ## Stack
 

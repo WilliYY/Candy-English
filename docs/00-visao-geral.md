@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas, Candy XP visual no resumo do aluno e controle de acessos.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas, Candy XP visual por role e controle de acessos.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -42,7 +42,7 @@ Rotas principais:
 - Financeiro e modulo interno do admin, sem pagamento online.
 - Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
 - Homework e aula interativa devem manter arquivo e campos protegidos por permissao de aluno/teacher/admin.
-- Candy XP no student e derivado de aulas/homeworks/feedbacks ja carregados para o proprio aluno; nao deve expor ranking publico nem dados de outros alunos.
+- Candy XP e derivado/read-only por role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos.
 
 ## Decisoes tecnicas tomadas
 
@@ -54,7 +54,7 @@ Rotas principais:
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.
 - Homework e aula interativa usam editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
-- Candy XP usa helper puro em `src/lib/candy-xp.ts` para calcular nivel, progresso e roadmap sem criar persistencia nova nesta fase.
+- Candy XP usa helper puro em `src/lib/candy-xp.ts` para calcular nivel infinito, progresso, trilha, roadmap e fontes por role sem criar persistencia nova nesta fase.
 - Catty usa OpenAI pelo servidor quando `OPENAI_API_KEY` existe e fallback local quando nao existe.
 - O cofre admin importa apenas integracoes externas do `.env` quando existem; segredos internos de banco, Auth e seed nao entram na tela.
 
