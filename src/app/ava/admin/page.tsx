@@ -6,6 +6,11 @@ import {
 import { syncEnvironmentAdminCredentials } from "@/lib/admin-credentials";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
+import { CANDY_XP_REWARDS } from "@/lib/candy-xp";
+import {
+  recordCandyXpEventsForUser,
+  type CandyXpEventInput,
+} from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
 import { getStorageUsageBytes } from "@/lib/storage";
 
@@ -347,6 +352,112 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const initialFinanceMonth =
     currentDate.getFullYear() === 2026 ? currentDate.getMonth() + 1 : 1;
   const initialAgendaMonth = initialFinanceMonth;
+  const adminXpEvents: CandyXpEventInput[] = [];
+
+  if (currentUser?.avatarPath) {
+    adminXpEvents.push({
+      kind: "PROFILE_READY",
+      sourceKey: `admin:profile-ready:${session.user.id}`,
+      sourceLabel: "Perfil preparado",
+      xp: CANDY_XP_REWARDS.admin.profileReady,
+    });
+  }
+
+  for (const user of users) {
+    if (user.isActive) {
+      adminXpEvents.push({
+        kind: "ADMIN_ROUTINE",
+        sourceKey: `admin:active-user:${user.id}`,
+        sourceLabel: "Usuarios ativos",
+        xp: CANDY_XP_REWARDS.admin.activeUser,
+      });
+    }
+
+    if (user.role === "TEACHER") {
+      adminXpEvents.push({
+        kind: "ADMIN_ROUTINE",
+        sourceKey: `admin:teacher:${user.id}`,
+        sourceLabel: "Comunidade",
+        xp: CANDY_XP_REWARDS.admin.teacher,
+      });
+    }
+
+    if (user.role === "STUDENT") {
+      adminXpEvents.push({
+        kind: "ADMIN_ROUTINE",
+        sourceKey: `admin:student:${user.id}`,
+        sourceLabel: "Comunidade",
+        xp: CANDY_XP_REWARDS.admin.student,
+      });
+    }
+  }
+
+  for (const assignment of assignments) {
+    adminXpEvents.push({
+      kind: "ADMIN_ROUTINE",
+      sourceKey: `admin:assignment:${assignment.id}`,
+      sourceLabel: "Vinculos",
+      xp: CANDY_XP_REWARDS.admin.assignment,
+    });
+  }
+
+  for (const contract of contracts) {
+    adminXpEvents.push({
+      kind: "ADMIN_ROUTINE",
+      sourceKey: `admin:contract:${contract.id}`,
+      sourceLabel: "Operacao",
+      xp: CANDY_XP_REWARDS.admin.contract,
+    });
+  }
+
+  for (const financeStudent of financeStudents) {
+    adminXpEvents.push({
+      kind: "ADMIN_ROUTINE",
+      sourceKey: `admin:financial-student:${financeStudent.id}`,
+      sourceLabel: "Operacao",
+      xp: CANDY_XP_REWARDS.admin.financialStudent,
+    });
+
+    for (const payment of financeStudent.payments) {
+      if (payment.isActive && payment.isPaid) {
+        adminXpEvents.push({
+          kind: "ADMIN_ROUTINE",
+          sourceKey: `admin:paid-payment:${payment.id}`,
+          sourceLabel: "Pagamentos",
+          xp: CANDY_XP_REWARDS.admin.paidPayment,
+        });
+      }
+    }
+  }
+
+  for (const agendaLesson of agendaLessons) {
+    if (
+      agendaLesson.isActive &&
+      ["ATTENDED", "MAKEUP_ATTENDED", "MISSED"].includes(agendaLesson.status)
+    ) {
+      adminXpEvents.push({
+        kind: "ADMIN_ROUTINE",
+        sourceKey: `admin:agenda-handled:${agendaLesson.id}`,
+        sourceLabel: "Agenda cuidada",
+        xp: CANDY_XP_REWARDS.admin.agendaHandledLesson,
+      });
+    }
+  }
+
+  for (const credential of adminCredentials) {
+    adminXpEvents.push({
+      kind: "ADMIN_ROUTINE",
+      sourceKey: `admin:credential:${credential.id}`,
+      sourceLabel: "Cofre admin",
+      xp: CANDY_XP_REWARDS.admin.credential,
+    });
+  }
+
+  const candyXpPersistence = await recordCandyXpEventsForUser({
+    events: adminXpEvents,
+    role: "ADMIN",
+    userId: session.user.id,
+  });
 
   return (
     <AdminUsersPanel
@@ -365,6 +476,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         url: credential.url,
         username: credential.username,
       }))}
+      candyXpPersistence={candyXpPersistence}
       agendaLessons={agendaLessons.map((lesson) => ({
         date: lesson.date.toISOString(),
         id: lesson.id,

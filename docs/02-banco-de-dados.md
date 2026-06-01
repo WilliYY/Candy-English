@@ -52,6 +52,15 @@ Operacao do AVA:
 - `SitePageContent`
 - `AdminCredential`
 
+Gamificacao Candy XP:
+
+- `CandyXpProfile`
+- `CandyXpEvent`
+- `CandyBadgeDefinition`
+- `CandyUserBadge`
+- `CandyMission`
+- `CandyMissionAttempt`
+
 Financeiro:
 
 - `FinancialStudent`
@@ -76,6 +85,8 @@ Enums:
 - `AgendaLessonStatus`
 - `AdminCredentialKind`
 - `AdminCredentialSource`
+- `CandyXpEventKind`
+- `CandyMissionKind`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -99,6 +110,10 @@ Enums:
 - `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
 - `AdminCredential.source=ENV` identifica credenciais sincronizadas de integracoes externas do `.env`; a UI nao deve permitir excluir ou alterar o valor sensivel desses registros pelo banco.
 - `AdminCredential.sourceKey` e unico para evitar duplicar a mesma variavel de ambiente.
+- `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.
+- `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
+- `CandyBadgeDefinition` guarda criterios simples de badge por role, nivel, streak ou contagem de evento; `CandyUserBadge` possui chave unica por usuario/badge.
+- `CandyMission` e o catalogo base para tarefas estilo Duolingo; `CandyMissionAttempt.attemptKey` evita repetir a mesma tentativa/evento de jogo no futuro.
 
 ## Decisoes tecnicas tomadas
 
@@ -113,6 +128,7 @@ Enums:
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
+- Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
 
 ## Riscos ao alterar esta parte
 
@@ -127,6 +143,8 @@ Enums:
 - Fazer hard delete de `AgendaStudent` apaga ocorrencias da agenda por cascade; a UI deve retirar agenda por `isActive=false`.
 - Alterar `HomeworkInteractiveField` sem manter coordenadas percentuais por pagina pode desalinhar respostas sobre o PDF/imagem.
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
+- Criar XP sem `sourceKey` estavel pode duplicar pontos; toda missao/tarefa deve definir uma origem unica por usuario.
+- Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.
 
 ## Pendencias
 
@@ -135,6 +153,7 @@ Enums:
 - Falta auditoria geral fora do financeiro.
 - Falta trilha de auditoria detalhada para revelar/copiar credenciais do cofre admin.
 - Falta exportacao do PDF final preenchido com respostas e desenhos do aluno.
+- Falta tela completa para aluno/teacher/admin explorarem badges, missoes, streaks e temporadas fora do card XP.
 
 ## Como pode evoluir
 

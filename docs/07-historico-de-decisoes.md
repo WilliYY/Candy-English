@@ -275,6 +275,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/candy-xp.ts`, `src/components/ava/student-xp-card.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/components/ava/teacher-workspace.tsx`, docs oficiais.
 - Riscos/cuidados: XP continua derivado/read-only; persistencia historica, badges, streaks, temporada competitiva ou jogos reais exigem schema, permissoes e estrategia anti-abuso.
 
+### 2026-06-01 - Candy XP persistente com ledger anti-duplicacao
+
+- Decisao: criar persistencia para Candy XP com `CandyXpProfile`, `CandyXpEvent`, badges, missoes e tentativas, mantendo niveis infinitos e sem ranking publico.
+- Motivo: preparar uma evolucao estilo Duolingo, onde homeworks, aulas, feedbacks, rotinas e futuros jogos/tarefas concedem XP real sem duplicar pontos pela mesma origem.
+- Impacto: `prisma/schema.prisma`, migration `20260601170000_candy_xp_persistence`, `src/lib/candy-xp.ts`, `src/lib/candy-xp-persistence.ts`, paginas admin/teacher/student e docs oficiais.
+- Riscos/cuidados: toda nova fonte de XP precisa de `sourceKey` estavel por usuario, validacao server-side de role/permissao e criterio claro de conclusao; jogos executaveis ainda exigem fase propria.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -25,7 +25,11 @@ import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildCandyStudentXpSnapshot } from "@/lib/candy-xp";
+import {
+  applyCandyXpPersistence,
+  buildCandyStudentXpSnapshot,
+  type CandyXpPersistenceSnapshot,
+} from "@/lib/candy-xp";
 import type { Role } from "@/lib/roles";
 
 export const studentTaskIds = [
@@ -103,6 +107,7 @@ type StudentHomework = StudentLesson["homeworks"][number];
 
 type StudentWorkspaceProps = {
   activeTask: StudentTask;
+  candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   chatThreads: ChatThreadRow[];
   contracts: {
     createdAt: Date;
@@ -267,6 +272,7 @@ function isInternalHomeworkLesson(lesson: StudentLesson) {
 
 export function StudentWorkspace({
   activeTask,
+  candyXpPersistence,
   chatThreads,
   contracts,
   currentUser,
@@ -298,20 +304,23 @@ export function StudentWorkspace({
   );
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
-  const xpSnapshot = buildCandyStudentXpSnapshot({
-    homeworks: homeworkItems.map(({ homework }) => ({
-      status: homework.submissions[0]?.status,
-    })),
-    lessonActivities: lessonActivityItems.map((homework) => ({
-      status: homework.submissions[0]?.status,
-    })),
-    profileReady: Boolean(
-      currentUser.avatarPath ||
-        currentUser.phone ||
-        studentProfile.level ||
-        studentProfile.studentPhone,
-    ),
-  });
+  const xpSnapshot = applyCandyXpPersistence(
+    buildCandyStudentXpSnapshot({
+      homeworks: homeworkItems.map(({ homework }) => ({
+        status: homework.submissions[0]?.status,
+      })),
+      lessonActivities: lessonActivityItems.map((homework) => ({
+        status: homework.submissions[0]?.status,
+      })),
+      profileReady: Boolean(
+        currentUser.avatarPath ||
+          currentUser.phone ||
+          studentProfile.level ||
+          studentProfile.studentPhone,
+      ),
+    }),
+    candyXpPersistence,
+  );
   const stats = [
     { icon: BookOpen, label: "Aulas", value: visibleLessons.length },
     { icon: ClipboardCheck, label: "Homeworks", value: homeworkCount },

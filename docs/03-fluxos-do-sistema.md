@@ -93,10 +93,13 @@ Helpers:
 ### Candy XP e jogos
 
 1. O card aparece em `/ava/student?task=resumo`, `/ava/teacher?task=resumo` e `/ava/admin?task=usuarios`.
-2. A pontuacao e calculada no servidor a partir dos dados que cada role ja pode ver: student usa atividades do proprio aluno, teacher usa alunos/aulas/homeworks/correcoes da sua area, e admin usa indicadores operacionais permitidos.
-3. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
-4. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
-5. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
+2. A pontuacao e sincronizada no servidor a partir dos dados que cada role ja pode ver: student usa atividades do proprio aluno, teacher usa alunos/aulas/homeworks/correcoes da sua area, e admin usa indicadores operacionais permitidos.
+3. Cada origem de XP vira um `CandyXpEvent` com `sourceKey` unica por usuario; se a mesma homework, feedback, aula, rotina ou missao aparecer de novo, o XP nao duplica.
+4. `CandyXpProfile` guarda total, nivel, progresso e streak como cache recalculado pela soma dos eventos.
+5. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
+6. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
+7. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
+8. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo, mas as telas de jogos e missoes executaveis ainda precisam ser criadas em fase propria.
 
 ### Contratos
 
@@ -184,7 +187,8 @@ Helpers:
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem.
 - Student tem botoes sempre visiveis.
-- Candy XP deve continuar derivado/read-only ate existir decisao de persistencia no banco; nao criar ranking publico, streak persistente ou badges gravados sem decisao nova.
+- Candy XP deve continuar sem ranking publico; XP, streaks, badges e missoes sao persistidos por usuario e nao podem vazar dados de outras roles.
+- Toda nova tarefa que conceder XP deve gravar por server action/rota protegida e usar `sourceKey` estavel para evitar abuso ou pontuacao duplicada.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.
 - A interface de criacao nova de aula usa o mesmo fluxo interativo de PDF/imagem por enquanto, criando uma aula real com atividade interativa vinculada que aparece em `Aulas e Materiais`, nao em `Responder homework`.
@@ -210,7 +214,7 @@ Helpers:
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
 - Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`, com atalhos de estudo e resposta contextual por tela.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
-- Candy XP fica nos paineis admin, teacher e student como gamificacao leve e prepara o espaco visual dos jogos sem alterar o fluxo de aula/homework.
+- Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
 
 ## Riscos ao alterar esta parte
 

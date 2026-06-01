@@ -13,6 +13,31 @@ enum Role {
   STUDENT
 }
 
+enum CandyXpEventKind {
+  ADMIN_ROUTINE
+  BADGE_AWARDED
+  FEEDBACK_REVIEWED
+  HOMEWORK_SUBMITTED
+  LESSON_ACTIVITY_SUBMITTED
+  MISSION_COMPLETED
+  PROFILE_READY
+  STREAK_BONUS
+  TEACHER_ROUTINE
+}
+
+enum CandyMissionKind {
+  ADMIN_ROUTINE
+  DAILY
+  FEEDBACK
+  GAME
+  HOMEWORK
+  LESSON
+  LISTENING
+  REVIEW
+  SPEAKING
+  VOCABULARY
+}
+
 enum LessonStatus {
   DRAFT
   PUBLISHED
@@ -72,27 +97,31 @@ enum AdminCredentialSource {
 }
 
 model User {
-  id                 String             @id @default(cuid())
-  name               String
-  email              String             @unique
-  passwordHash       String
-  sessionVersion     Int                @default(0)
-  role               Role               @default(STUDENT)
-  isActive           Boolean            @default(true)
-  phone              String?
-  address            String?
-  avatarPath         String?
-  avatarMimeType     String?
-  studentProfile     StudentProfile?
-  teacherProfile     TeacherProfile?
-  financialLogs      FinancialLog[]
-  agendaLogs         AgendaLog[]
-  createdCredentials AdminCredential[]  @relation("AdminCredentialCreatedBy")
-  updatedCredentials AdminCredential[]  @relation("AdminCredentialUpdatedBy")
-  sentChatMessages   ChatMessage[]
-  uploadedContracts  ContractDocument[] @relation("UploadedContracts")
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                   String                @id @default(cuid())
+  name                 String
+  email                String                @unique
+  passwordHash         String
+  sessionVersion       Int                   @default(0)
+  role                 Role                  @default(STUDENT)
+  isActive             Boolean               @default(true)
+  phone                String?
+  address              String?
+  avatarPath           String?
+  avatarMimeType       String?
+  studentProfile       StudentProfile?
+  teacherProfile       TeacherProfile?
+  financialLogs        FinancialLog[]
+  agendaLogs           AgendaLog[]
+  createdCredentials   AdminCredential[]     @relation("AdminCredentialCreatedBy")
+  updatedCredentials   AdminCredential[]     @relation("AdminCredentialUpdatedBy")
+  candyXpProfile       CandyXpProfile?
+  candyXpEvents        CandyXpEvent[]
+  candyBadges          CandyUserBadge[]
+  candyMissionAttempts CandyMissionAttempt[]
+  sentChatMessages     ChatMessage[]
+  uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
 
   @@index([isActive])
 }
@@ -467,6 +496,120 @@ model AdminCredential {
   @@index([kind])
   @@index([source])
   @@index([createdAt])
+}
+
+model CandyXpProfile {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role              Role
+  totalXp           Int       @default(0)
+  level             Int       @default(1)
+  levelStartXp      Int       @default(0)
+  progressXp        Int       @default(0)
+  requiredXp        Int       @default(120)
+  streakDays        Int       @default(0)
+  longestStreakDays Int       @default(0)
+  lastActivityDate  DateTime?
+  lastXpEventAt     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([role, level])
+  @@index([totalXp])
+  @@index([lastXpEventAt])
+}
+
+model CandyXpEvent {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role
+  kind        CandyXpEventKind
+  sourceKey   String
+  sourceLabel String
+  xp          Int
+  metadata    Json?
+  occurredAt  DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+
+  @@unique([userId, sourceKey])
+  @@index([userId, occurredAt])
+  @@index([role, kind])
+  @@index([sourceLabel])
+}
+
+model CandyBadgeDefinition {
+  id                 String            @id @default(cuid())
+  key                String            @unique
+  role               Role?
+  title              String
+  description        String
+  icon               String?
+  requiredLevel      Int?
+  requiredEventKind  CandyXpEventKind?
+  requiredEventCount Int?
+  requiredStreakDays Int?
+  isActive           Boolean           @default(true)
+  earnedBadges       CandyUserBadge[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([role, isActive])
+  @@index([requiredEventKind])
+}
+
+model CandyUserBadge {
+  id                String               @id @default(cuid())
+  userId            String
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeDefinitionId String
+  badgeDefinition   CandyBadgeDefinition @relation(fields: [badgeDefinitionId], references: [id], onDelete: Cascade)
+  earnedAt          DateTime             @default(now())
+  sourceEventId     String?
+
+  @@unique([userId, badgeDefinitionId])
+  @@index([userId, earnedAt])
+  @@index([badgeDefinitionId])
+}
+
+model CandyMission {
+  id            String                @id @default(cuid())
+  key           String                @unique
+  role          Role?
+  title         String
+  description   String
+  kind          CandyMissionKind
+  xpReward      Int
+  targetCount   Int                   @default(1)
+  repeatable    Boolean               @default(false)
+  cooldownHours Int?
+  isActive      Boolean               @default(true)
+  sortOrder     Int                   @default(0)
+  attempts      CandyMissionAttempt[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@index([role, isActive, sortOrder])
+  @@index([kind, isActive])
+}
+
+model CandyMissionAttempt {
+  id            String       @id @default(cuid())
+  attemptKey    String       @unique
+  missionId     String
+  mission       CandyMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceKey     String
+  progressCount Int          @default(0)
+  completedAt   DateTime?
+  xpEventId     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([missionId, userId])
+  @@index([userId, completedAt])
 }
 
 model ChatThread {

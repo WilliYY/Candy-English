@@ -7,6 +7,11 @@ import {
 import { StudentMaintenanceScreen } from "@/components/ava/student-maintenance-screen";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
+import { CANDY_XP_REWARDS } from "@/lib/candy-xp";
+import {
+  recordCandyXpEventsForUser,
+  type CandyXpEventInput,
+} from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -320,10 +325,71 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       },
     }),
   ]);
+  const profileReady = Boolean(
+    studentProfile.user.avatarPath ||
+      studentProfile.user.phone ||
+      studentProfile.level ||
+      studentProfile.studentPhone,
+  );
+  const studentXpEvents: CandyXpEventInput[] = [];
+
+  if (profileReady) {
+    studentXpEvents.push({
+      kind: "PROFILE_READY",
+      sourceKey: `student:profile-ready:${studentProfile.id}`,
+      sourceLabel: "Perfil preparado",
+      xp: CANDY_XP_REWARDS.student.profileReady,
+    });
+  }
+
+  for (const lesson of lessons) {
+    for (const homework of lesson.homeworks) {
+      const submission = homework.submissions[0];
+      const status = submission?.status;
+      const isSubmittedLike =
+        status === "RETURNED" || status === "REVIEWED" || status === "SUBMITTED";
+      const isLessonActivity =
+        homework.kind === "INTERACTIVE" &&
+        homework.fieldDetectionSource === "lesson-manual";
+
+      if (isSubmittedLike) {
+        studentXpEvents.push({
+          kind: isLessonActivity
+            ? "LESSON_ACTIVITY_SUBMITTED"
+            : "HOMEWORK_SUBMITTED",
+          sourceKey: isLessonActivity
+            ? `student:lesson-activity-submitted:${homework.id}`
+            : `student:homework-submitted:${homework.id}`,
+          sourceLabel: isLessonActivity
+            ? "Aulas finalizadas"
+            : "Homeworks enviadas",
+          xp: isLessonActivity
+            ? CANDY_XP_REWARDS.student.lessonActivitySubmitted
+            : CANDY_XP_REWARDS.student.homeworkSubmitted,
+        });
+      }
+
+      if (status === "REVIEWED" && submission) {
+        studentXpEvents.push({
+          kind: "FEEDBACK_REVIEWED",
+          sourceKey: `student:feedback-reviewed:${submission.id}`,
+          sourceLabel: "Feedbacks recebidos",
+          xp: CANDY_XP_REWARDS.student.feedbackReviewed,
+        });
+      }
+    }
+  }
+
+  const candyXpPersistence = await recordCandyXpEventsForUser({
+    events: studentXpEvents,
+    role: "STUDENT",
+    userId: session.user.id,
+  });
 
   return (
     <StudentWorkspace
       activeTask={activeTask}
+      candyXpPersistence={candyXpPersistence}
       chatThreads={chatThreads.map((thread) => ({
         id: thread.id,
         messages: thread.messages.map((message) => ({

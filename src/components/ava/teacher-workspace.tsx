@@ -36,7 +36,11 @@ import { StudentLevelForm } from "@/components/ava/student-level-form";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildCandyTeacherXpSnapshot } from "@/lib/candy-xp";
+import {
+  applyCandyXpPersistence,
+  buildCandyTeacherXpSnapshot,
+  type CandyXpPersistenceSnapshot,
+} from "@/lib/candy-xp";
 import type { Role } from "@/lib/roles";
 
 export const teacherTaskIds = [
@@ -184,6 +188,7 @@ type ContractRow = {
 
 type TeacherWorkspaceProps = {
   activeTask: TeacherTask;
+  candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   chatThreads: ChatThreadRow[];
   currentUser: {
     address?: string | null;
@@ -280,6 +285,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 
 export function TeacherWorkspace({
   activeTask,
+  candyXpPersistence,
   chatThreads,
   currentUser,
   contracts,
@@ -339,15 +345,18 @@ export function TeacherWorkspace({
     (total, lesson) => total + lesson.homeworks.length,
     0,
   );
-  const xpSnapshot = buildCandyTeacherXpSnapshot({
-    homeworksCount: homeworkTotal,
-    lessonsCount: lessons.length,
-    liveSessionsCount: liveSessions.length,
-    pendingSubmissionsCount: pendingSubmissions,
-    profileReady: Boolean(currentUser.avatarPath || currentUser.phone),
-    reviewedSubmissionsCount: reviewedSubmissions,
-    studentsCount: students.length,
-  });
+  const xpSnapshot = applyCandyXpPersistence(
+    buildCandyTeacherXpSnapshot({
+      homeworksCount: homeworkTotal,
+      lessonsCount: lessons.length,
+      liveSessionsCount: liveSessions.length,
+      pendingSubmissionsCount: pendingSubmissions,
+      profileReady: Boolean(currentUser.avatarPath || currentUser.phone),
+      reviewedSubmissionsCount: reviewedSubmissions,
+      studentsCount: students.length,
+    }),
+    candyXpPersistence,
+  );
   const stats = [
     { icon: BookOpen, label: "Aulas", value: lessons.length },
     {

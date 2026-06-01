@@ -4,6 +4,14 @@ import {
   TeacherWorkspace,
 } from "@/components/ava/teacher-workspace";
 import { requireAvaRole } from "@/lib/authorization";
+import {
+  CANDY_XP_REWARDS,
+  type CandyXpPersistenceSnapshot,
+} from "@/lib/candy-xp";
+import {
+  recordCandyXpEventsForUser,
+  type CandyXpEventInput,
+} from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
@@ -411,10 +419,78 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       },
     }),
   ]);
+  let candyXpPersistence: CandyXpPersistenceSnapshot | null = null;
+
+  if (session.user.role === "TEACHER" && currentTeacherProfile && currentUser) {
+    const teacherXpEvents: CandyXpEventInput[] = [];
+
+    if (currentUser.avatarPath || currentUser.phone) {
+      teacherXpEvents.push({
+        kind: "PROFILE_READY",
+        sourceKey: `teacher:profile-ready:${currentTeacherProfile.id}`,
+        sourceLabel: "Perfil preparado",
+        xp: CANDY_XP_REWARDS.teacher.profileReady,
+      });
+    }
+
+    for (const student of students) {
+      teacherXpEvents.push({
+        kind: "TEACHER_ROUTINE",
+        sourceKey: `teacher:student-linked:${currentTeacherProfile.id}:${student.id}`,
+        sourceLabel: "Alunos vinculados",
+        xp: CANDY_XP_REWARDS.teacher.studentLinked,
+      });
+    }
+
+    for (const lesson of lessons) {
+      teacherXpEvents.push({
+        kind: "TEACHER_ROUTINE",
+        sourceKey: `teacher:lesson-created:${lesson.id}`,
+        sourceLabel: "Aulas criadas",
+        xp: CANDY_XP_REWARDS.teacher.lessonCreated,
+      });
+
+      for (const homework of lesson.homeworks) {
+        teacherXpEvents.push({
+          kind: "TEACHER_ROUTINE",
+          sourceKey: `teacher:homework-created:${homework.id}`,
+          sourceLabel: "Homeworks criadas",
+          xp: CANDY_XP_REWARDS.teacher.homeworkCreated,
+        });
+      }
+    }
+
+    for (const submission of submissions) {
+      if (submission.status === "REVIEWED") {
+        teacherXpEvents.push({
+          kind: "FEEDBACK_REVIEWED",
+          sourceKey: `teacher:feedback-reviewed:${submission.id}`,
+          sourceLabel: "Feedbacks dados",
+          xp: CANDY_XP_REWARDS.teacher.feedbackReviewed,
+        });
+      }
+    }
+
+    for (const liveSession of liveSessions) {
+      teacherXpEvents.push({
+        kind: "TEACHER_ROUTINE",
+        sourceKey: `teacher:live-session:${liveSession.id}`,
+        sourceLabel: "Aulas ao vivo",
+        xp: CANDY_XP_REWARDS.teacher.liveSession,
+      });
+    }
+
+    candyXpPersistence = await recordCandyXpEventsForUser({
+      events: teacherXpEvents,
+      role: "TEACHER",
+      userId: session.user.id,
+    });
+  }
 
   return (
     <TeacherWorkspace
       activeTask={activeTask}
+      candyXpPersistence={candyXpPersistence}
       chatThreads={chatThreads.map((thread) => ({
         id: thread.id,
         messages: thread.messages.map((message) => ({

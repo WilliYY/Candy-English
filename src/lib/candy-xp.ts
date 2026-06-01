@@ -9,6 +9,7 @@ export const CANDY_XP_REWARDS = {
     credential: 15,
     financialStudent: 18,
     paidPayment: 10,
+    profileReady: 15,
     student: 16,
     teacher: 30,
   },
@@ -63,19 +64,45 @@ export type CandyXpSpotlightCard = {
   unlocked: boolean;
 };
 
+export type CandyXpRecentEvent = {
+  occurredAt: string;
+  sourceLabel: string;
+  xp: number;
+};
+
+export type CandyXpPersistenceSnapshot = {
+  badgeCount: number;
+  longestStreakDays: number;
+  recentEvents: CandyXpRecentEvent[];
+  sourceStats: Record<
+    string,
+    {
+      value: number;
+      xp: number;
+    }
+  >;
+  streakDays: number;
+  totalXp: number;
+};
+
 export type CandyXpSnapshot = {
+  badgeCount: number;
   level: number;
   levelStartXp: number;
+  longestStreakDays: number;
   nextGoals: string[];
   nextLevel: number;
   nextLevelTotalXp: number;
   percent: number;
+  persisted: boolean;
   progressXp: number;
+  recentEvents: CandyXpRecentEvent[];
   requiredXp: number;
   roadmap: CandyXpRoadmapItem[];
   role: CandyXpRole;
   sources: CandyXpSource[];
   spotlightCard: CandyXpSpotlightCard;
+  streakDays: number;
   totalXp: number;
   track: CandyXpTrackItem[];
 };
@@ -297,13 +324,54 @@ function buildCandyXpSnapshot({
   const progress = progressFromCandyXp(totalXp);
 
   return {
+    badgeCount: 0,
     ...progress,
+    longestStreakDays: 0,
     nextGoals,
+    persisted: false,
+    recentEvents: [],
     roadmap: getRoadmap(progress.level, roadmap),
     role,
     sources,
     spotlightCard,
+    streakDays: 0,
     totalXp,
+    track: getInfiniteTrack(progress.level),
+  };
+}
+
+export function applyCandyXpPersistence(
+  snapshot: CandyXpSnapshot,
+  persistence?: CandyXpPersistenceSnapshot | null,
+): CandyXpSnapshot {
+  if (!persistence) {
+    return snapshot;
+  }
+
+  const progress = progressFromCandyXp(persistence.totalXp);
+
+  return {
+    ...snapshot,
+    ...progress,
+    badgeCount: persistence.badgeCount,
+    longestStreakDays: persistence.longestStreakDays,
+    persisted: true,
+    recentEvents: persistence.recentEvents,
+    sources: snapshot.sources.map((source) => {
+      const persistedSource = persistence.sourceStats[source.label];
+
+      if (!persistedSource) {
+        return source;
+      }
+
+      return {
+        ...source,
+        value: persistedSource.value,
+        xp: persistedSource.xp,
+      };
+    }),
+    streakDays: persistence.streakDays,
+    totalXp: persistence.totalXp,
     track: getInfiniteTrack(progress.level),
   };
 }
@@ -570,6 +638,12 @@ export function buildCandyAdminXpSnapshot(
       label: "Cofre admin",
       value: input.credentialsCount,
       xp: input.credentialsCount * CANDY_XP_REWARDS.admin.credential,
+    },
+    {
+      description: "Perfil admin com avatar pronto para o AVA.",
+      label: "Perfil preparado",
+      value: input.profileReady ? 1 : 0,
+      xp: input.profileReady ? CANDY_XP_REWARDS.admin.profileReady : 0,
     },
   ];
 

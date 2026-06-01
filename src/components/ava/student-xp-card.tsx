@@ -1,8 +1,12 @@
 import {
+  Award,
+  CalendarDays,
   CheckCircle2,
   Flag,
+  Flame,
   Gamepad2,
   GraduationCap,
+  History,
   Lock,
   ShieldCheck,
   Sparkles,
@@ -26,6 +30,10 @@ type StudentXpCardProps = {
 };
 
 const xpFormatter = new Intl.NumberFormat("pt-BR");
+const eventDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+});
 
 const spotlightIcons = {
   admin: ShieldCheck,
@@ -140,6 +148,37 @@ export function CandyXpCard({
               <p className="mt-2 text-xs text-muted-foreground">
                 A trilha nao tem teto: cada novo nivel recalcula uma meta maior.
               </p>
+              {xp.persisted ? (
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  <div className="rounded-md border border-primary/10 bg-white/75 p-3">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      <Flame aria-hidden="true" className="size-3.5" />
+                      Sequencia
+                    </span>
+                    <strong className="mt-2 block text-lg text-primary">
+                      {xp.streakDays} dia(s)
+                    </strong>
+                  </div>
+                  <div className="rounded-md border border-primary/10 bg-white/75 p-3">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      <CalendarDays aria-hidden="true" className="size-3.5" />
+                      Melhor
+                    </span>
+                    <strong className="mt-2 block text-lg text-primary">
+                      {xp.longestStreakDays} dia(s)
+                    </strong>
+                  </div>
+                  <div className="rounded-md border border-primary/10 bg-white/75 p-3">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                      <Award aria-hidden="true" className="size-3.5" />
+                      Badges
+                    </span>
+                    <strong className="mt-2 block text-lg text-primary">
+                      {xp.badgeCount}
+                    </strong>
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -252,6 +291,44 @@ export function CandyXpCard({
                 })}
               </ol>
             </div>
+
+            {xp.persisted && xp.recentEvents.length > 0 ? (
+              <div className="rounded-lg border border-primary/12 bg-white/76 p-4 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-primary">
+                      Ultimos XP
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      Eventos gravados com chave anti-duplicacao.
+                    </p>
+                  </div>
+                  <History aria-hidden="true" className="size-5 text-accent" />
+                </div>
+                <ul className="mt-3 grid gap-2">
+                  {xp.recentEvents.map((event, index) => (
+                    <li
+                      key={`${event.sourceLabel}-${event.occurredAt}-${index}`}
+                      className="flex items-center justify-between gap-3 rounded-md bg-primary/5 px-3 py-2 text-sm"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-primary">
+                          {event.sourceLabel}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {eventDateFormatter.format(
+                            new Date(event.occurredAt),
+                          )}
+                        </span>
+                      </span>
+                      <strong className="shrink-0 rounded-md bg-amber-100 px-2 py-1 text-xs text-amber-900">
+                        +{xpFormatter.format(event.xp)}
+                      </strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             <div className="rounded-lg border border-primary/12 bg-white/70 p-4">
               <h3 className="text-sm font-semibold text-primary">

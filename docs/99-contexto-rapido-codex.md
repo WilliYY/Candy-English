@@ -36,7 +36,8 @@ Ao receber o prompt minimo, o agente deve:
 - Admin gerencia usuarios, redefinicao de senha, vinculos, contratos, financeiro, agenda, manutencao e cofre de APIs/senhas.
 - Teacher cria aulas, homework interativo, materiais, feedback, mensagens, contratos e aula ao vivo.
 - Student acessa aulas, homework, mensagens, contratos, perfil, avatar e aula ao vivo.
-- Admin, teacher e student veem Candy XP nos seus paineis: nivel, barra amarela, fontes de XP, trilha infinita, roadmap e slot visual para jogos/missoes futuras, calculado de forma derivada/read-only em `src/lib/candy-xp.ts`.
+- Admin, teacher e student veem Candy XP persistente nos seus paineis: nivel, barra amarela, fontes de XP, trilha infinita, streak, badges, ultimos eventos, roadmap e slot visual para jogos/missoes futuras.
+- Candy XP usa `src/lib/candy-xp.ts` para curva infinita e `src/lib/candy-xp-persistence.ts` para eventos `CandyXpEvent`, perfil/cache `CandyXpProfile`, badges e catalogo inicial de missoes com `sourceKey` anti-duplicacao.
 - Homework e aula interativa usam PDF/imagem original como fundo protegido.
 - Teacher desenha campos manualmente sobre o arquivo.
 - Campos do aluno ficam invisiveis; aparecem apenas texto, marcacoes e desenhos preenchidos.
@@ -66,6 +67,7 @@ Ao receber o prompt minimo, o agente deve:
 - Financeiro: `docs/13-financeiro.md`
 - Agenda: `docs/14-agenda.md`
 - Homework/aula interativa: `docs/15-homework-interativo.md`
+- Candy XP/gamificacao: `docs/16-candy-xp.md`
 - Direcao visual: `docs/design-direcao.md`
 
 ## Comandos locais preferidos

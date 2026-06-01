@@ -27,7 +27,8 @@ As pendencias podem afetar:
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.
 - Base de conhecimento propria/RAG para Catty responder sobre conteudos internos da Candy sem depender apenas da conversa digitada.
-- Jogos executaveis; hoje existem apenas cards/roadmaps visuais Candy XP nos paineis admin, teacher e student.
+- Jogos executaveis; hoje existem cards/roadmaps Candy XP persistentes nos paineis admin, teacher e student, com catalogo base de missoes, mas sem tela/jogo jogavel.
+- Tela completa de missoes, badges, streaks, temporadas e historico de XP fora do card compacto.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
 - Jitsi dedicado ou JaaS para aula ao vivo sem conta externa e sem limite de embed do `meet.jit.si` publico.
@@ -83,4 +84,4 @@ As pendencias podem afetar:
 - Transformar cada pendencia maior em fase propria.
 - Criar criterios de aceite antes de implementar recursos grandes.
 - Adicionar testes de permissao antes de expandir areas sensiveis.
-- Persistir historico de XP, streaks, badges ou jogos reais apenas depois de definir schema, permissoes, criterios de progresso e estrategia anti-abuso.
+- Jogos reais devem usar o ledger Candy XP existente, com server action/rota protegida e `sourceKey` unica por tentativa ou tarefa concluida.

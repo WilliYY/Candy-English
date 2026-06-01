@@ -42,7 +42,11 @@ import { ContractUploadForm } from "@/components/ava/contract-upload-form";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildCandyAdminXpSnapshot } from "@/lib/candy-xp";
+import {
+  applyCandyXpPersistence,
+  buildCandyAdminXpSnapshot,
+  type CandyXpPersistenceSnapshot,
+} from "@/lib/candy-xp";
 import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
@@ -123,6 +127,7 @@ type AdminContractRow = {
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
+  candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   agendaLessons: AdminAgendaLessonRow[];
   agendaLogs: AdminAgendaLogRow[];
   agendaStudents: AdminAgendaStudentRow[];
@@ -529,6 +534,7 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
 export function AdminUsersPanel({
   activeTask,
   adminCredentials,
+  candyXpPersistence,
   agendaLessons,
   agendaLogs,
   agendaStudents,
@@ -619,21 +625,24 @@ export function AdminUsersPanel({
   const agendaPendingLessonsCount = agendaLessons.filter(
     (lesson) => lesson.isActive && lesson.status === "SCHEDULED",
   ).length;
-  const xpSnapshot = buildCandyAdminXpSnapshot({
-    activeUsersCount: totals.active,
-    agendaHandledLessonsCount,
-    agendaPendingLessonsCount,
-    assignmentsCount: assignments.length,
-    contractsCount: contracts.length,
-    credentialsCount: adminCredentials.length,
-    financeStudentsCount: financeStudents.length,
-    paidPaymentsCount,
-    profileReady: Boolean(currentUser.avatarPath),
-    studentsCount: totals.STUDENT,
-    teachersCount: totals.TEACHER,
-    unpaidPaymentsCount,
-    usersCount: totals.total,
-  });
+  const xpSnapshot = applyCandyXpPersistence(
+    buildCandyAdminXpSnapshot({
+      activeUsersCount: totals.active,
+      agendaHandledLessonsCount,
+      agendaPendingLessonsCount,
+      assignmentsCount: assignments.length,
+      contractsCount: contracts.length,
+      credentialsCount: adminCredentials.length,
+      financeStudentsCount: financeStudents.length,
+      paidPaymentsCount,
+      profileReady: Boolean(currentUser.avatarPath),
+      studentsCount: totals.STUDENT,
+      teachersCount: totals.TEACHER,
+      unpaidPaymentsCount,
+      usersCount: totals.total,
+    }),
+    candyXpPersistence,
+  );
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">

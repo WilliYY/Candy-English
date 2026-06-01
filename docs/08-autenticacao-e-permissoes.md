@@ -32,6 +32,10 @@ Tabelas:
 - `TeacherProfile`
 - `StudentTeacherAssignment`
 - `AdminCredential`
+- `CandyXpProfile`
+- `CandyXpEvent`
+- `CandyUserBadge`
+- `CandyMissionAttempt`
 
 Rotas protegidas:
 
@@ -58,6 +62,8 @@ Rotas protegidas:
 - Valores de `AdminCredential` devem ser criptografados no servidor e revelados somente por server action protegida; nunca retornar valores para teacher/student.
 - Arquivos de homework interativo exigem `ADMIN`, `TEACHER` dona da aula ou `STUDENT` dono da homework.
 - Contratos PDF podem ser embutidos apenas em paginas do proprio AVA (`SAMEORIGIN`); a rota continua exigindo sessao e permissao por aluno.
+- Candy XP e gravado apenas no servidor a partir de dados ja autorizados para a role atual; student nao pode gravar XP para outro usuario e teacher nao pode pontuar aluno fora do vinculo.
+- Futuros jogos ou missoes precisam validar sessao, role, dono dos dados e `sourceKey` antes de conceder XP.
 
 ## Decisoes tecnicas tomadas
 
@@ -70,6 +76,7 @@ Rotas protegidas:
 - O token/session recebe `sessionVersion`; o callback JWT consulta o usuario ativo e invalida sessoes antigas quando a versao muda, o usuario fica inativo ou a role do banco diverge da role do token.
 - A action admin de redefinicao de senha atualiza `User.passwordHash` e incrementa `User.sessionVersion`, forçando novo login em sessoes ja abertas daquele usuario.
 - Actions do cofre admin chamam `auth()`, validam role `ADMIN`, validam payload com Zod e bloqueiam alteracao/exclusao direta de valores vindos do `.env`.
+- O ledger Candy XP usa `CandyXpEvent.userId + sourceKey` como defesa anti-replay/anti-duplicacao, alem das validacoes de role nas actions e paginas que sincronizam XP.
 
 ## Riscos ao alterar esta parte
 
