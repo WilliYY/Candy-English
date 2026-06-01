@@ -97,7 +97,7 @@ export function HomeVideoCard({
         className={cn(
           "overflow-hidden border border-primary/15 bg-white",
           isEmbedded
-            ? "h-48 rounded-[0.9rem] sm:h-56 lg:h-64 xl:h-72"
+            ? "h-48 rounded-[0.9rem] sm:h-56 lg:h-[24rem] xl:h-[28rem]"
             : "rounded-[1.25rem] lg:aspect-auto lg:min-h-0 lg:flex-1",
           !isEmbedded && "aspect-video",
         )}

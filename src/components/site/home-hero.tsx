@@ -46,7 +46,7 @@ export function HomeHero({ content }: HomeHeroProps) {
 
             <div className="pointer-events-none absolute inset-2 z-[1] rounded-[1.5rem] bg-[linear-gradient(90deg,rgba(255,255,255,0.14),transparent_35%,rgba(255,255,255,0.18))]" />
 
-            <div className="animate-fade-rise-delay relative z-10 grid min-h-[32rem] content-end gap-3 p-3 pt-44 sm:min-h-[41rem] sm:grid-cols-2 sm:p-5 sm:pt-56 lg:absolute lg:bottom-[13%] lg:left-[9.5%] lg:min-h-0 lg:w-[58%] lg:max-w-[50rem] lg:p-0 xl:bottom-[14%] xl:left-[10.5%] xl:w-[56%]">
+            <div className="animate-fade-rise-delay relative z-10 grid min-h-[32rem] content-end gap-3 p-3 pt-44 sm:min-h-[41rem] sm:grid-cols-2 sm:p-5 sm:pt-56 lg:absolute lg:bottom-[6.5%] lg:left-[8%] lg:min-h-0 lg:w-[70%] lg:max-w-[64rem] lg:gap-4 lg:p-0 xl:bottom-[7%] xl:left-[8%] xl:w-[69%]">
               <HomeVideoCard
                 label="Intro Candy English 1"
                 src="/brand/intro-1.mp4"
