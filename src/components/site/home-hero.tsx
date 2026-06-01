@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { HomeHeroLoopVideo } from "@/components/site/home-hero-loop-video";
 import { HomeVideoCard } from "@/components/site/home-video-card";
 import { Button } from "@/components/ui/button";
 
@@ -7,7 +8,7 @@ export const homeMethodVideoUrl =
   "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4";
 
 export const homeLoopVideoUrl = "/brand/home.mp4";
-export const homeHeroVideoUrl = "/brand/home-candy.mp4";
+export const homeHeroVideoUrl = "/brand/home-candy-2.mp4";
 
 type HomeHeroProps = {
   content?: {
@@ -33,30 +34,23 @@ export function HomeHero({ content }: HomeHeroProps) {
         <h1 className="sr-only">{title}</h1>
         <p className="sr-only">{description}</p>
 
-        <div className="home-mockup-stage relative mx-auto aspect-video w-[min(94vw,82rem)] overflow-visible rounded-[2rem] shadow-2xl shadow-primary/15">
-          <video
-            aria-label="Fundo animado Candy English"
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            className="home-candy-video-bg h-full w-full rounded-[2rem] object-contain"
-          >
-            <source src={homeHeroVideoUrl} type="video/mp4" />
-          </video>
-          <HomeVideoCard
-            label="Intro Candy English 2"
-            src="/brand/intro-2.mp4"
-            className="left-[1.9%] top-[10.4%] h-[50.8%] w-[39.2%] rotate-[1.4deg]"
-            controlsClassName="left-0 top-[100%] w-[78%]"
-          />
-          <HomeVideoCard
-            label="Intro Candy English 1"
-            src="/brand/intro-1.mp4"
-            className="left-[43.7%] top-[22.7%] h-[46%] w-[34.6%] rotate-[-1deg]"
-            controlsClassName="left-0 top-[121%] w-[105%]"
-          />
+        <div className="mx-auto grid w-full max-w-[86rem] gap-5 lg:grid-cols-[0.84fr_1.16fr] lg:items-stretch">
+          <div className="animate-fade-rise overflow-hidden rounded-[2rem] border border-white/80 bg-white/[0.72] p-2 shadow-2xl shadow-primary/14 backdrop-blur-sm">
+            <HomeHeroLoopVideo label="Home Candy English" src={homeHeroVideoUrl} />
+          </div>
+
+          <div className="animate-fade-rise-delay grid gap-4 md:grid-cols-2 lg:min-h-full">
+            <HomeVideoCard
+              label="Intro Candy English 1"
+              src="/brand/intro-1.mp4"
+              title="Intro 1"
+            />
+            <HomeVideoCard
+              label="Intro Candy English 2"
+              src="/brand/intro-2.mp4"
+              title="Intro 2"
+            />
+          </div>
         </div>
 
         <div className="mt-4 flex justify-center sm:mt-5">
