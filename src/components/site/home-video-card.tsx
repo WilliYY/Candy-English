@@ -74,12 +74,12 @@ export function HomeVideoCard({
   };
 
   return (
-    <article className={cn("absolute overflow-visible", className)}>
+    <article className={cn("absolute origin-center overflow-visible", className)}>
       <div className="h-full w-full overflow-hidden bg-white">
         <video
           ref={videoRef}
           aria-label={label}
-          className="h-full w-full bg-white object-cover object-center"
+          className="h-full w-full bg-white object-contain object-center"
           muted={isMuted}
           playsInline
           preload="metadata"
@@ -90,7 +90,7 @@ export function HomeVideoCard({
 
       <div
         className={cn(
-          "absolute left-1/2 grid h-[20%] w-full -translate-x-1/2 grid-cols-[1fr_1fr_0.7fr] gap-2",
+          "absolute grid h-[20%] w-full grid-cols-[1fr_1fr_0.7fr] gap-2",
           controlsClassName,
         )}
       >

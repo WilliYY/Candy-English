@@ -29,11 +29,11 @@ export function HomeHero({ content }: HomeHeroProps) {
       <div className="candy-home-clean-field absolute inset-0 z-0" />
       <div className="absolute inset-x-0 top-0 z-[1] h-44 bg-gradient-to-b from-[#fce5d8]/60 to-transparent" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col justify-center px-4 pb-20 pt-32 sm:px-6 sm:pb-24 sm:pt-40 lg:px-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-[92rem] flex-col justify-center px-3 pb-20 pt-28 sm:px-5 sm:pb-24 sm:pt-36 lg:px-8">
         <h1 className="sr-only">{title}</h1>
         <p className="sr-only">{description}</p>
 
-        <div className="home-mockup-stage relative mx-auto aspect-video w-full max-w-[70rem] overflow-visible rounded-[2rem] shadow-2xl shadow-primary/15">
+        <div className="home-mockup-stage relative mx-auto aspect-video w-[min(94vw,82rem)] overflow-visible rounded-[2rem] shadow-2xl shadow-primary/15">
           <video
             aria-label="Fundo animado Candy English"
             autoPlay
@@ -48,14 +48,14 @@ export function HomeHero({ content }: HomeHeroProps) {
           <HomeVideoCard
             label="Intro Candy English 2"
             src="/brand/intro-2.mp4"
-            className="left-[4.1%] top-[11.8%] h-[40.8%] w-[35.4%]"
-            controlsClassName="top-[111%] w-[91%]"
+            className="left-[4.7%] top-[12.4%] h-[37.8%] w-[30.4%] rotate-[1.4deg]"
+            controlsClassName="left-[-9%] top-[131%] w-[100%]"
           />
           <HomeVideoCard
             label="Intro Candy English 1"
             src="/brand/intro-1.mp4"
-            className="left-[38.4%] top-[24%] h-[43.5%] w-[37.5%]"
-            controlsClassName="top-[104%] w-[91%]"
+            className="left-[40.8%] top-[24.3%] h-[38.4%] w-[31.8%] rotate-[-1deg]"
+            controlsClassName="left-[-21%] top-[143%] w-[122%]"
           />
         </div>
 
