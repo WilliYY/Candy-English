@@ -134,14 +134,15 @@ Helpers:
 2. Widget identifica apenas contexto leve da tela atual (`area` e `task`) para adaptar titulo, texto de apoio e atalhos de estudo.
 3. O `RootLayout` chama `auth()` e passa para a Catty apenas o nome do usuario logado, quando existe; o widget usa o primeiro nome em baloes visuais locais no AVA.
 4. Para usuarios logados no AVA, a Catty fechada alterna baloes fofos a cada 10 segundos, com saudacao por horario, sem chamar IA.
-5. Fora do AVA logado, o widget mostra a orientacao para entrar na conta e nao envia mensagem para a API.
-6. Widget envia para `/api/catty/chat` apenas quando o usuario logado no AVA manda uma mensagem real: mensagem atual, ate 8 mensagens recentes e contexto leve.
-7. A rota chama `auth()` antes de parsear a mensagem; sem sessao ativa e role `ADMIN`, `TEACHER` ou `STUDENT`, retorna 401 amigavel.
-8. Para usuario autorizado, a rota valida o payload com Zod, aplica limite simples por IP e usa Gemini quando `GEMINI_API_KEY` existe.
-9. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
-10. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
-11. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-12. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+5. Para visitante sem login no site ou login, a Catty funciona apenas como mascote visual: alterna baloes publicos a cada 10 segundos e, no clique, mostra um aviso pequeno para entrar no AVA ou virar aluno Candy.
+6. Fora do AVA logado, o widget nao abre conversa real, nao envia mensagem para a API e nao chama IA.
+7. Widget envia para `/api/catty/chat` apenas quando o usuario logado no AVA manda uma mensagem real: mensagem atual, ate 8 mensagens recentes e contexto leve.
+8. A rota chama `auth()` antes de parsear a mensagem; sem sessao ativa e role `ADMIN`, `TEACHER` ou `STUDENT`, retorna 401 amigavel.
+9. Para usuario autorizado, a rota valida o payload com Zod, aplica limite simples por IP e usa Gemini quando `GEMINI_API_KEY` existe.
+10. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
+11. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+12. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+13. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 

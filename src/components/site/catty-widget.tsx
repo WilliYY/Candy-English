@@ -38,6 +38,41 @@ type CattyWidgetProps = {
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
 const CATTY_AUTH_REQUIRED_REPLY =
   "Awnn, eu sou só para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
+const CATTY_PUBLIC_LOCKED_REPLY =
+  "Awnn, meu chat e so para alunos Candy. Entra no AVA ou vem virar aluno para conversar comigo.";
+
+const publicBalloonTemplates = [
+  "Miaww, a Catty ta aqui e a profa tambem. Vem ser aluno Candy!",
+  "Pss pss, quer aprender ingles de um jeito mais docinho?",
+  "Miaww, eu guardo as melhores dicas para alunos Candy.",
+  "A Catty ta feliz porque hoje tem English!",
+  "Vem estudar com a gente. Eu prometo miar motivacao.",
+  "Ingles pode ser leve, fofo e poderoso. Vem pra Candy!",
+  "Miaww, voce ainda nao e aluno Candy? Ta esperando o que?",
+  "A profa ensina, eu acompanho e voce evolui.",
+  "Aqui tem aula, carinho e um pouquinho de magia Candy.",
+  "Quer destravar o ingles? A Catty te chama!",
+  "Vem ser aluno Candy e ganhar sua parceira de estudos.",
+  "Miaww, seu futuro bilingue ta piscando pra voce.",
+  "Eu sou pequena, mas minha vontade de te ver falando ingles e gigante.",
+  "English fica mais facil quando tem Candy no caminho.",
+  "A Catty ta te esperando do lado de dentro do AVA.",
+  "Entre para a Candy e venha estudar comigo.",
+  "Miau miau, aula boa e aula com Candy.",
+  "Voce traz a vontade, a Candy traz o metodo.",
+  "Quer aprender sem aquele ingles travado? Vem!",
+  "A profa prepara a aula e eu preparo o incentivo.",
+  "Hoje e um otimo dia para comecar ingles.",
+  "Miaww, eu tenho dicas, mas so libero para alunos Candy.",
+  "Candy English: porque estudar tambem pode ser gostoso.",
+  "Vem virar aluno Candy e desbloquear a Catty.",
+  "Aqui a gente aprende ingles sem cara de escola chata.",
+  "Eu vi um aluno evoluindo hoje. O proximo pode ser voce.",
+  "Miaww, seu ingles merece um upgrade fofo.",
+  "A Catty ta online, mas so alunos Candy conversam comigo.",
+  "Quer praticar ingles com uma gatinha estudiosa?",
+  "Vem para a Candy. Eu ja deixei seu cantinho preparado.",
+] as const;
 
 const loggedInBalloonTemplates = [
   "Miaww, {name}! Catty ta on. Let's practice! 🐱",
@@ -363,6 +398,18 @@ function getRandomLoggedInBalloon(name: string, current?: string) {
   return template.replace(/\{name\}/g, name).replace(/\{greeting\}/g, greeting);
 }
 
+function getRandomPublicBalloon(current?: string) {
+  const availableTemplates = publicBalloonTemplates.filter(
+    (template) => template !== current,
+  );
+  const templates =
+    availableTemplates.length > 0
+      ? availableTemplates
+      : publicBalloonTemplates;
+
+  return templates[Math.floor(Math.random() * templates.length)];
+}
+
 function isLoggedInAvaArea(context: CattyPageContext) {
   return (
     context.area === "admin" ||
@@ -371,10 +418,13 @@ function isLoggedInAvaArea(context: CattyPageContext) {
   );
 }
 
+function isPublicCattyArea(context: CattyPageContext) {
+  return context.area === "site" || context.area === "login";
+}
+
 export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [hasOpened, setHasOpened] = useState(false);
   const [context, setContext] = useState<CattyPageContext>({
     area: "unknown",
   });
@@ -387,6 +437,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [loggedInBalloon, setLoggedInBalloon] = useState("");
+  const [publicBalloon, setPublicBalloon] = useState("");
+  const [publicNoticeVisible, setPublicNoticeVisible] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
@@ -396,6 +448,12 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   );
   const canUseCattyChat = Boolean(sessionUser && isLoggedInAvaArea(context));
   const showLoggedInBalloons = canUseCattyChat;
+  const showPublicBalloons = Boolean(
+    !sessionUser && isPublicCattyArea(context) && !open,
+  );
+  const visiblePublicBalloon = publicNoticeVisible
+    ? CATTY_PUBLIC_LOCKED_REPLY
+    : publicBalloon;
   const hasWhatsAppWidget =
     !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
   const visibleContextCopy = canUseCattyChat
@@ -445,9 +503,48 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     return () => window.clearInterval(intervalId);
   }, [displayName, showLoggedInBalloons]);
 
+  useEffect(() => {
+    if (!showPublicBalloons) {
+      setPublicBalloon("");
+      return;
+    }
+
+    if (publicNoticeVisible) {
+      return;
+    }
+
+    setPublicBalloon((current) => getRandomPublicBalloon(current));
+
+    const intervalId = window.setInterval(() => {
+      setPublicBalloon((current) => getRandomPublicBalloon(current));
+    }, LOGGED_IN_BALLOON_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [publicNoticeVisible, showPublicBalloons]);
+
+  useEffect(() => {
+    if (!publicNoticeVisible) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPublicNoticeVisible(false);
+    }, 7000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [publicNoticeVisible]);
+
   function openCatty() {
-    setContext(getCurrentPageContext());
-    setHasOpened(true);
+    const currentContext = getCurrentPageContext();
+
+    setContext(currentContext);
+
+    if (!sessionUser || !isLoggedInAvaArea(currentContext)) {
+      setOpen(false);
+      setPublicNoticeVisible(true);
+      return;
+    }
+
     setOpen(true);
   }
 
@@ -534,7 +631,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         hasWhatsAppWidget ? "bottom-20 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
-      {open ? (
+      {open && canUseCattyChat ? (
         <section className="grid h-[min(620px,calc(100vh-6rem))] w-[min(420px,calc(100vw-2rem))] grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-2xl shadow-primary/20">
           <header className="relative overflow-hidden bg-primary px-4 py-4 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">
@@ -688,9 +785,12 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         </div>
       ) : null}
 
-      {!open && !showLoggedInBalloons && !hasOpened && !hasWhatsAppWidget ? (
-        <div className="catty-pop pointer-events-none mr-1 max-w-[230px] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
-          {CATTY_AUTH_REQUIRED_REPLY}
+      {!open &&
+      !showLoggedInBalloons &&
+      (showPublicBalloons || publicNoticeVisible) &&
+      visiblePublicBalloon ? (
+        <div className="catty-pop pointer-events-none mr-1 max-w-[min(280px,calc(100vw-5rem))] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
+          {visiblePublicBalloon}
         </div>
       ) : null}
 
@@ -699,13 +799,13 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         size="lg"
         className="catty-launcher h-16 rounded-full px-3 shadow-2xl shadow-primary/20 sm:px-4"
         onClick={() => {
-          if (open) {
+          if (open && canUseCattyChat) {
             setOpen(false);
           } else {
             openCatty();
           }
         }}
-        aria-expanded={open}
+        aria-expanded={open || publicNoticeVisible}
       >
         <span className="relative mr-2 flex size-11 overflow-hidden rounded-full border-2 border-white/55 bg-white shadow-sm">
           <Image
