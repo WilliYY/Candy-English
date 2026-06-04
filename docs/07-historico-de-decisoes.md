@@ -128,6 +128,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/layout.tsx`, `src/components/site/catty-widget.tsx`, `README.md` e docs oficiais.
 - Riscos/cuidados: usar so primeiro nome quando necessario; nao exibir dados sensiveis; manter baloes pequenos para nao cobrir WhatsApp ou botoes criticos.
 
+### 2026-06-04 - Catty restrita a usuario logado no AVA
+
+- Decisao: `/api/catty/chat` passa a exigir `auth()` com role `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel e nao chama IA nem fallback.
+- Motivo: impedir que a Catty vire chat publico do site e reduzir risco de custo externo ou uso indevido.
+- Impacto: `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `README.md` e docs oficiais.
+- Riscos/cuidados: manter a chamada visual publica sem permitir resposta fora do AVA logado; preservar admin, teacher e student.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

@@ -36,6 +36,8 @@ type CattyWidgetProps = {
 };
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
+const CATTY_AUTH_REQUIRED_REPLY =
+  "Entre na sua conta do AVA para conversar com a Catty.";
 
 const loggedInBalloonTemplates = [
   "Miaww, {name}! Catty ta on. Let's practice! 🐱",
@@ -392,9 +394,16 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     () => getFirstDisplayName(sessionUser?.name),
     [sessionUser?.name],
   );
-  const showLoggedInBalloons = Boolean(sessionUser && isLoggedInAvaArea(context));
+  const canUseCattyChat = Boolean(sessionUser && isLoggedInAvaArea(context));
+  const showLoggedInBalloons = canUseCattyChat;
   const hasWhatsAppWidget =
     !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
+  const visibleContextCopy = canUseCattyChat
+    ? contextCopy
+    : {
+        line: "Entre na sua conta do AVA para conversar comigo.",
+        title: "Catty no AVA",
+      };
 
   useEffect(() => {
     if (!open) return;
@@ -448,6 +457,31 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     if (!clean || isThinking) return;
 
     const currentContext = getCurrentPageContext();
+
+    if (!canUseCattyChat) {
+      setContext(currentContext);
+      setDraft("");
+      setMessages((current) => {
+        const lastMessage = current.at(-1);
+
+        if (
+          lastMessage?.from === "catty" &&
+          lastMessage.text === CATTY_AUTH_REQUIRED_REPLY
+        ) {
+          return current;
+        }
+
+        return [
+          ...current,
+          {
+            from: "catty",
+            text: CATTY_AUTH_REQUIRED_REPLY,
+          },
+        ];
+      });
+      return;
+    }
+
     const userMessage: CattyMessage = { from: "user", text: clean };
     const outgoingHistory = [...messages, userMessage].slice(-8);
 
@@ -470,7 +504,9 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       });
       const payload = (await response.json().catch(() => null)) as unknown;
       const reply =
-        readReply(payload) || buildFallbackCattyReply(clean, currentContext);
+        response.status === 401
+          ? readReply(payload) || CATTY_AUTH_REQUIRED_REPLY
+          : readReply(payload) || buildFallbackCattyReply(clean, currentContext);
 
       setMessages((current) => [
         ...current,
@@ -520,10 +556,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                     <Sparkles aria-hidden="true" className="size-4" />
                   </div>
                   <span className="text-xs font-medium text-primary-foreground/80">
-                    {contextCopy.title} da Candy
+                    {visibleContextCopy.title} da Candy
                   </span>
                   <p className="mt-1 max-w-64 text-xs leading-5 text-primary-foreground/80">
-                    {contextCopy.line}
+                    {visibleContextCopy.line}
                   </p>
                 </div>
               </div>
@@ -555,19 +591,27 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
             aria-busy={isThinking}
             aria-live="polite"
           >
-            {messages.map((message, index) => (
+            {canUseCattyChat ? (
+              messages.map((message, index) => (
+                <p
+                  key={`${message.from}-${index}`}
+                  className={
+                    message.from === "catty"
+                      ? "max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
+                      : "ml-auto max-w-[88%] rounded-2xl rounded-tr-sm bg-primary p-3 text-sm leading-6 text-primary-foreground shadow-sm"
+                  }
+                >
+                  {message.text}
+                </p>
+              ))
+            ) : (
               <p
-                key={`${message.from}-${index}`}
-                className={
-                  message.from === "catty"
-                    ? "max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
-                    : "ml-auto max-w-[88%] rounded-2xl rounded-tr-sm bg-primary p-3 text-sm leading-6 text-primary-foreground shadow-sm"
-                }
+                className="max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
               >
-                {message.text}
+                {CATTY_AUTH_REQUIRED_REPLY}
               </p>
-            ))}
-            {isThinking ? (
+            )}
+            {isThinking && canUseCattyChat ? (
               <div className="flex max-w-[88%] items-center gap-2 rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-muted-foreground shadow-sm">
                 <span>Catty esta pensando</span>
                 <span className="catty-typing-dot" aria-hidden="true" />
@@ -598,7 +642,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                     variant="secondary"
                     size="sm"
                     className="h-auto justify-start whitespace-normal rounded-xl px-3 py-2 text-left text-xs leading-5"
-                    disabled={isThinking}
+                    disabled={isThinking || !canUseCattyChat}
                     onClick={() => {
                       void sendMessage(reply.text);
                     }}
@@ -621,14 +665,14 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Digite em portugues ou English"
                 className="rounded-xl"
-                disabled={isThinking}
+                disabled={isThinking || !canUseCattyChat}
                 maxLength={600}
               />
               <Button
                 type="submit"
                 size="icon"
                 className="shrink-0 rounded-xl"
-                disabled={isThinking}
+                disabled={isThinking || !canUseCattyChat}
               >
                 <Send aria-hidden="true" />
                 <span className="sr-only">Enviar</span>
@@ -646,7 +690,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       {!open && !showLoggedInBalloons && !hasOpened && !hasWhatsAppWidget ? (
         <div className="catty-pop pointer-events-none mr-1 max-w-[230px] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
-          Hi! Vamos estudar um pouquinho?
+          {CATTY_AUTH_REQUIRED_REPLY}
         </div>
       ) : null}
 

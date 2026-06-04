@@ -55,6 +55,7 @@ Rotas protegidas:
 - `/ava/contracts/[contractId]`
 - `/ava/homework-assets/[homeworkId]`
 - `/ava/candy-xp-assets/[activityId]`
+- `/api/catty/chat`
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -79,6 +80,7 @@ Rotas protegidas:
 - Atividades Candy XP objetivas podem liberar XP automaticamente no servidor; respostas escritas exigem revisao admin.
 - Futuros jogos ou missoes precisam validar sessao, role, dono dos dados e `sourceKey` antes de conceder XP.
 - Catty pode receber do layout apenas o nome do usuario logado para baloes visuais locais; esse nome nao autoriza leitura de dados internos nem deve ser usado para enviar contratos, respostas, pagamentos ou credenciais para IA.
+- `/api/catty/chat` deve responder apenas para sessao ativa com role `ADMIN`, `TEACHER` ou `STUDENT`; usuario sem sessao recebe 401 amigavel e nao aciona Gemini, OpenAI ou fallback.
 
 ## Decisoes tecnicas tomadas
 
@@ -94,6 +96,7 @@ Rotas protegidas:
 - O ledger Candy XP usa `CandyXpEvent.userId + sourceKey` como defesa anti-replay/anti-duplicacao, alem das validacoes de role nas actions e paginas que sincronizam XP.
 - As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage.
 - O `RootLayout` pode chamar `auth()` para passar somente `session.user.name` ao widget da Catty, mantendo a deteccao de login no servidor e sem depender de descoberta client-side.
+- A rota da Catty chama `auth()` no servidor antes de processar a mensagem; o callback JWT/session ja invalida usuario inativo, mudanca de role e `sessionVersion` antiga.
 
 ## Riscos ao alterar esta parte
 
@@ -104,6 +107,7 @@ Rotas protegidas:
 - Servir arquivo de homework direto de `storage/` sem checar role/vinculo vaza material privado.
 - Servir arquivo Candy XP direto de `storage/` sem checar publicacao/assignment vaza atividade privada.
 - Logar ou serializar valores revelados de `AdminCredential` compromete APIs externas.
+- Remover a protecao server-side da Catty transforma a assistente em chat publico e pode gerar custo externo com Gemini/OpenAI.
 
 ## Pendencias
 

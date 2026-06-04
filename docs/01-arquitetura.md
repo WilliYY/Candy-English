@@ -11,7 +11,7 @@ Camadas principais:
 - `src/app/(site)/`: site institucional.
 - `src/app/ava/`: areas logadas do AVA.
 - `src/app/api/`: Auth.js e healthcheck.
-- `src/app/api/catty/chat/route.ts`: endpoint server-side da Catty com Gemini padrao, OpenAI acionado por chamada nominal e fallback local.
+- `src/app/api/catty/chat/route.ts`: endpoint server-side da Catty protegido por `auth()`, com Gemini padrao, OpenAI acionado por chamada nominal e fallback local apenas para usuario autorizado.
 - `src/components/site/`: header, footer, home, paginas institucionais, Catty e WhatsApp.
 - `src/components/ava/`: paineis e formularios do AVA.
 - `src/components/ui/`: componentes base shadcn/ui.
@@ -51,7 +51,8 @@ Servicos Docker:
 - APIs e senhas ficam em modulo interno do `ADMIN`, com valor criptografado e revelacao explicita na UI.
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
-- Catty so envia para Gemini/OpenAI a conversa digitada no widget e contexto leve de rota/tarefa, sem dados de sessao, senha, banco ou informacoes internas do AVA.
+- Catty pode aparecer fora do AVA como chamada visual, mas a conversa real e `/api/catty/chat` exigem sessao ativa e role valida.
+- Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado e contexto leve de rota/tarefa, sem dados de sessao, senha, banco ou informacoes internas do AVA.
 
 ## Decisoes tecnicas tomadas
 
@@ -72,7 +73,8 @@ Servicos Docker:
 - Headers basicos de seguranca ficam em `next.config.ts`; `X-Frame-Options=SAMEORIGIN` permite previews internos protegidos, como contratos PDF no AVA, sem liberar embed por sites externos.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
-- Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback quando a chave ou chamada falhar.
+- Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
+- Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback autorizado quando a chave ou chamada falhar.
 - Catty usa o contexto de `area` e `task` apenas para ajustar atalhos e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
 - Candy XP grava eventos persistidos por usuario em `CandyXpEvent`, recalcula `CandyXpProfile` por soma de eventos e aplica a curva sem teto fixo em `requiredForCandyLevel`.
 - Cada evento de XP usa `@@unique([userId, sourceKey])` para impedir pontuacao duplicada da mesma tarefa, homework, feedback, aula, rotina ou missao.
@@ -89,7 +91,7 @@ Servicos Docker:
 - Expor assets Candy XP fora de rota protegida pode vazar historias publicadas apenas para alunos especificos.
 - Otimizar PDF de forma agressiva pode prejudicar leitura; o preset padrao deve continuar equilibrado e o fallback precisa preservar o original quando houver falha.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
-- Remover fallback, limite de uso ou restricao de contexto da Catty pode quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
+- Remover protecao de sessao, fallback, limite de uso ou restricao de contexto da Catty pode transformar a assistente em chat publico, quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.
 
 ## Pendencias

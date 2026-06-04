@@ -6,6 +6,8 @@ import {
   sanitizeCattyReply,
   shouldUseOpenAiForCatty,
 } from "@/lib/catty";
+import { auth } from "@/lib/auth";
+import { isRole } from "@/lib/roles";
 import { cattyChatSchema } from "@/lib/validations/catty";
 
 export const runtime = "nodejs";
@@ -37,6 +39,8 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 type CattyAiSource = "gemini" | "openai";
+const CATTY_AUTH_REQUIRED_REPLY =
+  "Entre na sua conta do AVA para conversar com a Catty.";
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -291,6 +295,19 @@ async function requestCattyAiReply(input: string, sources: CattyAiSource[]) {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user?.id || !isRole(session.user.role)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        reply: CATTY_AUTH_REQUIRED_REPLY,
+        source: "unauthorized",
+      },
+      { status: 401 },
+    );
+  }
+
   let payload: unknown;
 
   try {
