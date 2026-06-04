@@ -33,6 +33,7 @@ Ao receber o prompt minimo, o agente deve:
 
 - Site institucional e AVA proprio em `/ava`.
 - Roles atuais: `ADMIN`, `TEACHER` e `STUDENT`.
+- Login do AVA tem pre-cadastro publico `Quero ser aluno Candy`; ele grava `StudentPreRegistration.PENDING` e nunca cria usuario, senha ou sessao automaticamente.
 - Admin gerencia usuarios, redefinicao de senha, vinculos, contratos, financeiro, agenda, manutencao e cofre de APIs/senhas.
 - Teacher cria aulas, homework interativo, materiais, feedback, mensagens, contratos e aula ao vivo.
 - Student acessa aulas, homework, mensagens, contratos, perfil, avatar e aula ao vivo.

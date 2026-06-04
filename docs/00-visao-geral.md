@@ -35,6 +35,7 @@ Rotas principais:
 - O AVA deve permanecer em `/ava`.
 - `ADMIN`, `TEACHER` e `STUDENT` sao os perfis atuais.
 - Areas protegidas devem validar permissao no servidor.
+- Pre-cadastro publico no login deve salvar apenas uma solicitacao pendente; nao pode criar usuario, senha, role ou sessao automaticamente.
 - Admins podem criar usuarios, ativar/desativar acessos e redefinir senhas pela interface protegida.
 - Admins podem registrar APIs/senhas em `/ava/admin?task=apis-senhas`; os valores ficam criptografados e so devem ser revelados pela UI protegida.
 - O aluno so acessa dados do proprio perfil.

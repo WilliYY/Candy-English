@@ -324,6 +324,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/storage.ts`, `src/app/ava/teacher/actions.ts`, `docs/15-homework-interativo.md` e docs oficiais.
 - Riscos/cuidados: imagens continuam sem compressao nesta fase para nao alterar visual; PDFs devem manter fallback para original, page count estimado e mensagem amigavel para a teacher.
 
+### 2026-06-04 - Pre-cadastro publico sem liberar login
+
+- Decisao: adicionar `StudentPreRegistration` e um formulario `Quero ser aluno Candy` em `/ava/login` para interessados enviarem dados sem criar acesso automatico.
+- Motivo: captar interessados direto no AVA mantendo o login protegido; a equipe Candy analisa a solicitacao antes de criar usuario, senha e vinculos.
+- Impacto: `prisma/schema.prisma`, migration `20260604153000_student_pre_registration`, `src/app/ava/login/actions.ts`, `src/components/ava/login-form.tsx`, `src/components/ava/student-pre-registration-form.tsx`, `src/lib/validations/pre-registration.ts` e docs oficiais.
+- Riscos/cuidados: o email da solicitacao e unico e tambem e comparado com `User.email`; a action publica retorna mensagem generica em duplicidade para evitar exposicao de cadastro e nunca chama Auth.js para iniciar sessao.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

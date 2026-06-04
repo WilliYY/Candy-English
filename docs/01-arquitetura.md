@@ -44,6 +44,7 @@ Servicos Docker:
 
 - O site institucional e publico; o AVA e protegido.
 - `/ava` redireciona visitante para `/ava/login` e usuario logado para a area correta.
+- `/ava/login` pode receber pre-cadastro publico, mas ele grava apenas `StudentPreRegistration` pendente e nao participa do Auth.js.
 - `ADMIN` pode supervisionar area teacher/student, mas dados sensiveis ainda exigem validacao.
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
@@ -59,6 +60,7 @@ Servicos Docker:
 - Next.js App Router e usado em todo o projeto.
 - Autorizacao de paginas fica em server components com `requireAvaRole`.
 - Escritas sensiveis ficam em server actions.
+- `src/app/ava/login/actions.ts` contem a action publica de pre-cadastro; ela valida dados, evita duplicidade de email e nao cria `User`.
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
@@ -93,6 +95,7 @@ Servicos Docker:
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
 - Remover protecao de sessao, fallback, limite de uso ou restricao de contexto da Catty pode transformar a assistente em chat publico, quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.
+- Transformar uma solicitacao `StudentPreRegistration` em usuario automaticamente sem revisao admin quebraria o controle de entrada no AVA.
 
 ## Pendencias
 

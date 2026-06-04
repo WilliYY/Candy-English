@@ -37,11 +37,13 @@ Componentes:
 - `src/components/ava/chat-thread-panel.tsx`
 - `src/components/ava/live-session-forms.tsx`
 - `src/components/ava/profile-forms.tsx`
+- `src/components/ava/student-pre-registration-form.tsx`
 - `src/components/site/catty-widget.tsx`
 
 Actions:
 
 - `src/app/ava/admin/actions.ts`
+- `src/app/ava/login/actions.ts`
 - `src/app/ava/teacher/actions.ts`
 - `src/app/ava/student/actions.ts`
 - `src/app/ava/candy-xp/actions.ts`
@@ -60,6 +62,16 @@ Helpers:
 2. Auth.js valida email, senha, usuario ativo e manutencao.
 3. Sessao JWT recebe `id` e `role`.
 4. Usuario vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`.
+
+### Pre-cadastro de interessado
+
+1. Visitante abre `/ava/login` e clica em `Quero ser aluno Candy`.
+2. O formulario coleta nome, email, telefone, cidade/endereco, data de nascimento, contatos, documento, responsavel, observacoes e objetivo com o ingles.
+3. `requestStudentPreRegistration` valida os dados no servidor e grava `StudentPreRegistration` com status `PENDING`.
+4. O fluxo nao cria `User`, nao cria senha, nao define role e nao gera sessao.
+5. Se o email ja existir como usuario ou solicitacao, o sistema nao cria duplicidade e retorna a mesma mensagem amigavel para evitar exposicao de cadastro.
+6. A pessoa ve a confirmacao: `Recebemos seu cadastro. A equipe Candy vai analisar e entrar em contato.`
+7. A liberacao real continua manual: admin deve criar o aluno no painel protegido quando decidir aprovar.
 
 ### Admin
 
@@ -213,6 +225,7 @@ Helpers:
 ## Regras de negocio que precisam ser preservadas
 
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
+- Pre-cadastro publico nunca deve liberar login automaticamente; ele apenas cria solicitacao pendente para analise.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem.
 - Student tem botoes sempre visiveis.
 - Candy XP deve continuar sem ranking publico; XP, streaks, badges e missoes sao persistidos por usuario e nao podem vazar dados de outras roles.

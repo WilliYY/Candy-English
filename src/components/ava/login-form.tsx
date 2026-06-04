@@ -1,12 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LoaderCircle, LogIn } from "lucide-react";
+import { HeartHandshake, LoaderCircle, LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
+import { StudentPreRegistrationForm } from "@/components/ava/student-pre-registration-form";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -38,6 +39,7 @@ export function LoginForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showPreRegistration, setShowPreRegistration] = useState(false);
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -77,74 +79,94 @@ export function LoginForm({
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
-      <FieldGroup>
-        <Field data-invalid={Boolean(emailError)}>
-          <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input
-            id="email"
-            type="email"
-            autoComplete="email"
-            aria-invalid={Boolean(emailError)}
-            disabled={isSubmitting}
-            {...form.register("email")}
-          />
-          <FieldError errors={[emailError]} />
-        </Field>
+    <div className="flex flex-col gap-6">
+      <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
+        <FieldGroup>
+          <Field data-invalid={Boolean(emailError)}>
+            <FieldLabel htmlFor="email">Email</FieldLabel>
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              aria-invalid={Boolean(emailError)}
+              disabled={isSubmitting}
+              {...form.register("email")}
+            />
+            <FieldError errors={[emailError]} />
+          </Field>
 
-        <Field data-invalid={Boolean(passwordError)}>
-          <FieldLabel htmlFor="password">Senha</FieldLabel>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            aria-invalid={Boolean(passwordError)}
-            disabled={isSubmitting}
-            {...form.register("password")}
-          />
-          <FieldError errors={[passwordError]} />
-        </Field>
-      </FieldGroup>
+          <Field data-invalid={Boolean(passwordError)}>
+            <FieldLabel htmlFor="password">Senha</FieldLabel>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              aria-invalid={Boolean(passwordError)}
+              disabled={isSubmitting}
+              {...form.register("password")}
+            />
+            <FieldError errors={[passwordError]} />
+          </Field>
+        </FieldGroup>
 
-      {authError ? (
-        <p className="text-sm text-destructive" role="alert">
-          {authError}
-        </p>
-      ) : null}
-
-      <Button type="submit" size="lg" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : (
-          <LogIn data-icon="inline-start" />
-        )}
-        Entrar
-      </Button>
-
-      <div className="flex flex-col gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="lg"
-          disabled={!googleEnabled || isSubmitting}
-          onClick={() => {
-            void signIn("google", {
-              callbackUrl: getSafeCallbackUrl(searchParams.get("callbackUrl")),
-            });
-          }}
-        >
-          <span aria-hidden="true" className="text-base font-semibold">
-            G
-          </span>
-          Entrar com Google
-        </Button>
-        {!googleEnabled ? (
-          <p className="break-words text-xs leading-5 text-muted-foreground">
-            O acesso com Google sera ativado quando a conta Google da Candy
-            estiver conectada ao AVA.
+        {authError ? (
+          <p className="text-sm text-destructive" role="alert">
+            {authError}
           </p>
         ) : null}
+
+        <Button type="submit" size="lg" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <LogIn data-icon="inline-start" />
+          )}
+          Entrar
+        </Button>
+
+        <div className="flex flex-col gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="lg"
+            disabled={!googleEnabled || isSubmitting}
+            onClick={() => {
+              void signIn("google", {
+                callbackUrl: getSafeCallbackUrl(searchParams.get("callbackUrl")),
+              });
+            }}
+          >
+            <span aria-hidden="true" className="text-base font-semibold">
+              G
+            </span>
+            Entrar com Google
+          </Button>
+          {!googleEnabled ? (
+            <p className="break-words text-xs leading-5 text-muted-foreground">
+              O acesso com Google sera ativado quando a conta Google da Candy
+              estiver conectada ao AVA.
+            </p>
+          ) : null}
+        </div>
+      </form>
+
+      <div className="border-t border-primary/10 pt-5">
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          className="w-full"
+          onClick={() => setShowPreRegistration((current) => !current)}
+          aria-expanded={showPreRegistration}
+        >
+          <HeartHandshake data-icon="inline-start" />
+          {showPreRegistration
+            ? "Fechar pre-cadastro"
+            : "Quero ser aluno Candy"}
+        </Button>
       </div>
-    </form>
+
+      {showPreRegistration ? <StudentPreRegistrationForm /> : null}
+    </div>
   );
 }

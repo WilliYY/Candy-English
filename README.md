@@ -21,6 +21,7 @@ Ja existe:
 - teacher com aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos, mensagens e card Teacher XP persistente;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, aula ao vivo, card Student XP persistente no resumo e area Candy XP com missoes de historia, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
+- pre-cadastro publico no login do AVA para interessados solicitarem contato, salvo como pendente sem criar usuario, senha ou sessao;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;

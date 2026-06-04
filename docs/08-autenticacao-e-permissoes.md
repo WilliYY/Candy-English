@@ -13,11 +13,13 @@ Arquivos:
 - `src/lib/roles.ts`
 - `src/types/next-auth.d.ts`
 - `src/lib/validations/auth.ts`
+- `src/lib/validations/pre-registration.ts`
 - `src/lib/validations/admin-users.ts`
 - `src/lib/validations/admin-credentials.ts`
 - `src/lib/validations/candy-xp-activities.ts`
 - `src/lib/admin-credentials.ts`
 - `src/app/ava/admin/actions.ts`
+- `src/app/ava/login/actions.ts`
 - `src/app/ava/candy-xp/actions.ts`
 - `src/app/api/auth/[...nextauth]/route.ts`
 - `src/app/ava/login/page.tsx`
@@ -28,12 +30,14 @@ Arquivos:
 - `src/app/ava/homework-assets/[homeworkId]/route.ts`
 - `src/app/ava/candy-xp-assets/[activityId]/route.ts`
 - `src/components/ava/login-form.tsx`
+- `src/components/ava/student-pre-registration-form.tsx`
 
 Tabelas:
 
 - `User`
 - `LoginAttempt`
 - `StudentProfile`
+- `StudentPreRegistration`
 - `TeacherProfile`
 - `StudentTeacherAssignment`
 - `AdminCredential`
@@ -66,6 +70,7 @@ Rotas protegidas:
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Google login so aceita email ja cadastrado e ativo.
+- Pre-cadastro publico no login apenas cria `StudentPreRegistration.PENDING`; nao cria senha, `User`, role ou sessao.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
 - Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
 - Apenas `ADMIN` pode criar, editar, excluir ou revelar APIs/senhas em `AdminCredential`.
@@ -87,6 +92,7 @@ Rotas protegidas:
 - Auth.js/NextAuth v5 usa JWT.
 - Credentials Provider e o login principal.
 - Google Provider e opcional.
+- `StudentPreRegistration` guarda interessados como solicitacao pendente fora do fluxo de Auth.js.
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.
 - O token/session recebe `id` e `role`.
@@ -101,6 +107,7 @@ Rotas protegidas:
 ## Riscos ao alterar esta parte
 
 - Remover validacao de `isActive` permite acesso de usuario bloqueado.
+- Criar usuario automaticamente a partir de `StudentPreRegistration` liberaria acesso sem revisao admin.
 - Confiar apenas no menu do client vaza dados.
 - Alterar callbacks JWT/session pode quebrar redirecionamento por role.
 - Usar dados sem verificar vinculo teacher/aluno pode expor informacoes.
