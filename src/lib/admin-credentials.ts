@@ -107,18 +107,45 @@ function getOptionalEnvValue(key: string) {
 
 export function getEnvironmentCredentialDefinitions() {
   const definitions: EnvironmentCredentialDefinition[] = [];
+  const geminiKey = getOptionalEnvValue("GEMINI_API_KEY");
+  const geminiCattyModel = getOptionalEnvValue("GEMINI_CATTY_MODEL");
   const openAiKey = getOptionalEnvValue("OPENAI_API_KEY");
-  const cattyModel = getOptionalEnvValue("OPENAI_CATTY_MODEL");
+  const openAiCattyModel = getOptionalEnvValue("OPENAI_CATTY_MODEL");
   const homeworkModel = getOptionalEnvValue("OPENAI_HOMEWORK_OCR_MODEL");
   const googleClientId = getOptionalEnvValue("GOOGLE_CLIENT_ID");
   const googleClientSecret = getOptionalEnvValue("GOOGLE_CLIENT_SECRET");
   const jitsiDomain = getOptionalEnvValue("NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN");
 
+  if (geminiKey) {
+    definitions.push({
+      kind: "API_KEY",
+      label: "Gemini API Key",
+      notes:
+        "Usada pela Catty como provedor padrao de conversa antes do fallback local.",
+      service: "Google Gemini",
+      sourceKey: "env:GEMINI_API_KEY",
+      url: "https://aistudio.google.com/apikey",
+      value: geminiKey,
+    });
+  }
+
+  if (geminiCattyModel) {
+    definitions.push({
+      kind: "CONFIG",
+      label: "Modelo Gemini da Catty",
+      notes: "Modelo usado pela Catty nas respostas normais com Gemini.",
+      service: "Google Gemini",
+      sourceKey: "env:GEMINI_CATTY_MODEL",
+      value: geminiCattyModel,
+    });
+  }
+
   if (openAiKey) {
     definitions.push({
       kind: "API_KEY",
       label: "OpenAI API Key",
-      notes: "Usada pela Catty com IA e pelos recursos opcionais de IA.",
+      notes:
+        "Usada pela Catty apenas quando a mensagem chama Catty pelo nome e pelos recursos opcionais de IA.",
       service: "OpenAI",
       sourceKey: "env:OPENAI_API_KEY",
       url: "https://platform.openai.com/api-keys",
@@ -126,14 +153,15 @@ export function getEnvironmentCredentialDefinitions() {
     });
   }
 
-  if (cattyModel) {
+  if (openAiCattyModel) {
     definitions.push({
       kind: "CONFIG",
-      label: "Modelo da Catty",
-      notes: "Modelo usado nas respostas da assistente Catty.",
+      label: "Modelo OpenAI da Catty",
+      notes:
+        "Modelo usado pela Catty no modo OpenAI acionado por chamada nominal.",
       service: "OpenAI",
       sourceKey: "env:OPENAI_CATTY_MODEL",
-      value: cattyModel,
+      value: openAiCattyModel,
     });
   }
 

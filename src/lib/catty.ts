@@ -72,6 +72,8 @@ const englishSignals = [
 const disallowedCattyTerms = [
   "as an ai",
   "chatgpt",
+  "gemini",
+  "google ai",
   "inteligencia artificial",
   "language model",
   "modelo de linguagem",
@@ -259,6 +261,10 @@ export function hasDisallowedCattyText(text: string) {
   const normalized = normalizeText(text);
 
   return disallowedCattyTerms.some((term) => normalized.includes(term));
+}
+
+export function shouldUseOpenAiForCatty(text: string) {
+  return /\bcatty\b/.test(normalizeText(text));
 }
 
 function sanitizeHistoryText(text: string) {

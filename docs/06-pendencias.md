@@ -38,7 +38,7 @@ As pendencias podem afetar:
 ## Pendencias tecnicas
 
 - Rotina formal de backup e restore do PostgreSQL.
-- Throttling mais forte por IP ou servico dedicado, inclusive para a Catty com OpenAI.
+- Throttling mais forte por IP ou servico dedicado, inclusive para a Catty com Gemini/OpenAI.
 - Normalizacao case-insensitive mais robusta para email.
 - Testes automatizados amplos por modulo.
 - Auditoria administrativa geral fora do financeiro.
@@ -61,7 +61,7 @@ As pendencias podem afetar:
 
 ## Regras de negocio que precisam ser preservadas
 
-- Nao implementar novas IAs alem da Catty/OpenAI e OCR opcional documentados, jogos executaveis, pagamentos online, MinIO ou integracoes externas sem pedido explicito.
+- Nao implementar novas IAs alem da Catty com Gemini/OpenAI e OCR opcional documentados, jogos executaveis, pagamentos online, MinIO ou integracoes externas sem pedido explicito.
 - Nao enviar arquivos de homework para servicos externos sem configuracao explicita de chave/API.
 - Nao transformar financeiro interno em gateway de pagamento sem decisao nova.
 - Nao abrir dados globais de alunos para teacher sem permissao por vinculo.
@@ -72,7 +72,7 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty usa OpenAI quando `OPENAI_API_KEY` esta configurada e fallback local quando nao esta; possui contexto leve de tela/tarefa, mas ainda nao possui base de conhecimento propria nem historico persistente.
+- Catty usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local quando chaves/chamadas falham; possui contexto leve de tela/tarefa, mas ainda nao possui base de conhecimento propria nem historico persistente.
 
 ## Riscos ao alterar esta parte
 

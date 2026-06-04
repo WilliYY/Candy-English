@@ -25,7 +25,7 @@ Ja existe:
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
-- Catty como assistente visual contextual com IA opcional via OpenAI, fallback local, atalhos de estudo, incentivo e pratica simples em ingles;
+- Catty como assistente visual contextual com Gemini padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local, atalhos de estudo, incentivo e pratica simples em ingles;
 - Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges, catalogo inicial de missoes e atividades de historias com XP automatico/manual;
 - otimizacao server-side de PDFs pedagogicos protegidos, incluindo Candy XP, homework interativo e aulas interativas, com Ghostscript quando disponivel e fallback para salvar o original se a compressao falhar;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
@@ -118,15 +118,17 @@ Variaveis principais:
 - `PDF_MAX_UPLOAD_MB`: limite de upload para esses PDFs pedagogicos, por padrao `14`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
 - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
-- `OPENAI_API_KEY`: chave opcional usada pela Catty com IA e pelo OCR opcional de homework; sem chave, a Catty usa fallback local e homework segue manual.
-- `OPENAI_CATTY_MODEL`: modelo usado pela Catty quando `OPENAI_API_KEY` existe, exemplo `gpt-5.4-nano`.
+- `GEMINI_API_KEY`: chave opcional usada pela Catty como provedor padrao; sem chave, a Catty usa fallback local nas mensagens comuns.
+- `GEMINI_CATTY_MODEL`: modelo Gemini usado pela Catty, exemplo `gemini-3.5-flash`.
+- `OPENAI_API_KEY`: chave opcional usada pela Catty somente quando a mensagem chama Catty pelo nome, e pelo OCR opcional de homework; sem chave, esse modo cai para Gemini/fallback e homework segue manual.
+- `OPENAI_CATTY_MODEL`: modelo OpenAI usado pela Catty no modo acionado por chamada nominal, exemplo `gpt-5.4-nano`.
 - `OPENAI_HOMEWORK_OCR_MODEL`: modelo para OCR opcional caso essa sugestao seja reativada, exemplo `gpt-4.1-mini`.
 - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`: admin inicial do seed.
 - `ADMIN_RESET_PASSWORD`: redefine senha do admin apenas quando `true`.
 - `AUDIT_BASE_URL`: base URL usada pelos smoke tests.
 
 O arquivo `.env.example` contem apenas exemplos e placeholders.
-O painel `/ava/admin?task=apis-senhas` sincroniza para o banco, de forma criptografada, apenas integracoes externas configuradas no `.env` como OpenAI, Google OAuth e dominio Jitsi. Segredos internos como `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres e senha seed do admin nao sao importados para a tela.
+O painel `/ava/admin?task=apis-senhas` sincroniza para o banco, de forma criptografada, apenas integracoes externas configuradas no `.env` como Gemini, OpenAI, Google OAuth e dominio Jitsi. Segredos internos como `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres e senha seed do admin nao sao importados para a tela.
 
 ## Instalacao local
 

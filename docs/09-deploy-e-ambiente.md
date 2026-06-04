@@ -42,14 +42,16 @@ Operacao por agente:
 - Uploads persistem no volume `app-storage`.
 - `private/secrets` e `private/backups` ficam fora do Git quando existirem.
 - Deploy com migration deve aplicar migration antes de recriar o app.
-- `OPENAI_API_KEY` e opcional; quando existe, ativa a Catty com OpenAI e tambem pode ser usada pelo OCR opcional de homework. Sem a chave, a Catty usa fallback local e homework segue manual.
-- `OPENAI_CATTY_MODEL` define o modelo da Catty, com fallback para `gpt-5.4-nano`.
+- `GEMINI_API_KEY` e opcional; quando existe, ativa a Catty com Gemini nas mensagens comuns. Sem a chave, a Catty usa fallback local nesse modo.
+- `GEMINI_CATTY_MODEL` define o modelo Gemini da Catty, com fallback para `gemini-3.5-flash`.
+- `OPENAI_API_KEY` e opcional; quando existe, ativa o modo OpenAI da Catty apenas quando a mensagem chama Catty pelo nome e tambem pode ser usada pelo OCR opcional de homework. Sem a chave, esse modo cai para Gemini/fallback e homework segue manual.
+- `OPENAI_CATTY_MODEL` define o modelo OpenAI da Catty, com fallback para `gpt-5.4-nano`.
 - `PDF_OPTIMIZATION_ENABLED` controla a tentativa de otimizacao server-side de PDFs pedagogicos protegidos, como Candy XP, homework interativo e aulas interativas; por padrao fica ligada.
 - `PDF_OPTIMIZATION_PRESET` define o preset do Ghostscript, com `ebook` como padrao equilibrado.
 - `PDF_MAX_UPLOAD_MB` define o limite para esses PDFs pedagogicos, mantendo margem abaixo do limite de Server Actions.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
 - `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
-- O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: OpenAI, Google OAuth e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
+- O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: Gemini, OpenAI, Google OAuth e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Decisoes tecnicas tomadas
 
@@ -64,7 +66,7 @@ Operacao por agente:
 - A imagem Docker instala Ghostscript para otimizar PDFs pedagogicos protegidos no runtime; ambientes sem Ghostscript usam fallback e salvam o original.
 - A imagem de ferramentas (`migrate`, `seed`, `audit-server-smoke`) gera o Prisma Client no build para que scripts de smoke e seed encontrem `src/generated/prisma/client`.
 - Aula ao vivo usa `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` para montar novas salas e liberar camera/microfone/display capture no `Permissions-Policy`.
-- Catty chama OpenAI apenas pelo servidor em `/api/catty/chat`; a chave nunca deve ir para o client.
+- Catty chama Gemini/OpenAI apenas pelo servidor em `/api/catty/chat`; as chaves nunca devem ir para o client.
 - O painel `/ava/admin?task=apis-senhas` salva valores em `AdminCredential` criptografados no banco; a revelacao acontece apenas por server action protegida.
 
 ## Riscos ao alterar esta parte
@@ -73,7 +75,7 @@ Operacao por agente:
 - Apagar volumes remove banco ou uploads.
 - Rodar `seed` com `ADMIN_RESET_PASSWORD=true` sem intencao pode trocar senha.
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
-- Ativar OpenAI sem revisar custo, privacidade e volume pode gerar despesa; Catty tem limite simples por IP, mas volume alto pede rate limit dedicado.
+- Ativar Gemini/OpenAI sem revisar custo, privacidade e volume pode gerar despesa; Catty tem limite simples por IP, mas volume alto pede rate limit dedicado.
 - Configurar `PDF_OPTIMIZATION_PRESET=screen` pode reduzir mais, mas tambem pode prejudicar leitura em materiais do Canva; manter `ebook` salvo motivo claro.
 - Aumentar `PDF_MAX_UPLOAD_MB` acima do limite de Server Actions nao funciona sem mudar `next.config.ts`.
 - Perder ou trocar `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` pode impedir leitura de credenciais ja criptografadas.

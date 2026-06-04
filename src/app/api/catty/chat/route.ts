@@ -4,6 +4,7 @@ import {
   buildFallbackCattyReply,
   hasDisallowedCattyText,
   sanitizeCattyReply,
+  shouldUseOpenAiForCatty,
 } from "@/lib/catty";
 import { cattyChatSchema } from "@/lib/validations/catty";
 
@@ -21,7 +22,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Se a pessoa estiver em aulas, ajude com vocabulario, frases exemplo e revisao curta.",
   "Se a pessoa estiver em mensagens, ajude a escrever uma frase educada em ingles ou portugues.",
   "Se a pessoa for teacher/admin, ajude a escrever instrucoes, feedback, texto de aula ou organizar a tarefa, mas nao prometa executar acoes no sistema.",
-  "Nao diga que voce e ChatGPT, OpenAI, modelo de linguagem ou IA. Fale apenas como Catty.",
+  "Nao diga que voce e ChatGPT, OpenAI, Gemini, modelo de linguagem ou IA. Fale apenas como Catty.",
   "Evite aberturas genericas como 'Claro!', 'Com certeza!', 'Como posso ajudar?' e 'Espero que isso ajude'. Comece de forma natural e carinhosa.",
   "Nao use emojis, travessoes longos ou simbolos decorativos. A fofura deve vir pelas palavras, nao por enfeites.",
   "Nao transforme a resposta em menu de opcoes. Faca no maximo uma pergunta simples de continuidade.",
@@ -35,6 +36,7 @@ const CATTY_SYSTEM_PROMPT = [
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+type CattyAiSource = "gemini" | "openai";
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -72,7 +74,7 @@ function isRateLimited(key: string) {
   return current.count > RATE_LIMIT_MAX_REQUESTS;
 }
 
-function extractResponseText(payload: unknown) {
+function extractOpenAiResponseText(payload: unknown) {
   if (typeof payload !== "object" || payload === null) {
     return "";
   }
@@ -113,6 +115,179 @@ function extractResponseText(payload: unknown) {
   }
 
   return "";
+}
+
+function extractGeminiResponseText(payload: unknown) {
+  if (typeof payload !== "object" || payload === null) {
+    return "";
+  }
+
+  const candidates = (payload as { candidates?: unknown }).candidates;
+
+  if (!Array.isArray(candidates)) {
+    return "";
+  }
+
+  for (const candidate of candidates) {
+    const content =
+      typeof candidate === "object" && candidate !== null
+        ? (candidate as { content?: unknown }).content
+        : null;
+    const parts =
+      typeof content === "object" && content !== null
+        ? (content as { parts?: unknown }).parts
+        : null;
+
+    if (!Array.isArray(parts)) {
+      continue;
+    }
+
+    const text = parts
+      .map((part) =>
+        typeof part === "object" &&
+        part !== null &&
+        "text" in part &&
+        typeof (part as { text?: unknown }).text === "string"
+          ? (part as { text: string }).text
+          : "",
+      )
+      .filter(Boolean)
+      .join(" ");
+
+    if (text) {
+      return text;
+    }
+  }
+
+  return "";
+}
+
+function buildGeminiUrl(model: string) {
+  const normalizedModel = model.replace(/^models\//, "");
+
+  return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+    normalizedModel,
+  )}:generateContent`;
+}
+
+function cleanAiReply(text: string) {
+  const reply = sanitizeCattyReply(text);
+
+  if (!reply || hasDisallowedCattyText(reply)) {
+    return null;
+  }
+
+  return reply;
+}
+
+async function requestOpenAiCattyReply(input: string) {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  const model = process.env.OPENAI_CATTY_MODEL?.trim() || "gpt-5.4-nano";
+
+  try {
+    const response = await fetch("https://api.openai.com/v1/responses", {
+      body: JSON.stringify({
+        input,
+        instructions: CATTY_SYSTEM_PROMPT,
+        max_output_tokens: 280,
+        model,
+      }),
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      signal: AbortSignal.timeout(12_000),
+    });
+
+    if (!response.ok) {
+      console.warn(`Catty OpenAI fallback: status ${response.status}`);
+
+      return null;
+    }
+
+    const data = (await response.json()) as unknown;
+    const reply = cleanAiReply(extractOpenAiResponseText(data));
+
+    return reply ? { reply, source: "openai" as const } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function requestGeminiCattyReply(input: string) {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+
+  if (!apiKey) {
+    return null;
+  }
+
+  const model = process.env.GEMINI_CATTY_MODEL?.trim() || "gemini-3.5-flash";
+
+  try {
+    const response = await fetch(buildGeminiUrl(model), {
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: input,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 280,
+        },
+        system_instruction: {
+          parts: [
+            {
+              text: CATTY_SYSTEM_PROMPT,
+            },
+          ],
+        },
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      method: "POST",
+      signal: AbortSignal.timeout(12_000),
+    });
+
+    if (!response.ok) {
+      console.warn(`Catty Gemini fallback: status ${response.status}`);
+
+      return null;
+    }
+
+    const data = (await response.json()) as unknown;
+    const reply = cleanAiReply(extractGeminiResponseText(data));
+
+    return reply ? { reply, source: "gemini" as const } : null;
+  } catch {
+    return null;
+  }
+}
+
+async function requestCattyAiReply(input: string, sources: CattyAiSource[]) {
+  for (const source of sources) {
+    const result =
+      source === "openai"
+        ? await requestOpenAiCattyReply(input)
+        : await requestGeminiCattyReply(input);
+
+    if (result) {
+      return result;
+    }
+  }
+
+  return null;
 }
 
 export async function POST(request: NextRequest) {
@@ -161,9 +336,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const input = buildCattyInput(message, history, context);
+  const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
+    ? ["openai", "gemini"]
+    : ["gemini"];
+  const aiReply = await requestCattyAiReply(input, sources);
 
-  if (!apiKey) {
+  if (!aiReply) {
     return NextResponse.json({
       ok: true,
       reply: fallbackReply,
@@ -171,55 +350,9 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const model = process.env.OPENAI_CATTY_MODEL?.trim() || "gpt-5.4-nano";
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      body: JSON.stringify({
-        input: buildCattyInput(message, history, context),
-        instructions: CATTY_SYSTEM_PROMPT,
-        max_output_tokens: 280,
-        model,
-      }),
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      signal: AbortSignal.timeout(12_000),
-    });
-
-    if (!response.ok) {
-      console.warn(`Catty OpenAI fallback: status ${response.status}`);
-
-      return NextResponse.json({
-        ok: true,
-        reply: fallbackReply,
-        source: "fallback",
-      });
-    }
-
-    const data = (await response.json()) as unknown;
-    const reply = sanitizeCattyReply(extractResponseText(data));
-
-    if (!reply || hasDisallowedCattyText(reply)) {
-      return NextResponse.json({
-        ok: true,
-        reply: fallbackReply,
-        source: "fallback",
-      });
-    }
-
-    return NextResponse.json({
-      ok: true,
-      reply,
-      source: "openai",
-    });
-  } catch {
-    return NextResponse.json({
-      ok: true,
-      reply: fallbackReply,
-      source: "fallback",
-    });
-  }
+  return NextResponse.json({
+    ok: true,
+    reply: aiReply.reply,
+    source: aiReply.source,
+  });
 }

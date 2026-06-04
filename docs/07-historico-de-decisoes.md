@@ -114,6 +114,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/api/catty/chat/route.ts`, `src/lib/catty.ts`, `src/lib/validations/catty.ts`, `src/components/site/catty-widget.tsx`, `.env.example`, docs oficiais.
 - Riscos/cuidados: nao enviar dados internos do AVA nem segredos para a Catty; monitorar custo/limites da OpenAI; futuro RAG/base de conhecimento exige nova decisao.
 
+### 2026-06-04 - Catty com Gemini padrao e OpenAI por chamada nominal
+
+- Decisao: Catty usa Gemini como provedor normal quando `GEMINI_API_KEY` existe; OpenAI so e tentada quando a mensagem chama Catty pelo nome.
+- Motivo: reduzir custo de tokens OpenAI no uso comum dos alunos e reservar OpenAI para interacoes em que o usuario aciona a assistente de forma explicita.
+- Impacto: `src/app/api/catty/chat/route.ts`, `src/lib/catty.ts`, `src/lib/admin-credentials.ts`, `.env.example`, `README.md` e docs oficiais.
+- Riscos/cuidados: manter segredo fora do Git; nao enviar dados internos do AVA; se Gemini/OpenAI falharem, preservar fallback local.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

@@ -137,7 +137,7 @@ Regras:
 - Contratos PDF sao servidos por rota protegida.
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
 - Contrato aceita PDF ate 8 MB.
-- Catty e interface visual com IA opcional via OpenAI quando `OPENAI_API_KEY` existe e fallback local quando nao existe.
+- Catty e interface visual com IA opcional via Gemini quando `GEMINI_API_KEY` existe, OpenAI apenas quando a mensagem chama Catty pelo nome e fallback local quando as chaves/chamadas falham.
 - Catty aparece no site institucional, no login e nos paineis logados do AVA por pedido explicito; WhatsApp continua fora dos paineis logados.
 - As animacoes decorativas com video, balas e GIFs foram removidas para reduzir distracao e consumo de recursos.
 

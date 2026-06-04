@@ -72,7 +72,7 @@ Helpers:
 ### APIs e senhas
 
 1. Admin abre `/ava/admin?task=apis-senhas`.
-2. A pagina sincroniza para `AdminCredential`, de forma criptografada, integracoes externas existentes no `.env` como OpenAI, Google OAuth e dominio Jitsi.
+2. A pagina sincroniza para `AdminCredential`, de forma criptografada, integracoes externas existentes no `.env` como Gemini, OpenAI, Google OAuth e dominio Jitsi.
 3. Admin pode registrar credenciais manuais com rotulo, servico, tipo, usuario, URL, notas e valor sensivel.
 4. O valor sensivel fica oculto por padrao; para copiar ou conferir, admin precisa clicar em `Revelar`.
 5. Credenciais manuais podem ser editadas ou excluidas; credenciais vindas do `.env` devem ser alteradas no servidor.
@@ -133,10 +133,11 @@ Helpers:
 1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA.
 2. Widget identifica apenas contexto leve da tela atual (`area` e `task`) para adaptar titulo, texto de apoio e atalhos de estudo.
 3. Widget envia a mensagem atual, ate 8 mensagens recentes e esse contexto leve para `/api/catty/chat`.
-4. A rota valida o payload com Zod, aplica limite simples por IP e usa OpenAI Responses API quando `OPENAI_API_KEY` existe.
-5. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
-6. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-7. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+4. A rota valida o payload com Zod, aplica limite simples por IP e usa Gemini quando `GEMINI_API_KEY` existe.
+5. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
+6. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+7. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+8. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 
@@ -238,7 +239,7 @@ Helpers:
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
-- Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `OPENAI_API_KEY`, com atalhos de estudo e resposta contextual por tela.
+- Catty usa IA opcional via rota server-side, mantendo fallback local para ambientes sem `GEMINI_API_KEY`/`OPENAI_API_KEY`, com atalhos de estudo e resposta contextual por tela.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
 - Atividades Candy XP usam modelos proprios para historia/PDF/perguntas/progresso e reaproveitam o ledger Candy XP para pontuar conclusoes.
