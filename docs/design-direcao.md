@@ -94,6 +94,7 @@ Cuidados:
 - A area `Aula ao vivo` deve tratar a chamada como palco central: configuracao e opcoes ficam acima, e o video aparece largo, centralizado e sem coluna lateral estreita.
 - Catty deve soar como uma study buddy fofa da Candy: encoraja estudar ingles em metas pequenas, responde em ingles quando a pessoa escreve em ingles, evita frases genericas de chatbot e mantem essa voz tanto na IA via Gemini/OpenAI quanto no fallback local.
 - Catty deve parecer mais viva sem dominar a tela: botao com avatar maior, cabecalho contextual, estado de digitacao, atalhos de estudo adaptados a homework, aulas, mensagens, teacher ou admin, e baloes visuais locais para usuarios logados no AVA com primeiro nome e saudacao por horario. Fora do AVA logado, a Catty aparece como mascote publica com baloes aleatorios a cada 10 segundos, posicionada acima do WhatsApp quando ele existir, e no clique mostra apenas um aviso pequeno para entrar no AVA ou virar aluno Candy antes de conversa real.
+- Os baloes visuais da Catty usam fala compacta com rabicho, brilho Candy e variacao sutil para visitante, logado e aviso de acesso, sempre sem abrir chat real para visitante.
 
 ## Fluxo Visual Do Site
 

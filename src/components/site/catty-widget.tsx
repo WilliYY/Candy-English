@@ -454,6 +454,12 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const visiblePublicBalloon = publicNoticeVisible
     ? CATTY_PUBLIC_LOCKED_REPLY
     : publicBalloon;
+  const publicBalloonTone = publicNoticeVisible
+    ? "catty-speech--notice"
+    : "catty-speech--public";
+  const publicBalloonLabel = publicNoticeVisible
+    ? "Acesso Candy"
+    : "Catty chama";
   const hasWhatsAppWidget =
     !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
   const visibleContextCopy = canUseCattyChat
@@ -780,8 +786,16 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       ) : null}
 
       {!open && showLoggedInBalloons && loggedInBalloon ? (
-        <div className="catty-pop pointer-events-none mr-1 max-w-[min(270px,calc(100vw-5rem))] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
-          {loggedInBalloon}
+        <div
+          className="catty-speech catty-speech--logged pointer-events-none mr-1"
+          role="status"
+          aria-live="polite"
+        >
+          <span className="catty-speech__eyebrow">
+            <Sparkles aria-hidden="true" className="size-3.5" />
+            Study mode
+          </span>
+          <span className="catty-speech__text">{loggedInBalloon}</span>
         </div>
       ) : null}
 
@@ -789,8 +803,16 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       !showLoggedInBalloons &&
       (showPublicBalloons || publicNoticeVisible) &&
       visiblePublicBalloon ? (
-        <div className="catty-pop pointer-events-none mr-1 max-w-[min(280px,calc(100vw-5rem))] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
-          {visiblePublicBalloon}
+        <div
+          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="catty-speech__eyebrow">
+            <Sparkles aria-hidden="true" className="size-3.5" />
+            {publicBalloonLabel}
+          </span>
+          <span className="catty-speech__text">{visiblePublicBalloon}</span>
         </div>
       ) : null}
 
