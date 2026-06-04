@@ -2,7 +2,7 @@ FROM node:24-bookworm-slim AS base
 WORKDIR /app
 
 RUN apt-get update -y && \
-  apt-get install -y --no-install-recommends ca-certificates openssl && \
+  apt-get install -y --no-install-recommends ca-certificates ghostscript openssl && \
   rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps

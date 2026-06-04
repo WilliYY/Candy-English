@@ -2,6 +2,10 @@ import { randomUUID } from "node:crypto";
 import type { Dirent } from "node:fs";
 import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
+import {
+  estimatePdfPageCount,
+  optimizeFileForStorage,
+} from "@/lib/file-optimization";
 
 const STORAGE_ROOT = process.env.AVA_STORAGE_DIR ?? path.join(process.cwd(), "storage");
 
@@ -79,6 +83,28 @@ async function saveFileBuffer(directory: string, extension: string, buffer: Buff
   return relativePath;
 }
 
+function getPdfMaxUploadBytes() {
+  const rawValue = process.env.PDF_MAX_UPLOAD_MB?.trim();
+
+  if (!rawValue) {
+    return HOMEWORK_ASSET_MAX_BYTES;
+  }
+
+  const value = Number(rawValue.replace(",", "."));
+
+  if (!Number.isFinite(value) || value <= 0) {
+    return HOMEWORK_ASSET_MAX_BYTES;
+  }
+
+  return Math.round(value * 1024 * 1024);
+}
+
+function formatUploadLimit(bytes: number) {
+  const value = bytes / (1024 * 1024);
+
+  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
+}
+
 export async function saveContractPdf(file: File) {
   if (file.type !== "application/pdf") {
     throw new Error("Envie um arquivo PDF.");
@@ -151,8 +177,17 @@ export async function saveCandyXpAsset(file: File) {
     throw new Error("Envie um PDF ou imagem PNG, JPG ou WebP.");
   }
 
-  if (file.size <= 0 || file.size > HOMEWORK_ASSET_MAX_BYTES) {
-    throw new Error("O arquivo Candy XP precisa ter ate 14 MB.");
+  const maxUploadBytes =
+    file.type === "application/pdf"
+      ? getPdfMaxUploadBytes()
+      : HOMEWORK_ASSET_MAX_BYTES;
+
+  if (file.size <= 0 || file.size > maxUploadBytes) {
+    throw new Error(
+      `O arquivo Candy XP precisa ter ate ${formatUploadLimit(
+        maxUploadBytes,
+      )} MB.`,
+    );
   }
 
   const extension =
@@ -164,12 +199,29 @@ export async function saveCandyXpAsset(file: File) {
           ? ".webp"
           : ".jpg";
   const buffer = Buffer.from(await file.arrayBuffer());
-  const relativePath = await saveFileBuffer("candy-xp-assets", extension, buffer);
+  const optimization = await optimizeFileForStorage({
+    buffer,
+    mimeType: file.type,
+  });
+  const relativePath = await saveFileBuffer(
+    "candy-xp-assets",
+    extension,
+    optimization.buffer,
+  );
 
   return {
     mimeType: file.type,
+    optimizationMessage: optimization.message,
+    optimizationPreset: optimization.preset,
+    optimizationStatus: optimization.status,
+    optimizedSizeBytes: optimization.optimizedSizeBytes,
     originalName: file.name,
+    originalSizeBytes: optimization.originalSizeBytes,
+    pageCount:
+      file.type === "application/pdf"
+        ? estimatePdfPageCount(optimization.buffer)
+        : 1,
     relativePath,
-    sizeBytes: file.size,
+    sizeBytes: optimization.optimizedSizeBytes,
   };
 }

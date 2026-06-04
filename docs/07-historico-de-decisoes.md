@@ -289,6 +289,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260601193000_candy_xp_activities`, `src/app/ava/candy-xp/actions.ts`, `src/app/ava/candy-xp-assets/[activityId]/route.ts`, `src/components/ava/admin-candy-xp-panel.tsx`, `src/components/ava/student-candy-xp-activities-panel.tsx`, `src/lib/candy-xp-activities.ts`, `src/lib/validations/candy-xp-activities.ts`, `src/lib/storage.ts`, paginas admin/student e docs oficiais.
 - Riscos/cuidados: editar perguntas ja respondidas pode invalidar historico; arquivos devem continuar protegidos pela rota server-side; XP deve ser concedido apenas pelo servidor com `sourceKey` unica por submissao.
 
+### 2026-06-04 - Otimizacao de PDF no upload Candy XP
+
+- Decisao: adicionar uma camada central `src/lib/file-optimization.ts` para tentar otimizar PDFs do Candy XP com Ghostscript antes de salvar no storage, mantendo fallback para salvar o original se a otimizacao falhar, nao reduzir tamanho ou parecer perder paginas.
+- Motivo: materiais do Canva podem ficar grandes e o AVA tera muitos uploads; reduzir tamanho no servidor economiza storage e melhora carregamento sem expor arquivos.
+- Impacto: `src/lib/file-optimization.ts`, `src/lib/storage.ts`, `src/app/ava/candy-xp/actions.ts`, `Dockerfile`, `.env.example` e docs oficiais.
+- Riscos/cuidados: presets agressivos podem reduzir legibilidade; a otimizacao deve continuar server-side, configuravel por ambiente e sem quebrar as rotas protegidas.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

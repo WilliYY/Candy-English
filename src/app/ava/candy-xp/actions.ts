@@ -2,10 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import {
-  estimateCandyXpAssetPageCount,
-  evaluateCandyXpActivityAnswers,
-} from "@/lib/candy-xp-activities";
+import { evaluateCandyXpActivityAnswers } from "@/lib/candy-xp-activities";
 import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
@@ -316,10 +313,8 @@ export async function createCandyXpActivity(
   }
 
   let savedAsset: Awaited<ReturnType<typeof saveCandyXpAsset>>;
-  let assetBuffer: Buffer;
 
   try {
-    assetBuffer = Buffer.from(await asset.arrayBuffer());
     savedAsset = await saveCandyXpAsset(asset);
   } catch (error) {
     return {
@@ -335,10 +330,7 @@ export async function createCandyXpActivity(
     data: {
       assetFileName: savedAsset.originalName,
       assetMimeType: savedAsset.mimeType,
-      assetPageCount: estimateCandyXpAssetPageCount(
-        assetBuffer,
-        savedAsset.mimeType,
-      ),
+      assetPageCount: savedAsset.pageCount,
       assetSizeBytes: savedAsset.sizeBytes,
       assetStoragePath: savedAsset.relativePath,
       category: data.category,
@@ -379,7 +371,9 @@ export async function createCandyXpActivity(
 
   return {
     ok: true,
-    message: "Atividade Candy XP criada.",
+    message: savedAsset.optimizationMessage
+      ? `Atividade Candy XP criada. ${savedAsset.optimizationMessage}`
+      : "Atividade Candy XP criada.",
   };
 }
 

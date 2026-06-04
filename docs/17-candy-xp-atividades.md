@@ -29,6 +29,7 @@ Helpers e validacoes:
 
 - `src/lib/candy-xp-activities.ts`
 - `src/lib/candy-xp-persistence.ts`
+- `src/lib/file-optimization.ts`
 - `src/lib/validations/candy-xp-activities.ts`
 - `src/lib/storage.ts`
 
@@ -47,18 +48,19 @@ Banco:
 
 1. Admin abre `/ava/admin?task=candy-xp`.
 2. Admin cria uma atividade com titulo, descricao, nivel, categoria, XP e status inicial.
-3. Admin envia PDF/imagem do Canva; o arquivo fica em `storage/candy-xp-assets`.
-4. Admin escolhe liberar para todos os alunos ou para um aluno especifico.
-5. Admin cadastra perguntas:
+3. Admin envia PDF/imagem do Canva; se for PDF, o servidor tenta otimizar com Ghostscript antes de salvar.
+4. O arquivo final fica em `storage/candy-xp-assets`.
+5. Admin escolhe liberar para todos os alunos ou para um aluno especifico.
+6. Admin cadastra perguntas:
    - resposta curta;
    - resposta longa;
    - multipla escolha;
    - checkbox;
    - matching.
-6. Para multipla escolha e checkbox, o admin marca respostas corretas colocando `*` no inicio da alternativa.
-7. Para matching, o admin usa uma linha por par no formato `left = right`.
-8. Admin pode editar a ficha da atividade e alternar entre rascunho, publicado e arquivado.
-9. Admin acompanha envios e corrige respostas escritas, aprovando com XP ou devolvendo para refazer.
+7. Para multipla escolha e checkbox, o admin marca respostas corretas colocando `*` no inicio da alternativa.
+8. Para matching, o admin usa uma linha por par no formato `left = right`.
+9. Admin pode editar a ficha da atividade e alternar entre rascunho, publicado e arquivado.
+10. Admin acompanha envios e corrige respostas escritas, aprovando com XP ou devolvendo para refazer.
 
 ## Fluxo aluno
 
@@ -88,6 +90,8 @@ Banco:
 
 - O modulo usa modelos proprios, em vez de reaproveitar `Homework`, porque a regra de XP, liberacao e correcao e diferente.
 - O PDF/imagem fica em `storage/candy-xp-assets`, seguindo o padrao de uploads protegidos do AVA.
+- A otimizacao de PDF usa `src/lib/file-optimization.ts` e so substitui o arquivo quando a versao otimizada fica menor e nao parece perder paginas.
+- Se Ghostscript nao estiver disponivel, falhar ou gerar arquivo maior, o upload continua salvando o original e retorna mensagem amigavel ao admin.
 - A premiacao usa o ledger existente `CandyXpEvent` e atualiza `CandyXpProfile` por `recordCandyXpEventsForUser`.
 - A tela student mostra cards gamificados com nivel, categoria, XP, progresso e status.
 - A tela admin prioriza criacao rapida e acompanhamento; edicao completa de perguntas apos envios deve ser tratada com cuidado em fase futura.
@@ -95,6 +99,7 @@ Banco:
 ## Riscos ao alterar esta parte
 
 - Liberar arquivo sem checar status/assignment pode vazar material privado.
+- Usar preset agressivo de PDF pode deixar texto pequeno do Canva ilegivel; o padrao `ebook` e o caminho equilibrado.
 - Alterar respostas corretas depois de envios pode tornar historico inconsistente.
 - Remover `sourceKey` estavel pode duplicar XP.
 - Transformar `TEACHER` em corretora deste modulo exige nova regra de permissao por vinculo.

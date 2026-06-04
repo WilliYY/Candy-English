@@ -110,15 +110,16 @@ Helpers:
 
 1. Admin abre `/ava/admin?task=candy-xp`.
 2. Admin cadastra titulo, descricao, nivel, categoria, XP, status, liberacao para todos ou um aluno especifico e envia PDF/imagem exportado do Canva.
-3. Admin monta perguntas do tipo resposta curta, resposta longa, multipla escolha, checkbox ou matching.
-4. Alternativas objetivas podem ter resposta correta cadastrada; matching usa pares `esquerda = direita`.
-5. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
-6. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
-7. Aluno responde, pode salvar progresso como `DRAFT` e depois enviar.
-8. Se a atividade for toda objetiva e estiver correta, o sistema marca `REVIEWED` e concede XP automaticamente.
-9. Se a atividade objetiva tiver erro, o sistema devolve como `RETURNED` para o aluno revisar.
-10. Se houver resposta escrita, a submissao fica `SUBMITTED` para o admin corrigir manualmente.
-11. Ao aprovar manualmente, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
+3. Quando o arquivo e PDF, o servidor tenta otimizar com Ghostscript antes de salvar; se a otimizacao falhar ou nao reduzir tamanho, o original e salvo para nao quebrar o fluxo.
+4. Admin monta perguntas do tipo resposta curta, resposta longa, multipla escolha, checkbox ou matching.
+5. Alternativas objetivas podem ter resposta correta cadastrada; matching usa pares `esquerda = direita`.
+6. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
+7. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
+8. Aluno responde, pode salvar progresso como `DRAFT` e depois enviar.
+9. Se a atividade for toda objetiva e estiver correta, o sistema marca `REVIEWED` e concede XP automaticamente.
+10. Se a atividade objetiva tiver erro, o sistema devolve como `RETURNED` para o aluno revisar.
+11. Se houver resposta escrita, a submissao fica `SUBMITTED` para o admin corrigir manualmente.
+12. Ao aprovar manualmente, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
 
 ### Contratos
 
@@ -210,6 +211,7 @@ Helpers:
 - Toda nova tarefa que conceder XP deve gravar por server action/rota protegida e usar `sourceKey` estavel para evitar abuso ou pontuacao duplicada.
 - Atividades Candy XP so podem ser criadas/corrigidas por `ADMIN`; `STUDENT` acessa apenas atividades publicadas e liberadas para o proprio perfil.
 - Arquivos Candy XP devem ser servidos apenas por `/ava/candy-xp-assets/[activityId]`, nunca por caminho direto do storage.
+- Otimizacao de PDF do Candy XP deve acontecer apenas no servidor e nunca pode expor arquivo fora da rota protegida.
 - Respostas escritas de Candy XP nao devem liberar XP automatico; precisam de revisao manual.
 - Homework corrigida nao deve ser reenviada.
 - A interface de criacao nova de homework deve usar o modo interativo; homework simples fica apenas como legado de dados antigos.

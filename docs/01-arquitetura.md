@@ -26,6 +26,7 @@ Camadas principais:
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
+- `src/lib/file-optimization.ts`: otimizacao server-side de PDFs antes de salvar no storage, com fallback seguro.
 - `src/lib/homework-ocr.ts`: helper reservado para OCR opcional de campos de homework; o fluxo padrao atual e manual.
 - `src/lib/validations/`: schemas Zod.
 - `prisma/schema.prisma`: modelo relacional.
@@ -63,9 +64,11 @@ Servicos Docker:
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
 - Atividades Candy XP usam rota server-side protegida para PDF/imagem e server actions para criacao, progresso, envio e correcao.
+- PDFs do Candy XP passam por tentativa de otimizacao no servidor antes de serem salvos em `storage/candy-xp-assets`; se a otimizacao falhar ou nao reduzir tamanho, o arquivo original continua sendo salvo.
 - Docker final usa `output: "standalone"`.
 - Server Actions aceitam upload ate 15 MB para suportar homework/aula interativa exportados do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
+- Ghostscript fica instalado no container para comprimir PDFs quando `PDF_OPTIMIZATION_ENABLED=true`.
 - Headers basicos de seguranca ficam em `next.config.ts`; `X-Frame-Options=SAMEORIGIN` permite previews internos protegidos, como contratos PDF no AVA, sem liberar embed por sites externos.
 - Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
@@ -84,6 +87,7 @@ Servicos Docker:
 - Mudar permissao do storage pode quebrar avatar e contratos.
 - Expor assets de homework fora de rota protegida pode vazar atividades e respostas de alunos.
 - Expor assets Candy XP fora de rota protegida pode vazar historias publicadas apenas para alunos especificos.
+- Otimizar PDF de forma agressiva pode prejudicar leitura; o preset padrao deve continuar equilibrado e o fallback precisa preservar o original quando houver falha.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
 - Remover fallback, limite de uso ou restricao de contexto da Catty pode quebrar ambientes sem chave OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.
