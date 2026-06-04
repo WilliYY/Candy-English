@@ -37,7 +37,7 @@ type CattyWidgetProps = {
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
 const CATTY_AUTH_REQUIRED_REPLY =
-  "Entre na sua conta do AVA para conversar com a Catty.";
+  "Awnn, eu sou só para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
 
 const loggedInBalloonTemplates = [
   "Miaww, {name}! Catty ta on. Let's practice! 🐱",
@@ -401,7 +401,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const visibleContextCopy = canUseCattyChat
     ? contextCopy
     : {
-        line: "Entre na sua conta do AVA para conversar comigo.",
+        line: "Entra na sua conta do AVA para conversar comigo.",
         title: "Catty no AVA",
       };
 

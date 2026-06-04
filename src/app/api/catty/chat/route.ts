@@ -40,7 +40,7 @@ const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 type CattyAiSource = "gemini" | "openai";
 const CATTY_AUTH_REQUIRED_REPLY =
-  "Entre na sua conta do AVA para conversar com a Catty.";
+  "Awnn, eu sou só para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
