@@ -60,7 +60,7 @@ Movimentos permitidos nesta fase:
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
 - Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA.
-- WhatsApp fixo no canto inferior direito acima da Catty no site institucional e no login do AVA.
+- Catty fica acima do WhatsApp no site institucional e no login do AVA; WhatsApp fica como botao inferior.
 
 Cuidados:
 

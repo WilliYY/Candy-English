@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   BookOpen,
   CheckCircle2,
@@ -250,6 +251,7 @@ function getQuickReplies(context: CattyPageContext): QuickReply[] {
 }
 
 export function CattyWidget() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [context, setContext] = useState<CattyPageContext>({
@@ -266,7 +268,8 @@ export function CattyWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
-  const hasWhatsAppWidget = context.area === "site" || context.area === "login";
+  const hasWhatsAppWidget =
+    !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
 
   useEffect(() => {
     if (!open) return;
@@ -346,7 +349,11 @@ export function CattyWidget() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-3 sm:bottom-5 sm:right-5">
+    <div
+      className={`fixed right-4 z-50 flex flex-col items-end gap-3 sm:right-5 ${
+        hasWhatsAppWidget ? "bottom-20 sm:bottom-24" : "bottom-4 sm:bottom-5"
+      }`}
+    >
       {open ? (
         <section className="grid h-[min(620px,calc(100vh-6rem))] w-[min(420px,calc(100vw-2rem))] grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-2xl shadow-primary/20">
           <header className="relative overflow-hidden bg-primary px-4 py-4 text-primary-foreground">
