@@ -26,7 +26,7 @@ Camadas principais:
 - `src/lib/roles.ts`: helpers de roles e destinos.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
-- `src/lib/file-optimization.ts`: otimizacao server-side de PDFs antes de salvar no storage, com fallback seguro.
+- `src/lib/file-optimization.ts`: otimizacao server-side de PDFs pedagogicos antes de salvar no storage, com fallback seguro.
 - `src/lib/homework-ocr.ts`: helper reservado para OCR opcional de campos de homework; o fluxo padrao atual e manual.
 - `src/lib/validations/`: schemas Zod.
 - `prisma/schema.prisma`: modelo relacional.
@@ -64,7 +64,7 @@ Servicos Docker:
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
 - Atividades Candy XP usam rota server-side protegida para PDF/imagem e server actions para criacao, progresso, envio e correcao.
-- PDFs do Candy XP passam por tentativa de otimizacao no servidor antes de serem salvos em `storage/candy-xp-assets`; se a otimizacao falhar ou nao reduzir tamanho, o arquivo original continua sendo salvo.
+- PDFs de Candy XP, homework interativo e aulas interativas passam por tentativa de otimizacao no servidor antes de serem salvos em `storage/candy-xp-assets` ou `storage/homework-assets`; se a otimizacao falhar ou nao reduzir tamanho, o arquivo original continua sendo salvo.
 - Docker final usa `output: "standalone"`.
 - Server Actions aceitam upload ate 15 MB para suportar homework/aula interativa exportados do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.

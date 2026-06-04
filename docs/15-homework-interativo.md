@@ -23,6 +23,7 @@ Arquivos principais:
 - `src/components/ava/interactive-homework-editor.tsx`
 - `src/components/ava/interactive-homework-review.tsx`
 - `src/components/ava/interactive-homework-student.tsx`
+- `src/lib/file-optimization.ts`
 - `src/lib/homework-ocr.ts`
 - `src/lib/storage.ts`
 - `src/lib/validations/learning.ts`
@@ -59,7 +60,8 @@ Tabelas e enums:
 - Na criacao de aula interativa, o sistema cria uma aula real com titulo/resumo/data e vincula uma atividade `Homework.kind=INTERACTIVE` a ela.
 - Homework interativo precisa continuar ligado a uma aula com aluno definido, mesmo quando essa aula for criada automaticamente.
 - O arquivo fica em `storage/homework-assets` ou no volume Docker equivalente, nunca no Git.
-- O tamanho maximo aceito pela UI/storage e 14 MB; `next.config.ts` usa 15 MB para a Server Action receber o arquivo com folga.
+- Imagens continuam limitadas a 14 MB; PDFs usam `PDF_MAX_UPLOAD_MB` com padrao de 14 MB, mantendo `next.config.ts` em 15 MB para a Server Action receber o arquivo com folga.
+- PDFs passam por tentativa de otimizacao server-side antes de salvar; se falhar, nao reduzir tamanho ou parecer perder paginas, o original e salvo.
 - O acesso ao arquivo passa por rota protegida; student so abre arquivo da propria homework.
 - Campos usam coordenadas percentuais (`page`, `x`, `y`, `width`, `height`) relativas a pagina real do PDF/imagem para se adaptar ao tamanho da tela.
 - O PDF/imagem original deve permanecer visivel como fundo; areas editaveis sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
@@ -91,6 +93,7 @@ Tabelas e enums:
 - A revisao do arquivo entregue reutiliza a mesma renderizacao fiel e mostra os valores da submissao sobre os campos percentuais salvos.
 - A criacao interativa grava `fieldDetectionSource` como `manual` e nao cria `HomeworkInteractiveField` automaticamente.
 - A criacao de aula interativa grava `fieldDetectionSource` como `lesson-manual` e tambem nasce sem `HomeworkInteractiveField`.
+- A otimizacao de PDF reaproveita `src/lib/file-optimization.ts`, o mesmo helper do Candy XP, e retorna mensagem de tamanho original/final para a teacher quando houver tentativa.
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
 - Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
@@ -104,6 +107,7 @@ Tabelas e enums:
 - Reintroduzir criacao automatica por IA pode recriar caixas indevidas sobre o PDF e precisa de controle explicito da teacher.
 - Mudar coordenadas para pixels fixos prejudica responsividade.
 - A OpenAI pode ter custo por uso; validar modelo, limites, privacidade e volume antes de reativar OCR em uploads reais.
+- Usar preset de PDF agressivo pode reduzir legibilidade de materiais do Canva; manter `ebook` salvo motivo claro e revisar PDF pesado manualmente.
 
 ## Pendencias
 

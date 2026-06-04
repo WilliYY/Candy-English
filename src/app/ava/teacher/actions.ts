@@ -65,15 +65,8 @@ function formText(formData: FormData, key: string) {
   return typeof value === "string" ? value : "";
 }
 
-function estimateAssetPageCount(buffer: Buffer, mimeType: string) {
-  if (mimeType !== "application/pdf") {
-    return 1;
-  }
-
-  const pdfText = buffer.toString("latin1");
-  const pageMatches = pdfText.match(/\/Type\s*\/Page\b/g);
-
-  return Math.max(1, pageMatches?.length ?? 1);
+function withOptimizationMessage(baseMessage: string, optimizationMessage: string | null) {
+  return optimizationMessage ? `${baseMessage} ${optimizationMessage}` : baseMessage;
 }
 
 async function getTeacherActor() {
@@ -367,10 +360,8 @@ export async function createInteractiveHomework(
   }
 
   let savedAsset: Awaited<ReturnType<typeof saveHomeworkAsset>>;
-  let assetBuffer: Buffer;
 
   try {
-    assetBuffer = Buffer.from(await asset.arrayBuffer());
     savedAsset = await saveHomeworkAsset(asset);
   } catch (error) {
     return {
@@ -415,7 +406,7 @@ export async function createInteractiveHomework(
       data: {
         assetFileName: savedAsset.originalName,
         assetMimeType: savedAsset.mimeType,
-        assetPageCount: estimateAssetPageCount(assetBuffer, savedAsset.mimeType),
+        assetPageCount: savedAsset.pageCount,
         assetSizeBytes: savedAsset.sizeBytes,
         assetStoragePath: savedAsset.relativePath,
         dueDate: data.dueDate,
@@ -441,7 +432,10 @@ export async function createInteractiveHomework(
   return {
     homeworkId: homework.id,
     ok: true,
-    message: "Homework interativa criada. Desenhe as areas no PDF e salve.",
+    message: withOptimizationMessage(
+      "Homework interativa criada. Desenhe as areas no PDF e salve.",
+      savedAsset.optimizationMessage,
+    ),
   };
 }
 
@@ -547,10 +541,8 @@ export async function createInteractiveLesson(
   }
 
   let savedAsset: Awaited<ReturnType<typeof saveHomeworkAsset>>;
-  let assetBuffer: Buffer;
 
   try {
-    assetBuffer = Buffer.from(await asset.arrayBuffer());
     savedAsset = await saveHomeworkAsset(asset);
   } catch (error) {
     return {
@@ -594,7 +586,7 @@ export async function createInteractiveLesson(
       data: {
         assetFileName: savedAsset.originalName,
         assetMimeType: savedAsset.mimeType,
-        assetPageCount: estimateAssetPageCount(assetBuffer, savedAsset.mimeType),
+        assetPageCount: savedAsset.pageCount,
         assetSizeBytes: savedAsset.sizeBytes,
         assetStoragePath: savedAsset.relativePath,
         fieldDetectionSource: "lesson-manual",
@@ -619,7 +611,10 @@ export async function createInteractiveLesson(
   return {
     homeworkId: homework.id,
     ok: true,
-    message: "Aula interativa criada. Desenhe as areas no PDF e salve.",
+    message: withOptimizationMessage(
+      "Aula interativa criada. Desenhe as areas no PDF e salve.",
+      savedAsset.optimizationMessage,
+    ),
   };
 }
 

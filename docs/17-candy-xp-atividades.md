@@ -90,7 +90,7 @@ Banco:
 
 - O modulo usa modelos proprios, em vez de reaproveitar `Homework`, porque a regra de XP, liberacao e correcao e diferente.
 - O PDF/imagem fica em `storage/candy-xp-assets`, seguindo o padrao de uploads protegidos do AVA.
-- A otimizacao de PDF usa `src/lib/file-optimization.ts` e so substitui o arquivo quando a versao otimizada fica menor e nao parece perder paginas.
+- A otimizacao de PDF usa `src/lib/file-optimization.ts`, compartilhado com homework/aulas interativas, e so substitui o arquivo quando a versao otimizada fica menor e nao parece perder paginas.
 - Se Ghostscript nao estiver disponivel, falhar ou gerar arquivo maior, o upload continua salvando o original e retorna mensagem amigavel ao admin.
 - A premiacao usa o ledger existente `CandyXpEvent` e atualiza `CandyXpProfile` por `recordCandyXpEventsForUser`.
 - A tela student mostra cards gamificados com nivel, categoria, XP, progresso e status.

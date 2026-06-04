@@ -27,7 +27,7 @@ Ja existe:
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
 - Catty como assistente visual contextual com IA opcional via OpenAI, fallback local, atalhos de estudo, incentivo e pratica simples em ingles;
 - Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges, catalogo inicial de missoes e atividades de historias com XP automatico/manual;
-- otimizacao server-side de PDFs do Candy XP com Ghostscript quando disponivel, mantendo fallback para salvar o original se a compressao falhar;
+- otimizacao server-side de PDFs pedagogicos protegidos, incluindo Candy XP, homework interativo e aulas interativas, com Ghostscript quando disponivel e fallback para salvar o original se a compressao falhar;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
 Nao existe ainda: pagamento online, minijogos executaveis de vocabulario/listening/speaking, tela completa de badges/temporadas, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e base de conhecimento propria/RAG para a Catty.
@@ -113,9 +113,9 @@ Variaveis principais:
 - `ADMIN_CREDENTIALS_SECRET`: segredo opcional para criptografar APIs/senhas salvas no admin; se ficar vazio, `AUTH_SECRET` e usado.
 - `AUTH_URL` e `NEXTAUTH_URL`: URL publica do app.
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
-- `PDF_OPTIMIZATION_ENABLED`: ativa/desativa a tentativa de otimizacao de PDFs do Candy XP.
+- `PDF_OPTIMIZATION_ENABLED`: ativa/desativa a tentativa de otimizacao de PDFs pedagogicos protegidos, como Candy XP, homework interativo e aulas interativas.
 - `PDF_OPTIMIZATION_PRESET`: preset do Ghostscript para PDF, por padrao `ebook`.
-- `PDF_MAX_UPLOAD_MB`: limite de upload para PDF do Candy XP, por padrao `14`.
+- `PDF_MAX_UPLOAD_MB`: limite de upload para esses PDFs pedagogicos, por padrao `14`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
 - `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
 - `OPENAI_API_KEY`: chave opcional usada pela Catty com IA e pelo OCR opcional de homework; sem chave, a Catty usa fallback local e homework segue manual.

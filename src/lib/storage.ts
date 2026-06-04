@@ -105,6 +105,66 @@ function formatUploadLimit(bytes: number) {
   return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }
 
+async function saveLearningAsset(
+  file: File,
+  input: {
+    directory: "candy-xp-assets" | "homework-assets";
+    label: string;
+  },
+) {
+  if (!allowedHomeworkAssetTypes.has(file.type)) {
+    throw new Error("Envie um PDF ou imagem PNG, JPG ou WebP.");
+  }
+
+  const maxUploadBytes =
+    file.type === "application/pdf"
+      ? getPdfMaxUploadBytes()
+      : HOMEWORK_ASSET_MAX_BYTES;
+
+  if (file.size <= 0 || file.size > maxUploadBytes) {
+    throw new Error(
+      `O arquivo ${input.label} precisa ter ate ${formatUploadLimit(
+        maxUploadBytes,
+      )} MB.`,
+    );
+  }
+
+  const extension =
+    file.type === "application/pdf"
+      ? ".pdf"
+      : file.type === "image/png"
+        ? ".png"
+        : file.type === "image/webp"
+          ? ".webp"
+          : ".jpg";
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const optimization = await optimizeFileForStorage({
+    buffer,
+    mimeType: file.type,
+  });
+  const relativePath = await saveFileBuffer(
+    input.directory,
+    extension,
+    optimization.buffer,
+  );
+
+  return {
+    mimeType: file.type,
+    optimizationMessage: optimization.message,
+    optimizationPreset: optimization.preset,
+    optimizationStatus: optimization.status,
+    optimizedSizeBytes: optimization.optimizedSizeBytes,
+    originalName: file.name,
+    originalSizeBytes: optimization.originalSizeBytes,
+    pageCount:
+      file.type === "application/pdf"
+        ? estimatePdfPageCount(optimization.buffer)
+        : 1,
+    relativePath,
+    sizeBytes: optimization.optimizedSizeBytes,
+  };
+}
+
 export async function saveContractPdf(file: File) {
   if (file.type !== "application/pdf") {
     throw new Error("Envie um arquivo PDF.");
@@ -145,83 +205,15 @@ export async function saveAvatarImage(file: File) {
 }
 
 export async function saveHomeworkAsset(file: File) {
-  if (!allowedHomeworkAssetTypes.has(file.type)) {
-    throw new Error("Envie um PDF ou imagem PNG, JPG ou WebP.");
-  }
-
-  if (file.size <= 0 || file.size > HOMEWORK_ASSET_MAX_BYTES) {
-    throw new Error("O arquivo da homework precisa ter ate 14 MB.");
-  }
-
-  const extension =
-    file.type === "application/pdf"
-      ? ".pdf"
-      : file.type === "image/png"
-        ? ".png"
-        : file.type === "image/webp"
-          ? ".webp"
-          : ".jpg";
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const relativePath = await saveFileBuffer("homework-assets", extension, buffer);
-
-  return {
-    mimeType: file.type,
-    originalName: file.name,
-    relativePath,
-    sizeBytes: file.size,
-  };
+  return saveLearningAsset(file, {
+    directory: "homework-assets",
+    label: "da homework",
+  });
 }
 
 export async function saveCandyXpAsset(file: File) {
-  if (!allowedHomeworkAssetTypes.has(file.type)) {
-    throw new Error("Envie um PDF ou imagem PNG, JPG ou WebP.");
-  }
-
-  const maxUploadBytes =
-    file.type === "application/pdf"
-      ? getPdfMaxUploadBytes()
-      : HOMEWORK_ASSET_MAX_BYTES;
-
-  if (file.size <= 0 || file.size > maxUploadBytes) {
-    throw new Error(
-      `O arquivo Candy XP precisa ter ate ${formatUploadLimit(
-        maxUploadBytes,
-      )} MB.`,
-    );
-  }
-
-  const extension =
-    file.type === "application/pdf"
-      ? ".pdf"
-      : file.type === "image/png"
-        ? ".png"
-        : file.type === "image/webp"
-          ? ".webp"
-          : ".jpg";
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const optimization = await optimizeFileForStorage({
-    buffer,
-    mimeType: file.type,
+  return saveLearningAsset(file, {
+    directory: "candy-xp-assets",
+    label: "Candy XP",
   });
-  const relativePath = await saveFileBuffer(
-    "candy-xp-assets",
-    extension,
-    optimization.buffer,
-  );
-
-  return {
-    mimeType: file.type,
-    optimizationMessage: optimization.message,
-    optimizationPreset: optimization.preset,
-    optimizationStatus: optimization.status,
-    optimizedSizeBytes: optimization.optimizedSizeBytes,
-    originalName: file.name,
-    originalSizeBytes: optimization.originalSizeBytes,
-    pageCount:
-      file.type === "application/pdf"
-        ? estimatePdfPageCount(optimization.buffer)
-        : 1,
-    relativePath,
-    sizeBytes: optimization.optimizedSizeBytes,
-  };
 }

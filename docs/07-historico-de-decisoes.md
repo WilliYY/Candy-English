@@ -296,6 +296,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/file-optimization.ts`, `src/lib/storage.ts`, `src/app/ava/candy-xp/actions.ts`, `Dockerfile`, `.env.example` e docs oficiais.
 - Riscos/cuidados: presets agressivos podem reduzir legibilidade; a otimizacao deve continuar server-side, configuravel por ambiente e sem quebrar as rotas protegidas.
 
+### 2026-06-04 - Otimizacao de PDF reaproveitada em homework e aula interativa
+
+- Decisao: reaproveitar a mesma camada `src/lib/file-optimization.ts` em `saveHomeworkAsset`, cobrindo uploads de `/ava/teacher?task=criar-homework` e `/ava/teacher?task=criar-aula`.
+- Motivo: homework interativo e aulas interativas tambem recebem PDFs do Canva e salvam em `storage/homework-assets`; usar um helper unico evita duplicacao e reduz acumulacao de arquivos pesados.
+- Impacto: `src/lib/storage.ts`, `src/app/ava/teacher/actions.ts`, `docs/15-homework-interativo.md` e docs oficiais.
+- Riscos/cuidados: imagens continuam sem compressao nesta fase para nao alterar visual; PDFs devem manter fallback para original, page count estimado e mensagem amigavel para a teacher.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

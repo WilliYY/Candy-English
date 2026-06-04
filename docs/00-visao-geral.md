@@ -45,7 +45,7 @@ Rotas principais:
 - Homework e aula interativa devem manter arquivo e campos protegidos por permissao de aluno/teacher/admin.
 - Candy XP e persistido por eventos server-side e continua respeitando role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos.
 - Atividades Candy XP devem liberar PDF/imagem apenas por rota protegida e conceder XP no servidor, com correcao automatica para perguntas objetivas e manual para respostas escritas.
-- PDFs de atividades Candy XP podem ser otimizados no servidor antes de salvar, mas a falha da otimizacao nao deve quebrar o upload nem abrir acesso publico.
+- PDFs pedagogicos protegidos, como atividades Candy XP, homework interativo e aulas interativas, podem ser otimizados no servidor antes de salvar, mas a falha da otimizacao nao deve quebrar o upload nem abrir acesso publico.
 
 ## Decisoes tecnicas tomadas
 
@@ -56,7 +56,7 @@ Rotas principais:
 - Prisma 7 usa client gerado em `src/generated/prisma`.
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.
 - Uploads persistem em `storage/` local ou volume Docker `app-storage`.
-- PDFs do Candy XP passam por tentativa de otimizacao server-side com Ghostscript quando configurado.
+- PDFs de Candy XP, homework interativo e aulas interativas passam por tentativa de otimizacao server-side com Ghostscript quando configurado.
 - Homework e aula interativa usam editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
 - Candy XP usa `src/lib/candy-xp.ts` para calcular nivel infinito/progresso e `src/lib/candy-xp-persistence.ts` para gravar eventos, streaks, badges e missoes com `sourceKey` anti-duplicacao.
 - Candy XP Atividades usa modelos proprios para historia, perguntas, liberacao por aluno e progresso, mas reaproveita o ledger de XP existente.
