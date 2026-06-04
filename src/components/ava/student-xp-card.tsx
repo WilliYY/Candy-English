@@ -145,9 +145,6 @@ export function CandyXpCard({
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                A trilha nao tem teto: cada novo nivel recalcula uma meta maior.
-              </p>
               {xp.persisted ? (
                 <div className="mt-4 grid gap-2 sm:grid-cols-3">
                   <div className="rounded-md border border-primary/10 bg-white/75 p-3">
