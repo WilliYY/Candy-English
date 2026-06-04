@@ -132,12 +132,14 @@ Helpers:
 
 1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA.
 2. Widget identifica apenas contexto leve da tela atual (`area` e `task`) para adaptar titulo, texto de apoio e atalhos de estudo.
-3. Widget envia a mensagem atual, ate 8 mensagens recentes e esse contexto leve para `/api/catty/chat`.
-4. A rota valida o payload com Zod, aplica limite simples por IP e usa Gemini quando `GEMINI_API_KEY` existe.
-5. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
-6. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
-7. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-8. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+3. O `RootLayout` chama `auth()` e passa para a Catty apenas o nome do usuario logado, quando existe; o widget usa o primeiro nome em baloes visuais locais no AVA.
+4. Para usuarios logados no AVA, a Catty fechada alterna baloes fofos a cada 10 segundos, com saudacao por horario, sem chamar IA.
+5. Widget envia para `/api/catty/chat` apenas quando o usuario manda uma mensagem real: mensagem atual, ate 8 mensagens recentes e contexto leve.
+6. A rota valida o payload com Zod, aplica limite simples por IP e usa Gemini quando `GEMINI_API_KEY` existe.
+7. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
+8. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+9. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+10. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 
@@ -225,7 +227,7 @@ Helpers:
 - Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - `meet.jit.si` publico exige conta para quem cria sala e nao deve ser tratado como embed de producao; para teacher/aluno sem conta Jitsi, usar dominio Jitsi dedicado/JaaS configurado no ambiente.
 - Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
-- Catty pode usar `area` e `task` da URL para orientar atalhos e linguagem, mas nao pode receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
+- Catty pode usar `area` e `task` da URL para orientar atalhos e linguagem, e o primeiro nome do usuario logado apenas para baloes visuais locais; nao pode receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
 - APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.

@@ -29,6 +29,57 @@ type QuickReply = {
   text: string;
 };
 
+type CattyWidgetProps = {
+  sessionUser?: {
+    name: string | null;
+  } | null;
+};
+
+const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
+
+const loggedInBalloonTemplates = [
+  "Miaww, {name}! Catty ta on. Let's practice! 🐱",
+  "{greeting}, {name}! Vamos estudar ingles um pouquinho?",
+  "Miaww, {name}! Como foi seu dia ate agora?",
+  "Catty chegou, {name}. Bora destravar esse English?",
+  "Ei, {name}, let's study together!",
+  "Miaww, hoje e dia de evoluir no ingles.",
+  "{name}, sua parceira de estudos esta online.",
+  "Good to see you, {name}! Ready to practice?",
+  "Miaww, {name}, abre uma atividade e vamos juntos.",
+  "Um pouquinho por dia, {name}. English fica mais facil.",
+  "Catty ta feliz porque voce entrou no AVA.",
+  "{name}, quer praticar uma frase em ingles agora?",
+  "Miaww, vamos aquecer o cerebro com English?",
+  "{greeting}! A Catty ja separou energia de estudo.",
+  "{name}, hoje seu ingles vai ganhar XP.",
+  "Bora, {name}! Uma frase nova ja conta.",
+  "Miaww, nao precisa ser perfeito. Precisa praticar.",
+  "Catty mode on. Study mode on. Vamos!",
+  "{name}, me chama se travar em alguma atividade.",
+  "Quer revisar rapidinho, {name}?",
+  "Miaww, estou aqui para te ajudar sem dar resposta pronta.",
+  "{name}, cada mini pratica vira progresso.",
+  "Let's go, {name}! Seu ingles agradece.",
+  "Catty ta pronta. E voce, {name}?",
+  "{greeting}, aluno Candy! Hoje tem evolucao.",
+  "Miaww, {name}, vamos deixar esse ingles mais leve.",
+  "Uma pergunta em English agora, {name}?",
+  "Catty acredita em voce, {name}. Bora estudar!",
+  "{name}, abre o Candy XP e vamos ganhar progresso.",
+  "Miaww, o AVA fica mais fofo quando voce entra.",
+  "Hoje e um bom dia para praticar listening, reading ou speaking.",
+  "{name}, quer uma dica sem spoiler da resposta?",
+  "Catty ta aqui: calma, foco e English.",
+  "Miaww, vamos transformar duvida em pratica.",
+  "{name}, seu futuro bilingue mandou um oi.",
+  "Estudar 5 minutinhos ja vale, {name}.",
+  "Good vibes, good English, {name}.",
+  "Miaww, escolha uma missao e vamos comecar.",
+  "{name}, quer treinar uma frase curtinha?",
+  "Catty feliz, aluno online, English acontecendo!",
+] as const;
+
 const defaultQuickReplies: QuickReply[] = [
   {
     icon: "practice",
@@ -250,7 +301,75 @@ function getQuickReplies(context: CattyPageContext): QuickReply[] {
   return defaultQuickReplies;
 }
 
-export function CattyWidget() {
+function getFirstDisplayName(name?: string | null) {
+  const cleaned = name?.replace(/\s+/g, " ").trim();
+
+  if (!cleaned) {
+    return "aluno Candy";
+  }
+
+  if (cleaned.length <= 18) {
+    return cleaned;
+  }
+
+  const firstName = cleaned.split(" ")[0]?.trim() || cleaned;
+
+  if (firstName.length > 18) {
+    return `${firstName.slice(0, 18)}...`;
+  }
+
+  return firstName;
+}
+
+function getCattyGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour < 5) {
+    return "Good night";
+  }
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 18) {
+    return "Good afternoon";
+  }
+
+  if (hour >= 22) {
+    return "Good night";
+  }
+
+  return "Good evening";
+}
+
+function getRandomLoggedInBalloon(name: string, current?: string) {
+  const greeting = getCattyGreeting();
+  const availableTemplates = loggedInBalloonTemplates.filter((template) => {
+    const rendered = template
+      .replace(/\{name\}/g, name)
+      .replace(/\{greeting\}/g, greeting);
+
+    return rendered !== current;
+  });
+  const templates =
+    availableTemplates.length > 0
+      ? availableTemplates
+      : loggedInBalloonTemplates;
+  const template = templates[Math.floor(Math.random() * templates.length)];
+
+  return template.replace(/\{name\}/g, name).replace(/\{greeting\}/g, greeting);
+}
+
+function isLoggedInAvaArea(context: CattyPageContext) {
+  return (
+    context.area === "admin" ||
+    context.area === "teacher" ||
+    context.area === "student"
+  );
+}
+
+export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
@@ -265,9 +384,15 @@ export function CattyWidget() {
   ]);
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+  const [loggedInBalloon, setLoggedInBalloon] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
+  const displayName = useMemo(
+    () => getFirstDisplayName(sessionUser?.name),
+    [sessionUser?.name],
+  );
+  const showLoggedInBalloons = Boolean(sessionUser && isLoggedInAvaArea(context));
   const hasWhatsAppWidget =
     !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
 
@@ -291,6 +416,25 @@ export function CattyWidget() {
       window.removeEventListener("focus", refreshContext);
     };
   }, []);
+
+  useEffect(() => {
+    if (!showLoggedInBalloons) {
+      setLoggedInBalloon("");
+      return;
+    }
+
+    setLoggedInBalloon((current) =>
+      getRandomLoggedInBalloon(displayName, current),
+    );
+
+    const intervalId = window.setInterval(() => {
+      setLoggedInBalloon((current) =>
+        getRandomLoggedInBalloon(displayName, current),
+      );
+    }, LOGGED_IN_BALLOON_INTERVAL_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [displayName, showLoggedInBalloons]);
 
   function openCatty() {
     setContext(getCurrentPageContext());
@@ -494,7 +638,13 @@ export function CattyWidget() {
         </section>
       ) : null}
 
-      {!open && !hasOpened && !hasWhatsAppWidget ? (
+      {!open && showLoggedInBalloons && loggedInBalloon ? (
+        <div className="catty-pop pointer-events-none mr-1 max-w-[min(270px,calc(100vw-5rem))] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
+          {loggedInBalloon}
+        </div>
+      ) : null}
+
+      {!open && !showLoggedInBalloons && !hasOpened && !hasWhatsAppWidget ? (
         <div className="catty-pop pointer-events-none mr-1 max-w-[230px] rounded-2xl rounded-br-sm border border-primary/15 bg-white px-4 py-3 text-sm leading-5 text-primary shadow-xl shadow-primary/10">
           Hi! Vamos estudar um pouquinho?
         </div>

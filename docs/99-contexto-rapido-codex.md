@@ -51,6 +51,7 @@ Ao receber o prompt minimo, o agente deve:
 - Itens de correcao ficam minimizados por padrao.
 - Contratos PDF sao visualizados no AVA por rota protegida.
 - Catty usa Gemini quando configurado, OpenAI apenas quando a mensagem chama Catty pelo nome e fallback local quando nao ha chave ou a chamada falha.
+- Catty recebe do `RootLayout` apenas o nome da sessao para baloes visuais locais no AVA logado; o widget usa primeiro nome, troca fala a cada 10 segundos e nao chama IA para esses baloes.
 - Header do site usa destaque forte no item de navegacao ativo.
 - Home atual usa `public/brand/home-candy-2.mp4` como fundo do primeiro card dominante do hero em loop mudo, com palco menos horizontal, zoom leve e fundo branco reduzido quando sobra area.
 - No hero da home, `intro-1.mp4` e `intro-2.mp4` ficam embutidos dentro desse mesmo primeiro card, no espaco livre do fundo, com borda suave, autoplay mudo, loop, fundo branco para evitar cortes e botoes visiveis para pausar/retomar e ligar/desligar som.

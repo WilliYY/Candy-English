@@ -121,6 +121,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/api/catty/chat/route.ts`, `src/lib/catty.ts`, `src/lib/admin-credentials.ts`, `.env.example`, `README.md` e docs oficiais.
 - Riscos/cuidados: manter segredo fora do Git; nao enviar dados internos do AVA; se Gemini/OpenAI falharem, preservar fallback local.
 
+### 2026-06-04 - Baloes locais da Catty para usuario logado
+
+- Decisao: o `RootLayout` passa apenas o nome da sessao para `CattyWidget`, que mostra baloes locais aleatorios no AVA logado sem chamar IA.
+- Motivo: deixar a Catty mais viva e pessoal para alunos, teachers e admins, sem aumentar custo de Gemini/OpenAI nem enviar dados internos.
+- Impacto: `src/app/layout.tsx`, `src/components/site/catty-widget.tsx`, `README.md` e docs oficiais.
+- Riscos/cuidados: usar so primeiro nome quando necessario; nao exibir dados sensiveis; manter baloes pequenos para nao cobrir WhatsApp ou botoes criticos.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

@@ -78,6 +78,7 @@ Rotas protegidas:
 - `TEACHER` nao acessa arquivos nem respostas Candy XP nesta fase.
 - Atividades Candy XP objetivas podem liberar XP automaticamente no servidor; respostas escritas exigem revisao admin.
 - Futuros jogos ou missoes precisam validar sessao, role, dono dos dados e `sourceKey` antes de conceder XP.
+- Catty pode receber do layout apenas o nome do usuario logado para baloes visuais locais; esse nome nao autoriza leitura de dados internos nem deve ser usado para enviar contratos, respostas, pagamentos ou credenciais para IA.
 
 ## Decisoes tecnicas tomadas
 
@@ -92,6 +93,7 @@ Rotas protegidas:
 - Actions do cofre admin chamam `auth()`, validam role `ADMIN`, validam payload com Zod e bloqueiam alteracao/exclusao direta de valores vindos do `.env`.
 - O ledger Candy XP usa `CandyXpEvent.userId + sourceKey` como defesa anti-replay/anti-duplicacao, alem das validacoes de role nas actions e paginas que sincronizam XP.
 - As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage.
+- O `RootLayout` pode chamar `auth()` para passar somente `session.user.name` ao widget da Catty, mantendo a deteccao de login no servidor e sem depender de descoberta client-side.
 
 ## Riscos ao alterar esta parte
 
