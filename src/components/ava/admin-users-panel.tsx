@@ -46,6 +46,11 @@ import {
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
 import { ContractUploadForm } from "@/components/ava/contract-upload-form";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
+import {
+  StudentPreRegistrationReviewPanel,
+  type PreRegistrationStatus,
+  type StudentPreRegistrationReviewRow,
+} from "@/components/ava/student-pre-registration-review-panel";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -61,6 +66,7 @@ export const adminTaskIds = [
   "criar-admin",
   "criar-teacher",
   "criar-aluno",
+  "aceitar-alunos",
   "vincular-aluno",
   "candy-xp",
   "contratos",
@@ -153,8 +159,11 @@ type AdminUsersPanelProps = {
   initialAgendaMonth: number;
   initialFinanceMonth: number;
   maintenanceMode: boolean;
+  preRegistrationStatus: PreRegistrationStatus;
+  preRegistrationStatusCounts: Record<PreRegistrationStatus, number>;
   students: CandyXpStudentOption[];
   storageUsageBytes: number;
+  studentPreRegistrations: StudentPreRegistrationReviewRow[];
   teachers: AssignmentOption[];
   users: AdminUserRow[];
 };
@@ -194,6 +203,10 @@ const taskMeta = {
   "criar-teacher": {
     icon: GraduationCap,
     title: "Criar teacher",
+  },
+  "aceitar-alunos": {
+    icon: UserCheck,
+    title: "Aceitar alunos",
   },
   contratos: {
     icon: FileText,
@@ -559,8 +572,11 @@ export function AdminUsersPanel({
   initialAgendaMonth,
   initialFinanceMonth,
   maintenanceMode,
+  preRegistrationStatus,
+  preRegistrationStatusCounts,
   students,
   storageUsageBytes,
+  studentPreRegistrations,
   teachers,
   users,
 }: AdminUsersPanelProps) {
@@ -738,6 +754,16 @@ export function AdminUsersPanel({
 
           {activeTask === "criar-aluno" ? (
             <AdminCreateUserForm fixedRole="STUDENT" submitLabel="Criar aluno" />
+          ) : null}
+
+          {activeTask === "aceitar-alunos" ? (
+            <StudentPreRegistrationReviewPanel
+              activeStatus={preRegistrationStatus}
+              basePath="/ava/admin"
+              requests={studentPreRegistrations}
+              statusCounts={preRegistrationStatusCounts}
+              viewerRole="ADMIN"
+            />
           ) : null}
 
           {activeTask === "vincular-aluno" ? (

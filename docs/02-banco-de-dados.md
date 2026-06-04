@@ -100,7 +100,8 @@ Enums:
 ## Regras de negocio que precisam ser preservadas
 
 - `User.email` e unico.
-- `StudentPreRegistration.email` e unico e guarda apenas solicitacoes pendentes/operacionais; nao cria acesso ao AVA.
+- `StudentPreRegistration.email` e unico e guarda solicitacoes operacionais; nao cria acesso ao AVA ate uma action protegida converter em `User.role=STUDENT`.
+- `StudentPreRegistration.reviewedByUserId`, `reviewedAt`, `convertedUserId` e `statusNote` registram revisao/conversao sem armazenar senha inicial.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
@@ -147,6 +148,7 @@ Enums:
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
 - Migration `20260601193000_candy_xp_activities` adiciona atividades Candy XP com PDF/imagem, perguntas, liberacao por aluno, progresso/submissao e evento de XP por atividade concluida.
 - Migration `20260604153000_student_pre_registration` adiciona `StudentPreRegistration` para interessados solicitarem cadastro pelo login sem criar `User`, senha ou sessao.
+- Migration `20260604170000_student_pre_registration_review` adiciona metadados de revisao e conversao do pre-cadastro para o modulo `Aceitar alunos`.
 
 ## Riscos ao alterar esta parte
 
@@ -165,7 +167,7 @@ Enums:
 - Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
-- Transformar `StudentPreRegistration` diretamente em login sem revisao admin quebraria a regra de acesso controlado ao AVA.
+- Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.
 
 ## Pendencias
 

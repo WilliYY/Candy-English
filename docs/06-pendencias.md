@@ -19,7 +19,7 @@ As pendencias podem afetar:
 ## Pendencias de produto
 
 - Edicao completa de usuarios existentes.
-- Tela admin para listar, aprovar, rejeitar ou converter pre-cadastros `StudentPreRegistration` em usuario real; hoje o login apenas recebe a solicitacao pendente.
+- Notificacao por email/WhatsApp para avisar a equipe Candy quando um novo pre-cadastro chegar.
 - Edicao/delecao completa de aulas e materiais; aula/homework interativa ja podem ser excluidas nas telas de criacao.
 - Multiplas perguntas por homework na interface.
 - Exportacao de homework interativo preenchido como PDF final.

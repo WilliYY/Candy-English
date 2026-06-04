@@ -13,6 +13,7 @@ import {
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
+import { studentPreRegistrationStatusSchema } from "@/lib/validations/pre-registration";
 
 export const metadata: Metadata = {
   title: "Teacher AVA",
@@ -23,6 +24,7 @@ export const runtime = "nodejs";
 
 type TeacherPageProps = {
   searchParams?: Promise<{
+    preStatus?: string | string[];
     task?: string | string[];
   }>;
 };
@@ -35,6 +37,18 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     ? params?.task[0]
     : params?.task;
   const activeTask = normalizeTeacherTask(requestedTask);
+  const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
+    ? params?.preStatus[0]
+    : params?.preStatus;
+  const parsedPreRegistrationStatus =
+    studentPreRegistrationStatusSchema.safeParse(
+      requestedPreRegistrationStatus,
+    );
+  const preRegistrationStatus =
+    parsedPreRegistrationStatus.success &&
+    ["PENDING", "CONTACTED"].includes(parsedPreRegistrationStatus.data)
+      ? parsedPreRegistrationStatus.data
+      : "PENDING";
   const currentTeacherProfile =
     session.user.role === "TEACHER"
       ? await prisma.teacherProfile.findUnique({
@@ -91,6 +105,8 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     liveSessions,
     contracts,
     chatThreads,
+    studentPreRegistrations,
+    studentPreRegistrationStatusCounts,
   ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: session.user.id },
@@ -418,6 +434,48 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         teacherProfileId: true,
       },
     }),
+    prisma.studentPreRegistration.findMany({
+      where: {
+        status: preRegistrationStatus,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        address: true,
+        birthDate: true,
+        convertedUser: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+        createdAt: true,
+        email: true,
+        englishGoal: true,
+        fullName: true,
+        guardianDocument: true,
+        guardianName: true,
+        guardianPhone: true,
+        id: true,
+        notes: true,
+        phone: true,
+        reviewedAt: true,
+        reviewedByUser: {
+          select: {
+            name: true,
+          },
+        },
+        secondaryContact: true,
+        status: true,
+        statusNote: true,
+        studentPhone: true,
+      },
+    }),
+    Promise.all([
+      prisma.studentPreRegistration.count({ where: { status: "PENDING" } }),
+      prisma.studentPreRegistration.count({ where: { status: "CONTACTED" } }),
+    ]),
   ]);
   let candyXpPersistence: CandyXpPersistenceSnapshot | null = null;
 
@@ -527,6 +585,35 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         id: student.id,
         label: student.user.name,
         level: student.level,
+      }))}
+      preRegistrationStatus={preRegistrationStatus}
+      preRegistrationStatusCounts={{
+        APPROVED: 0,
+        CONTACTED: studentPreRegistrationStatusCounts[1],
+        PENDING: studentPreRegistrationStatusCounts[0],
+        REJECTED: 0,
+      }}
+      studentPreRegistrations={studentPreRegistrations.map((request) => ({
+        address: request.address,
+        birthDate: request.birthDate?.toISOString() ?? null,
+        convertedUserEmail: request.convertedUser?.email ?? null,
+        convertedUserName: request.convertedUser?.name ?? null,
+        createdAt: request.createdAt.toISOString(),
+        email: request.email,
+        englishGoal: request.englishGoal,
+        fullName: request.fullName,
+        guardianDocument: request.guardianDocument,
+        guardianName: request.guardianName,
+        guardianPhone: request.guardianPhone,
+        id: request.id,
+        notes: request.notes,
+        phone: request.phone,
+        reviewedAt: request.reviewedAt?.toISOString() ?? null,
+        reviewedByName: request.reviewedByUser?.name ?? null,
+        secondaryContact: request.secondaryContact,
+        status: request.status,
+        statusNote: request.statusNote,
+        studentPhone: request.studentPhone,
       }))}
       submissions={submissions}
       teachers={teachers.map((teacher) => ({

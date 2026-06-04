@@ -13,6 +13,7 @@ import {
 } from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
 import { getStorageUsageBytes } from "@/lib/storage";
+import { studentPreRegistrationStatusSchema } from "@/lib/validations/pre-registration";
 
 export const metadata: Metadata = {
   title: "Admin AVA",
@@ -23,6 +24,7 @@ export const runtime = "nodejs";
 
 type AdminPageProps = {
   searchParams?: Promise<{
+    preStatus?: string | string[];
     task?: string | string[];
   }>;
 };
@@ -35,6 +37,16 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     ? params?.task[0]
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
+  const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
+    ? params?.preStatus[0]
+    : params?.preStatus;
+  const parsedPreRegistrationStatus =
+    studentPreRegistrationStatusSchema.safeParse(
+      requestedPreRegistrationStatus,
+    );
+  const preRegistrationStatus = parsedPreRegistrationStatus.success
+    ? parsedPreRegistrationStatus.data
+    : "PENDING";
 
   await syncEnvironmentAdminCredentials(session.user.id);
 
@@ -54,6 +66,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     storageUsageBytes,
     adminCredentials,
     candyXpActivities,
+    studentPreRegistrations,
+    studentPreRegistrationStatusCounts,
   ] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
@@ -418,6 +432,50 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         xpReward: true,
       },
     }),
+    prisma.studentPreRegistration.findMany({
+      where: {
+        status: preRegistrationStatus,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        address: true,
+        birthDate: true,
+        convertedUser: {
+          select: {
+            email: true,
+            name: true,
+          },
+        },
+        createdAt: true,
+        email: true,
+        englishGoal: true,
+        fullName: true,
+        guardianDocument: true,
+        guardianName: true,
+        guardianPhone: true,
+        id: true,
+        notes: true,
+        phone: true,
+        reviewedAt: true,
+        reviewedByUser: {
+          select: {
+            name: true,
+          },
+        },
+        secondaryContact: true,
+        status: true,
+        statusNote: true,
+        studentPhone: true,
+      },
+    }),
+    Promise.all([
+      prisma.studentPreRegistration.count({ where: { status: "PENDING" } }),
+      prisma.studentPreRegistration.count({ where: { status: "CONTACTED" } }),
+      prisma.studentPreRegistration.count({ where: { status: "APPROVED" } }),
+      prisma.studentPreRegistration.count({ where: { status: "REJECTED" } }),
+    ]),
   ]);
   const currentDate = new Date();
   const initialFinanceMonth =
@@ -668,6 +726,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       initialAgendaMonth={initialAgendaMonth}
       initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}
+      preRegistrationStatus={preRegistrationStatus}
+      preRegistrationStatusCounts={{
+        APPROVED: studentPreRegistrationStatusCounts[2],
+        CONTACTED: studentPreRegistrationStatusCounts[1],
+        PENDING: studentPreRegistrationStatusCounts[0],
+        REJECTED: studentPreRegistrationStatusCounts[3],
+      }}
       students={students.map((student) => ({
         email: student.user.email,
         id: student.id,
@@ -675,6 +740,28 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         label: `${student.user.name}${student.level ? ` - ${student.level}` : ""}`,
       }))}
       storageUsageBytes={storageUsageBytes}
+      studentPreRegistrations={studentPreRegistrations.map((request) => ({
+        address: request.address,
+        birthDate: request.birthDate?.toISOString() ?? null,
+        convertedUserEmail: request.convertedUser?.email ?? null,
+        convertedUserName: request.convertedUser?.name ?? null,
+        createdAt: request.createdAt.toISOString(),
+        email: request.email,
+        englishGoal: request.englishGoal,
+        fullName: request.fullName,
+        guardianDocument: request.guardianDocument,
+        guardianName: request.guardianName,
+        guardianPhone: request.guardianPhone,
+        id: request.id,
+        notes: request.notes,
+        phone: request.phone,
+        reviewedAt: request.reviewedAt?.toISOString() ?? null,
+        reviewedByName: request.reviewedByUser?.name ?? null,
+        secondaryContact: request.secondaryContact,
+        status: request.status,
+        statusNote: request.statusNote,
+        studentPhone: request.studentPhone,
+      }))}
       teachers={teachers.map((teacher) => ({
         email: teacher.user.email,
         id: teacher.id,

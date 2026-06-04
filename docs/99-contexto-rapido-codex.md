@@ -34,8 +34,8 @@ Ao receber o prompt minimo, o agente deve:
 - Site institucional e AVA proprio em `/ava`.
 - Roles atuais: `ADMIN`, `TEACHER` e `STUDENT`.
 - Login do AVA tem pre-cadastro publico `Quero ser aluno Candy`; ele grava `StudentPreRegistration.PENDING` e nunca cria usuario, senha ou sessao automaticamente.
-- Admin gerencia usuarios, redefinicao de senha, vinculos, contratos, financeiro, agenda, manutencao e cofre de APIs/senhas.
-- Teacher cria aulas, homework interativo, materiais, feedback, mensagens, contratos e aula ao vivo.
+- Admin gerencia usuarios, aceita/recusa pre-cadastros, redefinicao de senha, vinculos, contratos, financeiro, agenda, manutencao e cofre de APIs/senhas.
+- Teacher cria aulas, homework interativo, materiais, feedback, mensagens, contratos, aula ao vivo e pode aceitar pre-cadastros pendentes/em analise como alunos `STUDENT` vinculados a sua teacher.
 - Student acessa aulas, homework, mensagens, contratos, perfil, avatar e aula ao vivo.
 - Admin, teacher e student veem Candy XP persistente nos seus paineis: nivel, barra amarela, fontes de XP, trilha infinita, streak, badges, ultimos eventos, roadmap e slot visual para jogos/missoes futuras.
 - Candy XP usa `src/lib/candy-xp.ts` para curva infinita e `src/lib/candy-xp-persistence.ts` para eventos `CandyXpEvent`, perfil/cache `CandyXpProfile`, badges e catalogo inicial de missoes com `sourceKey` anti-duplicacao.

@@ -133,6 +133,7 @@ export async function getAvaNavAlertSignatures(
     message,
     contract,
     user,
+    preRegistration,
     finance,
     agenda,
     candyXp,
@@ -191,6 +192,16 @@ export async function getAvaNavAlertSignatures(
             select: { id: true, updatedAt: true },
           })
         : Promise.resolve(null),
+      role === "ADMIN" || role === "TEACHER"
+        ? prisma.studentPreRegistration.findFirst({
+            where:
+              role === "TEACHER"
+                ? { status: { in: ["PENDING", "CONTACTED"] } }
+                : {},
+            orderBy: { updatedAt: "desc" },
+            select: { id: true, updatedAt: true },
+          })
+        : Promise.resolve(null),
       role === "ADMIN"
         ? prisma.financialLog.findFirst({
             orderBy: { createdAt: "desc" },
@@ -216,11 +227,13 @@ export async function getAvaNavAlertSignatures(
   alerts["/ava/teacher?task=criar-aula"] = stamp(lesson);
   alerts["/ava/teacher?task=criar-homework"] = stamp(homework);
   alerts["/ava/teacher?task=corrigir-respostas"] = stamp(submission);
+  alerts["/ava/teacher?task=aceitar-alunos"] = stamp(preRegistration);
   alerts["/ava/teacher?task=mensagens"] = stamp(message);
   alerts["/ava/teacher?task=contratos"] = stamp(contract);
 
   if (role === "ADMIN") {
     alerts["/ava/admin?task=usuarios"] = stamp(user);
+    alerts["/ava/admin?task=aceitar-alunos"] = stamp(preRegistration);
     alerts["/ava/admin?task=contratos"] = stamp(contract);
     alerts["/ava/admin?task=vincular-aluno"] = stamp(user);
     alerts["/ava/admin?task=financeiro"] = stamp(finance);

@@ -6,6 +6,7 @@ import {
   GraduationCap,
   MessageSquareText,
   Radio,
+  UserCheck,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,11 @@ import {
   CreateLessonForm,
 } from "@/components/ava/teacher-forms";
 import { StudentLevelForm } from "@/components/ava/student-level-form";
+import {
+  StudentPreRegistrationReviewPanel,
+  type PreRegistrationStatus,
+  type StudentPreRegistrationReviewRow,
+} from "@/components/ava/student-pre-registration-review-panel";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +55,7 @@ export const teacherTaskIds = [
   "criar-aula",
   "criar-homework",
   "aulas",
+  "aceitar-alunos",
   "mensagens",
   "corrigir-respostas",
   "contratos",
@@ -202,7 +209,10 @@ type TeacherWorkspaceProps = {
   contracts: ContractRow[];
   lessons: TeacherLesson[];
   liveSessions: LiveSessionRow[];
+  preRegistrationStatus: PreRegistrationStatus;
+  preRegistrationStatusCounts: Record<PreRegistrationStatus, number>;
   students: Option[];
+  studentPreRegistrations: StudentPreRegistrationReviewRow[];
   submissions: TeacherSubmission[];
   teachers: Option[];
 };
@@ -223,6 +233,11 @@ const taskMeta = {
     description: "Leia rapidamente as aulas, materiais e vocabularios criados.",
     icon: BookOpen,
     title: "Aulas cadastradas",
+  },
+  "aceitar-alunos": {
+    description: "Revise interessados e crie contas STUDENT liberadas.",
+    icon: UserCheck,
+    title: "Aceitar alunos",
   },
   contratos: {
     description: "Envie e visualize contratos PDF de alunos.",
@@ -291,7 +306,10 @@ export function TeacherWorkspace({
   contracts,
   lessons,
   liveSessions,
+  preRegistrationStatus,
+  preRegistrationStatusCounts,
   students,
+  studentPreRegistrations,
   submissions,
   teachers,
 }: TeacherWorkspaceProps) {
@@ -594,6 +612,16 @@ export function TeacherWorkspace({
                 ))}
               </div>
             )
+          ) : null}
+
+          {activeTask === "aceitar-alunos" ? (
+            <StudentPreRegistrationReviewPanel
+              activeStatus={preRegistrationStatus}
+              basePath="/ava/teacher"
+              requests={studentPreRegistrations}
+              statusCounts={preRegistrationStatusCounts}
+              viewerRole="TEACHER"
+            />
           ) : null}
 
           {activeTask === "perfil" ? (

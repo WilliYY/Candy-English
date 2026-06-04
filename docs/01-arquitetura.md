@@ -44,7 +44,7 @@ Servicos Docker:
 
 - O site institucional e publico; o AVA e protegido.
 - `/ava` redireciona visitante para `/ava/login` e usuario logado para a area correta.
-- `/ava/login` pode receber pre-cadastro publico, mas ele grava apenas `StudentPreRegistration` pendente e nao participa do Auth.js.
+- `/ava/login` pode receber pre-cadastro publico, mas ele grava apenas `StudentPreRegistration` pendente e nao participa do Auth.js ate ser aceito no modulo protegido `Aceitar alunos`.
 - `ADMIN` pode supervisionar area teacher/student, mas dados sensiveis ainda exigem validacao.
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
@@ -61,6 +61,7 @@ Servicos Docker:
 - Autorizacao de paginas fica em server components com `requireAvaRole`.
 - Escritas sensiveis ficam em server actions.
 - `src/app/ava/login/actions.ts` contem a action publica de pre-cadastro; ela valida dados, evita duplicidade de email e nao cria `User`.
+- `src/app/ava/pre-registrations/actions.ts` contem actions protegidas por `ADMIN`/`TEACHER` para marcar analise, recusar e converter pre-cadastro em `User.role=STUDENT` com `StudentProfile`.
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.

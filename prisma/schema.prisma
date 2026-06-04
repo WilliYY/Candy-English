@@ -145,6 +145,8 @@ model User {
   updatedCredentials   AdminCredential[]     @relation("AdminCredentialUpdatedBy")
   createdCandyXpActivities CandyXpActivity[] @relation("CandyXpActivityCreatedBy")
   reviewedCandyXpSubmissions CandyXpActivitySubmission[] @relation("CandyXpSubmissionReviewedBy")
+  reviewedStudentPreRegistrations StudentPreRegistration[] @relation("StudentPreRegistrationReviewedBy")
+  convertedStudentPreRegistration StudentPreRegistration? @relation("StudentPreRegistrationConvertedUser")
   candyXpProfile       CandyXpProfile?
   candyXpEvents        CandyXpEvent[]
   candyBadges          CandyUserBadge[]
@@ -195,11 +197,19 @@ model StudentPreRegistration {
   guardianPhone    String?
   notes            String?
   englishGoal      String
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  reviewedByUser   User?                        @relation("StudentPreRegistrationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  convertedUserId  String?                      @unique
+  convertedUser    User?                        @relation("StudentPreRegistrationConvertedUser", fields: [convertedUserId], references: [id], onDelete: SetNull)
+  statusNote       String?
   createdAt        DateTime                     @default(now())
   updatedAt        DateTime                     @updatedAt
 
   @@index([status, createdAt])
   @@index([createdAt])
+  @@index([reviewedByUserId])
+  @@index([convertedUserId])
 }
 
 model TeacherProfile {

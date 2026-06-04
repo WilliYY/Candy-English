@@ -331,6 +331,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260604153000_student_pre_registration`, `src/app/ava/login/actions.ts`, `src/components/ava/login-form.tsx`, `src/components/ava/student-pre-registration-form.tsx`, `src/lib/validations/pre-registration.ts` e docs oficiais.
 - Riscos/cuidados: o email da solicitacao e unico e tambem e comparado com `User.email`; a action publica retorna mensagem generica em duplicidade para evitar exposicao de cadastro e nunca chama Auth.js para iniciar sessao.
 
+### 2026-06-04 - Aceite protegido de pre-cadastros
+
+- Decisao: criar o modulo `Aceitar alunos` em Admin e Teacher para revisar `StudentPreRegistration`, marcar em analise, recusar ou converter em conta `STUDENT`.
+- Motivo: o pre-cadastro publico precisa virar acesso real somente depois de revisao humana, sem permitir auto-login nem escolha de roles avancadas pelo fluxo.
+- Impacto: `prisma/schema.prisma`, migration `20260604170000_student_pre_registration_review`, `src/app/ava/pre-registrations/actions.ts`, `src/components/ava/student-pre-registration-review-panel.tsx`, paginas Admin/Teacher, sidebar do AVA e docs oficiais.
+- Riscos/cuidados: o aceite fixa `User.role=STUDENT` no servidor; a senha inicial e digitada por Admin/Teacher e nunca retornada em logs; Teacher que aceita o aluno cria vinculo automatico com a propria teacher.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

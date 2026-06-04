@@ -34,6 +34,7 @@ Componentes:
 - `src/components/ava/student-xp-card.tsx`
 - `src/components/ava/admin-candy-xp-panel.tsx`
 - `src/components/ava/student-candy-xp-activities-panel.tsx`
+- `src/components/ava/student-pre-registration-review-panel.tsx`
 - `src/components/ava/chat-thread-panel.tsx`
 - `src/components/ava/live-session-forms.tsx`
 - `src/components/ava/profile-forms.tsx`
@@ -44,6 +45,7 @@ Actions:
 
 - `src/app/ava/admin/actions.ts`
 - `src/app/ava/login/actions.ts`
+- `src/app/ava/pre-registrations/actions.ts`
 - `src/app/ava/teacher/actions.ts`
 - `src/app/ava/student/actions.ts`
 - `src/app/ava/candy-xp/actions.ts`
@@ -71,7 +73,9 @@ Helpers:
 4. O fluxo nao cria `User`, nao cria senha, nao define role e nao gera sessao.
 5. Se o email ja existir como usuario ou solicitacao, o sistema nao cria duplicidade e retorna a mesma mensagem amigavel para evitar exposicao de cadastro.
 6. A pessoa ve a confirmacao: `Recebemos seu cadastro. A equipe Candy vai analisar e entrar em contato.`
-7. A liberacao real continua manual: admin deve criar o aluno no painel protegido quando decidir aprovar.
+7. Admin ou Teacher abre `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`, revisa os dados e pode marcar `em analise`, recusar ou aceitar.
+8. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`.
+9. Quando uma Teacher aceita o aluno, o sistema tambem cria o vinculo `StudentTeacherAssignment` com essa teacher; Admin aceita sem vinculo automatico e pode vincular depois.
 
 ### Admin
 
@@ -79,7 +83,8 @@ Helpers:
 2. A tarefa padrao e `usuarios`.
 3. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro.
-5. Admin tambem tem atalhos para tarefas da area teacher.
+5. Admin revisa pre-cadastros em `Aceitar alunos`, com filtros por pendente, em analise, convertido e recusado.
+6. Admin tambem tem atalhos para tarefas da area teacher.
 
 ### APIs e senhas
 
@@ -97,6 +102,7 @@ Helpers:
 4. Cria aula interativa e homework interativo por arquivo do Canva.
 5. Corrige respostas e envia feedback.
 6. Pode abrir aula ao vivo e mensagens.
+7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos` e aceitar interessados como alunos `STUDENT` vinculados a sua teacher.
 
 ### Student
 
@@ -226,6 +232,7 @@ Helpers:
 
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
 - Pre-cadastro publico nunca deve liberar login automaticamente; ele apenas cria solicitacao pendente para analise.
+- O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem.
 - Student tem botoes sempre visiveis.
 - Candy XP deve continuar sem ranking publico; XP, streaks, badges e missoes sao persistidos por usuario e nao podem vazar dados de outras roles.
@@ -261,6 +268,7 @@ Helpers:
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
 - Atividades Candy XP usam modelos proprios para historia/PDF/perguntas/progresso e reaproveitam o ledger Candy XP para pontuar conclusoes.
+- Pre-cadastros usam a mesma tabela `StudentPreRegistration`; os status existentes sao traduzidos na UI como pendente, em analise, convertido em aluno e recusado.
 
 ## Riscos ao alterar esta parte
 

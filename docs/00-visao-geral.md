@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas, Candy XP persistente por role, atividades gamificadas de historia e controle de acessos.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: pre-cadastro com aceite protegido, aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas, Candy XP persistente por role, atividades gamificadas de historia e controle de acessos.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -36,6 +36,7 @@ Rotas principais:
 - `ADMIN`, `TEACHER` e `STUDENT` sao os perfis atuais.
 - Areas protegidas devem validar permissao no servidor.
 - Pre-cadastro publico no login deve salvar apenas uma solicitacao pendente; nao pode criar usuario, senha, role ou sessao automaticamente.
+- Admin/Teacher podem aceitar pre-cadastros apenas pelo modulo protegido `Aceitar alunos`; o servidor cria sempre `STUDENT` e nunca roles avancadas.
 - Admins podem criar usuarios, ativar/desativar acessos e redefinir senhas pela interface protegida.
 - Admins podem registrar APIs/senhas em `/ava/admin?task=apis-senhas`; os valores ficam criptografados e so devem ser revelados pela UI protegida.
 - O aluno so acessa dados do proprio perfil.

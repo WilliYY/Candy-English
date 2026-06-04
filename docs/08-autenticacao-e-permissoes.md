@@ -14,6 +14,7 @@ Arquivos:
 - `src/types/next-auth.d.ts`
 - `src/lib/validations/auth.ts`
 - `src/lib/validations/pre-registration.ts`
+- `src/app/ava/pre-registrations/actions.ts`
 - `src/lib/validations/admin-users.ts`
 - `src/lib/validations/admin-credentials.ts`
 - `src/lib/validations/candy-xp-activities.ts`
@@ -31,6 +32,7 @@ Arquivos:
 - `src/app/ava/candy-xp-assets/[activityId]/route.ts`
 - `src/components/ava/login-form.tsx`
 - `src/components/ava/student-pre-registration-form.tsx`
+- `src/components/ava/student-pre-registration-review-panel.tsx`
 
 Tabelas:
 
@@ -71,6 +73,10 @@ Rotas protegidas:
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Google login so aceita email ja cadastrado e ativo.
 - Pre-cadastro publico no login apenas cria `StudentPreRegistration.PENDING`; nao cria senha, `User`, role ou sessao.
+- Pre-cadastro publico no login apenas cria `StudentPreRegistration.PENDING`; nao cria senha, `User`, role ou sessao.
+- `ADMIN` e `TEACHER` podem revisar pre-cadastros no modulo `Aceitar alunos`; ao aceitar, o servidor cria somente `User.role=STUDENT` e `StudentProfile`.
+- Quando `TEACHER` aceita um aluno, o servidor tambem cria o vinculo `StudentTeacherAssignment` com a propria teacher.
+- O fluxo de aceite nunca cria `ADMIN` ou `TEACHER` e nunca retorna/loga a senha inicial em texto puro.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
 - Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
 - Apenas `ADMIN` pode criar, editar, excluir ou revelar APIs/senhas em `AdminCredential`.
@@ -93,6 +99,7 @@ Rotas protegidas:
 - Credentials Provider e o login principal.
 - Google Provider e opcional.
 - `StudentPreRegistration` guarda interessados como solicitacao pendente fora do fluxo de Auth.js.
+- `StudentPreRegistration` tambem guarda metadados de revisao/conversao; `APPROVED` e usado como status tecnico para `Convertido em aluno` na UI.
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.
 - O token/session recebe `id` e `role`.
@@ -108,6 +115,8 @@ Rotas protegidas:
 
 - Remover validacao de `isActive` permite acesso de usuario bloqueado.
 - Criar usuario automaticamente a partir de `StudentPreRegistration` liberaria acesso sem revisao admin.
+- Criar usuario automaticamente a partir de `StudentPreRegistration` liberaria acesso sem revisao admin/teacher.
+- Permitir que Teacher escolha role no aceite abriria escalacao de privilegio; o fluxo deve fixar `STUDENT` no servidor.
 - Confiar apenas no menu do client vaza dados.
 - Alterar callbacks JWT/session pode quebrar redirecionamento por role.
 - Usar dados sem verificar vinculo teacher/aluno pode expor informacoes.

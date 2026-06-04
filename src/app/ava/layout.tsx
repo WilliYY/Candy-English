@@ -16,6 +16,7 @@ import {
   Radio,
   Settings,
   Sparkles,
+  UserCheck,
   UserPlus,
   UserRound,
   UsersRound,
@@ -63,6 +64,12 @@ const navGroups = [
         section: "Gestao",
       },
       {
+        href: "/ava/admin?task=aceitar-alunos",
+        icon: UserCheck,
+        label: "Aceitar alunos",
+        section: "Gestao",
+      },
+      {
         href: "/ava/admin?task=vincular-aluno",
         icon: Link2,
         label: "Vincular aluno",
@@ -97,6 +104,12 @@ const navGroups = [
         icon: ClipboardCheck,
         label: "Corrigir homework",
         section: "Aulas",
+      },
+      {
+        href: "/ava/teacher?task=aceitar-alunos",
+        icon: UserCheck,
+        label: "Aceitar alunos",
+        section: "Comunicacao",
       },
       {
         href: "/ava/teacher?task=mensagens",
@@ -165,6 +178,12 @@ const navGroups = [
         icon: ClipboardCheck,
         label: "Corrigir homework",
         section: "Aulas",
+      },
+      {
+        href: "/ava/teacher?task=aceitar-alunos",
+        icon: UserCheck,
+        label: "Aceitar alunos",
+        section: "Comunicacao",
       },
       {
         href: "/ava/teacher?task=mensagens",

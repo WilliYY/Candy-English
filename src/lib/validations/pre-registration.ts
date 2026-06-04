@@ -97,3 +97,37 @@ export type StudentPreRegistrationInput = z.input<
 export type StudentPreRegistrationData = z.output<
   typeof studentPreRegistrationSchema
 >;
+
+export const studentPreRegistrationStatusSchema = z.enum([
+  "PENDING",
+  "CONTACTED",
+  "APPROVED",
+  "REJECTED",
+]);
+
+export const preRegistrationReviewSchema = z.object({
+  requestId: z.string().min(1, "Solicitacao invalida."),
+  status: z.enum(["CONTACTED", "REJECTED"]),
+  statusNote: optionalText(
+    1000,
+    "A observacao pode ter no maximo 1000 caracteres.",
+  ),
+});
+
+export const preRegistrationAcceptSchema = z.object({
+  initialPassword: z
+    .string()
+    .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")
+    .max(120, "A senha inicial pode ter no maximo 120 caracteres."),
+  requestId: z.string().min(1, "Solicitacao invalida."),
+});
+
+export type StudentPreRegistrationStatusInput = z.input<
+  typeof studentPreRegistrationStatusSchema
+>;
+export type PreRegistrationReviewInput = z.input<
+  typeof preRegistrationReviewSchema
+>;
+export type PreRegistrationAcceptInput = z.input<
+  typeof preRegistrationAcceptSchema
+>;
