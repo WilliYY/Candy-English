@@ -296,9 +296,6 @@ export function CandyXpCard({
                     <h3 className="text-sm font-semibold text-primary">
                       Ultimos XP
                     </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Eventos gravados com chave anti-duplicacao.
-                    </p>
                   </div>
                   <History aria-hidden="true" className="size-5 text-accent" />
                 </div>
