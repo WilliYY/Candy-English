@@ -279,6 +279,24 @@ function isVagueQuestion(text: string) {
   );
 }
 
+function isBareConfusionQuestion(text: string) {
+  const normalized = normalizeText(text);
+  const tokens = getWordTokens(text);
+
+  return (
+    tokens.length <= 5 &&
+    hasAny(normalized, [
+      "como assim",
+      "nao entendi",
+      "nao sei",
+      "o que faco",
+      "preso",
+      "travad",
+      "travou",
+    ])
+  );
+}
+
 function getQuotedFragment(text: string) {
   const quoted = text.match(/["']([^"']{2,120})["']/)?.[1]?.trim();
 
@@ -421,6 +439,10 @@ function detectCattyIntent(
     ])
   ) {
     return { confidence: "high", intent: "explain_word" };
+  }
+
+  if (isBareConfusionQuestion(text)) {
+    return { confidence: "low", intent: "confusing_question" };
   }
 
   if (
