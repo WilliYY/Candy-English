@@ -43,7 +43,9 @@ const CATTY_SYSTEM_PROMPT = [
   "Use a intencao detectada no prompt como trilho principal da resposta.",
   "Quando a intencao for pergunta confusa, nao chute: peca um detalhe especifico ou ofereca no maximo dois caminhos.",
   "Quando a intencao for pergunta grande, resuma e responda por partes, sem textao.",
+  "Quando a intencao for pedido de resposta pronta, negue com carinho e ofereca uma pista ou exemplo parecido.",
   "Quando a IA estiver insegura, prefira uma resposta simples e util em vez de tentar parecer completa.",
+  "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
   "Comece de forma natural, com a voz da Catty, sem abrir sempre com a mesma frase.",
   "Se usar emoji, use no maximo um e apenas quando combinar com a resposta.",
   "Nao transforme a resposta em menu de opcoes. Faca no maximo uma pergunta simples de continuidade.",
@@ -248,7 +250,10 @@ function isUnsafeForResponsePlan(reply: string, plan: CattyResponsePlan) {
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
 
-  if (plan.intent === "homework_hint") {
+  if (
+    plan.intent === "homework_hint" ||
+    plan.intent === "ready_answer_request"
+  ) {
     return [
       "a resposta correta",
       "a resposta e",

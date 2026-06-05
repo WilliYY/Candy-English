@@ -23,6 +23,7 @@ export type CattyIntent =
   | "homework_hint"
   | "motivation"
   | "practice_english"
+  | "ready_answer_request"
   | "teacher_feedback"
   | "teacher_message"
   | "translate_sentence";
@@ -89,6 +90,7 @@ const intentLabels: Record<CattyIntent, string> = {
   homework_hint: "dica de homework",
   motivation: "motivacao",
   practice_english: "praticar ingles",
+  ready_answer_request: "pedido de resposta pronta",
   teacher_feedback: "feedback para aluno",
   teacher_message: "mensagem para teacher",
   translate_sentence: "traduzir frase",
@@ -111,6 +113,8 @@ const intentInstructions: Record<CattyIntent, string> = {
     "anime o estudo com uma meta pequena e concreta para fazer agora.",
   practice_english:
     "crie uma micro pratica em ingles com frase curta, repeticao ou pergunta simples.",
+  ready_answer_request:
+    "recuse resposta pronta com carinho, explique que ajuda por pista ou exemplo parecido e peca apenas o enunciado.",
   teacher_feedback:
     "ajude a teacher com feedback curto, carinhoso e util, sem expor dados de aluno.",
   teacher_message:
@@ -158,6 +162,7 @@ const englishSignals = [
   "grammar",
   "has",
   "have",
+  "he",
   "hello",
   "help",
   "hi",
@@ -169,9 +174,13 @@ const englishSignals = [
   "phrase",
   "say",
   "sentence",
+  "she",
+  "school",
   "should",
   "study",
+  "they",
   "what",
+  "went",
   "why",
   "word",
 ];
@@ -320,6 +329,31 @@ function hasTranslationSignal(text: string) {
   ]);
 }
 
+function hasReadyAnswerSignal(text: string) {
+  const normalized = normalizeText(text);
+
+  return hasAny(normalized, [
+    "a resposta correta",
+    "a resposta e",
+    "answer is",
+    "correct answer",
+    "do it for me",
+    "faz para mim",
+    "faz pra mim",
+    "faz por mim",
+    "faca para mim",
+    "faca pra mim",
+    "gabarito",
+    "give me the answer",
+    "me da a resposta",
+    "me de a resposta",
+    "qual e a resposta",
+    "responde por mim",
+    "resposta pronta",
+    "the answer",
+  ]);
+}
+
 function extractTranslationFragment(text: string) {
   const quoted = getQuotedFragment(text);
 
@@ -420,8 +454,8 @@ function countMixedIntentSignals(text: string, context?: CattyPageContext) {
     hasTranslationSignal(text),
     hasAny(normalized, ["meaning", "o que significa", "palavra", "significa", "word"]),
     isHomeworkContext(context) ||
-      hasAny(normalized, ["answer", "dever", "gabarito", "homework", "resposta"]),
-    hasAny(normalized, ["faz pra mim", "faz por mim", "faca pra mim", "do it for me"]),
+      hasAny(normalized, ["answer", "dever", "homework", "responder"]),
+    hasReadyAnswerSignal(text),
   ];
 
   return signals.filter(Boolean).length;
@@ -486,6 +520,10 @@ function detectCattyIntent(
 ): { confidence: CattyResponsePlan["confidence"]; intent: CattyIntent } {
   const normalized = normalizeText(text);
   const mixedIntentCount = countMixedIntentSignals(text, context);
+
+  if (hasReadyAnswerSignal(text)) {
+    return { confidence: "high", intent: "ready_answer_request" };
+  }
 
   if (
     mixedIntentCount >= 2 &&
@@ -747,6 +785,10 @@ function buildPlannedEnglishReply(
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
 
+  if (intent === "ready_answer_request") {
+    return "Uwau, that sounds like a final-answer request. I will not do it for you, but I can give a clue or a similar example. Send the exercise prompt.";
+  }
+
   if (intent === "homework_hint") {
     if (
       hasAny(normalized, [
@@ -811,13 +853,17 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "complex_question") {
-    return "Miauw, big question. Let's split it: first send the sentence or word that matters most, then I help with the next step.";
+    return "Pss pss, big question. Let's go by parts: first choose the sentence to fix or the word to understand.";
   }
 
   if (intent === "confusing_question") {
+    if (isHomeworkContext(context)) {
+      return "Awnn, I understood it is about the activity. Send me the exact bit from the exercise.";
+    }
+
     return hasRecentContext(history, text)
-      ? "Awnn, I got a little lost. Which part are we talking about: the word, the sentence, or the exercise?"
-      : "Miauw, I got a little stuck here, but let's simplify. Do you want correction, translation, or practice?";
+      ? "Awnn, I understood that one part got confusing. Send me the exact bit from the exercise."
+      : "Miauw, I only got half of it. Send me the exact bit you want me to explain.";
   }
 
   return `Nya, I am here with you on ${contextLabel}. Write one small English sentence and I will help you polish it.`;
@@ -836,6 +882,10 @@ function buildPlannedPortugueseReply(
 
   if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
     return "Miauw, quando a teacher abrir a aula ao vivo, ela aparece no AVA. Entre por ali, permita camera e microfone, e pronto.";
+  }
+
+  if (intent === "ready_answer_request") {
+    return "Uwau, entendi que voce quer a resposta pronta. Nao faco por voce, mas te dou uma pista ou exemplo parecido. Me manda o enunciado.";
   }
 
   if (intent === "homework_hint") {
@@ -917,13 +967,17 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "complex_question") {
-    return "Miauw, tem bastante coisa ai. Vou simplificar: escolha primeiro a parte mais urgente, a frase ou a palavra, e eu te guio por etapas.";
+    return "Pss pss, tem bastante coisa ai. Vamos por partes: escolha primeiro a frase para corrigir ou a palavra para entender.";
   }
 
   if (intent === "confusing_question") {
+    if (isHomeworkContext(context)) {
+      return "Awnn, entendi que e sobre a atividade. Me manda o trecho exato do exercicio.";
+    }
+
     return hasRecentContext(history, text)
-      ? "Awnn, me diz qual parte ficou confusa: a palavra, a frase ou o enunciado que apareceu agora?"
-      : "Miauw, travei um pouquinho aqui, mas vamos simplificar. Voce quer corrigir, traduzir ou praticar?";
+      ? "Awnn, entendi que uma parte ficou confusa. Me manda o trecho exato do exercicio."
+      : "Miauw, entendi so metade. Me manda o trecho exato que voce quer entender.";
   }
 
   if (intent === "practice_english") {
@@ -1095,6 +1149,7 @@ export function buildCattyInput(
     `Contexto seguro do usuario: ${getSafeSessionContextLine(sessionContext)}.`,
     `Intencao detectada: ${plan.label} (${plan.confidence}).`,
     `Plano da Catty: ${plan.instruction}`,
+    "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
     "Use nome, role e nivel apenas para ajustar tom e exemplo. Nao invente dados do AVA.",
     "Se a mensagem estiver vaga ou confusa, peca uma informacao especifica em vez de inventar.",
     "Se a mensagem for grande, responda por partes e escolha apenas o proximo passo mais util.",
