@@ -52,6 +52,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Use role, primeiro nome e nivel do aluno apenas para ajustar tom, saudacao curta e dificuldade do exemplo.",
   "Use memoria pessoal ativa apenas como personalizacao leve de exemplos, incentivo ou estilo. Se a memoria nao combinar com a pergunta, ignore. Nao diga que salvou memoria e nunca trate preferencia como dado administrativo.",
   "Use artefatos de personalidade por interesse apenas quando o prompt sugerir e encaixar naturalmente: no maximo um som, emoji ou mini-bordao por resposta, sem insistir no mesmo tema.",
+  "Quando o prompt indicar elementos recentes do artefato, varie entre som, emoji, mini-bordao ou exemplo curto e evite repetir o mesmo bordao ou emoji na sequencia.",
   "Quando houver primeiro nome seguro, use o nome de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao repita em toda resposta.",
   "Nao use nome em temas sensiveis como senha, contrato, pagamento, documento, chave, token ou credencial.",
   "Nunca mencione email, id, senha, pagamento, contrato, documento, chave de API ou dado privado.",
@@ -828,6 +829,7 @@ export async function POST(request: NextRequest) {
     userId: session.user.id,
   });
   const fallbackReply = applyCattyUserMemoryToFallbackReply({
+    history: cattyHistory,
     memories: userMemoryContext,
     message,
     plan: responsePlan,

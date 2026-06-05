@@ -26,6 +26,7 @@ import {
   extractCattyArtifactAvoidanceCandidates,
   formatCattyArtifactPromptContext,
   pickCattyArtifactForContext,
+  pickCattyArtifactReplyVariant,
 } from "../src/lib/catty-artifacts";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
 import { cattyUserMemoryUpsertSchema } from "../src/lib/validations/catty-user-memory";
@@ -418,10 +419,37 @@ function main() {
     memories: [],
     message: "corrige minha frase sobre carros",
   });
-  const artifactPrompt = formatCattyArtifactPromptContext(capybaraArtifact);
-  const artifactFallback = applyCattyArtifactToReply({
+  const artifactPrompt = formatCattyArtifactPromptContext(capybaraArtifact, {
+    history: [
+      {
+        from: "catty",
+        text: "Awnn, modo capivara calma. Palavra ou frase?",
+      },
+    ],
     intent: "confusing_question",
+    message: "nao entendi capivara",
+  });
+  const artifactFallback = applyCattyArtifactToReply({
+    history: [
+      {
+        from: "catty",
+        text: "Awnn, modo capivara calma. Palavra ou frase?",
+      },
+    ],
+    intent: "confusing_question",
+    message: "nao entendi capivara",
     reply: "Awnn, voce travou na palavra, na frase ou no exercicio?",
+    selection: capybaraArtifact,
+  });
+  const repeatedVariant = pickCattyArtifactReplyVariant({
+    history: [
+      {
+        from: "catty",
+        text: "Awnn, modo capivara calma. Palavra ou frase?",
+      },
+    ],
+    intent: "confusing_question",
+    message: "nao entendi capivara",
     selection: capybaraArtifact,
   });
   const artifactAvoidance = extractCattyArtifactAvoidanceCandidates(
@@ -455,8 +483,25 @@ function main() {
     "prompt de artefato nao incluiu mini-bordoes do tema.",
   );
   assertCondition(
-    artifactFallback.includes("capivara"),
-    "fallback de artefato nao aplicou bordao do tema.",
+    artifactFallback !==
+      "Awnn, voce travou na palavra, na frase ou no exercicio?",
+    "fallback de artefato nao aplicou nenhuma variacao do tema.",
+  );
+  assertCondition(
+    !artifactFallback.includes("modo capivara calma"),
+    "fallback de artefato repetiu bordao recente.",
+  );
+  assertCondition(
+    artifactPrompt.includes("Variacao sugerida agora"),
+    "prompt de artefato nao incluiu variacao anti-repeticao.",
+  );
+  assertCondition(
+    artifactPrompt.includes("Evite repetir elementos recentes"),
+    "prompt de artefato nao incluiu elementos recentes.",
+  );
+  assertCondition(
+    repeatedVariant?.text !== "modo capivara calma",
+    "variante de artefato repetiu bordao recente.",
   );
   assertCondition(
     artifactAvoidance.some((memory) => memory.key === "avoid_capybara"),

@@ -1103,6 +1103,7 @@ function getMemoryFallbackHint(input: {
 }
 
 export function applyCattyUserMemoryToFallbackReply(input: {
+  history?: Array<{ from?: "catty" | "user"; text: string }>;
   memories: CattyUserMemoryPromptItem[];
   message?: string;
   plan: CattyResponsePlan;
@@ -1113,7 +1114,9 @@ export function applyCattyUserMemoryToFallbackReply(input: {
     !difficultyFriendlyIntents.has(input.plan.intent)
   ) {
     return applyCattyArtifactToReply({
+      history: input.history,
       intent: input.plan.intent,
+      message: input.message,
       reply: input.reply,
       selection: pickCattyArtifactForContext({
         intent: input.plan.intent,
@@ -1129,7 +1132,9 @@ export function applyCattyUserMemoryToFallbackReply(input: {
 
   if (!memory || input.reply.includes(memory.value)) {
     return applyCattyArtifactToReply({
+      history: input.history,
       intent: input.plan.intent,
+      message: input.message,
       reply: input.reply,
       selection: pickCattyArtifactForContext({
         intent: input.plan.intent,
@@ -1149,7 +1154,9 @@ export function applyCattyUserMemoryToFallbackReply(input: {
     : input.reply;
 
   return applyCattyArtifactToReply({
+    history: input.history,
     intent: input.plan.intent,
+    message: input.message,
     reply: replyWithMemory,
     selection: pickCattyArtifactForContext({
       intent: input.plan.intent,

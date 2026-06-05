@@ -2050,7 +2050,11 @@ export function buildCattyInput(
     "Memoria pessoal segura do usuario:",
     getCattyUserMemoryPromptLine(userMemoryContext),
     "Artefato de personalidade sugerido:",
-    formatCattyArtifactPromptContext(artifactSelection),
+    formatCattyArtifactPromptContext(artifactSelection, {
+      history,
+      intent: plan.intent,
+      message,
+    }),
     "Conversa recente:",
     lines.length > 0 ? lines.join("\n") : "Sem historico anterior.",
     `Mensagem atual do aluno: ${sanitizeHistoryText(message)}`,

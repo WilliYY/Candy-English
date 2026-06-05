@@ -41,6 +41,17 @@ export type CattyArtifactSelection = {
   score: number;
 };
 
+type CattyArtifactHistoryItem = {
+  from?: "catty" | "user";
+  text: string;
+};
+
+type CattyArtifactReplyVariant = {
+  emoji?: string;
+  kind: "catchphrase" | "example" | "sound";
+  text: string;
+};
+
 export type CattyArtifactAvoidanceCandidate = {
   category: "STYLE";
   confidence: number;
@@ -339,6 +350,167 @@ function shouldUseMemoryArtifact(input: {
   return hash % 3 !== 0;
 }
 
+function getRecentCattyArtifactTexts(history?: CattyArtifactHistoryItem[]) {
+  return (history ?? [])
+    .filter((item) => item.from !== "user")
+    .slice(-4)
+    .map((item) => normalizeArtifactText(item.text))
+    .filter(Boolean);
+}
+
+function getRecentCattyArtifactRawTexts(history?: CattyArtifactHistoryItem[]) {
+  return (history ?? [])
+    .filter((item) => item.from !== "user")
+    .slice(-4)
+    .map((item) => item.text)
+    .filter(Boolean);
+}
+
+function getBaseHintForIntent(
+  theme: CattyArtifactDefinition,
+  intent: CattyIntent,
+) {
+  if (intent === "confusing_question") {
+    return theme.genericHints[0] ?? theme.catchphrases[0] ?? "";
+  }
+
+  if (intent === "correct_sentence") {
+    return theme.genericHints[1] ?? theme.genericHints[0] ?? "";
+  }
+
+  if (
+    intent === "candy_xp" ||
+    intent === "motivation" ||
+    intent === "practice_english"
+  ) {
+    return theme.genericHints[2] ?? theme.genericHints[0] ?? "";
+  }
+
+  if (intent === "out_of_scope") {
+    return theme.genericHints[0] ?? "";
+  }
+
+  return theme.genericHints[0] ?? "";
+}
+
+function shouldKeepArtifactSubtle(input: {
+  intent: CattyIntent;
+  message?: string;
+}) {
+  const normalized = normalizeArtifactText(input.message ?? "");
+
+  return (
+    input.intent === "correct_sentence" ||
+    input.intent === "explain_word" ||
+    normalized.includes("serio") ||
+    normalized.includes("frustr") ||
+    normalized.includes("dificil") ||
+    normalized.includes("nao entendi")
+  );
+}
+
+function getArtifactVariantCandidates(input: {
+  intent: CattyIntent;
+  message?: string;
+  selection: CattyArtifactSelection;
+}) {
+  const theme = input.selection.artifact;
+  const baseHint = getBaseHintForIntent(theme, input.intent);
+  const subtle = shouldKeepArtifactSubtle({
+    intent: input.intent,
+    message: input.message,
+  });
+  const variants: CattyArtifactReplyVariant[] = [];
+
+  if (baseHint) {
+    variants.push({
+      emoji: theme.emojis[0],
+      kind: "catchphrase",
+      text: baseHint,
+    });
+  }
+
+  if (!subtle && theme.sounds[0] && baseHint) {
+    variants.push({
+      emoji: theme.emojis[1] ?? theme.emojis[0],
+      kind: "sound",
+      text: `${theme.sounds[0]}, ${baseHint}`,
+    });
+  }
+
+  const alternateCatchphrase =
+    theme.catchphrases.find((phrase) => phrase !== baseHint) ??
+    theme.catchphrases[0];
+
+  if (alternateCatchphrase && alternateCatchphrase !== baseHint) {
+    variants.push({
+      emoji: theme.emojis[1] ?? theme.emojis[0],
+      kind: "catchphrase",
+      text: alternateCatchphrase,
+    });
+  }
+
+  if (!subtle && theme.example) {
+    variants.push({
+      emoji: theme.emojis[2] ?? theme.emojis[0],
+      kind: "example",
+      text: `exemplo do tema: ${theme.example}`,
+    });
+  }
+
+  return variants;
+}
+
+function variantAppearsInRecent(
+  variant: CattyArtifactReplyVariant,
+  recentRawTexts: string[],
+  recentTexts: string[],
+) {
+  const normalizedVariant = normalizeArtifactText(variant.text);
+
+  return recentTexts.some(
+    (text) => normalizedVariant && text.includes(normalizedVariant),
+  ) || Boolean(
+    variant.emoji && recentRawTexts.some((text) => text.includes(variant.emoji ?? "")),
+  );
+}
+
+export function pickCattyArtifactReplyVariant(input: {
+  history?: CattyArtifactHistoryItem[];
+  intent: CattyIntent;
+  message?: string;
+  selection: CattyArtifactSelection | null;
+}) {
+  if (!input.selection || artifactBlockedIntents.has(input.intent)) {
+    return null;
+  }
+
+  const variants = getArtifactVariantCandidates({
+    intent: input.intent,
+    message: input.message,
+    selection: input.selection,
+  });
+
+  if (variants.length === 0) {
+    return null;
+  }
+
+  const recentTexts = getRecentCattyArtifactTexts(input.history);
+  const recentRawTexts = getRecentCattyArtifactRawTexts(input.history);
+  const freshVariants = variants.filter(
+    (variant) => !variantAppearsInRecent(variant, recentRawTexts, recentTexts),
+  );
+  const pool = freshVariants.length > 0 ? freshVariants : variants;
+  const index =
+    stableHash(
+      `${input.selection.artifact.id}:${input.intent}:${normalizeArtifactText(
+        input.message ?? "",
+      )}:${recentTexts.join("|")}`,
+    ) % pool.length;
+
+  return pool[index];
+}
+
 export function pickCattyArtifactForContext(input: {
   intent: CattyIntent;
   memories?: CattyArtifactMemoryItem[];
@@ -405,12 +577,27 @@ export function pickCattyArtifactForContext(input: {
 
 export function formatCattyArtifactPromptContext(
   selection: CattyArtifactSelection | null,
+  options?: {
+    history?: CattyArtifactHistoryItem[];
+    intent?: CattyIntent;
+    message?: string;
+  },
 ) {
   if (!selection) {
     return "Sem artefato de personalidade sugerido.";
   }
 
   const theme = selection.artifact;
+  const variant =
+    options?.intent
+      ? pickCattyArtifactReplyVariant({
+          history: options.history,
+          intent: options.intent,
+          message: options.message,
+          selection,
+        })
+      : null;
+  const recentTexts = getRecentCattyArtifactTexts(options?.history);
 
   return [
     `Tema sugerido: ${theme.label} (${selection.reason}).`,
@@ -418,38 +605,17 @@ export function formatCattyArtifactPromptContext(
     `Sons/onomatopeias: ${theme.sounds.join(", ")}.`,
     `Mini-bordoes: ${theme.catchphrases.join(", ")}.`,
     `Exemplo curto seguro: ${theme.example}.`,
+    variant
+      ? `Variacao sugerida agora: ${variant.kind} - ${variant.text}${variant.emoji ? ` ${variant.emoji}` : ""}.`
+      : null,
+    recentTexts.length > 0
+      ? `Evite repetir elementos recentes: ${recentTexts.slice(-2).join(" | ")}.`
+      : null,
     `Regra do tema: ${theme.toneRule}`,
-    "Use no maximo um artefato e apenas se encaixar naturalmente; se for correcao seria, seja discreta.",
-  ].join("\n");
-}
-
-function getFallbackHintForIntent(
-  selection: CattyArtifactSelection | null,
-  intent: CattyIntent,
-) {
-  if (!selection || artifactBlockedIntents.has(intent)) {
-    return "";
-  }
-
-  const theme = selection.artifact;
-
-  if (intent === "confusing_question") {
-    return theme.genericHints[0] ?? "";
-  }
-
-  if (intent === "correct_sentence") {
-    return theme.genericHints[1] ?? theme.genericHints[0] ?? "";
-  }
-
-  if (intent === "practice_english" || intent === "candy_xp") {
-    return theme.genericHints[2] ?? theme.genericHints[0] ?? "";
-  }
-
-  if (intent === "out_of_scope") {
-    return theme.genericHints[0] ?? "";
-  }
-
-  return "";
+    "Use no maximo um artefato e apenas se encaixar naturalmente; se for correcao seria, seja discreta e priorize clareza.",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function replyAlreadyHasArtifact(reply: string, theme: CattyArtifactDefinition) {
@@ -467,18 +633,26 @@ function replyAlreadyHasArtifact(reply: string, theme: CattyArtifactDefinition) 
 }
 
 export function applyCattyArtifactToReply(input: {
+  history?: CattyArtifactHistoryItem[];
   intent: CattyIntent;
+  message?: string;
   reply: string;
   selection: CattyArtifactSelection | null;
 }) {
-  const hint = getFallbackHintForIntent(input.selection, input.intent);
+  const variant = pickCattyArtifactReplyVariant({
+    history: input.history,
+    intent: input.intent,
+    message: input.message,
+    selection: input.selection,
+  });
+  const hint = variant?.text ?? "";
   const theme = input.selection?.artifact;
 
   if (!hint || !theme || replyAlreadyHasArtifact(input.reply, theme)) {
     return input.reply;
   }
 
-  const emoji = theme.emojis[0] ?? "";
+  const emoji = variant?.emoji ?? theme.emojis[0] ?? "";
   const artifactChunk = emoji ? `${hint} ${emoji}` : hint;
   const openings = ["Miauw, ", "Awnn, ", "Uwau, ", "Pss pss, ", "Nya, "];
 

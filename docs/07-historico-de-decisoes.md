@@ -431,10 +431,10 @@ Cada decisao deve conter:
 
 ### 2026-06-05 - Catty com artefatos de personalidade por interesse
 
-- Decisao: criar `src/lib/catty-artifacts.ts` para mapear interesses seguros do usuario em pequenos artefatos de fala da Catty, como sons, emojis, mini-bordoes e exemplos por tema.
+- Decisao: criar `src/lib/catty-artifacts.ts` para mapear interesses seguros do usuario em pequenos artefatos de fala da Catty, como sons, emojis, mini-bordoes e exemplos por tema, com variacao por historico recente.
 - Motivo: deixar a Catty mais viva e personalizada sem inventar gostos, sem aumentar contexto de IA em excesso e sem transformar toda resposta em meme.
 - Impacto: `src/lib/catty-artifacts.ts`, `src/lib/catty.ts`, `src/lib/catty-user-memory.ts`, `src/app/api/catty/chat/route.ts`, `src/lib/catty-personality.ts`, smoke da Catty e docs oficiais.
-- Riscos/cuidados: usar no maximo um artefato por resposta, ignorar quando a intencao nao combinar, respeitar memorias de estilo `avoid_*`, nao usar dados sensiveis nem repetir sempre o mesmo tema.
+- Riscos/cuidados: usar no maximo um artefato por resposta, ignorar quando a intencao nao combinar, respeitar memorias de estilo `avoid_*`, nao usar dados sensiveis, nao repetir sempre o mesmo tema e priorizar clareza em correcao/explicacao seria.
 
 ## Regras de negocio que precisam ser preservadas
 
