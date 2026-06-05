@@ -2,7 +2,6 @@ import { compare } from "bcryptjs";
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
@@ -145,15 +144,6 @@ const providers: NextAuthConfig["providers"] = [
     },
   }),
 ];
-
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  providers.push(
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-  );
-}
 
 export const authConfig = {
   pages: {

@@ -51,7 +51,7 @@ Operacao por agente:
 - `PDF_MAX_UPLOAD_MB` define o limite para esses PDFs pedagogicos, mantendo margem abaixo do limite de Server Actions.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
 - `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
-- O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: Gemini, OpenAI, Google OAuth e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
+- O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: Gemini, OpenAI e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Decisoes tecnicas tomadas
 

@@ -30,10 +30,8 @@ function getSafeCallbackUrl(callbackUrl: string | null) {
 }
 
 export function LoginForm({
-  googleEnabled,
   maintenanceMode,
 }: {
-  googleEnabled?: boolean;
   maintenanceMode?: boolean;
 }) {
   const router = useRouter();
@@ -124,30 +122,6 @@ export function LoginForm({
           Entrar
         </Button>
 
-        <div className="flex flex-col gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            disabled={!googleEnabled || isSubmitting}
-            onClick={() => {
-              void signIn("google", {
-                callbackUrl: getSafeCallbackUrl(searchParams.get("callbackUrl")),
-              });
-            }}
-          >
-            <span aria-hidden="true" className="text-base font-semibold">
-              G
-            </span>
-            Entrar com Google
-          </Button>
-          {!googleEnabled ? (
-            <p className="break-words text-xs leading-5 text-muted-foreground">
-              O acesso com Google sera ativado quando a conta Google da Candy
-              estiver conectada ao AVA.
-            </p>
-          ) : null}
-        </div>
       </form>
 
       <div className="border-t border-primary/10 pt-5">

@@ -53,7 +53,7 @@ Rotas principais:
 
 - Aplicacao propria em Next.js, nao WordPress.
 - PostgreSQL roda no Docker sem porta publica.
-- Auth.js usa JWT e Credentials Provider; Google e opcional.
+- Auth.js usa JWT e Credentials Provider; login Google esta desativado nesta fase.
 - Senhas ficam com hash `bcryptjs`, inclusive quando redefinidas por admin.
 - Prisma 7 usa client gerado em `src/generated/prisma`.
 - Docker usa container `app`, `postgres` e ferramentas no perfil `tools`.

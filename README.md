@@ -14,7 +14,7 @@ Fase atual documentada: FASE 32.
 
 Ja existe:
 
-- login real com Auth.js/NextAuth v5, JWT, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
+- login real com Auth.js/NextAuth v5, JWT, Credentials Provider, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - admin com cadastro de usuarios, aceite/recusa de pre-cadastros, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva;
@@ -118,7 +118,6 @@ Variaveis principais:
 - `PDF_OPTIMIZATION_PRESET`: preset do Ghostscript para PDF, por padrao `ebook`.
 - `PDF_MAX_UPLOAD_MB`: limite de upload para esses PDFs pedagogicos, por padrao `14`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
-- `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET`: login Google opcional.
 - `GEMINI_API_KEY`: chave opcional usada pela Catty como provedor padrao; sem chave, a Catty usa fallback local nas mensagens comuns.
 - `GEMINI_CATTY_MODEL`: modelo Gemini usado pela Catty, exemplo `gemini-3.5-flash`.
 - `OPENAI_API_KEY`: chave opcional usada pela Catty somente quando a mensagem chama Catty pelo nome, e pelo OCR opcional de homework; sem chave, esse modo cai para Gemini/fallback e homework segue manual.
@@ -129,7 +128,7 @@ Variaveis principais:
 - `AUDIT_BASE_URL`: base URL usada pelos smoke tests.
 
 O arquivo `.env.example` contem apenas exemplos e placeholders.
-O painel `/ava/admin?task=apis-senhas` sincroniza para o banco, de forma criptografada, apenas integracoes externas configuradas no `.env` como Gemini, OpenAI, Google OAuth e dominio Jitsi. Segredos internos como `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres e senha seed do admin nao sao importados para a tela.
+O painel `/ava/admin?task=apis-senhas` sincroniza para o banco, de forma criptografada, apenas integracoes externas configuradas no `.env` como Gemini, OpenAI e dominio Jitsi. Segredos internos como `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres e senha seed do admin nao sao importados para a tela.
 
 ## Instalacao local
 

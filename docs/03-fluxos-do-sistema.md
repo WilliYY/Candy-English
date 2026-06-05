@@ -89,7 +89,7 @@ Helpers:
 ### APIs e senhas
 
 1. Admin abre `/ava/admin?task=apis-senhas`.
-2. A pagina sincroniza para `AdminCredential`, de forma criptografada, integracoes externas existentes no `.env` como Gemini, OpenAI, Google OAuth e dominio Jitsi.
+2. A pagina sincroniza para `AdminCredential`, de forma criptografada, integracoes externas existentes no `.env` como Gemini, OpenAI e dominio Jitsi.
 3. Admin pode registrar credenciais manuais com rotulo, servico, tipo, usuario, URL, notas e valor sensivel.
 4. O valor sensivel fica oculto por padrao; para copiar ou conferir, admin precisa clicar em `Revelar`.
 5. Credenciais manuais podem ser editadas ou excluidas; credenciais vindas do `.env` devem ser alteradas no servidor.
@@ -259,7 +259,7 @@ Helpers:
 ## Decisoes tecnicas tomadas
 
 - O fluxo `/ava` nao exibe cards publicos; ele redireciona.
-- Google login e opcional e so aceita emails ja cadastrados.
+- Login Google esta desativado nesta fase; o AVA usa email/senha pelo Credentials Provider.
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.

@@ -51,6 +51,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/auth.ts`, login do AVA.
 - Riscos/cuidados: Google aceita apenas emails ja cadastrados e ativos.
 
+### 2026-06-05 - Login Google desativado por enquanto
+
+- Decisao: remover o provider Google do Auth.js e retirar o botao `Entrar com Google` da tela de login.
+- Motivo: manter o acesso do AVA simples e controlado por email/senha enquanto a Candy amadurece o fluxo de contas.
+- Impacto: `src/lib/auth.ts`, `src/app/ava/login/page.tsx`, `src/components/ava/login-form.tsx`, `.env.example`, `src/lib/admin-credentials.ts` e docs oficiais.
+- Riscos/cuidados: reativar Google no futuro exige nova decisao, credenciais OAuth validas e manutencao da regra de aceitar apenas usuarios ativos ja cadastrados.
+
 ### 2026-05 - Autorizacao no servidor, nao no middleware Edge
 
 - Decisao: paginas protegidas usam `requireAvaRole`; actions validam `auth()`.

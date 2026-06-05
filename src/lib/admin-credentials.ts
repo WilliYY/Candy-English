@@ -112,8 +112,6 @@ export function getEnvironmentCredentialDefinitions() {
   const openAiKey = getOptionalEnvValue("OPENAI_API_KEY");
   const openAiCattyModel = getOptionalEnvValue("OPENAI_CATTY_MODEL");
   const homeworkModel = getOptionalEnvValue("OPENAI_HOMEWORK_OCR_MODEL");
-  const googleClientId = getOptionalEnvValue("GOOGLE_CLIENT_ID");
-  const googleClientSecret = getOptionalEnvValue("GOOGLE_CLIENT_SECRET");
   const jitsiDomain = getOptionalEnvValue("NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN");
 
   if (geminiKey) {
@@ -173,28 +171,6 @@ export function getEnvironmentCredentialDefinitions() {
       service: "OpenAI",
       sourceKey: "env:OPENAI_HOMEWORK_OCR_MODEL",
       value: homeworkModel,
-    });
-  }
-
-  if (googleClientId) {
-    definitions.push({
-      kind: "CONFIG",
-      label: "Google Client ID",
-      notes: "Identificador publico do login Google.",
-      service: "Google OAuth",
-      sourceKey: "env:GOOGLE_CLIENT_ID",
-      value: googleClientId,
-    });
-  }
-
-  if (googleClientSecret) {
-    definitions.push({
-      kind: "API_KEY",
-      label: "Google Client Secret",
-      notes: "Segredo do login Google.",
-      service: "Google OAuth",
-      sourceKey: "env:GOOGLE_CLIENT_SECRET",
-      value: googleClientSecret,
     });
   }
 

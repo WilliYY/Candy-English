@@ -82,7 +82,7 @@ Servicos Docker:
 - Candy XP grava eventos persistidos por usuario em `CandyXpEvent`, recalcula `CandyXpProfile` por soma de eventos e aplica a curva sem teto fixo em `requiredForCandyLevel`.
 - Cada evento de XP usa `@@unique([userId, sourceKey])` para impedir pontuacao duplicada da mesma tarefa, homework, feedback, aula, rotina ou missao.
 - Atividades Candy XP ficam em modelos proprios (`CandyXpActivity`, perguntas, assignments e submissions), mas concedem pontos pelo ledger Candy XP para manter anti-duplicacao e historico centralizado.
-- `AdminCredential.secretCiphertext` e criptografado com AES-256-GCM usando `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; o painel sincroniza apenas Gemini, OpenAI, Google OAuth e dominio Jitsi do `.env`, nunca `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
+- `AdminCredential.secretCiphertext` e criptografado com AES-256-GCM usando `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET`; o painel sincroniza apenas Gemini, OpenAI e dominio Jitsi do `.env`, nunca `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
 ## Riscos ao alterar esta parte
 
