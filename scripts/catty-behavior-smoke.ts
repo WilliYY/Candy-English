@@ -14,7 +14,13 @@ import {
   formatCattyLearningPromptContext,
   pickCattyLearningFallbackReply,
 } from "../src/lib/catty-learning";
+import {
+  applyCattyUserMemoryToFallbackReply,
+  extractCattyUserMemoryCandidates,
+  formatCattyUserMemoryPromptContext,
+} from "../src/lib/catty-user-memory";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
+import { cattyUserMemoryUpsertSchema } from "../src/lib/validations/catty-user-memory";
 
 const expectedExampleCount = 15;
 const forbiddenGenericStarts = [
@@ -69,6 +75,7 @@ function assertPromptContext(input: string, id: string) {
     "Regra de homework",
     "Regra de escopo",
     "Memoria aprovada da Catty",
+    "Memoria pessoal segura do usuario",
     "Regra para ADMIN/TEACHER",
     "Conversa recente",
   ]) {
@@ -308,6 +315,44 @@ function main() {
     learningContext,
     "corrige",
   );
+  const userMemoryContext = [
+    {
+      category: "INTEREST" as const,
+      confidence: 88,
+      id: "memory-1",
+      key: "animal",
+      source: "USER_MESSAGE" as const,
+      value: "capivara",
+    },
+    {
+      category: "STYLE" as const,
+      confidence: 80,
+      id: "memory-2",
+      key: "examples",
+      source: "USER_MESSAGE" as const,
+      value: "exemplos com animais fofos",
+    },
+  ];
+  const promptWithUserMemory = buildCattyInput(
+    "vamos praticar",
+    [],
+    { area: "student", task: "candy-xp" },
+    buildCattyResponsePlan("vamos praticar", {
+      area: "student",
+      task: "candy-xp",
+    }),
+    { firstName: "Betina", role: "STUDENT" },
+    [],
+    userMemoryContext,
+  );
+  const memoryAwareFallback = applyCattyUserMemoryToFallbackReply({
+    memories: userMemoryContext,
+    plan: buildCattyResponsePlan("vamos praticar", {
+      area: "student",
+      task: "candy-xp",
+    }),
+    reply: "Miauw, vamos fazer uma pratica curtinha.",
+  });
 
   assertCondition(
     promptWithLearning.includes("Correcao sem frase"),
@@ -327,6 +372,29 @@ function main() {
     Boolean(learnedFallback?.includes("Miauw")),
     "fallback nao aproveitou resposta ideal aprovada.",
   );
+  assertCondition(
+    promptWithUserMemory.includes("capivara"),
+    "prompt nao incluiu memoria pessoal do usuario.",
+  );
+  assertCondition(
+    formatCattyUserMemoryPromptContext(userMemoryContext).includes("capivara"),
+    "formatador de memoria pessoal nao incluiu preferencia segura.",
+  );
+  assertCondition(
+    memoryAwareFallback.includes("capivara"),
+    "fallback nao aplicou memoria pessoal segura.",
+  );
+
+  const detectedMemories = extractCattyUserMemoryCandidates(
+    "Eu gosto de capivara e prefiro exemplos com animais fofos.",
+  );
+
+  assertCondition(
+    detectedMemories.some(
+      (memory) => memory.category === "INTEREST" && memory.value === "capivara",
+    ),
+    "detector de memoria pessoal nao capturou interesse explicito.",
+  );
 
   const missingIdealFeedback = cattyLearningFeedbackCreateSchema.safeParse({
     cattyMessageId: "catty-message-1",
@@ -343,6 +411,22 @@ function main() {
       "Miauw, quer aprender isso em English? Podemos dizer: I make a salad.",
     kind: "SHOULD_ANSWER",
   });
+  const sensitiveUserMemory = cattyUserMemoryUpsertSchema.safeParse({
+    category: "INTEREST",
+    key: "contato",
+    source: "USER_MESSAGE",
+    status: "ACTIVE",
+    targetUserId: "user-1",
+    value: "telefone da mae",
+  });
+  const validUserMemory = cattyUserMemoryUpsertSchema.safeParse({
+    category: "INTEREST",
+    key: "animal",
+    source: "USER_MESSAGE",
+    status: "ACTIVE",
+    targetUserId: "user-1",
+    value: "capivara",
+  });
 
   assertCondition(
     !missingIdealFeedback.success,
@@ -353,6 +437,11 @@ function main() {
     "feedback deveria bloquear termo sensivel.",
   );
   assertCondition(validFeedback.success, "feedback valido foi recusado.");
+  assertCondition(
+    !sensitiveUserMemory.success,
+    "memoria pessoal deveria bloquear dado sensivel.",
+  );
+  assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
     `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos validados.`,

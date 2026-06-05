@@ -401,6 +401,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/catty-learning.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/app/ava/catty-learning/actions.ts`, `scripts/catty-behavior-smoke.ts` e docs oficiais.
 - Riscos/cuidados: sugestoes automaticas nunca entram no prompt antes de aprovacao; termos sensiveis continuam bloqueados; Admin aprova memoria global e Teacher apenas sugere/revisa dentro das permissoes existentes.
 
+### 2026-06-05 - Catty com memoria pessoal por usuario
+
+- Decisao: criar `CattyUserMemory` e `CattyMemoryEvent` para memorias pessoais curtas por usuario logado, separadas da memoria global do Learning Center.
+- Motivo: permitir que a Catty personalize exemplos, incentivo e estilo com gostos, temas, dificuldades e objetivos leves do proprio aluno/teacher/admin sem misturar dados entre usuarios.
+- Impacto: `prisma/schema.prisma`, migration `20260605230000_catty_user_memory`, `src/lib/catty-user-memory.ts`, `src/lib/validations/catty-user-memory.ts`, `src/app/ava/catty-memory/actions.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, smoke da Catty e docs oficiais.
+- Riscos/cuidados: rota de resposta deve usar apenas `CattyUserMemory.ACTIVE` do proprio `session.user.id`; Teacher so acessa aluno vinculado; nao salvar senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado como memoria.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -26,6 +26,11 @@ import {
   maybeCreateCattyLearningAutoSuggestion,
   pickCattyLearningFallbackReply,
 } from "@/lib/catty-learning";
+import {
+  applyCattyUserMemoryToFallbackReply,
+  getCattyUserMemoryContext,
+  maybeCreateCattyUserMemoryFromMessage,
+} from "@/lib/catty-user-memory";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
@@ -45,6 +50,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Nao responda como especialista generica fora da Candy English. Se pedirem receita, codigo, API tecnica, financas, saude ou direito, redirecione para vocabulario, frase curta ou conversacao em ingles.",
   "Use o contexto da tela apenas para orientar a resposta. Nao invente dados, notas, pagamentos, contratos, respostas de homework ou informacoes internas.",
   "Use role, primeiro nome e nivel do aluno apenas para ajustar tom, saudacao curta e dificuldade do exemplo.",
+  "Use memoria pessoal ativa apenas como personalizacao leve de exemplos, incentivo ou estilo. Nao diga que salvou memoria e nunca trate preferencia como dado administrativo.",
   "Quando houver primeiro nome seguro, use o nome de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao repita em toda resposta.",
   "Nao use nome em temas sensiveis como senha, contrato, pagamento, documento, chave, token ou credencial.",
   "Nunca mencione email, id, senha, pagamento, contrato, documento, chave de API ou dado privado.",
@@ -642,6 +648,18 @@ async function getCattyLearningContextSafely(input: {
   }
 }
 
+async function getCattyUserMemoryContextSafely(userId: string) {
+  try {
+    return await getCattyUserMemoryContext({
+      userId,
+    });
+  } catch {
+    console.warn("Catty user memory context load failed.");
+
+    return [];
+  }
+}
+
 async function maybeCreateCattyLearningAutoSuggestionSafely(input: {
   context?: CattyPageContext;
   learningContext: Awaited<ReturnType<typeof getApprovedCattyLearningContext>>;
@@ -655,6 +673,18 @@ async function maybeCreateCattyLearningAutoSuggestionSafely(input: {
     await maybeCreateCattyLearningAutoSuggestion(input);
   } catch {
     console.warn("Catty auto learning suggestion failed.");
+  }
+}
+
+async function maybeCreateCattyUserMemoryFromMessageSafely(input: {
+  actorRole: "ADMIN" | "TEACHER" | "STUDENT";
+  message: string;
+  userId: string;
+}) {
+  try {
+    await maybeCreateCattyUserMemoryFromMessage(input);
+  } catch {
+    console.warn("Catty user memory extraction failed.");
   }
 }
 
@@ -789,9 +819,16 @@ export async function POST(request: NextRequest) {
     intent: responsePlan.intent,
     message,
   });
-  const fallbackReply =
-    pickCattyLearningFallbackReply(responsePlan, learningContext, message) ??
-    responsePlan.fallbackReply;
+  const userMemoryContext = await getCattyUserMemoryContextSafely(
+    session.user.id,
+  );
+  const fallbackReply = applyCattyUserMemoryToFallbackReply({
+    memories: userMemoryContext,
+    plan: responsePlan,
+    reply:
+      pickCattyLearningFallbackReply(responsePlan, learningContext, message) ??
+      responsePlan.fallbackReply,
+  });
   const input = buildCattyInput(
     message,
     cattyHistory,
@@ -799,6 +836,7 @@ export async function POST(request: NextRequest) {
     responsePlan,
     sessionContext,
     learningContext,
+    userMemoryContext,
   );
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]
@@ -821,6 +859,11 @@ export async function POST(request: NextRequest) {
       plan: responsePlan,
       reply: fallbackReply,
       source: "fallback",
+      userId: session.user.id,
+    });
+    await maybeCreateCattyUserMemoryFromMessageSafely({
+      actorRole: session.user.role,
+      message,
       userId: session.user.id,
     });
 
@@ -847,6 +890,11 @@ export async function POST(request: NextRequest) {
     plan: responsePlan,
     reply: aiReply.reply,
     source: aiReply.source,
+    userId: session.user.id,
+  });
+  await maybeCreateCattyUserMemoryFromMessageSafely({
+    actorRole: session.user.role,
+    message,
     userId: session.user.id,
   });
 

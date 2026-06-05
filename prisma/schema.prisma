@@ -165,6 +165,30 @@ enum CattyLearningFeedbackKind {
   PATTERN_SUGGESTION
 }
 
+enum CattyUserMemoryCategory {
+  INTEREST
+  LEARNING_GOAL
+  DIFFICULTY
+  STYLE
+  FAVORITE_THEME
+  EMOJI_PREFERENCE
+  NOTE
+}
+
+enum CattyUserMemorySource {
+  USER_MESSAGE
+  TEACHER_NOTE
+  ADMIN_NOTE
+  CATTY_DETECTED
+}
+
+enum CattyUserMemoryStatus {
+  ACTIVE
+  PENDING
+  FLAGGED
+  ARCHIVED
+}
+
 model User {
   id                   String                @id @default(cuid())
   name                 String
@@ -196,6 +220,10 @@ model User {
   approvedCattyLearningItems CattyLearningItem[] @relation("CattyLearningItemApprovedBy")
   createdCattyLearningFeedbacks CattyLearningFeedback[] @relation("CattyLearningFeedbackCreatedBy")
   reviewedCattyLearningFeedbacks CattyLearningFeedback[] @relation("CattyLearningFeedbackReviewedBy")
+  cattyUserMemories    CattyUserMemory[]    @relation("CattyUserMemoryUser")
+  createdCattyUserMemories CattyUserMemory[] @relation("CattyUserMemoryCreatedBy")
+  cattyMemoryEvents    CattyMemoryEvent[]   @relation("CattyMemoryEventUser")
+  createdCattyMemoryEvents CattyMemoryEvent[] @relation("CattyMemoryEventCreatedBy")
   sentChatMessages     ChatMessage[]
   uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
   createdAt            DateTime              @default(now())
@@ -890,6 +918,54 @@ model CattyLearningFeedback {
   @@index([contextKey])
   @@index([createdByUserId])
   @@index([reviewedByUserId])
+}
+
+model CattyUserMemory {
+  id              String                    @id @default(cuid())
+  userId          String
+  user            User                      @relation("CattyUserMemoryUser", fields: [userId], references: [id], onDelete: Cascade)
+  category        CattyUserMemoryCategory
+  key             String
+  value           String
+  confidence      Int                       @default(70)
+  source          CattyUserMemorySource     @default(CATTY_DETECTED)
+  status          CattyUserMemoryStatus     @default(PENDING)
+  flaggedReason   String?
+  createdByUserId String?
+  createdByUser   User?                     @relation("CattyUserMemoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  lastUsedAt      DateTime?
+  usageCount      Int                       @default(0)
+  events          CattyMemoryEvent[]
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@unique([userId, category, key])
+  @@index([userId, status, category])
+  @@index([createdByUserId])
+  @@index([status, updatedAt])
+}
+
+model CattyMemoryEvent {
+  id              String                    @id @default(cuid())
+  memoryId        String?
+  memory          CattyUserMemory?          @relation(fields: [memoryId], references: [id], onDelete: SetNull)
+  userId          String
+  user            User                      @relation("CattyMemoryEventUser", fields: [userId], references: [id], onDelete: Cascade)
+  category        CattyUserMemoryCategory?
+  key             String?
+  previousValue   String?
+  nextValue       String?
+  action          String
+  source          CattyUserMemorySource
+  status          CattyUserMemoryStatus?
+  note            String?
+  createdByUserId String?
+  createdByUser   User?                     @relation("CattyMemoryEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime                  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([memoryId])
+  @@index([createdByUserId])
 }
 
 model ChatThread {

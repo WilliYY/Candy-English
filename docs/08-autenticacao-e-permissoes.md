@@ -47,6 +47,8 @@ Tabelas:
 - `CattyMessage`
 - `CattyLearningItem`
 - `CattyLearningFeedback`
+- `CattyUserMemory`
+- `CattyMemoryEvent`
 - `CandyXpProfile`
 - `CandyXpEvent`
 - `CandyUserBadge`
@@ -103,6 +105,8 @@ Rotas protegidas:
 - `ADMIN` pode editar feedback e aprovar como aprendizado global usado pela Catty.
 - Itens aprovados do Catty Learning Center entram como guia de estilo/exemplo/vocabulario na Catty, nunca como dado interno do aluno; a rota envia no maximo 3 memorias relevantes por resposta, priorizadas por intencao, tags e termos da mensagem.
 - Auto-sugestoes da Catty entram apenas como `CattyLearningFeedback.PATTERN_SUGGESTION` pendente; Admin/Teacher revisam pela fila protegida, e somente Admin pode transformar isso em memoria aprovada global.
+- `CattyUserMemory` e memoria pessoal por usuario: a rota de chat usa somente itens `ACTIVE` do proprio `session.user.id`; `STUDENT` acessa/corrige somente a propria memoria, `TEACHER` so acessa aluno vinculado por `StudentTeacherAssignment` e `ADMIN` pode supervisionar.
+- Memoria pessoal da Catty deve ser curta e segura; actions e helper bloqueiam senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao e dados privados antes de gravar ou corrigir.
 - Senha, pagamento, contrato, API key, telefone e dados privados devem ser bloqueados pela validacao de feedback, aprendizado manual e auto-sugestao.
 
 ## Decisoes tecnicas tomadas
@@ -123,7 +127,9 @@ Rotas protegidas:
 - O `RootLayout` pode chamar `auth()` para passar somente `session.user.name` ao widget da Catty, mantendo a deteccao de login no servidor e sem depender de descoberta client-side.
 - A rota da Catty chama `auth()` no servidor antes de processar a mensagem; o callback JWT/session ja invalida usuario inativo, mudanca de role e `sessionVersion` antiga.
 - A rota da Catty usa `CattyConversation`/`CattyMessage` somente depois de validar a sessao e limita o historico a 50 mensagens por contexto, usando ate 8 mensagens como contexto da IA.
+- A rota da Catty usa `CattyUserMemory` somente depois de validar a sessao e sempre filtra pelo `session.user.id`, para que gosto/dificuldade de um aluno nao apareca para outro.
 - Actions do Catty Learning Center chamam `auth()`, validam role e usam Zod para impedir feedback/aprendizados com termos sensiveis antes de gravar ou aprovar memoria.
+- Actions de memoria pessoal da Catty chamam `auth()`, validam role, dono do dado e vinculo teacher/aluno antes de salvar, corrigir, arquivar ou marcar memoria como flagged.
 - O envio de feedback da Catty valida que o `CattyMessage` avaliado pertence ao proprio usuario logado; Teacher/Admin revisam pela fila protegida, com filtro de vinculo para Teacher.
 
 ## Riscos ao alterar esta parte
@@ -142,6 +148,7 @@ Rotas protegidas:
 - Expor historico da Catty por `contextKey` sem filtrar `userId` vazaria conversas entre usuarios.
 - Aprovar aprendizado com dados sensiveis pode fazer a Catty repetir informacao privada em respostas futuras; revisar conteudo antes de aprovar e manter a validacao conservadora.
 - Expor todos os feedbacks da Catty para Teacher sem validar vinculo pode vazar conversa de aluno; manter o filtro por `StudentTeacherAssignment`.
+- Expor memoria pessoal da Catty sem filtro por `userId` ou sem validar vinculo teacher/aluno pode vazar interesses, dificuldades e observacoes pedagogicas leves entre usuarios.
 
 ## Pendencias
 

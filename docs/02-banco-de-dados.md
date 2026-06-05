@@ -51,6 +51,8 @@ Operacao do AVA:
 - `CattyMessage`
 - `CattyLearningItem`
 - `CattyLearningFeedback`
+- `CattyUserMemory`
+- `CattyMemoryEvent`
 - `ChatThread`
 - `ChatMessage`
 - `AppSetting`
@@ -100,6 +102,9 @@ Enums:
 - `CattyLearningCategory`
 - `CattyLearningStatus`
 - `CattyLearningFeedbackKind`
+- `CattyUserMemoryCategory`
+- `CattyUserMemorySource`
+- `CattyUserMemoryStatus`
 - `CandyXpEventKind`
 - `CandyMissionKind`
 - `CandyXpActivityStatus`
@@ -137,6 +142,11 @@ Enums:
 - `CattyLearningFeedback` registra feedback discreto do chat da Catty (`LIKED`, `DISLIKED`, `CONFUSING`, `SHOULD_ANSWER` ou `PATTERN_SUGGESTION`), com pergunta/resposta resumidas, sugestao ideal opcional, contexto leve e vinculo opcional ao `CattyMessage`.
 - `PATTERN_SUGGESTION` tambem pode ser criado automaticamente como fila pendente quando a Catty usa fallback sem memoria relevante, recebe mensagem confusa/fora do trilho sem memoria aprovada ou acumula feedbacks negativos recentes; ele nao vira memoria global nem entra no prompt antes de revisao/aprovacao.
 - Feedback aprovado por Admin pode virar `CattyLearningItem.APPROVED`; feedback sugerido por Teacher vira aprendizado pendente para aprovacao global.
+- `CattyUserMemory` guarda memoria pessoal por `User.id`, como interesse, objetivo, dificuldade, estilo, tema favorito, preferencia de emoji ou nota pedagogica leve.
+- `CattyUserMemory.status=ACTIVE` e o unico status usado no prompt da Catty; `PENDING`, `FLAGGED` e `ARCHIVED` nao entram nas respostas.
+- `CattyUserMemory.userId + category + key` e unico para evitar duplicar a mesma preferencia do mesmo usuario; memorias pessoais nunca sao compartilhadas entre alunos.
+- `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, uso e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
+- Memoria pessoal da Catty deve ser resumo curto e nao pode conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao ou dado privado.
 - `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.
 - `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
 - `CandyBadgeDefinition` guarda criterios simples de badge por role, nivel, streak ou contagem de evento; `CandyUserBadge` possui chave unica por usuario/badge.
@@ -168,6 +178,7 @@ Enums:
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 - Migration `20260605210000_catty_learning_center` adiciona Catty Learning Center com itens aprovaveis e feedback/sugestoes.
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.
+- Migration `20260605230000_catty_user_memory` adiciona memoria pessoal da Catty por usuario e eventos de auditoria/limpeza.
 
 ## Riscos ao alterar esta parte
 
@@ -187,6 +198,8 @@ Enums:
 - Remover a poda de `CattyMessage` ou enviar mais historico para IA pode aumentar custo e tamanho de banco sem ganho claro.
 - Aprovar memoria da Catty com dados sensiveis, telefone, documento, pagamento, contrato, token, chave ou email pode vazar informacao para Gemini/OpenAI; manter validacao e revisao humana.
 - Feedback da Catty copia apenas trechos resumidos da propria conversa do usuario; se houver termo sensivel, a action ou auto-sugestao deve bloquear o registro para evitar que entre na fila de treino.
+- Permitir que memoria pessoal de um usuario seja consultada sem filtrar `userId` pode vazar gostos, dificuldades ou notas pedagogicas entre alunos; manter sempre filtro por dono, admin ou teacher vinculada.
+- Criar memorias pessoais demais aumenta custo/contexto; a rota limita o prompt e gera evento de sugestao de limpeza quando o volume passa do recomendado.
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
 - Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.
@@ -201,6 +214,7 @@ Enums:
 - Falta tela completa para aluno/teacher/admin explorarem badges, missoes, streaks e temporadas fora do card XP.
 - Falta editor completo de perguntas Candy XP depois que a atividade ja foi criada.
 - Falta exportacao/relatorio detalhado das respostas Candy XP.
+- Falta tela completa para revisar, corrigir e arquivar memorias pessoais da Catty; hoje ha models, helper e server actions protegidas.
 
 ## Como pode evoluir
 
