@@ -19,6 +19,7 @@ Camadas principais:
 - `src/lib/authorization.ts`: guard de roles para paginas.
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
 - `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
+- `src/lib/catty-history.ts`: persistencia limitada de historico recente da Catty por usuario e contexto de tela.
 - `src/lib/candy-xp.ts`: motor puro de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/candy-xp-persistence.ts`: ledger server-side do Candy XP, catalogo de badges/missoes, streaks e gravacao idempotente por `sourceKey`.
 - `src/lib/candy-xp-activities.ts`: avaliacao automatica e helpers das atividades Candy XP com PDF/perguntas.
@@ -53,7 +54,7 @@ Servicos Docker:
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
 - Catty pode aparecer fora do AVA como chamada visual, mas a conversa real e `/api/catty/chat` exigem sessao ativa e role valida.
-- Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado e contexto leve de rota/tarefa, sem dados de sessao, senha, banco ou informacoes internas do AVA.
+- Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado, historico recente limitado e contexto leve de rota/tarefa, sem dados de sessao, senha, banco ou informacoes internas do AVA.
 
 ## Decisoes tecnicas tomadas
 
@@ -78,7 +79,8 @@ Servicos Docker:
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
 - Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback autorizado quando a chave ou chamada falhar.
-- Catty usa o contexto de `area` e `task` apenas para ajustar atalhos e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
+- Catty usa o contexto de `area` e `task` apenas para ajustar atalhos, historico recente e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
+- O historico da Catty fica em `CattyConversation`/`CattyMessage`, e limitado a 50 mensagens por usuario/contexto; somente as 8 mais recentes entram no prompt para IA.
 - Candy XP grava eventos persistidos por usuario em `CandyXpEvent`, recalcula `CandyXpProfile` por soma de eventos e aplica a curva sem teto fixo em `requiredForCandyLevel`.
 - Cada evento de XP usa `@@unique([userId, sourceKey])` para impedir pontuacao duplicada da mesma tarefa, homework, feedback, aula, rotina ou missao.
 - Atividades Candy XP ficam em modelos proprios (`CandyXpActivity`, perguntas, assignments e submissions), mas concedem pontos pelo ledger Candy XP para manter anti-duplicacao e historico centralizado.
@@ -94,7 +96,7 @@ Servicos Docker:
 - Expor assets Candy XP fora de rota protegida pode vazar historias publicadas apenas para alunos especificos.
 - Otimizar PDF de forma agressiva pode prejudicar leitura; o preset padrao deve continuar equilibrado e o fallback precisa preservar o original quando houver falha.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
-- Remover protecao de sessao, fallback, limite de uso ou restricao de contexto da Catty pode transformar a assistente em chat publico, quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
+- Remover protecao de sessao, fallback, limite de uso, poda de historico ou restricao de contexto da Catty pode transformar a assistente em chat publico, quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.
 - Transformar uma solicitacao `StudentPreRegistration` em usuario automaticamente sem revisao admin quebraria o controle de entrada no AVA.
 

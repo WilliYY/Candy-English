@@ -18,4 +18,7 @@ export const cattyChatSchema = z.object({
   message: z.string().trim().min(1).max(600),
 });
 
+export const cattyHistoryQuerySchema = cattyPageContextSchema;
+
 export type CattyChatInput = z.infer<typeof cattyChatSchema>;
+export type CattyHistoryQueryInput = z.infer<typeof cattyHistoryQuerySchema>;

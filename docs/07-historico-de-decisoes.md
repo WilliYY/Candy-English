@@ -142,6 +142,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `README.md` e docs oficiais.
 - Riscos/cuidados: manter a chamada visual publica sem permitir resposta fora do AVA logado; preservar admin, teacher e student.
 
+### 2026-06-05 - Catty com historico recente persistente
+
+- Decisao: gravar conversas da Catty em `CattyConversation`/`CattyMessage` apenas para usuarios autenticados do AVA, separando por `area/task`, carregando o historico ao abrir o widget e mantendo poda para 50 mensagens por contexto.
+- Motivo: dar continuidade real a conversa da Catty sem criar memoria infinita, sem abrir chat publico e sem enviar dados internos do AVA para IA.
+- Impacto: `prisma/schema.prisma`, migration `20260605120000_catty_conversation_history`, `src/lib/catty-history.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx` e docs oficiais.
+- Riscos/cuidados: somente 8 mensagens recentes entram no prompt; visitante nao grava historico; futuras expansoes para RAG/base de conhecimento exigem decisao separada de privacidade e custo.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

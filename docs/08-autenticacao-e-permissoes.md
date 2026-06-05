@@ -43,6 +43,8 @@ Tabelas:
 - `TeacherProfile`
 - `StudentTeacherAssignment`
 - `AdminCredential`
+- `CattyConversation`
+- `CattyMessage`
 - `CandyXpProfile`
 - `CandyXpEvent`
 - `CandyUserBadge`
@@ -92,6 +94,7 @@ Rotas protegidas:
 - Futuros jogos ou missoes precisam validar sessao, role, dono dos dados e `sourceKey` antes de conceder XP.
 - Catty pode receber do layout apenas o nome do usuario logado para baloes visuais locais; esse nome nao autoriza leitura de dados internos nem deve ser usado para enviar contratos, respostas, pagamentos ou credenciais para IA.
 - `/api/catty/chat` deve responder apenas para sessao ativa com role `ADMIN`, `TEACHER` ou `STUDENT`; usuario sem sessao recebe 401 amigavel e nao aciona Gemini, OpenAI ou fallback.
+- Historico da Catty deve ser carregado e gravado apenas para o `User.id` autenticado; visitante sem login nao grava historico e nao pode acessar mensagens por chamada direta de API.
 
 ## Decisoes tecnicas tomadas
 
@@ -110,6 +113,7 @@ Rotas protegidas:
 - As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage.
 - O `RootLayout` pode chamar `auth()` para passar somente `session.user.name` ao widget da Catty, mantendo a deteccao de login no servidor e sem depender de descoberta client-side.
 - A rota da Catty chama `auth()` no servidor antes de processar a mensagem; o callback JWT/session ja invalida usuario inativo, mudanca de role e `sessionVersion` antiga.
+- A rota da Catty usa `CattyConversation`/`CattyMessage` somente depois de validar a sessao e limita o historico a 50 mensagens por contexto, usando ate 8 mensagens como contexto da IA.
 
 ## Riscos ao alterar esta parte
 
@@ -124,6 +128,7 @@ Rotas protegidas:
 - Servir arquivo Candy XP direto de `storage/` sem checar publicacao/assignment vaza atividade privada.
 - Logar ou serializar valores revelados de `AdminCredential` compromete APIs externas.
 - Remover a protecao server-side da Catty transforma a assistente em chat publico e pode gerar custo externo com Gemini/OpenAI.
+- Expor historico da Catty por `contextKey` sem filtrar `userId` vazaria conversas entre usuarios.
 
 ## Pendencias
 

@@ -2,13 +2,24 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   buildCattyInput,
   buildFallbackCattyReply,
+  type CattyMessage,
+  type CattyPageContext,
   hasDisallowedCattyText,
   sanitizeCattyReply,
   shouldUseOpenAiForCatty,
 } from "@/lib/catty";
+import {
+  CATTY_AI_CONTEXT_LIMIT,
+  getCattyConversationMessages,
+  persistCattyExchange,
+  type CattyStoredReplySource,
+} from "@/lib/catty-history";
 import { auth } from "@/lib/auth";
 import { isRole } from "@/lib/roles";
-import { cattyChatSchema } from "@/lib/validations/catty";
+import {
+  cattyChatSchema,
+  cattyHistoryQuerySchema,
+} from "@/lib/validations/catty";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -294,6 +305,127 @@ async function requestCattyAiReply(input: string, sources: CattyAiSource[]) {
   return null;
 }
 
+function removeCurrentMessageFromClientHistory(
+  history: CattyMessage[],
+  message: string,
+) {
+  const lastMessage = history.at(-1);
+
+  if (
+    lastMessage?.from === "user" &&
+    lastMessage.text.trim() === message.trim()
+  ) {
+    return history.slice(0, -1);
+  }
+
+  return history;
+}
+
+function toStoredReplySource(
+  source: CattyAiSource | "fallback",
+): CattyStoredReplySource {
+  if (source === "openai") {
+    return "OPENAI";
+  }
+
+  if (source === "gemini") {
+    return "GEMINI";
+  }
+
+  return "FALLBACK";
+}
+
+async function getHistoryForAi(input: {
+  clientHistory: CattyMessage[];
+  context?: CattyPageContext;
+  message: string;
+  userId: string;
+}) {
+  const fallbackHistory = removeCurrentMessageFromClientHistory(
+    input.clientHistory,
+    input.message,
+  );
+
+  try {
+    const storedHistory = await getCattyConversationMessages({
+      context: input.context,
+      take: CATTY_AI_CONTEXT_LIMIT,
+      userId: input.userId,
+    });
+
+    return storedHistory.length > 0 ? storedHistory : fallbackHistory;
+  } catch {
+    console.warn("Catty history load failed; using client context.");
+
+    return fallbackHistory;
+  }
+}
+
+async function persistCattyExchangeSafely(input: {
+  cattyReply: string;
+  context?: CattyPageContext;
+  source: CattyStoredReplySource;
+  userId: string;
+  userMessage: string;
+}) {
+  try {
+    await persistCattyExchange(input);
+  } catch {
+    console.warn("Catty history persistence failed.");
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const session = await auth();
+
+  if (!session?.user?.id || !isRole(session.user.role)) {
+    return NextResponse.json(
+      {
+        messages: [],
+        ok: false,
+        reply: CATTY_AUTH_REQUIRED_REPLY,
+        source: "unauthorized",
+      },
+      { status: 401 },
+    );
+  }
+
+  const searchParams = request.nextUrl.searchParams;
+  const parsed = cattyHistoryQuerySchema.safeParse({
+    area: searchParams.get("area") ?? undefined,
+    task: searchParams.get("task") ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      {
+        messages: [],
+        ok: false,
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const messages = await getCattyConversationMessages({
+      context: parsed.data,
+      userId: session.user.id,
+    });
+
+    return NextResponse.json({
+      messages,
+      ok: true,
+    });
+  } catch {
+    console.warn("Catty history GET failed.");
+
+    return NextResponse.json({
+      messages: [],
+      ok: true,
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
   const session = await auth();
 
@@ -353,19 +485,41 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const input = buildCattyInput(message, history, context);
+  const aiHistory = await getHistoryForAi({
+    clientHistory: history,
+    context,
+    message,
+    userId: session.user.id,
+  });
+  const input = buildCattyInput(message, aiHistory, context);
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]
     : ["gemini"];
   const aiReply = await requestCattyAiReply(input, sources);
 
   if (!aiReply) {
+    await persistCattyExchangeSafely({
+      cattyReply: fallbackReply,
+      context,
+      source: "FALLBACK",
+      userId: session.user.id,
+      userMessage: message,
+    });
+
     return NextResponse.json({
       ok: true,
       reply: fallbackReply,
       source: "fallback",
     });
   }
+
+  await persistCattyExchangeSafely({
+    cattyReply: aiReply.reply,
+    context,
+    source: toStoredReplySource(aiReply.source),
+    userId: session.user.id,
+    userMessage: message,
+  });
 
   return NextResponse.json({
     ok: true,

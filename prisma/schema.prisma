@@ -125,6 +125,17 @@ enum AdminCredentialSource {
   ENV
 }
 
+enum CattyMessageRole {
+  USER
+  CATTY
+}
+
+enum CattyReplySource {
+  GEMINI
+  OPENAI
+  FALLBACK
+}
+
 model User {
   id                   String                @id @default(cuid())
   name                 String
@@ -151,6 +162,7 @@ model User {
   candyXpEvents        CandyXpEvent[]
   candyBadges          CandyUserBadge[]
   candyMissionAttempts CandyMissionAttempt[]
+  cattyConversations   CattyConversation[]
   sentChatMessages     ChatMessage[]
   uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
   createdAt            DateTime              @default(now())
@@ -755,6 +767,33 @@ model CandyXpActivitySubmission {
   @@index([studentProfileId, status])
   @@index([activityId, status])
   @@index([reviewedByUserId])
+}
+
+model CattyConversation {
+  id         String         @id @default(cuid())
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  area       String
+  task       String?
+  contextKey String
+  messages   CattyMessage[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([userId, contextKey])
+  @@index([userId, updatedAt])
+}
+
+model CattyMessage {
+  id             String             @id @default(cuid())
+  conversationId String
+  conversation   CattyConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           CattyMessageRole
+  text           String
+  source         CattyReplySource?
+  createdAt      DateTime           @default(now())
+
+  @@index([conversationId, createdAt])
 }
 
 model ChatThread {

@@ -47,6 +47,8 @@ Operacao do AVA:
 
 - `LiveSession`
 - `ContractDocument`
+- `CattyConversation`
+- `CattyMessage`
 - `ChatThread`
 - `ChatMessage`
 - `AppSetting`
@@ -91,6 +93,8 @@ Enums:
 - `AgendaLessonStatus`
 - `AdminCredentialKind`
 - `AdminCredentialSource`
+- `CattyMessageRole`
+- `CattyReplySource`
 - `CandyXpEventKind`
 - `CandyMissionKind`
 - `CandyXpActivityStatus`
@@ -121,6 +125,8 @@ Enums:
 - `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
 - `AdminCredential.source=ENV` identifica credenciais sincronizadas de integracoes externas do `.env`; a UI nao deve permitir excluir ou alterar o valor sensivel desses registros pelo banco.
 - `AdminCredential.sourceKey` e unico para evitar duplicar a mesma variavel de ambiente.
+- `CattyConversation` guarda historico recente da Catty apenas para `User` autenticado, separado por `contextKey` de area/tarefa.
+- `CattyMessage` guarda mensagens do usuario e da Catty com origem opcional da resposta (`GEMINI`, `OPENAI` ou `FALLBACK`); o app poda para manter no maximo 50 mensagens por conversa.
 - `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.
 - `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
 - `CandyBadgeDefinition` guarda criterios simples de badge por role, nivel, streak ou contagem de evento; `CandyUserBadge` possui chave unica por usuario/badge.
@@ -149,6 +155,7 @@ Enums:
 - Migration `20260601193000_candy_xp_activities` adiciona atividades Candy XP com PDF/imagem, perguntas, liberacao por aluno, progresso/submissao e evento de XP por atividade concluida.
 - Migration `20260604153000_student_pre_registration` adiciona `StudentPreRegistration` para interessados solicitarem cadastro pelo login sem criar `User`, senha ou sessao.
 - Migration `20260604170000_student_pre_registration_review` adiciona metadados de revisao e conversao do pre-cadastro para o modulo `Aceitar alunos`.
+- Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 
 ## Riscos ao alterar esta parte
 
@@ -165,6 +172,7 @@ Enums:
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
 - Criar XP sem `sourceKey` estavel pode duplicar pontos; toda missao/tarefa deve definir uma origem unica por usuario.
 - Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.
+- Remover a poda de `CattyMessage` ou enviar mais historico para IA pode aumentar custo e tamanho de banco sem ganho claro.
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
 - Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.

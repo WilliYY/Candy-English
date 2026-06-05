@@ -73,7 +73,7 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty responde apenas para usuario logado no AVA; usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local autorizado quando chaves/chamadas falham; possui contexto leve de tela/tarefa, mas ainda nao possui base de conhecimento propria nem historico persistente.
+- Catty responde apenas para usuario logado no AVA; usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local autorizado quando chaves/chamadas falham; possui contexto leve de tela/tarefa e historico recente persistente limitado, mas ainda nao possui base de conhecimento propria/RAG.
 
 ## Riscos ao alterar esta parte
 

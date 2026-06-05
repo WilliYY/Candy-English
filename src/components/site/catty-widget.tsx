@@ -41,6 +41,13 @@ const CATTY_AUTH_REQUIRED_REPLY =
 const CATTY_PUBLIC_LOCKED_REPLY =
   "Awnn, meu chat e so para alunos Candy. Entra no AVA ou vem virar aluno para conversar comigo.";
 
+const initialCattyMessages: CattyMessage[] = [
+  {
+    from: "catty",
+    text: "Oi, eu sou a Catty. Me chama para praticar ingles, corrigir uma frase ou destravar uma atividade.",
+  },
+];
+
 const publicBalloonTemplates = [
   "Miaww, a Catty ta aqui e a profa tambem. Vem ser aluno Candy!",
   "Pss pss, quer aprender ingles de um jeito mais docinho?",
@@ -157,6 +164,54 @@ function readReply(payload: unknown) {
   const reply = (payload as { reply?: unknown }).reply;
 
   return typeof reply === "string" ? reply.trim() : "";
+}
+
+function readMessages(payload: unknown): CattyMessage[] {
+  if (typeof payload !== "object" || payload === null) {
+    return [];
+  }
+
+  const messages = (payload as { messages?: unknown }).messages;
+
+  if (!Array.isArray(messages)) {
+    return [];
+  }
+
+  return messages
+    .map((message) => {
+      if (typeof message !== "object" || message === null) {
+        return null;
+      }
+
+      const from = (message as { from?: unknown }).from;
+      const text = (message as { text?: unknown }).text;
+
+      if (
+        (from !== "catty" && from !== "user") ||
+        typeof text !== "string" ||
+        text.trim().length === 0
+      ) {
+        return null;
+      }
+
+      return {
+        from,
+        text: text.trim(),
+      } satisfies CattyMessage;
+    })
+    .filter((message): message is CattyMessage => message !== null)
+    .slice(-50);
+}
+
+function isInitialCattyMessageList(messages: CattyMessage[]) {
+  return (
+    messages.length === initialCattyMessages.length &&
+    messages.every(
+      (message, index) =>
+        message.from === initialCattyMessages[index]?.from &&
+        message.text === initialCattyMessages[index]?.text,
+    )
+  );
 }
 
 function getCurrentPageContext(): CattyPageContext {
@@ -428,12 +483,9 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const [context, setContext] = useState<CattyPageContext>({
     area: "unknown",
   });
-  const [messages, setMessages] = useState<CattyMessage[]>([
-    {
-      from: "catty",
-      text: "Oi, eu sou a Catty. Me chama para praticar ingles, corrigir uma frase ou destravar uma atividade.",
-    },
-  ]);
+  const [messages, setMessages] = useState<CattyMessage[]>(
+    initialCattyMessages,
+  );
   const [draft, setDraft] = useState("");
   const [isThinking, setIsThinking] = useState(false);
   const [loggedInBalloon, setLoggedInBalloon] = useState("");
@@ -474,6 +526,62 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
     messagesEndRef.current?.scrollIntoView({ block: "end" });
   }, [isThinking, messages, open]);
+
+  useEffect(() => {
+    if (!open || !canUseCattyChat) {
+      return;
+    }
+
+    const area = context.area ?? "unknown";
+    const task = context.task;
+    let cancelled = false;
+
+    async function loadHistory() {
+      const params = new URLSearchParams();
+
+      params.set("area", area);
+
+      if (task) {
+        params.set("task", task);
+      }
+
+      try {
+        const response = await fetch(`/api/catty/chat?${params.toString()}`, {
+          cache: "no-store",
+          method: "GET",
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json().catch(() => null)) as unknown;
+        const storedMessages = readMessages(payload);
+
+        if (cancelled) {
+          return;
+        }
+
+        setMessages((current) => {
+          if (!isInitialCattyMessageList(current)) {
+            return current;
+          }
+
+          return storedMessages.length > 0
+            ? storedMessages
+            : initialCattyMessages;
+        });
+      } catch {
+        // History is a convenience layer; the chat must keep working without it.
+      }
+    }
+
+    void loadHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canUseCattyChat, context.area, context.task, open]);
 
   useEffect(() => {
     function refreshContext() {
@@ -551,6 +659,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       return;
     }
 
+    setMessages(initialCattyMessages);
     setOpen(true);
   }
 
