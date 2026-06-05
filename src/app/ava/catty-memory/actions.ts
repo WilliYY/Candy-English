@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { clearCattyConversationMessages } from "@/lib/catty-history";
 import {
+  removeSensitiveCattyUserMemoryValue,
   updateCattyUserMemoryStatus,
   updateCattyUserMemoryValue,
   upsertCattyUserMemory,
@@ -102,6 +104,56 @@ export async function correctCattyUserMemory(
     ...input,
     actorRole: session.user.role,
     actorUserId: session.user.id,
+  });
+
+  if (result.ok) {
+    revalidateCattyMemory();
+  }
+
+  return result;
+}
+
+export async function removeSensitiveCattyUserMemory(input: {
+  memoryId: string;
+}): Promise<CattyUserMemoryActionResult> {
+  const session = await requireCattyMemorySession();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Entre no AVA para remover memoria pessoal da Catty.",
+    };
+  }
+
+  const result = await removeSensitiveCattyUserMemoryValue({
+    actorRole: session.user.role,
+    actorUserId: session.user.id,
+    memoryId: input.memoryId,
+  });
+
+  if (result.ok) {
+    revalidateCattyMemory();
+  }
+
+  return result;
+}
+
+export async function clearCattyConversationHistory(input: {
+  conversationId: string;
+}): Promise<CattyUserMemoryActionResult> {
+  const session = await requireCattyMemorySession();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Entre no AVA para limpar historico da Catty.",
+    };
+  }
+
+  const result = await clearCattyConversationMessages({
+    actorRole: session.user.role,
+    actorUserId: session.user.id,
+    conversationId: input.conversationId,
   });
 
   if (result.ok) {

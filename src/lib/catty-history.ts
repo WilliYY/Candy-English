@@ -1,8 +1,16 @@
 import type { CattyMessage, CattyPageContext } from "@/lib/catty";
+import { canAccessCattyUserMemoryTarget } from "@/lib/catty-user-memory";
 import { getPrisma } from "@/lib/prisma";
+import type { Role } from "@/lib/roles";
 
-export const CATTY_HISTORY_DISPLAY_LIMIT = 50;
+export const CATTY_HISTORY_DISPLAY_LIMIT = 120;
 export const CATTY_AI_CONTEXT_LIMIT = 8;
+export const CATTY_HISTORY_MESSAGE_MAX_LENGTH = 700;
+export const CATTY_HISTORY_STORAGE_LIMIT = 50000;
+export const CATTY_HISTORY_HEAVY_BYTES = 500 * 1024 * 1024;
+export const CATTY_HISTORY_HEAVY_MESSAGE_COUNT = Math.floor(
+  CATTY_HISTORY_HEAVY_BYTES / CATTY_HISTORY_MESSAGE_MAX_LENGTH,
+);
 
 export type CattyStoredReplySource = "FALLBACK" | "GEMINI" | "OPENAI";
 
@@ -15,7 +23,10 @@ type PersistCattyExchangeInput = {
 };
 
 function normalizeStoredText(text: string) {
-  return text.replace(/\s+/g, " ").trim().slice(0, 700);
+  return text
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, CATTY_HISTORY_MESSAGE_MAX_LENGTH);
 }
 
 function normalizeTask(task?: string) {
@@ -34,6 +45,10 @@ export function getCattyHistoryContext(context?: CattyPageContext) {
     contextKey: contextKey.slice(0, 120),
     task,
   };
+}
+
+export function estimateCattyConversationBytes(messageCount: number) {
+  return Math.max(messageCount, 0) * CATTY_HISTORY_MESSAGE_MAX_LENGTH;
 }
 
 export async function getCattyConversationMessages(input: {
@@ -147,8 +162,8 @@ export async function persistCattyExchange({
       select: {
         id: true,
       },
-      skip: CATTY_HISTORY_DISPLAY_LIMIT,
-      take: CATTY_HISTORY_DISPLAY_LIMIT,
+      skip: CATTY_HISTORY_STORAGE_LIMIT,
+      take: 1000,
       where: {
         conversationId: conversation.id,
       },
@@ -170,4 +185,52 @@ export async function persistCattyExchange({
       userMessageId: userStoredMessage.id,
     };
   });
+}
+
+export async function clearCattyConversationMessages(input: {
+  actorRole: Role;
+  actorUserId: string;
+  conversationId: string;
+}) {
+  const prisma = getPrisma();
+  const conversation = await prisma.cattyConversation.findUnique({
+    select: {
+      id: true,
+      userId: true,
+    },
+    where: {
+      id: input.conversationId,
+    },
+  });
+
+  if (!conversation) {
+    return {
+      ok: false,
+      message: "Nao encontrei esse historico da Catty.",
+    };
+  }
+
+  const canAccess = await canAccessCattyUserMemoryTarget({
+    actorRole: input.actorRole,
+    actorUserId: input.actorUserId,
+    targetUserId: conversation.userId,
+  });
+
+  if (!canAccess) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para limpar esse historico da Catty.",
+    };
+  }
+
+  const deleted = await prisma.cattyMessage.deleteMany({
+    where: {
+      conversationId: conversation.id,
+    },
+  });
+
+  return {
+    ok: true,
+    message: `Historico da Catty limpo: ${deleted.count} mensagem(ns) removida(s).`,
+  };
 }

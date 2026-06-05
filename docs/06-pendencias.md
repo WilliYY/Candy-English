@@ -32,7 +32,6 @@ As pendencias podem afetar:
 - Tela completa de missoes, badges, streaks, temporadas e historico de XP fora do card compacto.
 - Edicao completa das perguntas Candy XP apos a atividade criada.
 - Relatorio/exportacao detalhada das respostas Candy XP.
-- Tela completa para admin/teacher/student revisar, corrigir e arquivar memorias pessoais da Catty; a base atual possui models, helper e server actions protegidas.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
 - Jitsi dedicado ou JaaS para aula ao vivo sem conta externa e sem limite de embed do `meet.jit.si` publico.
@@ -74,7 +73,7 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty responde apenas para usuario logado no AVA; usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local autorizado quando chaves/chamadas falham; possui contexto leve de tela/tarefa, historico recente persistente limitado, ate 3 memorias aprovadas do Catty Learning Center, memorias pessoais ativas do proprio usuario e auto-sugestoes pendentes para revisao, mas ainda nao possui RAG automatico amplo.
+- Catty responde apenas para usuario logado no AVA; usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local autorizado quando chaves/chamadas falham; possui contexto leve de tela/tarefa, historico persistente por usuario/contexto com prompt curto, ate 3 memorias aprovadas do Catty Learning Center, memorias pessoais ativas do proprio usuario, gestao humana dessas memorias e auto-sugestoes pendentes para revisao, mas ainda nao possui RAG automatico amplo.
 
 ## Riscos ao alterar esta parte
 

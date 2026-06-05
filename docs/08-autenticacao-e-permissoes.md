@@ -126,10 +126,10 @@ Rotas protegidas:
 - As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage.
 - O `RootLayout` pode chamar `auth()` para passar somente `session.user.name` ao widget da Catty, mantendo a deteccao de login no servidor e sem depender de descoberta client-side.
 - A rota da Catty chama `auth()` no servidor antes de processar a mensagem; o callback JWT/session ja invalida usuario inativo, mudanca de role e `sessionVersion` antiga.
-- A rota da Catty usa `CattyConversation`/`CattyMessage` somente depois de validar a sessao e limita o historico a 50 mensagens por contexto, usando ate 8 mensagens como contexto da IA.
+- A rota da Catty usa `CattyConversation`/`CattyMessage` somente depois de validar a sessao; o banco pode reter ate 50.000 mensagens por usuario/contexto, a UI carrega ate 120 recentes e somente 8 mensagens entram no contexto da IA.
 - A rota da Catty usa `CattyUserMemory` somente depois de validar a sessao e sempre filtra pelo `session.user.id`, para que gosto/dificuldade de um aluno nao apareca para outro.
 - Actions do Catty Learning Center chamam `auth()`, validam role e usam Zod para impedir feedback/aprendizados com termos sensiveis antes de gravar ou aprovar memoria.
-- Actions de memoria pessoal da Catty chamam `auth()`, validam role, dono do dado e vinculo teacher/aluno antes de salvar, corrigir, arquivar ou marcar memoria como flagged.
+- Actions de memoria pessoal da Catty chamam `auth()`, validam role, dono do dado e vinculo teacher/aluno antes de salvar, corrigir, aprovar, arquivar, remover dado sensivel, limpar historico ou marcar memoria como flagged.
 - O envio de feedback da Catty valida que o `CattyMessage` avaliado pertence ao proprio usuario logado; Teacher/Admin revisam pela fila protegida, com filtro de vinculo para Teacher.
 
 ## Riscos ao alterar esta parte

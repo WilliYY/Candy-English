@@ -45,6 +45,7 @@ import {
   type CattyLearningFeedbackRow,
   type CattyLearningItemRow,
 } from "@/components/ava/catty-learning-center-panel";
+import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,6 +54,7 @@ import {
   buildCandyTeacherXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 
 export const teacherTaskIds = [
@@ -63,6 +65,7 @@ export const teacherTaskIds = [
   "aulas",
   "aceitar-alunos",
   "catty-learning",
+  "catty-memory",
   "mensagens",
   "corrigir-respostas",
   "contratos",
@@ -205,6 +208,7 @@ type TeacherWorkspaceProps = {
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
+  cattyMemoryData: CattyMemoryManagementData;
   chatThreads: ChatThreadRow[];
   currentUser: {
     address?: string | null;
@@ -252,6 +256,11 @@ const taskMeta = {
     description: "Sugira exemplos e regras para a memoria aprovada da Catty.",
     icon: BrainCircuit,
     title: "Catty Learning Center",
+  },
+  "catty-memory": {
+    description: "Revise memorias pessoais da Catty dos seus alunos.",
+    icon: BrainCircuit,
+    title: "Memoria da Catty",
   },
   contratos: {
     description: "Envie e visualize contratos PDF de alunos.",
@@ -317,6 +326,7 @@ export function TeacherWorkspace({
   candyXpPersistence,
   cattyLearningFeedbacks,
   cattyLearningItems,
+  cattyMemoryData,
   chatThreads,
   currentUser,
   contracts,
@@ -644,6 +654,13 @@ export function TeacherWorkspace({
             <CattyLearningCenterPanel
               feedbacks={cattyLearningFeedbacks}
               items={cattyLearningItems}
+              viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
+            />
+          ) : null}
+
+          {activeTask === "catty-memory" ? (
+            <CattyMemoryPanel
+              data={cattyMemoryData}
               viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
             />
           ) : null}

@@ -883,6 +883,79 @@ export async function updateCattyUserMemoryValue(
   };
 }
 
+export async function removeSensitiveCattyUserMemoryValue(input: {
+  actorRole: Role;
+  actorUserId: string;
+  memoryId: string;
+}) {
+  const prisma = getPrisma();
+  const memory = await prisma.cattyUserMemory.findUnique({
+    select: {
+      category: true,
+      id: true,
+      key: true,
+      source: true,
+      userId: true,
+    },
+    where: {
+      id: input.memoryId,
+    },
+  });
+
+  if (!memory) {
+    return {
+      ok: false,
+      message: "Nao encontrei essa memoria da Catty.",
+    };
+  }
+
+  const canAccess = await canAccessCattyUserMemoryTarget({
+    actorRole: input.actorRole,
+    actorUserId: input.actorUserId,
+    targetUserId: memory.userId,
+  });
+
+  if (!canAccess) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para remover essa memoria da Catty.",
+    };
+  }
+
+  const note = "Dado sensivel removido por revisao humana.";
+  const updated = await prisma.cattyUserMemory.update({
+    data: {
+      confidence: 0,
+      flaggedReason: note,
+      status: "ARCHIVED",
+      value: "[dado sensivel removido]",
+    },
+    where: {
+      id: memory.id,
+    },
+  });
+
+  await createMemoryEvent({
+    action: "SENSITIVE_REMOVED",
+    category: memory.category,
+    createdByUserId: input.actorUserId,
+    key: memory.key,
+    memoryId: memory.id,
+    nextValue: "[dado sensivel removido]",
+    note,
+    previousValue: null,
+    source: memory.source,
+    status: "ARCHIVED",
+    userId: memory.userId,
+  });
+
+  return {
+    memoryId: updated.id,
+    ok: true,
+    message: "Dado sensivel removido e memoria arquivada.",
+  };
+}
+
 export async function getCattyUserMemoryContext(input: {
   intent?: CattyResponsePlan["intent"];
   limit?: number;

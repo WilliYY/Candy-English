@@ -142,12 +142,12 @@ Cada decisao deve conter:
 - Impacto: `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `README.md` e docs oficiais.
 - Riscos/cuidados: manter a chamada visual publica sem permitir resposta fora do AVA logado; preservar admin, teacher e student.
 
-### 2026-06-05 - Catty com historico recente persistente
+### 2026-06-05 - Catty com historico persistente controlado
 
-- Decisao: gravar conversas da Catty em `CattyConversation`/`CattyMessage` apenas para usuarios autenticados do AVA, separando por `area/task`, carregando o historico ao abrir o widget e mantendo poda para 50 mensagens por contexto.
-- Motivo: dar continuidade real a conversa da Catty sem criar memoria infinita, sem abrir chat publico e sem enviar dados internos do AVA para IA.
+- Decisao: gravar conversas da Catty em `CattyConversation`/`CattyMessage` apenas para usuarios autenticados do AVA, separando por `area/task`, carregando uma janela recente ao abrir o widget, retendo ate 50.000 mensagens por contexto no banco e mantendo somente 8 mensagens no prompt da IA.
+- Motivo: dar continuidade real por anos de estudo sem criar custo de IA proporcional ao historico e sem abrir chat publico.
 - Impacto: `prisma/schema.prisma`, migration `20260605120000_catty_conversation_history`, `src/lib/catty-history.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx` e docs oficiais.
-- Riscos/cuidados: somente 8 mensagens recentes entram no prompt; visitante nao grava historico; futuras expansoes para RAG/base de conhecimento exigem decisao separada de privacidade e custo.
+- Riscos/cuidados: somente 8 mensagens recentes entram no prompt; visitante nao grava historico; historico pesado precisa de alerta e limpeza manual; futuras expansoes para RAG/base de conhecimento exigem decisao separada de privacidade e custo.
 
 ### 2026-06-05 - Personalidade oficial da Catty
 
@@ -414,6 +414,13 @@ Cada decisao deve conter:
 - Motivo: personalizar respostas sem aumentar custo, sem repetir gostos em toda frase e sem deixar preferencias antigas incorretas contaminarem Gemini, OpenAI ou fallback.
 - Impacto: `src/lib/catty-user-memory.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `scripts/catty-behavior-smoke.ts` e docs oficiais.
 - Riscos/cuidados: memoria pessoal continua sendo tempero leve; Gemini/OpenAI devem ignorar itens que nao combinam com a pergunta; conflito nao apaga memoria automaticamente e precisa de revisao futura por Admin/Teacher.
+
+### 2026-06-05 - Gestao humana da memoria pessoal da Catty
+
+- Decisao: criar `Memoria da Catty` em Admin, Teacher e Student. Admin gerencia tudo; Teacher ve a propria memoria e alunos vinculados; Student ve apenas a propria memoria e pode pedir correcao.
+- Motivo: permitir que a Catty aprenda preferencias leves sem virar bagunca automatica, com revisao humana para corrigir erro, arquivar memoria, aprovar pendentes, remover dado sensivel e limpar historico pesado.
+- Impacto: `src/components/ava/catty-memory-panel.tsx`, `src/lib/catty-memory-management.ts`, `src/app/ava/catty-memory/actions.ts`, `src/lib/catty-history.ts`, `src/lib/catty-user-memory.ts`, paineis Admin/Teacher/Student, layout do AVA e docs oficiais.
+- Riscos/cuidados: memorias `FLAGGED`, `ARCHIVED` e `PENDING` nao entram no prompt; limpar historico apaga mensagens da Catty daquele contexto; remover dado sensivel nao deve registrar o valor anterior em evento.
 
 ## Regras de negocio que precisam ser preservadas
 

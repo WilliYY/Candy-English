@@ -38,6 +38,7 @@ import {
   type CattyLearningFeedbackRow,
   type CattyLearningItemRow,
 } from "@/components/ava/catty-learning-center-panel";
+import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import {
   AdminFinancePanel,
   type AdminFinanceLogRow,
@@ -64,6 +65,7 @@ import {
   buildCandyAdminXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +82,7 @@ export const adminTaskIds = [
   "agenda",
   "apis-senhas",
   "catty-learning",
+  "catty-memory",
   "editar-site",
 ] as const;
 
@@ -150,6 +153,7 @@ type AdminUsersPanelProps = {
   candyXpActivities: AdminCandyXpActivityRow[];
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
+  cattyMemoryData: CattyMemoryManagementData;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   agendaLessons: AdminAgendaLessonRow[];
   agendaLogs: AdminAgendaLogRow[];
@@ -240,6 +244,10 @@ const taskMeta = {
   "catty-learning": {
     icon: BrainCircuit,
     title: "Catty Learning Center",
+  },
+  "catty-memory": {
+    icon: BrainCircuit,
+    title: "Memoria da Catty",
   },
   "editar-site": {
     icon: Wrench,
@@ -575,6 +583,7 @@ export function AdminUsersPanel({
   candyXpActivities,
   cattyLearningFeedbacks,
   cattyLearningItems,
+  cattyMemoryData,
   candyXpPersistence,
   agendaLessons,
   agendaLogs,
@@ -835,6 +844,10 @@ export function AdminUsersPanel({
               items={cattyLearningItems}
               viewerRole="ADMIN"
             />
+          ) : null}
+
+          {activeTask === "catty-memory" ? (
+            <CattyMemoryPanel data={cattyMemoryData} viewerRole="ADMIN" />
           ) : null}
 
           {activeTask === "editar-site" ? (

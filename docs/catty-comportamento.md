@@ -8,7 +8,7 @@ A identidade viva da personagem fica em `src/lib/catty-personality.ts`. Esse arq
 
 O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`. Ele guarda memorias curtas em `CattyLearningItem`; teachers podem sugerir, mas apenas admins aprovam. O widget tambem pode gerar `CattyLearningFeedback` discreto em respostas logadas, e a rota pode criar `PATTERN_SUGGESTION` pendente quando detectar lacuna de memoria ou repeticao de feedback negativo. Feedback e auto-sugestao nunca mudam o prompt sozinhos. Somente ate 3 itens `APPROVED` e relevantes entram no prompt/fallback, e nunca devem conter senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados.
 
-A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logado. Ela pode guardar gostos, tema favorito, dificuldade comum, objetivo de estudo ou estilo de explicacao, sempre como resumo curto. Somente itens `ACTIVE` do proprio usuario entram no prompt e apenas como toque leve de exemplo, incentivo ou estilo. A rota escolhe poucas memorias por relevancia da mensagem/intencao, limita ate 5 itens no total, ate 2 dificuldades e ate 2 interesses/temas, e deve ignorar memoria que nao combine. Essa memoria nunca deve conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado. Se uma mensagem contradiz memoria ativa, ela vira `FLAGGED` para revisao.
+A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logado. Ela pode guardar gostos, tema favorito, dificuldade comum, objetivo de estudo ou estilo de explicacao, sempre como resumo curto. Somente itens `ACTIVE` do proprio usuario entram no prompt e apenas como toque leve de exemplo, incentivo ou estilo. A rota escolhe poucas memorias por relevancia da mensagem/intencao, limita ate 5 itens no total, ate 2 dificuldades e ate 2 interesses/temas, e deve ignorar memoria que nao combine. Essa memoria nunca deve conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado. Se uma mensagem contradiz memoria ativa, ela vira `FLAGGED` para revisao. Admin, Teacher e Student possuem a tarefa `Memoria da Catty` para revisar o que esta salvo conforme permissao; Teacher so ve alunos vinculados e Student so ve a propria memoria.
 
 ## Regras que os exemplos protegem
 
@@ -26,6 +26,7 @@ A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logad
 - Fazer no maximo uma pergunta de continuidade.
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
+- Usar gestao humana para corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado sem colocar `FLAGGED`, `ARCHIVED` ou `PENDING` no prompt.
 - Usar feedback do widget apenas como fila de revisao; Teacher sugere, Admin aprova globalmente.
 - Usar auto-sugestao apenas como fila pendente; nunca aprender conteudo automaticamente direto do usuario.
 

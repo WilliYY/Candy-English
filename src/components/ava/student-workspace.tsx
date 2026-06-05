@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  BrainCircuit,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -27,6 +28,7 @@ import {
   StudentCandyXpActivitiesPanel,
   type StudentCandyXpActivity,
 } from "@/components/ava/student-candy-xp-activities-panel";
+import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,6 +37,7 @@ import {
   buildCandyStudentXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 
 export const studentTaskIds = [
@@ -43,6 +46,7 @@ export const studentTaskIds = [
   "aulas",
   "homeworks",
   "candy-xp",
+  "catty-memory",
   "mensagens",
   "contratos",
   "perfil",
@@ -115,6 +119,7 @@ type StudentWorkspaceProps = {
   activeTask: StudentTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   candyXpActivities: StudentCandyXpActivity[];
+  cattyMemoryData: CattyMemoryManagementData;
   chatThreads: ChatThreadRow[];
   contracts: {
     createdAt: Date;
@@ -184,6 +189,11 @@ const taskMeta = {
     description: "Historias e missoes para ganhar XP.",
     icon: Sparkles,
     title: "Candy XP",
+  },
+  "catty-memory": {
+    description: "Veja preferencias leves que a Catty usa para te ajudar.",
+    icon: BrainCircuit,
+    title: "Memoria da Catty",
   },
   homeworks: {
     description: "Responda atividades online e acompanhe feedbacks.",
@@ -286,6 +296,7 @@ export function StudentWorkspace({
   activeTask,
   candyXpPersistence,
   candyXpActivities,
+  cattyMemoryData,
   chatThreads,
   contracts,
   currentUser,
@@ -489,6 +500,10 @@ export function StudentWorkspace({
                 userId={currentUser.id}
               />
             </div>
+          ) : null}
+
+          {activeTask === "catty-memory" ? (
+            <CattyMemoryPanel data={cattyMemoryData} viewerRole="STUDENT" />
           ) : null}
 
           {activeTask === "contratos" ? (

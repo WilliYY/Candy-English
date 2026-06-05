@@ -135,8 +135,8 @@ Enums:
 - `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
 - `AdminCredential.source=ENV` identifica credenciais sincronizadas de integracoes externas do `.env`; a UI nao deve permitir excluir ou alterar o valor sensivel desses registros pelo banco.
 - `AdminCredential.sourceKey` e unico para evitar duplicar a mesma variavel de ambiente.
-- `CattyConversation` guarda historico recente da Catty apenas para `User` autenticado, separado por `contextKey` de area/tarefa.
-- `CattyMessage` guarda mensagens do usuario e da Catty com origem opcional da resposta (`GEMINI`, `OPENAI` ou `FALLBACK`); o app poda para manter no maximo 50 mensagens por conversa.
+- `CattyConversation` guarda historico da Catty apenas para `User` autenticado, separado por `contextKey` de area/tarefa.
+- `CattyMessage` guarda mensagens do usuario e da Catty com origem opcional da resposta (`GEMINI`, `OPENAI` ou `FALLBACK`); o app pode reter ate 50.000 mensagens por conversa para acompanhar anos de estudo, mas carrega apenas uma janela recente na UI e envia somente 8 mensagens para IA.
 - `CattyLearningItem` guarda memorias controladas da Catty, como regra de personalidade, resposta ideal/ruim, vocabulario, duvida comum, exemplo de homework, orientacao teacher/aluno, bordao, correcao aprovada ou contexto Candy English.
 - `CattyLearningItem.status=APPROVED` e o unico status usado no prompt/fallback da Catty; `PENDING`, `REJECTED` e `ARCHIVED` ficam apenas para revisao operacional.
 - `CattyLearningFeedback` registra feedback discreto do chat da Catty (`LIKED`, `DISLIKED`, `CONFUSING`, `SHOULD_ANSWER` ou `PATTERN_SUGGESTION`), com pergunta/resposta resumidas, sugestao ideal opcional, contexto leve e vinculo opcional ao `CattyMessage`.
@@ -145,7 +145,7 @@ Enums:
 - `CattyUserMemory` guarda memoria pessoal por `User.id`, como interesse, objetivo, dificuldade, estilo, tema favorito, preferencia de emoji ou nota pedagogica leve.
 - `CattyUserMemory.status=ACTIVE` e o unico status usado no prompt da Catty; `PENDING`, `FLAGGED` e `ARCHIVED` nao entram nas respostas. Mensagens contraditorias, como o usuario negar uma preferencia antiga, devem marcar a memoria como `FLAGGED` para revisao, nunca apagar automaticamente.
 - `CattyUserMemory.userId + category + key` e unico para evitar duplicar a mesma preferencia do mesmo usuario; memorias pessoais nunca sao compartilhadas entre alunos.
-- `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, conflito marcado, uso e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
+- `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, conflito marcado, remocao de dado sensivel e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
 - Memoria pessoal da Catty deve ser resumo curto e nao pode conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao ou dado privado.
 - `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.
 - `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
@@ -195,11 +195,11 @@ Enums:
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
 - Criar XP sem `sourceKey` estavel pode duplicar pontos; toda missao/tarefa deve definir uma origem unica por usuario.
 - Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.
-- Remover a poda de `CattyMessage` ou enviar mais historico para IA pode aumentar custo e tamanho de banco sem ganho claro.
+- Enviar mais `CattyMessage` para IA pode aumentar custo sem ganho claro; manter o prompt limitado a 8 mensagens, mesmo com retencao longa no banco.
 - Aprovar memoria da Catty com dados sensiveis, telefone, documento, pagamento, contrato, token, chave ou email pode vazar informacao para Gemini/OpenAI; manter validacao e revisao humana.
 - Feedback da Catty copia apenas trechos resumidos da propria conversa do usuario; se houver termo sensivel, a action ou auto-sugestao deve bloquear o registro para evitar que entre na fila de treino.
 - Permitir que memoria pessoal de um usuario seja consultada sem filtrar `userId` pode vazar gostos, dificuldades ou notas pedagogicas entre alunos; manter sempre filtro por dono, admin ou teacher vinculada.
-- Criar memorias pessoais demais aumenta custo/contexto; a rota limita o prompt e gera evento de sugestao de limpeza quando o volume passa do recomendado.
+- Criar memorias pessoais demais aumenta custo/contexto; a rota limita o prompt, a tela `Memoria da Catty` mostra alertas e a equipe pode arquivar itens, remover dado sensivel ou limpar historico manualmente.
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
 - Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.
@@ -214,7 +214,6 @@ Enums:
 - Falta tela completa para aluno/teacher/admin explorarem badges, missoes, streaks e temporadas fora do card XP.
 - Falta editor completo de perguntas Candy XP depois que a atividade ja foi criada.
 - Falta exportacao/relatorio detalhado das respostas Candy XP.
-- Falta tela completa para revisar, corrigir e arquivar memorias pessoais da Catty; hoje ha models, helper e server actions protegidas.
 
 ## Como pode evoluir
 
