@@ -25,6 +25,7 @@ export const CATTY_PERSONALITY_GUIDE = [
   "Use respostas curtas, com linguagem facil, energia positiva e uma pergunta simples quando fizer sentido.",
   "Use expressoes de assinatura com naturalidade: Miauw, Awnn, Uwau, Pss pss, Nya e Bora estudar.",
   "Voce pode usar no maximo um emoji ocasional por resposta, preferindo 🐱, 📚, ✨ ou 🍬.",
+  "A fofura deve ajudar a explicar e acolher, sem virar meme ou esconder a parte pedagogica.",
   "Misture English simples em frases curtas quando combinar com o estudo, sem dificultar.",
   "Nao soe como chatbot generico: evite repetir 'Claro!', 'Com certeza!' e aberturas roboticas.",
   "Corrija com carinho, sem bronca, mostrando uma versao melhor e um motivo pequeno.",
@@ -164,21 +165,21 @@ function buildEnglishReply(text: string, context?: CattyPageContext) {
     hasAny(normalized, ["homework", "answer", "answers"]) ||
     context?.task === "homeworks"
   ) {
-    return "Miauw, tiny study rule: I can guide you, but I will not give the whole answer. Send one sentence from the homework and I will explain what it asks. 🐱";
+    return "Nya, I will not give the full answer, but I can give a good clue: look at the verb first. Send one sentence and I will guide you. 🐱";
   }
 
   if (
     hasAny(normalized, ["correct", "grammar", "sentence", "say"]) ||
     hasAny(normalized, ["phrase"])
   ) {
-    return "Awnn, send one sentence. I will make it smoother and explain one tiny reason, nice and simple.";
+    return "Awnn, almost there. Send one sentence and I will make it smoother with one tiny reason.";
   }
 
   if (
     context?.task === "mensagens" ||
     hasAny(normalized, ["message", "teacher"])
   ) {
-    return "Nya, I can help you write a kind message. Try: Hi teacher, I have a question about the activity.";
+    return "Pss pss, I can help you write a kind message. Try: Hi teacher, I have a question about the activity.";
   }
 
   if (hasAny(normalized, ["how are you", "hello", "hi"])) {
@@ -186,15 +187,11 @@ function buildEnglishReply(text: string, context?: CattyPageContext) {
   }
 
   if (hasAny(normalized, ["practice", "study", "learn", "english"])) {
-    return "Uwau, bora estudar. Say this out loud: I am getting better at English one step at a time.";
+    return "Bora estudar, Candy student. Say this out loud: I am getting better at English one step at a time.";
   }
 
   if (hasAny(normalized, ["what does", "mean", "word"])) {
-    return "Pss pss, send me the word and I will help with a simple meaning. Small words, big progress.";
-  }
-
-  if (hasAny(normalized, ["grammar", "sentence", "say"])) {
-    return "Awnn, send one sentence and I will help make it clearer. You are already practicing, and that counts.";
+    return "Miauw, let's go by parts. Send me the word and I will explain it with a simple example.";
   }
 
   return `Nya, I am here with you on ${contextLabel}. Write one small English sentence and I will help you polish it.`;
@@ -208,7 +205,7 @@ function buildPortugueseReply(text: string, context?: CattyPageContext) {
   }
 
   if (hasAny(normalized, ["homework", "atividade", "dever"])) {
-    return "Pss pss, eu te ajudo a entender o enunciado, mas sem entregar resposta pronta. Manda uma frase da atividade e eu explico o que ela pede.";
+    return "Nya, nao vou te dar a resposta pronta, mas te dou uma pista boa: olha primeiro o verbo e o que a pergunta pede. Manda uma frase se quiser.";
   }
 
   if (hasAny(normalized, ["senha", "login", "entrar"])) {
@@ -224,11 +221,11 @@ function buildPortugueseReply(text: string, context?: CattyPageContext) {
   }
 
   if (hasAny(normalized, ["anima", "estudar", "ingles", "ringles", "cansad"])) {
-    return "Uwau, hoje vale meta pequena. Leia uma frase em English, repita em voz alta e comemore. Pequeno tambem e progresso. ✨";
+    return "Bora estudar, aluno Candy. Hoje vale meta pequena: leia uma frase em English, repita em voz alta e comemore. ✨";
   }
 
   if (hasAny(normalized, ["corrige", "corrigir", "frase", "gramatica"])) {
-    return "Miauw, manda uma frase curtinha. Eu te devolvo uma versao melhor e uma explicacao simples, sem bronca.";
+    return "Awnn, quase la. Manda uma frase curtinha e eu te devolvo uma versao melhor com uma explicacao simples.";
   }
 
   if (hasAny(normalized, ["teacher", "prof", "mensagem", "falar"])) {
@@ -244,10 +241,10 @@ function buildPortugueseReply(text: string, context?: CattyPageContext) {
   }
 
   if (context?.task === "aulas") {
-    return "Bora estudar: nas aulas, posso explicar vocabulario e montar uma frase exemplo. Manda a palavra que ficou dificil.";
+    return "Miauw, vamos por partes. Nas aulas, posso explicar vocabulario e montar uma frase exemplo. Manda a palavra que ficou dificil.";
   }
 
-  return "Miauw, estou aqui para deixar o estudo mais leve. Me pergunte sobre homework, aula ao vivo ou mande uma frase em English para praticar.";
+  return "Bora estudar, aluno Candy. Uma frase por vez ja conta. Me pergunte sobre homework, aula ao vivo ou mande uma frase em English.";
 }
 
 export function buildFallbackCattyReply(

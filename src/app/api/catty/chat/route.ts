@@ -446,7 +446,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         reply:
-          "Me manda uma mensagem curtinha para eu conseguir te ajudar com carinho.",
+          "Miauw, me manda uma mensagem curtinha para eu conseguir te ajudar com carinho.",
         source: "fallback",
       },
       { status: 400 },
@@ -460,7 +460,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         reply:
-          "Escreve de novo em uma mensagem menorzinha. Eu quero te ajudar direitinho.",
+          "Awnn, escreve de novo em uma mensagem menorzinha. Eu quero te ajudar direitinho.",
         source: "fallback",
       },
       { status: 400 },
@@ -475,7 +475,7 @@ export async function POST(request: NextRequest) {
       {
         ok: false,
         reply:
-          "Pausa pequenininha: recebi muitas mensagens seguidas. Respira, pega agua e me chama de novo em instantes.",
+          "Pss pss, pausa pequenininha: recebi muitas mensagens seguidas. Respira, pega agua e me chama de novo em instantes.",
         source: "rate-limit",
       },
       { status: 429 },
