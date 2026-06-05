@@ -5,6 +5,7 @@ import {
   CATTY_PERSONALITY_GUIDE,
   type CattyMessage,
   type CattyPageContext,
+  type CattyResponsePlan,
   hasDisallowedCattyText,
   sanitizeCattyReply,
   shouldUseOpenAiForCatty,
@@ -187,14 +188,78 @@ function buildGeminiUrl(model: string) {
   )}:generateContent`;
 }
 
-function cleanAiReply(text: string) {
+function cleanAiReply(text: string, plan: CattyResponsePlan) {
   const reply = sanitizeCattyReply(text);
 
-  if (!reply || hasDisallowedCattyText(reply) || isLikelyIncompleteReply(reply)) {
+  if (
+    !reply ||
+    hasDisallowedCattyText(reply) ||
+    isLikelyIncompleteReply(reply) ||
+    isLowValueAiReply(reply) ||
+    isUnsafeForResponsePlan(reply, plan)
+  ) {
     return null;
   }
 
   return reply;
+}
+
+function isLowValueAiReply(reply: string) {
+  const normalized = reply
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+  const words = normalized.match(/[a-z0-9]+/g) ?? [];
+
+  if (words.length <= 3) {
+    return true;
+  }
+
+  if (
+    words.length <= 8 &&
+    [
+      "claro",
+      "com certeza",
+      "como posso ajudar",
+      "me diga mais",
+      "nao entendi",
+      "ok",
+      "sim",
+    ].some((term) => normalized.includes(term))
+  ) {
+    return true;
+  }
+
+  return [
+    "como posso ajudar hoje",
+    "preciso de mais contexto",
+    "sou apenas um assistente",
+  ].some((term) => normalized.includes(term));
+}
+
+function isUnsafeForResponsePlan(reply: string, plan: CattyResponsePlan) {
+  const normalized = reply
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (plan.intent === "homework_hint") {
+    return [
+      "a resposta correta",
+      "a resposta e",
+      "answer is",
+      "correct answer",
+      "gabarito",
+      "the answer is",
+    ].some((term) => normalized.includes(term));
+  }
+
+  if (plan.intent === "confusing_question") {
+    return normalized.includes("nao entendi sua pergunta");
+  }
+
+  return false;
 }
 
 function isLikelyIncompleteReply(reply: string) {
@@ -242,7 +307,7 @@ function isLikelyIncompleteReply(reply: string) {
   );
 }
 
-async function requestOpenAiCattyReply(input: string) {
+async function requestOpenAiCattyReply(input: string, plan: CattyResponsePlan) {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
 
   if (!apiKey) {
@@ -274,7 +339,7 @@ async function requestOpenAiCattyReply(input: string) {
     }
 
     const data = (await response.json()) as unknown;
-    const reply = cleanAiReply(extractOpenAiResponseText(data));
+    const reply = cleanAiReply(extractOpenAiResponseText(data), plan);
 
     return reply ? { reply, source: "openai" as const } : null;
   } catch {
@@ -282,7 +347,7 @@ async function requestOpenAiCattyReply(input: string) {
   }
 }
 
-async function requestGeminiCattyReply(input: string) {
+async function requestGeminiCattyReply(input: string, plan: CattyResponsePlan) {
   const apiKey = process.env.GEMINI_API_KEY?.trim();
 
   if (!apiKey) {
@@ -329,7 +394,7 @@ async function requestGeminiCattyReply(input: string) {
     }
 
     const data = (await response.json()) as unknown;
-    const reply = cleanAiReply(extractGeminiResponseText(data));
+    const reply = cleanAiReply(extractGeminiResponseText(data), plan);
 
     return reply ? { reply, source: "gemini" as const } : null;
   } catch {
@@ -337,12 +402,16 @@ async function requestGeminiCattyReply(input: string) {
   }
 }
 
-async function requestCattyAiReply(input: string, sources: CattyAiSource[]) {
+async function requestCattyAiReply(
+  input: string,
+  plan: CattyResponsePlan,
+  sources: CattyAiSource[],
+) {
   for (const source of sources) {
     const result =
       source === "openai"
-        ? await requestOpenAiCattyReply(input)
-        : await requestGeminiCattyReply(input);
+        ? await requestOpenAiCattyReply(input, plan)
+        : await requestGeminiCattyReply(input, plan);
 
     if (result) {
       return result;
@@ -368,6 +437,41 @@ function removeCurrentMessageFromClientHistory(
   return history;
 }
 
+function normalizeHistoryKey(message: CattyMessage) {
+  return `${message.from}:${message.text.replace(/\s+/g, " ").trim().toLowerCase()}`;
+}
+
+function mergeCattyHistory(input: {
+  clientHistory: CattyMessage[];
+  currentMessage: string;
+  storedHistory: CattyMessage[];
+}) {
+  const clientHistory = removeCurrentMessageFromClientHistory(
+    input.clientHistory,
+    input.currentMessage,
+  );
+  const merged = [...input.storedHistory, ...clientHistory]
+    .map((message) => ({
+      from: message.from,
+      text: message.text.replace(/\s+/g, " ").trim(),
+    }))
+    .filter((message) => message.text.length > 0);
+  const seen = new Set<string>();
+  const dedupedNewestFirst = [...merged].reverse().filter((message) => {
+    const key = normalizeHistoryKey(message);
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+
+    return true;
+  });
+
+  return dedupedNewestFirst.reverse().slice(-CATTY_AI_CONTEXT_LIMIT);
+}
+
 function toStoredReplySource(
   source: CattyAiSource | "fallback",
 ): CattyStoredReplySource {
@@ -382,7 +486,7 @@ function toStoredReplySource(
   return "FALLBACK";
 }
 
-async function getHistoryForAi(input: {
+async function getHistoryForCatty(input: {
   clientHistory: CattyMessage[];
   context?: CattyPageContext;
   message: string;
@@ -400,11 +504,15 @@ async function getHistoryForAi(input: {
       userId: input.userId,
     });
 
-    return storedHistory.length > 0 ? storedHistory : fallbackHistory;
+    return mergeCattyHistory({
+      clientHistory: fallbackHistory,
+      currentMessage: input.message,
+      storedHistory,
+    });
   } catch {
     console.warn("Catty history load failed; using client context.");
 
-    return fallbackHistory;
+    return fallbackHistory.slice(-CATTY_AI_CONTEXT_LIMIT);
   }
 }
 
@@ -518,8 +626,6 @@ export async function POST(request: NextRequest) {
   }
 
   const { context, history, message } = parsed.data;
-  const responsePlan = buildCattyResponsePlan(message, context);
-  const fallbackReply = responsePlan.fallbackReply;
 
   if (isRateLimited(getClientIp(request))) {
     return NextResponse.json(
@@ -533,17 +639,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const aiHistory = await getHistoryForAi({
+  const cattyHistory = await getHistoryForCatty({
     clientHistory: history,
     context,
     message,
     userId: session.user.id,
   });
-  const input = buildCattyInput(message, aiHistory, context, responsePlan);
+  const responsePlan = buildCattyResponsePlan(message, context, cattyHistory);
+  const fallbackReply = responsePlan.fallbackReply;
+  const input = buildCattyInput(message, cattyHistory, context, responsePlan);
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]
     : ["gemini"];
-  const aiReply = await requestCattyAiReply(input, sources);
+  const aiReply = await requestCattyAiReply(input, responsePlan, sources);
 
   if (!aiReply) {
     await persistCattyExchangeSafely({

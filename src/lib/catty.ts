@@ -110,16 +110,21 @@ const intentInstructions: Record<CattyIntent, string> = {
 };
 
 const portugueseSignals = [
+  "ajuda",
   "aula",
   "como",
   "contrato",
   "dever",
+  "enunciado",
   "estudar",
+  "exercicio",
   "faco",
   "falar",
   "homework",
   "ingles",
   "mensagem",
+  "pergunta",
+  "resposta",
   "senha",
   "teacher",
   "voce",
@@ -264,7 +269,9 @@ function isVagueQuestion(text: string) {
       "nao sei",
       "o que faco",
       "isso",
+      "preso",
       "this",
+      "travad",
       "travou",
       "what now",
     ]) ||
@@ -284,6 +291,72 @@ function getQuotedFragment(text: string) {
   return afterColon.length >= 2 && afterColon.length <= 120
     ? afterColon
     : "";
+}
+
+function extractCorrectionFragment(text: string) {
+  const quoted = getQuotedFragment(text);
+
+  if (quoted) {
+    return quoted;
+  }
+
+  const match = text.match(
+    /(?:corrige|corrigir|correct(?:\s+this\s+phrase)?|frase|phrase|sentence)\s*:?\s+(.{3,140})/i,
+  )?.[1]?.trim();
+
+  if (!match) {
+    return "";
+  }
+
+  const normalized = normalizeText(match);
+
+  if (
+    hasAny(normalized, [
+      "a frase",
+      "a sentence",
+      "em ingles",
+      "esta frase",
+      "uma frase",
+      "uma sentence",
+    ]) &&
+    getWordTokens(match).length <= 5
+  ) {
+    return "";
+  }
+
+  return match;
+}
+
+function getRecentUserContext(history: CattyMessage[], currentText: string) {
+  const normalizedCurrent = normalizeText(currentText).trim();
+
+  return [...history]
+    .reverse()
+    .find(
+      (message) =>
+        message.from === "user" &&
+        normalizeText(message.text).trim() !== normalizedCurrent &&
+        getWordTokens(message.text).length >= 3,
+    );
+}
+
+function hasRecentContext(history: CattyMessage[], currentText: string) {
+  return Boolean(getRecentUserContext(history, currentText));
+}
+
+function hasHomeworkPrompt(text: string) {
+  const normalized = normalizeText(text);
+
+  return (
+    hasAny(normalized, [
+      "enunciado",
+      "exercise",
+      "pergunta",
+      "question",
+      "questao",
+      "texto",
+    ]) || getWordTokens(text).length >= 12
+  );
 }
 
 function extractTargetWord(text: string) {
@@ -387,7 +460,9 @@ function detectCattyIntent(
       "desanimo",
       "motivacao",
       "motiva",
+      "preso",
       "preguica",
+      "travad",
     ])
   ) {
     return { confidence: "high", intent: "motivation" };
@@ -543,16 +618,24 @@ function buildPlannedEnglishReply(
   text: string,
   context: CattyPageContext | undefined,
   intent: CattyIntent,
+  history: CattyMessage[],
 ) {
   const normalized = normalizeText(text);
   const contextLabel = getContextLabel(context);
+  const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
 
   if (intent === "homework_hint") {
-    return "Nya, I will not give the full answer, but I can give a good clue: look at the verb first. Send one sentence and I will guide you.";
+    return hasHomeworkPrompt(text)
+      ? "Pss pss, Catty tip: I do not give the final answer, but I can show a similar example. Send the part that made you stuck."
+      : "Awnn, I think the exercise is missing. Send me the question text, and I will give you a clue without the final answer.";
   }
 
   if (intent === "correct_sentence") {
+    if (!correctionFragment) {
+      return "Miauw, send me the sentence you want to correct. Then I will fix it and explain it super shortly.";
+    }
+
     if (hasAny(normalized, ["i has"])) {
       return "Awnn, almost there. Better: I have a book. Use have with I.";
     }
@@ -589,7 +672,9 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "confusing_question") {
-    return "Awnn, I need one tiny clue: do you want correction or word meaning? Pick one and send the sentence.";
+    return hasRecentContext(history, text)
+      ? "Awnn, I got a little lost. Which part are we talking about: the word, the sentence, or the exercise?"
+      : "Miauw, I got a little stuck here, but let's simplify. Do you want correction, translation, or practice?";
   }
 
   return `Nya, I am here with you on ${contextLabel}. Write one small English sentence and I will help you polish it.`;
@@ -599,8 +684,10 @@ function buildPlannedPortugueseReply(
   text: string,
   context: CattyPageContext | undefined,
   intent: CattyIntent,
+  history: CattyMessage[],
 ) {
   const normalized = normalizeText(text);
+  const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
 
   if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
@@ -608,7 +695,9 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "homework_hint") {
-    return "Nya, nao vou te dar a resposta pronta, mas te dou uma pista boa: olha primeiro o verbo e o que a pergunta pede. Manda uma frase se quiser.";
+    return hasHomeworkPrompt(text)
+      ? "Pss pss, dica da Catty: eu nao dou a resposta pronta, mas posso te mostrar um exemplo parecido. Me manda a parte que travou."
+      : "Awnn, acho que faltou o exercicio. Me manda o enunciado ou o texto da pergunta, que eu te dou uma pista boa.";
   }
 
   if (hasAny(normalized, ["senha", "login", "entrar"])) {
@@ -628,6 +717,10 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "correct_sentence") {
+    if (!correctionFragment) {
+      return "Miauw, me manda a frase que voce quer corrigir. Ai eu arrumo e explico bem curtinho.";
+    }
+
     if (hasAny(normalized, ["i has"])) {
       return "Awnn, quase la. A forma melhor e: I have a book. Com I, usamos have.";
     }
@@ -658,7 +751,9 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "confusing_question") {
-    return "Awnn, me da uma pista pequenininha: voce quer corrigir uma frase ou entender uma palavra? Escolhe um caminho e me manda.";
+    return hasRecentContext(history, text)
+      ? "Awnn, me diz qual parte ficou confusa: a palavra, a frase ou o enunciado que apareceu agora?"
+      : "Miauw, travei um pouquinho aqui, mas vamos simplificar. Voce quer corrigir, traduzir ou praticar?";
   }
 
   if (intent === "practice_english") {
@@ -684,10 +779,11 @@ function buildPlannedFallbackReply(
   text: string,
   context: CattyPageContext | undefined,
   intent: CattyIntent,
+  history: CattyMessage[],
 ) {
   const plannedReply = isEnglishMessage(text)
-    ? buildPlannedEnglishReply(text, context, intent)
-    : buildPlannedPortugueseReply(text, context, intent);
+    ? buildPlannedEnglishReply(text, context, intent, history)
+    : buildPlannedPortugueseReply(text, context, intent, history);
 
   return (
     plannedReply ||
@@ -700,13 +796,14 @@ function buildPlannedFallbackReply(
 export function buildCattyResponsePlan(
   text: string,
   context?: CattyPageContext,
+  history: CattyMessage[] = [],
 ): CattyResponsePlan {
   const { confidence, intent } = detectCattyIntent(text, context);
   const language = isEnglishMessage(text) ? "English" : "Portuguese";
 
   return {
     confidence,
-    fallbackReply: buildPlannedFallbackReply(text, context, intent),
+    fallbackReply: buildPlannedFallbackReply(text, context, intent, history),
     intent,
     instruction: intentInstructions[intent],
     label: intentLabels[intent],
@@ -717,8 +814,9 @@ export function buildCattyResponsePlan(
 export function buildFallbackCattyReply(
   text: string,
   context?: CattyPageContext,
+  history?: CattyMessage[],
 ) {
-  return buildCattyResponsePlan(text, context).fallbackReply;
+  return buildCattyResponsePlan(text, context, history).fallbackReply;
 }
 
 export function getCattyPreferredLanguage(text: string) {
@@ -782,7 +880,7 @@ export function buildCattyInput(
   message: string,
   history: CattyMessage[],
   context?: CattyPageContext,
-  plan = buildCattyResponsePlan(message, context),
+  plan = buildCattyResponsePlan(message, context, history),
 ) {
   const safeHistory = history
     .slice(-8)

@@ -18,7 +18,7 @@ Camadas principais:
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
-- `src/lib/catty.ts`: personalidade, deteccao leve de intencao, plano de resposta, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
+- `src/lib/catty.ts`: personalidade, deteccao leve de intencao, plano de resposta com historico recente, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
 - `src/lib/catty-history.ts`: persistencia limitada de historico recente da Catty por usuario e contexto de tela.
 - `src/lib/candy-xp.ts`: motor puro de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/candy-xp-persistence.ts`: ledger server-side do Candy XP, catalogo de badges/missoes, streaks e gravacao idempotente por `sourceKey`.
@@ -80,6 +80,7 @@ Servicos Docker:
 - Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
 - Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback autorizado quando a chave ou chamada falhar.
 - Catty usa o contexto de `area` e `task` apenas para ajustar atalhos, historico recente e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
+- O prompt da Catty mescla historico persistido com historico local recente do widget, remove a mensagem atual duplicada, limita a 8 mensagens e cai para fallback por intencao quando a IA retorna vazio, cortado, generico, fora de tom ou inseguro para homework.
 - O historico da Catty fica em `CattyConversation`/`CattyMessage`, e limitado a 50 mensagens por usuario/contexto; somente as 8 mais recentes entram no prompt para IA.
 - Candy XP grava eventos persistidos por usuario em `CandyXpEvent`, recalcula `CandyXpProfile` por soma de eventos e aplica a curva sem teto fixo em `requiredForCandyLevel`.
 - Cada evento de XP usa `@@unique([userId, sourceKey])` para impedir pontuacao duplicada da mesma tarefa, homework, feedback, aula, rotina ou missao.
