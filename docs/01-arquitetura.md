@@ -20,7 +20,7 @@ Camadas principais:
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
 - `src/lib/catty-personality.ts`: identidade viva da Catty, bordoes, baloes, frases por situacao, regras de uso de emoji/bordao e guias de personalidade/escopo.
 - `src/lib/catty.ts`: deteccao leve de intencao, plano de resposta com historico recente, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
-- `src/lib/catty-learning.ts`: busca memoria aprovada do Catty Learning Center, formata contexto para Gemini/OpenAI e escolhe fallback aprendido apenas quando seguro.
+- `src/lib/catty-learning.ts`: busca ate 3 memorias aprovadas do Catty Learning Center por intencao/tags/texto, formata contexto para Gemini/OpenAI, escolhe fallback aprendido apenas quando seguro e cria auto-sugestoes pendentes quando houver lacuna de resposta.
 - `src/lib/catty-history.ts`: persistencia limitada de historico recente da Catty por usuario e contexto de tela.
 - `src/lib/candy-xp.ts`: motor puro de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/candy-xp-persistence.ts`: ledger server-side do Candy XP, catalogo de badges/missoes, streaks e gravacao idempotente por `sourceKey`.
@@ -58,6 +58,7 @@ Servicos Docker:
 - Catty pode aparecer fora do AVA como chamada visual, mas a conversa real e `/api/catty/chat` exigem sessao ativa e role valida.
 - Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado, historico recente limitado, contexto leve de rota/tarefa e contexto seguro derivado no servidor, como role, primeiro nome seguro e nivel do aluno quando existir, sem email, id, senha, banco, contrato, pagamento ou informacoes internas do AVA.
 - Catty Learning Center aceita sugestoes de `ADMIN` e `TEACHER`, mas apenas `ADMIN` aprova memoria global usada pela Catty; dados sensiveis nao devem ser salvos como aprendizado.
+- Auto-sugestoes da Catty entram como `CattyLearningFeedback.PATTERN_SUGGESTION` pendente quando a rota usa fallback sem memoria relevante, recebe pergunta confusa/fora do trilho sem memoria aprovada ou acumula feedbacks negativos; elas nunca entram no prompt antes da aprovacao humana.
 - O widget da Catty permite feedback discreto em respostas logadas; `STUDENT` pode avaliar a propria conversa, `TEACHER` pode revisar feedback proprio ou de alunos vinculados e `ADMIN` pode aprovar globalmente como aprendizado.
 
 ## Decisoes tecnicas tomadas
@@ -86,7 +87,7 @@ Servicos Docker:
 - Catty usa o contexto de `area`, `task`, role, primeiro nome seguro e nivel do aluno apenas para ajustar atalhos, historico recente, dificuldade do exemplo e tom da resposta, por exemplo homework, Candy XP, aulas, mensagens, teacher ou admin; o nome pode aparecer naturalmente em respostas seguras, mas nao em tema sensivel como senha, contrato, pagamento, documento, chave, token ou credencial.
 - Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`; itens nascem `PENDING`, teachers apenas sugerem e Admin pode aprovar, recusar, arquivar ou devolver para pendente.
 - Feedbacks do widget entram em `CattyLearningFeedback`; Admin pode editar e aprovar como `CattyLearningItem.APPROVED`, enquanto Teacher pode transformar feedback visivel em sugestao pendente.
-- Somente itens `CattyLearningItem.status=APPROVED` entram no contexto da Catty; a rota limita a poucos itens relevantes por intencao/mensagem e nao salva conversa inteira como conhecimento.
+- Somente itens `CattyLearningItem.status=APPROVED` entram no contexto da Catty; a rota pontua candidatos por intencao, categoria, tags e termos da mensagem, envia no maximo 3 itens relevantes por resposta e nao salva conversa inteira como conhecimento.
 - O prompt da Catty mescla historico persistido com historico local recente do widget, remove a mensagem atual duplicada, limita a 8 mensagens e cai para fallback por intencao quando a IA retorna vazio, cortado, generico, fora de tom ou inseguro para homework/pedido de resposta pronta/codigo/API/assunto fora do escopo; o plano diferencia correcao, traducao, explicacao de palavra, conversacao, homework, Candy XP, aula/material, mensagem para teacher, criacao de atividade para teacher, feedback para aluno, motivacao, ajuda no AVA, codigo/API, pergunta fora do tema, pergunta confusa e pergunta longa/misturada.
 - A identidade viva da Catty fica centralizada em `src/lib/catty-personality.ts`; a rota e o widget reutilizam os mesmos bordoes, baloes, emojis permitidos e regras, e respostas de IA com mais de um bordao ou emoji demais sao recusadas/sanitizadas para cair no fallback ou manter tom controlado.
 - O historico da Catty fica em `CattyConversation`/`CattyMessage`, e limitado a 50 mensagens por usuario/contexto; somente as 8 mais recentes entram no prompt para IA.

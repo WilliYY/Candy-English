@@ -1926,6 +1926,7 @@ function getCattyLearningPromptLine(items: CattyLearningPromptItem[]) {
   }
 
   return items
+    .slice(0, 3)
     .map((item, index) => {
       const parts = [
         `${index + 1}. ${sanitizeContextText(item.title, 90)} (${item.category}${item.intent ? `, ${sanitizeContextText(item.intent, 40)}` : ""})`,
@@ -1984,7 +1985,7 @@ export function buildCattyInput(
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",
     "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
-    "Regra de memoria aprovada: use a memoria do Catty Learning Center apenas como guia de estilo, exemplo ou vocabulario; nao trate como dado interno do aluno e nao invente informacoes.",
+    "Regra de memoria aprovada: use no maximo 3 memorias do Catty Learning Center apenas como guia de estilo, exemplo ou vocabulario; nao trate como dado interno do aluno e nao invente informacoes.",
     "Regra para ADMIN/TEACHER: pode ajudar com instrucao, atividade, exemplo e feedback um pouco mais completo, mas sem textao, lista gigante ou prometer executar acoes.",
     "Use nome, role e nivel apenas para ajustar tom e exemplo. Nao invente dados do AVA.",
     "Se a mensagem estiver vaga ou confusa, peca uma informacao especifica em vez de inventar.",

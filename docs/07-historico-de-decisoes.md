@@ -394,6 +394,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260604170000_student_pre_registration_review`, `src/app/ava/pre-registrations/actions.ts`, `src/components/ava/student-pre-registration-review-panel.tsx`, paginas Admin/Teacher, sidebar do AVA e docs oficiais.
 - Riscos/cuidados: o aceite fixa `User.role=STUDENT` no servidor; a senha inicial e digitada por Admin/Teacher e nunca retornada em logs; Teacher que aceita o aluno cria vinculo automatico com a propria teacher.
 
+### 2026-06-05 - Memoria aprovada limitada e auto-sugestao pendente da Catty
+
+- Decisao: limitar o contexto da Catty a ate 3 memorias aprovadas por resposta, priorizadas por intencao, categoria, tags e termos da mensagem, e criar auto-sugestoes apenas como `CattyLearningFeedback.PATTERN_SUGGESTION` pendente.
+- Motivo: melhorar qualidade sem aumentar custo nem permitir que a Catty aprenda automaticamente conteudo inseguro ou privado.
+- Impacto: `src/lib/catty-learning.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/app/ava/catty-learning/actions.ts`, `scripts/catty-behavior-smoke.ts` e docs oficiais.
+- Riscos/cuidados: sugestoes automaticas nunca entram no prompt antes de aprovacao; termos sensiveis continuam bloqueados; Admin aprova memoria global e Teacher apenas sugere/revisa dentro das permissoes existentes.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

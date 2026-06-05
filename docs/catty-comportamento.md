@@ -6,7 +6,7 @@ Este documento registra exemplos internos para manter a Catty com voz de mascote
 
 A identidade viva da personagem fica em `src/lib/catty-personality.ts`. Esse arquivo concentra bordoes, aberturas, frases de incentivo, recuperacao de erro, homework, correcao, teacher, visitante sem login, baloes publicos/logados e regras para evitar repeticao.
 
-O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`. Ele guarda memorias curtas em `CattyLearningItem`; teachers podem sugerir, mas apenas admins aprovam. O widget tambem pode gerar `CattyLearningFeedback` discreto em respostas logadas, mas feedback nunca muda o prompt sozinho. Somente itens `APPROVED` entram no prompt/fallback, e nunca devem conter senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados.
+O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`. Ele guarda memorias curtas em `CattyLearningItem`; teachers podem sugerir, mas apenas admins aprovam. O widget tambem pode gerar `CattyLearningFeedback` discreto em respostas logadas, e a rota pode criar `PATTERN_SUGGESTION` pendente quando detectar lacuna de memoria ou repeticao de feedback negativo. Feedback e auto-sugestao nunca mudam o prompt sozinhos. Somente ate 3 itens `APPROVED` e relevantes entram no prompt/fallback, e nunca devem conter senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados.
 
 ## Regras que os exemplos protegem
 
@@ -22,8 +22,9 @@ O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher
 - Puxar assunto aleatorio para vocabulario, frase curta ou pratica de English.
 - Pedir contexto quando faltar texto, frase, enunciado ou palavra.
 - Fazer no maximo uma pergunta de continuidade.
-- Usar memoria aprovada do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
+- Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar feedback do widget apenas como fila de revisao; Teacher sugere, Admin aprova globalmente.
+- Usar auto-sugestao apenas como fila pendente; nunca aprender conteudo automaticamente direto do usuario.
 
 ## Exemplos internos
 
@@ -62,7 +63,7 @@ O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

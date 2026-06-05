@@ -23,6 +23,7 @@ import {
 } from "@/lib/catty-history";
 import {
   getApprovedCattyLearningContext,
+  maybeCreateCattyLearningAutoSuggestion,
   pickCattyLearningFallbackReply,
 } from "@/lib/catty-learning";
 import { auth } from "@/lib/auth";
@@ -641,6 +642,22 @@ async function getCattyLearningContextSafely(input: {
   }
 }
 
+async function maybeCreateCattyLearningAutoSuggestionSafely(input: {
+  context?: CattyPageContext;
+  learningContext: Awaited<ReturnType<typeof getApprovedCattyLearningContext>>;
+  message: string;
+  plan: CattyResponsePlan;
+  reply: string;
+  source: "fallback" | "gemini" | "openai";
+  userId: string;
+}) {
+  try {
+    await maybeCreateCattyLearningAutoSuggestion(input);
+  } catch {
+    console.warn("Catty auto learning suggestion failed.");
+  }
+}
+
 export async function GET(request: NextRequest) {
   const session = await auth();
 
@@ -797,6 +814,16 @@ export async function POST(request: NextRequest) {
       userMessage: message,
     });
 
+    await maybeCreateCattyLearningAutoSuggestionSafely({
+      context,
+      learningContext,
+      message,
+      plan: responsePlan,
+      reply: fallbackReply,
+      source: "fallback",
+      userId: session.user.id,
+    });
+
     return NextResponse.json({
       messageId: persistedExchange?.cattyMessageId,
       ok: true,
@@ -811,6 +838,16 @@ export async function POST(request: NextRequest) {
     source: toStoredReplySource(aiReply.source),
     userId: session.user.id,
     userMessage: message,
+  });
+
+  await maybeCreateCattyLearningAutoSuggestionSafely({
+    context,
+    learningContext,
+    message,
+    plan: responsePlan,
+    reply: aiReply.reply,
+    source: aiReply.source,
+    userId: session.user.id,
   });
 
   return NextResponse.json({

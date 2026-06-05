@@ -101,7 +101,9 @@ Rotas protegidas:
 - `STUDENT` pode enviar feedback discreto sobre respostas da propria Catty, mas nao cria nem aprova memoria global da Catty.
 - `TEACHER` pode revisar feedback proprio ou de alunos vinculados e transformar em sugestao pendente; nao pode aprovar globalmente.
 - `ADMIN` pode editar feedback e aprovar como aprendizado global usado pela Catty.
-- Itens aprovados do Catty Learning Center entram como guia de estilo/exemplo/vocabulario na Catty, nunca como dado interno do aluno; senha, pagamento, contrato, API key, telefone e dados privados devem ser bloqueados pela validacao.
+- Itens aprovados do Catty Learning Center entram como guia de estilo/exemplo/vocabulario na Catty, nunca como dado interno do aluno; a rota envia no maximo 3 memorias relevantes por resposta, priorizadas por intencao, tags e termos da mensagem.
+- Auto-sugestoes da Catty entram apenas como `CattyLearningFeedback.PATTERN_SUGGESTION` pendente; Admin/Teacher revisam pela fila protegida, e somente Admin pode transformar isso em memoria aprovada global.
+- Senha, pagamento, contrato, API key, telefone e dados privados devem ser bloqueados pela validacao de feedback, aprendizado manual e auto-sugestao.
 
 ## Decisoes tecnicas tomadas
 

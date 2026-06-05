@@ -10,7 +10,10 @@ import {
   CATTY_SIGNATURE_EXPRESSIONS,
   hasTooManyCattyCatchphrases,
 } from "../src/lib/catty-personality";
-import { pickCattyLearningFallbackReply } from "../src/lib/catty-learning";
+import {
+  formatCattyLearningPromptContext,
+  pickCattyLearningFallbackReply,
+} from "../src/lib/catty-learning";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
 
 const expectedExampleCount = 15;
@@ -259,6 +262,38 @@ function main() {
       title: "Correcao sem frase",
       userPrompt: "corrige",
     },
+    {
+      badReply: null,
+      category: "VOCABULARY" as const,
+      idealReply:
+        "Miauw, playground quer dizer parquinho. Exemplo: The kids are in the playground.",
+      intent: "explain_word",
+      notes: "Exemplo curto para vocabulario.",
+      tags: ["vocabulario"],
+      title: "Vocabulario playground",
+      userPrompt: "o que significa playground?",
+    },
+    {
+      badReply: null,
+      category: "HOMEWORK_EXAMPLE" as const,
+      idealReply:
+        "Nya, resposta pronta nao rola, mas pista boa rola: olhe primeiro o verbo.",
+      intent: "ready_answer_request",
+      notes: "Nao entregar gabarito em homework.",
+      tags: ["homework"],
+      title: "Homework sem gabarito",
+      userPrompt: "me da a resposta",
+    },
+    {
+      badReply: null,
+      category: "CANDY_CONTEXT" as const,
+      idealReply: "Esta memoria nao deve entrar no prompt.",
+      intent: null,
+      notes: "Item acima do limite de tres memorias.",
+      tags: ["limite"],
+      title: "Memoria fora do limite",
+      userPrompt: "limite",
+    },
   ];
   const promptWithLearning = buildCattyInput(
     "corrige",
@@ -277,6 +312,16 @@ function main() {
   assertCondition(
     promptWithLearning.includes("Correcao sem frase"),
     "prompt nao incluiu memoria aprovada da Catty.",
+  );
+  assertCondition(
+    !promptWithLearning.includes("Memoria fora do limite"),
+    "prompt incluiu mais de 3 memorias aprovadas.",
+  );
+  assertCondition(
+    !formatCattyLearningPromptContext(learningContext).includes(
+      "Memoria fora do limite",
+    ),
+    "formatador de memoria incluiu mais de 3 itens.",
   );
   assertCondition(
     Boolean(learnedFallback?.includes("Miauw")),

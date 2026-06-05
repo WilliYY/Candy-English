@@ -7,6 +7,7 @@ import {
   type CattyPageContext,
   type CattySessionContext,
 } from "@/lib/catty";
+import { maybeCreateCattyNegativeFeedbackSuggestion } from "@/lib/catty-learning";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
@@ -453,6 +454,15 @@ export async function submitCattyReplyFeedback(
       userPrompt,
     },
   });
+
+  if (parsed.data.kind !== "LIKED") {
+    await maybeCreateCattyNegativeFeedbackSuggestion({
+      context: pageContext,
+      intent: responsePlan.intent,
+      message: userPrompt,
+      userId: session.user.id,
+    });
+  }
 
   revalidateCattyLearning();
 
