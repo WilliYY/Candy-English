@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hasSensitiveCattyUserMemoryText } from "@/lib/validations/catty-user-memory";
 
 function optionalText(maxLength: number, message: string) {
   return z
@@ -114,13 +115,28 @@ export const preRegistrationReviewSchema = z.object({
   ),
 });
 
-export const preRegistrationAcceptSchema = z.object({
-  initialPassword: z
-    .string()
-    .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")
-    .max(120, "A senha inicial pode ter no maximo 120 caracteres."),
-  requestId: z.string().min(1, "Solicitacao invalida."),
-});
+export const preRegistrationAcceptSchema = z
+  .object({
+    cattyContext: optionalText(
+      160,
+      "O contexto Catty pode ter no maximo 160 caracteres.",
+    ),
+    initialPassword: z
+      .string()
+      .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")
+      .max(120, "A senha inicial pode ter no maximo 120 caracteres."),
+    requestId: z.string().min(1, "Solicitacao invalida."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.cattyContext && hasSensitiveCattyUserMemoryText(data.cattyContext)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Nao salve senha, pagamento, contrato, documento, telefone, endereco, token, chave ou dados privados no contexto Catty.",
+        path: ["cattyContext"],
+      });
+    }
+  });
 
 export type StudentPreRegistrationStatusInput = z.input<
   typeof studentPreRegistrationStatusSchema

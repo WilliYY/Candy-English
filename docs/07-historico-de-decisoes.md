@@ -422,6 +422,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/ava/catty-memory-panel.tsx`, `src/lib/catty-memory-management.ts`, `src/app/ava/catty-memory/actions.ts`, `src/lib/catty-history.ts`, `src/lib/catty-user-memory.ts`, paineis Admin/Teacher/Student, layout do AVA e docs oficiais.
 - Riscos/cuidados: memorias `FLAGGED`, `ARCHIVED` e `PENDING` nao entram no prompt; limpar historico apaga mensagens da Catty daquele contexto; remover dado sensivel nao deve registrar o valor anterior em evento.
 
+### 2026-06-05 - Contexto Catty inicial no cadastro de aluno
+
+- Decisao: adicionar um campo minimizado `Contexto Catty` na criacao direta de aluno e no aceite de pre-cadastro, salvando o valor como `CattyUserMemory.NOTE/contexto_catty` ativa do aluno.
+- Motivo: permitir que Admin/Teacher deem contexto pedagogico leve para a Catty desde o primeiro acesso do aluno, sem criar campo novo sensivel em `User` ou `StudentProfile`.
+- Impacto: `src/components/ava/admin-create-user-form.tsx`, `src/components/ava/student-pre-registration-review-panel.tsx`, `src/app/ava/admin/actions.ts`, `src/app/ava/pre-registrations/actions.ts`, validacoes de usuario/pre-cadastro e docs oficiais.
+- Riscos/cuidados: manter o campo curto, opcional e fechado por padrao; bloquear senha, telefone, documento, pagamento, contrato, endereco, email, token, chave/API ou dados privados antes de gravar.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

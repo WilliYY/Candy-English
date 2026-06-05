@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ROLES } from "@/lib/roles";
+import { hasSensitiveCattyUserMemoryText } from "@/lib/validations/catty-user-memory";
 
 function optionalText(maxLength: number, message: string) {
   return z
@@ -174,6 +175,10 @@ export const adminCreateUserSchema = z
       }),
     notes: optionalText(1000, "As notas podem ter no maximo 1000 caracteres."),
     bio: optionalText(1000, "A bio pode ter no maximo 1000 caracteres."),
+    cattyContext: optionalText(
+      160,
+      "O contexto Catty pode ter no maximo 160 caracteres.",
+    ),
   })
   .superRefine((data, ctx) => {
     if (data.role === "TEACHER" && data.level) {
@@ -195,6 +200,7 @@ export const adminCreateUserSchema = z
     if (data.role !== "STUDENT") {
       (
         [
+          "cattyContext",
           "guardianDocument",
           "studentPhone",
           "studentPhoneAlt",
@@ -209,6 +215,15 @@ export const adminCreateUserSchema = z
             path: [field],
           });
         }
+      });
+    }
+
+    if (data.cattyContext && hasSensitiveCattyUserMemoryText(data.cattyContext)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Nao salve senha, pagamento, contrato, documento, telefone, endereco, token, chave ou dados privados no contexto Catty.",
+        path: ["cattyContext"],
       });
     }
   });

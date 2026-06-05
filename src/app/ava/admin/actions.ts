@@ -10,6 +10,7 @@ import {
   getAdminCredentialSecretPreview,
 } from "@/lib/admin-credentials";
 import { setMaintenanceMode } from "@/lib/app-settings";
+import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 import {
@@ -426,6 +427,7 @@ export async function createAvaUser(
   const {
     bio,
     birthDate,
+    cattyContext,
     email,
     guardianDocument,
     level,
@@ -439,6 +441,7 @@ export async function createAvaUser(
     studentPhoneAlt,
   } = parsed.data;
   const passwordHash = await hash(password, 12);
+  let createdUserId: string | null = null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -451,6 +454,7 @@ export async function createAvaUser(
           role,
         },
       });
+      createdUserId = user.id;
 
       if (role === "STUDENT") {
         await tx.studentProfile.create({
@@ -494,11 +498,34 @@ export async function createAvaUser(
     };
   }
 
+  let message = "Usuario cadastrado com sucesso.";
+
+  if (role === "STUDENT" && cattyContext && createdUserId) {
+    const memoryResult = await upsertCattyUserMemory({
+      actorRole: "ADMIN",
+      actorUserId: session.user.id,
+      category: "NOTE",
+      confidence: 90,
+      key: "contexto_catty",
+      source: "ADMIN_NOTE",
+      status: "ACTIVE",
+      targetUserId: createdUserId,
+      value: cattyContext,
+    });
+
+    if (!memoryResult.ok) {
+      message =
+        "Usuario cadastrado, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
+    } else {
+      message = "Usuario cadastrado com contexto Catty inicial.";
+    }
+  }
+
   revalidatePath("/ava/admin");
 
   return {
     ok: true,
-    message: "Usuario cadastrado com sucesso.",
+    message,
   };
 }
 

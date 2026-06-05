@@ -1,7 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GraduationCap, LoaderCircle, Plus, ShieldCheck, UserRound } from "lucide-react";
+import {
+  BrainCircuit,
+  GraduationCap,
+  LoaderCircle,
+  Plus,
+  ShieldCheck,
+  UserRound,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -33,6 +40,7 @@ const roleDescriptions: Record<Role, string> = {
 const defaultValues: AdminCreateUserInput = {
   bio: "",
   birthDate: "",
+  cattyContext: "",
   email: "",
   guardianDocument: "",
   level: "",
@@ -342,6 +350,39 @@ export function AdminCreateUserForm({
               />
               <FieldError errors={[form.formState.errors.motherPhone]} />
             </Field>
+
+            <details className="md:col-span-2 rounded-xl border border-primary/15 bg-primary/[0.03] p-4 text-sm">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-primary [&::-webkit-details-marker]:hidden">
+                <span className="inline-flex items-center gap-2 font-semibold">
+                  <BrainCircuit aria-hidden="true" className="size-4" />
+                  Contexto Catty
+                </span>
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/70">
+                  opcional
+                </span>
+              </summary>
+              <Field
+                className="mt-4"
+                data-invalid={Boolean(form.formState.errors.cattyContext)}
+              >
+                <FieldLabel htmlFor="admin-user-catty-context">
+                  Memoria inicial da Catty
+                </FieldLabel>
+                <Textarea
+                  id="admin-user-catty-context"
+                  aria-invalid={Boolean(form.formState.errors.cattyContext)}
+                  disabled={isPending}
+                  placeholder="Ex: gosta de exemplos com jogos; trava em do/does; prefere explicacao curta."
+                  className="min-h-24"
+                  {...form.register("cattyContext")}
+                />
+                <FieldDescription>
+                  Use apenas contexto pedagogico leve. A Catty pode usar isso
+                  para personalizar exemplos e continuar aprendendo com o aluno.
+                </FieldDescription>
+                <FieldError errors={[form.formState.errors.cattyContext]} />
+              </Field>
+            </details>
           </div>
         ) : null}
 

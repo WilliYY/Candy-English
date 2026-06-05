@@ -85,7 +85,7 @@ Helpers:
 5. Se o email ja existir como usuario ou solicitacao, o sistema nao cria duplicidade e retorna a mesma mensagem amigavel para evitar exposicao de cadastro.
 6. A pessoa ve a confirmacao: `Recebemos seu cadastro. A equipe Candy vai analisar e entrar em contato.`
 7. Admin ou Teacher abre `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`, revisa os dados e pode marcar `em analise`, recusar ou aceitar.
-8. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`.
+8. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory`.
 9. Quando uma Teacher aceita o aluno, o sistema tambem cria o vinculo `StudentTeacherAssignment` com essa teacher; Admin aceita sem vinculo automatico e pode vincular depois.
 
 ### Admin
@@ -93,7 +93,7 @@ Helpers:
 1. Admin abre `/ava/admin`.
 2. A tarefa padrao e `usuarios`.
 3. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
-4. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro.
+4. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
 5. Admin revisa pre-cadastros em `Aceitar alunos`, com filtros por pendente, em analise, convertido e recusado.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin gerencia memorias pessoais da Catty em `Memoria da Catty`, com filtros por usuario, categoria e status, aprovando, corrigindo, arquivando, marcando erro, removendo dado sensivel e limpando historico pesado.
@@ -183,7 +183,7 @@ Helpers:
 17. Sem chave, erro de API, resposta vazia, resposta cortada, resposta generica demais, resposta fora da personalidade ou resposta especializada indevida fora do escopo Candy English, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
 18. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
 19. A rota busca em `CattyLearningItem` somente itens `APPROVED`, pontua candidatos por intencao, categoria, tags e termos da mensagem, escolhe ate 3 aprendizados relevantes e adiciona esse resumo curto ao prompt como memoria aprovada, sem conversa inteira.
-20. A rota busca candidatos `CattyUserMemory.ACTIVE` somente do proprio `session.user.id`, pontua por intencao, termos da mensagem, confianca, uso e recencia, e adiciona ao prompt ate 5 memorias pessoais seguras.
+20. A rota busca candidatos `CattyUserMemory.ACTIVE` somente do proprio `session.user.id`, pontua por intencao, termos da mensagem, confianca, uso e recencia, e adiciona ao prompt ate 5 memorias pessoais seguras. Entre essas memorias pode existir `NOTE/contexto_catty`, criada no cadastro ou aceite do aluno por Admin/Teacher, para dar contexto pedagogico inicial quando a Catty ainda nao aprendeu muito sobre a pessoa.
 21. O contexto pessoal limita o peso da memoria: ate 2 dificuldades de aprendizado e ate 2 interesses/temas favoritos entram no resumo, e a regra enviada para Gemini/OpenAI manda ignorar memoria que nao combine com a pergunta.
 22. Depois da resposta, a rota pode detectar declaracoes explicitas e seguras do proprio usuario, como `gosto de capivara`, `tenho dificuldade com do/does` ou `prefiro exemplos com jogos`, e salvar resumo curto em `CattyUserMemory` com evento em `CattyMemoryEvent`; se a mensagem contradiz memoria ativa, como `nao gosto mais de capivara`, a memoria e marcada como `FLAGGED`, nao apagada automaticamente.
 23. Gemini e OpenAI recebem o mesmo contexto curto de memoria aprovada global e memoria pessoal relevante do proprio usuario; se falharem, o fallback local pode usar uma resposta ideal aprovada do Learning Center e um toque leve da memoria pessoal quando a intencao combina e a resposta passa pelos filtros de seguranca.

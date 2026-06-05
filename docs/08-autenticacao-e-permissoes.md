@@ -107,6 +107,7 @@ Rotas protegidas:
 - Auto-sugestoes da Catty entram apenas como `CattyLearningFeedback.PATTERN_SUGGESTION` pendente; Admin/Teacher revisam pela fila protegida, e somente Admin pode transformar isso em memoria aprovada global.
 - `CattyUserMemory` e memoria pessoal por usuario: a rota de chat usa somente itens `ACTIVE` do proprio `session.user.id`; `STUDENT` acessa/corrige somente a propria memoria, `TEACHER` so acessa aluno vinculado por `StudentTeacherAssignment` e `ADMIN` pode supervisionar.
 - Memoria pessoal da Catty deve ser curta e segura; actions e helper bloqueiam senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao e dados privados antes de gravar ou corrigir.
+- Admin e Teacher podem preencher `Contexto Catty` somente ao criar/aceitar aluno `STUDENT`; o valor vira `CattyUserMemory.NOTE/contexto_catty` ativa, respeitando a mesma validacao de dados sensiveis e as mesmas permissoes da memoria pessoal.
 - Senha, pagamento, contrato, API key, telefone e dados privados devem ser bloqueados pela validacao de feedback, aprendizado manual e auto-sugestao.
 
 ## Decisoes tecnicas tomadas
@@ -130,6 +131,7 @@ Rotas protegidas:
 - A rota da Catty usa `CattyUserMemory` somente depois de validar a sessao e sempre filtra pelo `session.user.id`, para que gosto/dificuldade de um aluno nao apareca para outro.
 - Actions do Catty Learning Center chamam `auth()`, validam role e usam Zod para impedir feedback/aprendizados com termos sensiveis antes de gravar ou aprovar memoria.
 - Actions de memoria pessoal da Catty chamam `auth()`, validam role, dono do dado e vinculo teacher/aluno antes de salvar, corrigir, aprovar, arquivar, remover dado sensivel, limpar historico ou marcar memoria como flagged.
+- A criacao direta de aluno pelo Admin e o aceite de pre-cadastro por Admin/Teacher podem semear a memoria pessoal inicial `NOTE/contexto_catty` usando `upsertCattyUserMemory`, sem criar novo campo sensivel em `User` ou `StudentProfile`.
 - O envio de feedback da Catty valida que o `CattyMessage` avaliado pertence ao proprio usuario logado; Teacher/Admin revisam pela fila protegida, com filtro de vinculo para Teacher.
 
 ## Riscos ao alterar esta parte

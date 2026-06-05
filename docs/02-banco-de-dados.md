@@ -145,6 +145,7 @@ Enums:
 - `CattyUserMemory` guarda memoria pessoal por `User.id`, como interesse, objetivo, dificuldade, estilo, tema favorito, preferencia de emoji ou nota pedagogica leve.
 - `CattyUserMemory.status=ACTIVE` e o unico status usado no prompt da Catty; `PENDING`, `FLAGGED` e `ARCHIVED` nao entram nas respostas. Mensagens contraditorias, como o usuario negar uma preferencia antiga, devem marcar a memoria como `FLAGGED` para revisao, nunca apagar automaticamente.
 - `CattyUserMemory.userId + category + key` e unico para evitar duplicar a mesma preferencia do mesmo usuario; memorias pessoais nunca sao compartilhadas entre alunos.
+- `CattyUserMemory.NOTE` com key `contexto_catty` pode ser semeada no cadastro direto de aluno ou no aceite de pre-cadastro, criando uma memoria inicial curta para a Catty usar quando ainda nao houver contexto suficiente do aluno.
 - `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, conflito marcado, remocao de dado sensivel e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
 - Memoria pessoal da Catty deve ser resumo curto e nao pode conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao ou dado privado.
 - `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.

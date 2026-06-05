@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BrainCircuit,
   CheckCircle2,
   Clock3,
   LoaderCircle,
@@ -250,28 +251,36 @@ function RejectForm({ requestId }: { requestId: string }) {
 
 function AcceptForm({ requestId }: { requestId: string }) {
   const router = useRouter();
+  const [cattyContext, setCattyContext] = useState("");
   const [initialPassword, setInitialPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [cattyContextError, setCattyContextError] = useState<string | null>(
+    null,
+  );
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
+    setCattyContextError(null);
     setPasswordError(null);
 
     startTransition(async () => {
       const result = await acceptStudentPreRegistration({
+        cattyContext,
         initialPassword,
         requestId,
       });
 
       if (!result.ok) {
+        setCattyContextError(result.errors?.cattyContext ?? null);
         setPasswordError(result.errors?.initialPassword ?? null);
         setMessage(result.message);
         return;
       }
 
+      setCattyContext("");
       setInitialPassword("");
       setMessage(result.message);
       router.refresh();
@@ -309,6 +318,36 @@ function AcceptForm({ requestId }: { requestId: string }) {
           Aceitar aluno
         </Button>
       </div>
+      <details className="rounded-xl border border-primary/15 bg-primary/[0.03] p-3 text-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-primary [&::-webkit-details-marker]:hidden">
+          <span className="inline-flex items-center gap-2 font-semibold">
+            <BrainCircuit aria-hidden="true" className="size-4" />
+            Contexto Catty
+          </span>
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/70">
+            opcional
+          </span>
+        </summary>
+        <div className="mt-3">
+          <Textarea
+            value={cattyContext}
+            onChange={(event) => setCattyContext(event.target.value)}
+            disabled={isPending}
+            aria-invalid={Boolean(cattyContextError)}
+            placeholder="Ex: gosta de exemplos com jogos; trava em do/does; prefere explicacao curta."
+            className="min-h-20 text-sm"
+          />
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            Memoria pedagogica leve para a Catty usar depois. Nao inclua dados
+            sensiveis.
+          </p>
+          {cattyContextError ? (
+            <p className="mt-1 text-xs font-medium text-destructive">
+              {cattyContextError}
+            </p>
+          ) : null}
+        </div>
+      </details>
       {message ? (
         <p
           className="rounded-lg border bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground"

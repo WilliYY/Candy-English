@@ -3,6 +3,7 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
@@ -157,12 +158,13 @@ export async function acceptStudentPreRegistration(
     return {
       errors: fieldErrors<PreRegistrationAcceptInput>(parsed.error.issues),
       ok: false,
-      message: "Revise a senha inicial.",
+      message: "Revise os dados para aceitar o aluno.",
     };
   }
 
   const prisma = getPrisma();
   const passwordHash = await hash(parsed.data.initialPassword, 12);
+  let createdUserId: string | null = null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -213,6 +215,7 @@ export async function acceptStudentPreRegistration(
           role: "STUDENT",
         },
       });
+      createdUserId = user.id;
 
       const studentProfile = await tx.studentProfile.create({
         data: {
@@ -301,11 +304,36 @@ export async function acceptStudentPreRegistration(
     };
   }
 
+  let message = "Aluno aceito e conta STUDENT criada com sucesso.";
+
+  if (parsed.data.cattyContext && createdUserId) {
+    const source =
+      session.user.role === "ADMIN" ? "ADMIN_NOTE" : "TEACHER_NOTE";
+    const memoryResult = await upsertCattyUserMemory({
+      actorRole: session.user.role,
+      actorUserId: session.user.id,
+      category: "NOTE",
+      confidence: 90,
+      key: "contexto_catty",
+      source,
+      status: "ACTIVE",
+      targetUserId: createdUserId,
+      value: parsed.data.cattyContext,
+    });
+
+    if (!memoryResult.ok) {
+      message =
+        "Aluno aceito, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
+    } else {
+      message = "Aluno aceito com contexto Catty inicial.";
+    }
+  }
+
   revalidatePath("/ava/admin");
   revalidatePath("/ava/teacher");
 
   return {
     ok: true,
-    message: "Aluno aceito e conta STUDENT criada com sucesso.",
+    message,
   };
 }
