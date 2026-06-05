@@ -170,6 +170,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/lib/catty-examples.ts`, `scripts/catty-behavior-smoke.ts`, `docs/catty-comportamento.md` e docs oficiais.
 - Riscos/cuidados: manter historico curto, nao enviar dados sensiveis ao prompt, preservar fallback local quando Gemini/OpenAI falharem e revisar novos exemplos sempre que a Catty responder fora do papel de mascote-professora.
 
+### 2026-06-05 - Catty com nome seguro e emoji controlado
+
+- Decisao: a Catty passa a usar o primeiro nome seguro do usuario logado em respostas onde isso ajuda o tom, como motivacao, correcao, homework e Candy XP, e passa a aceitar ate dois emojis permitidos por resposta.
+- Motivo: deixar a mascote-professora mais proxima e viva sem transformar a conversa em bagunca, sem expor email/nome completo e sem aumentar chamadas de IA.
+- Impacto: `src/lib/catty-personality.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `src/lib/catty-examples.ts`, `scripts/catty-behavior-smoke.ts`, `README.md`, `docs/01-arquitetura.md`, `docs/03-fluxos-do-sistema.md`, `docs/catty-comportamento.md` e `docs/99-contexto-rapido-codex.md`.
+- Riscos/cuidados: nao usar nome em tema sensivel como senha, contrato, pagamento, documento, chave, token ou credencial; manter OpenAI somente quando a mensagem chama Catty; manter baloes automaticos locais sem IA.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

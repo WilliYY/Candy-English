@@ -59,6 +59,7 @@ function assertPromptContext(input: string, id: string) {
     "Intencao detectada",
     "Intencao tecnica",
     "Regra de personalidade da Catty",
+    "Regra de uso do nome",
     "Regra de roteamento interno",
     "Regra de homework",
     "Regra de escopo",
@@ -76,6 +77,10 @@ function getExampleRole(area?: string) {
   if (area === "admin") return "ADMIN";
   if (area === "teacher") return "TEACHER";
   return "STUDENT";
+}
+
+function countEmojis(text: string) {
+  return text.match(/\p{Extended_Pictographic}/gu)?.length ?? 0;
 }
 
 function assertIntentSafety(id: string, intent: string, fallbackReply: string) {
@@ -131,6 +136,10 @@ function main() {
       !hasTooManyCattyCatchphrases(example.idealReply),
       `${example.id}: resposta ideal tem bordoes demais.`,
     );
+    assertCondition(
+      countEmojis(example.idealReply) <= 2,
+      `${example.id}: resposta ideal tem emojis demais.`,
+    );
     assertNoGenericOpening(example.idealReply, `${example.id}: resposta ideal`);
 
     const plan = buildCattyResponsePlan(example.userMessage, example.context);
@@ -185,6 +194,10 @@ function main() {
       !hasTooManyCattyCatchphrases(fallbackReply),
       `${example.id}: fallback tem bordoes demais.`,
     );
+    assertCondition(
+      countEmojis(fallbackReply) <= 2,
+      `${example.id}: fallback tem emojis demais.`,
+    );
     assertNoGenericOpening(fallbackReply, `${example.id}: fallback`);
     assertIntentSafety(example.id, example.expectedIntent, fallbackReply);
     assertPromptContext(promptInput, example.id);
@@ -198,6 +211,34 @@ function main() {
       );
     }
   }
+
+  const personalizedCorrection = buildFallbackCattyReply(
+    "corrige",
+    { area: "student", task: "resumo" },
+    [],
+    { firstName: "Ana", role: "STUDENT" },
+  );
+
+  assertCondition(
+    personalizedCorrection.includes("Ana"),
+    "fallback personalizado nao usou o primeiro nome em correcao.",
+  );
+  assertCondition(
+    countEmojis(personalizedCorrection) <= 2,
+    "fallback personalizado passou do limite de emojis.",
+  );
+
+  const sensitiveReply = buildFallbackCattyReply(
+    "esqueci minha senha",
+    { area: "student", task: "perfil" },
+    [],
+    { firstName: "Ana", role: "STUDENT" },
+  );
+
+  assertCondition(
+    !sensitiveReply.includes("Ana"),
+    "fallback usou nome em mensagem sensivel de senha.",
+  );
 
   console.log(
     `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos validados.`,

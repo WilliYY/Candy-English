@@ -40,6 +40,8 @@ const CATTY_SYSTEM_PROMPT = [
   "Nao responda como especialista generica fora da Candy English. Se pedirem receita, codigo, API tecnica, financas, saude ou direito, redirecione para vocabulario, frase curta ou conversacao em ingles.",
   "Use o contexto da tela apenas para orientar a resposta. Nao invente dados, notas, pagamentos, contratos, respostas de homework ou informacoes internas.",
   "Use role, primeiro nome e nivel do aluno apenas para ajustar tom, saudacao curta e dificuldade do exemplo.",
+  "Quando houver primeiro nome seguro, use o nome de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao repita em toda resposta.",
+  "Nao use nome em temas sensiveis como senha, contrato, pagamento, documento, chave, token ou credencial.",
   "Nunca mencione email, id, senha, pagamento, contrato, documento, chave de API ou dado privado.",
   "Se a pessoa estiver em homework ou aula interativa, explique o enunciado, de pistas e exemplos parecidos, mas nao entregue a resposta final.",
   "Se a pessoa estiver em aulas, ajude com vocabulario, frases exemplo e revisao curta.",
@@ -55,7 +57,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Quando a IA estiver insegura, prefira uma resposta simples e util em vez de tentar parecer completa.",
   "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
   "Comece de forma natural, com a voz da Catty, sem abrir sempre com a mesma frase.",
-  "Se usar emoji, use no maximo um e apenas quando combinar com a resposta.",
+  "Pode usar humor leve, energia meme controlada e ate dois emojis permitidos quando combinar com a resposta.",
   "Nao transforme a resposta em menu de opcoes. Faca no maximo uma pergunta simples de continuidade.",
   "Para pratica em ingles, prefira uma frase curta para repetir, uma microcorrecao ou uma pergunta pequena.",
   "Se o aluno pedir correcao de ingles, mostre uma versao melhor e explique em uma frase simples.",
@@ -519,17 +521,35 @@ function toStoredReplySource(
   return "FALLBACK";
 }
 
-function getFirstName(name?: string | null) {
-  return name?.replace(/\s+/g, " ").trim().split(" ")[0]?.slice(0, 24) || "";
+function getFirstNameFromName(name?: string | null) {
+  const cleaned = name?.replace(/\s+/g, " ").trim();
+
+  if (!cleaned || cleaned.includes("@")) {
+    return "";
+  }
+
+  return cleaned.split(" ")[0]?.slice(0, 24) || "";
+}
+
+function getFirstNameFromEmail(email?: string | null) {
+  const localPart = email
+    ?.split("@")[0]
+    ?.replace(/[._-]+/g, " ")
+    .replace(/[^a-zA-Z0-9\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return localPart?.split(" ")[0]?.slice(0, 24) || "";
 }
 
 async function getCattySessionContext(input: {
+  email?: string | null;
   name?: string | null;
   role: CattySessionContext["role"];
   userId: string;
 }): Promise<CattySessionContext> {
   const context: CattySessionContext = {
-    firstName: getFirstName(input.name),
+    firstName: getFirstNameFromName(input.name) || getFirstNameFromEmail(input.email),
     role: input.role,
   };
 
@@ -717,13 +737,19 @@ export async function POST(request: NextRequest) {
     message,
     userId: session.user.id,
   });
-  const responsePlan = buildCattyResponsePlan(message, context, cattyHistory);
-  const fallbackReply = responsePlan.fallbackReply;
   const sessionContext = await getCattySessionContext({
+    email: session.user.email,
     name: session.user.name,
     role: session.user.role,
     userId: session.user.id,
   });
+  const responsePlan = buildCattyResponsePlan(
+    message,
+    context,
+    cattyHistory,
+    sessionContext,
+  );
+  const fallbackReply = responsePlan.fallbackReply;
   const input = buildCattyInput(
     message,
     cattyHistory,

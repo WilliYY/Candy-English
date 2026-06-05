@@ -26,7 +26,7 @@ Ja existe:
 - financeiro admin recorrente para 2026 com `FinancialStudent`, snapshots mensais em `FinancialPayment` e `FinancialLog`;
 - agenda admin para 2026 com alunos recorrentes, presenca, falta e reposicao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
-- Catty como gatinha mascote-professora publica com baloes aleatorios no site e assistente interna do AVA para usuarios logados, com personalidade Candy oficial, Gemini padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado, historico recente persistente e limitado, atalhos de estudo, baloes personalizados, incentivo e pratica simples em ingles;
+- Catty como gatinha mascote-professora publica com baloes aleatorios no site e assistente interna do AVA para usuarios logados, com personalidade Candy oficial, primeiro nome seguro em respostas quando fizer sentido, emojis controlados, Gemini padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado, historico recente persistente e limitado, atalhos de estudo, baloes personalizados, incentivo e pratica simples em ingles;
 - Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges, catalogo inicial de missoes e atividades de historias com XP automatico/manual;
 - otimizacao server-side de PDFs pedagogicos protegidos, incluindo Candy XP, homework interativo e aulas interativas, com Ghostscript quando disponivel e fallback para salvar o original se a compressao falhar;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.

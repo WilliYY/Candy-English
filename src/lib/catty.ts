@@ -1061,7 +1061,7 @@ function buildScopeRedirectEnglishReply(topic: CattyScopeTopic | null) {
   }
 
   if (topic === "cooking") {
-    return "Miauw, do you want to learn how to say that in English? We can start with: I make a salad with lettuce and tomatoes. Want to build your sentence?";
+    return "Uwau, let's turn that into English 🥗✨ You can say: I make a salad. Want to add the ingredients?";
   }
 
   if (topic === "finance") {
@@ -1097,7 +1097,7 @@ function buildScopeRedirectPortugueseReply(topic: CattyScopeTopic | null) {
   }
 
   if (topic === "cooking") {
-    return "Miauw, voce quer aprender a falar isso em ingles? Podemos comecar com: I make a salad with lettuce and tomatoes. Quer montar sua frase?";
+    return "Uwau, vamos transformar isso em English? 🥗✨ Voce pode dizer: I make a salad. Quer colocar os ingredientes na frase?";
   }
 
   if (topic === "finance") {
@@ -1127,11 +1127,194 @@ function buildTeacherActivityPortugueseReply() {
   return "Pss pss, teacher, escolha uma frase-alvo, uma instrucao simples e uma forma de resposta. Quer montar para listening, reading ou writing?";
 }
 
+type PersonalizeCattyReplyInput = {
+  context?: CattyPageContext;
+  history: CattyMessage[];
+  intent: CattyIntent;
+  language: CattyResponsePlan["language"];
+  sessionContext?: CattySessionContext;
+  text: string;
+};
+
+const nameFriendlyIntents: CattyIntent[] = [
+  "candy_xp",
+  "confusing_question",
+  "correct_sentence",
+  "homework_hint",
+  "motivation",
+  "practice_english",
+  "teacher_activity_creation",
+  "teacher_feedback",
+];
+
+function countReplyEmojis(text: string) {
+  return text.match(/\p{Extended_Pictographic}/gu)?.length ?? 0;
+}
+
+function getPersonalizationEmoji(intent: CattyIntent, reply: string) {
+  if (countReplyEmojis(reply) >= 2) {
+    return "";
+  }
+
+  const emojiByIntent: Partial<Record<CattyIntent, string>> = {
+    candy_xp: "🎯",
+    confusing_question: "🐾",
+    correct_sentence: "😺",
+    homework_hint: "🐾",
+    motivation: "🚀",
+    practice_english: "🚀",
+    teacher_activity_creation: "😺",
+    teacher_feedback: "😺",
+  };
+
+  return emojiByIntent[intent] ?? "✨";
+}
+
+function getSafeReplyFirstName(sessionContext?: CattySessionContext) {
+  const firstName = sanitizeContextText(sessionContext?.firstName, 24);
+
+  if (!firstName || firstName.includes("@")) {
+    return "";
+  }
+
+  return firstName;
+}
+
+function hasSensitiveNameContext(text: string, context?: CattyPageContext) {
+  const normalized = normalizeText(text);
+  const task = getTaskText(context);
+
+  return (
+    task.includes("apis-senhas") ||
+    task.includes("contratos") ||
+    task.includes("financeiro") ||
+    hasAny(normalized, [
+      "api key",
+      "chave",
+      "contrato",
+      "credencial",
+      "documento",
+      "pagamento",
+      "senha",
+      "token",
+    ])
+  );
+}
+
+function hasRoleAddressedReply(
+  reply: string,
+  sessionContext?: CattySessionContext,
+) {
+  if (sessionContext?.role === "STUDENT") {
+    return false;
+  }
+
+  return /\b(admin|teacher)\b/i.test(reply);
+}
+
+function shouldUseNameInReply(
+  reply: string,
+  input: PersonalizeCattyReplyInput,
+) {
+  const firstName = getSafeReplyFirstName(input.sessionContext);
+
+  if (
+    !firstName ||
+    hasSensitiveNameContext(input.text, input.context) ||
+    hasRoleAddressedReply(reply, input.sessionContext)
+  ) {
+    return false;
+  }
+
+  if (normalizeText(reply).includes(normalizeText(firstName))) {
+    return false;
+  }
+
+  return (
+    input.history.length <= 2 || nameFriendlyIntents.includes(input.intent)
+  );
+}
+
+function removeRepeatedPersonalizationEmoji(reply: string, emoji: string) {
+  if (!emoji) {
+    return reply;
+  }
+
+  const firstIndex = reply.indexOf(emoji);
+
+  if (firstIndex === -1) {
+    return reply;
+  }
+
+  const repeatedIndex = reply.indexOf(emoji, firstIndex + emoji.length);
+
+  if (repeatedIndex === -1) {
+    return reply;
+  }
+
+  const before = reply.slice(0, repeatedIndex).trimEnd();
+  const after = reply.slice(repeatedIndex + emoji.length).trimStart();
+  const spacer = /[.!?]$/.test(before) ? " " : ". ";
+
+  return `${before}${spacer}${after}`.replace(/\s{2,}/g, " ");
+}
+
+function personalizeCattyReply(
+  reply: string,
+  input: PersonalizeCattyReplyInput,
+) {
+  if (!shouldUseNameInReply(reply, input)) {
+    return reply;
+  }
+
+  const firstName = getSafeReplyFirstName(input.sessionContext);
+  const emoji = getPersonalizationEmoji(input.intent, reply);
+  const nameChunk = emoji ? `${firstName} ${emoji}` : firstName;
+  const openings = ["Miauw, ", "Awnn, ", "Uwau, ", "Pss pss, ", "Nya, "];
+
+  for (const opening of openings) {
+    if (reply.startsWith(opening)) {
+      return removeRepeatedPersonalizationEmoji(
+        `${opening}${nameChunk} ${reply.slice(opening.length)}`,
+        emoji,
+      );
+    }
+  }
+
+  if (reply.startsWith("Bora estudar, aluno Candy")) {
+    const rest = reply
+      .replace(/^Bora estudar, aluno Candy(?:\s*🚀)?\.?\s*/u, "")
+      .trim();
+
+    return removeRepeatedPersonalizationEmoji(
+      `Bora estudar, ${nameChunk}. ${rest}`,
+      emoji,
+    );
+  }
+
+  if (reply.startsWith("Bora estudar, Candy student")) {
+    const rest = reply
+      .replace(/^Bora estudar, Candy student(?:\s*🚀)?\.?\s*/u, "")
+      .trim();
+
+    return removeRepeatedPersonalizationEmoji(
+      `Bora estudar, ${nameChunk}. ${rest}`,
+      emoji,
+    );
+  }
+
+  return removeRepeatedPersonalizationEmoji(
+    `Miauw, ${nameChunk} ${reply}`,
+    emoji,
+  );
+}
+
 function buildPlannedEnglishReply(
   text: string,
   context: CattyPageContext | undefined,
   intent: CattyIntent,
   history: CattyMessage[],
+  sessionContext?: CattySessionContext,
 ) {
   const normalized = normalizeText(text);
   const contextLabel = getContextLabel(context);
@@ -1148,11 +1331,25 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "candy_xp") {
-    return buildCandyXpEnglishReply();
+    return personalizeCattyReply(buildCandyXpEnglishReply(), {
+      context,
+      history,
+      intent,
+      language: "English",
+      sessionContext,
+      text,
+    });
   }
 
   if (intent === "teacher_activity_creation") {
-    return buildTeacherActivityEnglishReply();
+    return personalizeCattyReply(buildTeacherActivityEnglishReply(), {
+      context,
+      history,
+      intent,
+      language: "English",
+      sessionContext,
+      text,
+    });
   }
 
   if (intent === "lesson_material") {
@@ -1160,7 +1357,17 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "ready_answer_request") {
-    return "Nya, final answer is not allowed. Here is a clue: look at the verb first. Send the sentence and I will guide you.";
+    return personalizeCattyReply(
+      "Nya, final answer is not allowed 😹 but a good clue is allowed: look at the verb first. Send the sentence and I will guide you.",
+      {
+        context,
+        history,
+        intent,
+        language: "English",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "homework_hint") {
@@ -1172,12 +1379,32 @@ function buildPlannedEnglishReply(
         "the answer",
       ])
     ) {
-      return "Nya, I will not give the final answer, but I can help. Send the exercise and I will show a similar example.";
+      return personalizeCattyReply(
+        "Nya, I will not give the final answer 😹 but I can help. Send the exercise and I will show a similar example.",
+        {
+          context,
+          history,
+          intent,
+          language: "English",
+          sessionContext,
+          text,
+        },
+      );
     }
 
-    return hasHomeworkPrompt(text)
-      ? "Pss pss, Catty tip: I do not give the final answer, but I can show a similar example. Send the part that made you stuck."
-      : "Awnn, I think the exercise is missing. Send me the question text, and I will give you a clue without the final answer.";
+    return personalizeCattyReply(
+      hasHomeworkPrompt(text)
+        ? "Pss pss, Catty tip 🐾 I do not give the final answer, but I can show a similar example. Send the part that made you stuck."
+        : "Awnn, I think the exercise is missing 🐾 Send me the question text, and I will give you a clue without the final answer.",
+      {
+        context,
+        history,
+        intent,
+        language: "English",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "translate_sentence") {
@@ -1188,7 +1415,17 @@ function buildPlannedEnglishReply(
 
   if (intent === "correct_sentence") {
     if (!correctionFragment) {
-      return "Miauw, send me the sentence you want to correct. Then I will fix it and explain it super shortly.";
+      return personalizeCattyReply(
+        "Miauw, send me the sentence you want to correct 😺 Then I will fix it and explain it super shortly.",
+        {
+          context,
+          history,
+          intent,
+          language: "English",
+          sessionContext,
+          text,
+        },
+      );
     }
 
     if (hasAny(normalized, ["i has"])) {
@@ -1223,7 +1460,17 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "motivation" || intent === "practice_english") {
-    return "Bora estudar, Candy student. Say this out loud: I am getting better at English one step at a time.";
+    return personalizeCattyReply(
+      "Bora estudar, Candy student 🚀 Say this out loud: I am getting better at English one step at a time.",
+      {
+        context,
+        history,
+        intent,
+        language: "English",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "complex_question") {
@@ -1232,12 +1479,32 @@ function buildPlannedEnglishReply(
 
   if (intent === "confusing_question") {
     if (isHomeworkContext(context)) {
-      return "Awnn, I understood it is about the activity. Send me the exact bit from the exercise.";
+      return personalizeCattyReply(
+        "Awnn, I understood it is about the activity 🐾 Send me the exact bit from the exercise.",
+        {
+          context,
+          history,
+          intent,
+          language: "English",
+          sessionContext,
+          text,
+        },
+      );
     }
 
-    return hasRecentContext(history, text)
-      ? "Awnn, I understood that one part got confusing. Send me the exact bit from the exercise."
-      : "Awnn, tell me one thing: did you get stuck on the word, the sentence, or the exercise?";
+    return personalizeCattyReply(
+      hasRecentContext(history, text)
+        ? "Awnn, I understood that one part got confusing 🐾 Send me the exact bit from the exercise."
+        : "Awnn, tell me one thing 🐾 did you get stuck on the word, the sentence, or the exercise?",
+      {
+        context,
+        history,
+        intent,
+        language: "English",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   return `Nya, I am here with you on ${contextLabel}. Write one small English sentence and I will help you polish it.`;
@@ -1248,6 +1515,7 @@ function buildPlannedPortugueseReply(
   context: CattyPageContext | undefined,
   intent: CattyIntent,
   history: CattyMessage[],
+  sessionContext?: CattySessionContext,
 ) {
   const normalized = normalizeText(text);
   const correctionFragment = extractCorrectionFragment(text);
@@ -1263,11 +1531,25 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "candy_xp") {
-    return buildCandyXpPortugueseReply();
+    return personalizeCattyReply(buildCandyXpPortugueseReply(), {
+      context,
+      history,
+      intent,
+      language: "Portuguese",
+      sessionContext,
+      text,
+    });
   }
 
   if (intent === "teacher_activity_creation") {
-    return buildTeacherActivityPortugueseReply();
+    return personalizeCattyReply(buildTeacherActivityPortugueseReply(), {
+      context,
+      history,
+      intent,
+      language: "Portuguese",
+      sessionContext,
+      text,
+    });
   }
 
   if (intent === "lesson_material") {
@@ -1279,7 +1561,17 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "ready_answer_request") {
-    return "Nya, resposta pronta nao pode. Mas te dou uma pista boa: olha primeiro o verbo da frase.";
+    return personalizeCattyReply(
+      "Nya, resposta pronta nao rola 😹 mas pista boa rola: olha primeiro o verbo da frase.",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "homework_hint") {
@@ -1292,12 +1584,32 @@ function buildPlannedPortugueseReply(
         "resposta pronta",
       ])
     ) {
-      return "Nya, eu nao faco por voce nem dou resposta pronta. Mas me manda o exercicio e eu te mostro um exemplo parecido.";
+      return personalizeCattyReply(
+        "Nya, eu nao faco por voce nem dou resposta pronta 😹 Mas me manda o exercicio e eu te mostro um exemplo parecido.",
+        {
+          context,
+          history,
+          intent,
+          language: "Portuguese",
+          sessionContext,
+          text,
+        },
+      );
     }
 
-    return hasHomeworkPrompt(text)
-      ? "Pss pss, dica da Catty: eu nao dou a resposta pronta, mas posso te mostrar um exemplo parecido. Me manda a parte que travou."
-      : "Awnn, acho que faltou o exercicio. Me manda o enunciado ou o texto da pergunta, que eu te dou uma pista boa.";
+    return personalizeCattyReply(
+      hasHomeworkPrompt(text)
+        ? "Pss pss, dica da Catty 🐾 eu nao dou a resposta pronta, mas posso te mostrar um exemplo parecido. Me manda a parte que travou."
+        : "Awnn, acho que faltou o exercicio 🐾 Me manda o enunciado ou o texto da pergunta, que eu te dou uma pista boa.",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "translate_sentence") {
@@ -1319,12 +1631,32 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "motivation") {
-    return "Bora estudar, aluno Candy. Hoje vale meta pequena: leia uma frase em English, repita em voz alta e comemore.";
+    return personalizeCattyReply(
+      "Bora estudar, aluno Candy 🚀 Hoje vale meta pequena: leia uma frase em English, repita em voz alta e comemore.",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "correct_sentence") {
     if (!correctionFragment) {
-      return "Miauw, me manda a frase que voce quer corrigir. Ai eu arrumo e explico bem curtinho.";
+      return personalizeCattyReply(
+        "Miauw, me manda a frase que voce quer corrigir 😺 A Catty arruma e explica rapidinho.",
+        {
+          context,
+          history,
+          intent,
+          language: "Portuguese",
+          sessionContext,
+          text,
+        },
+      );
     }
 
     if (hasAny(normalized, ["i has"])) {
@@ -1339,7 +1671,17 @@ function buildPlannedPortugueseReply(
       return "Uwau, quase la. A forma melhor e: She goes to school. Com he, she ou it, o verbo ganha -s.";
     }
 
-    return "Awnn, manda a frase exata que voce quer corrigir. Eu devolvo uma versao melhor e um motivo bem simples.";
+    return personalizeCattyReply(
+      "Awnn, manda a frase exata que voce quer corrigir 😺 Eu devolvo uma versao melhor e um motivo bem simples.",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "explain_word") {
@@ -1357,7 +1699,17 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "teacher_feedback") {
-    return "Pss pss, teacher, tenta assim: Voce se esforcou bem hoje. Agora revise uma frase com calma e tente de novo. Pequeno progresso conta.";
+    return personalizeCattyReply(
+      "Catty mode on, teacher 😺 manda o feedback bruto que eu deixo mais fofo, claro e com cara de Candy.",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "complex_question") {
@@ -1366,16 +1718,46 @@ function buildPlannedPortugueseReply(
 
   if (intent === "confusing_question") {
     if (isHomeworkContext(context)) {
-      return "Awnn, entendi que e sobre a atividade. Me manda o trecho exato do exercicio.";
+      return personalizeCattyReply(
+        "Awnn, entendi que e sobre a atividade 🐾 Me manda o trecho exato do exercicio.",
+        {
+          context,
+          history,
+          intent,
+          language: "Portuguese",
+          sessionContext,
+          text,
+        },
+      );
     }
 
-    return hasRecentContext(history, text)
-      ? "Awnn, entendi que uma parte ficou confusa. Me manda o trecho exato do exercicio."
-      : "Awnn, me diz so uma coisa: voce travou na palavra, na frase ou no exercicio?";
+    return personalizeCattyReply(
+      hasRecentContext(history, text)
+        ? "Awnn, entendi que uma parte ficou confusa 🐾 Me manda o trecho exato do exercicio."
+        : "Awnn, me diz so uma coisa 🐾 voce travou na palavra, na frase ou no exercicio?",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "practice_english") {
-    return "Bora estudar, aluno Candy. Treino rapido: escreva uma frase com I like e eu corrijo com carinho.";
+    return personalizeCattyReply(
+      "Bora estudar, aluno Candy 🚀 Treino rapido: escreva uma frase com I like e eu corrijo com carinho.",
+      {
+        context,
+        history,
+        intent,
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (context?.area === "teacher") {
@@ -1398,10 +1780,17 @@ function buildPlannedFallbackReply(
   context: CattyPageContext | undefined,
   intent: CattyIntent,
   history: CattyMessage[],
+  sessionContext?: CattySessionContext,
 ) {
   const plannedReply = isEnglishMessage(text)
-    ? buildPlannedEnglishReply(text, context, intent, history)
-    : buildPlannedPortugueseReply(text, context, intent, history);
+    ? buildPlannedEnglishReply(text, context, intent, history, sessionContext)
+    : buildPlannedPortugueseReply(
+        text,
+        context,
+        intent,
+        history,
+        sessionContext,
+      );
 
   return (
     plannedReply ||
@@ -1415,13 +1804,20 @@ export function buildCattyResponsePlan(
   text: string,
   context?: CattyPageContext,
   history: CattyMessage[] = [],
+  sessionContext?: CattySessionContext,
 ): CattyResponsePlan {
   const { confidence, intent } = detectCattyIntent(text, context);
   const language = isEnglishMessage(text) ? "English" : "Portuguese";
 
   return {
     confidence,
-    fallbackReply: buildPlannedFallbackReply(text, context, intent, history),
+    fallbackReply: buildPlannedFallbackReply(
+      text,
+      context,
+      intent,
+      history,
+      sessionContext,
+    ),
     intent,
     instruction: intentInstructions[intent],
     label: intentLabels[intent],
@@ -1433,8 +1829,14 @@ export function buildFallbackCattyReply(
   text: string,
   context?: CattyPageContext,
   history?: CattyMessage[],
+  sessionContext?: CattySessionContext,
 ) {
-  return buildCattyResponsePlan(text, context, history).fallbackReply;
+  return buildCattyResponsePlan(
+    text,
+    context,
+    history,
+    sessionContext,
+  ).fallbackReply;
 }
 
 export function getCattyPreferredLanguage(text: string) {
@@ -1443,6 +1845,7 @@ export function getCattyPreferredLanguage(text: string) {
 
 function limitCattyEmojis(text: string) {
   let allowedEmojiCount = 0;
+  const maxAllowedEmojis = 2;
 
   return text
     .replace(/\p{Extended_Pictographic}/gu, (emoji) => {
@@ -1456,7 +1859,7 @@ function limitCattyEmojis(text: string) {
 
       allowedEmojiCount += 1;
 
-      return allowedEmojiCount <= 1 ? emoji : "";
+      return allowedEmojiCount <= maxAllowedEmojis ? emoji : "";
     })
     .replace(/\ufe0f/g, "");
 }
@@ -1544,7 +1947,8 @@ export function buildCattyInput(
     `Intencao detectada: ${plan.label} (${plan.confidence}).`,
     `Intencao tecnica: ${plan.intent}.`,
     `Plano da Catty: ${plan.instruction}`,
-    "Regra de personalidade da Catty: gatinha mascote-professora da Candy English, resposta curta, fofa, didatica e com no maximo um bordao ou emoji.",
+    "Regra de personalidade da Catty: gatinha mascote-professora da Candy English, resposta curta, fofa, didatica e com no maximo um bordao e ate dois emojis.",
+    "Regra de uso do nome: se houver primeiro nome seguro, use de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao em toda resposta nem em assunto sensivel.",
     "Regra de roteamento interno: Gemini e o padrao; OpenAI so quando a mensagem chama Catty; se provedores falharem, usar fallback local; baloes automaticos nao chamam IA.",
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",

@@ -327,6 +327,18 @@ function getFirstDisplayName(name?: string | null) {
     return "aluno Candy";
   }
 
+  if (cleaned.includes("@")) {
+    const localName = cleaned
+      .split("@")[0]
+      ?.replace(/[._-]+/g, " ")
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(" ")[0];
+
+    return localName || "aluno Candy";
+  }
+
   if (cleaned.length <= 18) {
     return cleaned;
   }

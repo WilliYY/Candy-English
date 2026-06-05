@@ -55,7 +55,7 @@ Servicos Docker:
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
 - Catty pode aparecer fora do AVA como chamada visual, mas a conversa real e `/api/catty/chat` exigem sessao ativa e role valida.
-- Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado, historico recente limitado, contexto leve de rota/tarefa e contexto seguro derivado no servidor, como role, primeiro nome e nivel do aluno quando existir, sem email, id, senha, banco, contrato, pagamento ou informacoes internas do AVA.
+- Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado, historico recente limitado, contexto leve de rota/tarefa e contexto seguro derivado no servidor, como role, primeiro nome seguro e nivel do aluno quando existir, sem email, id, senha, banco, contrato, pagamento ou informacoes internas do AVA.
 
 ## Decisoes tecnicas tomadas
 
@@ -80,9 +80,9 @@ Servicos Docker:
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
 - Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback autorizado quando a chave ou chamada falhar.
-- Catty usa o contexto de `area`, `task`, role, primeiro nome e nivel do aluno apenas para ajustar atalhos, historico recente, dificuldade do exemplo e tom da resposta, por exemplo homework, aulas, mensagens, teacher ou admin; esse contexto nao autoriza leitura ou escrita de dados internos.
+- Catty usa o contexto de `area`, `task`, role, primeiro nome seguro e nivel do aluno apenas para ajustar atalhos, historico recente, dificuldade do exemplo e tom da resposta, por exemplo homework, Candy XP, aulas, mensagens, teacher ou admin; o nome pode aparecer naturalmente em respostas seguras, mas nao em tema sensivel como senha, contrato, pagamento, documento, chave, token ou credencial.
 - O prompt da Catty mescla historico persistido com historico local recente do widget, remove a mensagem atual duplicada, limita a 8 mensagens e cai para fallback por intencao quando a IA retorna vazio, cortado, generico, fora de tom ou inseguro para homework/pedido de resposta pronta/codigo/API/assunto fora do escopo; o plano diferencia correcao, traducao, explicacao de palavra, conversacao, homework, Candy XP, aula/material, mensagem para teacher, criacao de atividade para teacher, feedback para aluno, motivacao, ajuda no AVA, codigo/API, pergunta fora do tema, pergunta confusa e pergunta longa/misturada.
-- A identidade viva da Catty fica centralizada em `src/lib/catty-personality.ts`; a rota e o widget reutilizam os mesmos bordoes, baloes e regras, e respostas de IA com mais de um bordao sao recusadas para cair no fallback.
+- A identidade viva da Catty fica centralizada em `src/lib/catty-personality.ts`; a rota e o widget reutilizam os mesmos bordoes, baloes, emojis permitidos e regras, e respostas de IA com mais de um bordao ou emoji demais sao recusadas/sanitizadas para cair no fallback ou manter tom controlado.
 - O historico da Catty fica em `CattyConversation`/`CattyMessage`, e limitado a 50 mensagens por usuario/contexto; somente as 8 mais recentes entram no prompt para IA.
 - Candy XP grava eventos persistidos por usuario em `CandyXpEvent`, recalcula `CandyXpProfile` por soma de eventos e aplica a curva sem teto fixo em `requiredForCandyLevel`.
 - Cada evento de XP usa `@@unique([userId, sourceKey])` para impedir pontuacao duplicada da mesma tarefa, homework, feedback, aula, rotina ou missao.
