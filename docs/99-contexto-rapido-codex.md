@@ -52,7 +52,7 @@ Ao receber o prompt minimo, o agente deve:
 - Corrigir homework mostra o PDF com a entrega marcada e separa `Aguardando correcao` de `Corrigidos`.
 - Itens de correcao ficam minimizados por padrao.
 - Contratos PDF sao visualizados no AVA por rota protegida.
-- Catty so responde para usuario logado no AVA; `/api/catty/chat` exige `auth()` com role `ADMIN`, `TEACHER` ou `STUDENT`, usa Gemini quando configurado, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado quando nao ha chave ou a chamada falha, e historico recente persistente limitado por usuario/contexto.
+- Catty so responde para usuario logado no AVA; `/api/catty/chat` exige `auth()` com role `ADMIN`, `TEACHER` ou `STUDENT`, usa Gemini quando configurado, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado quando nao ha chave ou a chamada falha, historico recente persistente limitado por usuario/contexto e personalidade oficial em `CATTY_PERSONALITY_GUIDE`.
 - Catty recebe do `RootLayout` apenas o nome da sessao para baloes visuais locais no AVA logado; o widget usa primeiro nome, troca fala a cada 10 segundos e nao chama IA para esses baloes. Para visitante sem login no site/login, a Catty e mascote publica com baloes aleatorios a cada 10 segundos e clique bloqueado por aviso pequeno, sem abrir chat real nem chamar API.
 - Header do site usa destaque forte no item de navegacao ativo.
 - Home atual usa `public/brand/home-candy-2.mp4` como fundo do primeiro card dominante do hero em loop mudo, com palco menos horizontal, zoom leve e fundo branco reduzido quando sobra area.

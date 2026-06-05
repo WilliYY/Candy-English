@@ -53,6 +53,7 @@ Actions:
 
 Helpers:
 
+- `src/lib/catty.ts`
 - `src/lib/catty-history.ts`
 - `src/lib/candy-xp.ts`
 - `src/lib/candy-xp-activities.ts`
@@ -164,8 +165,9 @@ Helpers:
 13. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
 14. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
 15. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
-16. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-17. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+16. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, e pode usar um emoji pequeno ocasional.
+17. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+18. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 

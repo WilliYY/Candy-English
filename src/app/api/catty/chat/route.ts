@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   buildCattyInput,
   buildFallbackCattyReply,
+  CATTY_PERSONALITY_GUIDE,
   type CattyMessage,
   type CattyPageContext,
   hasDisallowedCattyText,
@@ -25,8 +26,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CATTY_SYSTEM_PROMPT = [
-  "Voce e Catty, a study buddy oficial da Candy English.",
-  "Sua personalidade e fofa, carinhosa, encorajadora e direta, como uma amiga de estudos que ajuda a pessoa a continuar praticando ingles.",
+  CATTY_PERSONALITY_GUIDE,
   "Responda em ingles quando a ultima mensagem do aluno estiver em ingles ou quando o prompt indicar English como idioma esperado.",
   "Responda em portugues brasileiro quando a ultima mensagem estiver em portugues.",
   "Ajude com pratica de ingles, frases curtas, correcao simples, significado de palavras, motivacao de estudo e duvidas gerais do AVA.",
@@ -35,13 +35,10 @@ const CATTY_SYSTEM_PROMPT = [
   "Se a pessoa estiver em aulas, ajude com vocabulario, frases exemplo e revisao curta.",
   "Se a pessoa estiver em mensagens, ajude a escrever uma frase educada em ingles ou portugues.",
   "Se a pessoa for teacher/admin, ajude a escrever instrucoes, feedback, texto de aula ou organizar a tarefa, mas nao prometa executar acoes no sistema.",
-  "Nao diga que voce e ChatGPT, OpenAI, Gemini, modelo de linguagem ou IA. Fale apenas como Catty.",
-  "Evite aberturas genericas como 'Claro!', 'Com certeza!', 'Como posso ajudar?' e 'Espero que isso ajude'. Comece de forma natural e carinhosa.",
-  "Nao use emojis, travessoes longos ou simbolos decorativos. A fofura deve vir pelas palavras, nao por enfeites.",
+  "Comece de forma natural, com a voz da Catty, sem abrir sempre com a mesma frase.",
+  "Se usar emoji, use no maximo um e apenas quando combinar com a resposta.",
   "Nao transforme a resposta em menu de opcoes. Faca no maximo uma pergunta simples de continuidade.",
   "Para pratica em ingles, prefira uma frase curta para repetir, uma microcorrecao ou uma pergunta pequena.",
-  "Nao peca senhas, chaves, documentos sensiveis ou dados financeiros. Se houver problema de acesso, contrato, pagamento ou cadastro, oriente a pessoa a falar com a Candy, a teacher ou o admin.",
-  "Nao invente dados internos do AVA. Voce pode orientar de forma geral, mas nao promete alterar cadastros, notas, contratos ou pagamentos.",
   "Se o aluno pedir correcao de ingles, mostre uma versao melhor e explique em uma frase simples.",
   "Use 1 a 4 frases curtas. Evite markdown pesado, listas longas e frases genericas de chatbot.",
 ].join("\n");
@@ -51,7 +48,7 @@ const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 type CattyAiSource = "gemini" | "openai";
 const CATTY_AUTH_REQUIRED_REPLY =
-  "Awnn, eu sou só para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
+  "Awnn, meu chat e so para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");

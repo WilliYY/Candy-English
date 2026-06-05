@@ -149,6 +149,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260605120000_catty_conversation_history`, `src/lib/catty-history.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx` e docs oficiais.
 - Riscos/cuidados: somente 8 mensagens recentes entram no prompt; visitante nao grava historico; futuras expansoes para RAG/base de conhecimento exigem decisao separada de privacidade e custo.
 
+### 2026-06-05 - Personalidade oficial da Catty
+
+- Decisao: centralizar a voz da Catty em `CATTY_PERSONALITY_GUIDE`, tornando-a uma gatinha mascote-professora da Candy com energia positiva, expressoes proprias e emoji ocasional controlado.
+- Motivo: evitar que Gemini/OpenAI ou fallback local soem como chatbot generico e manter uma identidade unica em respostas, baloes e mensagens de bloqueio.
+- Impacto: `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `README.md`, `docs/03-fluxos-do-sistema.md` e `docs/design-direcao.md`.
+- Riscos/cuidados: manter respostas curtas, sem entregar respostas de homework, sem inventar dados do AVA e sem exagerar em emoji/expressoes.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

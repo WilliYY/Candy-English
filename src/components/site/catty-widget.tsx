@@ -37,30 +37,30 @@ type CattyWidgetProps = {
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
 const CATTY_AUTH_REQUIRED_REPLY =
-  "Awnn, eu sou só para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
+  "Awnn, meu chat e so para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
 const CATTY_PUBLIC_LOCKED_REPLY =
-  "Awnn, meu chat e so para alunos Candy. Entra no AVA ou vem virar aluno para conversar comigo.";
+  "Awnn, meu chat e so para alunos Candy. Entra no AVA ou vem virar aluno para conversar comigo. 🐱";
 
 const initialCattyMessages: CattyMessage[] = [
   {
     from: "catty",
-    text: "Oi, eu sou a Catty. Me chama para praticar ingles, corrigir uma frase ou destravar uma atividade.",
+    text: "Miauw, eu sou a Catty, sua gatinha de estudos da Candy. Bora praticar English sem medo?",
   },
 ];
 
 const publicBalloonTemplates = [
-  "Miaww, a Catty ta aqui e a profa tambem. Vem ser aluno Candy!",
+  "Miauw, a Catty ta aqui e a profa tambem. Vem ser aluno Candy!",
   "Pss pss, quer aprender ingles de um jeito mais docinho?",
-  "Miaww, eu guardo as melhores dicas para alunos Candy.",
+  "Nya, eu guardo as melhores dicas para alunos Candy.",
   "A Catty ta feliz porque hoje tem English!",
   "Vem estudar com a gente. Eu prometo miar motivacao.",
   "Ingles pode ser leve, fofo e poderoso. Vem pra Candy!",
-  "Miaww, voce ainda nao e aluno Candy? Ta esperando o que?",
+  "Miauw, voce ainda nao e aluno Candy? Ta esperando o que?",
   "A profa ensina, eu acompanho e voce evolui.",
   "Aqui tem aula, carinho e um pouquinho de magia Candy.",
   "Quer destravar o ingles? A Catty te chama!",
   "Vem ser aluno Candy e ganhar sua parceira de estudos.",
-  "Miaww, seu futuro bilingue ta piscando pra voce.",
+  "Uwau, seu futuro bilingue ta piscando pra voce.",
   "Eu sou pequena, mas minha vontade de te ver falando ingles e gigante.",
   "English fica mais facil quando tem Candy no caminho.",
   "A Catty ta te esperando do lado de dentro do AVA.",
@@ -70,56 +70,56 @@ const publicBalloonTemplates = [
   "Quer aprender sem aquele ingles travado? Vem!",
   "A profa prepara a aula e eu preparo o incentivo.",
   "Hoje e um otimo dia para comecar ingles.",
-  "Miaww, eu tenho dicas, mas so libero para alunos Candy.",
+  "Pss pss, eu tenho dicas, mas so libero para alunos Candy.",
   "Candy English: porque estudar tambem pode ser gostoso.",
   "Vem virar aluno Candy e desbloquear a Catty.",
   "Aqui a gente aprende ingles sem cara de escola chata.",
   "Eu vi um aluno evoluindo hoje. O proximo pode ser voce.",
-  "Miaww, seu ingles merece um upgrade fofo.",
+  "Miauw, seu ingles merece um upgrade fofo.",
   "A Catty ta online, mas so alunos Candy conversam comigo.",
   "Quer praticar ingles com uma gatinha estudiosa?",
   "Vem para a Candy. Eu ja deixei seu cantinho preparado.",
 ] as const;
 
 const loggedInBalloonTemplates = [
-  "Miaww, {name}! Catty ta on. Let's practice! 🐱",
+  "Miauw, {name}! Catty ta on. Let's practice! 🐱",
   "{greeting}, {name}! Vamos estudar ingles um pouquinho?",
-  "Miaww, {name}! Como foi seu dia ate agora?",
+  "Nya, {name}! Como foi seu dia ate agora?",
   "Catty chegou, {name}. Bora destravar esse English?",
   "Ei, {name}, let's study together!",
-  "Miaww, hoje e dia de evoluir no ingles.",
+  "Uwau, hoje e dia de evoluir no ingles.",
   "{name}, sua parceira de estudos esta online.",
   "Good to see you, {name}! Ready to practice?",
-  "Miaww, {name}, abre uma atividade e vamos juntos.",
+  "Miauw, {name}, abre uma atividade e vamos juntos.",
   "Um pouquinho por dia, {name}. English fica mais facil.",
   "Catty ta feliz porque voce entrou no AVA.",
   "{name}, quer praticar uma frase em ingles agora?",
-  "Miaww, vamos aquecer o cerebro com English?",
+  "Pss pss, vamos aquecer o cerebro com English?",
   "{greeting}! A Catty ja separou energia de estudo.",
   "{name}, hoje seu ingles vai ganhar XP.",
   "Bora, {name}! Uma frase nova ja conta.",
-  "Miaww, nao precisa ser perfeito. Precisa praticar.",
+  "Awnn, nao precisa ser perfeito. Precisa praticar.",
   "Catty mode on. Study mode on. Vamos!",
   "{name}, me chama se travar em alguma atividade.",
   "Quer revisar rapidinho, {name}?",
-  "Miaww, estou aqui para te ajudar sem dar resposta pronta.",
+  "Miauw, estou aqui para te ajudar sem dar resposta pronta.",
   "{name}, cada mini pratica vira progresso.",
   "Let's go, {name}! Seu ingles agradece.",
   "Catty ta pronta. E voce, {name}?",
   "{greeting}, aluno Candy! Hoje tem evolucao.",
-  "Miaww, {name}, vamos deixar esse ingles mais leve.",
+  "Nya, {name}, vamos deixar esse ingles mais leve.",
   "Uma pergunta em English agora, {name}?",
   "Catty acredita em voce, {name}. Bora estudar!",
   "{name}, abre o Candy XP e vamos ganhar progresso.",
-  "Miaww, o AVA fica mais fofo quando voce entra.",
+  "Miauw, o AVA fica mais fofo quando voce entra.",
   "Hoje e um bom dia para praticar listening, reading ou speaking.",
   "{name}, quer uma dica sem spoiler da resposta?",
   "Catty ta aqui: calma, foco e English.",
-  "Miaww, vamos transformar duvida em pratica.",
+  "Pss pss, vamos transformar duvida em pratica.",
   "{name}, seu futuro bilingue mandou um oi.",
   "Estudar 5 minutinhos ja vale, {name}.",
   "Good vibes, good English, {name}.",
-  "Miaww, escolha uma missao e vamos comecar.",
+  "Bora estudar, escolha uma missao e vamos comecar.",
   "{name}, quer treinar uma frase curtinha?",
   "Catty feliz, aluno online, English acontecendo!",
 ] as const;
@@ -250,15 +250,15 @@ function getCurrentPageContext(): CattyPageContext {
 function getContextCopy(context: CattyPageContext) {
   if (context.area === "student" && context.task === "homeworks") {
     return {
-      line: "Te ajudo a entender o homework, sem entregar resposta pronta.",
-      title: "Homework buddy",
+      line: "Pss pss, te dou dica sem entregar resposta pronta.",
+      title: "Homework Catty",
     };
   }
 
   if (context.area === "student" && context.task === "aulas") {
     return {
-      line: "Manda uma palavra da aula e eu explico bem simples.",
-      title: "Aula buddy",
+      line: "Miauw, manda uma palavra e eu explico simples.",
+      title: "Aula Catty",
     };
   }
 
@@ -284,8 +284,8 @@ function getContextCopy(context: CattyPageContext) {
   }
 
   return {
-    line: "Pratique um pouquinho de ingles comigo agora.",
-    title: "Study buddy",
+    line: "Bora estudar um pouquinho comigo agora.",
+    title: "Study Catty",
   };
 }
 

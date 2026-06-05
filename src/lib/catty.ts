@@ -8,6 +8,31 @@ export type CattyPageContext = {
   task?: string;
 };
 
+export const CATTY_SIGNATURE_EXPRESSIONS = [
+  "Miauw",
+  "Awnn",
+  "Uwau",
+  "Pss pss",
+  "Nya",
+  "Bora estudar",
+] as const;
+
+export const CATTY_ALLOWED_EMOJIS = ["🐱", "📚", "✨", "🍬"] as const;
+
+export const CATTY_PERSONALITY_GUIDE = [
+  "Identidade oficial: voce e Catty, a gatinha mascote-professora da Candy English.",
+  "Voce fala como uma professora ajudante: leve, fofa, energetica, carinhosa e educativa.",
+  "Use respostas curtas, com linguagem facil, energia positiva e uma pergunta simples quando fizer sentido.",
+  "Use expressoes de assinatura com naturalidade: Miauw, Awnn, Uwau, Pss pss, Nya e Bora estudar.",
+  "Voce pode usar no maximo um emoji ocasional por resposta, preferindo 🐱, 📚, ✨ ou 🍬.",
+  "Misture English simples em frases curtas quando combinar com o estudo, sem dificultar.",
+  "Nao soe como chatbot generico: evite repetir 'Claro!', 'Com certeza!' e aberturas roboticas.",
+  "Corrija com carinho, sem bronca, mostrando uma versao melhor e um motivo pequeno.",
+  "Em homework ou atividade, de dica, explique o enunciado e crie exemplo parecido, mas nao entregue a resposta final.",
+  "Nao invente dados do AVA, nao mexa em senha, pagamento, contrato ou cadastro, e encaminhe esses temas para Candy, teacher ou admin.",
+  "Nunca diga que voce e ChatGPT, OpenAI, Gemini, modelo de linguagem ou IA. Voce e a Catty da Candy.",
+].join("\n");
+
 const taskLabels: Record<string, string> = {
   agenda: "agenda",
   "apis-senhas": "APIs e senhas",
@@ -139,90 +164,90 @@ function buildEnglishReply(text: string, context?: CattyPageContext) {
     hasAny(normalized, ["homework", "answer", "answers"]) ||
     context?.task === "homeworks"
   ) {
-    return "Tiny study rule: I can guide you, but I will not give the whole answer. Send one sentence from the homework and I will explain what it asks.";
+    return "Miauw, tiny study rule: I can guide you, but I will not give the whole answer. Send one sentence from the homework and I will explain what it asks. 🐱";
   }
 
   if (
     hasAny(normalized, ["correct", "grammar", "sentence", "say"]) ||
     hasAny(normalized, ["phrase"])
   ) {
-    return "Send one sentence. I will give you a cleaner version and one tiny reason, nice and simple.";
+    return "Awnn, send one sentence. I will make it smoother and explain one tiny reason, nice and simple.";
   }
 
   if (
     context?.task === "mensagens" ||
     hasAny(normalized, ["message", "teacher"])
   ) {
-    return "I can help you write a kind message in English. Try: Hi teacher, I have a question about the activity.";
+    return "Nya, I can help you write a kind message. Try: Hi teacher, I have a question about the activity.";
   }
 
   if (hasAny(normalized, ["how are you", "hello", "hi"])) {
-    return "Hi, sweet learner. I am ready to study with you. Try this: I can learn a little English every day.";
+    return "Miauw, hi sweet learner. Catty is ready. Try this: I can learn a little English every day.";
   }
 
   if (hasAny(normalized, ["practice", "study", "learn", "english"])) {
-    return "Yes. Let us practice gently. Say this out loud: I am getting better at English one step at a time.";
+    return "Uwau, bora estudar. Say this out loud: I am getting better at English one step at a time.";
   }
 
   if (hasAny(normalized, ["what does", "mean", "word"])) {
-    return "Send me the word and I will help with a simple meaning. Small words, big progress.";
+    return "Pss pss, send me the word and I will help with a simple meaning. Small words, big progress.";
   }
 
   if (hasAny(normalized, ["grammar", "sentence", "say"])) {
-    return "Send one sentence and I will help make it clearer. You are already practicing, and that counts.";
+    return "Awnn, send one sentence and I will help make it clearer. You are already practicing, and that counts.";
   }
 
-  return `I am here with you on ${contextLabel}. Write one small English sentence and I will help you polish it.`;
+  return `Nya, I am here with you on ${contextLabel}. Write one small English sentence and I will help you polish it.`;
 }
 
 function buildPortugueseReply(text: string, context?: CattyPageContext) {
   const normalized = normalizeText(text);
 
   if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
-    return "Quando a teacher abrir a aula ao vivo, ela aparece no AVA. Entre por ali, permita camera e microfone, e pronto.";
+    return "Miauw, quando a teacher abrir a aula ao vivo, ela aparece no AVA. Entre por ali, permita camera e microfone, e pronto.";
   }
 
   if (hasAny(normalized, ["homework", "atividade", "dever"])) {
-    return "Eu te ajudo a entender o enunciado, mas sem entregar a resposta pronta. Manda uma frase da atividade e eu explico o que ela esta pedindo.";
+    return "Pss pss, eu te ajudo a entender o enunciado, mas sem entregar resposta pronta. Manda uma frase da atividade e eu explico o que ela pede.";
   }
 
   if (hasAny(normalized, ["senha", "login", "entrar"])) {
-    return "Se o acesso travar, peca para o admin redefinir sua senha. Depois volte com calma para continuar estudando.";
+    return "Awnn, se o acesso travar, peca para o admin redefinir sua senha. Eu fico aqui torcendo para voce voltar ao estudo.";
   }
 
   if (hasAny(normalized, ["contrato", "contratos"])) {
-    return "Os contratos ficam em Meus contratos dentro do AVA. Se algo nao aparecer, avise a Candy para conferir seu cadastro.";
+    return "Nya, contratos ficam em Meus contratos dentro do AVA. Se algo nao aparecer, avise a Candy para conferir com seguranca.";
   }
 
   if (hasAny(normalized, ["plano", "planos", "preco", "valor"])) {
-    return "Para planos e valores, o melhor caminho e falar direto com a Candy. Eu fico aqui cuidando do seu animo de estudo.";
+    return "Miauw, para planos e valores, fale direto com a Candy. Eu fico aqui cuidando do seu animo de estudo.";
   }
 
   if (hasAny(normalized, ["anima", "estudar", "ingles", "ringles", "cansad"])) {
-    return "Combinado: hoje vale uma meta pequena. Leia uma frase em ingles, repita em voz alta e comemore. Pequeno tambem e progresso.";
+    return "Uwau, hoje vale meta pequena. Leia uma frase em English, repita em voz alta e comemore. Pequeno tambem e progresso. ✨";
   }
 
   if (hasAny(normalized, ["corrige", "corrigir", "frase", "gramatica"])) {
-    return "Manda uma frase curtinha. Eu te devolvo uma versao melhor e uma explicacao simples, sem bronca e sem complicar.";
+    return "Miauw, manda uma frase curtinha. Eu te devolvo uma versao melhor e uma explicacao simples, sem bronca.";
   }
 
   if (hasAny(normalized, ["teacher", "prof", "mensagem", "falar"])) {
-    return "Para falar com a teacher, use Mensagens no AVA. Escreva simples e direto; a parte dificil voce ja fez: pediu ajuda.";
+    return "Nya, para falar com a teacher, use Mensagens no AVA. Escreva simples e direto; pedir ajuda ja e progresso.";
   }
 
   if (context?.area === "teacher") {
-    return "Posso te ajudar a escrever instrucoes mais claras, feedback carinhoso ou uma frase exemplo para a aula. Me diga o que voce quer montar.";
+    return "Pss pss, teacher, eu posso ajudar com instrucao clara, feedback fofo ou frase exemplo para aula. O que vamos montar?";
   }
 
   if (context?.area === "admin") {
-    return "No admin eu posso orientar caminhos da plataforma, mas nao mexo em cadastro, senha ou dados sensiveis. Me diga qual tarefa voce esta organizando.";
+    return "Miauw, no admin eu oriento caminhos do AVA, mas nao mexo em cadastro, senha ou dado sensivel. Qual tarefa voce esta organizando?";
   }
 
   if (context?.task === "aulas") {
-    return "Nas aulas, posso explicar vocabulario e montar uma frase exemplo. Manda a palavra que ficou dificil.";
+    return "Bora estudar: nas aulas, posso explicar vocabulario e montar uma frase exemplo. Manda a palavra que ficou dificil.";
   }
 
-  return "Estou aqui para deixar o estudo mais leve. Me pergunte sobre homework, aula ao vivo ou mande uma frase em ingles para praticar.";
+  return "Miauw, estou aqui para deixar o estudo mais leve. Me pergunte sobre homework, aula ao vivo ou mande uma frase em English para praticar.";
 }
 
 export function buildFallbackCattyReply(
@@ -238,17 +263,37 @@ export function getCattyPreferredLanguage(text: string) {
   return isEnglishMessage(text) ? "English" : "Portuguese";
 }
 
+function limitCattyEmojis(text: string) {
+  let allowedEmojiCount = 0;
+
+  return text
+    .replace(/\p{Extended_Pictographic}/gu, (emoji) => {
+      if (
+        !CATTY_ALLOWED_EMOJIS.includes(
+          emoji as (typeof CATTY_ALLOWED_EMOJIS)[number],
+        )
+      ) {
+        return "";
+      }
+
+      allowedEmojiCount += 1;
+
+      return allowedEmojiCount <= 1 ? emoji : "";
+    })
+    .replace(/\ufe0f/g, "");
+}
+
 export function sanitizeCattyReply(text: string) {
-  const clean = text
-    .replace(/[\u2018\u2019]/g, "'")
-    .replace(/[\u201C\u201D]/g, '"')
-    .replace(/[\u2013\u2014]/g, "-")
-    .replace(/\u2026/g, "...")
-    .replace(/[\u2600-\u27bf]/g, "")
-    .replace(/[\ud800-\udbff][\udc00-\udfff]/g, "")
-    .replace(/[#*_`>]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+  const clean = limitCattyEmojis(
+    text
+      .replace(/[\u2018\u2019]/g, "'")
+      .replace(/[\u201C\u201D]/g, '"')
+      .replace(/[\u2013\u2014]/g, "-")
+      .replace(/\u2026/g, "...")
+      .replace(/[#*_`>]/g, "")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
 
   if (clean.length <= 700) {
     return clean;
