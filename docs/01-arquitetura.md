@@ -18,7 +18,7 @@ Camadas principais:
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
-- `src/lib/catty.ts`: personalidade, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
+- `src/lib/catty.ts`: personalidade, deteccao leve de intencao, plano de resposta, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
 - `src/lib/catty-history.ts`: persistencia limitada de historico recente da Catty por usuario e contexto de tela.
 - `src/lib/candy-xp.ts`: motor puro de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/candy-xp-persistence.ts`: ledger server-side do Candy XP, catalogo de badges/missoes, streaks e gravacao idempotente por `sourceKey`.

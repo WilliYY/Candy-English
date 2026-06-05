@@ -160,14 +160,16 @@ Helpers:
 8. Widget envia para `/api/catty/chat` apenas quando o usuario logado no AVA manda uma mensagem real: mensagem atual, historico local recente e contexto leve.
 9. A rota chama `auth()` antes de parsear a mensagem; sem sessao ativa e role `ADMIN`, `TEACHER` ou `STUDENT`, retorna 401 amigavel.
 10. Para usuario autorizado, a rota valida o payload com Zod, aplica limite simples por IP e usa as ultimas mensagens persistidas daquele usuario/contexto como contexto da IA.
-11. Somente as 8 mensagens recentes entram no prompt; a conversa armazenada e podada para no maximo 50 mensagens por contexto.
-12. A rota usa Gemini quando `GEMINI_API_KEY` existe.
-13. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
-14. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
-15. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
-16. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, e pode usar um emoji pequeno ocasional.
-17. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-18. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+11. Antes de chamar IA ou fallback, `src/lib/catty.ts` detecta uma intencao leve da mensagem, como corrigir frase, explicar palavra, dica de homework, pratica de ingles, ajuda no AVA, mensagem para teacher, motivacao, pergunta grande ou pergunta confusa.
+12. Essa intencao vira um pequeno plano de resposta usado tanto no prompt da IA quanto no fallback local; perguntas vagas devem pedir uma informacao especifica e perguntas grandes devem ser resumidas em partes.
+13. Somente as 8 mensagens recentes entram no prompt; a conversa armazenada e podada para no maximo 50 mensagens por contexto.
+14. A rota usa Gemini quando `GEMINI_API_KEY` existe.
+15. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
+16. Sem chave, erro de API ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+17. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
+18. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, e pode usar um emoji pequeno ocasional.
+19. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+20. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 

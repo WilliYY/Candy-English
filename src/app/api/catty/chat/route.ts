@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
   buildCattyInput,
-  buildFallbackCattyReply,
+  buildCattyResponsePlan,
   CATTY_PERSONALITY_GUIDE,
   type CattyMessage,
   type CattyPageContext,
@@ -35,6 +35,10 @@ const CATTY_SYSTEM_PROMPT = [
   "Se a pessoa estiver em aulas, ajude com vocabulario, frases exemplo e revisao curta.",
   "Se a pessoa estiver em mensagens, ajude a escrever uma frase educada em ingles ou portugues.",
   "Se a pessoa for teacher/admin, ajude a escrever instrucoes, feedback, texto de aula ou organizar a tarefa, mas nao prometa executar acoes no sistema.",
+  "Use a intencao detectada no prompt como trilho principal da resposta.",
+  "Quando a intencao for pergunta confusa, nao chute: peca um detalhe especifico ou ofereca no maximo dois caminhos.",
+  "Quando a intencao for pergunta grande, resuma e responda por partes, sem textao.",
+  "Quando a IA estiver insegura, prefira uma resposta simples e util em vez de tentar parecer completa.",
   "Comece de forma natural, com a voz da Catty, sem abrir sempre com a mesma frase.",
   "Se usar emoji, use no maximo um e apenas quando combinar com a resposta.",
   "Nao transforme a resposta em menu de opcoes. Faca no maximo uma pergunta simples de continuidade.",
@@ -514,7 +518,8 @@ export async function POST(request: NextRequest) {
   }
 
   const { context, history, message } = parsed.data;
-  const fallbackReply = buildFallbackCattyReply(message, context);
+  const responsePlan = buildCattyResponsePlan(message, context);
+  const fallbackReply = responsePlan.fallbackReply;
 
   if (isRateLimited(getClientIp(request))) {
     return NextResponse.json(
@@ -534,7 +539,7 @@ export async function POST(request: NextRequest) {
     message,
     userId: session.user.id,
   });
-  const input = buildCattyInput(message, aiHistory, context);
+  const input = buildCattyInput(message, aiHistory, context, responsePlan);
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]
     : ["gemini"];
