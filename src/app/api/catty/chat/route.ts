@@ -21,6 +21,10 @@ import {
   persistCattyExchange,
   type CattyStoredReplySource,
 } from "@/lib/catty-history";
+import {
+  getApprovedCattyLearningContext,
+  pickCattyLearningFallbackReply,
+} from "@/lib/catty-learning";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
@@ -622,6 +626,19 @@ async function persistCattyExchangeSafely(input: {
   }
 }
 
+async function getCattyLearningContextSafely(input: {
+  intent: CattyResponsePlan["intent"];
+  message: string;
+}) {
+  try {
+    return await getApprovedCattyLearningContext(input);
+  } catch {
+    console.warn("Catty learning context load failed.");
+
+    return [];
+  }
+}
+
 export async function GET(request: NextRequest) {
   const session = await auth();
 
@@ -749,13 +766,20 @@ export async function POST(request: NextRequest) {
     cattyHistory,
     sessionContext,
   );
-  const fallbackReply = responsePlan.fallbackReply;
+  const learningContext = await getCattyLearningContextSafely({
+    intent: responsePlan.intent,
+    message,
+  });
+  const fallbackReply =
+    pickCattyLearningFallbackReply(responsePlan, learningContext, message) ??
+    responsePlan.fallbackReply;
   const input = buildCattyInput(
     message,
     cattyHistory,
     context,
     responsePlan,
     sessionContext,
+    learningContext,
   );
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]

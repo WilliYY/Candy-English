@@ -10,6 +10,7 @@ import {
   CATTY_SIGNATURE_EXPRESSIONS,
   hasTooManyCattyCatchphrases,
 } from "../src/lib/catty-personality";
+import { pickCattyLearningFallbackReply } from "../src/lib/catty-learning";
 
 const expectedExampleCount = 15;
 const forbiddenGenericStarts = [
@@ -63,6 +64,7 @@ function assertPromptContext(input: string, id: string) {
     "Regra de roteamento interno",
     "Regra de homework",
     "Regra de escopo",
+    "Memoria aprovada da Catty",
     "Regra para ADMIN/TEACHER",
     "Conversa recente",
   ]) {
@@ -238,6 +240,46 @@ function main() {
   assertCondition(
     !sensitiveReply.includes("Ana"),
     "fallback usou nome em mensagem sensivel de senha.",
+  );
+
+  const learningPlan = buildCattyResponsePlan("corrige", {
+    area: "student",
+    task: "homework",
+  });
+  const learningContext = [
+    {
+      badReply: "Nao entendi sua pergunta.",
+      category: "IDEAL_REPLY" as const,
+      idealReply:
+        "Miauw, me manda a frase que voce quer corrigir. A Catty explica rapidinho.",
+      intent: "correct_sentence",
+      notes: "Usar tom curto quando o aluno pede correcao sem frase.",
+      tags: ["correcao"],
+      title: "Correcao sem frase",
+      userPrompt: "corrige",
+    },
+  ];
+  const promptWithLearning = buildCattyInput(
+    "corrige",
+    [],
+    { area: "student", task: "homework" },
+    learningPlan,
+    { firstName: "Ana", role: "STUDENT" },
+    learningContext,
+  );
+  const learnedFallback = pickCattyLearningFallbackReply(
+    learningPlan,
+    learningContext,
+    "corrige",
+  );
+
+  assertCondition(
+    promptWithLearning.includes("Correcao sem frase"),
+    "prompt nao incluiu memoria aprovada da Catty.",
+  );
+  assertCondition(
+    Boolean(learnedFallback?.includes("Miauw")),
+    "fallback nao aproveitou resposta ideal aprovada.",
   );
 
   console.log(

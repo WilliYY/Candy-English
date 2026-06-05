@@ -136,6 +136,27 @@ enum CattyReplySource {
   FALLBACK
 }
 
+enum CattyLearningCategory {
+  PERSONALITY_RULE
+  IDEAL_REPLY
+  BAD_REPLY
+  VOCABULARY
+  COMMON_QUESTION
+  HOMEWORK_EXAMPLE
+  TEACHER_GUIDANCE
+  STUDENT_GUIDANCE
+  CATTY_PHRASE
+  APPROVED_CORRECTION
+  CANDY_CONTEXT
+}
+
+enum CattyLearningStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
 model User {
   id                   String                @id @default(cuid())
   name                 String
@@ -163,6 +184,10 @@ model User {
   candyBadges          CandyUserBadge[]
   candyMissionAttempts CandyMissionAttempt[]
   cattyConversations   CattyConversation[]
+  createdCattyLearningItems CattyLearningItem[] @relation("CattyLearningItemCreatedBy")
+  approvedCattyLearningItems CattyLearningItem[] @relation("CattyLearningItemApprovedBy")
+  createdCattyLearningFeedbacks CattyLearningFeedback[] @relation("CattyLearningFeedbackCreatedBy")
+  reviewedCattyLearningFeedbacks CattyLearningFeedback[] @relation("CattyLearningFeedbackReviewedBy")
   sentChatMessages     ChatMessage[]
   uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
   createdAt            DateTime              @default(now())
@@ -794,6 +819,56 @@ model CattyMessage {
   createdAt      DateTime           @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+model CattyLearningItem {
+  id               String                @id @default(cuid())
+  title            String
+  category         CattyLearningCategory
+  intent           String?
+  userPrompt       String?
+  badReply         String?
+  idealReply       String?
+  notes            String?
+  tags             String[]              @default([])
+  status           CattyLearningStatus   @default(PENDING)
+  createdByUserId  String?
+  createdByUser    User?                 @relation("CattyLearningItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  approvedByUserId String?
+  approvedByUser   User?                 @relation("CattyLearningItemApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  approvedAt       DateTime?
+  feedbacks        CattyLearningFeedback[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([status, category])
+  @@index([intent])
+  @@index([createdByUserId])
+  @@index([approvedByUserId])
+  @@index([createdAt])
+}
+
+model CattyLearningFeedback {
+  id                String                 @id @default(cuid())
+  itemId            String?
+  item              CattyLearningItem?     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  note              String
+  suggestedTitle    String?
+  suggestedCategory CattyLearningCategory?
+  suggestedIntent   String?
+  status            CattyLearningStatus    @default(PENDING)
+  createdByUserId   String?
+  createdByUser     User?                  @relation("CattyLearningFeedbackCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedByUserId  String?
+  reviewedByUser    User?                  @relation("CattyLearningFeedbackReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedAt        DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([status, createdAt])
+  @@index([itemId])
+  @@index([createdByUserId])
+  @@index([reviewedByUserId])
 }
 
 model ChatThread {

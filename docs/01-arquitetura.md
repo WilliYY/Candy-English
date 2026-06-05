@@ -20,6 +20,7 @@ Camadas principais:
 - `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
 - `src/lib/catty-personality.ts`: identidade viva da Catty, bordoes, baloes, frases por situacao, regras de uso de emoji/bordao e guias de personalidade/escopo.
 - `src/lib/catty.ts`: deteccao leve de intencao, plano de resposta com historico recente, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
+- `src/lib/catty-learning.ts`: busca memoria aprovada do Catty Learning Center, formata contexto para Gemini/OpenAI e escolhe fallback aprendido apenas quando seguro.
 - `src/lib/catty-history.ts`: persistencia limitada de historico recente da Catty por usuario e contexto de tela.
 - `src/lib/candy-xp.ts`: motor puro de XP por role, com curva de nivel infinita, trilha visual e builders para admin, teacher e student.
 - `src/lib/candy-xp-persistence.ts`: ledger server-side do Candy XP, catalogo de badges/missoes, streaks e gravacao idempotente por `sourceKey`.
@@ -56,6 +57,7 @@ Servicos Docker:
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
 - Catty pode aparecer fora do AVA como chamada visual, mas a conversa real e `/api/catty/chat` exigem sessao ativa e role valida.
 - Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado, historico recente limitado, contexto leve de rota/tarefa e contexto seguro derivado no servidor, como role, primeiro nome seguro e nivel do aluno quando existir, sem email, id, senha, banco, contrato, pagamento ou informacoes internas do AVA.
+- Catty Learning Center aceita sugestoes de `ADMIN` e `TEACHER`, mas apenas `ADMIN` aprova memoria global usada pela Catty; dados sensiveis nao devem ser salvos como aprendizado.
 
 ## Decisoes tecnicas tomadas
 
@@ -81,6 +83,8 @@ Servicos Docker:
 - Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
 - Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback autorizado quando a chave ou chamada falhar.
 - Catty usa o contexto de `area`, `task`, role, primeiro nome seguro e nivel do aluno apenas para ajustar atalhos, historico recente, dificuldade do exemplo e tom da resposta, por exemplo homework, Candy XP, aulas, mensagens, teacher ou admin; o nome pode aparecer naturalmente em respostas seguras, mas nao em tema sensivel como senha, contrato, pagamento, documento, chave, token ou credencial.
+- Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`; itens nascem `PENDING`, teachers apenas sugerem e Admin pode aprovar, recusar, arquivar ou devolver para pendente.
+- Somente itens `CattyLearningItem.status=APPROVED` entram no contexto da Catty; a rota limita a poucos itens relevantes por intencao/mensagem e nao salva conversa inteira como conhecimento.
 - O prompt da Catty mescla historico persistido com historico local recente do widget, remove a mensagem atual duplicada, limita a 8 mensagens e cai para fallback por intencao quando a IA retorna vazio, cortado, generico, fora de tom ou inseguro para homework/pedido de resposta pronta/codigo/API/assunto fora do escopo; o plano diferencia correcao, traducao, explicacao de palavra, conversacao, homework, Candy XP, aula/material, mensagem para teacher, criacao de atividade para teacher, feedback para aluno, motivacao, ajuda no AVA, codigo/API, pergunta fora do tema, pergunta confusa e pergunta longa/misturada.
 - A identidade viva da Catty fica centralizada em `src/lib/catty-personality.ts`; a rota e o widget reutilizam os mesmos bordoes, baloes, emojis permitidos e regras, e respostas de IA com mais de um bordao ou emoji demais sao recusadas/sanitizadas para cair no fallback ou manter tom controlado.
 - O historico da Catty fica em `CattyConversation`/`CattyMessage`, e limitado a 50 mensagens por usuario/contexto; somente as 8 mais recentes entram no prompt para IA.
@@ -99,7 +103,7 @@ Servicos Docker:
 - Expor assets Candy XP fora de rota protegida pode vazar historias publicadas apenas para alunos especificos.
 - Otimizar PDF de forma agressiva pode prejudicar leitura; o preset padrao deve continuar equilibrado e o fallback precisa preservar o original quando houver falha.
 - Alterar `Permissions-Policy` pode quebrar camera/microfone do Jitsi.
-- Remover protecao de sessao, fallback, limite de uso, poda de historico ou restricao de contexto da Catty pode transformar a assistente em chat publico, quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
+- Remover protecao de sessao, fallback, limite de uso, poda de historico, aprovacao do Learning Center ou restricao de contexto da Catty pode transformar a assistente em chat publico, quebrar ambientes sem chave Gemini/OpenAI, aumentar custo em producao ou vazar dados desnecessarios.
 - Trocar `ADMIN_CREDENTIALS_SECRET` depois de salvar credenciais pode impedir a descriptografia dos registros antigos.
 - Transformar uma solicitacao `StudentPreRegistration` em usuario automaticamente sem revisao admin quebraria o controle de entrada no AVA.
 

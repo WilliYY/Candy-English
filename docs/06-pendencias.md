@@ -27,7 +27,7 @@ As pendencias podem afetar:
 - Editor ou visualizador Word embutido.
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.
-- Base de conhecimento propria/RAG para Catty responder sobre conteudos internos da Candy sem depender apenas da conversa digitada.
+- RAG/base automatica ampla para Catty responder sobre conteudos internos da Candy; hoje existe apenas Catty Learning Center com aprendizado sugerido e aprovado manualmente.
 - Minijogos executaveis de vocabulario/listening/speaking; hoje existem cards/roadmaps Candy XP persistentes e atividades de historia com PDF/perguntas em `/ava/student?task=candy-xp`, mas nao jogos em tempo real.
 - Tela completa de missoes, badges, streaks, temporadas e historico de XP fora do card compacto.
 - Edicao completa das perguntas Candy XP apos a atividade criada.
@@ -73,13 +73,13 @@ As pendencias podem afetar:
 - O projeto prioriza MVP operacional e seguro em vez de dashboard grande.
 - Materiais podem usar links externos; upload livre fica para fase futura.
 - Aula ao vivo usa Jitsi por enquanto.
-- Catty responde apenas para usuario logado no AVA; usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local autorizado quando chaves/chamadas falham; possui contexto leve de tela/tarefa e historico recente persistente limitado, mas ainda nao possui base de conhecimento propria/RAG.
+- Catty responde apenas para usuario logado no AVA; usa Gemini quando `GEMINI_API_KEY` esta configurada, OpenAI apenas quando a mensagem chama Catty pelo nome e `OPENAI_API_KEY` existe, e fallback local autorizado quando chaves/chamadas falham; possui contexto leve de tela/tarefa, historico recente persistente limitado e Catty Learning Center com memoria aprovada manualmente, mas ainda nao possui RAG automatico amplo.
 
 ## Riscos ao alterar esta parte
 
 - Implementar pendencias grandes sem decompor pode gerar regressao no AVA.
 - Confundir pendencia com funcionalidade existente pode criar documentacao falsa.
-- Adicionar integracao externa sem plano de seguranca pode expor dados ou custos; a Catty deve continuar limitada ao texto digitado no widget e ao contexto leve de rota/tarefa.
+- Adicionar integracao externa sem plano de seguranca pode expor dados ou custos; a Catty deve continuar limitada ao texto digitado no widget, ao contexto leve de rota/tarefa e a memorias aprovadas sem dados sensiveis.
 - Transformar o cofre admin em exposicao automatica de segredos aumenta risco operacional; manter revelacao manual, role `ADMIN` e sem logs do valor em claro.
 
 ## Como pode evoluir

@@ -1,6 +1,7 @@
 import {
   CalendarCheck2,
   CalendarDays,
+  BrainCircuit,
   FileText,
   GraduationCap,
   HardDrive,
@@ -32,6 +33,10 @@ import {
   AdminCredentialsPanel,
   type AdminCredentialRow,
 } from "@/components/ava/admin-credentials-panel";
+import {
+  CattyLearningCenterPanel,
+  type CattyLearningItemRow,
+} from "@/components/ava/catty-learning-center-panel";
 import {
   AdminFinancePanel,
   type AdminFinanceLogRow,
@@ -73,6 +78,7 @@ export const adminTaskIds = [
   "financeiro",
   "agenda",
   "apis-senhas",
+  "catty-learning",
   "editar-site",
 ] as const;
 
@@ -141,6 +147,7 @@ type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
   candyXpActivities: AdminCandyXpActivityRow[];
+  cattyLearningItems: CattyLearningItemRow[];
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   agendaLessons: AdminAgendaLessonRow[];
   agendaLogs: AdminAgendaLogRow[];
@@ -227,6 +234,10 @@ const taskMeta = {
   "candy-xp": {
     icon: Sparkles,
     title: "Candy XP",
+  },
+  "catty-learning": {
+    icon: BrainCircuit,
+    title: "Catty Learning Center",
   },
   "editar-site": {
     icon: Wrench,
@@ -560,6 +571,7 @@ export function AdminUsersPanel({
   activeTask,
   adminCredentials,
   candyXpActivities,
+  cattyLearningItems,
   candyXpPersistence,
   agendaLessons,
   agendaLogs,
@@ -812,6 +824,13 @@ export function AdminUsersPanel({
 
           {activeTask === "apis-senhas" ? (
             <AdminCredentialsPanel credentials={adminCredentials} />
+          ) : null}
+
+          {activeTask === "catty-learning" ? (
+            <CattyLearningCenterPanel
+              items={cattyLearningItems}
+              viewerRole="ADMIN"
+            />
           ) : null}
 
           {activeTask === "editar-site" ? (

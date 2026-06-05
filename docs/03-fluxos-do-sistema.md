@@ -33,6 +33,7 @@ Componentes:
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/student-xp-card.tsx`
 - `src/components/ava/admin-candy-xp-panel.tsx`
+- `src/components/ava/catty-learning-center-panel.tsx`
 - `src/components/ava/student-candy-xp-activities-panel.tsx`
 - `src/components/ava/student-pre-registration-review-panel.tsx`
 - `src/components/ava/chat-thread-panel.tsx`
@@ -49,11 +50,13 @@ Actions:
 - `src/app/ava/teacher/actions.ts`
 - `src/app/ava/student/actions.ts`
 - `src/app/ava/candy-xp/actions.ts`
+- `src/app/ava/catty-learning/actions.ts`
 - `src/app/ava/actions.ts`
 
 Helpers:
 
 - `src/lib/catty.ts`
+- `src/lib/catty-learning.ts`
 - `src/lib/catty-personality.ts`
 - `src/lib/catty-examples.ts`
 - `src/lib/catty-history.ts`
@@ -88,7 +91,8 @@ Helpers:
 3. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro.
 5. Admin revisa pre-cadastros em `Aceitar alunos`, com filtros por pendente, em analise, convertido e recusado.
-6. Admin tambem tem atalhos para tarefas da area teacher.
+6. Admin aprova, recusa ou arquiva memorias do Catty Learning Center em `Catty Learning`.
+7. Admin tambem tem atalhos para tarefas da area teacher.
 
 ### APIs e senhas
 
@@ -107,6 +111,7 @@ Helpers:
 5. Corrige respostas e envia feedback.
 6. Pode abrir aula ao vivo e mensagens.
 7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos` e aceitar interessados como alunos `STUDENT` vinculados a sua teacher.
+8. Pode sugerir aprendizados no `Catty Learning`, mas nao aprova memoria global.
 
 ### Student
 
@@ -170,11 +175,13 @@ Helpers:
 16. Se a mensagem chama Catty pelo nome, incluindo `Catty`, `catty` ou `/catty`, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
 17. Sem chave, erro de API, resposta vazia, resposta cortada, resposta generica demais, resposta fora da personalidade ou resposta especializada indevida fora do escopo Candy English, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
 18. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
-19. A identidade viva fica em `src/lib/catty-personality.ts`: `CATTY_PERSONALITY_GUIDE`, `CATTY_PERSONALITY_USAGE_RULES` e `CATTY_SCOPE_GUIDE` formam `CATTY_BRAIN_RULES`; Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya`, `Catty mode on` e `Bora estudar`, pode usar humor/meme leve e ate dois emojis permitidos quando combinar, mas nao responde como especialista generica fora do estudo de ingles/AVA.
-20. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-21. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
-22. Os baloes publicos/logados, respostas de bloqueio, abertura inicial e frases por situacao tambem saem de `src/lib/catty-personality.ts`, para evitar voz duplicada entre widget, prompt e fallback.
-23. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback, o uso de no maximo um bordao, o limite de emojis, a personalizacao por primeiro nome seguro e o gatilho OpenAI/Gemini continuam alinhados.
+19. A rota busca em `CattyLearningItem` somente itens `APPROVED`, escolhe poucos aprendizados relevantes por intencao/mensagem e adiciona esse resumo ao prompt como memoria aprovada, sem conversa inteira.
+20. Se Gemini/OpenAI falharem, o fallback local pode usar uma resposta ideal aprovada do Learning Center apenas quando a intencao combina e a resposta passa pelos filtros de seguranca.
+21. A identidade viva fica em `src/lib/catty-personality.ts`: `CATTY_PERSONALITY_GUIDE`, `CATTY_PERSONALITY_USAGE_RULES` e `CATTY_SCOPE_GUIDE` formam `CATTY_BRAIN_RULES`; Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya`, `Catty mode on` e `Bora estudar`, pode usar humor/meme leve e ate dois emojis permitidos quando combinar, mas nao responde como especialista generica fora do estudo de ingles/AVA.
+22. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+23. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+24. Os baloes publicos/logados, respostas de bloqueio, abertura inicial e frases por situacao tambem saem de `src/lib/catty-personality.ts`, para evitar voz duplicada entre widget, prompt e fallback.
+25. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback, o uso de no maximo um bordao, o limite de emojis, a personalizacao por primeiro nome seguro, memoria aprovada e o gatilho OpenAI/Gemini continuam alinhados.
 
 ### Aula ao vivo
 
@@ -266,6 +273,7 @@ Helpers:
 - Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
 - Catty nao deve responder como especialista generica em receita, codigo, API tecnica, financas, saude, direito ou temas aleatorios; quando o assunto foge do ingles/AVA, ela deve transformar em vocabulario, frase curta ou conversacao em ingles.
 - Catty pode usar `area` e `task` da URL para orientar atalhos, historico recente e linguagem, e pode usar role, primeiro nome e nivel do aluno derivados no servidor apenas como contexto seguro; o nome nao deve aparecer em assunto sensivel e a Catty nao pode responder usuario sem sessao valida nem receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
+- Catty Learning Center nunca deve aprender automaticamente com qualquer usuario; Teacher/Admin sugerem, apenas Admin aprova, e itens com dados sensiveis devem ser recusados.
 - APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
@@ -280,6 +288,7 @@ Helpers:
 - Agenda usa ocorrencias por data para facilitar presenca e reposicao.
 - Homework e aula interativa usam arquivo protegido, renderizacao fiel do PDF/imagem e campos percentuais desenhados manualmente por pagina.
 - Catty usa IA opcional via rota server-side protegida por `auth()`, mantendo fallback local apenas para usuario autorizado em ambientes sem `GEMINI_API_KEY`/`OPENAI_API_KEY`, com atalhos de estudo, resposta contextual por tela e historico recente limitado por usuario.
+- Catty Learning Center adiciona memoria aprovada e curta ao prompt/fallback sem virar RAG automatico nem coletar conversa inteira.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
 - Atividades Candy XP usam modelos proprios para historia/PDF/perguntas/progresso e reaproveitam o ledger Candy XP para pontuar conclusoes.
@@ -291,7 +300,7 @@ Helpers:
 - Mostrar mais de uma tarefa grande por tela pode poluir o AVA.
 - Remover validacao server-side pode vazar dados.
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
-- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget, historico recente da propria Catty, contexto leve de `area`/`task` e contexto seguro minimo de role, primeiro nome e nivel do aluno, sem usar nome em senha, contrato, pagamento, documento, chave, token ou credencial.
+- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget, historico recente da propria Catty, contexto leve de `area`/`task`, memoria aprovada sem dados sensiveis e contexto seguro minimo de role, primeiro nome e nivel do aluno, sem usar nome em senha, contrato, pagamento, documento, chave, token ou credencial.
 - Revelar credenciais na tela deve ser uma acao consciente do admin; nao adicionar exibicao automatica nem logs do valor em claro.
 - Alterar resposta correta de atividade Candy XP publicada pode mudar o criterio de novas tentativas; manter cuidado com atividades ja respondidas.
 

@@ -13,6 +13,7 @@ import {
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
+import type { CattyLearningIntentInput } from "@/lib/validations/catty-learning";
 import { studentPreRegistrationStatusSchema } from "@/lib/validations/pre-registration";
 
 export const metadata: Metadata = {
@@ -105,6 +106,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     liveSessions,
     contracts,
     chatThreads,
+    cattyLearningItems,
     studentPreRegistrations,
     studentPreRegistrationStatusCounts,
   ] = await Promise.all([
@@ -434,6 +436,50 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         teacherProfileId: true,
       },
     }),
+    prisma.cattyLearningItem.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        approvedAt: true,
+        approvedByUser: {
+          select: {
+            name: true,
+          },
+        },
+        badReply: true,
+        category: true,
+        createdAt: true,
+        createdByUser: {
+          select: {
+            name: true,
+          },
+        },
+        createdByUserId: true,
+        id: true,
+        idealReply: true,
+        intent: true,
+        notes: true,
+        status: true,
+        tags: true,
+        title: true,
+        userPrompt: true,
+      },
+      take: 80,
+      where:
+        session.user.role === "TEACHER"
+          ? {
+              OR: [
+                {
+                  status: "APPROVED",
+                },
+                {
+                  createdByUserId: session.user.id,
+                },
+              ],
+            }
+          : {},
+    }),
     prisma.studentPreRegistration.findMany({
       where: {
         status: preRegistrationStatus,
@@ -549,6 +595,22 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     <TeacherWorkspace
       activeTask={activeTask}
       candyXpPersistence={candyXpPersistence}
+      cattyLearningItems={cattyLearningItems.map((item) => ({
+        approvedAt: item.approvedAt?.toISOString() ?? null,
+        approvedByName: item.approvedByUser?.name ?? null,
+        badReply: item.badReply,
+        category: item.category,
+        createdAt: item.createdAt.toISOString(),
+        createdByName: item.createdByUser?.name ?? null,
+        id: item.id,
+        idealReply: item.idealReply,
+        intent: item.intent as CattyLearningIntentInput | null,
+        notes: item.notes,
+        status: item.status,
+        tags: item.tags,
+        title: item.title,
+        userPrompt: item.userPrompt,
+      }))}
       chatThreads={chatThreads.map((thread) => ({
         id: thread.id,
         messages: thread.messages.map((message) => ({

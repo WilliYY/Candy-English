@@ -62,7 +62,7 @@ Rotas principais:
 - Homework e aula interativa usam editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
 - Candy XP usa `src/lib/candy-xp.ts` para calcular nivel infinito/progresso e `src/lib/candy-xp-persistence.ts` para gravar eventos, streaks, badges e missoes com `sourceKey` anti-duplicacao.
 - Candy XP Atividades usa modelos proprios para historia, perguntas, liberacao por aluno e progresso, mas reaproveita o ledger de XP existente.
-- Catty responde apenas para usuarios autenticados do AVA; usa Gemini pelo servidor como provedor padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado quando as chaves/chamadas falham e historico recente persistente por usuario/contexto.
+- Catty responde apenas para usuarios autenticados do AVA; usa Gemini pelo servidor como provedor padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado quando as chaves/chamadas falham, historico recente persistente por usuario/contexto e memoria aprovada do Catty Learning Center.
 - O cofre admin importa apenas integracoes externas do `.env` quando existem; segredos internos de banco, Auth e seed nao entram na tela.
 
 ## Mapa da documentacao oficial

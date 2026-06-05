@@ -177,6 +177,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/catty-personality.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `src/lib/catty-examples.ts`, `scripts/catty-behavior-smoke.ts`, `README.md`, `docs/01-arquitetura.md`, `docs/03-fluxos-do-sistema.md`, `docs/catty-comportamento.md` e `docs/99-contexto-rapido-codex.md`.
 - Riscos/cuidados: nao usar nome em tema sensivel como senha, contrato, pagamento, documento, chave, token ou credencial; manter OpenAI somente quando a mensagem chama Catty; manter baloes automaticos locais sem IA.
 
+### 2026-06-05 - Catty Learning Center com aprovacao humana
+
+- Decisao: criar `CattyLearningItem` e `CattyLearningFeedback` para memoria controlada da Catty; teachers e admins podem sugerir, mas apenas admin aprova memoria global usada no prompt/fallback.
+- Motivo: permitir que a Catty melhore com exemplos, vocabulario, respostas ideais e regras da Candy sem aprender automaticamente qualquer coisa enviada por usuarios.
+- Impacto: `prisma/schema.prisma`, migration `20260605210000_catty_learning_center`, `src/app/ava/catty-learning/actions.ts`, `src/components/ava/catty-learning-center-panel.tsx`, paginas admin/teacher, `src/lib/catty-learning.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, menu do AVA, smoke da Catty e docs oficiais.
+- Riscos/cuidados: nao aprovar memoria com senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados; manter poucos itens no prompt; nao transformar isso em RAG automatico sem nova decisao.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

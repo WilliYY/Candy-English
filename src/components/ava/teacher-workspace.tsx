@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  BrainCircuit,
   CalendarDays,
   ClipboardCheck,
   FileText,
@@ -39,6 +40,10 @@ import {
   type PreRegistrationStatus,
   type StudentPreRegistrationReviewRow,
 } from "@/components/ava/student-pre-registration-review-panel";
+import {
+  CattyLearningCenterPanel,
+  type CattyLearningItemRow,
+} from "@/components/ava/catty-learning-center-panel";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +61,7 @@ export const teacherTaskIds = [
   "criar-homework",
   "aulas",
   "aceitar-alunos",
+  "catty-learning",
   "mensagens",
   "corrigir-respostas",
   "contratos",
@@ -196,6 +202,7 @@ type ContractRow = {
 type TeacherWorkspaceProps = {
   activeTask: TeacherTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  cattyLearningItems: CattyLearningItemRow[];
   chatThreads: ChatThreadRow[];
   currentUser: {
     address?: string | null;
@@ -238,6 +245,11 @@ const taskMeta = {
     description: "Revise interessados e crie contas STUDENT liberadas.",
     icon: UserCheck,
     title: "Aceitar alunos",
+  },
+  "catty-learning": {
+    description: "Sugira exemplos e regras para a memoria aprovada da Catty.",
+    icon: BrainCircuit,
+    title: "Catty Learning Center",
   },
   contratos: {
     description: "Envie e visualize contratos PDF de alunos.",
@@ -301,6 +313,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 export function TeacherWorkspace({
   activeTask,
   candyXpPersistence,
+  cattyLearningItems,
   chatThreads,
   currentUser,
   contracts,
@@ -621,6 +634,13 @@ export function TeacherWorkspace({
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
               viewerRole="TEACHER"
+            />
+          ) : null}
+
+          {activeTask === "catty-learning" ? (
+            <CattyLearningCenterPanel
+              items={cattyLearningItems}
+              viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
             />
           ) : null}
 

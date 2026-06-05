@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import {
   BookOpen,
+  BrainCircuit,
   CalendarCheck2,
   ChevronDown,
   ClipboardCheck,
@@ -142,6 +143,12 @@ const navGroups = [
         section: "Sistema",
       },
       {
+        href: "/ava/admin?task=catty-learning",
+        icon: BrainCircuit,
+        label: "Catty Learning",
+        section: "Sistema",
+      },
+      {
         href: "/ava/admin?task=editar-site",
         icon: PencilLine,
         label: "Manutencao",
@@ -189,6 +196,12 @@ const navGroups = [
         href: "/ava/teacher?task=mensagens",
         icon: MessageSquareText,
         label: "Mensagens",
+        section: "Comunicacao",
+      },
+      {
+        href: "/ava/teacher?task=catty-learning",
+        icon: BrainCircuit,
+        label: "Catty Learning",
         section: "Comunicacao",
       },
       {

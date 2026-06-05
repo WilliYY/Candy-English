@@ -1,4 +1,5 @@
 import { CATTY_ALLOWED_EMOJIS } from "./catty-personality";
+import type { CattyLearningPromptItem } from "@/lib/catty-learning";
 
 export {
   CATTY_ALLOWED_EMOJIS,
@@ -1918,12 +1919,41 @@ function getSafeSessionContextLine(sessionContext?: CattySessionContext) {
   return parts.join("; ");
 }
 
+function getCattyLearningPromptLine(items: CattyLearningPromptItem[]) {
+  if (items.length === 0) {
+    return "Sem memoria aprovada relevante.";
+  }
+
+  return items
+    .map((item, index) => {
+      const parts = [
+        `${index + 1}. ${sanitizeContextText(item.title, 90)} (${item.category}${item.intent ? `, ${sanitizeContextText(item.intent, 40)}` : ""})`,
+        item.userPrompt
+          ? `pergunta: ${sanitizeContextText(item.userPrompt, 160)}`
+          : null,
+        item.badReply ? `evitar: ${sanitizeContextText(item.badReply, 160)}` : null,
+        item.idealReply
+          ? `resposta ideal: ${sanitizeContextText(item.idealReply, 220)}`
+          : null,
+        item.notes ? `observacao: ${sanitizeContextText(item.notes, 220)}` : null,
+        item.tags.length > 0
+          ? `tags: ${item.tags.map((tag) => sanitizeContextText(tag, 32)).join(", ")}`
+          : null,
+      ].filter(Boolean);
+
+      return parts.join("; ");
+    })
+    .join("\n")
+    .slice(0, 1800);
+}
+
 export function buildCattyInput(
   message: string,
   history: CattyMessage[],
   context?: CattyPageContext,
   plan = buildCattyResponsePlan(message, context, history),
   sessionContext?: CattySessionContext,
+  learningContext: CattyLearningPromptItem[] = [],
 ) {
   const safeHistory = history
     .slice(-8)
@@ -1953,10 +1983,13 @@ export function buildCattyInput(
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",
     "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
+    "Regra de memoria aprovada: use a memoria do Catty Learning Center apenas como guia de estilo, exemplo ou vocabulario; nao trate como dado interno do aluno e nao invente informacoes.",
     "Regra para ADMIN/TEACHER: pode ajudar com instrucao, atividade, exemplo e feedback um pouco mais completo, mas sem textao, lista gigante ou prometer executar acoes.",
     "Use nome, role e nivel apenas para ajustar tom e exemplo. Nao invente dados do AVA.",
     "Se a mensagem estiver vaga ou confusa, peca uma informacao especifica em vez de inventar.",
     "Se a mensagem for grande, responda por partes e escolha apenas o proximo passo mais util.",
+    "Memoria aprovada da Catty:",
+    getCattyLearningPromptLine(learningContext),
     "Conversa recente:",
     lines.length > 0 ? lines.join("\n") : "Sem historico anterior.",
     `Mensagem atual do aluno: ${sanitizeHistoryText(message)}`,
