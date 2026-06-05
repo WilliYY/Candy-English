@@ -50,6 +50,8 @@ Tabelas:
 - `CattyUserMemory`
 - `CattyMemoryEvent`
 - `CattyUserArtifact`
+- `CattyArtifactEnrichmentCache`
+- `CattyArtifactEnrichment`
 - `CandyXpProfile`
 - `CandyXpEvent`
 - `CandyUserBadge`
@@ -112,6 +114,9 @@ Rotas protegidas:
 - `CattyUserArtifact` e estilo configuravel por usuario: `ADMIN` gerencia todos os alunos, `TEACHER` somente alunos vinculados e `STUDENT` somente o proprio usuario, podendo sugerir tema ou pedir para nao usar. Somente `ACTIVE` entra na rota da Catty; `PENDING`, `DISABLED` e `ARCHIVED` ficam fora do prompt/fallback.
 - Actions de `Estilo da Catty` chamam `auth()`, validam role, dono/vinculo e Zod no servidor; elas bloqueiam senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API e temas sensiveis antes de gravar.
 - Quando um artefato fica `ACTIVE`, a action pode sincronizar uma memoria segura `FAVORITE_THEME/artifact_*`; quando fica `DISABLED`, sincroniza `STYLE/avoid_*` para a Catty respeitar o pedido de parar de usar aquele tema.
+- Enriquecimento de artefato em `Estilo da Catty` e permitido apenas para `ADMIN` ou `TEACHER`; `STUDENT` pode sugerir tema, mas nao aciona busca/crawler/cache nem aprova sugestao.
+- `ADMIN` pode enriquecer/aprovar/recusar/arquivar sugestoes de qualquer aluno; `TEACHER` so pode fazer isso para alunos vinculados por `StudentTeacherAssignment`; a validacao acontece em server action e helper, nao apenas na UI.
+- Sugestoes de `CattyArtifactEnrichment` com status pendente, falho, recusado ou arquivado nunca entram no prompt/fallback da Catty; somente uma aprovacao humana cria/atualiza `CattyUserArtifact.ACTIVE`.
 - Senha, pagamento, contrato, API key, telefone e dados privados devem ser bloqueados pela validacao de feedback, aprendizado manual e auto-sugestao.
 
 ## Decisoes tecnicas tomadas
@@ -136,6 +141,7 @@ Rotas protegidas:
 - Actions do Catty Learning Center chamam `auth()`, validam role e usam Zod para impedir feedback/aprendizados com termos sensiveis antes de gravar ou aprovar memoria.
 - Actions de memoria pessoal da Catty chamam `auth()`, validam role, dono do dado e vinculo teacher/aluno antes de salvar, corrigir, aprovar, arquivar, remover dado sensivel, limpar historico ou marcar memoria como flagged.
 - Actions de artefatos da Catty chamam `auth()`, validam role, dono do dado e vinculo teacher/aluno antes de salvar, ativar, desativar ou arquivar tema; `STUDENT` nao consegue aprovar tema como `ACTIVE`.
+- Actions de enriquecimento de artefatos da Catty chamam `auth()`, bloqueiam `STUDENT`, validam dono/vinculo, usam Zod e bloqueiam tema sensivel antes de consultar cache ou provedor externo.
 - A criacao direta de aluno pelo Admin e o aceite de pre-cadastro por Admin/Teacher podem semear a memoria pessoal inicial `NOTE/contexto_catty` usando `upsertCattyUserMemory`, sem criar novo campo sensivel em `User` ou `StudentProfile`.
 - O envio de feedback da Catty valida que o `CattyMessage` avaliado pertence ao proprio usuario logado; Teacher/Admin revisam pela fila protegida, com filtro de vinculo para Teacher.
 
@@ -157,6 +163,7 @@ Rotas protegidas:
 - Expor todos os feedbacks da Catty para Teacher sem validar vinculo pode vazar conversa de aluno; manter o filtro por `StudentTeacherAssignment`.
 - Expor memoria pessoal da Catty sem filtro por `userId` ou sem validar vinculo teacher/aluno pode vazar interesses, dificuldades e observacoes pedagogicas leves entre usuarios.
 - Expor `CattyUserArtifact` sem filtro de dono/vinculo pode revelar gostos e preferencias de aluno; manter sempre filtro por Admin, Teacher vinculada ou proprio Student.
+- Permitir enriquecimento externo por Student ou sem validar vinculo teacher/aluno pode gerar custo, vazar preferencias e ativar temas sem revisao; manter busca apenas em fluxo Admin/Teacher protegido.
 
 ## Pendencias
 

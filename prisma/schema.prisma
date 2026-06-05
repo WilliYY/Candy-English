@@ -196,6 +196,15 @@ enum CattyUserArtifactStatus {
   ARCHIVED
 }
 
+enum CattyArtifactEnrichmentStatus {
+  PENDING
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+  FAILED
+  ARCHIVED
+}
+
 model User {
   id                   String                @id @default(cuid())
   name                 String
@@ -234,6 +243,9 @@ model User {
   cattyUserArtifacts   CattyUserArtifact[]  @relation("CattyUserArtifactUser")
   createdCattyUserArtifacts CattyUserArtifact[] @relation("CattyUserArtifactCreatedBy")
   updatedCattyUserArtifacts CattyUserArtifact[] @relation("CattyUserArtifactUpdatedBy")
+  cattyArtifactEnrichmentTargets CattyArtifactEnrichment[] @relation("CattyArtifactEnrichmentTargetUser")
+  createdCattyArtifactEnrichments CattyArtifactEnrichment[] @relation("CattyArtifactEnrichmentCreatedBy")
+  reviewedCattyArtifactEnrichments CattyArtifactEnrichment[] @relation("CattyArtifactEnrichmentReviewedBy")
   sentChatMessages     ChatMessage[]
   uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
   createdAt            DateTime              @default(now())
@@ -995,6 +1007,7 @@ model CattyUserArtifact {
   createdByUser   User?                     @relation("CattyUserArtifactCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   updatedByUserId String?
   updatedByUser   User?                     @relation("CattyUserArtifactUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  enrichments      CattyArtifactEnrichment[]
   lastUsedAt      DateTime?
   usageCount      Int                       @default(0)
   createdAt       DateTime                  @default(now())
@@ -1004,6 +1017,72 @@ model CattyUserArtifact {
   @@index([userId, status])
   @@index([createdByUserId])
   @@index([updatedByUserId])
+  @@index([status, updatedAt])
+}
+
+model CattyArtifactEnrichmentCache {
+  id                    String                    @id @default(cuid())
+  cacheKey              String                    @unique
+  themeId               String
+  label                 String
+  provider              String                    @default("offline")
+  query                 String
+  safeSummary           String?
+  suggestedEmojis       String[]                  @default([])
+  suggestedSounds       String[]                  @default([])
+  suggestedCatchphrases String[]                  @default([])
+  suggestedExamples     String[]                  @default([])
+  suggestedVocabulary   Json?
+  suggestedBalloons     String[]                  @default([])
+  cautions              String[]                  @default([])
+  sources               Json?
+  enrichments           CattyArtifactEnrichment[]
+  expiresAt             DateTime?
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@index([themeId])
+  @@index([updatedAt])
+  @@index([expiresAt])
+}
+
+model CattyArtifactEnrichment {
+  id                    String                         @id @default(cuid())
+  status                CattyArtifactEnrichmentStatus  @default(PENDING)
+  targetUserId          String?
+  targetUser            User?                          @relation("CattyArtifactEnrichmentTargetUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+  artifactId            String?
+  artifact              CattyUserArtifact?             @relation(fields: [artifactId], references: [id], onDelete: SetNull)
+  cacheId               String?
+  cache                 CattyArtifactEnrichmentCache?  @relation(fields: [cacheId], references: [id], onDelete: SetNull)
+  themeId               String
+  label                 String
+  provider              String                         @default("offline")
+  query                 String?
+  safeSummary           String?
+  suggestedEmojis       String[]                       @default([])
+  suggestedSounds       String[]                       @default([])
+  suggestedCatchphrases String[]                       @default([])
+  suggestedExamples     String[]                       @default([])
+  suggestedVocabulary   Json?
+  suggestedBalloons     String[]                       @default([])
+  cautions              String[]                       @default([])
+  sources               Json?
+  failureReason         String?
+  createdByUserId       String?
+  createdByUser         User?                          @relation("CattyArtifactEnrichmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedByUserId      String?
+  reviewedByUser        User?                          @relation("CattyArtifactEnrichmentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedAt            DateTime?
+  createdAt             DateTime                       @default(now())
+  updatedAt             DateTime                       @updatedAt
+
+  @@index([targetUserId, status])
+  @@index([themeId, status])
+  @@index([artifactId])
+  @@index([cacheId])
+  @@index([createdByUserId])
+  @@index([reviewedByUserId])
   @@index([status, updatedAt])
 }
 

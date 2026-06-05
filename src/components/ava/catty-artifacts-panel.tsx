@@ -14,6 +14,9 @@ import {
 import { type FormEvent, useMemo, useState, useTransition } from "react";
 import {
   changeCattyUserArtifactStatus,
+  approveCattyArtifactSuggestion,
+  changeCattyArtifactEnrichmentStatus,
+  enrichCattyArtifactTheme,
   saveCattyUserArtifact,
 } from "@/app/ava/catty-artifacts/actions";
 import { Button } from "@/components/ui/button";
@@ -26,6 +29,8 @@ import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import {
   cattyUserArtifactStatusValues,
+  type CattyArtifactEnrichmentReviewInput,
+  type CattyArtifactEnrichmentStatusInput,
   type CattyUserArtifactStatusInput,
   type CattyUserArtifactUpsertInput,
 } from "@/lib/validations/catty-artifacts";
@@ -48,6 +53,24 @@ const statusStyles = {
   DISABLED: "border-rose-200 bg-rose-50 text-rose-700",
   PENDING: "border-amber-200 bg-amber-50 text-amber-700",
 } satisfies Record<CattyUserArtifactStatusInput, string>;
+
+const enrichmentStatusLabels = {
+  APPROVED: "Aprovada",
+  ARCHIVED: "Arquivada",
+  FAILED: "Com aviso",
+  PENDING: "Na fila",
+  READY_FOR_REVIEW: "Revisar",
+  REJECTED: "Recusada",
+} satisfies Record<CattyArtifactEnrichmentStatusInput, string>;
+
+const enrichmentStatusStyles = {
+  APPROVED: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  ARCHIVED: "border-slate-200 bg-slate-50 text-slate-600",
+  FAILED: "border-amber-200 bg-amber-50 text-amber-800",
+  PENDING: "border-sky-200 bg-sky-50 text-sky-700",
+  READY_FOR_REVIEW: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
+  REJECTED: "border-rose-200 bg-rose-50 text-rose-700",
+} satisfies Record<CattyArtifactEnrichmentStatusInput, string>;
 
 const alertStyles = {
   danger: "border-rose-200 bg-rose-50 text-rose-800",
@@ -112,6 +135,15 @@ export function CattyArtifactsPanel({
         : data.recentUsages.filter((usage) => usage.userId === userFilter),
     [data.recentUsages, userFilter],
   );
+  const filteredEnrichments = useMemo(
+    () =>
+      userFilter === "ALL"
+        ? data.enrichments
+        : data.enrichments.filter(
+            (enrichment) => enrichment.targetUserId === userFilter,
+          ),
+    [data.enrichments, userFilter],
+  );
   const selectedUser =
     userFilter === "ALL"
       ? null
@@ -146,6 +178,16 @@ export function CattyArtifactsPanel({
     };
   }
 
+  function buildReviewInput(
+    formData: FormData,
+  ): CattyArtifactEnrichmentReviewInput {
+    return {
+      ...buildInput(formData),
+      enrichmentId: getText(formData, "enrichmentId"),
+      status: "ACTIVE",
+    };
+  }
+
   function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
@@ -159,6 +201,21 @@ export function CattyArtifactsPanel({
       if (result.ok) {
         form.reset();
       }
+    });
+  }
+
+  function handleEnrich(form: HTMLFormElement, forceRefresh = false) {
+    const formData = new FormData(form);
+
+    startTransition(async () => {
+      const result = await enrichCattyArtifactTheme({
+        forceRefresh,
+        label: getText(formData, "label"),
+        targetUserId: getText(formData, "targetUserId"),
+        themeId: getText(formData, "themeId"),
+      });
+
+      setMessage(result.message);
     });
   }
 
@@ -182,6 +239,33 @@ export function CattyArtifactsPanel({
       const result = await changeCattyUserArtifactStatus({
         artifactId,
         blockedReason,
+        status,
+      });
+
+      setMessage(result.message);
+    });
+  }
+
+  function handleApproveEnrichment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startTransition(async () => {
+      const result = await approveCattyArtifactSuggestion(
+        buildReviewInput(formData),
+      );
+
+      setMessage(result.message);
+    });
+  }
+
+  function updateEnrichmentStatus(
+    enrichmentId: string,
+    status: "ARCHIVED" | "REJECTED",
+  ) {
+    startTransition(async () => {
+      const result = await changeCattyArtifactEnrichmentStatus({
+        enrichmentId,
         status,
       });
 
@@ -442,14 +526,33 @@ export function CattyArtifactsPanel({
               />
             </Field>
 
-            <Button type="submit" disabled={isPending} className="w-fit gap-2">
-              {isPending ? (
-                <LoaderCircle className="animate-spin" aria-hidden="true" />
-              ) : (
-                <Sparkles aria-hidden="true" />
-              )}
-              {canManage ? "Salvar tema" : "Enviar sugestao"}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="submit" disabled={isPending} className="gap-2">
+                {isPending ? (
+                  <LoaderCircle className="animate-spin" aria-hidden="true" />
+                ) : (
+                  <Sparkles aria-hidden="true" />
+                )}
+                {canManage ? "Salvar tema" : "Enviar sugestao"}
+              </Button>
+
+              {canManage ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending}
+                  className="gap-2"
+                  onClick={(event) => {
+                    if (event.currentTarget.form) {
+                      handleEnrich(event.currentTarget.form);
+                    }
+                  }}
+                >
+                  <Sparkles aria-hidden="true" />
+                  Enriquecer tema
+                </Button>
+              ) : null}
+            </div>
           </form>
         </section>
 
@@ -522,6 +625,358 @@ export function CattyArtifactsPanel({
             </div>
           ) : null}
         </section>
+
+        {canManage ? (
+          <section className="grid gap-3">
+            <div className="ava-soft-card rounded-lg border p-5">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-fuchsia-100 text-fuchsia-700">
+                  <Sparkles aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold">
+                    Sugestoes enriquecidas
+                  </h2>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Busca/cache criam sugestoes, mas a Catty so usa depois de
+                    aprovacao humana.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {filteredEnrichments.length === 0 ? (
+              <p className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
+                Nenhuma sugestao de enriquecimento para estes filtros.
+              </p>
+            ) : (
+              filteredEnrichments.map((enrichment) => {
+                const canReview = [
+                  "FAILED",
+                  "PENDING",
+                  "READY_FOR_REVIEW",
+                ].includes(enrichment.status);
+                const defaultTone =
+                  enrichment.cautions[0] ||
+                  "Usar como toque leve, sem repetir em toda resposta.";
+
+                return (
+                  <article
+                    key={enrichment.id}
+                    className="ava-soft-card rounded-lg border p-5"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
+                              enrichmentStatusStyles[enrichment.status],
+                            )}
+                          >
+                            {enrichmentStatusLabels[enrichment.status]}
+                          </span>
+                          <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
+                            {enrichment.themeId}
+                          </span>
+                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                            {enrichment.provider}
+                          </span>
+                        </div>
+                        <h3 className="mt-3 text-lg font-semibold">
+                          {enrichment.label}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {enrichment.targetUserName ?? "Aluno nao informado"}
+                        </p>
+                      </div>
+                      <div className="grid gap-1 text-sm text-muted-foreground md:text-right">
+                        <span>Criado: {formatDateTime(enrichment.createdAt)}</span>
+                        <span>
+                          Atualizado: {formatDateTime(enrichment.updatedAt)}
+                        </span>
+                        {enrichment.cacheId ? <span>cache ativo</span> : null}
+                      </div>
+                    </div>
+
+                    {enrichment.safeSummary ? (
+                      <p className="mt-4 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                        {enrichment.safeSummary}
+                      </p>
+                    ) : null}
+
+                    {enrichment.failureReason ? (
+                      <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
+                        {enrichment.failureReason}
+                      </p>
+                    ) : null}
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-lg border bg-white/75 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Emojis
+                        </p>
+                        <p className="mt-2 text-lg">
+                          {enrichment.suggestedEmojis.join(" ") ||
+                            "Sem emojis"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border bg-white/75 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Sons
+                        </p>
+                        <p className="mt-2 text-sm leading-6">
+                          {enrichment.suggestedSounds.join(", ") ||
+                            "Sem sons"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border bg-white/75 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Bordoes
+                        </p>
+                        <p className="mt-2 text-sm leading-6">
+                          {enrichment.suggestedCatchphrases.join(", ") ||
+                            "Sem bordoes"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid gap-3 md:grid-cols-2">
+                      <div className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Exemplos
+                        </p>
+                        <p className="mt-2 text-muted-foreground">
+                          {enrichment.suggestedExamples.join(" | ") ||
+                            "Sem exemplos"}
+                        </p>
+                      </div>
+                      <div className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Cuidados
+                        </p>
+                        <p className="mt-2 text-muted-foreground">
+                          {enrichment.cautions.join(" | ") ||
+                            "Sem cuidados extras"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {enrichment.suggestedVocabulary.length > 0 ? (
+                      <div className="mt-3 rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                          Vocabulario sugerido
+                        </p>
+                        <div className="mt-2 grid gap-2">
+                          {enrichment.suggestedVocabulary.map((item) => (
+                            <p key={`${enrichment.id}-${item.word}`}>
+                              <strong>{item.word}</strong>: {item.meaning}
+                              {item.example ? ` - ${item.example}` : ""}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    {enrichment.sources.length > 0 ? (
+                      <details className="mt-3 rounded-lg border bg-primary/[0.03] p-3">
+                        <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                          Fontes da busca
+                        </summary>
+                        <div className="mt-3 grid gap-2">
+                          {enrichment.sources.map((source) => (
+                            <a
+                              key={`${enrichment.id}-${source.url}`}
+                              href={source.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-lg border bg-white/80 p-3 text-sm leading-6 transition hover:border-primary/30"
+                            >
+                              <strong className="block text-foreground">
+                                {source.title || source.url}
+                              </strong>
+                              {source.snippet ? (
+                                <span className="text-muted-foreground">
+                                  {source.snippet}
+                                </span>
+                              ) : null}
+                            </a>
+                          ))}
+                        </div>
+                      </details>
+                    ) : null}
+
+                    {canReview ? (
+                      <details className="mt-4 rounded-lg border bg-fuchsia-50/40 p-3">
+                        <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                          Aprovar editando
+                        </summary>
+                        <form
+                          onSubmit={handleApproveEnrichment}
+                          className="mt-4 grid gap-3"
+                        >
+                          <input
+                            type="hidden"
+                            name="enrichmentId"
+                            value={enrichment.id}
+                          />
+                          <input
+                            type="hidden"
+                            name="targetUserId"
+                            value={enrichment.targetUserId ?? ""}
+                          />
+                          <input
+                            type="hidden"
+                            name="themeId"
+                            value={enrichment.themeId}
+                          />
+                          <input type="hidden" name="status" value="ACTIVE" />
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Field>
+                              <FieldLabel
+                                htmlFor={`enrichment-label-${enrichment.id}`}
+                              >
+                                Nome
+                              </FieldLabel>
+                              <Input
+                                id={`enrichment-label-${enrichment.id}`}
+                                name="label"
+                                defaultValue={enrichment.label}
+                                disabled={isPending}
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel
+                                htmlFor={`enrichment-emojis-${enrichment.id}`}
+                              >
+                                Emojis
+                              </FieldLabel>
+                              <Input
+                                id={`enrichment-emojis-${enrichment.id}`}
+                                name="emojisText"
+                                defaultValue={listToText(
+                                  enrichment.suggestedEmojis,
+                                )}
+                                disabled={isPending}
+                              />
+                            </Field>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Field>
+                              <FieldLabel
+                                htmlFor={`enrichment-sounds-${enrichment.id}`}
+                              >
+                                Sons
+                              </FieldLabel>
+                              <Input
+                                id={`enrichment-sounds-${enrichment.id}`}
+                                name="soundsText"
+                                defaultValue={listToText(
+                                  enrichment.suggestedSounds,
+                                )}
+                                disabled={isPending}
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel
+                                htmlFor={`enrichment-example-${enrichment.id}`}
+                              >
+                                Exemplo curto
+                              </FieldLabel>
+                              <Input
+                                id={`enrichment-example-${enrichment.id}`}
+                                name="example"
+                                defaultValue={
+                                  enrichment.suggestedExamples[0] ?? ""
+                                }
+                                disabled={isPending}
+                              />
+                            </Field>
+                          </div>
+
+                          <Field>
+                            <FieldLabel
+                              htmlFor={`enrichment-catchphrases-${enrichment.id}`}
+                            >
+                              Bordoes
+                            </FieldLabel>
+                            <Textarea
+                              id={`enrichment-catchphrases-${enrichment.id}`}
+                              name="catchphrasesText"
+                              defaultValue={listToText(
+                                enrichment.suggestedCatchphrases,
+                              )}
+                              rows={2}
+                              disabled={isPending}
+                            />
+                          </Field>
+
+                          <Field>
+                            <FieldLabel
+                              htmlFor={`enrichment-tone-${enrichment.id}`}
+                            >
+                              Regra de tom
+                            </FieldLabel>
+                            <Textarea
+                              id={`enrichment-tone-${enrichment.id}`}
+                              name="toneRule"
+                              defaultValue={defaultTone}
+                              rows={2}
+                              disabled={isPending}
+                            />
+                          </Field>
+
+                          <input type="hidden" name="blockedReason" value="" />
+
+                          <Button
+                            type="submit"
+                            variant="outline"
+                            disabled={isPending}
+                            className="w-fit"
+                          >
+                            <CheckCircle2 aria-hidden="true" />
+                            Aprovar e ativar
+                          </Button>
+                        </form>
+                      </details>
+                    ) : null}
+
+                    {canReview ? (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={isPending}
+                          onClick={() =>
+                            updateEnrichmentStatus(enrichment.id, "REJECTED")
+                          }
+                        >
+                          <Ban aria-hidden="true" />
+                          Recusar
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={isPending}
+                          onClick={() =>
+                            updateEnrichmentStatus(enrichment.id, "ARCHIVED")
+                          }
+                        >
+                          <Archive aria-hidden="true" />
+                          Arquivar
+                        </Button>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })
+            )}
+          </section>
+        ) : null}
 
         <section className="grid gap-3">
           {filteredArtifacts.length === 0 ? (

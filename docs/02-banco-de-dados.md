@@ -54,6 +54,8 @@ Operacao do AVA:
 - `CattyUserMemory`
 - `CattyMemoryEvent`
 - `CattyUserArtifact`
+- `CattyArtifactEnrichmentCache`
+- `CattyArtifactEnrichment`
 - `ChatThread`
 - `ChatMessage`
 - `AppSetting`
@@ -107,6 +109,7 @@ Enums:
 - `CattyUserMemorySource`
 - `CattyUserMemoryStatus`
 - `CattyUserArtifactStatus`
+- `CattyArtifactEnrichmentStatus`
 - `CandyXpEventKind`
 - `CandyMissionKind`
 - `CandyXpActivityStatus`
@@ -154,6 +157,10 @@ Enums:
 - `CattyUserArtifact.status=ACTIVE` e o unico status que entra no prompt/fallback; `PENDING` fica aguardando aprovacao, `DISABLED` bloqueia o tema para aquele usuario e `ARCHIVED` preserva historico sem uso.
 - `CattyUserArtifact.userId + themeId` e unico para evitar varios cadastros do mesmo tema no mesmo aluno. Admin pode gerenciar todos, Teacher apenas alunos vinculados e Student apenas sugerir/desativar o proprio tema.
 - Artefatos da Catty nao podem conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou tema sensivel/inadequado. Quando um tema fica ativo, a helper tambem sincroniza memoria `FAVORITE_THEME/artifact_*`; quando fica desativado, sincroniza `STYLE/avoid_*`.
+- `CattyArtifactEnrichmentCache` guarda sugestoes cacheadas por provedor/tema/label para evitar pesquisar o mesmo interesse repetidamente. O cache salva apenas resumo curto, arrays de emojis/sons/bordoes/exemplos, vocabulario curto, cautelas e fontes resumidas; nao deve guardar textos longos copiados da internet.
+- `CattyArtifactEnrichment` guarda a fila de enriquecimento de temas para um usuario alvo. `READY_FOR_REVIEW`/`PENDING`/`FAILED` ficam aguardando revisao, `APPROVED` registra aprovacao e vinculo ao `CattyUserArtifact`, `REJECTED` e `ARCHIVED` ficam fora da Catty.
+- Enriquecimento de artefato nunca e usado no chat normal antes de aprovacao humana. Admin/Teacher podem pedir sugestao no painel `Estilo da Catty`; Student pode sugerir tema, mas nao enriquecimento/aprovacao.
+- Se o provedor externo falhar ou estiver desativado, a fila ainda pode receber uma sugestao generica segura com `failureReason`, para nao travar o fluxo operacional.
 - `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.
 - `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
 - `CandyBadgeDefinition` guarda criterios simples de badge por role, nivel, streak ou contagem de evento; `CandyUserBadge` possui chave unica por usuario/badge.
@@ -187,6 +194,7 @@ Enums:
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.
 - Migration `20260605230000_catty_user_memory` adiciona memoria pessoal da Catty por usuario e eventos de auditoria/limpeza.
 - Migration `20260605234500_catty_user_artifacts` adiciona artefatos configuraveis da Catty por usuario.
+- Migration `20260605235500_catty_artifact_enrichment` adiciona cache e fila revisavel para enriquecimento de artefatos da Catty.
 
 ## Riscos ao alterar esta parte
 
@@ -210,6 +218,7 @@ Enums:
 - Criar memorias pessoais demais aumenta custo/contexto; a rota limita o prompt, a tela `Memoria da Catty` mostra alertas e a equipe pode arquivar itens, remover dado sensivel ou limpar historico manualmente.
 - Permitir `CattyUserArtifact.ACTIVE` sem revisao pode fazer a Catty repetir tema errado, ofensivo ou sensivel; manter validacao conservadora e deixar Student apenas como sugestao/desativacao.
 - Usar artefato configuravel sem anti-repeticao pode deixar a Catty cansativa; manter contagem/uso recente, historico curto e limite de no maximo um artefato por resposta.
+- Usar busca web de enriquecimento sem cache/aprovacao humana pode trazer tema inadequado, texto copiado ou contexto errado para alunos; manter busca apenas em fluxo Admin/Teacher, resumo curto, bloqueio de tema sensivel e aprovacao antes de ativar.
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
 - Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.

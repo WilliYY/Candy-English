@@ -29,7 +29,12 @@ import {
   pickCattyArtifactReplyVariant,
 } from "../src/lib/catty-artifacts";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
-import { cattyUserArtifactUpsertSchema } from "../src/lib/validations/catty-artifacts";
+import {
+  cattyArtifactEnrichmentRequestSchema,
+  cattyArtifactEnrichmentReviewSchema,
+  cattyUserArtifactUpsertSchema,
+  hasBlockedCattyArtifactText,
+} from "../src/lib/validations/catty-artifacts";
 import { cattyUserMemoryUpsertSchema } from "../src/lib/validations/catty-user-memory";
 
 const expectedExampleCount = 15;
@@ -528,6 +533,28 @@ function main() {
     targetUserId: "user-1",
     themeId: "dinosaurs",
   });
+  const validEnrichmentRequest =
+    cattyArtifactEnrichmentRequestSchema.safeParse({
+      label: "dinossauro",
+      targetUserId: "user-1",
+      themeId: "dinosaurs",
+    });
+  const blockedEnrichmentRequest =
+    cattyArtifactEnrichmentRequestSchema.safeParse({
+      label: "arma",
+      targetUserId: "user-1",
+      themeId: "arma",
+    });
+  const validEnrichmentReview = cattyArtifactEnrichmentReviewSchema.safeParse({
+    catchphrasesText: "modo dino curioso",
+    emojisText: "🦖 ✨",
+    enrichmentId: "enrichment-1",
+    label: "dinossauro",
+    soundsText: "rawr",
+    status: "ACTIVE",
+    targetUserId: "user-1",
+    themeId: "dinosaurs",
+  });
 
   assertCondition(
     capybaraArtifact?.artifact.id === "capybara",
@@ -587,6 +614,22 @@ function main() {
   assertCondition(
     validArtifactForm.success,
     "validacao do formulario de artefato customizado falhou.",
+  );
+  assertCondition(
+    validEnrichmentRequest.success,
+    "validacao de pedido de enriquecimento seguro falhou.",
+  );
+  assertCondition(
+    !blockedEnrichmentRequest.success,
+    "enriquecimento deveria bloquear tema sensivel antes da busca.",
+  );
+  assertCondition(
+    hasBlockedCattyArtifactText("violencia"),
+    "detector de tema bloqueado nao reconheceu termo sensivel.",
+  );
+  assertCondition(
+    validEnrichmentReview.success,
+    "validacao de aprovacao editada do enriquecimento falhou.",
   );
 
   const detectedMemories = extractCattyUserMemoryCandidates(

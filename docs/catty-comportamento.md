@@ -12,6 +12,8 @@ A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logad
 
 Os artefatos de personalidade ficam em `src/lib/catty-artifacts.ts` e podem ser ajustados por usuario no painel `Estilo da Catty` (`/ava/admin?task=catty-artifacts`, `/ava/teacher?task=catty-artifacts` e `/ava/student?task=catty-artifacts`). Eles transformam interesses seguros do aluno em pequenos memes de fala, como carros, capivara, Pokemon, princesa/contos de fadas, futebol, games ou tema customizado aprovado. Cada tema tem emojis permitidos, sons, mini-bordoes e um exemplo curto. A rota sugere no maximo um artefato quando a mensagem atual, a memoria pessoal ou um `CattyUserArtifact.ACTIVE` combinam com a intencao; se nao combinar, a Catty ignora. A variacao usa o historico recente da propria Catty para evitar repetir o mesmo bordao ou emoji em sequencia. Se o usuario pedir para parar de usar um tema, isso vira uma memoria de estilo `avoid_*` e/ou `CattyUserArtifact.DISABLED`, bloqueando o artefato sem apagar o interesse antigo.
 
+O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e aparece na mesma tela `Estilo da Catty` apenas para Admin/Teacher. Quando um tema novo ainda nao tem contexto bom, a equipe pode clicar em `Enriquecer tema`; o sistema consulta cache por provedor/tema/label, pode usar busca web configurada apenas nesse fluxo de preparacao, gera resumo curto, emojis, sons, bordoes, exemplos, vocabulario e cautelas, e salva tudo como `CattyArtifactEnrichment.READY_FOR_REVIEW`. A Catty nunca usa resultado da internet diretamente no chat. A sugestao precisa ser editada/aprovada por humano para virar `CattyUserArtifact.ACTIVE`; Student pode sugerir gosto, mas nao aciona busca nem aprova.
+
 ## Regras que os exemplos protegem
 
 - Responder curto, com personalidade e utilidade pedagogica.
@@ -29,6 +31,7 @@ Os artefatos de personalidade ficam em `src/lib/catty-artifacts.ts` e podem ser 
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
 - Usar artefatos por interesse como tempero leve, no maximo um por resposta, somente quando combinarem com a mensagem.
+- Usar enriquecimento de artefatos apenas como fila revisavel; nunca buscar internet nem ativar sugestao durante uma conversa normal.
 - Variar entre som, emoji, mini-bordao ou exemplo curto conforme historico recente.
 - Respeitar preferencias `avoid_*` para nao insistir em tema que o usuario pediu para parar.
 - Usar gestao humana para corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado sem colocar `FLAGGED`, `ARCHIVED` ou `PENDING` no prompt.
@@ -72,7 +75,7 @@ Os artefatos de personalidade ficam em `src/lib/catty-artifacts.ts` e podem ser 
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

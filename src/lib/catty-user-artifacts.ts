@@ -1,6 +1,10 @@
 import { CATTY_ARTIFACT_THEMES } from "@/lib/catty-artifacts";
 import type { CattyArtifactCustomItem } from "@/lib/catty-artifacts";
 import {
+  getCattyArtifactEnrichmentsForUsers,
+  type CattyArtifactEnrichmentRow,
+} from "@/lib/catty-artifact-enrichment";
+import {
   canAccessCattyUserMemoryTarget,
   upsertCattyUserMemory,
 } from "@/lib/catty-user-memory";
@@ -89,6 +93,7 @@ export type CattyArtifactThemeOption = {
 export type CattyArtifactManagementData = {
   alerts: CattyArtifactAlertRow[];
   artifacts: CattyUserArtifactRow[];
+  enrichments: CattyArtifactEnrichmentRow[];
   recentUsages: CattyArtifactRecentUsageRow[];
   themeOptions: CattyArtifactThemeOption[];
   users: CattyArtifactUserOption[];
@@ -631,6 +636,7 @@ export async function getCattyArtifactManagementData(
     return {
       alerts: [],
       artifacts: [],
+      enrichments: [],
       recentUsages: [],
       themeOptions: CATTY_ARTIFACT_THEMES.map((theme) => ({
         catchphrases: theme.catchphrases,
@@ -643,7 +649,7 @@ export async function getCattyArtifactManagementData(
     };
   }
 
-  const [users, artifacts, messages] = await Promise.all([
+  const [users, artifacts, enrichments, messages] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ name: "asc" }, { email: "asc" }],
       select: {
@@ -721,6 +727,7 @@ export async function getCattyArtifactManagementData(
         },
       },
     }),
+    getCattyArtifactEnrichmentsForUsers(accessibleUserIds),
     prisma.cattyMessage.findMany({
       orderBy: {
         createdAt: "desc",
@@ -826,6 +833,7 @@ export async function getCattyArtifactManagementData(
       recentUsages,
     }),
     artifacts: artifactRows,
+    enrichments,
     recentUsages,
     themeOptions: CATTY_ARTIFACT_THEMES.map((theme) => ({
       catchphrases: theme.catchphrases,

@@ -112,6 +112,13 @@ export function getEnvironmentCredentialDefinitions() {
   const openAiKey = getOptionalEnvValue("OPENAI_API_KEY");
   const openAiCattyModel = getOptionalEnvValue("OPENAI_CATTY_MODEL");
   const homeworkModel = getOptionalEnvValue("OPENAI_HOMEWORK_OCR_MODEL");
+  const cattyArtifactSearchProvider = getOptionalEnvValue(
+    "CATTY_ARTIFACT_SEARCH_PROVIDER",
+  );
+  const cattyArtifactSearchCacheDays = getOptionalEnvValue(
+    "CATTY_ARTIFACT_SEARCH_CACHE_DAYS",
+  );
+  const braveSearchKey = getOptionalEnvValue("BRAVE_SEARCH_API_KEY");
   const jitsiDomain = getOptionalEnvValue("NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN");
 
   if (geminiKey) {
@@ -171,6 +178,43 @@ export function getEnvironmentCredentialDefinitions() {
       service: "OpenAI",
       sourceKey: "env:OPENAI_HOMEWORK_OCR_MODEL",
       value: homeworkModel,
+    });
+  }
+
+  if (cattyArtifactSearchProvider) {
+    definitions.push({
+      kind: "CONFIG",
+      label: "Provider busca Estilo da Catty",
+      notes:
+        "Define o provider usado apenas no enriquecimento Admin/Teacher de interesses da Catty, nunca no chat normal.",
+      service: "Catty Artifact Enrichment",
+      sourceKey: "env:CATTY_ARTIFACT_SEARCH_PROVIDER",
+      value: cattyArtifactSearchProvider,
+    });
+  }
+
+  if (cattyArtifactSearchCacheDays) {
+    definitions.push({
+      kind: "CONFIG",
+      label: "Cache busca Estilo da Catty",
+      notes:
+        "Quantidade de dias para reutilizar sugestoes de enriquecimento de interesses da Catty.",
+      service: "Catty Artifact Enrichment",
+      sourceKey: "env:CATTY_ARTIFACT_SEARCH_CACHE_DAYS",
+      value: cattyArtifactSearchCacheDays,
+    });
+  }
+
+  if (braveSearchKey) {
+    definitions.push({
+      kind: "API_KEY",
+      label: "Brave Search API Key",
+      notes:
+        "Usada somente pelo fluxo protegido de enriquecimento de interesses da Catty para Admin/Teacher.",
+      service: "Brave Search",
+      sourceKey: "env:BRAVE_SEARCH_API_KEY",
+      url: "https://api-dashboard.search.brave.com/",
+      value: braveSearchKey,
     });
   }
 

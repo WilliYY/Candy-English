@@ -63,6 +63,7 @@ Helpers:
 - `src/lib/catty-learning.ts`
 - `src/lib/catty-user-memory.ts`
 - `src/lib/catty-artifacts.ts`
+- `src/lib/catty-artifact-enrichment.ts`
 - `src/lib/catty-user-artifacts.ts`
 - `src/lib/catty-memory-management.ts`
 - `src/lib/catty-personality.ts`
@@ -102,7 +103,8 @@ Helpers:
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin gerencia memorias pessoais da Catty em `Memoria da Catty`, com filtros por usuario, categoria e status, aprovando, corrigindo, arquivando, marcando erro, removendo dado sensivel e limpando historico pesado.
 8. Admin ajusta temas, emojis, sons e bordoes por aluno em `Estilo da Catty`; temas ativos entram na Catty, pendentes aguardam revisao, desativados criam preferencia `avoid_*` e arquivados ficam fora do prompt.
-9. Admin tambem tem atalhos para tarefas da area teacher.
+9. Quando um tema ainda nao tem artefatos bons, Admin pode clicar em `Enriquecer tema`; o sistema usa cache/provedor configurado para criar uma sugestao revisavel, que so vira artefato ativo depois de aprovacao/edicao humana.
+10. Admin tambem tem atalhos para tarefas da area teacher.
 
 ### APIs e senhas
 
@@ -124,6 +126,7 @@ Helpers:
 8. Pode sugerir aprendizados e revisar feedbacks visiveis no `Catty Learning`, mas nao aprova memoria global.
 9. Pode revisar memorias pessoais da Catty dos proprios alunos vinculados em `Memoria da Catty`, alem da propria memoria, sem acessar alunos de outra teacher.
 10. Pode ajustar `Estilo da Catty` somente dos alunos vinculados, aprovando tema seguro como artefato ativo ou marcando como nao usar.
+11. Pode pedir enriquecimento de tema para aluno vinculado e revisar a sugestao antes de ativar; nao consegue acessar alunos de outra teacher.
 
 ### Student
 
@@ -134,7 +137,7 @@ Helpers:
 5. Visualiza feedback.
 6. Edita dados pessoais permitidos, mas nao o nivel.
 7. Pode abrir `Memoria da Catty` para ver o que a Catty lembra dele e pedir correcao quando algo estiver errado.
-8. Pode abrir `Estilo da Catty` para sugerir um tema favorito ou pedir para nao usar um tema; sugestao de aluno fica pendente ate revisao humana.
+8. Pode abrir `Estilo da Catty` para sugerir um tema favorito ou pedir para nao usar um tema; sugestao de aluno fica pendente ate revisao humana e nao dispara busca web.
 
 ### Candy XP e jogos
 
@@ -198,17 +201,20 @@ Helpers:
 25. Gemini e OpenAI recebem o mesmo contexto curto de memoria aprovada global, memoria pessoal relevante do proprio usuario, artefato sugerido quando houver, variacao recomendada e elementos recentes a evitar; se falharem, o fallback local pode usar uma resposta ideal aprovada do Learning Center, um toque leve da memoria pessoal e um artefato discreto quando a intencao combina e a resposta passa pelos filtros de seguranca.
 26. Admin/Teacher/Student acessam `Memoria da Catty` conforme permissao: Admin ve tudo, Teacher ve somente a propria memoria e alunos vinculados, Student ve a propria memoria e pode pedir correcao; memorias `FLAGGED` e `ARCHIVED` nao entram no prompt.
 27. Admin/Teacher/Student acessam `Estilo da Catty` conforme permissao: Admin ve todos os alunos, Teacher ve alunos vinculados e Student ve o proprio usuario. Admin/Teacher podem ativar, editar, marcar como nao usar ou arquivar; Student pode sugerir tema e pedir para nao usar.
-28. A tela mostra alertas quando ha sugestao pendente, possivel dado sensivel ou repeticao recente de um elemento do artefato; Admin/Teacher podem corrigir o tema sem mexer no codigo.
-29. A tela de memoria mostra alertas quando um usuario tem contexto pesado, memorias contraditorias, possivel dado sensivel ou muitos itens antigos sem uso; Admin/Teacher podem limpar historico de conversa manualmente.
-30. Cada resposta persistida da Catty pode receber microfeedback no widget: gostei, nao gostei, resposta confusa ou deveria responder assim.
-31. O feedback chama server action protegida, valida que a mensagem pertence ao usuario logado, copia apenas pergunta/resposta resumidas, bloqueia termos sensiveis e cria `CattyLearningFeedback.PENDING`.
-32. Admin/Teacher veem a fila em `Catty Learning`; Admin pode editar e aprovar como memoria global, Teacher pode editar e sugerir aprendizado pendente, e feedback recusado/arquivado nao entra no prompt.
-33. A rota tambem pode criar `CattyLearningFeedback.PATTERN_SUGGESTION` pendente quando usa fallback sem memoria relevante, quando uma mensagem confusa/fora do trilho nao tem memoria aprovada relacionada ou quando ha muitos feedbacks negativos recentes na mesma intencao; essa sugestao e apenas fila de revisao e nao muda o comportamento oficial ate aprovacao.
-34. A identidade viva fica em `src/lib/catty-personality.ts`: `CATTY_PERSONALITY_GUIDE`, `CATTY_PERSONALITY_USAGE_RULES` e `CATTY_SCOPE_GUIDE` formam `CATTY_BRAIN_RULES`; Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya`, `Catty mode on` e `Bora estudar`, pode usar humor/meme leve e ate dois emojis permitidos quando combinar, mas nao responde como especialista generica fora do estudo de ingles/AVA.
-35. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-36. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
-37. Os baloes publicos/logados, respostas de bloqueio, abertura inicial e frases por situacao tambem saem de `src/lib/catty-personality.ts`, para evitar voz duplicada entre widget, prompt e fallback.
-38. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback, o uso de no maximo um bordao, o limite de emojis, a personalizacao por primeiro nome seguro, memoria aprovada, memoria pessoal segura, artefato padrao/customizado e o gatilho OpenAI/Gemini continuam alinhados.
+28. Admin/Teacher podem pedir `Enriquecer tema` quando um interesse ainda nao tem emojis, sons, bordoes ou exemplos bons. `src/lib/catty-artifact-enrichment.ts` valida permissao, bloqueia tema sensivel, consulta cache por provedor/tema/label e, se necessario, usa o provedor configurado para buscar contexto curto fora do chat normal.
+29. O enriquecimento cria `CattyArtifactEnrichment.READY_FOR_REVIEW` com resumo seguro, fontes resumidas, vocabulario, emojis, sons, bordoes, exemplos, baloes e cautelas. Nada disso entra no prompt/fallback enquanto nao for aprovado.
+30. Admin/Teacher podem editar a sugestao antes de aprovar; a aprovacao cria ou atualiza `CattyUserArtifact.ACTIVE`. Sugestoes recusadas ou arquivadas ficam registradas e fora da Catty.
+31. A tela mostra alertas quando ha sugestao pendente, possivel dado sensivel ou repeticao recente de um elemento do artefato; Admin/Teacher podem corrigir o tema sem mexer no codigo.
+32. A tela de memoria mostra alertas quando um usuario tem contexto pesado, memorias contraditorias, possivel dado sensivel ou muitos itens antigos sem uso; Admin/Teacher podem limpar historico de conversa manualmente.
+33. Cada resposta persistida da Catty pode receber microfeedback no widget: gostei, nao gostei, resposta confusa ou deveria responder assim.
+34. O feedback chama server action protegida, valida que a mensagem pertence ao usuario logado, copia apenas pergunta/resposta resumidas, bloqueia termos sensiveis e cria `CattyLearningFeedback.PENDING`.
+35. Admin/Teacher veem a fila em `Catty Learning`; Admin pode editar e aprovar como memoria global, Teacher pode editar e sugerir aprendizado pendente, e feedback recusado/arquivado nao entra no prompt.
+36. A rota tambem pode criar `CattyLearningFeedback.PATTERN_SUGGESTION` pendente quando usa fallback sem memoria relevante, quando uma mensagem confusa/fora do trilho nao tem memoria aprovada relacionada ou quando ha muitos feedbacks negativos recentes na mesma intencao; essa sugestao e apenas fila de revisao e nao muda o comportamento oficial ate aprovacao.
+37. A identidade viva fica em `src/lib/catty-personality.ts`: `CATTY_PERSONALITY_GUIDE`, `CATTY_PERSONALITY_USAGE_RULES` e `CATTY_SCOPE_GUIDE` formam `CATTY_BRAIN_RULES`; Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya`, `Catty mode on` e `Bora estudar`, pode usar humor/meme leve e ate dois emojis permitidos quando combinar, mas nao responde como especialista generica fora do estudo de ingles/AVA.
+38. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+39. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+40. Os baloes publicos/logados, respostas de bloqueio, abertura inicial e frases por situacao tambem saem de `src/lib/catty-personality.ts`, para evitar voz duplicada entre widget, prompt e fallback.
+41. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback, o uso de no maximo um bordao, o limite de emojis, a personalizacao por primeiro nome seguro, memoria aprovada, memoria pessoal segura, artefato padrao/customizado, schemas de enriquecimento e o gatilho OpenAI/Gemini continuam alinhados.
 
 ### Aula ao vivo
 
@@ -302,6 +308,7 @@ Helpers:
 - Catty pode usar `area` e `task` da URL para orientar atalhos, historico recente e linguagem, e pode usar role, primeiro nome e nivel do aluno derivados no servidor apenas como contexto seguro; o nome nao deve aparecer em assunto sensivel e a Catty nao pode responder usuario sem sessao valida nem receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
 - Catty pode usar `CattyUserMemory.ACTIVE` apenas do proprio usuario como personalizacao leve; `TEACHER` so acessa memoria de aluno vinculado e `ADMIN` supervisiona, mas a rota de resposta sempre filtra pelo `session.user.id`. `FLAGGED`, `ARCHIVED` e `PENDING` nao entram no prompt da resposta.
 - Catty Learning Center nunca deve aprender automaticamente com qualquer usuario; feedback do widget vira fila pendente, Teacher/Admin sugerem, apenas Admin aprova memoria global, e itens com dados sensiveis devem ser recusados.
+- Enriquecimento de artefato da Catty nunca deve rodar durante o chat normal; ele acontece apenas no fluxo Admin/Teacher de preparacao/revisao, usa cache e so ativa um tema apos aprovacao/edicao humana.
 - APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
@@ -320,6 +327,7 @@ Helpers:
 - Catty User Memory adiciona memoria pessoal curta por usuario, com status ativo/pendente/flagged/arquivado, eventos de auditoria e bloqueio conservador de termos sensiveis.
 - Catty Memory Management adiciona uma tarefa simples em Admin/Teacher/Student para listar, filtrar, corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado da Catty conforme permissao.
 - Catty User Artifacts adiciona a tarefa `Estilo da Catty` em Admin/Teacher/Student para configurar temas, emojis, sons e bordoes por aluno sem alterar codigo; somente status `ACTIVE` entra no prompt/fallback.
+- Catty Artifact Enrichment adiciona cache e fila revisavel para gerar sugestoes de artefatos por interesse; busca web e opcional, configuravel e nunca entra direto na resposta do aluno.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
 - Atividades Candy XP usam modelos proprios para historia/PDF/perguntas/progresso e reaproveitam o ledger Candy XP para pontuar conclusoes.
@@ -333,6 +341,7 @@ Helpers:
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
 - Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget, historico recente da propria Catty, contexto leve de `area`/`task`, memoria aprovada sem dados sensiveis, memoria pessoal ativa do proprio usuario e contexto seguro minimo de role, primeiro nome e nivel do aluno, sem usar nome em senha, contrato, pagamento, documento, chave, token ou credencial.
 - Salvar memoria pessoal ampla demais ou sem filtro pode vazar preferencia/dificuldade de aluno; manter resumo curto, status `ACTIVE` somente para itens seguros e bloqueio de telefone, endereco, documento, pagamento, contrato, email, token e chaves.
+- Usar busca web para tema da Catty sem revisao pode trazer contexto errado ou inadequado; manter o resultado como sugestao curta, cacheada e revisavel, sem copiar texto longo e sem ativar antes de Admin/Teacher aprovar.
 - Revelar credenciais na tela deve ser uma acao consciente do admin; nao adicionar exibicao automatica nem logs do valor em claro.
 - Alterar resposta correta de atividade Candy XP publicada pode mudar o criterio de novas tentativas; manter cuidado com atividades ja respondidas.
 

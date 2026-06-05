@@ -14,14 +14,18 @@ export type CattyUserArtifactStatusInput =
 const blockedArtifactTerms = [
   "aposta",
   "arma",
+  "assassinato",
   "bebida",
   "crime",
   "droga",
+  "extremismo",
   "odio",
   "ofensa",
+  "pornografia",
   "politica",
   "religiao",
   "sexo",
+  "terror",
   "violencia",
 ];
 
@@ -32,7 +36,7 @@ function normalizeArtifactValidationText(text: string) {
     .toLowerCase();
 }
 
-function hasBlockedArtifactText(text: string) {
+export function hasBlockedCattyArtifactText(text: string) {
   const normalized = normalizeArtifactValidationText(text);
 
   return blockedArtifactTerms.some((term) => normalized.includes(term));
@@ -158,7 +162,7 @@ export const cattyUserArtifactUpsertSchema = z
       });
     }
 
-    if (hasBlockedArtifactText(searchableContent)) {
+    if (hasBlockedCattyArtifactText(searchableContent)) {
       ctx.addIssue({
         code: "custom",
         message:
@@ -199,7 +203,7 @@ export const cattyUserArtifactStatusUpdateSchema = z
     if (
       value.blockedReason &&
       (hasSensitiveCattyUserMemoryText(value.blockedReason) ||
-        hasBlockedArtifactText(value.blockedReason))
+        hasBlockedCattyArtifactText(value.blockedReason))
     ) {
       ctx.addIssue({
         code: "custom",
@@ -217,4 +221,78 @@ export type CattyUserArtifactUpsertData = z.output<
 >;
 export type CattyUserArtifactStatusUpdateInput = z.input<
   typeof cattyUserArtifactStatusUpdateSchema
+>;
+
+export const cattyArtifactEnrichmentStatusValues = [
+  "PENDING",
+  "READY_FOR_REVIEW",
+  "APPROVED",
+  "REJECTED",
+  "FAILED",
+  "ARCHIVED",
+] as const;
+
+export type CattyArtifactEnrichmentStatusInput =
+  (typeof cattyArtifactEnrichmentStatusValues)[number];
+
+export const cattyArtifactEnrichmentRequestSchema = z
+  .object({
+    forceRefresh: z.boolean().optional().default(false),
+    label: z
+      .string()
+      .trim()
+      .min(2, "Informe o nome do interesse.")
+      .max(64, "O interesse pode ter no maximo 64 caracteres."),
+    targetUserId: z.string().min(1, "Usuario invalido."),
+    themeId: z
+      .string()
+      .trim()
+      .min(2, "Informe uma chave do tema.")
+      .max(48, "A chave do tema pode ter no maximo 48 caracteres.")
+      .regex(
+        /^[a-z0-9][a-z0-9_-]*$/,
+        "Use apenas letras minusculas, numeros, _ ou - na chave.",
+      ),
+  })
+  .superRefine((value, ctx) => {
+    const content = `${value.themeId} ${value.label}`;
+
+    if (hasSensitiveCattyUserMemoryText(content)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Nao use dado sensivel como interesse da Catty. Use apenas temas leves de estudo.",
+        path: ["label"],
+      });
+    }
+
+    if (hasBlockedCattyArtifactText(content)) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Esse interesse parece sensivel ou inadequado para aula. Escolha um tema leve.",
+        path: ["label"],
+      });
+    }
+  });
+
+export const cattyArtifactEnrichmentReviewSchema = z
+  .object({
+    enrichmentId: z.string().min(1, "Sugestao invalida."),
+  })
+  .and(cattyUserArtifactUpsertSchema);
+
+export const cattyArtifactEnrichmentStatusUpdateSchema = z.object({
+  enrichmentId: z.string().min(1, "Sugestao invalida."),
+  status: z.enum(["REJECTED", "ARCHIVED"]),
+});
+
+export type CattyArtifactEnrichmentRequestInput = z.input<
+  typeof cattyArtifactEnrichmentRequestSchema
+>;
+export type CattyArtifactEnrichmentReviewInput = z.input<
+  typeof cattyArtifactEnrichmentReviewSchema
+>;
+export type CattyArtifactEnrichmentStatusUpdateInput = z.input<
+  typeof cattyArtifactEnrichmentStatusUpdateSchema
 >;
