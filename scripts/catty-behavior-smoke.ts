@@ -58,8 +58,11 @@ function assertPromptContext(input: string, id: string) {
     "Contexto seguro do usuario",
     "Intencao detectada",
     "Intencao tecnica",
+    "Regra de personalidade da Catty",
+    "Regra de roteamento interno",
     "Regra de homework",
     "Regra de escopo",
+    "Regra para ADMIN/TEACHER",
     "Conversa recente",
   ]) {
     assertCondition(

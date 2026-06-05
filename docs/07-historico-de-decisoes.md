@@ -163,6 +163,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/catty-personality.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `scripts/catty-behavior-smoke.ts` e docs oficiais.
 - Riscos/cuidados: IA com mais de um bordao deve cair para fallback; visitante continua sem chat real; respostas seguem curtas e pedagogicas.
 
+### 2026-06-05 - Catty com roteamento por intencao ampliado
+
+- Decisao: manter Gemini como provedor padrao, OpenAI apenas quando a mensagem chama Catty, e ampliar o plano local com a intencao `teacher_activity_creation`, contexto seguro de role/nome/nivel e regras explicitas de personalidade, escopo e fallback.
+- Motivo: deixar a Catty mais logica para alunos, teachers e admins sem aumentar custo de OpenAI nem transformar a mascote em assistente generica de receita, codigo ou API.
+- Impacto: `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/lib/catty-examples.ts`, `scripts/catty-behavior-smoke.ts`, `docs/catty-comportamento.md` e docs oficiais.
+- Riscos/cuidados: manter historico curto, nao enviar dados sensiveis ao prompt, preservar fallback local quando Gemini/OpenAI falharem e revisar novos exemplos sempre que a Catty responder fora do papel de mascote-professora.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

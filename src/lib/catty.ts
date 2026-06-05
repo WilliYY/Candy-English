@@ -38,6 +38,7 @@ export type CattyIntent =
   | "out_of_scope"
   | "practice_english"
   | "ready_answer_request"
+  | "teacher_activity_creation"
   | "teacher_feedback"
   | "teacher_message"
   | "translate_sentence";
@@ -93,6 +94,7 @@ const intentLabels: Record<CattyIntent, string> = {
   out_of_scope: "pergunta fora do tema",
   practice_english: "praticar ingles",
   ready_answer_request: "pedido de resposta pronta",
+  teacher_activity_creation: "criacao de atividade para teacher",
   teacher_feedback: "feedback para aluno",
   teacher_message: "mensagem para teacher",
   translate_sentence: "traduzir frase",
@@ -125,6 +127,8 @@ const intentInstructions: Record<CattyIntent, string> = {
     "crie uma micro pratica em ingles com frase curta, repeticao ou pergunta simples.",
   ready_answer_request:
     "recuse resposta pronta com carinho, explique que ajuda por pista ou exemplo parecido e peca apenas o enunciado.",
+  teacher_activity_creation:
+    "ajude teacher/admin a montar uma atividade curta com objetivo, frase-alvo, instrucao simples e forma de resposta, sem plano gigante.",
   teacher_feedback:
     "ajude a teacher com feedback curto, carinhoso e util, sem expor dados de aluno.",
   teacher_message:
@@ -379,6 +383,61 @@ function hasLessonMaterialSignal(text: string, context?: CattyPageContext) {
       "pdf",
       "slide",
     ])
+  );
+}
+
+function isEducatorContext(context?: CattyPageContext) {
+  return context?.area === "teacher" || context?.area === "admin";
+}
+
+function hasTeacherActivityCreationSignal(
+  text: string,
+  context?: CattyPageContext,
+) {
+  const normalized = normalizeText(text);
+  const task = getTaskText(context);
+  const creationSignal =
+    hasAny(normalized, [
+      "cria",
+      "criar",
+      "create",
+      "monta",
+      "montar",
+      "planeja",
+      "planejar",
+      "prepare",
+      "preparar",
+    ]) ||
+    task.includes("criar-aula") ||
+    task.includes("criar-homework");
+  const activitySignal = hasAny(normalized, [
+    "atividade",
+    "canva",
+    "exercise",
+    "exercicio",
+    "homework",
+    "instrucao",
+    "lesson",
+    "listening",
+    "pdf",
+    "pergunta",
+    "question",
+    "reading",
+    "speaking",
+    "writing",
+  ]);
+
+  return (
+    isEducatorContext(context) &&
+    (creationSignal ||
+      hasAny(normalized, [
+        "criar atividade",
+        "create activity",
+        "montar atividade",
+        "planejar atividade",
+        "preparar atividade",
+      ])) &&
+    activitySignal
   );
 }
 
@@ -789,6 +848,14 @@ function detectCattyIntent(
     return { confidence: "high", intent: "candy_xp" };
   }
 
+  if (isEducatorContext(context) && hasAny(normalized, ["feedback"])) {
+    return { confidence: "high", intent: "teacher_feedback" };
+  }
+
+  if (hasTeacherActivityCreationSignal(text, context)) {
+    return { confidence: "high", intent: "teacher_activity_creation" };
+  }
+
   if (hasLessonMaterialSignal(text, context)) {
     return { confidence: "medium", intent: "lesson_material" };
   }
@@ -814,10 +881,6 @@ function detectCattyIntent(
     ])
   ) {
     return { confidence: "high", intent: "homework_hint" };
-  }
-
-  if (context?.area === "teacher" && hasAny(normalized, ["feedback"])) {
-    return { confidence: "high", intent: "teacher_feedback" };
   }
 
   if (
@@ -994,11 +1057,11 @@ function buildPortugueseReply(text: string, context?: CattyPageContext) {
 
 function buildScopeRedirectEnglishReply(topic: CattyScopeTopic | null) {
   if (topic === "cake") {
-    return "Awnn, let's turn that into English practice. The sentence is: I make a cake. Want to learn ingredients in English?";
+    return "Awnn, let's turn that into English. The sentence is: I make a cake. Want to learn the ingredients in English?";
   }
 
   if (topic === "cooking") {
-    return "Uwau, let's turn that into English. You can say: I make a salad. Want to add the ingredients?";
+    return "Miauw, do you want to learn how to say that in English? We can start with: I make a salad with lettuce and tomatoes. Want to build your sentence?";
   }
 
   if (topic === "finance") {
@@ -1013,7 +1076,7 @@ function buildScopeRedirectEnglishReply(topic: CattyScopeTopic | null) {
 }
 
 function buildCodeApiEnglishReply() {
-  return "Pss pss, I am Catty from Candy English, not a coding helper. I can help you say that idea in English or explain a class word.";
+  return "Pss pss, I am Catty from Candy English. I can help you explain that idea in English or build a sentence for class.";
 }
 
 function buildCandyXpEnglishReply() {
@@ -1024,13 +1087,17 @@ function buildLessonMaterialEnglishReply() {
   return "Awnn, let's use the lesson material step by step. Send me the word or sentence from the material, and I will explain it simply.";
 }
 
+function buildTeacherActivityEnglishReply() {
+  return "Pss pss, teacher, choose one target sentence, one simple instruction, and one answer type. Want it for listening, reading, or writing?";
+}
+
 function buildScopeRedirectPortugueseReply(topic: CattyScopeTopic | null) {
   if (topic === "cake") {
-    return "Awnn, posso transformar isso em pratica de English. A frase seria: I make a cake. Quer aprender os ingredientes em ingles?";
+    return "Awnn, vamos transformar isso em English? A frase e: I make a cake. Quer aprender os ingredientes em ingles?";
   }
 
   if (topic === "cooking") {
-    return "Uwau, vamos transformar isso em English? Voce pode dizer: I make a salad. Quer colocar os ingredientes na frase?";
+    return "Miauw, voce quer aprender a falar isso em ingles? Podemos comecar com: I make a salad with lettuce and tomatoes. Quer montar sua frase?";
   }
 
   if (topic === "finance") {
@@ -1045,7 +1112,7 @@ function buildScopeRedirectPortugueseReply(topic: CattyScopeTopic | null) {
 }
 
 function buildCodeApiPortugueseReply() {
-  return "Pss pss, eu sou a Catty de estudos da Candy English, nao uma helper de codigo. Posso te ajudar a escrever essa ideia em ingles ou explicar uma palavra da aula.";
+  return "Pss pss, eu sou a Catty de estudos da Candy English. Posso te ajudar a explicar essa ideia em ingles ou montar uma frase para aula.";
 }
 
 function buildCandyXpPortugueseReply() {
@@ -1054,6 +1121,10 @@ function buildCandyXpPortugueseReply() {
 
 function buildLessonMaterialPortugueseReply() {
   return "Awnn, vamos usar o material da aula por partes. Me manda a palavra ou frase do material que eu explico simples.";
+}
+
+function buildTeacherActivityPortugueseReply() {
+  return "Pss pss, teacher, escolha uma frase-alvo, uma instrucao simples e uma forma de resposta. Quer montar para listening, reading ou writing?";
 }
 
 function buildPlannedEnglishReply(
@@ -1078,6 +1149,10 @@ function buildPlannedEnglishReply(
 
   if (intent === "candy_xp") {
     return buildCandyXpEnglishReply();
+  }
+
+  if (intent === "teacher_activity_creation") {
+    return buildTeacherActivityEnglishReply();
   }
 
   if (intent === "lesson_material") {
@@ -1189,6 +1264,10 @@ function buildPlannedPortugueseReply(
 
   if (intent === "candy_xp") {
     return buildCandyXpPortugueseReply();
+  }
+
+  if (intent === "teacher_activity_creation") {
+    return buildTeacherActivityPortugueseReply();
   }
 
   if (intent === "lesson_material") {
@@ -1465,9 +1544,12 @@ export function buildCattyInput(
     `Intencao detectada: ${plan.label} (${plan.confidence}).`,
     `Intencao tecnica: ${plan.intent}.`,
     `Plano da Catty: ${plan.instruction}`,
+    "Regra de personalidade da Catty: gatinha mascote-professora da Candy English, resposta curta, fofa, didatica e com no maximo um bordao ou emoji.",
+    "Regra de roteamento interno: Gemini e o padrao; OpenAI so quando a mensagem chama Catty; se provedores falharem, usar fallback local; baloes automaticos nao chamam IA.",
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",
     "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
+    "Regra para ADMIN/TEACHER: pode ajudar com instrucao, atividade, exemplo e feedback um pouco mais completo, mas sem textao, lista gigante ou prometer executar acoes.",
     "Use nome, role e nivel apenas para ajustar tom e exemplo. Nao invente dados do AVA.",
     "Se a mensagem estiver vaga ou confusa, peca uma informacao especifica em vez de inventar.",
     "Se a mensagem for grande, responda por partes e escolha apenas o proximo passo mais util.",
