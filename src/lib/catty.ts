@@ -18,7 +18,8 @@ export type CattyIntent =
   | "motivation"
   | "practice_english"
   | "teacher_feedback"
-  | "teacher_message";
+  | "teacher_message"
+  | "translate_sentence";
 
 export type CattyResponsePlan = {
   confidence: "high" | "medium" | "low";
@@ -84,6 +85,7 @@ const intentLabels: Record<CattyIntent, string> = {
   practice_english: "praticar ingles",
   teacher_feedback: "feedback para aluno",
   teacher_message: "mensagem para teacher",
+  translate_sentence: "traduzir frase",
 };
 
 const intentInstructions: Record<CattyIntent, string> = {
@@ -107,6 +109,8 @@ const intentInstructions: Record<CattyIntent, string> = {
     "ajude a teacher com feedback curto, carinhoso e util, sem expor dados de aluno.",
   teacher_message:
     "ajude a escrever uma mensagem educada e curta para a teacher.",
+  translate_sentence:
+    "traduza ou peca o texto exato para traduzir; quando for homework, nao entregue resposta final.",
 };
 
 const portugueseSignals = [
@@ -122,11 +126,16 @@ const portugueseSignals = [
   "falar",
   "homework",
   "ingles",
+  "mim",
   "mensagem",
   "pergunta",
+  "pode",
+  "preciso",
   "resposta",
   "senha",
+  "tambem",
   "teacher",
+  "traduz",
   "voce",
 ];
 
@@ -290,11 +299,46 @@ function isBareConfusionQuestion(text: string) {
       "nao entendi",
       "nao sei",
       "o que faco",
-      "preso",
-      "travad",
-      "travou",
     ])
   );
+}
+
+function hasTranslationSignal(text: string) {
+  const normalized = normalizeText(text);
+
+  return hasAny(normalized, [
+    "traducao",
+    "traduz",
+    "translate",
+    "translation",
+  ]);
+}
+
+function extractTranslationFragment(text: string) {
+  const quoted = getQuotedFragment(text);
+
+  if (quoted) {
+    return quoted;
+  }
+
+  const match = text.match(
+    /(?:traduz(?:a|ir)?|translate(?:\s+this)?|translation)\s*:?\s+(.{3,160})/i,
+  )?.[1]?.trim();
+
+  if (!match) {
+    return "";
+  }
+
+  const normalized = normalizeText(match);
+
+  if (
+    hasAny(normalized, ["a frase", "em ingles", "esta frase", "isso", "uma frase"]) &&
+    getWordTokens(match).length <= 5
+  ) {
+    return "";
+  }
+
+  return match;
 }
 
 function getQuotedFragment(text: string) {
@@ -323,7 +367,7 @@ function extractCorrectionFragment(text: string) {
   )?.[1]?.trim();
 
   if (!match) {
-    return "";
+    return isLikelyEnglishCorrectionCandidate(text) ? text.trim() : "";
   }
 
   const normalized = normalizeText(match);
@@ -343,6 +387,38 @@ function extractCorrectionFragment(text: string) {
   }
 
   return match;
+}
+
+function isLikelyEnglishCorrectionCandidate(text: string) {
+  const normalized = normalizeText(text);
+  const tokens = getWordTokens(text);
+
+  return (
+    tokens.length >= 4 &&
+    tokens.length <= 14 &&
+    hasAny(normalized, [
+      "he go",
+      "i has",
+      "she go",
+      "they is",
+      "we is",
+      "you is",
+    ])
+  );
+}
+
+function countMixedIntentSignals(text: string, context?: CattyPageContext) {
+  const normalized = normalizeText(text);
+  const signals = [
+    hasAny(normalized, ["corrige", "corrigir", "correct", "grammar", "frase"]),
+    hasTranslationSignal(text),
+    hasAny(normalized, ["meaning", "o que significa", "palavra", "significa", "word"]),
+    isHomeworkContext(context) ||
+      hasAny(normalized, ["answer", "dever", "gabarito", "homework", "resposta"]),
+    hasAny(normalized, ["faz pra mim", "faz por mim", "faca pra mim", "do it for me"]),
+  ];
+
+  return signals.filter(Boolean).length;
 }
 
 function getRecentUserContext(history: CattyMessage[], currentText: string) {
@@ -403,8 +479,17 @@ function detectCattyIntent(
   context?: CattyPageContext,
 ): { confidence: CattyResponsePlan["confidence"]; intent: CattyIntent } {
   const normalized = normalizeText(text);
+  const mixedIntentCount = countMixedIntentSignals(text, context);
 
   if (
+    mixedIntentCount >= 2 &&
+    (isLongQuestion(text) || getWordTokens(text).length >= 18)
+  ) {
+    return { confidence: "medium", intent: "complex_question" };
+  }
+
+  if (
+    isLikelyEnglishCorrectionCandidate(text) ||
     hasAny(normalized, [
       "corrige",
       "corrigir",
@@ -417,6 +502,10 @@ function detectCattyIntent(
     ])
   ) {
     return { confidence: "high", intent: "correct_sentence" };
+  }
+
+  if (hasTranslationSignal(text)) {
+    return { confidence: "high", intent: "translate_sentence" };
   }
 
   if (
@@ -443,6 +532,10 @@ function detectCattyIntent(
 
   if (isBareConfusionQuestion(text)) {
     return { confidence: "low", intent: "confusing_question" };
+  }
+
+  if (hasAny(normalized, ["estou travado", "preso", "travad", "travou"])) {
+    return { confidence: "high", intent: "motivation" };
   }
 
   if (
@@ -646,11 +739,29 @@ function buildPlannedEnglishReply(
   const contextLabel = getContextLabel(context);
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
+  const translationFragment = extractTranslationFragment(text);
 
   if (intent === "homework_hint") {
+    if (
+      hasAny(normalized, [
+        "answer",
+        "do it for me",
+        "give me the answer",
+        "the answer",
+      ])
+    ) {
+      return "Nya, I will not give the final answer, but I can help. Send the exercise and I will show a similar example.";
+    }
+
     return hasHomeworkPrompt(text)
       ? "Pss pss, Catty tip: I do not give the final answer, but I can show a similar example. Send the part that made you stuck."
       : "Awnn, I think the exercise is missing. Send me the question text, and I will give you a clue without the final answer.";
+  }
+
+  if (intent === "translate_sentence") {
+    return translationFragment
+      ? "Miauw, I can translate it, but if this is homework I will explain the idea instead of giving the final answer."
+      : "Miauw, send me the exact sentence you want to translate. Tiny text first, then I help.";
   }
 
   if (intent === "correct_sentence") {
@@ -663,6 +774,10 @@ function buildPlannedEnglishReply(
     }
 
     if (hasAny(normalized, ["she go"])) {
+      if (hasAny(normalized, ["yesterday"])) {
+        return "Uwau, tiny fix: She went to school yesterday. With yesterday, use went.";
+      }
+
       return "Uwau, tiny fix: She goes to school. With he, she or it, add -s to the verb.";
     }
 
@@ -711,15 +826,34 @@ function buildPlannedPortugueseReply(
   const normalized = normalizeText(text);
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
+  const translationFragment = extractTranslationFragment(text);
 
   if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
     return "Miauw, quando a teacher abrir a aula ao vivo, ela aparece no AVA. Entre por ali, permita camera e microfone, e pronto.";
   }
 
   if (intent === "homework_hint") {
+    if (
+      hasAny(normalized, [
+        "faz pra mim",
+        "faz por mim",
+        "faca pra mim",
+        "me da a resposta",
+        "resposta pronta",
+      ])
+    ) {
+      return "Nya, eu nao faco por voce nem dou resposta pronta. Mas me manda o exercicio e eu te mostro um exemplo parecido.";
+    }
+
     return hasHomeworkPrompt(text)
       ? "Pss pss, dica da Catty: eu nao dou a resposta pronta, mas posso te mostrar um exemplo parecido. Me manda a parte que travou."
       : "Awnn, acho que faltou o exercicio. Me manda o enunciado ou o texto da pergunta, que eu te dou uma pista boa.";
+  }
+
+  if (intent === "translate_sentence") {
+    return translationFragment
+      ? "Miauw, eu posso traduzir, mas se for homework eu explico a ideia sem entregar a resposta final."
+      : "Miauw, me manda a frase exata que voce quer traduzir. Uma frase curtinha ja basta.";
   }
 
   if (hasAny(normalized, ["senha", "login", "entrar"])) {
@@ -745,6 +879,14 @@ function buildPlannedPortugueseReply(
 
     if (hasAny(normalized, ["i has"])) {
       return "Awnn, quase la. A forma melhor e: I have a book. Com I, usamos have.";
+    }
+
+    if (hasAny(normalized, ["she go"])) {
+      if (hasAny(normalized, ["yesterday"])) {
+        return "Uwau, quase la. A forma melhor e: She went to school yesterday. Como tem yesterday, use went.";
+      }
+
+      return "Uwau, quase la. A forma melhor e: She goes to school. Com he, she ou it, o verbo ganha -s.";
     }
 
     return "Awnn, manda a frase exata que voce quer corrigir. Eu devolvo uma versao melhor e um motivo bem simples.";

@@ -160,8 +160,8 @@ Helpers:
 8. Widget envia para `/api/catty/chat` apenas quando o usuario logado no AVA manda uma mensagem real: mensagem atual, historico local recente e contexto leve.
 9. A rota chama `auth()` antes de parsear a mensagem; sem sessao ativa e role `ADMIN`, `TEACHER` ou `STUDENT`, retorna 401 amigavel.
 10. Para usuario autorizado, a rota valida o payload com Zod, aplica limite simples por IP e mescla o historico persistido com o historico local recente do widget, removendo a mensagem atual e limitando o contexto enviado.
-11. Antes de chamar IA ou fallback, `src/lib/catty.ts` detecta uma intencao leve da mensagem, como corrigir frase, explicar palavra, dica de homework, pratica de ingles, ajuda no AVA, mensagem para teacher, motivacao, pergunta grande ou pergunta confusa.
-12. Essa intencao vira um pequeno plano de resposta usado tanto no prompt da IA quanto no fallback local; perguntas vagas devem pedir uma informacao especifica, correcoes sem frase pedem a frase, homework sem enunciado pede a pergunta, e perguntas grandes devem ser resumidas em partes.
+11. Antes de chamar IA ou fallback, `src/lib/catty.ts` detecta uma intencao leve da mensagem, como corrigir frase, traduzir frase, explicar palavra, dica de homework, pratica de ingles, ajuda no AVA, mensagem para teacher, motivacao, pergunta grande ou pergunta confusa.
+12. Essa intencao vira um pequeno plano de resposta usado tanto no prompt da IA quanto no fallback local; perguntas vagas devem pedir uma informacao especifica, correcoes ou traducoes sem frase pedem o texto, frases em ingles com erro comum podem virar correcao direta, aluno travado recebe um passo simples, homework sem enunciado pede a pergunta, e perguntas grandes devem ser resumidas em partes.
 13. Somente as 8 mensagens recentes entram no prompt; a conversa armazenada e podada para no maximo 50 mensagens por contexto.
 14. A rota usa Gemini quando `GEMINI_API_KEY` existe.
 15. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
