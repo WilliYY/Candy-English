@@ -1,5 +1,10 @@
 import type { Role } from "@/lib/roles";
 import type { CattyResponsePlan } from "@/lib/catty";
+import {
+  applyCattyArtifactToReply,
+  extractCattyArtifactAvoidanceCandidates,
+  pickCattyArtifactForContext,
+} from "@/lib/catty-artifacts";
 import { getPrisma } from "@/lib/prisma";
 import {
   cattyUserMemoryStatusUpdateSchema,
@@ -1099,6 +1104,7 @@ function getMemoryFallbackHint(input: {
 
 export function applyCattyUserMemoryToFallbackReply(input: {
   memories: CattyUserMemoryPromptItem[];
+  message?: string;
   plan: CattyResponsePlan;
   reply: string;
 }) {
@@ -1106,7 +1112,15 @@ export function applyCattyUserMemoryToFallbackReply(input: {
     !promptFriendlyIntents.has(input.plan.intent) &&
     !difficultyFriendlyIntents.has(input.plan.intent)
   ) {
-    return input.reply;
+    return applyCattyArtifactToReply({
+      intent: input.plan.intent,
+      reply: input.reply,
+      selection: pickCattyArtifactForContext({
+        intent: input.plan.intent,
+        memories: input.memories,
+        message: input.message,
+      }),
+    });
   }
 
   const memory =
@@ -1114,7 +1128,15 @@ export function applyCattyUserMemoryToFallbackReply(input: {
     getFriendlyMemoryHint(input.memories);
 
   if (!memory || input.reply.includes(memory.value)) {
-    return input.reply;
+    return applyCattyArtifactToReply({
+      intent: input.plan.intent,
+      reply: input.reply,
+      selection: pickCattyArtifactForContext({
+        intent: input.plan.intent,
+        memories: input.memories,
+        message: input.message,
+      }),
+    });
   }
 
   const hint = getMemoryFallbackHint({
@@ -1122,7 +1144,19 @@ export function applyCattyUserMemoryToFallbackReply(input: {
     plan: input.plan,
   });
 
-  return hint ? compactText(`${input.reply}${hint}`, 700) : input.reply;
+  const replyWithMemory = hint
+    ? compactText(`${input.reply}${hint}`, 700)
+    : input.reply;
+
+  return applyCattyArtifactToReply({
+    intent: input.plan.intent,
+    reply: replyWithMemory,
+    selection: pickCattyArtifactForContext({
+      intent: input.plan.intent,
+      memories: input.memories,
+      message: input.message,
+    }),
+  });
 }
 
 async function flagContradictoryCattyUserMemoriesFromMessage(input: {
@@ -1205,7 +1239,10 @@ export async function maybeCreateCattyUserMemoryFromMessage(input: {
     userId: input.userId,
   });
 
-  const candidates = extractCattyUserMemoryCandidates(input.message);
+  const candidates = [
+    ...extractCattyArtifactAvoidanceCandidates(input.message),
+    ...extractCattyUserMemoryCandidates(input.message),
+  ];
 
   if (candidates.length === 0) {
     return [];

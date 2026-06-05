@@ -21,6 +21,12 @@ import {
   formatCattyUserMemoryPromptContext,
   selectRelevantCattyUserMemories,
 } from "../src/lib/catty-user-memory";
+import {
+  applyCattyArtifactToReply,
+  extractCattyArtifactAvoidanceCandidates,
+  formatCattyArtifactPromptContext,
+  pickCattyArtifactForContext,
+} from "../src/lib/catty-artifacts";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
 import { cattyUserMemoryUpsertSchema } from "../src/lib/validations/catty-user-memory";
 
@@ -78,6 +84,7 @@ function assertPromptContext(input: string, id: string) {
     "Regra de escopo",
     "Memoria aprovada da Catty",
     "Memoria pessoal segura do usuario",
+    "Artefato de personalidade sugerido",
     "Regra para ADMIN/TEACHER",
     "Conversa recente",
   ]) {
@@ -349,6 +356,7 @@ function main() {
   );
   const memoryAwareFallback = applyCattyUserMemoryToFallbackReply({
     memories: userMemoryContext,
+    message: "vamos praticar com capivara",
     plan: buildCattyResponsePlan("vamos praticar", {
       area: "student",
       task: "candy-xp",
@@ -357,6 +365,7 @@ function main() {
   });
   const confusedMemoryFallback = applyCattyUserMemoryToFallbackReply({
     memories: userMemoryContext,
+    message: "nao entendi capivara",
     plan: buildCattyResponsePlan("nao entendi", {
       area: "student",
       task: "candy-xp",
@@ -397,6 +406,65 @@ function main() {
   assertCondition(
     confusedMemoryFallback.includes("capivara"),
     "fallback confuso nao aplicou memoria pessoal relevante.",
+  );
+
+  const capybaraArtifact = pickCattyArtifactForContext({
+    intent: "confusing_question",
+    memories: userMemoryContext,
+    message: "nao entendi capivara",
+  });
+  const carsArtifact = pickCattyArtifactForContext({
+    intent: "correct_sentence",
+    memories: [],
+    message: "corrige minha frase sobre carros",
+  });
+  const artifactPrompt = formatCattyArtifactPromptContext(capybaraArtifact);
+  const artifactFallback = applyCattyArtifactToReply({
+    intent: "confusing_question",
+    reply: "Awnn, voce travou na palavra, na frase ou no exercicio?",
+    selection: capybaraArtifact,
+  });
+  const artifactAvoidance = extractCattyArtifactAvoidanceCandidates(
+    "Para de usar exemplos de capivara comigo.",
+  );
+  const blockedArtifact = pickCattyArtifactForContext({
+    intent: "confusing_question",
+    memories: [
+      ...userMemoryContext,
+      {
+        category: "STYLE" as const,
+        confidence: 92,
+        key: "avoid_capybara",
+        source: "USER_MESSAGE" as const,
+        value: "evitar artefatos de capivara",
+      },
+    ],
+    message: "nao entendi",
+  });
+
+  assertCondition(
+    capybaraArtifact?.artifact.id === "capybara",
+    "artefato de capivara nao foi selecionado por interesse/mensagem.",
+  );
+  assertCondition(
+    carsArtifact?.artifact.id === "cars",
+    "artefato de carros nao foi selecionado por mensagem atual.",
+  );
+  assertCondition(
+    artifactPrompt.includes("modo capivara calma"),
+    "prompt de artefato nao incluiu mini-bordoes do tema.",
+  );
+  assertCondition(
+    artifactFallback.includes("capivara"),
+    "fallback de artefato nao aplicou bordao do tema.",
+  );
+  assertCondition(
+    artifactAvoidance.some((memory) => memory.key === "avoid_capybara"),
+    "detector nao capturou preferencia para evitar tema.",
+  );
+  assertCondition(
+    blockedArtifact === null,
+    "artefato deveria ser bloqueado por memoria de evitar tema.",
   );
 
   const detectedMemories = extractCattyUserMemoryCandidates(

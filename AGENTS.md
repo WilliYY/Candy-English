@@ -118,7 +118,7 @@ Leitura minima recomendada:
 - Catty aparece no site, login e paineis logados do AVA por pedido explicito.
 - WhatsApp aparece no site e login, mas nao nos paineis logados do AVA.
 - Cuidar para Catty nao cobrir botoes criticos.
-- Catty pode usar contexto leve de rota/tarefa, ate 3 memorias aprovadas do Catty Learning Center, memorias pessoais ativas do proprio usuario e o `Contexto Catty` inicial do aluno quando cadastrado/aceito para orientar tom/exemplos; nao deve receber dados internos do AVA, senhas, chaves, contratos, documentos, telefones, enderecos, pagamentos ou respostas prontas de homework. Auto-sugestoes da Catty ficam pendentes e so viram memoria global apos aprovacao humana.
+- Catty pode usar contexto leve de rota/tarefa, ate 3 memorias aprovadas do Catty Learning Center, memorias pessoais ativas do proprio usuario, artefatos de personalidade derivados de interesses seguros e o `Contexto Catty` inicial do aluno quando cadastrado/aceito para orientar tom/exemplos; nao deve receber dados internos do AVA, senhas, chaves, contratos, documentos, telefones, enderecos, pagamentos ou respostas prontas de homework. Auto-sugestoes da Catty ficam pendentes e so viram memoria global apos aprovacao humana.
 - Evitar elementos decorativos pesados que prejudiquem performance ou clareza.
 
 ## Financeiro

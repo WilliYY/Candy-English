@@ -10,6 +10,8 @@ O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher
 
 A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logado. Ela pode guardar gostos, tema favorito, dificuldade comum, objetivo de estudo ou estilo de explicacao, sempre como resumo curto. Somente itens `ACTIVE` do proprio usuario entram no prompt e apenas como toque leve de exemplo, incentivo ou estilo. A rota escolhe poucas memorias por relevancia da mensagem/intencao, limita ate 5 itens no total, ate 2 dificuldades e ate 2 interesses/temas, e deve ignorar memoria que nao combine. Essa memoria nunca deve conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado. Se uma mensagem contradiz memoria ativa, ela vira `FLAGGED` para revisao. Admin, Teacher e Student possuem a tarefa `Memoria da Catty` para revisar o que esta salvo conforme permissao; Teacher so ve alunos vinculados e Student so ve a propria memoria.
 
+Os artefatos de personalidade ficam em `src/lib/catty-artifacts.ts`. Eles transformam interesses seguros do aluno em pequenos memes de fala, como carros, capivara, Pokemon, princesa/contos de fadas, futebol e games. Cada tema tem emojis permitidos, sons, mini-bordoes e um exemplo curto. A rota sugere no maximo um artefato quando a mensagem atual ou a memoria pessoal combinam com a intencao; se nao combinar, a Catty ignora. Se o usuario pedir para parar de usar um tema, isso vira uma memoria de estilo `avoid_*`, bloqueando o artefato sem apagar o interesse antigo.
+
 ## Regras que os exemplos protegem
 
 - Responder curto, com personalidade e utilidade pedagogica.
@@ -26,6 +28,8 @@ A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logad
 - Fazer no maximo uma pergunta de continuidade.
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
+- Usar artefatos por interesse como tempero leve, no maximo um por resposta, somente quando combinarem com a mensagem.
+- Respeitar preferencias `avoid_*` para nao insistir em tema que o usuario pediu para parar.
 - Usar gestao humana para corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado sem colocar `FLAGGED`, `ARCHIVED` ou `PENDING` no prompt.
 - Usar feedback do widget apenas como fila de revisao; Teacher sugere, Admin aprova globalmente.
 - Usar auto-sugestao apenas como fila pendente; nunca aprender conteudo automaticamente direto do usuario.
@@ -67,7 +71,7 @@ A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logad
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, bloqueio de dado sensivel em memoria/feedback, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade por interesse, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

@@ -19,6 +19,15 @@ export const CATTY_ALLOWED_EMOJIS = [
   "🎯",
   "🚀",
   "🥗",
+  "✨",
+  "🏎",
+  "🚗",
+  "🏁",
+  "🦫",
+  "⚡",
+  "👑",
+  "⚽",
+  "🎮",
 ] as const;
 
 export const CATTY_OPENINGS = [
