@@ -620,9 +620,11 @@ async function persistCattyExchangeSafely(input: {
   userMessage: string;
 }) {
   try {
-    await persistCattyExchange(input);
+    return await persistCattyExchange(input);
   } catch {
     console.warn("Catty history persistence failed.");
+
+    return null;
   }
 }
 
@@ -787,7 +789,7 @@ export async function POST(request: NextRequest) {
   const aiReply = await requestCattyAiReply(input, responsePlan, sources);
 
   if (!aiReply) {
-    await persistCattyExchangeSafely({
+    const persistedExchange = await persistCattyExchangeSafely({
       cattyReply: fallbackReply,
       context,
       source: "FALLBACK",
@@ -796,13 +798,14 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({
+      messageId: persistedExchange?.cattyMessageId,
       ok: true,
       reply: fallbackReply,
       source: "fallback",
     });
   }
 
-  await persistCattyExchangeSafely({
+  const persistedExchange = await persistCattyExchangeSafely({
     cattyReply: aiReply.reply,
     context,
     source: toStoredReplySource(aiReply.source),
@@ -811,6 +814,7 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({
+    messageId: persistedExchange?.cattyMessageId,
     ok: true,
     reply: aiReply.reply,
     source: aiReply.source,

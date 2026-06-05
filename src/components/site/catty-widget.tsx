@@ -5,16 +5,22 @@ import { usePathname } from "next/navigation";
 import {
   BookOpen,
   CheckCircle2,
+  CircleHelp,
   GraduationCap,
   Heart,
   Lightbulb,
+  LoaderCircle,
   MessageCircle,
+  MessageSquarePlus,
   PencilLine,
   Send,
   Sparkles,
+  ThumbsDown,
+  ThumbsUp,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { submitCattyReplyFeedback } from "@/app/ava/catty-learning/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,6 +47,12 @@ type CattyWidgetProps = {
     name: string | null;
   } | null;
 };
+
+type CattyWidgetFeedbackKind =
+  | "CONFUSING"
+  | "DISLIKED"
+  | "LIKED"
+  | "SHOULD_ANSWER";
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
 
@@ -93,6 +105,18 @@ function readReply(payload: unknown) {
   return typeof reply === "string" ? reply.trim() : "";
 }
 
+function readMessageId(payload: unknown) {
+  if (typeof payload !== "object" || payload === null) {
+    return undefined;
+  }
+
+  const messageId = (payload as { messageId?: unknown }).messageId;
+
+  return typeof messageId === "string" && messageId.trim()
+    ? messageId.trim()
+    : undefined;
+}
+
 function readMessages(payload: unknown): CattyMessage[] {
   if (typeof payload !== "object" || payload === null) {
     return [];
@@ -105,12 +129,13 @@ function readMessages(payload: unknown): CattyMessage[] {
   }
 
   return messages
-    .map((message) => {
+    .map((message): CattyMessage | null => {
       if (typeof message !== "object" || message === null) {
         return null;
       }
 
       const from = (message as { from?: unknown }).from;
+      const id = (message as { id?: unknown }).id;
       const text = (message as { text?: unknown }).text;
 
       if (
@@ -121,10 +146,16 @@ function readMessages(payload: unknown): CattyMessage[] {
         return null;
       }
 
-      return {
+      const parsedMessage: CattyMessage = {
         from,
         text: text.trim(),
-      } satisfies CattyMessage;
+      };
+
+      if (typeof id === "string" && id.trim()) {
+        parsedMessage.id = id.trim();
+      }
+
+      return parsedMessage;
     })
     .filter((message): message is CattyMessage => message !== null)
     .slice(-50);
@@ -430,6 +461,15 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const [loggedInBalloon, setLoggedInBalloon] = useState("");
   const [publicBalloon, setPublicBalloon] = useState("");
   const [publicNoticeVisible, setPublicNoticeVisible] = useState(false);
+  const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>(
+    {},
+  );
+  const [feedbackOpenMessageId, setFeedbackOpenMessageId] = useState<
+    string | null
+  >(null);
+  const [feedbackStatus, setFeedbackStatus] = useState<
+    Record<string, "error" | "saved" | "sending">
+  >({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
@@ -658,11 +698,13 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         response.status === 401
           ? readReply(payload) || CATTY_AUTH_REQUIRED_REPLY
           : readReply(payload) || buildFallbackCattyReply(clean, currentContext);
+      const messageId = readMessageId(payload);
 
       setMessages((current) => [
         ...current,
         {
           from: "catty",
+          id: messageId,
           text: reply,
         },
       ]);
@@ -676,6 +718,42 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       ]);
     } finally {
       setIsThinking(false);
+    }
+  }
+
+  async function sendFeedback(
+    message: CattyMessage,
+    kind: CattyWidgetFeedbackKind,
+    idealReply?: string,
+  ) {
+    if (!message.id) {
+      return;
+    }
+
+    setFeedbackStatus((current) => ({
+      ...current,
+      [message.id as string]: "sending",
+    }));
+
+    const result = await submitCattyReplyFeedback({
+      cattyMessageId: message.id,
+      idealReply,
+      kind,
+    });
+
+    setFeedbackStatus((current) => ({
+      ...current,
+      [message.id as string]: result.ok ? "saved" : "error",
+    }));
+
+    if (result.ok) {
+      setFeedbackOpenMessageId((current) =>
+        current === message.id ? null : current,
+      );
+      setFeedbackDrafts((current) => ({
+        ...current,
+        [message.id as string]: "",
+      }));
     }
   }
 
@@ -743,18 +821,146 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
             aria-live="polite"
           >
             {canUseCattyChat ? (
-              messages.map((message, index) => (
-                <p
-                  key={`${message.from}-${index}`}
-                  className={
-                    message.from === "catty"
-                      ? "max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
-                      : "ml-auto max-w-[88%] rounded-2xl rounded-tr-sm bg-primary p-3 text-sm leading-6 text-primary-foreground shadow-sm"
-                  }
-                >
-                  {message.text}
-                </p>
-              ))
+              messages.map((message, index) => {
+                const canFeedback = message.from === "catty" && Boolean(message.id);
+                const messageStatus = message.id
+                  ? feedbackStatus[message.id]
+                  : undefined;
+                const idealDraft = message.id
+                  ? feedbackDrafts[message.id] ?? ""
+                  : "";
+
+                return (
+                  <div
+                    key={`${message.from}-${message.id ?? index}`}
+                    className={
+                      message.from === "catty"
+                        ? "max-w-[88%]"
+                        : "ml-auto max-w-[88%]"
+                    }
+                  >
+                    <p
+                      className={
+                        message.from === "catty"
+                          ? "rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
+                          : "rounded-2xl rounded-tr-sm bg-primary p-3 text-sm leading-6 text-primary-foreground shadow-sm"
+                      }
+                    >
+                      {message.text}
+                    </p>
+
+                    {canFeedback ? (
+                      <div className="mt-1 flex flex-wrap items-center gap-1 pl-2 text-[0.68rem] text-muted-foreground">
+                        <FeedbackIconButton
+                          disabled={messageStatus === "sending"}
+                          label="Gostei"
+                          onClick={() => {
+                            void sendFeedback(message, "LIKED");
+                          }}
+                        >
+                          <ThumbsUp aria-hidden="true" className="size-3" />
+                        </FeedbackIconButton>
+                        <FeedbackIconButton
+                          disabled={messageStatus === "sending"}
+                          label="Nao gostei"
+                          onClick={() => {
+                            void sendFeedback(message, "DISLIKED");
+                          }}
+                        >
+                          <ThumbsDown aria-hidden="true" className="size-3" />
+                        </FeedbackIconButton>
+                        <FeedbackIconButton
+                          disabled={messageStatus === "sending"}
+                          label="Resposta confusa"
+                          onClick={() => {
+                            void sendFeedback(message, "CONFUSING");
+                          }}
+                        >
+                          <CircleHelp aria-hidden="true" className="size-3" />
+                        </FeedbackIconButton>
+                        <FeedbackIconButton
+                          disabled={messageStatus === "sending"}
+                          label="Deveria responder assim"
+                          onClick={() => {
+                            setFeedbackOpenMessageId((current) =>
+                              current === message.id ? null : (message.id ?? null),
+                            );
+                          }}
+                        >
+                          <MessageSquarePlus
+                            aria-hidden="true"
+                            className="size-3"
+                          />
+                        </FeedbackIconButton>
+                        {messageStatus === "sending" ? (
+                          <LoaderCircle
+                            aria-hidden="true"
+                            className="ml-1 size-3 animate-spin"
+                          />
+                        ) : null}
+                        {messageStatus === "saved" ? (
+                          <span className="ml-1">recebido</span>
+                        ) : null}
+                        {messageStatus === "error" ? (
+                          <span className="ml-1 text-rose-600">
+                            tente de novo
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {message.id && feedbackOpenMessageId === message.id ? (
+                      <form
+                        className="mt-2 rounded-xl border border-primary/10 bg-white/80 p-2 shadow-sm"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          void sendFeedback(
+                            message,
+                            "SHOULD_ANSWER",
+                            idealDraft,
+                          );
+                        }}
+                      >
+                        <textarea
+                          value={idealDraft}
+                          onChange={(event) => {
+                            const value = event.target.value;
+
+                            setFeedbackDrafts((current) => ({
+                              ...current,
+                              [message.id as string]: value,
+                            }));
+                          }}
+                          className="min-h-16 w-full resize-none rounded-lg border bg-white px-3 py-2 text-xs leading-5 outline-none transition focus:border-primary"
+                          maxLength={1000}
+                          placeholder="Escreva como a Catty deveria responder..."
+                        />
+                        <div className="mt-2 flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={() => setFeedbackOpenMessageId(null)}
+                          >
+                            Cancelar
+                          </Button>
+                          <Button
+                            type="submit"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            disabled={
+                              messageStatus === "sending" || !idealDraft.trim()
+                            }
+                          >
+                            Enviar
+                          </Button>
+                        </div>
+                      </form>
+                    ) : null}
+                  </div>
+                );
+              })
             ) : (
               <p
                 className="max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
@@ -897,5 +1103,30 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         />
       </Button>
     </div>
+  );
+}
+
+function FeedbackIconButton({
+  children,
+  disabled,
+  label,
+  onClick,
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="inline-flex size-6 items-center justify-center rounded-full border border-transparent text-muted-foreground/75 transition hover:border-primary/15 hover:bg-white hover:text-primary disabled:pointer-events-none disabled:opacity-50"
+    >
+      {children}
+    </button>
   );
 }

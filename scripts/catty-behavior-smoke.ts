@@ -11,6 +11,7 @@ import {
   hasTooManyCattyCatchphrases,
 } from "../src/lib/catty-personality";
 import { pickCattyLearningFallbackReply } from "../src/lib/catty-learning";
+import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
 
 const expectedExampleCount = 15;
 const forbiddenGenericStarts = [
@@ -281,6 +282,32 @@ function main() {
     Boolean(learnedFallback?.includes("Miauw")),
     "fallback nao aproveitou resposta ideal aprovada.",
   );
+
+  const missingIdealFeedback = cattyLearningFeedbackCreateSchema.safeParse({
+    cattyMessageId: "catty-message-1",
+    kind: "SHOULD_ANSWER",
+  });
+  const sensitiveFeedback = cattyLearningFeedbackCreateSchema.safeParse({
+    cattyMessageId: "catty-message-1",
+    idealReply: "Use este telefone no exemplo.",
+    kind: "SHOULD_ANSWER",
+  });
+  const validFeedback = cattyLearningFeedbackCreateSchema.safeParse({
+    cattyMessageId: "catty-message-1",
+    idealReply:
+      "Miauw, quer aprender isso em English? Podemos dizer: I make a salad.",
+    kind: "SHOULD_ANSWER",
+  });
+
+  assertCondition(
+    !missingIdealFeedback.success,
+    "feedback deveria exigir resposta ideal em SHOULD_ANSWER.",
+  );
+  assertCondition(
+    !sensitiveFeedback.success,
+    "feedback deveria bloquear termo sensivel.",
+  );
+  assertCondition(validFeedback.success, "feedback valido foi recusado.");
 
   console.log(
     `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos validados.`,

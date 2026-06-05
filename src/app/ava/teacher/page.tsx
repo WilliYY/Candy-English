@@ -13,7 +13,11 @@ import {
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
-import type { CattyLearningIntentInput } from "@/lib/validations/catty-learning";
+import type {
+  CattyLearningCategoryInput,
+  CattyLearningFeedbackKindInput,
+  CattyLearningIntentInput,
+} from "@/lib/validations/catty-learning";
 import { studentPreRegistrationStatusSchema } from "@/lib/validations/pre-registration";
 
 export const metadata: Metadata = {
@@ -106,6 +110,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     liveSessions,
     contracts,
     chatThreads,
+    cattyLearningFeedbacks,
     cattyLearningItems,
     studentPreRegistrations,
     studentPreRegistrationStatusCounts,
@@ -436,6 +441,65 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         teacherProfileId: true,
       },
     }),
+    prisma.cattyLearningFeedback.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        cattyReply: true,
+        contextArea: true,
+        contextTask: true,
+        createdAt: true,
+        createdByUser: {
+          select: {
+            name: true,
+            role: true,
+          },
+        },
+        id: true,
+        idealReply: true,
+        item: {
+          select: {
+            title: true,
+          },
+        },
+        kind: true,
+        note: true,
+        reviewedAt: true,
+        reviewedByUser: {
+          select: {
+            name: true,
+          },
+        },
+        status: true,
+        suggestedCategory: true,
+        suggestedIntent: true,
+        suggestedTitle: true,
+        userPrompt: true,
+      },
+      take: 80,
+      where:
+        session.user.role === "TEACHER"
+          ? {
+              OR: [
+                {
+                  createdByUserId: session.user.id,
+                },
+                {
+                  createdByUser: {
+                    studentProfile: {
+                      teacherAssignments: {
+                        some: {
+                          teacherProfileId: teacherProfileIdForFiltering,
+                        },
+                      },
+                    },
+                  },
+                },
+              ],
+            }
+          : {},
+    }),
     prisma.cattyLearningItem.findMany({
       orderBy: {
         createdAt: "desc",
@@ -595,6 +659,28 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     <TeacherWorkspace
       activeTask={activeTask}
       candyXpPersistence={candyXpPersistence}
+      cattyLearningFeedbacks={cattyLearningFeedbacks.map((feedback) => ({
+        cattyReply: feedback.cattyReply,
+        contextArea: feedback.contextArea,
+        contextTask: feedback.contextTask,
+        createdAt: feedback.createdAt.toISOString(),
+        createdByName: feedback.createdByUser?.name ?? null,
+        createdByRole: feedback.createdByUser?.role ?? null,
+        id: feedback.id,
+        idealReply: feedback.idealReply,
+        itemTitle: feedback.item?.title ?? null,
+        kind: feedback.kind as CattyLearningFeedbackKindInput,
+        note: feedback.note,
+        reviewedAt: feedback.reviewedAt?.toISOString() ?? null,
+        reviewedByName: feedback.reviewedByUser?.name ?? null,
+        status: feedback.status,
+        suggestedCategory:
+          feedback.suggestedCategory as CattyLearningCategoryInput | null,
+        suggestedIntent:
+          feedback.suggestedIntent as CattyLearningIntentInput | null,
+        suggestedTitle: feedback.suggestedTitle,
+        userPrompt: feedback.userPrompt,
+      }))}
       cattyLearningItems={cattyLearningItems.map((item) => ({
         approvedAt: item.approvedAt?.toISOString() ?? null,
         approvedByName: item.approvedByUser?.name ?? null,

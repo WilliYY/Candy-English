@@ -35,6 +35,7 @@ import {
 } from "@/components/ava/admin-credentials-panel";
 import {
   CattyLearningCenterPanel,
+  type CattyLearningFeedbackRow,
   type CattyLearningItemRow,
 } from "@/components/ava/catty-learning-center-panel";
 import {
@@ -147,6 +148,7 @@ type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
   candyXpActivities: AdminCandyXpActivityRow[];
+  cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   agendaLessons: AdminAgendaLessonRow[];
@@ -571,6 +573,7 @@ export function AdminUsersPanel({
   activeTask,
   adminCredentials,
   candyXpActivities,
+  cattyLearningFeedbacks,
   cattyLearningItems,
   candyXpPersistence,
   agendaLessons,
@@ -828,6 +831,7 @@ export function AdminUsersPanel({
 
           {activeTask === "catty-learning" ? (
             <CattyLearningCenterPanel
+              feedbacks={cattyLearningFeedbacks}
               items={cattyLearningItems}
               viewerRole="ADMIN"
             />

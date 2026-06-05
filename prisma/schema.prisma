@@ -157,6 +157,14 @@ enum CattyLearningStatus {
   ARCHIVED
 }
 
+enum CattyLearningFeedbackKind {
+  LIKED
+  DISLIKED
+  CONFUSING
+  SHOULD_ANSWER
+  PATTERN_SUGGESTION
+}
+
 model User {
   id                   String                @id @default(cuid())
   name                 String
@@ -816,6 +824,7 @@ model CattyMessage {
   role           CattyMessageRole
   text           String
   source         CattyReplySource?
+  learningFeedbacks CattyLearningFeedback[]
   createdAt      DateTime           @default(now())
 
   @@index([conversationId, createdAt])
@@ -852,10 +861,19 @@ model CattyLearningFeedback {
   id                String                 @id @default(cuid())
   itemId            String?
   item              CattyLearningItem?     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  kind              CattyLearningFeedbackKind @default(PATTERN_SUGGESTION)
+  cattyMessageId    String?
+  cattyMessage      CattyMessage?          @relation(fields: [cattyMessageId], references: [id], onDelete: SetNull)
   note              String
   suggestedTitle    String?
   suggestedCategory CattyLearningCategory?
   suggestedIntent   String?
+  userPrompt        String?
+  cattyReply        String?
+  idealReply        String?
+  contextArea       String?
+  contextTask       String?
+  contextKey        String?
   status            CattyLearningStatus    @default(PENDING)
   createdByUserId   String?
   createdByUser     User?                  @relation("CattyLearningFeedbackCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
@@ -866,7 +884,10 @@ model CattyLearningFeedback {
   updatedAt         DateTime               @updatedAt
 
   @@index([status, createdAt])
+  @@index([kind, status])
   @@index([itemId])
+  @@index([cattyMessageId])
+  @@index([contextKey])
   @@index([createdByUserId])
   @@index([reviewedByUserId])
 }

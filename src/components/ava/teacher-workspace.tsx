@@ -42,6 +42,7 @@ import {
 } from "@/components/ava/student-pre-registration-review-panel";
 import {
   CattyLearningCenterPanel,
+  type CattyLearningFeedbackRow,
   type CattyLearningItemRow,
 } from "@/components/ava/catty-learning-center-panel";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
@@ -202,6 +203,7 @@ type ContractRow = {
 type TeacherWorkspaceProps = {
   activeTask: TeacherTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
   chatThreads: ChatThreadRow[];
   currentUser: {
@@ -313,6 +315,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 export function TeacherWorkspace({
   activeTask,
   candyXpPersistence,
+  cattyLearningFeedbacks,
   cattyLearningItems,
   chatThreads,
   currentUser,
@@ -639,6 +642,7 @@ export function TeacherWorkspace({
 
           {activeTask === "catty-learning" ? (
             <CattyLearningCenterPanel
+              feedbacks={cattyLearningFeedbacks}
               items={cattyLearningItems}
               viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
             />

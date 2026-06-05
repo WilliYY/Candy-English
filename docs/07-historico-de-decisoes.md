@@ -184,6 +184,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260605210000_catty_learning_center`, `src/app/ava/catty-learning/actions.ts`, `src/components/ava/catty-learning-center-panel.tsx`, paginas admin/teacher, `src/lib/catty-learning.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, menu do AVA, smoke da Catty e docs oficiais.
 - Riscos/cuidados: nao aprovar memoria com senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados; manter poucos itens no prompt; nao transformar isso em RAG automatico sem nova decisao.
 
+### 2026-06-05 - Feedback discreto para treinar a Catty
+
+- Decisao: respostas persistidas da Catty no widget podem receber feedback pequeno (`gostei`, `nao gostei`, `resposta confusa` e `deveria responder assim`), sempre por usuario logado.
+- Motivo: alimentar a fila de treino sem liberar aprendizado automatico nem poluir o chat com controles grandes.
+- Impacto: `prisma/schema.prisma`, migration `20260605223000_catty_learning_feedback`, `src/components/site/catty-widget.tsx`, `src/app/ava/catty-learning/actions.ts`, paginas admin/teacher, `src/components/ava/catty-learning-center-panel.tsx` e docs oficiais.
+- Riscos/cuidados: feedback pode conter dado privado digitado pelo usuario; a action bloqueia termos sensiveis e o painel mostra apenas trechos resumidos.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

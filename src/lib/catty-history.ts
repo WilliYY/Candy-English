@@ -58,6 +58,7 @@ export async function getCattyConversationMessages(input: {
       messages: {
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         select: {
+          id: true,
           role: true,
           text: true,
         },
@@ -74,6 +75,7 @@ export async function getCattyConversationMessages(input: {
     .reverse()
     .map((message) => ({
       from: message.role === "CATTY" ? "catty" : "user",
+      id: message.id,
       text: message.text,
     }));
 }
@@ -95,7 +97,7 @@ export async function persistCattyExchange({
   const prisma = getPrisma();
   const historyContext = getCattyHistoryContext(context);
 
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
     const conversation = await tx.cattyConversation.upsert({
       where: {
         userId_contextKey: {
@@ -118,20 +120,26 @@ export async function persistCattyExchange({
       },
     });
 
-    await tx.cattyMessage.createMany({
-      data: [
-        {
-          conversationId: conversation.id,
-          role: "USER",
-          text: cleanUserMessage,
-        },
-        {
-          conversationId: conversation.id,
-          role: "CATTY",
-          source,
-          text: cleanCattyReply,
-        },
-      ],
+    const userStoredMessage = await tx.cattyMessage.create({
+      data: {
+        conversationId: conversation.id,
+        role: "USER",
+        text: cleanUserMessage,
+      },
+      select: {
+        id: true,
+      },
+    });
+    const cattyStoredMessage = await tx.cattyMessage.create({
+      data: {
+        conversationId: conversation.id,
+        role: "CATTY",
+        source,
+        text: cleanCattyReply,
+      },
+      select: {
+        id: true,
+      },
     });
 
     const staleMessages = await tx.cattyMessage.findMany({
@@ -155,5 +163,11 @@ export async function persistCattyExchange({
         },
       });
     }
+
+    return {
+      cattyMessageId: cattyStoredMessage.id,
+      conversationId: conversation.id,
+      userMessageId: userStoredMessage.id,
+    };
   });
 }

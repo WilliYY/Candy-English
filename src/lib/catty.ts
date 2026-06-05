@@ -11,6 +11,7 @@ export {
 
 export type CattyMessage = {
   from: "catty" | "user";
+  id?: string;
   text: string;
 };
 
