@@ -54,6 +54,7 @@ Actions:
 Helpers:
 
 - `src/lib/catty.ts`
+- `src/lib/catty-personality.ts`
 - `src/lib/catty-examples.ts`
 - `src/lib/catty-history.ts`
 - `src/lib/candy-xp.ts`
@@ -169,10 +170,11 @@ Helpers:
 16. Se a mensagem chama Catty pelo nome, incluindo `Catty`, `catty` ou `/catty`, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
 17. Sem chave, erro de API, resposta vazia, resposta cortada, resposta generica demais, resposta fora da personalidade ou resposta especializada indevida fora do escopo Candy English, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
 18. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
-19. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE` e o escopo oficial fica em `CATTY_SCOPE_GUIDE`, combinados em `CATTY_BRAIN_RULES`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, pode usar um emoji pequeno ocasional e nao responde como especialista generica fora do estudo de ingles/AVA.
+19. A identidade viva fica em `src/lib/catty-personality.ts`: `CATTY_PERSONALITY_GUIDE`, `CATTY_PERSONALITY_USAGE_RULES` e `CATTY_SCOPE_GUIDE` formam `CATTY_BRAIN_RULES`; Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya`, `Catty mode on` e `Bora estudar`, pode usar um emoji pequeno ocasional e nao responde como especialista generica fora do estudo de ingles/AVA.
 20. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
 21. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
-22. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback e o gatilho OpenAI/Gemini continuam alinhados.
+22. Os baloes publicos/logados, respostas de bloqueio, abertura inicial e frases por situacao tambem saem de `src/lib/catty-personality.ts`, para evitar voz duplicada entre widget, prompt e fallback.
+23. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback, o uso de no maximo um bordao e o gatilho OpenAI/Gemini continuam alinhados.
 
 ### Aula ao vivo
 

@@ -156,6 +156,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `README.md`, `docs/03-fluxos-do-sistema.md` e `docs/design-direcao.md`.
 - Riscos/cuidados: manter respostas curtas, sem entregar respostas de homework, sem inventar dados do AVA e sem exagerar em emoji/expressoes.
 
+### 2026-06-05 - Identidade viva reutilizavel da Catty
+
+- Decisao: mover a identidade da Catty para `src/lib/catty-personality.ts`, centralizando bordoes, baloes publicos/logados, abertura inicial, mensagens de bloqueio, frases por situacao, regras de emoji e limite de bordoes.
+- Motivo: evitar voz duplicada entre prompt, fallback e widget, e deixar mais facil ajustar a personagem sem mexer na logica de auth/IA.
+- Impacto: `src/lib/catty-personality.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `src/components/site/catty-widget.tsx`, `scripts/catty-behavior-smoke.ts` e docs oficiais.
+- Riscos/cuidados: IA com mais de um bordao deve cair para fallback; visitante continua sem chat real; respostas seguem curtas e pedagogicas.
+
 ### 2026-05 - Financeiro recorrente
 
 - Decisao: substituir linha financeira solta por `FinancialStudent`, `FinancialPayment` e `FinancialLog`.

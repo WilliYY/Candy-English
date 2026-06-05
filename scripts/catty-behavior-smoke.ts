@@ -2,11 +2,14 @@ import {
   buildCattyInput,
   buildCattyResponsePlan,
   buildFallbackCattyReply,
-  CATTY_SIGNATURE_EXPRESSIONS,
   hasDisallowedCattyText,
   shouldUseOpenAiForCatty,
 } from "../src/lib/catty";
 import { CATTY_BEHAVIOR_EXAMPLES } from "../src/lib/catty-examples";
+import {
+  CATTY_SIGNATURE_EXPRESSIONS,
+  hasTooManyCattyCatchphrases,
+} from "../src/lib/catty-personality";
 
 const expectedExampleCount = 15;
 const forbiddenGenericStarts = [
@@ -121,6 +124,10 @@ function main() {
       includesSignature(example.idealReply),
       `${example.id}: resposta ideal sem voz da Catty.`,
     );
+    assertCondition(
+      !hasTooManyCattyCatchphrases(example.idealReply),
+      `${example.id}: resposta ideal tem bordoes demais.`,
+    );
     assertNoGenericOpening(example.idealReply, `${example.id}: resposta ideal`);
 
     const plan = buildCattyResponsePlan(example.userMessage, example.context);
@@ -170,6 +177,10 @@ function main() {
     assertCondition(
       includesSignature(fallbackReply),
       `${example.id}: fallback sem expressao da Catty.`,
+    );
+    assertCondition(
+      !hasTooManyCattyCatchphrases(fallbackReply),
+      `${example.id}: fallback tem bordoes demais.`,
     );
     assertNoGenericOpening(fallbackReply, `${example.id}: fallback`);
     assertIntentSafety(example.id, example.expectedIntent, fallbackReply);

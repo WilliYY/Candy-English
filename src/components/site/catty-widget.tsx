@@ -22,6 +22,13 @@ import {
   type CattyMessage,
   type CattyPageContext,
 } from "@/lib/catty";
+import {
+  CATTY_AUTH_REQUIRED_REPLY,
+  CATTY_INITIAL_MESSAGE,
+  CATTY_LOGGED_IN_BALLOON_TEMPLATES,
+  CATTY_PUBLIC_BALLOON_TEMPLATES,
+  CATTY_PUBLIC_LOCKED_REPLY,
+} from "@/lib/catty-personality";
 
 type QuickReply = {
   icon: "book" | "check" | "heart" | "lightbulb" | "pencil" | "practice";
@@ -36,93 +43,13 @@ type CattyWidgetProps = {
 };
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
-const CATTY_AUTH_REQUIRED_REPLY =
-  "Awnn, meu chat e so para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
-const CATTY_PUBLIC_LOCKED_REPLY =
-  "Awnn, meu chat e so para alunos Candy. Entra no AVA ou vem virar aluno para conversar comigo. 🐱";
 
 const initialCattyMessages: CattyMessage[] = [
   {
     from: "catty",
-    text: "Miauw, eu sou a Catty, sua gatinha de estudos da Candy. Bora praticar English sem medo?",
+    text: CATTY_INITIAL_MESSAGE,
   },
 ];
-
-const publicBalloonTemplates = [
-  "Miauw, a Catty ta aqui e a profa tambem. Vem ser aluno Candy!",
-  "Pss pss, quer aprender ingles de um jeito mais docinho?",
-  "Nya, eu guardo as melhores dicas para alunos Candy.",
-  "A Catty ta feliz porque hoje tem English!",
-  "Vem estudar com a gente. Eu prometo miar motivacao.",
-  "Ingles pode ser leve, fofo e poderoso. Vem pra Candy!",
-  "Miauw, voce ainda nao e aluno Candy? Ta esperando o que?",
-  "A profa ensina, eu acompanho e voce evolui.",
-  "Aqui tem aula, carinho e um pouquinho de magia Candy.",
-  "Quer destravar o ingles? A Catty te chama!",
-  "Vem ser aluno Candy e ganhar sua parceira de estudos.",
-  "Uwau, seu futuro bilingue ta piscando pra voce.",
-  "Eu sou pequena, mas minha vontade de te ver falando ingles e gigante.",
-  "English fica mais facil quando tem Candy no caminho.",
-  "A Catty ta te esperando do lado de dentro do AVA.",
-  "Entre para a Candy e venha estudar comigo.",
-  "Miau miau, aula boa e aula com Candy.",
-  "Voce traz a vontade, a Candy traz o metodo.",
-  "Quer aprender sem aquele ingles travado? Vem!",
-  "A profa prepara a aula e eu preparo o incentivo.",
-  "Hoje e um otimo dia para comecar ingles.",
-  "Pss pss, eu tenho dicas, mas so libero para alunos Candy.",
-  "Candy English: porque estudar tambem pode ser gostoso.",
-  "Vem virar aluno Candy e desbloquear a Catty.",
-  "Aqui a gente aprende ingles sem cara de escola chata.",
-  "Eu vi um aluno evoluindo hoje. O proximo pode ser voce.",
-  "Miauw, seu ingles merece um upgrade fofo.",
-  "A Catty ta online, mas so alunos Candy conversam comigo.",
-  "Quer praticar ingles com uma gatinha estudiosa?",
-  "Vem para a Candy. Eu ja deixei seu cantinho preparado.",
-] as const;
-
-const loggedInBalloonTemplates = [
-  "Miauw, {name}! Catty ta on. Let's practice! 🐱",
-  "{greeting}, {name}! Vamos estudar ingles um pouquinho?",
-  "Nya, {name}! Como foi seu dia ate agora?",
-  "Catty chegou, {name}. Bora destravar esse English?",
-  "Ei, {name}, let's study together!",
-  "Uwau, hoje e dia de evoluir no ingles.",
-  "{name}, sua parceira de estudos esta online.",
-  "Good to see you, {name}! Ready to practice?",
-  "Miauw, {name}, abre uma atividade e vamos juntos.",
-  "Um pouquinho por dia, {name}. English fica mais facil.",
-  "Catty ta feliz porque voce entrou no AVA.",
-  "{name}, quer praticar uma frase em ingles agora?",
-  "Pss pss, vamos aquecer o cerebro com English?",
-  "{greeting}! A Catty ja separou energia de estudo.",
-  "{name}, hoje seu ingles vai ganhar XP.",
-  "Bora, {name}! Uma frase nova ja conta.",
-  "Awnn, nao precisa ser perfeito. Precisa praticar.",
-  "Catty mode on. Study mode on. Vamos!",
-  "{name}, me chama se travar em alguma atividade.",
-  "Quer revisar rapidinho, {name}?",
-  "Miauw, estou aqui para te ajudar sem dar resposta pronta.",
-  "{name}, cada mini pratica vira progresso.",
-  "Let's go, {name}! Seu ingles agradece.",
-  "Catty ta pronta. E voce, {name}?",
-  "{greeting}, aluno Candy! Hoje tem evolucao.",
-  "Nya, {name}, vamos deixar esse ingles mais leve.",
-  "Uma pergunta em English agora, {name}?",
-  "Catty acredita em voce, {name}. Bora estudar!",
-  "{name}, abre o Candy XP e vamos ganhar progresso.",
-  "Miauw, o AVA fica mais fofo quando voce entra.",
-  "Hoje e um bom dia para praticar listening, reading ou speaking.",
-  "{name}, quer uma dica sem spoiler da resposta?",
-  "Catty ta aqui: calma, foco e English.",
-  "Pss pss, vamos transformar duvida em pratica.",
-  "{name}, seu futuro bilingue mandou um oi.",
-  "Estudar 5 minutinhos ja vale, {name}.",
-  "Good vibes, good English, {name}.",
-  "Bora estudar, escolha uma missao e vamos comecar.",
-  "{name}, quer treinar uma frase curtinha?",
-  "Catty feliz, aluno online, English acontecendo!",
-] as const;
 
 const defaultQuickReplies: QuickReply[] = [
   {
@@ -437,7 +364,7 @@ function getCattyGreeting() {
 
 function getRandomLoggedInBalloon(name: string, current?: string) {
   const greeting = getCattyGreeting();
-  const availableTemplates = loggedInBalloonTemplates.filter((template) => {
+  const availableTemplates = CATTY_LOGGED_IN_BALLOON_TEMPLATES.filter((template) => {
     const rendered = template
       .replace(/\{name\}/g, name)
       .replace(/\{greeting\}/g, greeting);
@@ -447,20 +374,20 @@ function getRandomLoggedInBalloon(name: string, current?: string) {
   const templates =
     availableTemplates.length > 0
       ? availableTemplates
-      : loggedInBalloonTemplates;
+      : CATTY_LOGGED_IN_BALLOON_TEMPLATES;
   const template = templates[Math.floor(Math.random() * templates.length)];
 
   return template.replace(/\{name\}/g, name).replace(/\{greeting\}/g, greeting);
 }
 
 function getRandomPublicBalloon(current?: string) {
-  const availableTemplates = publicBalloonTemplates.filter(
+  const availableTemplates = CATTY_PUBLIC_BALLOON_TEMPLATES.filter(
     (template) => template !== current,
   );
   const templates =
     availableTemplates.length > 0
       ? availableTemplates
-      : publicBalloonTemplates;
+      : CATTY_PUBLIC_BALLOON_TEMPLATES;
 
   return templates[Math.floor(Math.random() * templates.length)];
 }

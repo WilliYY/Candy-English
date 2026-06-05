@@ -2,7 +2,6 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   buildCattyInput,
   buildCattyResponsePlan,
-  CATTY_BRAIN_RULES,
   type CattyMessage,
   type CattyPageContext,
   type CattyResponsePlan,
@@ -11,6 +10,11 @@ import {
   sanitizeCattyReply,
   shouldUseOpenAiForCatty,
 } from "@/lib/catty";
+import {
+  CATTY_AUTH_REQUIRED_REPLY,
+  CATTY_BRAIN_RULES,
+  hasTooManyCattyCatchphrases,
+} from "@/lib/catty-personality";
 import {
   CATTY_AI_CONTEXT_LIMIT,
   getCattyConversationMessages,
@@ -62,8 +66,6 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 type CattyAiSource = "gemini" | "openai";
-const CATTY_AUTH_REQUIRED_REPLY =
-  "Awnn, meu chat e so para alunos Candy. Entra na sua conta do AVA para conversar comigo.";
 
 function getClientIp(request: NextRequest) {
   const forwardedFor = request.headers.get("x-forwarded-for");
@@ -203,6 +205,7 @@ function cleanAiReply(text: string, plan: CattyResponsePlan) {
   if (
     !reply ||
     hasDisallowedCattyText(reply) ||
+    hasTooManyCattyCatchphrases(reply) ||
     isLikelyIncompleteReply(reply) ||
     isLowValueAiReply(reply) ||
     isUnsafeForResponsePlan(reply, plan)
