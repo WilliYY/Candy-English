@@ -13,6 +13,7 @@ import {
   Link2,
   LockKeyhole,
   MessageSquareText,
+  Palette,
   PencilLine,
   Radio,
   Settings,
@@ -155,6 +156,12 @@ const navGroups = [
         section: "Sistema",
       },
       {
+        href: "/ava/admin?task=catty-artifacts",
+        icon: Palette,
+        label: "Estilo da Catty",
+        section: "Sistema",
+      },
+      {
         href: "/ava/admin?task=editar-site",
         icon: PencilLine,
         label: "Manutencao",
@@ -217,6 +224,12 @@ const navGroups = [
         section: "Comunicacao",
       },
       {
+        href: "/ava/teacher?task=catty-artifacts",
+        icon: Palette,
+        label: "Estilo da Catty",
+        section: "Comunicacao",
+      },
+      {
         href: "/ava/teacher?task=contratos",
         icon: FileText,
         label: "Contratos PDF",
@@ -254,6 +267,11 @@ const navGroups = [
         href: "/ava/student?task=catty-memory",
         icon: BrainCircuit,
         label: "Memoria da Catty",
+      },
+      {
+        href: "/ava/student?task=catty-artifacts",
+        icon: Palette,
+        label: "Estilo da Catty",
       },
       {
         href: "/ava/student?task=mensagens",

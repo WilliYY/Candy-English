@@ -436,6 +436,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/catty-artifacts.ts`, `src/lib/catty.ts`, `src/lib/catty-user-memory.ts`, `src/app/api/catty/chat/route.ts`, `src/lib/catty-personality.ts`, smoke da Catty e docs oficiais.
 - Riscos/cuidados: usar no maximo um artefato por resposta, ignorar quando a intencao nao combinar, respeitar memorias de estilo `avoid_*`, nao usar dados sensiveis, nao repetir sempre o mesmo tema e priorizar clareza em correcao/explicacao seria.
 
+### 2026-06-05 - Estilo da Catty configuravel por aluno
+
+- Decisao: criar `CattyUserArtifact` e a tarefa `Estilo da Catty` em Admin, Teacher e Student para configurar temas, emojis, sons e bordoes por aluno sem alterar codigo.
+- Motivo: permitir que Admin/Teacher corrijam temas errados, aprovem sugestoes dos alunos e ajustem memes seguros da Catty ao longo dos anos de estudo, mantendo controle humano.
+- Impacto: `prisma/schema.prisma`, migration `20260605234500_catty_user_artifacts`, `src/lib/catty-user-artifacts.ts`, `src/lib/validations/catty-artifacts.ts`, `src/components/ava/catty-artifacts-panel.tsx`, `src/app/ava/catty-artifacts/actions.ts`, `src/lib/catty-artifacts.ts`, `src/app/api/catty/chat/route.ts`, paineis Admin/Teacher/Student, layout do AVA, smoke da Catty e docs oficiais.
+- Riscos/cuidados: somente `ACTIVE` entra no prompt/fallback; Student apenas sugere ou pede para nao usar; Teacher so acessa aluno vinculado; validar e bloquear dados sensiveis ou temas inadequados; registrar uso recente para detectar repeticao.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -6,6 +6,7 @@ import {
   FileText,
   GraduationCap,
   MessageSquareText,
+  Palette,
   Radio,
   UserCheck,
   UserRound,
@@ -45,6 +46,7 @@ import {
   type CattyLearningFeedbackRow,
   type CattyLearningItemRow,
 } from "@/components/ava/catty-learning-center-panel";
+import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
 import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
@@ -54,6 +56,7 @@ import {
   buildCandyTeacherXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 
@@ -66,6 +69,7 @@ export const teacherTaskIds = [
   "aceitar-alunos",
   "catty-learning",
   "catty-memory",
+  "catty-artifacts",
   "mensagens",
   "corrigir-respostas",
   "contratos",
@@ -206,6 +210,7 @@ type ContractRow = {
 type TeacherWorkspaceProps = {
   activeTask: TeacherTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  cattyArtifactData: CattyArtifactManagementData;
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
   cattyMemoryData: CattyMemoryManagementData;
@@ -261,6 +266,11 @@ const taskMeta = {
     description: "Revise memorias pessoais da Catty dos seus alunos.",
     icon: BrainCircuit,
     title: "Memoria da Catty",
+  },
+  "catty-artifacts": {
+    description: "Ajuste temas, emojis e bordoes seguros dos alunos.",
+    icon: Palette,
+    title: "Estilo da Catty",
   },
   contratos: {
     description: "Envie e visualize contratos PDF de alunos.",
@@ -324,6 +334,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 export function TeacherWorkspace({
   activeTask,
   candyXpPersistence,
+  cattyArtifactData,
   cattyLearningFeedbacks,
   cattyLearningItems,
   cattyMemoryData,
@@ -661,6 +672,13 @@ export function TeacherWorkspace({
           {activeTask === "catty-memory" ? (
             <CattyMemoryPanel
               data={cattyMemoryData}
+              viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
+            />
+          ) : null}
+
+          {activeTask === "catty-artifacts" ? (
+            <CattyArtifactsPanel
+              data={cattyArtifactData}
               viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
             />
           ) : null}

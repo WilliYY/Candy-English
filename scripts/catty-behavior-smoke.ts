@@ -29,6 +29,7 @@ import {
   pickCattyArtifactReplyVariant,
 } from "../src/lib/catty-artifacts";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
+import { cattyUserArtifactUpsertSchema } from "../src/lib/validations/catty-artifacts";
 import { cattyUserMemoryUpsertSchema } from "../src/lib/validations/catty-user-memory";
 
 const expectedExampleCount = 15;
@@ -469,6 +470,64 @@ function main() {
     ],
     message: "nao entendi",
   });
+  const customArtifactContext = [
+    {
+      catchphrases: ["modo dino curioso", "passinho jurassico"],
+      emojis: ["🦖", "✨"],
+      example: "The dinosaur is reading a book.",
+      id: "artifact-dino",
+      label: "dinossauro",
+      sounds: ["rawr"],
+      themeId: "dinosaurs",
+      toneRule: "Usar dino como brincadeira leve, sem forcar toda resposta.",
+    },
+  ];
+  const customArtifact = pickCattyArtifactForContext({
+    customArtifacts: customArtifactContext,
+    intent: "practice_english",
+    memories: [
+      {
+        category: "FAVORITE_THEME" as const,
+        confidence: 90,
+        key: "artifact_dinosaurs",
+        source: "TEACHER_NOTE" as const,
+        value: "gosta de dinossauro",
+      },
+    ],
+    message: "vamos praticar",
+  });
+  const customArtifactPrompt = formatCattyArtifactPromptContext(customArtifact, {
+    intent: "practice_english",
+    message: "vamos praticar",
+  });
+  const customArtifactFallback = applyCattyUserMemoryToFallbackReply({
+    artifacts: customArtifactContext,
+    memories: [
+      {
+        category: "FAVORITE_THEME" as const,
+        confidence: 90,
+        id: "memory-dino",
+        key: "artifact_dinosaurs",
+        source: "TEACHER_NOTE" as const,
+        value: "gosta de dinossauro",
+      },
+    ],
+    message: "vamos praticar",
+    plan: buildCattyResponsePlan("vamos praticar", {
+      area: "student",
+      task: "candy-xp",
+    }),
+    reply: "Miauw, vamos praticar uma frase curtinha.",
+  });
+  const validArtifactForm = cattyUserArtifactUpsertSchema.safeParse({
+    catchphrasesText: "modo dino curioso",
+    emojisText: "🦖 ✨",
+    label: "dinossauro",
+    soundsText: "rawr",
+    status: "ACTIVE",
+    targetUserId: "user-1",
+    themeId: "dinosaurs",
+  });
 
   assertCondition(
     capybaraArtifact?.artifact.id === "capybara",
@@ -510,6 +569,24 @@ function main() {
   assertCondition(
     blockedArtifact === null,
     "artefato deveria ser bloqueado por memoria de evitar tema.",
+  );
+  assertCondition(
+    customArtifact?.artifact.id === "dinosaurs" &&
+      customArtifact.artifact.customArtifactId === "artifact-dino",
+    "artefato customizado do painel nao foi selecionado.",
+  );
+  assertCondition(
+    customArtifactPrompt.includes("modo dino curioso"),
+    "prompt nao incluiu bordao do artefato customizado.",
+  );
+  assertCondition(
+    customArtifactFallback.includes("dino") ||
+      customArtifactFallback.includes("🦖"),
+    "fallback nao aplicou artefato customizado.",
+  );
+  assertCondition(
+    validArtifactForm.success,
+    "validacao do formulario de artefato customizado falhou.",
   );
 
   const detectedMemories = extractCattyUserMemoryCandidates(

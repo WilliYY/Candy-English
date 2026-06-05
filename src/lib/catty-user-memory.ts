@@ -4,6 +4,7 @@ import {
   applyCattyArtifactToReply,
   extractCattyArtifactAvoidanceCandidates,
   pickCattyArtifactForContext,
+  type CattyArtifactCustomItem,
 } from "@/lib/catty-artifacts";
 import { getPrisma } from "@/lib/prisma";
 import {
@@ -1103,6 +1104,7 @@ function getMemoryFallbackHint(input: {
 }
 
 export function applyCattyUserMemoryToFallbackReply(input: {
+  artifacts?: CattyArtifactCustomItem[];
   history?: Array<{ from?: "catty" | "user"; text: string }>;
   memories: CattyUserMemoryPromptItem[];
   message?: string;
@@ -1119,6 +1121,7 @@ export function applyCattyUserMemoryToFallbackReply(input: {
       message: input.message,
       reply: input.reply,
       selection: pickCattyArtifactForContext({
+        customArtifacts: input.artifacts,
         intent: input.plan.intent,
         memories: input.memories,
         message: input.message,
@@ -1137,6 +1140,7 @@ export function applyCattyUserMemoryToFallbackReply(input: {
       message: input.message,
       reply: input.reply,
       selection: pickCattyArtifactForContext({
+        customArtifacts: input.artifacts,
         intent: input.plan.intent,
         memories: input.memories,
         message: input.message,
@@ -1159,6 +1163,7 @@ export function applyCattyUserMemoryToFallbackReply(input: {
     message: input.message,
     reply: replyWithMemory,
     selection: pickCattyArtifactForContext({
+      customArtifacts: input.artifacts,
       intent: input.plan.intent,
       memories: input.memories,
       message: input.message,

@@ -31,6 +31,11 @@ import {
   getCattyUserMemoryContext,
   maybeCreateCattyUserMemoryFromMessage,
 } from "@/lib/catty-user-memory";
+import { pickCattyArtifactForContext } from "@/lib/catty-artifacts";
+import {
+  getCattyUserArtifactContext,
+  recordCattyUserArtifactUsage,
+} from "@/lib/catty-user-artifacts";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
@@ -664,6 +669,28 @@ async function getCattyUserMemoryContextSafely(input: {
   }
 }
 
+async function getCattyUserArtifactContextSafely(input: {
+  userId: string;
+}) {
+  try {
+    return await getCattyUserArtifactContext(input);
+  } catch {
+    console.warn("Catty user artifact context load failed.");
+
+    return [];
+  }
+}
+
+async function recordCattyUserArtifactUsageSafely(
+  artifactId?: string | null,
+) {
+  try {
+    await recordCattyUserArtifactUsage(artifactId);
+  } catch {
+    console.warn("Catty user artifact usage update failed.");
+  }
+}
+
 async function maybeCreateCattyLearningAutoSuggestionSafely(input: {
   context?: CattyPageContext;
   learningContext: Awaited<ReturnType<typeof getApprovedCattyLearningContext>>;
@@ -828,7 +855,17 @@ export async function POST(request: NextRequest) {
     message,
     userId: session.user.id,
   });
+  const userArtifactContext = await getCattyUserArtifactContextSafely({
+    userId: session.user.id,
+  });
+  const selectedArtifact = pickCattyArtifactForContext({
+    customArtifacts: userArtifactContext,
+    intent: responsePlan.intent,
+    memories: userMemoryContext,
+    message,
+  });
   const fallbackReply = applyCattyUserMemoryToFallbackReply({
+    artifacts: userArtifactContext,
     history: cattyHistory,
     memories: userMemoryContext,
     message,
@@ -845,6 +882,7 @@ export async function POST(request: NextRequest) {
     sessionContext,
     learningContext,
     userMemoryContext,
+    userArtifactContext,
   );
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]
@@ -874,6 +912,9 @@ export async function POST(request: NextRequest) {
       message,
       userId: session.user.id,
     });
+    await recordCattyUserArtifactUsageSafely(
+      selectedArtifact?.artifact.customArtifactId,
+    );
 
     return NextResponse.json({
       messageId: persistedExchange?.cattyMessageId,
@@ -905,6 +946,9 @@ export async function POST(request: NextRequest) {
     message,
     userId: session.user.id,
   });
+  await recordCattyUserArtifactUsageSafely(
+    selectedArtifact?.artifact.customArtifactId,
+  );
 
   return NextResponse.json({
     messageId: persistedExchange?.cattyMessageId,

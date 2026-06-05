@@ -12,6 +12,7 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
 
@@ -106,6 +107,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     chatThreads,
     candyXpActivities,
     cattyMemoryData,
+    cattyArtifactData,
   ] = await Promise.all([
     prisma.lesson.findMany({
       where: {
@@ -400,6 +402,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       viewerRole: "STUDENT",
       viewerUserId: session.user.id,
     }),
+    getCattyArtifactManagementData({
+      actorRole: "STUDENT",
+      actorUserId: session.user.id,
+    }),
   ]);
   const profileReady = Boolean(
     studentProfile.user.avatarPath ||
@@ -495,6 +501,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         xpReward: activity.xpReward,
       }))}
       candyXpPersistence={candyXpPersistence}
+      cattyArtifactData={cattyArtifactData}
       cattyMemoryData={cattyMemoryData}
       chatThreads={chatThreads.map((thread) => ({
         id: thread.id,

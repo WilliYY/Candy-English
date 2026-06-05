@@ -7,6 +7,7 @@ import {
   ClipboardCheck,
   FileText,
   MessageSquareText,
+  Palette,
   Radio,
   Sparkles,
   UserRound,
@@ -28,6 +29,7 @@ import {
   StudentCandyXpActivitiesPanel,
   type StudentCandyXpActivity,
 } from "@/components/ava/student-candy-xp-activities-panel";
+import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
 import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
@@ -37,6 +39,7 @@ import {
   buildCandyStudentXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 
@@ -47,6 +50,7 @@ export const studentTaskIds = [
   "homeworks",
   "candy-xp",
   "catty-memory",
+  "catty-artifacts",
   "mensagens",
   "contratos",
   "perfil",
@@ -119,6 +123,7 @@ type StudentWorkspaceProps = {
   activeTask: StudentTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   candyXpActivities: StudentCandyXpActivity[];
+  cattyArtifactData: CattyArtifactManagementData;
   cattyMemoryData: CattyMemoryManagementData;
   chatThreads: ChatThreadRow[];
   contracts: {
@@ -194,6 +199,11 @@ const taskMeta = {
     description: "Veja preferencias leves que a Catty usa para te ajudar.",
     icon: BrainCircuit,
     title: "Memoria da Catty",
+  },
+  "catty-artifacts": {
+    description: "Sugira temas fofos para os exemplos e memes da Catty.",
+    icon: Palette,
+    title: "Estilo da Catty",
   },
   homeworks: {
     description: "Responda atividades online e acompanhe feedbacks.",
@@ -296,6 +306,7 @@ export function StudentWorkspace({
   activeTask,
   candyXpPersistence,
   candyXpActivities,
+  cattyArtifactData,
   cattyMemoryData,
   chatThreads,
   contracts,
@@ -504,6 +515,13 @@ export function StudentWorkspace({
 
           {activeTask === "catty-memory" ? (
             <CattyMemoryPanel data={cattyMemoryData} viewerRole="STUDENT" />
+          ) : null}
+
+          {activeTask === "catty-artifacts" ? (
+            <CattyArtifactsPanel
+              data={cattyArtifactData}
+              viewerRole="STUDENT"
+            />
           ) : null}
 
           {activeTask === "contratos" ? (

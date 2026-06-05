@@ -38,6 +38,7 @@ import {
   type CattyLearningFeedbackRow,
   type CattyLearningItemRow,
 } from "@/components/ava/catty-learning-center-panel";
+import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
 import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import {
   AdminFinancePanel,
@@ -65,6 +66,7 @@ import {
   buildCandyAdminXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
@@ -83,6 +85,7 @@ export const adminTaskIds = [
   "apis-senhas",
   "catty-learning",
   "catty-memory",
+  "catty-artifacts",
   "editar-site",
 ] as const;
 
@@ -151,6 +154,7 @@ type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
   candyXpActivities: AdminCandyXpActivityRow[];
+  cattyArtifactData: CattyArtifactManagementData;
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
   cattyMemoryData: CattyMemoryManagementData;
@@ -248,6 +252,10 @@ const taskMeta = {
   "catty-memory": {
     icon: BrainCircuit,
     title: "Memoria da Catty",
+  },
+  "catty-artifacts": {
+    icon: Sparkles,
+    title: "Estilo da Catty",
   },
   "editar-site": {
     icon: Wrench,
@@ -581,6 +589,7 @@ export function AdminUsersPanel({
   activeTask,
   adminCredentials,
   candyXpActivities,
+  cattyArtifactData,
   cattyLearningFeedbacks,
   cattyLearningItems,
   cattyMemoryData,
@@ -848,6 +857,13 @@ export function AdminUsersPanel({
 
           {activeTask === "catty-memory" ? (
             <CattyMemoryPanel data={cattyMemoryData} viewerRole="ADMIN" />
+          ) : null}
+
+          {activeTask === "catty-artifacts" ? (
+            <CattyArtifactsPanel
+              data={cattyArtifactData}
+              viewerRole="ADMIN"
+            />
           ) : null}
 
           {activeTask === "editar-site" ? (

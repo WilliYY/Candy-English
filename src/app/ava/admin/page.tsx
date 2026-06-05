@@ -11,6 +11,7 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
 import { getStorageUsageBytes } from "@/lib/storage";
@@ -74,6 +75,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     cattyLearningFeedbacks,
     cattyLearningItems,
     cattyMemoryData,
+    cattyArtifactData,
     candyXpActivities,
     studentPreRegistrations,
     studentPreRegistrationStatusCounts,
@@ -443,6 +445,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       viewerRole: "ADMIN",
       viewerUserId: session.user.id,
     }),
+    getCattyArtifactManagementData({
+      actorRole: "ADMIN",
+      actorUserId: session.user.id,
+    }),
     prisma.candyXpActivity.findMany({
       orderBy: {
         createdAt: "desc",
@@ -723,6 +729,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         title: activity.title,
         xpReward: activity.xpReward,
       }))}
+      cattyArtifactData={cattyArtifactData}
       cattyLearningFeedbacks={cattyLearningFeedbacks.map((feedback) => ({
         cattyReply: feedback.cattyReply,
         contextArea: feedback.contextArea,

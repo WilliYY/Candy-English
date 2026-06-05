@@ -189,6 +189,13 @@ enum CattyUserMemoryStatus {
   ARCHIVED
 }
 
+enum CattyUserArtifactStatus {
+  ACTIVE
+  PENDING
+  DISABLED
+  ARCHIVED
+}
+
 model User {
   id                   String                @id @default(cuid())
   name                 String
@@ -224,6 +231,9 @@ model User {
   createdCattyUserMemories CattyUserMemory[] @relation("CattyUserMemoryCreatedBy")
   cattyMemoryEvents    CattyMemoryEvent[]   @relation("CattyMemoryEventUser")
   createdCattyMemoryEvents CattyMemoryEvent[] @relation("CattyMemoryEventCreatedBy")
+  cattyUserArtifacts   CattyUserArtifact[]  @relation("CattyUserArtifactUser")
+  createdCattyUserArtifacts CattyUserArtifact[] @relation("CattyUserArtifactCreatedBy")
+  updatedCattyUserArtifacts CattyUserArtifact[] @relation("CattyUserArtifactUpdatedBy")
   sentChatMessages     ChatMessage[]
   uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
   createdAt            DateTime              @default(now())
@@ -966,6 +976,35 @@ model CattyMemoryEvent {
   @@index([userId, createdAt])
   @@index([memoryId])
   @@index([createdByUserId])
+}
+
+model CattyUserArtifact {
+  id              String                    @id @default(cuid())
+  userId          String
+  user            User                      @relation("CattyUserArtifactUser", fields: [userId], references: [id], onDelete: Cascade)
+  themeId         String
+  label           String
+  emojis          String[]                  @default([])
+  catchphrases    String[]                  @default([])
+  sounds          String[]                  @default([])
+  example         String?
+  toneRule        String?
+  status          CattyUserArtifactStatus   @default(PENDING)
+  blockedReason   String?
+  createdByUserId String?
+  createdByUser   User?                     @relation("CattyUserArtifactCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUserId String?
+  updatedByUser   User?                     @relation("CattyUserArtifactUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  lastUsedAt      DateTime?
+  usageCount      Int                       @default(0)
+  createdAt       DateTime                  @default(now())
+  updatedAt       DateTime                  @updatedAt
+
+  @@unique([userId, themeId])
+  @@index([userId, status])
+  @@index([createdByUserId])
+  @@index([updatedByUserId])
+  @@index([status, updatedAt])
 }
 
 model ChatThread {

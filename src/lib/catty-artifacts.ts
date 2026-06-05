@@ -11,7 +11,8 @@ export type CattyArtifactThemeId =
   | "games"
   | "pokemon"
   | "princess"
-  | "soccer";
+  | "soccer"
+  | (string & {});
 
 export type CattyArtifactMemoryItem = {
   category: CattyUserMemoryCategoryInput;
@@ -25,6 +26,7 @@ export type CattyArtifactMemoryItem = {
 
 export type CattyArtifactDefinition = {
   catchphrases: string[];
+  customArtifactId?: string;
   emojis: string[];
   example: string;
   genericHints: string[];
@@ -57,6 +59,17 @@ export type CattyArtifactAvoidanceCandidate = {
   confidence: number;
   key: string;
   value: string;
+};
+
+export type CattyArtifactCustomItem = {
+  catchphrases: string[];
+  emojis: string[];
+  example?: string | null;
+  id: string;
+  label: string;
+  sounds: string[];
+  themeId: string;
+  toneRule?: string | null;
 };
 
 const artifactFriendlyIntents = new Set<CattyIntent>([
@@ -287,7 +300,92 @@ function themeMatchesText(theme: CattyArtifactDefinition, text: string) {
   );
 }
 
-function getAvoidedThemeIds(memories: CattyArtifactMemoryItem[]) {
+function getCustomArtifactKeywords(artifact: CattyArtifactCustomItem) {
+  return [
+    artifact.themeId,
+    artifact.label,
+    ...artifact.catchphrases,
+    ...artifact.sounds,
+    artifact.example ?? "",
+    artifact.toneRule ?? "",
+  ]
+    .flatMap((item) => normalizeArtifactText(item).split(/\s+/))
+    .filter((item) => item.length >= 3);
+}
+
+function mergeCustomArtifactWithTheme(
+  base: CattyArtifactDefinition,
+  custom: CattyArtifactCustomItem,
+): CattyArtifactDefinition {
+  const catchphrases =
+    custom.catchphrases.length > 0 ? custom.catchphrases : base.catchphrases;
+  const sounds = custom.sounds.length > 0 ? custom.sounds : base.sounds;
+
+  return {
+    ...base,
+    catchphrases,
+    customArtifactId: custom.id,
+    emojis: custom.emojis.length > 0 ? custom.emojis : base.emojis,
+    example: custom.example || base.example,
+    genericHints: catchphrases.length > 0 ? catchphrases : base.genericHints,
+    keywords: [...new Set([...base.keywords, ...getCustomArtifactKeywords(custom)])],
+    label: custom.label || base.label,
+    sounds,
+    toneRule: custom.toneRule || base.toneRule,
+  };
+}
+
+function customArtifactToDefinition(
+  custom: CattyArtifactCustomItem,
+): CattyArtifactDefinition {
+  const catchphrases = custom.catchphrases.length > 0 ? custom.catchphrases : [
+    custom.label,
+  ];
+  const sounds = custom.sounds;
+
+  return {
+    catchphrases,
+    customArtifactId: custom.id,
+    emojis: custom.emojis,
+    example: custom.example || `I like ${custom.label}.`,
+    genericHints: catchphrases,
+    id: custom.themeId,
+    keywords: [...new Set(getCustomArtifactKeywords(custom))],
+    label: custom.label,
+    sounds,
+    toneRule:
+      custom.toneRule ||
+      "Use como tempero leve de personalidade, sem forcar em toda resposta.",
+  };
+}
+
+function getAvailableArtifactThemes(
+  customArtifacts?: CattyArtifactCustomItem[],
+) {
+  if (!customArtifacts || customArtifacts.length === 0) {
+    return CATTY_ARTIFACT_THEMES;
+  }
+
+  const customByThemeId = new Map(
+    customArtifacts.map((artifact) => [artifact.themeId, artifact]),
+  );
+  const builtInIds = new Set(CATTY_ARTIFACT_THEMES.map((theme) => theme.id));
+  const mergedBuiltIns = CATTY_ARTIFACT_THEMES.map((theme) => {
+    const custom = customByThemeId.get(theme.id);
+
+    return custom ? mergeCustomArtifactWithTheme(theme, custom) : theme;
+  });
+  const customOnly = customArtifacts
+    .filter((artifact) => !builtInIds.has(artifact.themeId))
+    .map(customArtifactToDefinition);
+
+  return [...customOnly, ...mergedBuiltIns];
+}
+
+function getAvoidedThemeIds(
+  memories: CattyArtifactMemoryItem[],
+  themes: CattyArtifactDefinition[],
+) {
   const avoided = new Set<CattyArtifactThemeId>();
 
   for (const memory of memories) {
@@ -297,7 +395,7 @@ function getAvoidedThemeIds(memories: CattyArtifactMemoryItem[]) {
 
     const normalized = normalizeArtifactText(`${memory.key} ${memory.value}`);
 
-    for (const theme of CATTY_ARTIFACT_THEMES) {
+    for (const theme of themes) {
       if (
         normalized.includes(`avoid_${theme.id}`) ||
         (normalized.includes("evitar") && themeMatchesText(theme, normalized))
@@ -512,13 +610,15 @@ export function pickCattyArtifactReplyVariant(input: {
 }
 
 export function pickCattyArtifactForContext(input: {
+  customArtifacts?: CattyArtifactCustomItem[];
   intent: CattyIntent;
   memories?: CattyArtifactMemoryItem[];
   message?: string;
 }): CattyArtifactSelection | null {
   const memories = input.memories ?? [];
-  const avoided = getAvoidedThemeIds(memories);
-  const directTheme = CATTY_ARTIFACT_THEMES.find(
+  const themes = getAvailableArtifactThemes(input.customArtifacts);
+  const avoided = getAvoidedThemeIds(memories, themes);
+  const directTheme = themes.find(
     (theme) => !avoided.has(theme.id) && themeMatchesText(theme, input.message ?? ""),
   );
 
@@ -532,7 +632,7 @@ export function pickCattyArtifactForContext(input: {
 
   let best: CattyArtifactSelection | null = null;
 
-  for (const theme of CATTY_ARTIFACT_THEMES) {
+  for (const theme of themes) {
     if (avoided.has(theme.id)) {
       continue;
     }

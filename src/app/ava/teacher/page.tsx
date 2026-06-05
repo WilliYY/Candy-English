@@ -12,6 +12,7 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
 import type {
@@ -114,6 +115,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     cattyLearningFeedbacks,
     cattyLearningItems,
     cattyMemoryData,
+    cattyArtifactData,
     studentPreRegistrations,
     studentPreRegistrationStatusCounts,
   ] = await Promise.all([
@@ -550,6 +552,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       viewerRole: session.user.role,
       viewerUserId: session.user.id,
     }),
+    getCattyArtifactManagementData({
+      actorRole: session.user.role,
+      actorUserId: session.user.id,
+    }),
     prisma.studentPreRegistration.findMany({
       where: {
         status: preRegistrationStatus,
@@ -665,6 +671,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     <TeacherWorkspace
       activeTask={activeTask}
       candyXpPersistence={candyXpPersistence}
+      cattyArtifactData={cattyArtifactData}
       cattyLearningFeedbacks={cattyLearningFeedbacks.map((feedback) => ({
         cattyReply: feedback.cattyReply,
         contextArea: feedback.contextArea,
