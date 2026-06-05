@@ -1955,19 +1955,41 @@ function getCattyUserMemoryPromptLine(items: CattyUserMemoryPromptItem[]) {
     return "Sem memoria pessoal ativa para este usuario.";
   }
 
-  return items
-    .slice(0, 5)
-    .map((item, index) => {
-      const parts = [
-        `${index + 1}. ${item.category}/${sanitizeContextText(item.key, 48)}: ${sanitizeContextText(item.value, 120)}`,
-        `confianca=${item.confidence}`,
-        `origem=${item.source}`,
-      ];
+  const limitedItems = items.slice(0, 5);
+  const difficulties = limitedItems
+    .filter((item) => item.category === "DIFFICULTY")
+    .slice(0, 2)
+    .map((item) => sanitizeContextText(item.value, 80));
+  const interests = limitedItems
+    .filter((item) =>
+      ["FAVORITE_THEME", "INTEREST"].includes(item.category),
+    )
+    .slice(0, 2)
+    .map((item) => sanitizeContextText(item.value, 80));
+  const memoryLines = limitedItems.map((item, index) => {
+    const parts = [
+      `${index + 1}. ${item.category}/${sanitizeContextText(item.key, 48)}: ${sanitizeContextText(item.value, 120)}`,
+      `confianca=${item.confidence}`,
+      `origem=${item.source}`,
+    ];
 
-      return parts.join("; ");
-    })
+    return parts.join("; ");
+  });
+
+  return [
+    "Uso: encaixe naturalmente; ignore se nao combinar com a pergunta; nao repita o mesmo gosto toda hora.",
+    interests.length > 0
+      ? `Interesses/temas favoritos relevantes: ${interests.join(", ")}.`
+      : null,
+    difficulties.length > 0
+      ? `Dificuldades de aprendizado relevantes: ${difficulties.join(", ")}.`
+      : null,
+    "Memorias relevantes (max 5):",
+    memoryLines.join("\n"),
+  ]
+    .filter(Boolean)
     .join("\n")
-    .slice(0, 1000);
+    .slice(0, 1300);
 }
 
 export function buildCattyInput(

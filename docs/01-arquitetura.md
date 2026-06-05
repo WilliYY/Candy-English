@@ -60,7 +60,7 @@ Servicos Docker:
 - Catty so envia para Gemini/OpenAI a conversa digitada no widget por usuario autorizado, historico recente limitado, contexto leve de rota/tarefa e contexto seguro derivado no servidor, como role, primeiro nome seguro e nivel do aluno quando existir, sem email, id, senha, banco, contrato, pagamento ou informacoes internas do AVA.
 - Catty Learning Center aceita sugestoes de `ADMIN` e `TEACHER`, mas apenas `ADMIN` aprova memoria global usada pela Catty; dados sensiveis nao devem ser salvos como aprendizado.
 - Auto-sugestoes da Catty entram como `CattyLearningFeedback.PATTERN_SUGGESTION` pendente quando a rota usa fallback sem memoria relevante, recebe pergunta confusa/fora do trilho sem memoria aprovada ou acumula feedbacks negativos; elas nunca entram no prompt antes da aprovacao humana.
-- Memoria pessoal da Catty fica separada por `User.id` em `CattyUserMemory`; somente itens `ACTIVE` do proprio usuario entram no prompt como personalizacao leve de exemplo, incentivo ou estilo.
+- Memoria pessoal da Catty fica separada por `User.id` em `CattyUserMemory`; somente itens `ACTIVE` do proprio usuario entram no prompt, ranqueados por relevancia e limitados a um contexto curto para personalizacao leve de exemplo, incentivo ou estilo. Mensagens que contradizem memoria antiga marcam o item como `FLAGGED` para revisao.
 - O widget da Catty permite feedback discreto em respostas logadas; `STUDENT` pode avaliar a propria conversa, `TEACHER` pode revisar feedback proprio ou de alunos vinculados e `ADMIN` pode aprovar globalmente como aprendizado.
 
 ## Decisoes tecnicas tomadas

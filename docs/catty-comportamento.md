@@ -8,7 +8,7 @@ A identidade viva da personagem fica em `src/lib/catty-personality.ts`. Esse arq
 
 O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`. Ele guarda memorias curtas em `CattyLearningItem`; teachers podem sugerir, mas apenas admins aprovam. O widget tambem pode gerar `CattyLearningFeedback` discreto em respostas logadas, e a rota pode criar `PATTERN_SUGGESTION` pendente quando detectar lacuna de memoria ou repeticao de feedback negativo. Feedback e auto-sugestao nunca mudam o prompt sozinhos. Somente ate 3 itens `APPROVED` e relevantes entram no prompt/fallback, e nunca devem conter senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados.
 
-A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logado. Ela pode guardar gostos, tema favorito, dificuldade comum, objetivo de estudo ou estilo de explicacao, sempre como resumo curto. Somente itens `ACTIVE` do proprio usuario entram no prompt e apenas como toque leve de exemplo, incentivo ou estilo. Essa memoria nunca deve conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado.
+A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logado. Ela pode guardar gostos, tema favorito, dificuldade comum, objetivo de estudo ou estilo de explicacao, sempre como resumo curto. Somente itens `ACTIVE` do proprio usuario entram no prompt e apenas como toque leve de exemplo, incentivo ou estilo. A rota escolhe poucas memorias por relevancia da mensagem/intencao, limita ate 5 itens no total, ate 2 dificuldades e ate 2 interesses/temas, e deve ignorar memoria que nao combine. Essa memoria nunca deve conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado. Se uma mensagem contradiz memoria ativa, ela vira `FLAGGED` para revisao.
 
 ## Regras que os exemplos protegem
 
@@ -66,7 +66,7 @@ A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logad
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario, bloqueio de dado sensivel em memoria/feedback, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, bloqueio de dado sensivel em memoria/feedback, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

@@ -50,7 +50,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Nao responda como especialista generica fora da Candy English. Se pedirem receita, codigo, API tecnica, financas, saude ou direito, redirecione para vocabulario, frase curta ou conversacao em ingles.",
   "Use o contexto da tela apenas para orientar a resposta. Nao invente dados, notas, pagamentos, contratos, respostas de homework ou informacoes internas.",
   "Use role, primeiro nome e nivel do aluno apenas para ajustar tom, saudacao curta e dificuldade do exemplo.",
-  "Use memoria pessoal ativa apenas como personalizacao leve de exemplos, incentivo ou estilo. Nao diga que salvou memoria e nunca trate preferencia como dado administrativo.",
+  "Use memoria pessoal ativa apenas como personalizacao leve de exemplos, incentivo ou estilo. Se a memoria nao combinar com a pergunta, ignore. Nao diga que salvou memoria e nunca trate preferencia como dado administrativo.",
   "Quando houver primeiro nome seguro, use o nome de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao repita em toda resposta.",
   "Nao use nome em temas sensiveis como senha, contrato, pagamento, documento, chave, token ou credencial.",
   "Nunca mencione email, id, senha, pagamento, contrato, documento, chave de API ou dado privado.",
@@ -648,11 +648,13 @@ async function getCattyLearningContextSafely(input: {
   }
 }
 
-async function getCattyUserMemoryContextSafely(userId: string) {
+async function getCattyUserMemoryContextSafely(input: {
+  intent: CattyResponsePlan["intent"];
+  message: string;
+  userId: string;
+}) {
   try {
-    return await getCattyUserMemoryContext({
-      userId,
-    });
+    return await getCattyUserMemoryContext(input);
   } catch {
     console.warn("Catty user memory context load failed.");
 
@@ -819,9 +821,11 @@ export async function POST(request: NextRequest) {
     intent: responsePlan.intent,
     message,
   });
-  const userMemoryContext = await getCattyUserMemoryContextSafely(
-    session.user.id,
-  );
+  const userMemoryContext = await getCattyUserMemoryContextSafely({
+    intent: responsePlan.intent,
+    message,
+    userId: session.user.id,
+  });
   const fallbackReply = applyCattyUserMemoryToFallbackReply({
     memories: userMemoryContext,
     plan: responsePlan,

@@ -408,6 +408,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260605230000_catty_user_memory`, `src/lib/catty-user-memory.ts`, `src/lib/validations/catty-user-memory.ts`, `src/app/ava/catty-memory/actions.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, smoke da Catty e docs oficiais.
 - Riscos/cuidados: rota de resposta deve usar apenas `CattyUserMemory.ACTIVE` do proprio `session.user.id`; Teacher so acessa aluno vinculado; nao salvar senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou dado privado como memoria.
 
+### 2026-06-05 - Memoria pessoal relevante no contexto da Catty
+
+- Decisao: a rota da Catty passa a buscar memorias pessoais ativas do usuario logado, ranquear por intencao, termos da mensagem, confianca, uso e recencia, enviar ao prompt no maximo 5 itens, limitar dificuldades e interesses/temas a 2 cada, e marcar memorias contraditas como `FLAGGED`.
+- Motivo: personalizar respostas sem aumentar custo, sem repetir gostos em toda frase e sem deixar preferencias antigas incorretas contaminarem Gemini, OpenAI ou fallback.
+- Impacto: `src/lib/catty-user-memory.ts`, `src/lib/catty.ts`, `src/app/api/catty/chat/route.ts`, `scripts/catty-behavior-smoke.ts` e docs oficiais.
+- Riscos/cuidados: memoria pessoal continua sendo tempero leve; Gemini/OpenAI devem ignorar itens que nao combinam com a pergunta; conflito nao apaga memoria automaticamente e precisa de revisao futura por Admin/Teacher.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

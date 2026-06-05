@@ -20,7 +20,10 @@ export type CattyUserMemoryPromptItem = {
   confidence: number;
   id: string;
   key: string;
+  lastUsedAt?: Date | null;
   source: CattyUserMemorySourceInput;
+  updatedAt?: Date | null;
+  usageCount?: number;
   value: string;
 };
 
@@ -46,13 +49,36 @@ const CATTY_USER_MEMORY_PROMPT_LIMIT = 5;
 const CATTY_USER_MEMORY_CANDIDATE_LIMIT = 24;
 const CATTY_USER_MEMORY_CLEANUP_THRESHOLD = 40;
 const CATTY_USER_MEMORY_CLEANUP_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const CATTY_USER_MEMORY_DIFFICULTY_LIMIT = 2;
+const CATTY_USER_MEMORY_INTEREST_LIMIT = 2;
 
 const promptFriendlyIntents = new Set<CattyResponsePlan["intent"]>([
   "candy_xp",
+  "confusing_question",
   "explain_word",
   "motivation",
   "out_of_scope",
   "practice_english",
+]);
+
+const difficultyFriendlyIntents = new Set<CattyResponsePlan["intent"]>([
+  "correct_sentence",
+  "explain_word",
+  "homework_hint",
+  "practice_english",
+  "ready_answer_request",
+  "translate_sentence",
+]);
+
+const interestMemoryCategories = new Set<CattyUserMemoryCategoryInput>([
+  "FAVORITE_THEME",
+  "INTEREST",
+]);
+
+const personalStyleMemoryCategories = new Set<CattyUserMemoryCategoryInput>([
+  "EMOJI_PREFERENCE",
+  "LEARNING_GOAL",
+  "STYLE",
 ]);
 
 function compactText(text: string, maxLength: number) {
@@ -75,6 +101,88 @@ function cleanMemoryValue(value: string) {
       .replace(/\b(minha|minhas|meu|meus|eu)\b/gi, "")
       .replace(/\s+/g, " "),
     160,
+  );
+}
+
+function getMemoryTokens(value: string) {
+  return normalizeCattyUserMemoryText(value)
+    .split(/\s+/)
+    .map((token) => token.replace(/[^a-z0-9]/g, ""))
+    .filter((token) => token.length >= 3)
+    .slice(0, 24);
+}
+
+function getMemoryTimestampScore(date?: Date | null) {
+  if (!date) {
+    return 0;
+  }
+
+  const ageInDays = Math.max(
+    (Date.now() - date.getTime()) / (24 * 60 * 60 * 1000),
+    0,
+  );
+
+  if (ageInDays <= 7) return 2;
+  if (ageInDays <= 30) return 1;
+  if (ageInDays <= 90) return 0.5;
+
+  return 0;
+}
+
+function getMemoryIntentScore(
+  memory: CattyUserMemoryPromptItem,
+  intent?: CattyResponsePlan["intent"],
+) {
+  if (!intent) {
+    return 0;
+  }
+
+  if (memory.category === "DIFFICULTY") {
+    return difficultyFriendlyIntents.has(intent) ? 7 : 2;
+  }
+
+  if (interestMemoryCategories.has(memory.category)) {
+    return promptFriendlyIntents.has(intent) ? 6 : 1.5;
+  }
+
+  if (memory.category === "LEARNING_GOAL") {
+    return ["candy_xp", "motivation", "practice_english"].includes(intent)
+      ? 5
+      : 1;
+  }
+
+  if (memory.category === "STYLE" || memory.category === "EMOJI_PREFERENCE") {
+    return ["complex_question", "confusing_question", "explain_word"].includes(
+      intent,
+    )
+      ? 4
+      : 1.5;
+  }
+
+  return 0.5;
+}
+
+function scoreCattyUserMemory(input: {
+  intent?: CattyResponsePlan["intent"];
+  memory: CattyUserMemoryPromptItem;
+  message?: string;
+}) {
+  const memory = input.memory;
+  const normalizedMessage = normalizeCattyUserMemoryText(input.message ?? "");
+  const tokens = getMemoryTokens(
+    `${memory.category} ${memory.key} ${memory.value}`,
+  );
+  const tokenHits = tokens.filter((token) =>
+    normalizedMessage.includes(token),
+  ).length;
+
+  return (
+    getMemoryIntentScore(memory, input.intent) +
+    tokenHits * 3 +
+    Math.min(memory.confidence / 25, 4) +
+    Math.min(memory.usageCount ?? 0, 8) * 0.25 +
+    getMemoryTimestampScore(memory.updatedAt) +
+    getMemoryTimestampScore(memory.lastUsedAt) * 0.5
   );
 }
 
@@ -212,8 +320,18 @@ export function extractCattyUserMemoryCandidates(
     });
   }
 
+  const contradictions = extractCattyUserMemoryContradictions(message);
+
   return candidates.filter((candidate, index, list) => {
     if (!isUsefulMemoryValue(candidate.value)) {
+      return false;
+    }
+
+    if (
+      contradictions.some((value) =>
+        memoryValuesConflict(candidate.value, value),
+      )
+    ) {
       return false;
     }
 
@@ -224,6 +342,113 @@ export function extractCattyUserMemoryCandidates(
       ) === index
     );
   });
+}
+
+export function extractCattyUserMemoryContradictions(message: string) {
+  const normalized = normalizeCattyUserMemoryText(message);
+  const values: string[] = [];
+  const patterns = [
+    /\b(?:nao gosto mais de|nao curto mais|parei de gostar de|nao amo mais) ([a-z0-9 _-]{2,80})/,
+    /\b(?:nao gosto de|nao curto|nao amo) ([a-z0-9 _-]{2,80})/,
+    /\b(?:meu animal favorito nao e|meu animal favorito nao eh|animal favorito nao e|animal favorito nao eh) ([a-z0-9 _-]{2,80})/,
+    /\b(?:meu tema favorito nao e|meu tema favorito nao eh|tema favorito nao e|tema favorito nao eh) ([a-z0-9 _-]{2,80})/,
+  ];
+
+  for (const pattern of patterns) {
+    const value = captureNormalizedValue(normalized, [pattern], 8);
+
+    if (value) {
+      values.push(cleanMemoryValue(value));
+    }
+  }
+
+  return [...new Set(values)].filter((value) => value.length > 0).slice(0, 4);
+}
+
+function memoryValuesConflict(memoryValue: string, contradictionValue: string) {
+  const memory = normalizeCattyUserMemoryText(memoryValue);
+  const contradiction = normalizeCattyUserMemoryText(contradictionValue);
+
+  if (memory.length < 3 || contradiction.length < 3) {
+    return false;
+  }
+
+  return memory.includes(contradiction) || contradiction.includes(memory);
+}
+
+export function selectRelevantCattyUserMemories(input: {
+  intent?: CattyResponsePlan["intent"];
+  limit?: number;
+  memories: CattyUserMemoryPromptItem[];
+  message?: string;
+}) {
+  const limit = Math.min(
+    Math.max(input.limit ?? CATTY_USER_MEMORY_PROMPT_LIMIT, 1),
+    CATTY_USER_MEMORY_PROMPT_LIMIT,
+  );
+  const safeMemories = input.memories.filter(
+    (memory) => !hasSensitiveCattyUserMemoryText(memory.value),
+  );
+  const sortedMemories = safeMemories
+    .map((memory) => ({
+      memory,
+      score: scoreCattyUserMemory({
+        intent: input.intent,
+        memory,
+        message: input.message,
+      }),
+    }))
+    .sort((a, b) => {
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      const usageDiff = (b.memory.usageCount ?? 0) - (a.memory.usageCount ?? 0);
+
+      if (usageDiff !== 0) {
+        return usageDiff;
+      }
+
+      return (
+        (b.memory.updatedAt?.getTime() ?? 0) -
+        (a.memory.updatedAt?.getTime() ?? 0)
+      );
+    });
+  const selected: CattyUserMemoryPromptItem[] = [];
+  let difficultyCount = 0;
+  let interestCount = 0;
+
+  for (const { memory } of sortedMemories) {
+    if (
+      memory.category === "DIFFICULTY" &&
+      difficultyCount >= CATTY_USER_MEMORY_DIFFICULTY_LIMIT
+    ) {
+      continue;
+    }
+
+    if (
+      interestMemoryCategories.has(memory.category) &&
+      interestCount >= CATTY_USER_MEMORY_INTEREST_LIMIT
+    ) {
+      continue;
+    }
+
+    selected.push(memory);
+
+    if (memory.category === "DIFFICULTY") {
+      difficultyCount += 1;
+    }
+
+    if (interestMemoryCategories.has(memory.category)) {
+      interestCount += 1;
+    }
+
+    if (selected.length >= limit) {
+      break;
+    }
+  }
+
+  return selected;
 }
 
 async function getTeacherProfileId(userId: string) {
@@ -659,7 +884,9 @@ export async function updateCattyUserMemoryValue(
 }
 
 export async function getCattyUserMemoryContext(input: {
+  intent?: CattyResponsePlan["intent"];
   limit?: number;
+  message?: string;
   userId: string;
 }): Promise<CattyUserMemoryPromptItem[]> {
   const limit = Math.min(
@@ -676,25 +903,31 @@ export async function getCattyUserMemoryContext(input: {
         updatedAt: "desc",
       },
     ],
-    select: {
-      category: true,
-      confidence: true,
-      id: true,
-      key: true,
-      source: true,
-      value: true,
-    },
     take: CATTY_USER_MEMORY_CANDIDATE_LIMIT,
     where: {
       status: "ACTIVE",
       userId: input.userId,
     },
+    select: {
+      category: true,
+      confidence: true,
+      id: true,
+      key: true,
+      lastUsedAt: true,
+      source: true,
+      updatedAt: true,
+      usageCount: true,
+      value: true,
+    },
   });
-  const safeMemories = memories
-    .filter((memory) => !hasSensitiveCattyUserMemoryText(memory.value))
-    .slice(0, limit);
+  const selectedMemories = selectRelevantCattyUserMemories({
+    intent: input.intent,
+    limit,
+    memories,
+    message: input.message,
+  });
 
-  if (safeMemories.length > 0) {
+  if (selectedMemories.length > 0) {
     await prisma.cattyUserMemory.updateMany({
       data: {
         lastUsedAt: new Date(),
@@ -704,13 +937,17 @@ export async function getCattyUserMemoryContext(input: {
       },
       where: {
         id: {
-          in: safeMemories.map((memory) => memory.id),
+          in: selectedMemories.map((memory) => memory.id),
         },
       },
     });
   }
 
-  return safeMemories;
+  if (memories.length >= CATTY_USER_MEMORY_CANDIDATE_LIMIT) {
+    await maybeCreateCleanupSuggestion(input.userId);
+  }
+
+  return selectedMemories;
 }
 
 export function formatCattyUserMemoryPromptContext(
@@ -731,11 +968,60 @@ export function formatCattyUserMemoryPromptContext(
 }
 
 function getFriendlyMemoryHint(memories: CattyUserMemoryPromptItem[]) {
-  return memories.find((memory) =>
-    ["INTEREST", "FAVORITE_THEME", "STYLE", "EMOJI_PREFERENCE"].includes(
-      memory.category,
-    ),
+  return (
+    memories.find((memory) => interestMemoryCategories.has(memory.category)) ??
+    memories.find((memory) =>
+      personalStyleMemoryCategories.has(memory.category),
+    )
   );
+}
+
+function getDifficultyMemoryHint(memories: CattyUserMemoryPromptItem[]) {
+  return memories.find((memory) => memory.category === "DIFFICULTY");
+}
+
+function getEnglishMemoryExampleValue(value: string) {
+  const normalized = normalizeCattyUserMemoryText(value);
+
+  if (normalized.includes("capivara")) return "capybara";
+  if (normalized.includes("pokemon")) return "Pokemon";
+  if (normalized.includes("animal fofo")) return "cute animal";
+  if (normalized.includes("gato") || normalized.includes("gatinho")) {
+    return "cat";
+  }
+
+  return compactText(value, 40);
+}
+
+function getMemoryFallbackHint(input: {
+  memory: CattyUserMemoryPromptItem;
+  plan: CattyResponsePlan;
+}) {
+  const value = compactText(input.memory.value, 64);
+
+  if (input.memory.category === "DIFFICULTY") {
+    return difficultyFriendlyIntents.has(input.plan.intent)
+      ? ` Pss pss, lembro que ${value} costuma pegar; vamos olhar so essa parte.`
+      : "";
+  }
+
+  if (!promptFriendlyIntents.has(input.plan.intent)) {
+    return "";
+  }
+
+  if (input.plan.intent === "confusing_question") {
+    return ` Vamos no modo ${value} calma.`;
+  }
+
+  if (input.plan.intent === "practice_english") {
+    return ` Exemplo com ${value}: I like ${getEnglishMemoryExampleValue(value)}.`;
+  }
+
+  if (input.memory.category === "STYLE") {
+    return ` Posso usar exemplos com ${value}.`;
+  }
+
+  return ` Vou puxar exemplos com ${value} quando combinar.`;
 }
 
 export function applyCattyUserMemoryToFallbackReply(input: {
@@ -743,22 +1029,97 @@ export function applyCattyUserMemoryToFallbackReply(input: {
   plan: CattyResponsePlan;
   reply: string;
 }) {
-  if (!promptFriendlyIntents.has(input.plan.intent)) {
+  if (
+    !promptFriendlyIntents.has(input.plan.intent) &&
+    !difficultyFriendlyIntents.has(input.plan.intent)
+  ) {
     return input.reply;
   }
 
-  const memory = getFriendlyMemoryHint(input.memories);
+  const memory =
+    getDifficultyMemoryHint(input.memories) ??
+    getFriendlyMemoryHint(input.memories);
 
   if (!memory || input.reply.includes(memory.value)) {
     return input.reply;
   }
 
-  const hint =
-    memory.category === "STYLE"
-      ? ` Posso usar exemplos com ${memory.value}.`
-      : ` Vou puxar exemplos com ${memory.value} quando combinar.`;
+  const hint = getMemoryFallbackHint({
+    memory,
+    plan: input.plan,
+  });
 
-  return compactText(`${input.reply}${hint}`, 700);
+  return hint ? compactText(`${input.reply}${hint}`, 700) : input.reply;
+}
+
+async function flagContradictoryCattyUserMemoriesFromMessage(input: {
+  message: string;
+  userId: string;
+}) {
+  const contradictions = extractCattyUserMemoryContradictions(input.message);
+
+  if (contradictions.length === 0) {
+    return [];
+  }
+
+  const prisma = getPrisma();
+  const memories = await prisma.cattyUserMemory.findMany({
+    select: {
+      category: true,
+      id: true,
+      key: true,
+      source: true,
+      userId: true,
+      value: true,
+    },
+    take: 60,
+    where: {
+      status: "ACTIVE",
+      userId: input.userId,
+    },
+  });
+  const conflictingMemories = memories.filter((memory) =>
+    contradictions.some((value) =>
+      memoryValuesConflict(memory.value, value),
+    ),
+  );
+
+  if (conflictingMemories.length === 0) {
+    return [];
+  }
+
+  const flaggedReason =
+    "A mensagem mais recente contradiz esta memoria pessoal. Revisar antes de reutilizar.";
+
+  await prisma.cattyUserMemory.updateMany({
+    data: {
+      flaggedReason,
+      status: "FLAGGED",
+    },
+    where: {
+      id: {
+        in: conflictingMemories.map((memory) => memory.id),
+      },
+    },
+  });
+
+  for (const memory of conflictingMemories) {
+    await createMemoryEvent({
+      action: "CONFLICT_FLAGGED",
+      category: memory.category,
+      createdByUserId: input.userId,
+      key: memory.key,
+      memoryId: memory.id,
+      nextValue: "FLAGGED",
+      note: flaggedReason,
+      previousValue: memory.value,
+      source: "CATTY_DETECTED",
+      status: "FLAGGED",
+      userId: memory.userId,
+    });
+  }
+
+  return conflictingMemories.map((memory) => memory.id);
 }
 
 export async function maybeCreateCattyUserMemoryFromMessage(input: {
@@ -766,6 +1127,11 @@ export async function maybeCreateCattyUserMemoryFromMessage(input: {
   message: string;
   userId: string;
 }) {
+  await flagContradictoryCattyUserMemoriesFromMessage({
+    message: input.message,
+    userId: input.userId,
+  });
+
   const candidates = extractCattyUserMemoryCandidates(input.message);
 
   if (candidates.length === 0) {

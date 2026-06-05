@@ -17,7 +17,9 @@ import {
 import {
   applyCattyUserMemoryToFallbackReply,
   extractCattyUserMemoryCandidates,
+  extractCattyUserMemoryContradictions,
   formatCattyUserMemoryPromptContext,
+  selectRelevantCattyUserMemories,
 } from "../src/lib/catty-user-memory";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
 import { cattyUserMemoryUpsertSchema } from "../src/lib/validations/catty-user-memory";
@@ -353,6 +355,14 @@ function main() {
     }),
     reply: "Miauw, vamos fazer uma pratica curtinha.",
   });
+  const confusedMemoryFallback = applyCattyUserMemoryToFallbackReply({
+    memories: userMemoryContext,
+    plan: buildCattyResponsePlan("nao entendi", {
+      area: "student",
+      task: "candy-xp",
+    }),
+    reply: "Awnn, voce travou na palavra, na frase ou no exercicio?",
+  });
 
   assertCondition(
     promptWithLearning.includes("Correcao sem frase"),
@@ -384,16 +394,110 @@ function main() {
     memoryAwareFallback.includes("capivara"),
     "fallback nao aplicou memoria pessoal segura.",
   );
+  assertCondition(
+    confusedMemoryFallback.includes("capivara"),
+    "fallback confuso nao aplicou memoria pessoal relevante.",
+  );
 
   const detectedMemories = extractCattyUserMemoryCandidates(
     "Eu gosto de capivara e prefiro exemplos com animais fofos.",
   );
+  const negativeDetectedMemories = extractCattyUserMemoryCandidates(
+    "Nao gosto mais de capivara.",
+  );
+  const contradictions = extractCattyUserMemoryContradictions(
+    "Nao gosto mais de capivara.",
+  );
+  const relevantMemories = selectRelevantCattyUserMemories({
+    intent: "practice_english",
+    message: "Cria uma frase com capivara.",
+    memories: [
+      ...userMemoryContext,
+      {
+        category: "DIFFICULTY" as const,
+        confidence: 86,
+        id: "memory-3",
+        key: "grammar",
+        source: "USER_MESSAGE" as const,
+        updatedAt: new Date("2026-06-01T10:00:00.000Z"),
+        usageCount: 3,
+        value: "simple past",
+      },
+      {
+        category: "DIFFICULTY" as const,
+        confidence: 80,
+        id: "memory-4",
+        key: "grammar-2",
+        source: "TEACHER_NOTE" as const,
+        updatedAt: new Date("2026-06-02T10:00:00.000Z"),
+        usageCount: 2,
+        value: "do e does",
+      },
+      {
+        category: "DIFFICULTY" as const,
+        confidence: 78,
+        id: "memory-5",
+        key: "grammar-3",
+        source: "TEACHER_NOTE" as const,
+        updatedAt: new Date("2026-06-03T10:00:00.000Z"),
+        usageCount: 1,
+        value: "prepositions",
+      },
+      {
+        category: "FAVORITE_THEME" as const,
+        confidence: 82,
+        id: "memory-6",
+        key: "theme",
+        source: "USER_MESSAGE" as const,
+        updatedAt: new Date("2026-06-04T10:00:00.000Z"),
+        usageCount: 1,
+        value: "Pokemon",
+      },
+      {
+        category: "INTEREST" as const,
+        confidence: 74,
+        id: "memory-7",
+        key: "topic",
+        source: "USER_MESSAGE" as const,
+        updatedAt: new Date("2026-06-05T10:00:00.000Z"),
+        usageCount: 0,
+        value: "filmes",
+      },
+    ],
+  });
 
   assertCondition(
     detectedMemories.some(
       (memory) => memory.category === "INTEREST" && memory.value === "capivara",
     ),
     "detector de memoria pessoal nao capturou interesse explicito.",
+  );
+  assertCondition(
+    !negativeDetectedMemories.some((memory) => memory.value === "capivara"),
+    "detector nao deveria salvar memoria negada pelo usuario.",
+  );
+  assertCondition(
+    contradictions.includes("capivara"),
+    "detector de contradicao nao capturou preferencia negada.",
+  );
+  assertCondition(
+    relevantMemories.length <= 5,
+    "seletor de memoria pessoal passou do limite do prompt.",
+  );
+  assertCondition(
+    relevantMemories.filter((memory) => memory.category === "DIFFICULTY")
+      .length <= 2,
+    "seletor incluiu mais de 2 dificuldades.",
+  );
+  assertCondition(
+    relevantMemories.filter((memory) =>
+      ["FAVORITE_THEME", "INTEREST"].includes(memory.category),
+    ).length <= 2,
+    "seletor incluiu mais de 2 interesses/temas.",
+  );
+  assertCondition(
+    relevantMemories.some((memory) => memory.value === "capivara"),
+    "seletor nao priorizou memoria citada na mensagem.",
   );
 
   const missingIdealFeedback = cattyLearningFeedbackCreateSchema.safeParse({

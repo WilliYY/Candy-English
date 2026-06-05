@@ -143,9 +143,9 @@ Enums:
 - `PATTERN_SUGGESTION` tambem pode ser criado automaticamente como fila pendente quando a Catty usa fallback sem memoria relevante, recebe mensagem confusa/fora do trilho sem memoria aprovada ou acumula feedbacks negativos recentes; ele nao vira memoria global nem entra no prompt antes de revisao/aprovacao.
 - Feedback aprovado por Admin pode virar `CattyLearningItem.APPROVED`; feedback sugerido por Teacher vira aprendizado pendente para aprovacao global.
 - `CattyUserMemory` guarda memoria pessoal por `User.id`, como interesse, objetivo, dificuldade, estilo, tema favorito, preferencia de emoji ou nota pedagogica leve.
-- `CattyUserMemory.status=ACTIVE` e o unico status usado no prompt da Catty; `PENDING`, `FLAGGED` e `ARCHIVED` nao entram nas respostas.
+- `CattyUserMemory.status=ACTIVE` e o unico status usado no prompt da Catty; `PENDING`, `FLAGGED` e `ARCHIVED` nao entram nas respostas. Mensagens contraditorias, como o usuario negar uma preferencia antiga, devem marcar a memoria como `FLAGGED` para revisao, nunca apagar automaticamente.
 - `CattyUserMemory.userId + category + key` e unico para evitar duplicar a mesma preferencia do mesmo usuario; memorias pessoais nunca sao compartilhadas entre alunos.
-- `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, uso e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
+- `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, conflito marcado, uso e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
 - Memoria pessoal da Catty deve ser resumo curto e nao pode conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao ou dado privado.
 - `CandyXpEvent` e o ledger historico de XP; cada evento possui `sourceKey` e a chave unica `userId + sourceKey` impede duplicar XP pela mesma origem.
 - `CandyXpProfile` e cache calculado do total, nivel, progresso e streak; a fonte de verdade continua sendo a soma de `CandyXpEvent`.
