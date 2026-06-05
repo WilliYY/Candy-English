@@ -54,6 +54,7 @@ Actions:
 Helpers:
 
 - `src/lib/catty.ts`
+- `src/lib/catty-examples.ts`
 - `src/lib/catty-history.ts`
 - `src/lib/candy-xp.ts`
 - `src/lib/candy-xp-activities.ts`
@@ -171,6 +172,7 @@ Helpers:
 19. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE` e o escopo oficial fica em `CATTY_SCOPE_GUIDE`, combinados em `CATTY_BRAIN_RULES`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, pode usar um emoji pequeno ocasional e nao responde como especialista generica fora do estudo de ingles/AVA.
 20. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
 21. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+22. O banco de exemplos em `src/lib/catty-examples.ts` e a documentacao `docs/catty-comportamento.md` registram respostas ruins e ideais para casos como receita, codigo/API, homework, teacher, admin, motivacao e vocabulario; o smoke `npm run audit:catty-behavior` valida que a classificacao, o fallback e o gatilho OpenAI/Gemini continuam alinhados.
 
 ### Aula ao vivo
 

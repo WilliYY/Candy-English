@@ -17,9 +17,11 @@
     "audit:server-smoke": "tsx scripts/server-smoke.ts",
     "audit:auth-smoke": "tsx scripts/auth-smoke.ts",
     "audit:avatar-smoke": "tsx scripts/avatar-smoke.ts",
+    "audit:catty-behavior": "tsx scripts/catty-behavior-smoke.ts",
     "verify:server-smoke": "docker compose --profile tools run --rm audit-server-smoke",
     "verify:auth-smoke": "docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke",
-    "verify:avatar-smoke": "docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke"
+    "verify:avatar-smoke": "docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke",
+    "verify:catty-behavior": "docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior"
   },
   "dependencies": {
     "@hookform/resolvers": "5.2.2",

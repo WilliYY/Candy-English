@@ -14,6 +14,7 @@ Este documento centraliza comandos de desenvolvimento, validacao, Docker e deplo
 - `scripts/server-smoke.ts`
 - `scripts/auth-smoke.ts`
 - `scripts/avatar-smoke.ts`
+- `scripts/catty-behavior-smoke.ts`
 
 ## Instalar
 
@@ -43,6 +44,7 @@ npm run build
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run audit:avatar-smoke
+npm run audit:catty-behavior
 ```
 
 ## Docker local
@@ -61,6 +63,7 @@ docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior
 ```
 
 ## Deploy Oracle sem migration
@@ -108,6 +111,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 
 - `verify:*` roda smokes via Docker Compose.
 - `audit-server-smoke` depende do app healthy.
+- `audit:catty-behavior` valida exemplos internos da Catty sem chamar Gemini nem OpenAI.
 - Docker usa perfil `tools` para comandos sob demanda.
 - `app-storage` e compartilhado para validar avatar/contratos.
 

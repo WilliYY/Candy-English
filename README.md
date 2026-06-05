@@ -68,6 +68,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
+- `docs/catty-comportamento.md`: exemplos bons/ruins e smoke de comportamento da Catty.
 - `docs/99-contexto-rapido-codex.md`: prompt minimo e memoria curta para continuar o projeto em outro chat.
 
 Arquivos historicos como `docs/arquitetura.md`, `docs/fluxos-ava.md`, `docs/design-direcao.md` e `docs/producao-checklist.md` continuam uteis, mas a serie numerada e a referencia principal.
@@ -185,9 +186,11 @@ npm run prisma:seed
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run audit:avatar-smoke
+npm run audit:catty-behavior
 npm run verify:server-smoke
 npm run verify:auth-smoke
 npm run verify:avatar-smoke
+npm run verify:catty-behavior
 ```
 
 ## Deploy Oracle
