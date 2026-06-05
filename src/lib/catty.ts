@@ -73,11 +73,14 @@ const englishSignals = [
   "are",
   "can",
   "could",
+  "correct",
   "do",
   "does",
   "english",
   "good",
   "grammar",
+  "has",
+  "have",
   "hello",
   "help",
   "hi",
@@ -86,6 +89,7 @@ const englishSignals = [
   "learn",
   "mean",
   "practice",
+  "phrase",
   "say",
   "sentence",
   "should",
@@ -118,6 +122,24 @@ function hasAny(text: string, terms: string[]) {
   return terms.some((term) => text.includes(term));
 }
 
+function countSignalMatches(text: string, terms: string[]) {
+  const tokens = new Set(text.match(/[a-z0-9]+/g) ?? []);
+
+  return terms.filter((term) => {
+    const normalizedTerm = normalizeText(term);
+
+    if (normalizedTerm.includes(" ")) {
+      return text.includes(normalizedTerm);
+    }
+
+    if (normalizedTerm.length <= 3) {
+      return tokens.has(normalizedTerm);
+    }
+
+    return text.includes(normalizedTerm);
+  }).length;
+}
+
 function getContextLabel(context?: CattyPageContext) {
   if (!context) {
     return "site";
@@ -143,17 +165,14 @@ function getContextLabel(context?: CattyPageContext) {
 
 function isEnglishMessage(text: string) {
   const normalized = normalizeText(text);
-  const englishMatches = englishSignals.filter((term) =>
-    normalized.includes(term),
-  ).length;
-  const portugueseMatches = portugueseSignals.filter((term) =>
-    normalized.includes(term),
-  ).length;
+  const englishMatches = countSignalMatches(normalized, englishSignals);
+  const portugueseMatches = countSignalMatches(normalized, portugueseSignals);
   const onlySimpleLatin = /^[a-z0-9\s?'".,!:-]+$/.test(normalized);
 
   return (
     englishMatches > 0 &&
-    (englishMatches >= portugueseMatches || onlySimpleLatin)
+    (englishMatches > portugueseMatches ||
+      (portugueseMatches === 0 && onlySimpleLatin))
   );
 }
 
@@ -172,6 +191,10 @@ function buildEnglishReply(text: string, context?: CattyPageContext) {
     hasAny(normalized, ["correct", "grammar", "sentence", "say"]) ||
     hasAny(normalized, ["phrase"])
   ) {
+    if (hasAny(normalized, ["i has"])) {
+      return "Awnn, almost there. Better: I have a book. Use have with I.";
+    }
+
     return "Awnn, almost there. Send one sentence and I will make it smoother with one tiny reason.";
   }
 
@@ -230,6 +253,10 @@ function buildPortugueseReply(text: string, context?: CattyPageContext) {
 
   if (hasAny(normalized, ["teacher", "prof", "mensagem", "falar"])) {
     return "Nya, para falar com a teacher, use Mensagens no AVA. Escreva simples e direto; pedir ajuda ja e progresso.";
+  }
+
+  if (context?.area === "teacher" && hasAny(normalized, ["feedback"])) {
+    return "Pss pss, teacher, tenta assim: Voce se esforcou bem hoje. Agora revise uma frase com calma e tente de novo. Pequeno progresso conta.";
   }
 
   if (context?.area === "teacher") {

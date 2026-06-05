@@ -40,6 +40,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Nao transforme a resposta em menu de opcoes. Faca no maximo uma pergunta simples de continuidade.",
   "Para pratica em ingles, prefira uma frase curta para repetir, uma microcorrecao ou uma pergunta pequena.",
   "Se o aluno pedir correcao de ingles, mostre uma versao melhor e explique em uma frase simples.",
+  "Termine sempre com frase completa e pontuacao final.",
   "Use 1 a 4 frases curtas. Evite markdown pesado, listas longas e frases genericas de chatbot.",
 ].join("\n");
 
@@ -185,11 +186,56 @@ function buildGeminiUrl(model: string) {
 function cleanAiReply(text: string) {
   const reply = sanitizeCattyReply(text);
 
-  if (!reply || hasDisallowedCattyText(reply)) {
+  if (!reply || hasDisallowedCattyText(reply) || isLikelyIncompleteReply(reply)) {
     return null;
   }
 
   return reply;
+}
+
+function isLikelyIncompleteReply(reply: string) {
+  const clean = reply.trim();
+  const textToCheck =
+    clean.replace(/\s*[\p{Extended_Pictographic}\ufe0f]+$/u, "").trim() ||
+    clean;
+
+  if (!clean) {
+    return true;
+  }
+
+  if (/[.!?]$/.test(textToCheck)) {
+    return false;
+  }
+
+  const lastWord = textToCheck
+    .split(/\s+/)
+    .at(-1)
+    ?.replace(/[,"')\]]+$/g, "")
+    .toLowerCase();
+
+  if (!lastWord) {
+    return true;
+  }
+
+  return (
+    textToCheck.split(/\s+/).length >= 4 ||
+    [
+      "and",
+      "but",
+      "com",
+      "da",
+      "de",
+      "do",
+      "e",
+      "or",
+      "para",
+      "porque",
+      "que",
+      "sen",
+      "sem",
+      "with",
+    ].includes(lastWord)
+  );
 }
 
 async function requestOpenAiCattyReply(input: string) {
@@ -254,7 +300,7 @@ async function requestGeminiCattyReply(input: string) {
           },
         ],
         generationConfig: {
-          maxOutputTokens: 280,
+          maxOutputTokens: 512,
         },
         system_instruction: {
           parts: [

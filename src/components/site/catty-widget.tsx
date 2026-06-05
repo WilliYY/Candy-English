@@ -742,8 +742,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   return (
     <div
-      className={`fixed right-4 z-50 flex flex-col items-end gap-3 sm:right-5 ${
-        hasWhatsAppWidget ? "bottom-20 sm:bottom-24" : "bottom-4 sm:bottom-5"
+      className={`fixed right-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:right-5 sm:max-w-none ${
+        hasWhatsAppWidget ? "bottom-44 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
       {open && canUseCattyChat ? (
@@ -896,7 +896,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       {!open && showLoggedInBalloons && loggedInBalloon ? (
         <div
-          className="catty-speech catty-speech--logged pointer-events-none mr-1"
+          className="catty-speech catty-speech--logged pointer-events-none mr-1 mb-10 sm:mb-0"
           role="status"
           aria-live="polite"
         >
@@ -913,7 +913,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       (showPublicBalloons || publicNoticeVisible) &&
       visiblePublicBalloon ? (
         <div
-          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1`}
+          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1 mb-10 sm:mb-0`}
           role="status"
           aria-live="polite"
         >
@@ -928,7 +928,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       <Button
         type="button"
         size="lg"
-        className="catty-launcher h-16 rounded-full px-3 shadow-2xl shadow-primary/20 sm:px-4"
+        className="catty-launcher h-14 w-14 rounded-full p-1 shadow-2xl shadow-primary/20 sm:h-16 sm:w-auto sm:px-4"
         onClick={() => {
           if (open && canUseCattyChat) {
             setOpen(false);
@@ -938,7 +938,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         }}
         aria-expanded={open || publicNoticeVisible}
       >
-        <span className="relative mr-2 flex size-11 overflow-hidden rounded-full border-2 border-white/55 bg-white shadow-sm">
+        <span className="relative flex size-11 overflow-hidden rounded-full border-2 border-white/55 bg-white shadow-sm sm:mr-2">
           <Image
             src="/brand/catty.png"
             alt=""
@@ -952,7 +952,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         <span aria-hidden="true" className="hidden font-semibold sm:inline">
           Catty
         </span>
-        <MessageCircle aria-hidden="true" className="size-4 sm:ml-1" />
+        <MessageCircle
+          aria-hidden="true"
+          className="hidden size-3.5 sm:ml-1 sm:block sm:size-4"
+        />
       </Button>
     </div>
   );
