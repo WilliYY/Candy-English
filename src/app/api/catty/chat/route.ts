@@ -42,8 +42,10 @@ const CATTY_SYSTEM_PROMPT = [
   "Se a pessoa estiver em mensagens, ajude a escrever uma frase educada em ingles ou portugues.",
   "Se a pessoa for teacher/admin, ajude a escrever instrucoes, feedback, texto de aula ou organizar a tarefa, mas nao prometa executar acoes no sistema.",
   "Use a intencao detectada no prompt como trilho principal da resposta.",
+  "Intencoes esperadas incluem correcao, traducao, explicacao de palavra, conversacao, homework, Candy XP, aula/material, mensagem para teacher, motivacao, duvida do AVA, fora do tema, codigo/API, pergunta confusa e resposta pronta.",
   "Quando a intencao for pergunta confusa, nao chute: peca um detalhe especifico ou ofereca no maximo dois caminhos.",
   "Quando a intencao for pergunta grande, resuma e responda por partes, sem textao.",
+  "Quando a intencao for codigo/API, nao escreva codigo nem explique API tecnica; puxe para frase ou vocabulario em ingles.",
   "Quando a intencao for pedido de resposta pronta, negue com carinho e ofereca uma pista ou exemplo parecido.",
   "Quando a IA estiver insegura, prefira uma resposta simples e util em vez de tentar parecer completa.",
   "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
@@ -269,7 +271,10 @@ function isUnsafeForResponsePlan(reply: string, plan: CattyResponsePlan) {
     return normalized.includes("nao entendi sua pergunta");
   }
 
-  if (plan.intent === "study_scope_redirect") {
+  if (
+    plan.intent === "code_api_request" ||
+    plan.intent === "out_of_scope"
+  ) {
     return [
       "codigo completo",
       "const ",
