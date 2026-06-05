@@ -159,17 +159,18 @@ Helpers:
 7. Quando o usuario logado abre o chat real, o widget chama `GET /api/catty/chat` para carregar historico recente daquele usuario e contexto de tela.
 8. Widget envia para `/api/catty/chat` apenas quando o usuario logado no AVA manda uma mensagem real: mensagem atual, historico local recente e contexto leve.
 9. A rota chama `auth()` antes de parsear a mensagem; sem sessao ativa e role `ADMIN`, `TEACHER` ou `STUDENT`, retorna 401 amigavel.
-10. Para usuario autorizado, a rota valida o payload com Zod, aplica limite simples por IP e mescla o historico persistido com o historico local recente do widget, removendo a mensagem atual e limitando o contexto enviado.
+10. Para usuario autorizado, a rota valida o payload com Zod, aplica limite simples por IP, mescla o historico persistido com o historico local recente do widget, removendo a mensagem atual e limitando o contexto enviado.
 11. Antes de chamar IA ou fallback, `src/lib/catty.ts` detecta uma intencao leve da mensagem, como corrigir frase, traduzir frase, explicar palavra, dica de homework, pratica de ingles, ajuda no AVA, mensagem para teacher, motivacao, pergunta grande ou pergunta confusa.
 12. Essa intencao vira um pequeno plano de resposta usado tanto no prompt da IA quanto no fallback local; perguntas vagas devem pedir uma informacao especifica, correcoes ou traducoes sem frase pedem o texto, frases em ingles com erro comum podem virar correcao direta, aluno travado recebe um passo simples, homework sem enunciado pede a pergunta, e perguntas grandes devem ser resumidas em partes.
-13. Somente as 8 mensagens recentes entram no prompt; a conversa armazenada e podada para no maximo 50 mensagens por contexto.
-14. A rota usa Gemini quando `GEMINI_API_KEY` existe.
-15. Se a mensagem chama Catty pelo nome, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
-16. Sem chave, erro de API, resposta vazia, resposta cortada, resposta generica demais ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
-17. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
-18. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, e pode usar um emoji pequeno ocasional.
-19. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
-20. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
+13. A rota deriva do servidor um contexto seguro do usuario com role, primeiro nome e nivel do aluno quando existir; esse contexto so ajusta tom e dificuldade do exemplo e nao inclui email, id, senha, contratos, pagamentos, documentos ou credenciais.
+14. Somente as 8 mensagens recentes entram no prompt; a conversa armazenada e podada para no maximo 50 mensagens por contexto.
+15. A rota usa Gemini quando `GEMINI_API_KEY` existe.
+16. Se a mensagem chama Catty pelo nome, incluindo `Catty`, `catty` ou `/catty`, a rota tenta OpenAI Responses API antes de Gemini, desde que `OPENAI_API_KEY` exista.
+17. Sem chave, erro de API, resposta vazia, resposta cortada, resposta generica demais ou resposta fora da personalidade, a Catty usa o fallback local autorizado com orientacoes de estudo, homework, aula ao vivo e pratica simples em ingles.
+18. A troca final do usuario logado e gravada em `CattyConversation`/`CattyMessage`; visitante sem login nao grava historico.
+19. A personalidade oficial fica em `CATTY_PERSONALITY_GUIDE`: Catty e uma gatinha mascote-professora da Candy, usa expressoes como `Miauw`, `Awnn`, `Uwau`, `Pss pss`, `Nya` e `Bora estudar`, e pode usar um emoji pequeno ocasional.
+20. Quando o usuario escreve em ingles, a resposta deve vir em ingles simples; em portugues, a resposta deve ficar em portugues brasileiro.
+21. Em homework e aula interativa, Catty ajuda a entender o enunciado, dar pistas e criar exemplos parecidos, mas nao entrega a resposta final.
 
 ### Aula ao vivo
 
@@ -259,7 +260,7 @@ Helpers:
 - Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - `meet.jit.si` publico exige conta para quem cria sala e nao deve ser tratado como embed de producao; para teacher/aluno sem conta Jitsi, usar dominio Jitsi dedicado/JaaS configurado no ambiente.
 - Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
-- Catty pode usar `area` e `task` da URL para orientar atalhos, historico recente e linguagem, e o primeiro nome do usuario logado apenas para baloes visuais locais; nao pode responder usuario sem sessao valida nem receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
+- Catty pode usar `area` e `task` da URL para orientar atalhos, historico recente e linguagem, e pode usar role, primeiro nome e nivel do aluno derivados no servidor apenas como contexto seguro; nao pode responder usuario sem sessao valida nem receber registros internos, respostas salvas, contratos, pagamentos ou credenciais.
 - APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
@@ -285,7 +286,7 @@ Helpers:
 - Mostrar mais de uma tarefa grande por tela pode poluir o AVA.
 - Remover validacao server-side pode vazar dados.
 - Alterar bloqueio de manutencao pode impedir admins/teachers de operar.
-- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget, historico recente da propria Catty e contexto leve de `area`/`task`.
+- Enviar dados do AVA para a Catty sem necessidade pode criar risco de privacidade; manter a rota limitada ao texto digitado no widget, historico recente da propria Catty, contexto leve de `area`/`task` e contexto seguro minimo de role, primeiro nome e nivel do aluno.
 - Revelar credenciais na tela deve ser uma acao consciente do admin; nao adicionar exibicao automatica nem logs do valor em claro.
 - Alterar resposta correta de atividade Candy XP publicada pode mudar o criterio de novas tentativas; manter cuidado com atividades ja respondidas.
 

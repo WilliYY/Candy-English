@@ -8,6 +8,12 @@ export type CattyPageContext = {
   task?: string;
 };
 
+export type CattySessionContext = {
+  firstName?: string;
+  role?: "ADMIN" | "TEACHER" | "STUDENT";
+  studentLevel?: string;
+};
+
 export type CattyIntent =
   | "ava_help"
   | "complex_question"
@@ -1040,11 +1046,33 @@ function sanitizeHistoryText(text: string) {
   return text.replace(/\s+/g, " ").trim().slice(0, 700);
 }
 
+function sanitizeContextText(text?: string | null, maxLength = 40) {
+  return text?.replace(/\s+/g, " ").trim().slice(0, maxLength) || "";
+}
+
+function getSafeSessionContextLine(sessionContext?: CattySessionContext) {
+  const role = sessionContext?.role ?? "desconhecida";
+  const firstName = sanitizeContextText(sessionContext?.firstName, 24);
+  const studentLevel = sanitizeContextText(sessionContext?.studentLevel, 40);
+  const parts = [`role=${role}`];
+
+  if (firstName) {
+    parts.push(`primeiro nome=${firstName}`);
+  }
+
+  if (sessionContext?.role === "STUDENT" && studentLevel) {
+    parts.push(`nivel do aluno=${studentLevel}`);
+  }
+
+  return parts.join("; ");
+}
+
 export function buildCattyInput(
   message: string,
   history: CattyMessage[],
   context?: CattyPageContext,
   plan = buildCattyResponsePlan(message, context, history),
+  sessionContext?: CattySessionContext,
 ) {
   const safeHistory = history
     .slice(-8)
@@ -1061,9 +1089,13 @@ export function buildCattyInput(
 
   return [
     `Idioma esperado para a resposta: ${plan.language}.`,
+    `Area atual: ${context?.area ?? "unknown"}.`,
+    `Tarefa atual: ${context?.task ? sanitizeContextText(context.task, 80) : "sem tarefa especifica"}.`,
     `Contexto atual da tela: ${getContextLabel(context)}.`,
+    `Contexto seguro do usuario: ${getSafeSessionContextLine(sessionContext)}.`,
     `Intencao detectada: ${plan.label} (${plan.confidence}).`,
     `Plano da Catty: ${plan.instruction}`,
+    "Use nome, role e nivel apenas para ajustar tom e exemplo. Nao invente dados do AVA.",
     "Se a mensagem estiver vaga ou confusa, peca uma informacao especifica em vez de inventar.",
     "Se a mensagem for grande, responda por partes e escolha apenas o proximo passo mais util.",
     "Conversa recente:",

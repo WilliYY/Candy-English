@@ -6,6 +6,7 @@ import {
   type CattyMessage,
   type CattyPageContext,
   type CattyResponsePlan,
+  type CattySessionContext,
   hasDisallowedCattyText,
   sanitizeCattyReply,
   shouldUseOpenAiForCatty,
@@ -17,6 +18,7 @@ import {
   type CattyStoredReplySource,
 } from "@/lib/catty-history";
 import { auth } from "@/lib/auth";
+import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
   cattyChatSchema,
@@ -32,6 +34,8 @@ const CATTY_SYSTEM_PROMPT = [
   "Responda em portugues brasileiro quando a ultima mensagem estiver em portugues.",
   "Ajude com pratica de ingles, frases curtas, correcao simples, significado de palavras, motivacao de estudo e duvidas gerais do AVA.",
   "Use o contexto da tela apenas para orientar a resposta. Nao invente dados, notas, pagamentos, contratos, respostas de homework ou informacoes internas.",
+  "Use role, primeiro nome e nivel do aluno apenas para ajustar tom, saudacao curta e dificuldade do exemplo.",
+  "Nunca mencione email, id, senha, pagamento, contrato, documento, chave de API ou dado privado.",
   "Se a pessoa estiver em homework ou aula interativa, explique o enunciado, de pistas e exemplos parecidos, mas nao entregue a resposta final.",
   "Se a pessoa estiver em aulas, ajude com vocabulario, frases exemplo e revisao curta.",
   "Se a pessoa estiver em mensagens, ajude a escrever uma frase educada em ingles ou portugues.",
@@ -486,6 +490,45 @@ function toStoredReplySource(
   return "FALLBACK";
 }
 
+function getFirstName(name?: string | null) {
+  return name?.replace(/\s+/g, " ").trim().split(" ")[0]?.slice(0, 24) || "";
+}
+
+async function getCattySessionContext(input: {
+  name?: string | null;
+  role: CattySessionContext["role"];
+  userId: string;
+}): Promise<CattySessionContext> {
+  const context: CattySessionContext = {
+    firstName: getFirstName(input.name),
+    role: input.role,
+  };
+
+  if (input.role !== "STUDENT") {
+    return context;
+  }
+
+  try {
+    const prisma = getPrisma();
+    const profile = await prisma.studentProfile.findUnique({
+      select: {
+        level: true,
+      },
+      where: {
+        userId: input.userId,
+      },
+    });
+
+    if (profile?.level) {
+      context.studentLevel = profile.level;
+    }
+  } catch {
+    console.warn("Catty student level context failed.");
+  }
+
+  return context;
+}
+
 async function getHistoryForCatty(input: {
   clientHistory: CattyMessage[];
   context?: CattyPageContext;
@@ -647,7 +690,18 @@ export async function POST(request: NextRequest) {
   });
   const responsePlan = buildCattyResponsePlan(message, context, cattyHistory);
   const fallbackReply = responsePlan.fallbackReply;
-  const input = buildCattyInput(message, cattyHistory, context, responsePlan);
+  const sessionContext = await getCattySessionContext({
+    name: session.user.name,
+    role: session.user.role,
+    userId: session.user.id,
+  });
+  const input = buildCattyInput(
+    message,
+    cattyHistory,
+    context,
+    responsePlan,
+    sessionContext,
+  );
   const sources: CattyAiSource[] = shouldUseOpenAiForCatty(message)
     ? ["openai", "gemini"]
     : ["gemini"];
