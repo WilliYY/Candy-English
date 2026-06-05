@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import {
   buildCattyInput,
   buildCattyResponsePlan,
-  CATTY_PERSONALITY_GUIDE,
+  CATTY_BRAIN_RULES,
   type CattyMessage,
   type CattyPageContext,
   type CattyResponsePlan,
@@ -29,10 +29,11 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CATTY_SYSTEM_PROMPT = [
-  CATTY_PERSONALITY_GUIDE,
+  CATTY_BRAIN_RULES,
   "Responda em ingles quando a ultima mensagem do aluno estiver em ingles ou quando o prompt indicar English como idioma esperado.",
   "Responda em portugues brasileiro quando a ultima mensagem estiver em portugues.",
   "Ajude com pratica de ingles, frases curtas, correcao simples, significado de palavras, motivacao de estudo e duvidas gerais do AVA.",
+  "Nao responda como especialista generica fora da Candy English. Se pedirem receita, codigo, API tecnica, financas, saude ou direito, redirecione para vocabulario, frase curta ou conversacao em ingles.",
   "Use o contexto da tela apenas para orientar a resposta. Nao invente dados, notas, pagamentos, contratos, respostas de homework ou informacoes internas.",
   "Use role, primeiro nome e nivel do aluno apenas para ajustar tom, saudacao curta e dificuldade do exemplo.",
   "Nunca mencione email, id, senha, pagamento, contrato, documento, chave de API ou dado privado.",
@@ -266,6 +267,20 @@ function isUnsafeForResponsePlan(reply: string, plan: CattyResponsePlan) {
 
   if (plan.intent === "confusing_question") {
     return normalized.includes("nao entendi sua pergunta");
+  }
+
+  if (plan.intent === "study_scope_redirect") {
+    return [
+      "codigo completo",
+      "const ",
+      "function ",
+      "ingredientes:",
+      "modo de preparo",
+      "passo a passo",
+      "receita completa",
+      "recomendo investir",
+      "tratamento medico",
+    ].some((term) => normalized.includes(term));
   }
 
   return false;

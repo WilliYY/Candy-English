@@ -24,9 +24,19 @@ export type CattyIntent =
   | "motivation"
   | "practice_english"
   | "ready_answer_request"
+  | "study_scope_redirect"
   | "teacher_feedback"
   | "teacher_message"
   | "translate_sentence";
+
+type CattyScopeTopic =
+  | "cake"
+  | "code_api"
+  | "cooking"
+  | "finance"
+  | "generic"
+  | "health"
+  | "legal";
 
 export type CattyResponsePlan = {
   confidence: "high" | "medium" | "low";
@@ -63,6 +73,19 @@ export const CATTY_PERSONALITY_GUIDE = [
   "Nunca diga que voce e ChatGPT, OpenAI, Gemini, modelo de linguagem ou IA. Voce e a Catty da Candy.",
 ].join("\n");
 
+export const CATTY_SCOPE_GUIDE = [
+  "Escopo oficial: Catty e uma mascote-professora de ingles da Candy English, nao uma assistente generica.",
+  "Se a pessoa pedir receita, codigo, API tecnica, financas, saude, direito ou outro tema fora de ingles/AVA, nao entregue uma resposta especializada completa.",
+  "Quando o assunto fugir do escopo, transforme em pratica de English: uma frase simples, vocabulario curto ou pergunta de conversacao.",
+  "Puxe a conversa de volta para aprendizado, homework, aula, vocabulario, speaking, writing, listening, reading ou uso seguro do AVA.",
+  "Ensine aos poucos, em conversa curta, com no maximo uma pergunta de continuidade.",
+].join("\n");
+
+export const CATTY_BRAIN_RULES = [
+  CATTY_PERSONALITY_GUIDE,
+  CATTY_SCOPE_GUIDE,
+].join("\n");
+
 const taskLabels: Record<string, string> = {
   agenda: "agenda",
   "apis-senhas": "APIs e senhas",
@@ -91,6 +114,7 @@ const intentLabels: Record<CattyIntent, string> = {
   motivation: "motivacao",
   practice_english: "praticar ingles",
   ready_answer_request: "pedido de resposta pronta",
+  study_scope_redirect: "redirecionar para estudo de ingles",
   teacher_feedback: "feedback para aluno",
   teacher_message: "mensagem para teacher",
   translate_sentence: "traduzir frase",
@@ -115,6 +139,8 @@ const intentInstructions: Record<CattyIntent, string> = {
     "crie uma micro pratica em ingles com frase curta, repeticao ou pergunta simples.",
   ready_answer_request:
     "recuse resposta pronta com carinho, explique que ajuda por pista ou exemplo parecido e peca apenas o enunciado.",
+  study_scope_redirect:
+    "nao responda como especialista generica; transforme o tema em pratica curta de ingles, vocabulario ou conversacao.",
   teacher_feedback:
     "ajude a teacher com feedback curto, carinhoso e util, sem expor dados de aluno.",
   teacher_message:
@@ -265,6 +291,137 @@ function isHomeworkContext(context?: CattyPageContext) {
     task.includes("dever") ||
     task.includes("corrigir-respostas")
   );
+}
+
+function isEnglishLearningMessage(text: string, context?: CattyPageContext) {
+  const normalized = normalizeText(text);
+
+  return (
+    isHomeworkContext(context) ||
+    hasAny(normalized, [
+      "atividade",
+      "aula",
+      "corrige",
+      "corrigir",
+      "dever",
+      "enunciado",
+      "english",
+      "exercicio",
+      "frase",
+      "homework",
+      "ingles",
+      "listening",
+      "palavra",
+      "practice",
+      "praticar",
+      "reading",
+      "sentence",
+      "speaking",
+      "traduz",
+      "translate",
+      "vocabulario",
+      "word",
+      "writing",
+    ])
+  );
+}
+
+function getCattyScopeTopic(
+  text: string,
+  context?: CattyPageContext,
+): CattyScopeTopic | null {
+  const normalized = normalizeText(text);
+
+  if (isEnglishLearningMessage(text, context)) {
+    return null;
+  }
+
+  if (context?.task === "apis-senhas" && hasAny(normalized, ["api", "apis"])) {
+    return null;
+  }
+
+  if (
+    hasAny(normalized, [
+      "bolo",
+      "cake",
+      "cupcake",
+      "massa de bolo",
+      "receita de bolo",
+    ])
+  ) {
+    return "cake";
+  }
+
+  if (
+    hasAny(normalized, [
+      "cozinha",
+      "cozinhar",
+      "ingrediente",
+      "receita",
+      "salad",
+      "salada",
+    ])
+  ) {
+    return "cooking";
+  }
+
+  if (
+    hasAny(normalized, [
+      "api",
+      "backend",
+      "codigo",
+      "code",
+      "endpoint",
+      "javascript",
+      "programa",
+      "programar",
+      "python",
+      "typescript",
+    ])
+  ) {
+    return "code_api";
+  }
+
+  if (
+    hasAny(normalized, [
+      "acao",
+      "bitcoin",
+      "cripto",
+      "financas",
+      "investimento",
+      "investir",
+      "renda fixa",
+    ])
+  ) {
+    return "finance";
+  }
+
+  if (
+    hasAny(normalized, [
+      "doenca",
+      "medicina",
+      "remedio",
+      "saude",
+      "sintoma",
+      "tratamento",
+    ])
+  ) {
+    return "health";
+  }
+
+  if (
+    hasAny(normalized, [
+      "advogado",
+      "contrato juridico",
+      "direito",
+      "juridico",
+      "processo",
+    ])
+  ) {
+    return "legal";
+  }
+
+  return null;
 }
 
 function isLongQuestion(text: string) {
@@ -525,6 +682,10 @@ function detectCattyIntent(
     return { confidence: "high", intent: "ready_answer_request" };
   }
 
+  if (getCattyScopeTopic(text, context)) {
+    return { confidence: "high", intent: "study_scope_redirect" };
+  }
+
   if (
     mixedIntentCount >= 2 &&
     (isLongQuestion(text) || getWordTokens(text).length >= 18)
@@ -773,6 +934,54 @@ function buildPortugueseReply(text: string, context?: CattyPageContext) {
   return "Bora estudar, aluno Candy. Uma frase por vez ja conta. Me pergunte sobre homework, aula ao vivo ou mande uma frase em English.";
 }
 
+function buildScopeRedirectEnglishReply(topic: CattyScopeTopic | null) {
+  if (topic === "cake") {
+    return "Awnn, let's turn that into English practice. The sentence is: I make a cake. Want to learn ingredients in English?";
+  }
+
+  if (topic === "cooking") {
+    return "Miauw, I can turn that into English practice instead of a full recipe. Try: I make a salad with lettuce and tomatoes. Want to build your sentence?";
+  }
+
+  if (topic === "code_api") {
+    return "Pss pss, I am Catty from Candy English, not a coding helper. I can help you say that idea in English or explain a class word.";
+  }
+
+  if (topic === "finance") {
+    return "Nya, money advice is outside my study corner. We can practice words like price, save and plan. Which word do you want?";
+  }
+
+  if (topic === "health" || topic === "legal") {
+    return "Awnn, that topic needs a real specialist. I can help you say the idea in simple English, one sentence at a time.";
+  }
+
+  return "Miauw, that is outside my Candy study corner. I can turn it into English practice with one short sentence.";
+}
+
+function buildScopeRedirectPortugueseReply(topic: CattyScopeTopic | null) {
+  if (topic === "cake") {
+    return "Awnn, posso transformar isso em pratica de English. A frase seria: I make a cake. Quer aprender os ingredientes em ingles?";
+  }
+
+  if (topic === "cooking") {
+    return "Miauw, voce quer aprender como falar isso em ingles? Podemos comecar com: I make a salad with lettuce and tomatoes. Quer montar sua frase?";
+  }
+
+  if (topic === "code_api") {
+    return "Pss pss, eu sou a Catty de estudos da Candy English, nao uma helper de codigo. Posso te ajudar a escrever essa ideia em ingles ou explicar uma palavra da aula.";
+  }
+
+  if (topic === "finance") {
+    return "Nya, financas nao e meu cantinho de estudo. Posso transformar em vocabulario: price, save, plan. Qual palavra voce quer treinar?";
+  }
+
+  if (topic === "health" || topic === "legal") {
+    return "Awnn, esse assunto precisa de um especialista de verdade. Eu posso te ajudar a dizer a ideia em ingles simples, uma frase por vez.";
+  }
+
+  return "Miauw, esse assunto foge um pouco da aula. Posso transformar em pratica de English com uma frase curta.";
+}
+
 function buildPlannedEnglishReply(
   text: string,
   context: CattyPageContext | undefined,
@@ -784,6 +993,10 @@ function buildPlannedEnglishReply(
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
+
+  if (intent === "study_scope_redirect") {
+    return buildScopeRedirectEnglishReply(getCattyScopeTopic(text, context));
+  }
 
   if (intent === "ready_answer_request") {
     return "Uwau, that sounds like a final-answer request. I will not do it for you, but I can give a clue or a similar example. Send the exercise prompt.";
@@ -879,6 +1092,10 @@ function buildPlannedPortugueseReply(
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
+
+  if (intent === "study_scope_redirect") {
+    return buildScopeRedirectPortugueseReply(getCattyScopeTopic(text, context));
+  }
 
   if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
     return "Miauw, quando a teacher abrir a aula ao vivo, ela aparece no AVA. Entre por ali, permita camera e microfone, e pronto.";
@@ -1150,6 +1367,7 @@ export function buildCattyInput(
     `Intencao detectada: ${plan.label} (${plan.confidence}).`,
     `Plano da Catty: ${plan.instruction}`,
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
+    "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
     "Use nome, role e nivel apenas para ajustar tom e exemplo. Nao invente dados do AVA.",
     "Se a mensagem estiver vaga ou confusa, peca uma informacao especifica em vez de inventar.",
     "Se a mensagem for grande, responda por partes e escolha apenas o proximo passo mais util.",
