@@ -68,7 +68,8 @@ Tabelas e enums:
 - Na tela do aluno, as areas de escrita, checkbox e desenho nao devem mostrar borda, fundo, placeholder ou caixa HTML propria; apenas a resposta digitada, a marca selecionada ou os tracos desenhados devem aparecer.
 - A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
 - No editor da teacher, cada area manual deve exibir uma previa discreta do resultado final (`x` centralizado, texto exemplo alinhado como a resposta do aluno ou area de desenho) para deixar claro onde a resposta aparecera.
-- Campos `SHORT_TEXT` devem aceitar lacunas baixas e precisas; o tamanho da fonte se adapta ao quadro desenhado pela teacher e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
+- A teacher usa uma unica ferramenta `Texto` para areas de escrita; o editor escolhe internamente entre linha curta e area longa conforme a altura do quadro desenhado.
+- Campos de texto baixos devem aceitar lacunas precisas; campos maiores viram area de texto longa. O tamanho da fonte se adapta ao quadro desenhado pela teacher e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
 - Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas e deve permitir desfazer o ultimo traco sem apagar todo o desenho.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
@@ -97,6 +98,7 @@ Tabelas e enums:
 - A otimizacao de PDF reaproveita `src/lib/file-optimization.ts`, o mesmo helper do Candy XP, e retorna mensagem de tamanho original/final para a teacher quando houver tentativa.
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
 - Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
+- A interface mostra apenas `Texto` para criacao de escrita; no banco, a area e normalizada como `SHORT_TEXT` ou `LONG_TEXT` de acordo com a altura para manter compatibilidade com aluno, correcao e atividades antigas.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.
 

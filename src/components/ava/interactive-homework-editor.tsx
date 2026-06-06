@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlignLeft,
   CheckSquare,
   FileText,
   LoaderCircle,
@@ -60,6 +59,7 @@ export type InteractiveHomeworkEditorRow = {
 };
 
 type FieldTool = EditableHomeworkField["type"];
+type EditorFieldTool = "CHECKBOX" | "DRAWING" | "TEXT";
 
 type FieldToolMeta = {
   Icon: LucideIcon;
@@ -116,14 +116,15 @@ type EditorAction =
       start: PagePoint;
     };
 
-const FIELD_TOOL_OPTIONS: FieldTool[] = [
-  "SHORT_TEXT",
-  "LONG_TEXT",
+const TEXT_FIELD_LONG_THRESHOLD = 5.6;
+
+const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
+  "TEXT",
   "CHECKBOX",
   "DRAWING",
 ];
 
-const FIELD_TOOL_META: Record<FieldTool, FieldToolMeta> = {
+const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
   CHECKBOX: {
     Icon: CheckSquare,
     defaultHeight: 2.4,
@@ -145,25 +146,51 @@ const FIELD_TOOL_META: Record<FieldTool, FieldToolMeta> = {
     minWidth: 8,
     placeholder: null,
   },
-  LONG_TEXT: {
-    Icon: AlignLeft,
-    defaultHeight: 9,
-    defaultWidth: 36,
-    label: "Texto longo",
-    minHeight: 5,
-    minWidth: 10,
-    placeholder: "Resposta",
-  },
-  SHORT_TEXT: {
+  TEXT: {
     Icon: Type,
-    defaultHeight: 2.6,
-    defaultWidth: 18,
-    label: "Texto curto",
+    defaultHeight: 2.8,
+    defaultWidth: 22,
+    label: "Texto",
     minHeight: 1.2,
     minWidth: 4,
-    placeholder: "Resposta curta",
+    placeholder: "Texto",
   },
 };
+
+function isTextFieldType(type: FieldTool): type is "LONG_TEXT" | "SHORT_TEXT" {
+  return type === "SHORT_TEXT" || type === "LONG_TEXT";
+}
+
+function textFieldTypeForGeometry(
+  geometry: Pick<FieldGeometry, "height">,
+): "LONG_TEXT" | "SHORT_TEXT" {
+  return geometry.height >= TEXT_FIELD_LONG_THRESHOLD
+    ? "LONG_TEXT"
+    : "SHORT_TEXT";
+}
+
+function metaForFieldType(type: FieldTool) {
+  return FIELD_TOOL_META[isTextFieldType(type) ? "TEXT" : type];
+}
+
+function normalizeTextFieldType(field: EditableHomeworkField) {
+  if (!isTextFieldType(field.type)) {
+    return field;
+  }
+
+  const type = textFieldTypeForGeometry(field);
+
+  if (type === field.type && field.label === "Texto") {
+    return field;
+  }
+
+  return {
+    ...field,
+    label: "Texto",
+    placeholder: "Texto",
+    type,
+  };
+}
 
 function clampNumber(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) {
@@ -226,7 +253,7 @@ function pagePointFromEvent(
 }
 
 function geometryFromPixelSize(
-  type: FieldTool,
+  type: EditorFieldTool,
   point: PagePoint,
   pageRect: PageRect,
   sizePixels: number,
@@ -248,7 +275,7 @@ function geometryFromPixelSize(
 }
 
 function defaultGeometryFromPoint(
-  type: FieldTool,
+  type: EditorFieldTool,
   point: PagePoint,
   pageRect?: PageRect,
 ) {
@@ -270,7 +297,7 @@ function defaultGeometryFromPoint(
 }
 
 function geometryFromPoints(
-  type: FieldTool,
+  type: EditorFieldTool,
   start: PagePoint,
   current: PagePoint,
   pageRect: PageRect,
@@ -324,8 +351,9 @@ function moveFieldGeometry(
   start: PagePoint,
   current: PagePoint,
 ) {
-  const width = clampNumber(field.width, 4, 100);
-  const height = clampNumber(field.height, 4, 100);
+  const meta = metaForFieldType(field.type);
+  const width = clampNumber(field.width, meta.minWidth, 100);
+  const height = clampNumber(field.height, meta.minHeight, 100);
   const deltaX = current.x - start.x;
   const deltaY = current.y - start.y;
 
@@ -342,7 +370,7 @@ function resizeFieldGeometry(
   current: PagePoint,
   pageRect: PageRect,
 ) {
-  const meta = FIELD_TOOL_META[field.type];
+  const meta = metaForFieldType(field.type);
   const minWidth = meta.resizeMode === "square" ? meta.minWidth : 4;
   const minHeight = meta.resizeMode === "square" ? meta.minHeight : 4;
   const x = clampNumber(field.x, 0, 100 - minWidth);
@@ -426,23 +454,25 @@ function createEditableField({
   id: string;
   page: number;
   sortOrder: number;
-  type: FieldTool;
+  type: EditorFieldTool;
 }): EditableHomeworkField {
   const meta = FIELD_TOOL_META[type];
+  const fieldType =
+    type === "TEXT" ? textFieldTypeForGeometry(geometry) : type;
 
-  return {
+  return normalizeTextFieldType({
     height: geometry.height,
     id,
     label: `${meta.label} ${sortOrder + 1}`,
     page,
     placeholder: meta.placeholder,
-    required: type !== "CHECKBOX",
+    required: fieldType !== "CHECKBOX",
     sortOrder,
-    type,
+    type: fieldType,
     width: geometry.width,
     x: geometry.x,
     y: geometry.y,
-  };
+  });
 }
 
 function InteractiveHomeworkCanvasEditor({
@@ -456,7 +486,7 @@ function InteractiveHomeworkCanvasEditor({
   fields: EditableHomeworkField[];
   homework: InteractiveHomeworkEditorRow;
   selectedFieldId: string | null;
-  selectedTool: FieldTool;
+  selectedTool: EditorFieldTool;
   setFields: Dispatch<SetStateAction<EditableHomeworkField[]>>;
   setSelectedFieldId: Dispatch<SetStateAction<string | null>>;
 }) {
@@ -586,7 +616,7 @@ function InteractiveHomeworkCanvasEditor({
         setFields((currentFields) =>
           currentFields.map((field) =>
             field.id === action.fieldId
-              ? { ...field, ...geometry }
+              ? normalizeTextFieldType({ ...field, ...geometry })
               : field,
           ),
         );
@@ -601,7 +631,9 @@ function InteractiveHomeworkCanvasEditor({
 
       setFields((currentFields) =>
         currentFields.map((field) =>
-          field.id === action.fieldId ? { ...field, ...geometry } : field,
+          field.id === action.fieldId
+            ? normalizeTextFieldType({ ...field, ...geometry })
+            : field,
         ),
       );
     }
@@ -719,7 +751,7 @@ function InteractiveHomeworkEditorItem({
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
   const [fields, setFields] = useState<EditableHomeworkField[]>(homework.fields);
-  const [selectedTool, setSelectedTool] = useState<FieldTool>("SHORT_TEXT");
+  const [selectedTool, setSelectedTool] = useState<EditorFieldTool>("TEXT");
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     homework.fields[0]?.id ?? null,
   );
@@ -754,12 +786,16 @@ function InteractiveHomeworkEditorItem({
 
     startSaveTransition(async () => {
       const result = await saveInteractiveHomeworkFields({
-        fields: fields.map((field, index) => ({
-          ...field,
-          label: field.label ?? undefined,
-          placeholder: field.placeholder ?? undefined,
-          sortOrder: index,
-        })),
+        fields: fields.map((field, index) => {
+          const normalizedField = normalizeTextFieldType(field);
+
+          return {
+            ...normalizedField,
+            label: normalizedField.label ?? undefined,
+            placeholder: normalizedField.placeholder ?? undefined,
+            sortOrder: index,
+          };
+        }),
         homeworkId: homework.id,
       });
 
