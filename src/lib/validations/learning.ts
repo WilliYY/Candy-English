@@ -103,7 +103,7 @@ const homeworkFieldTypeSchema = z.enum([
 ]);
 
 export const interactiveHomeworkFieldSchema = z.object({
-  height: z.coerce.number().min(2, "Altura minima 2%.").max(100),
+  height: z.coerce.number().min(1, "Altura minima 1%.").max(100),
   id: z.string().optional(),
   label: z
     .string()
@@ -119,7 +119,7 @@ export const interactiveHomeworkFieldSchema = z.object({
   required: z.boolean().default(false),
   sortOrder: z.coerce.number().int().min(0).max(200).default(0),
   type: homeworkFieldTypeSchema,
-  width: z.coerce.number().min(2, "Largura minima 2%.").max(100),
+  width: z.coerce.number().min(1, "Largura minima 1%.").max(100),
   x: z.coerce.number().min(0).max(100),
   y: z.coerce.number().min(0).max(100),
 });

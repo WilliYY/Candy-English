@@ -2,6 +2,10 @@
 
 import { useMemo } from "react";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import {
+  getInteractiveHomeworkTextStyle,
+  InteractiveHomeworkTextFrame,
+} from "@/components/ava/interactive-homework-text";
 import { cn } from "@/lib/utils";
 
 export type ReviewInteractiveField = {
@@ -173,15 +177,30 @@ export function InteractiveHomeworkReview({
               );
             }
 
+            if (field.type === "SHORT_TEXT") {
+              return (
+                <InteractiveHomeworkTextFrame key={field.id} style={style}>
+                  <div
+                    aria-label={field.label ?? `Campo ${index + 1}`}
+                    className="flex size-full items-center overflow-hidden whitespace-nowrap px-[0.25em] font-semibold text-primary"
+                    style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
+                  >
+                    {value}
+                  </div>
+                </InteractiveHomeworkTextFrame>
+              );
+            }
+
             return (
-              <div
-                key={field.id}
-                aria-label={field.label ?? `Campo ${index + 1}`}
-                className="absolute overflow-hidden whitespace-pre-wrap rounded-[3px] px-1 text-sm font-semibold leading-5 text-primary"
-                style={style}
-              >
-                {value}
-              </div>
+              <InteractiveHomeworkTextFrame key={field.id} style={style}>
+                <div
+                  aria-label={field.label ?? `Campo ${index + 1}`}
+                  className="size-full overflow-hidden whitespace-pre-wrap px-[0.3em] py-[0.2em] font-semibold text-primary"
+                  style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+                >
+                  {value}
+                </div>
+              </InteractiveHomeworkTextFrame>
             );
           }}
           title={title}

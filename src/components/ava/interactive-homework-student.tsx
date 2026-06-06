@@ -24,6 +24,10 @@ import {
   submitInteractiveHomework,
 } from "@/app/ava/student/actions";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import {
+  getInteractiveHomeworkTextStyle,
+  InteractiveHomeworkTextFrame,
+} from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
 
 export type StudentInteractiveField = {
@@ -543,7 +547,7 @@ export function InteractiveHomeworkStudent({
           pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
           renderField={(field, index, style) => {
               const commonClass =
-                "pointer-events-auto absolute appearance-none border-0 bg-transparent px-1 text-sm font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
+                "size-full min-w-0 appearance-none border-0 bg-transparent font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
 
               if (field.type === "CHECKBOX") {
                 return (
@@ -587,32 +591,44 @@ export function InteractiveHomeworkStudent({
 
               if (field.type === "SHORT_TEXT") {
                 return (
-                  <input
+                  <InteractiveHomeworkTextFrame
                     key={field.id}
+                    className="pointer-events-auto"
+                    style={style}
+                  >
+                    <input
+                      aria-label={field.label ?? `Campo ${index + 1}`}
+                      className={`${commonClass} overflow-hidden whitespace-nowrap px-[0.25em]`}
+                      disabled={isLocked}
+                      onChange={(event) =>
+                        updateValue(field.id, event.target.value)
+                      }
+                      placeholder={field.placeholder ?? "Resposta"}
+                      style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
+                      value={values[field.id] ?? ""}
+                    />
+                  </InteractiveHomeworkTextFrame>
+                );
+              }
+
+              return (
+                <InteractiveHomeworkTextFrame
+                  key={field.id}
+                  className="pointer-events-auto"
+                  style={style}
+                >
+                  <textarea
                     aria-label={field.label ?? `Campo ${index + 1}`}
-                    className={commonClass}
+                    className={`${commonClass} resize-none overflow-hidden px-[0.3em] py-[0.2em]`}
                     disabled={isLocked}
                     onChange={(event) =>
                       updateValue(field.id, event.target.value)
                     }
                     placeholder={field.placeholder ?? "Resposta"}
-                    style={style}
+                    style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
                     value={values[field.id] ?? ""}
                   />
-                );
-              }
-
-              return (
-                <textarea
-                  key={field.id}
-                  aria-label={field.label ?? `Campo ${index + 1}`}
-                  className={`${commonClass} resize-none overflow-hidden py-1 leading-5`}
-                  disabled={isLocked}
-                  onChange={(event) => updateValue(field.id, event.target.value)}
-                  placeholder={field.placeholder ?? "Resposta"}
-                  style={style}
-                  value={values[field.id] ?? ""}
-                />
+                </InteractiveHomeworkTextFrame>
               );
           }}
           title={homework.title}

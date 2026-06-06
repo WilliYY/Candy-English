@@ -27,6 +27,7 @@ import {
   saveInteractiveHomeworkFields,
 } from "@/app/ava/teacher/actions";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { getInteractiveHomeworkTextStyle } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -155,11 +156,11 @@ const FIELD_TOOL_META: Record<FieldTool, FieldToolMeta> = {
   },
   SHORT_TEXT: {
     Icon: Type,
-    defaultHeight: 5,
-    defaultWidth: 24,
+    defaultHeight: 2.6,
+    defaultWidth: 18,
     label: "Texto curto",
-    minHeight: 4,
-    minWidth: 8,
+    minHeight: 1.2,
+    minWidth: 4,
     placeholder: "Resposta curta",
   },
 };
@@ -389,7 +390,10 @@ function FieldAnswerPreview({ field }: { field: EditableHomeworkField }) {
 
   if (field.type === "SHORT_TEXT") {
     return (
-      <span className="pointer-events-none absolute inset-0 flex items-center overflow-hidden px-1 text-sm font-semibold text-primary/70">
+      <span
+        className="pointer-events-none absolute inset-0 flex items-center overflow-hidden whitespace-nowrap px-[0.25em] font-semibold text-primary/70"
+        style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
+      >
         texto
       </span>
     );
@@ -397,7 +401,10 @@ function FieldAnswerPreview({ field }: { field: EditableHomeworkField }) {
 
   if (field.type === "LONG_TEXT") {
     return (
-      <span className="pointer-events-none absolute inset-0 overflow-hidden px-1 py-1 text-sm font-semibold leading-5 text-primary/70">
+      <span
+        className="pointer-events-none absolute inset-0 overflow-hidden px-[0.3em] py-[0.2em] font-semibold text-primary/70"
+        style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+      >
         texto
       </span>
     );
@@ -679,7 +686,10 @@ function InteractiveHomeworkCanvasEditor({
                 : "border-dashed border-primary/55 hover:border-primary",
             )}
             onPointerDown={(event) => beginMove(event, field)}
-            style={style}
+            style={{
+              ...style,
+              containerType: "size",
+            }}
             title={field.label || `Area ${index + 1}`}
           >
             <FieldAnswerPreview field={field} />

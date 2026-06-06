@@ -68,6 +68,7 @@ Tabelas e enums:
 - Na tela do aluno, as areas de escrita, checkbox e desenho nao devem mostrar borda, fundo, placeholder ou caixa HTML propria; apenas a resposta digitada, a marca selecionada ou os tracos desenhados devem aparecer.
 - A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
 - No editor da teacher, cada area manual deve exibir uma previa discreta do resultado final (`x` centralizado, texto exemplo alinhado como a resposta do aluno ou area de desenho) para deixar claro onde a resposta aparecera.
+- Campos `SHORT_TEXT` devem aceitar lacunas baixas e precisas; o tamanho da fonte se adapta ao quadro desenhado pela teacher e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
 - Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas e deve permitir desfazer o ultimo traco sem apagar todo o desenho.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.

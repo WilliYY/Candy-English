@@ -69,6 +69,22 @@ function withOptimizationMessage(baseMessage: string, optimizationMessage: strin
   return optimizationMessage ? `${baseMessage} ${optimizationMessage}` : baseMessage;
 }
 
+function getInteractiveFieldMinimums(type: string) {
+  if (type === "CHECKBOX") {
+    return { height: 2, width: 2 };
+  }
+
+  if (type === "SHORT_TEXT") {
+    return { height: 1.2, width: 3 };
+  }
+
+  if (type === "DRAWING") {
+    return { height: 6, width: 8 };
+  }
+
+  return { height: 4, width: 8 };
+}
+
 async function getTeacherActor() {
   const session = await auth();
 
@@ -673,11 +689,17 @@ export async function saveInteractiveHomeworkFields(
     }),
     prisma.homeworkInteractiveField.createMany({
       data: parsed.data.fields.map((field, index) => {
-        const minSize = field.type === "CHECKBOX" ? 2 : 4;
-        const x = Math.min(field.x, 100 - minSize);
-        const y = Math.min(field.y, 100 - minSize);
-        const width = Math.max(minSize, Math.min(field.width, 100 - x));
-        const height = Math.max(minSize, Math.min(field.height, 100 - y));
+        const minimums = getInteractiveFieldMinimums(field.type);
+        const x = Math.min(field.x, 100 - minimums.width);
+        const y = Math.min(field.y, 100 - minimums.height);
+        const width = Math.max(
+          minimums.width,
+          Math.min(field.width, 100 - x),
+        );
+        const height = Math.max(
+          minimums.height,
+          Math.min(field.height, 100 - y),
+        );
 
         return {
           height,
