@@ -69,6 +69,7 @@ Tabelas e enums:
 - A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
 - A criacao de homework/aula interativa permite selecionar varios PDFs/imagens no mesmo formulario; cada arquivo e enviado em fila sequencial e vira uma atividade separada com titulo baseado no nome do arquivo quando o titulo manual fica vazio.
 - No editor da teacher, cada area manual deve exibir uma previa discreta do resultado final (`x` centralizado, texto exemplo alinhado como a resposta do aluno ou area de desenho) para deixar claro onde a resposta aparecera.
+- A area selecionada no editor da teacher deve ficar mais visivel com borda forte, etiqueta do tipo de area, alca de redimensionamento destacada e, em campos de texto, contador de linhas legivel.
 - A teacher usa uma unica ferramenta `Texto` para areas de escrita; o editor escolhe internamente entre linha curta e area longa conforme a altura do quadro desenhado.
 - Campos de texto baixos devem aceitar lacunas precisas; campos maiores viram area de texto longa. O tamanho da fonte se adapta ao quadro desenhado pela teacher, usa toda a largura/altura util e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
 - No editor da teacher, campos de texto mostram guias discretas de linha e contador de linhas enquanto a area e criada ou selecionada; essas guias nao aparecem para o aluno nem na correcao final.

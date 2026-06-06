@@ -491,9 +491,11 @@ function resizeFieldGeometry(
 
 function FieldTextGuide({
   kind,
+  selected = false,
   showCount = false,
 }: {
   kind: "LONG_TEXT" | "SHORT_TEXT";
+  selected?: boolean;
   showCount?: boolean;
 }) {
   const guideRef = useRef<HTMLDivElement>(null);
@@ -535,23 +537,36 @@ function FieldTextGuide({
   return (
     <span
       ref={guideRef}
-      className="pointer-events-none absolute inset-0 block overflow-hidden rounded-[2px] px-[0.3em] py-[0.2em] text-primary/65"
+      className={cn(
+        "pointer-events-none absolute inset-0 block overflow-hidden rounded-[3px] px-[0.3em] py-[0.2em] transition-colors duration-200",
+        selected
+          ? "bg-white/50 text-primary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]"
+          : "text-primary/62",
+      )}
       style={getInteractiveHomeworkTextStyle(kind)}
     >
       <span className="absolute inset-x-[0.3em] top-[0.2em] flex flex-col">
         {lines.map((_, index) => (
           <span
             key={index}
-            className="block border-b border-dashed border-primary/35"
+            className={cn(
+              "block border-b border-dashed",
+              selected ? "border-primary/50" : "border-primary/30",
+            )}
             style={{ height: lineHeight }}
           />
         ))}
       </span>
-      <span className="absolute left-[0.35em] top-[0.15em] font-semibold text-primary/45">
+      <span
+        className={cn(
+          "absolute left-[0.35em] top-[0.15em] font-semibold",
+          selected ? "text-primary/62" : "text-primary/42",
+        )}
+      >
         texto
       </span>
       {showCount ? (
-        <span className="absolute right-1 top-1 rounded-full border border-primary/20 bg-white/85 px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary shadow-sm">
+        <span className="absolute right-1 top-1 rounded-[3px] border border-white/70 bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground shadow-[0_4px_12px_rgba(65,42,76,0.22)]">
           {lineCount} {lineCount === 1 ? "linha" : "linhas"}
         </span>
       ) : null}
@@ -575,11 +590,23 @@ function FieldAnswerPreview({
   }
 
   if (field.type === "SHORT_TEXT") {
-    return <FieldTextGuide kind="SHORT_TEXT" showCount={selected} />;
+    return (
+      <FieldTextGuide
+        kind="SHORT_TEXT"
+        selected={selected}
+        showCount={selected}
+      />
+    );
   }
 
   if (field.type === "LONG_TEXT") {
-    return <FieldTextGuide kind="LONG_TEXT" showCount={selected} />;
+    return (
+      <FieldTextGuide
+        kind="LONG_TEXT"
+        selected={selected}
+        showCount={selected}
+      />
+    );
   }
 
   return (
@@ -602,6 +629,18 @@ function FieldAnswerPreview({
       ) : null}
     </span>
   );
+}
+
+function getFieldPreviewLabel(field: EditableHomeworkField) {
+  if (field.type === "CHECKBOX") {
+    return "Marcar";
+  }
+
+  if (field.type === "DRAWING") {
+    return "Desenho";
+  }
+
+  return "Texto";
 }
 
 function createEditableField({
@@ -874,7 +913,7 @@ function InteractiveHomeworkCanvasEditor({
                   ? "flex items-center justify-center bg-white/50"
                   : selectedTool === "DRAWING"
                     ? "bg-white/35"
-                    : "bg-primary/10",
+                    : "bg-white/45 shadow-[0_14px_34px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.72)]",
               )}
               style={{
                 containerType: "size",
@@ -890,6 +929,7 @@ function InteractiveHomeworkCanvasEditor({
               {selectedTool === "TEXT" ? (
                 <FieldTextGuide
                   kind={textFieldTypeForGeometry(draftGeometry)}
+                  selected
                   showCount
                 />
               ) : null}
@@ -921,14 +961,14 @@ function InteractiveHomeworkCanvasEditor({
           <div
             key={field.id}
             className={cn(
-              "absolute z-10 cursor-move touch-none rounded-[3px] border-2",
+              "absolute z-10 cursor-move touch-none rounded-[3px] border-2 transition-[border-color,background-color,box-shadow] duration-200 ease-out",
               isMarkField
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
                 : isDrawingField
                   ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
                   : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
-                ? "border-primary ring-2 ring-primary/25"
+                ? "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
                 : "border-dashed border-primary/55 hover:border-primary",
             )}
             onPointerDown={(event) => beginMove(event, field)}
@@ -938,15 +978,20 @@ function InteractiveHomeworkCanvasEditor({
             }}
             title={field.label || `Area ${index + 1}`}
           >
+            {selected ? (
+              <span className="pointer-events-none absolute -top-7 left-0 z-20 rounded-[3px] border border-white/70 bg-primary px-2 py-1 text-[10px] font-bold uppercase leading-none tracking-[0.12em] text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)]">
+                {getFieldPreviewLabel(field)}
+              </span>
+            ) : null}
             <FieldAnswerPreview field={field} selected={selected} />
             {selected ? (
               <button
                 aria-label="Redimensionar area"
                 className={cn(
-                  "absolute cursor-nwse-resize rounded-full border border-primary/30 bg-white text-primary shadow-sm",
+                  "absolute cursor-nwse-resize rounded-full border-2 border-white bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)] ring-2 ring-primary/20 transition-transform duration-200 hover:scale-110",
                   isMarkField
-                    ? "-bottom-1.5 -right-1.5 size-3.5"
-                    : "-bottom-2 -right-2 size-5",
+                    ? "-bottom-1.5 -right-1.5 size-4"
+                    : "-bottom-2.5 -right-2.5 size-5",
                 )}
                 onPointerDown={(event) => beginResize(event, field)}
                 type="button"
