@@ -97,6 +97,7 @@ function assertPromptContext(input: string, id: string) {
     "Memoria aprovada da Catty",
     "Memoria pessoal segura do usuario",
     "Continuidade conversacional",
+    "Correcao local detectada",
     "Artefato de personalidade sugerido",
     "Regra para ADMIN/TEACHER",
     "Conversa recente",
@@ -290,12 +291,6 @@ function main() {
     },
     {
       history: [],
-      mustInclude: ["capybara", "My favorite animal is a capybara"],
-      topic: "capybara",
-      userMessage: "My favorite animal is capybara.",
-    },
-    {
-      history: [],
       mustInclude: ["past sentence", "one more thing in the past"],
       topic: "soccer yesterday",
       userMessage: "I played soccer yesterday.",
@@ -349,6 +344,158 @@ function main() {
       );
     }
   }
+
+  const grammarCorrectionCases = [
+    {
+      expected: ["Melhor", "I like chocolate", "like sem -s", "What else"],
+      userMessage: "I likes chocolate.",
+    },
+    {
+      expected: ["Melhor", "She likes pizza", "verbo ganha -s", "Does she"],
+      userMessage: "She like pizza.",
+    },
+    {
+      expected: ["Melhor", "He likes games", "verbo ganha -s", "Does he"],
+      userMessage: "He like games.",
+    },
+    {
+      expected: ["Melhor", "I have a dog", "usamos have", "What else"],
+      userMessage: "I has a dog.",
+    },
+    {
+      expected: ["Melhor", "She has a cat", "usamos has", "What else"],
+      userMessage: "She have a cat.",
+    },
+    {
+      expected: ["Melhor", "I like pizza", "sem am", "What else"],
+      userMessage: "I am like pizza.",
+    },
+    {
+      expected: ["Melhor", "I am 10 years old", "idade", "say your age"],
+      userMessage: "I have 10 years old.",
+    },
+    {
+      expected: ["Melhor", "I went to school yesterday", "went to", "What did"],
+      userMessage: "I went in school yesterday.",
+    },
+    {
+      expected: ["Melhor", "I went to school yesterday", "passado", "yesterday"],
+      userMessage: "I go to school yesterday.",
+    },
+    {
+      expected: ["Melhor", "Yesterday I watched a movie", "passado", "one more"],
+      userMessage: "Yesterday I watch a movie.",
+    },
+    {
+      expected: ["Melhor", "I like cars", "plural", "What kind"],
+      userMessage: "I like car.",
+    },
+    {
+      expected: ["Melhor", "My favorite animal is a capybara", "Antes de capybara", "animal sentence"],
+      userMessage: "My favorite animal is capybara.",
+    },
+    {
+      expected: ["Melhor", "I have an apple", "Antes de apple", "a or an"],
+      userMessage: "I have apple.",
+    },
+    {
+      expected: ["Melhor", "What do you like?", "usamos do", "do"],
+      userMessage: "What you like?",
+    },
+    {
+      expected: ["Melhor", "What does she like?", "does", "does she"],
+      userMessage: "What she likes?",
+    },
+    {
+      expected: ["Melhor", "Does she like pizza?", "sem -s", "What else"],
+      userMessage: "Does she likes pizza?",
+    },
+    {
+      expected: ["Melhor", "Does he like pizza?", "usa does", "does question"],
+      userMessage: "Do he like pizza?",
+    },
+    {
+      expected: ["Melhor", "I was happy", "usamos was", "past sentence"],
+      userMessage: "I were happy.",
+    },
+    {
+      expected: ["Melhor", "They were tired", "usamos were", "were"],
+      userMessage: "They was tired.",
+    },
+    {
+      expected: ["Melhor", "They are happy", "usamos are", "are"],
+      userMessage: "They is happy.",
+    },
+  ];
+
+  assertCondition(
+    grammarCorrectionCases.length === 20,
+    "smoke deve cobrir 20 frases de correcao conversacional.",
+  );
+
+  for (const example of grammarCorrectionCases) {
+    const plan = buildCattyResponsePlan(example.userMessage, {
+      area: "student",
+      task: "resumo",
+    });
+    const prompt = buildCattyInput(
+      example.userMessage,
+      [],
+      { area: "student", task: "resumo" },
+      plan,
+      { firstName: "Ana", role: "STUDENT" },
+    );
+    const normalizedFallback = normalizeText(plan.fallbackReply);
+
+    assertCondition(
+      plan.intent === "correct_sentence",
+      `${example.userMessage}: erro comum nao virou correcao direta.`,
+    );
+    assertCondition(
+      Boolean(plan.correction),
+      `${example.userMessage}: plano nao gerou correcao local.`,
+    );
+    assertCondition(
+      prompt.includes("Correcao local detectada") &&
+        prompt.includes(plan.correction?.correctedSentence ?? ""),
+      `${example.userMessage}: prompt nao levou a correcao para IA.`,
+    );
+    assertCondition(
+      !normalizedFallback.includes("send me the sentence") &&
+        !normalizedFallback.includes("manda a frase exata"),
+      `${example.userMessage}: fallback pediu frase de novo apesar de ja ter frase.`,
+    );
+    assertCondition(
+      includesSignature(plan.fallbackReply),
+      `${example.userMessage}: fallback de correcao sem voz da Catty.`,
+    );
+    assertCondition(
+      countEmojis(plan.fallbackReply) <= 2,
+      `${example.userMessage}: fallback de correcao tem emojis demais.`,
+    );
+
+    for (const expected of example.expected) {
+      assertCondition(
+        normalizedFallback.includes(normalizeText(expected)),
+        `${example.userMessage}: fallback nao contem "${expected}". Resposta: ${plan.fallbackReply}`,
+      );
+    }
+  }
+
+  const homeworkCorrectionPlan = buildCattyResponsePlan(
+    "I likes chocolate.",
+    { area: "student", task: "homeworks" },
+  );
+  const normalizedHomeworkCorrection = normalizeText(
+    homeworkCorrectionPlan.fallbackReply,
+  );
+
+  assertCondition(
+    normalizedHomeworkCorrection.includes("nao dou gabarito final") &&
+      normalizedHomeworkCorrection.includes("estrutura parecida") &&
+      normalizedHomeworkCorrection.includes("i like chocolate"),
+    "correcao em homework deve explicar estrutura parecida sem gabarito final.",
+  );
 
   const learningPlan = buildCattyResponsePlan("corrige", {
     area: "student",

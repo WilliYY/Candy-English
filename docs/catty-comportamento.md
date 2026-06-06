@@ -31,6 +31,9 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 - Pedir contexto quando faltar texto, frase, enunciado ou palavra.
 - Fazer no maximo uma pergunta de continuidade.
 - Quando o aluno mandar uma frase curta em ingles, manter o mesmo assunto, corrigir so o necessario e fazer uma pergunta relacionada.
+- Quando a frase curta em ingles ja tiver erro comum detectavel, corrigir direto em vez de pedir a frase de novo.
+- A correcao conversacional deve seguir: reacao curta da Catty, `Melhor: ...`, explicacao simples em uma frase e pergunta relacionada ao mesmo assunto.
+- Em homework, a Catty nao deve entregar gabarito final; quando corrigir, deve tratar como estrutura parecida e pedir para o aluno aplicar o padrao.
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
 - Usar artefatos por interesse como tempero leve, no maximo um por resposta, somente quando combinarem com a mensagem.
@@ -64,6 +67,49 @@ A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don'
 | 13 | `I played soccer yesterday.` -> `Good.` | `Uwau, past sentence spotted. Can you say one more thing in the past?` |
 | 14 | `I like` -> `I don't understand.` | `Awnn, almost there. Complete it with one small word or idea.` |
 | 15 | Historico `I like chocolate.` e depois `I like` -> resposta sem memoria | `Awnn, almost there. Complete it...` mantendo `chocolate` como assunto recente no prompt. |
+
+## Correcao conversacional
+
+A Catty agora possui um detector local de erros comuns em `src/lib/catty.ts`. Esse detector roda antes do fallback e tambem entra no prompt enviado a Gemini/OpenAI como `Correcao local detectada`. Quando houver uma correcao local, a IA recebe a frase corrigida, a explicacao simples e a pergunta de continuidade; se a IA falhar, o fallback local usa os mesmos dados sem depender de provedor externo.
+
+Regras criadas:
+
+- concordancia basica: `I likes`, `She/He like`, `I has`, `She/He have`;
+- gosto com estrutura errada: `I am like...`;
+- idade: `I have ___ years old`;
+- destino com preposicao: `I went in school`;
+- passado com `yesterday`, incluindo `I go... yesterday` e `Yesterday I watch...`;
+- plural de categoria apos `I like`, como `I like car`;
+- artigo `a/an` faltando em animal/fruta favorita ou substantivo contavel simples;
+- ordem de perguntas simples com `do/does`;
+- uso de `do/does` antes de verbo com ou sem `-s`;
+- uso de `was/were`;
+- uso de `is/are/am`.
+
+Frases de teste e resposta esperada do fallback local:
+
+| # | Frase do aluno | Resposta esperada |
+|---|---|---|
+| 1 | `I likes chocolate.` | `Awnn, quase la 😺 Melhor: I like chocolate. Com I, usamos like sem -s. What else do you like?` |
+| 2 | `She like pizza.` | `Uwau, small fix ✨ Melhor: She likes pizza. Com she, o verbo ganha -s. Does she like chocolate too?` |
+| 3 | `He like games.` | `Uwau, small fix ✨ Melhor: He likes games. Com he, o verbo ganha -s. Does he like chocolate too?` |
+| 4 | `I has a dog.` | `Awnn, quase la 😺 Melhor: I have a dog. Com I, usamos have. What else do you have?` |
+| 5 | `She have a cat.` | `Uwau, small fix ✨ Melhor: She has a cat. Com she, usamos has. What else does she have?` |
+| 6 | `I am like pizza.` | `Awnn, quase la 😺 Melhor: I like pizza. Para falar do que voce gosta, usamos I like, sem am. What else do you like?` |
+| 7 | `I have 10 years old.` | `Miauw, em ingles fica 😺 Melhor: I am 10 years old. Para idade, usamos I am. Can you say your age again?` |
+| 8 | `I went in school yesterday.` | `Pss pss, ajuste pequeno 🐾 Melhor: I went to school yesterday. Usamos go/went to para destino. What did you do there?` |
+| 9 | `I go to school yesterday.` | `Pss pss, ajuste pequeno 🐾 Melhor: I went to school yesterday. Com yesterday, usamos o verbo no passado. What else did you do yesterday?` |
+| 10 | `Yesterday I watch a movie.` | `Pss pss, ajuste pequeno 🐾 Melhor: Yesterday I watched a movie. Com yesterday, usamos o verbo no passado. Can you say one more thing in the past?` |
+| 11 | `I like car.` | `Awnn, quase la 😺 Melhor: I like cars. Para falar da categoria em geral, usamos plural. What kind of cars do you like?` |
+| 12 | `My favorite animal is capybara.` | `Awnn, quase perfeito ✨ Melhor: My favorite animal is a capybara. Antes de capybara, usamos a. Can you make one more animal sentence?` |
+| 13 | `I have apple.` | `Awnn, quase la 😺 Melhor: I have an apple. Antes de apple, usamos an. Can you make one more sentence with a or an?` |
+| 14 | `What you like?` | `Awnn, quase la 😺 Melhor: What do you like? Em pergunta com I/you/we/they, usamos do. Can you ask one more question with do?` |
+| 15 | `What she likes?` | `Uwau, small fix ✨ Melhor: What does she like? Em pergunta com she/he, usamos does e o verbo fica like. Can you ask one more question with does she?` |
+| 16 | `Does she likes pizza?` | `Uwau, small fix ✨ Melhor: Does she like pizza? Depois de does, o verbo fica sem -s. What else does she like?` |
+| 17 | `Do he like pizza?` | `Uwau, small fix ✨ Melhor: Does he like pizza? Com he, a pergunta usa does. Can you make another does question?` |
+| 18 | `I were happy.` | `Uwau, small fix ✨ Melhor: I was happy. Com I, usamos was. Can you make one more past sentence?` |
+| 19 | `They was tired.` | `Awnn, quase la 😺 Melhor: They were tired. Com they, usamos were. Can you make one more sentence with were?` |
+| 20 | `They is happy.` | `Awnn, quase la 😺 Melhor: They are happy. Com they, usamos are. Can you make one more sentence with are?` |
 
 ## Exemplos internos
 
@@ -102,7 +148,7 @@ A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don'
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, as 20 frases de correcao conversacional, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

@@ -84,8 +84,18 @@ export type CattyConversationContinuityPlan = {
   topic: string;
 };
 
+export type CattyGrammarCorrectionPlan = {
+  correctedSentence: string;
+  explanation: string;
+  homeworkExplanation: string;
+  prompt: string;
+  question: string;
+  rule: string;
+};
+
 export type CattyResponsePlan = {
   confidence: "high" | "medium" | "low";
+  correction?: CattyGrammarCorrectionPlan;
   continuity?: CattyConversationContinuityPlan;
   fallbackReply: string;
   intent: CattyIntent;
@@ -735,16 +745,17 @@ function isLikelyEnglishCorrectionCandidate(text: string) {
   const tokens = getWordTokens(text);
 
   return (
-    tokens.length >= 4 &&
-    tokens.length <= 14 &&
-    hasAny(normalized, [
-      "he go",
-      "i has",
-      "she go",
-      "they is",
-      "we is",
-      "you is",
-    ])
+    (tokens.length >= 4 &&
+      tokens.length <= 14 &&
+      hasAny(normalized, [
+        "he go",
+        "i has",
+        "she go",
+        "they is",
+        "we is",
+        "you is",
+      ])) ||
+    Boolean(buildCommonEnglishCorrectionPlan(text))
   );
 }
 
@@ -827,6 +838,514 @@ function getSimpleEnglishFavoriteCorrection(
   }
 
   return `My favorite animal is a ${topic}.`;
+}
+
+function cleanCorrectionSentence(value: string) {
+  return value
+    .replace(/[“”]/g, '"')
+    .replace(/[’]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[.!?]+$/g, "");
+}
+
+function formatCorrectionSentence(value: string, end = ".") {
+  return `${cleanCorrectionSentence(value)}${end}`;
+}
+
+function capitalizeFirstWord(value: string) {
+  const trimmed = value.trim();
+
+  return trimmed ? `${trimmed[0]?.toUpperCase()}${trimmed.slice(1)}` : trimmed;
+}
+
+function formatEnglishSubject(value: string, position: "start" | "middle") {
+  const normalized = normalizeText(value).trim();
+
+  if (normalized === "i") {
+    return "I";
+  }
+
+  return position === "start" ? capitalizeFirstWord(normalized) : normalized;
+}
+
+function getCorrectionCandidateText(text: string) {
+  const quoted = getQuotedFragment(text);
+
+  if (quoted) {
+    return quoted;
+  }
+
+  const stripped = stripCattyAddress(text);
+  const match = stripped.match(
+    /(?:corrige|corrigir|correct(?:\s+this)?(?:\s+phrase|\s+sentence)?|melhora(?:r)?(?:\s+minha\s+frase)?|frase|phrase|sentence)\s*:?\s+(.{3,160})/i,
+  )?.[1]?.trim();
+
+  return match || stripped;
+}
+
+const countableArticleWords = new Set([
+  "animal",
+  "apple",
+  "book",
+  "car",
+  "cat",
+  "dog",
+  "egg",
+  "game",
+  "movie",
+  "orange",
+  "umbrella",
+]);
+
+const pluralPracticeWords: Record<string, string> = {
+  animal: "animals",
+  apple: "apples",
+  book: "books",
+  car: "cars",
+  cat: "cats",
+  dog: "dogs",
+  game: "games",
+  movie: "movies",
+};
+
+const pastVerbMap: Record<string, string> = {
+  do: "did",
+  eat: "ate",
+  go: "went",
+  have: "had",
+  make: "made",
+  play: "played",
+  read: "read",
+  see: "saw",
+  study: "studied",
+  visit: "visited",
+  walk: "walked",
+  watch: "watched",
+};
+
+function getArticleForWord(word: string) {
+  return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
+}
+
+function addArticleIfNeeded(value: string) {
+  const clean = cleanCorrectionSentence(value);
+  const normalized = normalizeText(clean);
+
+  if (
+    getWordTokens(clean).length === 1 &&
+    countableArticleWords.has(normalized) &&
+    !startsWithArticle(clean)
+  ) {
+    return `${getArticleForWord(clean)} ${clean}`;
+  }
+
+  return clean;
+}
+
+function buildCorrectionPlan(input: {
+  correctedSentence: string;
+  explanation: string;
+  question: string;
+  rule: string;
+}): CattyGrammarCorrectionPlan {
+  return {
+    correctedSentence: input.correctedSentence,
+    explanation: input.explanation,
+    homeworkExplanation: `Use essa estrutura parecida: ${input.correctedSentence} ${input.explanation}`,
+    prompt: [
+      `Erro comum detectado: ${input.rule}.`,
+      `Frase corrigida: ${input.correctedSentence}`,
+      `Explicacao simples: ${input.explanation}`,
+      `Continuacao relacionada: ${input.question}`,
+      "Responda no formato: reacao curta da Catty, Melhor: frase corrigida, explicacao simples e uma pergunta relacionada.",
+    ].join(" "),
+    question: input.question,
+    rule: input.rule,
+  };
+}
+
+function buildCommonEnglishCorrectionPlan(
+  text: string,
+): CattyGrammarCorrectionPlan | undefined {
+  const rawCandidate = getCorrectionCandidateText(text);
+  const hasQuestionMark = /\?\s*$/.test(rawCandidate);
+  const sentence = cleanCorrectionSentence(rawCandidate);
+  const normalized = normalizeText(sentence);
+  const tokens = getWordTokens(sentence);
+
+  if (
+    tokens.length < 2 ||
+    tokens.length > 18 ||
+    hasAny(normalized, ["answer", "api", "code", "homework", "translate"])
+  ) {
+    return undefined;
+  }
+
+  let match = sentence.match(/^i\s+likes\s+(.+)$/i);
+  if (hasQuestionMark) {
+    match = sentence.match(/^(she|he)\s+likes?\s+(.+)$/i);
+    if (match) {
+      const subject = formatEnglishSubject(match[1] ?? "she", "middle");
+      const topic = cleanCorrectionSentence(match[2] ?? "");
+
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `Does ${subject} like ${topic}`,
+          "?",
+        ),
+        explanation: "Pergunta com she/he precisa de does.",
+        question: `Can you ask another question about ${subject}?`,
+        rule: "missing does in question",
+      });
+    }
+
+    match = sentence.match(/^(i|you|we|they)\s+likes?\s+(.+)$/i);
+    if (match) {
+      const subject = formatEnglishSubject(match[1] ?? "you", "middle");
+      const topic = cleanCorrectionSentence(match[2] ?? "");
+
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(`Do ${subject} like ${topic}`, "?"),
+        explanation: "Pergunta simples precisa de do no comeco.",
+        question: "Can you ask one more question with do?",
+        rule: "missing do in question",
+      });
+    }
+  }
+
+  match = sentence.match(/^i\s+likes\s+(.+)$/i);
+  if (match) {
+    const topic = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I like ${topic}`),
+      explanation: "Com I, usamos like sem -s.",
+      question: "What else do you like?",
+      rule: "I likes -> I like",
+    });
+  }
+
+  match = sentence.match(/^(she|he)\s+like\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "she");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} likes ${topic}`),
+      explanation: `Com ${subject.toLowerCase()}, o verbo ganha -s.`,
+      question: `Does ${subject.toLowerCase()} like chocolate too?`,
+      rule: "she/he like -> she/he likes",
+    });
+  }
+
+  match = sentence.match(/^i\s+has\s+(.+)$/i);
+  if (match) {
+    const object = addArticleIfNeeded(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I have ${object}`),
+      explanation: "Com I, usamos have.",
+      question: "What else do you have?",
+      rule: "I has -> I have",
+    });
+  }
+
+  match = sentence.match(/^(she|he)\s+have\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "she");
+    const object = addArticleIfNeeded(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} has ${object}`),
+      explanation: `Com ${subject.toLowerCase()}, usamos has.`,
+      question: `What else does ${subject.toLowerCase()} have?`,
+      rule: "she/he have -> she/he has",
+    });
+  }
+
+  match = sentence.match(/^i\s+am\s+like\s+(.+)$/i);
+  if (match) {
+    const topic = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I like ${topic}`),
+      explanation: "Para falar do que voce gosta, usamos I like, sem am.",
+      question: "What else do you like?",
+      rule: "I am like -> I like",
+    });
+  }
+
+  match = sentence.match(/^i\s+have\s+(\d{1,3})\s+years?\s+old$/i);
+  if (match) {
+    const age = match[1] ?? "";
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I am ${age} years old`),
+      explanation: "Para idade, usamos I am.",
+      question: "Can you say your age again?",
+      rule: "I have years old -> I am years old",
+    });
+  }
+
+  match = sentence.match(/^i\s+went\s+in\s+(.+?)(?:\s+yesterday)?$/i);
+  if (match && hasAny(normalized, ["in school", "in the park", "in park"])) {
+    const place = cleanCorrectionSentence(match[1] ?? "")
+      .replace(/^the\s+/i, "the ")
+      .replace(/^park$/i, "the park");
+    const suffix = normalized.includes("yesterday") ? " yesterday" : "";
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I went to ${place}${suffix}`),
+      explanation: "Usamos go/went to para destino.",
+      question: "What did you do there?",
+      rule: "went in -> went to",
+    });
+  }
+
+  match = sentence.match(/^(i|she|he|we|they|you)\s+(go|play|study|watch|walk|visit|eat|see|do|have|make|read)\b\s*(.*?)\s+yesterday$/i);
+  if (match) {
+    const subject = match[1] ?? "I";
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const pastVerb = pastVerbMap[verb];
+
+    if (pastVerb) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `${capitalizeFirstWord(subject)} ${pastVerb}${rest ? ` ${rest}` : ""} yesterday`,
+        ),
+        explanation: "Com yesterday, usamos o verbo no passado.",
+        question: "What else did you do yesterday?",
+        rule: "yesterday with present verb -> past verb",
+      });
+    }
+  }
+
+  match = sentence.match(/^yesterday\s+(i|she|he|we|they|you)\s+(go|play|study|watch|walk|visit|eat|see|do|have|make|read)\b\s*(.*)$/i);
+  if (match) {
+    const subject = match[1] ?? "I";
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const pastVerb = pastVerbMap[verb];
+
+    if (pastVerb) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `Yesterday ${formatEnglishSubject(subject, "middle")} ${pastVerb}${rest ? ` ${rest}` : ""}`,
+        ),
+        explanation: "Com yesterday, usamos o verbo no passado.",
+        question: "Can you say one more thing in the past?",
+        rule: "yesterday before present verb -> past verb",
+      });
+    }
+  }
+
+  match = sentence.match(/^i\s+like\s+([a-z]+)$/i);
+  if (match) {
+    const singular = normalizeText(match[1] ?? "");
+    const plural = pluralPracticeWords[singular];
+
+    if (plural) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(`I like ${plural}`),
+        explanation: "Para falar da categoria em geral, usamos plural.",
+        question: `What kind of ${plural} do you like?`,
+        rule: "category noun after I like -> plural",
+      });
+    }
+  }
+
+  match = sentence.match(/^my\s+favorite\s+(animal|fruit)\s+is\s+([a-z]+(?:\s+[a-z]+)?)$/i);
+  if (match && !startsWithArticle(match[2] ?? "")) {
+    const kind = normalizeText(match[1] ?? "animal");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `My favorite ${kind} is ${getArticleForWord(topic)} ${topic}`,
+      ),
+      explanation: `Antes de ${topic}, usamos ${getArticleForWord(topic)}.`,
+      question:
+        kind === "animal"
+          ? "Can you make one more animal sentence?"
+          : "Can you make one more fruit sentence?",
+      rule: "missing a/an after favorite animal/fruit",
+    });
+  }
+
+  match = sentence.match(/^(i\s+(?:have|want)|she\s+(?:has|wants)|he\s+(?:has|wants))\s+([a-z]+)$/i);
+  if (match) {
+    const start = match[1] ?? "I have";
+    const object = normalizeText(match[2] ?? "");
+
+    if (countableArticleWords.has(object) && !startsWithArticle(object)) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `${capitalizeFirstWord(start)} ${getArticleForWord(object)} ${object}`,
+        ),
+        explanation: `Antes de ${object}, usamos ${getArticleForWord(object)}.`,
+        question: "Can you make one more sentence with a or an?",
+        rule: "missing a/an before singular count noun",
+      });
+    }
+  }
+
+  match = sentence.match(/^what\s+(she|he)\s+likes?\??$/i);
+  if (match) {
+    const subject = normalizeText(match[1] ?? "she");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`What does ${subject} like`, "?"),
+      explanation: "Em pergunta com she/he, usamos does e o verbo fica like.",
+      question: `Can you ask one more question with does ${subject}?`,
+      rule: "question order with she/he",
+    });
+  }
+
+  match = sentence.match(/^what\s+(i|you|we|they)\s+like\??$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "you", "middle");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`What do ${subject} like`, "?"),
+      explanation: "Em pergunta com I/you/we/they, usamos do.",
+      question: "Can you ask one more question with do?",
+      rule: "question order with do",
+    });
+  }
+
+  match = sentence.match(/^does\s+(she|he)\s+likes\s+(.+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "middle");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Does ${subject} like ${topic}`, "?"),
+      explanation: "Depois de does, o verbo fica sem -s.",
+      question: `What else does ${subject} like?`,
+      rule: "does + verb without -s",
+    });
+  }
+
+  match = sentence.match(/^do\s+(she|he)\s+like\s+(.+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "middle");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Does ${subject} like ${topic}`, "?"),
+      explanation: `Com ${subject}, a pergunta usa does.`,
+      question: `Can you make another does question?`,
+      rule: "do she/he -> does she/he",
+    });
+  }
+
+  match = sentence.match(/^do\s+(i|you|we|they)\s+likes\s+(.+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "you", "middle");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Do ${subject} like ${topic}`, "?"),
+      explanation: "Depois de do, o verbo fica sem -s.",
+      question: "Can you make one more do question?",
+      rule: "do + verb without -s",
+    });
+  }
+
+  match = sentence.match(/^(you|i|we|they)\s+like\s+(.+)$/i);
+  if (match && hasQuestionMark) {
+    const subject = formatEnglishSubject(match[1] ?? "you", "middle");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Do ${subject} like ${topic}`, "?"),
+      explanation: "Pergunta simples precisa de do no comeco.",
+      question: "Can you ask one more question with do?",
+      rule: "missing do in question",
+    });
+  }
+
+  match = sentence.match(/^(she|he)\s+likes?\s+(.+)$/i);
+  if (match && hasQuestionMark) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "middle");
+    const topic = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Does ${subject} like ${topic}`, "?"),
+      explanation: "Pergunta com she/he precisa de does.",
+      question: `Can you ask another question about ${subject}?`,
+      rule: "missing does in question",
+    });
+  }
+
+  match = sentence.match(/^(i|she|he|it)\s+were\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "I");
+    const explanationSubject = subject === "I" ? "I" : subject.toLowerCase();
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} was ${rest}`),
+      explanation: `Com ${explanationSubject}, usamos was.`,
+      question: "Can you make one more past sentence?",
+      rule: "I/she/he/it were -> was",
+    });
+  }
+
+  match = sentence.match(/^(we|they|you)\s+was\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "they");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} were ${rest}`),
+      explanation: `Com ${subject.toLowerCase()}, usamos were.`,
+      question: "Can you make one more sentence with were?",
+      rule: "we/they/you was -> were",
+    });
+  }
+
+  match = sentence.match(/^i\s+(?:is|are)\s+(.+)$/i);
+  if (match) {
+    const rest = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I am ${rest}`),
+      explanation: "Com I, usamos am.",
+      question: "Can you make one more sentence with I am?",
+      rule: "I is/are -> I am",
+    });
+  }
+
+  match = sentence.match(/^(you|we|they)\s+is\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "they");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} are ${rest}`),
+      explanation: `Com ${subject.toLowerCase()}, usamos are.`,
+      question: "Can you make one more sentence with are?",
+      rule: "you/we/they is -> are",
+    });
+  }
+
+  match = sentence.match(/^(she|he|it)\s+are\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "she");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} is ${rest}`),
+      explanation: `Com ${subject.toLowerCase()}, usamos is.`,
+      question: "Can you make one more sentence with is?",
+      rule: "she/he/it are -> is",
+    });
+  }
+
+  return undefined;
 }
 
 function getSimpleEnglishPracticeMatch(text: string):
@@ -1129,6 +1648,16 @@ function formatCattyContinuityPromptContext(
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function formatCattyCorrectionPromptContext(
+  correction?: CattyGrammarCorrectionPlan,
+) {
+  if (!correction) {
+    return "Nenhuma correcao local detectada.";
+  }
+
+  return correction.prompt;
 }
 
 function hasRecentContext(history: CattyMessage[], currentText: string) {
@@ -1760,12 +2289,39 @@ function buildSimpleEnglishContinuityReply(
   return `Uwau, good sentence 😺 ${continuity.question}`;
 }
 
+function buildGrammarCorrectionFallbackReply(
+  correction: CattyGrammarCorrectionPlan,
+  context?: CattyPageContext,
+) {
+  const normalizedRule = normalizeText(correction.rule);
+
+  if (isHomeworkContext(context)) {
+    return `Pss pss, se isso for homework, eu nao dou gabarito final 🐾 Mas a estrutura parecida e: ${correction.correctedSentence} ${correction.explanation} Agora tente aplicar esse padrao no seu exercicio.`;
+  }
+
+  const reaction = normalizedRule.includes("years old")
+    ? "Miauw, em ingles fica 😺"
+    : normalizedRule.includes("went") ||
+        normalizedRule.includes("yesterday")
+      ? "Pss pss, ajuste pequeno 🐾"
+      : normalizedRule.includes("she/he") ||
+          normalizedRule.includes("does") ||
+          normalizedRule.includes("do ")
+        ? "Uwau, small fix ✨"
+        : normalizedRule.includes("favorite")
+          ? "Awnn, quase perfeito ✨"
+          : "Awnn, quase la 😺";
+
+  return `${reaction} Melhor: ${correction.correctedSentence} ${correction.explanation} ${correction.question}`;
+}
+
 function buildPlannedEnglishReply(
   text: string,
   context: CattyPageContext | undefined,
   intent: CattyIntent,
   history: CattyMessage[],
   sessionContext?: CattySessionContext,
+  correction?: CattyGrammarCorrectionPlan,
 ) {
   const normalized = normalizeText(text);
   const contextLabel = getContextLabel(context);
@@ -1806,6 +2362,20 @@ function buildPlannedEnglishReply(
 
   if (intent === "lesson_material") {
     return buildLessonMaterialEnglishReply();
+  }
+
+  if (correction && (intent === "correct_sentence" || intent === "practice_english")) {
+    return personalizeCattyReply(
+      buildGrammarCorrectionFallbackReply(correction, context),
+      {
+        context,
+        history,
+        intent: "correct_sentence",
+        language: "English",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (intent === "practice_english" && continuity) {
@@ -1979,6 +2549,7 @@ function buildPlannedPortugueseReply(
   intent: CattyIntent,
   history: CattyMessage[],
   sessionContext?: CattySessionContext,
+  correction?: CattyGrammarCorrectionPlan,
 ) {
   const normalized = normalizeText(text);
   const correctionFragment = extractCorrectionFragment(text);
@@ -2079,6 +2650,20 @@ function buildPlannedPortugueseReply(
     return translationFragment
       ? "Miauw, eu posso traduzir, mas se for homework eu explico a ideia sem entregar a resposta final."
       : "Miauw, me manda a frase exata que voce quer traduzir. Uma frase curtinha ja basta.";
+  }
+
+  if (correction && (intent === "correct_sentence" || intent === "practice_english")) {
+    return personalizeCattyReply(
+      buildGrammarCorrectionFallbackReply(correction, context),
+      {
+        context,
+        history,
+        intent: "correct_sentence",
+        language: "Portuguese",
+        sessionContext,
+        text,
+      },
+    );
   }
 
   if (hasAny(normalized, ["senha", "login", "entrar"])) {
@@ -2244,15 +2829,24 @@ function buildPlannedFallbackReply(
   intent: CattyIntent,
   history: CattyMessage[],
   sessionContext?: CattySessionContext,
+  correction?: CattyGrammarCorrectionPlan,
 ) {
   const plannedReply = isEnglishMessage(text)
-    ? buildPlannedEnglishReply(text, context, intent, history, sessionContext)
+    ? buildPlannedEnglishReply(
+        text,
+        context,
+        intent,
+        history,
+        sessionContext,
+        correction,
+      )
     : buildPlannedPortugueseReply(
         text,
         context,
         intent,
         history,
         sessionContext,
+        correction,
       );
 
   return (
@@ -2270,11 +2864,13 @@ export function buildCattyResponsePlan(
   sessionContext?: CattySessionContext,
 ): CattyResponsePlan {
   const { confidence, intent } = detectCattyIntent(text, context);
+  const correction = buildCommonEnglishCorrectionPlan(text);
   const continuity = buildCattyConversationContinuityPlan(text, history);
   const language = isEnglishMessage(text) ? "English" : "Portuguese";
 
   return {
     confidence,
+    correction,
     continuity,
     fallbackReply: buildPlannedFallbackReply(
       text,
@@ -2282,6 +2878,7 @@ export function buildCattyResponsePlan(
       intent,
       history,
       sessionContext,
+      correction,
     ),
     intent,
     instruction: intentInstructions[intent],
@@ -2497,6 +3094,8 @@ export function buildCattyInput(
     "Regra de roteamento interno: Gemini e o padrao; OpenAI so quando a mensagem chama Catty; se provedores falharem, usar fallback local; baloes automaticos nao chamam IA.",
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
     "Regra de continuidade: quando a mensagem atual for uma frase curta em ingles, mantenha o mesmo assunto, elogie ou corrija de leve e faca uma pergunta curta relacionada. Nao responda generico nem troque de tema.",
+    "Regra de correcao conversacional: quando houver correcao local detectada, nao peca a frase de novo. Use: reacao curta, `Melhor: ...`, explicacao simples em uma frase e uma pergunta relacionada.",
+    "Regra de correcao em homework: nao entregue gabarito final; use a correcao como estrutura parecida e convide o aluno a aplicar o padrao.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",
     "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
     "Regra de memoria aprovada: use no maximo 3 memorias do Catty Learning Center apenas como guia de estilo, exemplo ou vocabulario; nao trate como dado interno do aluno e nao invente informacoes.",
@@ -2512,6 +3111,8 @@ export function buildCattyInput(
     getCattyUserMemoryPromptLine(userMemoryContext),
     "Continuidade conversacional:",
     formatCattyContinuityPromptContext(plan.continuity),
+    "Correcao local detectada:",
+    formatCattyCorrectionPromptContext(plan.correction),
     "Artefato de personalidade sugerido:",
     formatCattyArtifactPromptContext(artifactSelection, {
       history,
