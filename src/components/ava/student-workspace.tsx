@@ -6,11 +6,14 @@ import {
   ChevronDown,
   ClipboardCheck,
   FileText,
+  Gift,
   MessageSquareText,
   Palette,
   Radio,
   Sparkles,
+  Target,
   UserRound,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
@@ -42,6 +45,7 @@ import {
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
+import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
 
 export const studentTaskIds = [
   "resumo",
@@ -151,6 +155,7 @@ type StudentWorkspaceProps = {
     title: string;
   }[];
   studentProfileId: string;
+  profileCompletion: StudentProfileCompletion;
   studentProfile: {
     birthDate?: Date | null;
     gender?: string | null;
@@ -173,6 +178,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "2-digit",
   year: "numeric",
 });
+const xpFormatter = new Intl.NumberFormat("pt-BR");
 
 const taskMeta = {
   "aula-ao-vivo": {
@@ -268,6 +274,103 @@ function EmptyState({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ProfileCompletionCard({
+  completion,
+}: {
+  completion: StudentProfileCompletion;
+}) {
+  const missingItems = completion.missingItems.slice(0, 3);
+
+  return (
+    <section className="ava-profile-completion-card overflow-hidden rounded-2xl border p-5">
+      <div className="relative z-10 flex flex-col gap-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/70 bg-white/75 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-amber-900 shadow-sm">
+              <Zap aria-hidden="true" className="size-3.5" />
+              Perfil + XP
+            </span>
+            <h3 className="mt-3 text-xl font-semibold text-primary">
+              Complete seu perfil e ganhe ate 300 XP
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              A Candy conta os dados importantes para deixar seu AVA pronto e
+              sua teacher com as informacoes certas.
+            </p>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3 rounded-xl border border-white/70 bg-white/85 px-4 py-3 text-primary shadow-sm">
+            <span className="flex size-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <Gift aria-hidden="true" className="size-5" />
+            </span>
+            <span>
+              <span className="block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                Garantido
+              </span>
+              <strong className="block text-xl leading-none">
+                +{xpFormatter.format(completion.xp)} XP
+              </strong>
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-end justify-between gap-3">
+            <span className="text-sm font-semibold text-primary">
+              {completion.completedCount}/{completion.totalCount} campos
+            </span>
+            <strong className="text-lg text-amber-900">
+              {completion.percent}%
+            </strong>
+          </div>
+          <div
+            aria-label={`Perfil ${completion.percent}% completo`}
+            aria-valuemax={100}
+            aria-valuemin={0}
+            aria-valuenow={completion.percent}
+            className="h-4 overflow-hidden rounded-full border border-amber-500/25 bg-white/70 p-0.5"
+            role="progressbar"
+          >
+            <div
+              aria-hidden="true"
+              className="candy-xp-progress-fill candy-profile-progress-fill h-full rounded-full"
+              style={{ width: `${completion.percent}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-3">
+          {completion.items.map((item) => (
+            <div
+              key={item.key}
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
+                item.completed
+                  ? "border-emerald-300/80 bg-emerald-50 text-emerald-800"
+                  : "border-primary/10 bg-white/66 text-muted-foreground"
+              }`}
+            >
+              {item.completed ? (
+                <CheckCircle2 aria-hidden="true" className="size-4 shrink-0" />
+              ) : (
+                <Target aria-hidden="true" className="size-4 shrink-0" />
+              )}
+              <span className="min-w-0 truncate">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="rounded-xl border border-white/70 bg-white/72 px-4 py-3 text-sm leading-6 text-muted-foreground">
+          {completion.isComplete
+            ? "Perfil completo. Seu bonus maximo de perfil ja esta ativo no Candy XP."
+            : missingItems.length > 0
+              ? `Proximos pontos: ${missingItems.map((item) => item.label).join(", ")}.`
+              : "Preencha os campos importantes e salve para atualizar seu Candy XP."}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function formatDateInput(value?: Date | null) {
   return value ? value.toISOString().slice(0, 10) : "";
 }
@@ -314,6 +417,7 @@ export function StudentWorkspace({
   lessons,
   liveSessions,
   studentProfileId,
+  profileCompletion,
   studentProfile,
   teachers,
 }: StudentWorkspaceProps) {
@@ -350,12 +454,7 @@ export function StudentWorkspace({
       lessonActivities: lessonActivityItems.map((homework) => ({
         status: homework.submissions[0]?.status,
       })),
-      profileReady: Boolean(
-        currentUser.avatarPath ||
-          currentUser.phone ||
-          studentProfile.level ||
-          studentProfile.studentPhone,
-      ),
+      profileCompletionPercent: profileCompletion.percent,
     }),
     candyXpPersistence,
   );
@@ -490,6 +589,7 @@ export function StudentWorkspace({
                     {studentProfile.level ?? "Ainda nao definido"}
                   </p>
                 </div>
+                <ProfileCompletionCard completion={profileCompletion} />
                 <ProfileForm
                   defaultValues={{
                     address: currentUser.address ?? "",

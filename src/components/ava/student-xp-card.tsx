@@ -194,6 +194,7 @@ export function CandyXpCard({
                   </div>
                   <strong className="mt-3 block text-2xl text-primary">
                     {source.value}
+                    {source.valueSuffix ?? ""}
                   </strong>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">
                     {source.description}

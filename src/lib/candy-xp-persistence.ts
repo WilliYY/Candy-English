@@ -624,19 +624,35 @@ export async function recordCandyXpEventsForUser(input: {
   });
 
   if (events.length > 0) {
-    await prisma.candyXpEvent.createMany({
-      data: events.map((event) => ({
-        kind: event.kind,
-        metadata: event.metadata ?? undefined,
-        occurredAt: event.occurredAt ?? new Date(),
-        role: input.role,
-        sourceKey: event.sourceKey,
-        sourceLabel: event.sourceLabel,
-        userId: input.userId,
-        xp: event.xp,
-      })),
-      skipDuplicates: true,
-    });
+    await prisma.$transaction(
+      events.map((event) =>
+        prisma.candyXpEvent.upsert({
+          where: {
+            userId_sourceKey: {
+              sourceKey: event.sourceKey,
+              userId: input.userId,
+            },
+          },
+          create: {
+            kind: event.kind,
+            metadata: event.metadata ?? undefined,
+            occurredAt: event.occurredAt ?? new Date(),
+            role: input.role,
+            sourceKey: event.sourceKey,
+            sourceLabel: event.sourceLabel,
+            userId: input.userId,
+            xp: event.xp,
+          },
+          update: {
+            kind: event.kind,
+            metadata: event.metadata ?? undefined,
+            role: input.role,
+            sourceLabel: event.sourceLabel,
+            xp: event.xp,
+          },
+        }),
+      ),
+    );
   }
 
   return refreshCandyXpProfile(input.userId, input.role);

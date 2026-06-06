@@ -12,6 +12,7 @@ Arquivos principais:
 
 - `src/lib/candy-xp.ts`: curva infinita, snapshot visual e builders por role.
 - `src/lib/candy-xp-persistence.ts`: catalogo, ledger de eventos, streaks, badges e missoes.
+- `src/lib/student-profile-completion.ts`: calculo dos dados importantes do perfil student, percentual e XP proporcional.
 - `src/lib/candy-xp-activities.ts`: avaliacao automatica de perguntas objetivas e metadados do arquivo.
 - `src/lib/validations/candy-xp-activities.ts`: schemas Zod das atividades, perguntas, respostas e revisao.
 - `src/app/ava/candy-xp/actions.ts`: criacao, edicao simples, progresso, envio e correcao.
@@ -71,7 +72,7 @@ Rotas das atividades:
 
 Student:
 
-- `Perfil preparado`: perfil/avatar/dados basicos.
+- `Perfil preparado`: percentual dos dados importantes do perfil, rendendo ate 300 XP.
 - `Aulas finalizadas`: atividade interativa criada pelo fluxo de aula e entregue.
 - `Homeworks enviadas`: homework entregue.
 - `Feedbacks recebidos`: submissao revisada pela teacher.
@@ -101,9 +102,11 @@ Admin:
 
 - A curva de nivel continua infinita por `requiredForCandyLevel`.
 - O card aplica dados persistidos com `applyCandyXpPersistence`, mantendo fallback visual se a persistencia ainda nao existir.
+- O perfil student usa XP proporcional: cada dado importante preenchido aumenta a porcentagem e o bonus chega a 300 XP quando o perfil fica 100% completo.
 - O catalogo inicial de badges e missoes e criado por upsert server-side em `ensureCandyXpCatalog`.
 - `completeCandyMission` fica como ponto de entrada futuro para jogos/tarefas executaveis.
 - Eventos historicos nao sao removidos quando uma entidade deixa de existir; XP representa historico conquistado.
+- O evento `Perfil preparado` do student e tratado como bonus de estado atual: ele pode atualizar XP/metadados conforme a porcentagem dos dados importantes muda.
 - Atividades Candy XP usam models proprios para historia/PDF/perguntas/progresso, mas a premiacao continua centralizada no ledger `CandyXpEvent`.
 - A primeira versao permite editar dados principais da atividade; edicao completa de perguntas apos publicacao fica para fase posterior por risco de invalidar respostas ja enviadas.
 

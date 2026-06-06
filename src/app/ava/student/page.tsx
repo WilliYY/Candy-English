@@ -15,6 +15,7 @@ import {
 import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
+import { getStudentProfileCompletion } from "@/lib/student-profile-completion";
 
 export const metadata: Metadata = {
   title: "Student AVA",
@@ -407,20 +408,30 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       actorUserId: session.user.id,
     }),
   ]);
-  const profileReady = Boolean(
-    studentProfile.user.avatarPath ||
-      studentProfile.user.phone ||
-      studentProfile.level ||
-      studentProfile.studentPhone,
-  );
+  const profileCompletion = getStudentProfileCompletion({
+    address: studentProfile.user.address,
+    avatarPath: studentProfile.user.avatarPath,
+    birthDate: studentProfile.birthDate,
+    guardianDocument: studentProfile.guardianDocument,
+    motherName: studentProfile.motherName,
+    motherPhone: studentProfile.motherPhone,
+    name: studentProfile.user.name,
+    phone: studentProfile.user.phone,
+    studentPhone: studentProfile.studentPhone,
+  });
   const studentXpEvents: CandyXpEventInput[] = [];
 
-  if (profileReady) {
+  if (profileCompletion.xp > 0) {
     studentXpEvents.push({
       kind: "PROFILE_READY",
+      metadata: {
+        completedFields: profileCompletion.completedCount,
+        percent: profileCompletion.percent,
+        totalFields: profileCompletion.totalCount,
+      },
       sourceKey: `student:profile-ready:${studentProfile.id}`,
       sourceLabel: "Perfil preparado",
-      xp: CANDY_XP_REWARDS.student.profileReady,
+      xp: profileCompletion.xp,
     });
   }
 
@@ -540,6 +551,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         studentPhone: studentProfile.studentPhone,
         studentPhoneAlt: studentProfile.studentPhoneAlt,
       }}
+      profileCompletion={profileCompletion}
       teachers={teacherAssignments.map((assignment) => ({
         id: assignment.teacherProfileId,
         label: `${assignment.teacherProfile.user.name} - ${assignment.teacherProfile.user.email}`,

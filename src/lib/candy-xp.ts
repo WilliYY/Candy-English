@@ -1,3 +1,5 @@
+import { STUDENT_PROFILE_COMPLETION_MAX_XP } from "@/lib/student-profile-completion";
+
 export type CandyXpRole = "admin" | "student" | "teacher";
 
 export const CANDY_XP_REWARDS = {
@@ -18,7 +20,7 @@ export const CANDY_XP_REWARDS = {
     feedbackReviewed: 25,
     homeworkSubmitted: 50,
     lessonActivitySubmitted: 40,
-    profileReady: 15,
+    profileReady: STUDENT_PROFILE_COMPLETION_MAX_XP,
   },
   teacher: {
     feedbackReviewed: 60,
@@ -41,7 +43,9 @@ export type CandyXpActivityInput = {
 export type CandyXpSource = {
   description: string;
   label: string;
+  preserveValue?: boolean;
   value: number;
+  valueSuffix?: string;
   xp: number;
 };
 
@@ -112,7 +116,7 @@ export type BuildCandyStudentXpSnapshotInput = {
   candyXpActivities?: CandyXpActivityInput[];
   homeworks: CandyXpActivityInput[];
   lessonActivities: CandyXpActivityInput[];
-  profileReady: boolean;
+  profileCompletionPercent: number;
 };
 
 export type BuildCandyTeacherXpSnapshotInput = {
@@ -368,7 +372,7 @@ export function applyCandyXpPersistence(
 
       return {
         ...source,
-        value: persistedSource.value,
+        value: source.preserveValue ? source.value : persistedSource.value,
         xp: persistedSource.xp,
       };
     }),
@@ -403,8 +407,8 @@ function getStudentNextGoals(input: BuildCandyStudentXpSnapshotInput) {
     goals.push("Entregar uma homework pendente.");
   }
 
-  if (!input.profileReady) {
-    goals.push("Completar perfil e avatar para deixar o AVA pronto.");
+  if (input.profileCompletionPercent < 100) {
+    goals.push("Completar dados importantes do perfil para liberar ate 300 XP.");
   }
 
   if (goals.length === 0) {
@@ -482,9 +486,13 @@ export function buildCandyStudentXpSnapshot(
   const reviewedFeedbacks = [...input.lessonActivities, ...input.homeworks].filter(
     (activity) => isReviewed(activity.status),
   ).length;
-  const profileXp = input.profileReady
-    ? CANDY_XP_REWARDS.student.profileReady
-    : 0;
+  const profileCompletionPercent = Math.min(
+    100,
+    Math.max(0, Math.round(input.profileCompletionPercent)),
+  );
+  const profileXp = Math.round(
+    (profileCompletionPercent / 100) * CANDY_XP_REWARDS.student.profileReady,
+  );
   const sources: CandyXpSource[] = [
     {
       description: "Historias e missoes Candy XP concluidas.",
@@ -515,9 +523,11 @@ export function buildCandyStudentXpSnapshot(
       xp: reviewedFeedbacks * CANDY_XP_REWARDS.student.feedbackReviewed,
     },
     {
-      description: "Perfil com dados basicos ou avatar.",
+      description: "Progresso dos dados importantes do perfil.",
       label: "Perfil preparado",
-      value: input.profileReady ? 1 : 0,
+      preserveValue: true,
+      value: profileCompletionPercent,
+      valueSuffix: "%",
       xp: profileXp,
     },
   ];
