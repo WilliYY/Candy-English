@@ -81,8 +81,9 @@ export function UserSummaryPanel({
                   </strong>
                 </span>
               </span>
-              <span className="shrink-0 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-amber-900 shadow-sm ring-1 ring-amber-500/10">
-                {xp.percent}% completo
+              <span className="shrink-0 rounded-full bg-white/90 px-2.5 py-1.5 text-xs font-bold text-amber-900 shadow-sm ring-1 ring-amber-500/10 sm:px-3">
+                <span className="sm:hidden">{xp.percent}%</span>
+                <span className="hidden sm:inline">{xp.percent}% completo</span>
               </span>
             </div>
 

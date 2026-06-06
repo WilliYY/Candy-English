@@ -707,7 +707,7 @@ export function AdminUsersPanel({
   );
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
+    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,410px)]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
@@ -732,12 +732,12 @@ export function AdminUsersPanel({
       </div>
 
       <Card className="ava-panel-card overflow-hidden">
-        <CardHeader className="ava-task-header border-b border-primary/15 bg-primary/10 px-7 py-5">
-          <div className="relative flex min-h-12 items-center justify-center text-center">
-            <span className="absolute left-0 flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+        <CardHeader className="ava-task-header border-b border-primary/15 bg-primary/10 px-4 py-5 sm:px-7">
+          <div className="flex min-h-12 flex-col items-center justify-center gap-3 text-center sm:relative sm:flex-row">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm sm:absolute sm:left-0">
               <TaskIcon aria-hidden="true" />
             </span>
-            <CardTitle className="px-14 text-center text-xl">
+            <CardTitle className="px-0 text-center text-lg sm:px-14 sm:text-xl">
               {task.title}
             </CardTitle>
           </div>
@@ -751,7 +751,7 @@ export function AdminUsersPanel({
                 title={`Nivel ${xpSnapshot.level} admin`}
                 xp={xpSnapshot}
               />
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 {stats.map((stat) => (
                   <div
                     key={stat.label}
