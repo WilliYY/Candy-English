@@ -131,6 +131,7 @@ Rotas protegidas:
 - O token/session recebe `id` e `role`.
 - O token/session recebe `sessionVersion`; o callback JWT consulta o usuario ativo e invalida sessoes antigas quando a versao muda, o usuario fica inativo ou a role do banco diverge da role do token.
 - A action admin de redefinicao de senha atualiza `User.passwordHash` e incrementa `User.sessionVersion`, forçando novo login em sessoes ja abertas daquele usuario.
+- O botao `Sair` do AVA usa logout client-side do Auth.js com clique unico e redirecionamento final para `/ava/login`, evitando que a tela protegida tente renderizar depois que a sessao foi encerrada.
 - Actions do cofre admin chamam `auth()`, validam role `ADMIN`, validam payload com Zod e bloqueiam alteracao/exclusao direta de valores vindos do `.env`.
 - O ledger Candy XP usa `CandyXpEvent.userId + sourceKey` como defesa anti-replay/anti-duplicacao, alem das validacoes de role nas actions e paginas que sincronizam XP.
 - As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage.
