@@ -464,6 +464,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260606003000_catty_primary_artifacts`, `src/lib/catty-user-artifacts.ts`, `src/lib/catty-artifacts.ts`, `src/lib/validations/catty-artifacts.ts`, `src/components/ava/catty-artifacts-panel.tsx`, menus Admin/Teacher e docs oficiais.
 - Riscos/cuidados: `isPrimary` so prioriza artefato `ACTIVE`, Student nao marca principal sozinho, cada usuario deve ter no maximo um principal ativo por vez, contexto pesado vira alerta operacional e busca continua revisavel antes de ativar.
 
+### 2026-06-06 - Catty dos alunos unifica memoria e gostos
+
+- Decisao: simplificar o painel Admin/Teacher de personalizacao da Catty em uma entrada `Catty dos alunos`, unindo o cadastro de gosto, artefatos e resumo simples da memoria do aluno. A rota antiga `catty-memory` continua funcionando como painel tecnico oculto para auditoria/limpeza, mas nao aparece como item separado no menu principal Admin/Teacher.
+- Motivo: reduzir confusao entre `Memoria da Catty` e `Catty Learning: gostos`, deixando o fluxo operacional como aluno -> gosto -> emojis/sons/bordoes gerados -> salvar memoria leve.
+- Impacto: `src/app/ava/layout.tsx`, `src/components/ava/catty-artifacts-panel.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/components/ava/teacher-workspace.tsx`, README e docs oficiais.
+- Riscos/cuidados: Student continua sem tela tecnica; permissoes e actions do servidor seguem as mesmas; URL antiga deve continuar renderizando tela compativel para nao quebrar links.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

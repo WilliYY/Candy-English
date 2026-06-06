@@ -3,16 +3,21 @@
 import {
   Archive,
   Ban,
+  BrainCircuit,
+  Cat,
   CheckCircle2,
   Clock3,
+  Heart,
   LoaderCircle,
   MessageSquareText,
   Palette,
   PencilLine,
+  RefreshCw,
   ShieldAlert,
   Sparkles,
   Star,
   UserRound,
+  WandSparkles,
 } from "lucide-react";
 import {
   type ComponentType,
@@ -36,6 +41,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
+import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import {
@@ -48,6 +54,7 @@ import {
 
 type CattyArtifactsPanelProps = {
   data: CattyArtifactManagementData;
+  memoryData?: CattyMemoryManagementData;
   viewerRole: Role;
 };
 
@@ -57,23 +64,6 @@ const statusLabels = {
   DISABLED: "Nao usar",
   PENDING: "Pendente",
 } satisfies Record<CattyUserArtifactStatusInput, string>;
-
-const statusDescriptions = {
-  ACTIVE: "Liberado para contexto",
-  ARCHIVED: "Guardado fora do uso",
-  DISABLED: "Tema bloqueado",
-  PENDING: "Aguardando revisao",
-} satisfies Record<CattyUserArtifactStatusInput, string>;
-
-const statusIcons = {
-  ACTIVE: CheckCircle2,
-  ARCHIVED: Archive,
-  DISABLED: Ban,
-  PENDING: Sparkles,
-} satisfies Record<
-  CattyUserArtifactStatusInput,
-  ComponentType<SVGProps<SVGSVGElement>>
->;
 
 const statusStyles = {
   ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -127,6 +117,22 @@ function getBoolean(formData: FormData, key: string) {
   return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
+function normalizeThemeText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function slugifyThemeLabel(value: string) {
+  const slug = normalizeThemeText(value)
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 48);
+
+  return slug || "tema_candy";
+}
+
 function listToText(items: string[]) {
   return items.join(", ");
 }
@@ -159,15 +165,84 @@ function EmptyCard({
   );
 }
 
+type ArtifactDraft = {
+  catchphrasesText: string;
+  emojisText: string;
+  example: string;
+  label: string;
+  soundsText: string;
+  themeId: string;
+  toneRule: string;
+};
+
+const emptyDraft: ArtifactDraft = {
+  catchphrasesText: "",
+  emojisText: "",
+  example: "",
+  label: "",
+  soundsText: "",
+  themeId: "",
+  toneRule: "",
+};
+
+function buildGenericSuggestion(label: string): Omit<ArtifactDraft, "label"> {
+  const cleanLabel = label.trim() || "English";
+
+  return {
+    catchphrasesText:
+      "modo Candy, passinho de English, energia de estudo, uma frase por vez",
+    emojisText: "🐱, 🍬, ✨",
+    example: `I like ${cleanLabel}.`,
+    soundsText: "miauw, plim, pss pss",
+    themeId: slugifyThemeLabel(cleanLabel),
+    toneRule:
+      "Usar como toque leve quando combinar, sem repetir em toda resposta.",
+  };
+}
+
+function getThemeSuggestion(
+  label: string,
+  themes: CattyArtifactManagementData["themeOptions"],
+) {
+  const normalized = normalizeThemeText(label);
+  const matchedTheme = themes.find((theme) => {
+    const themeText = normalizeThemeText(`${theme.id} ${theme.label}`);
+
+    return (
+      themeText.includes(normalized) ||
+      normalized.includes(normalizeThemeText(theme.id)) ||
+      normalized.includes(normalizeThemeText(theme.label))
+    );
+  });
+
+  if (!matchedTheme) {
+    return buildGenericSuggestion(label);
+  }
+
+  return {
+    catchphrasesText: listToText(matchedTheme.catchphrases),
+    emojisText: listToText(matchedTheme.emojis),
+    example: `I like ${matchedTheme.label}.`,
+    soundsText: listToText(matchedTheme.sounds),
+    themeId: matchedTheme.id,
+    toneRule:
+      "Usar como toque leve quando combinar, sem repetir em toda resposta.",
+  };
+}
+
 export function CattyArtifactsPanel({
   data,
+  memoryData,
   viewerRole,
 }: CattyArtifactsPanelProps) {
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
+  const [draft, setDraft] = useState<ArtifactDraft>(emptyDraft);
   const [statusFilter, setStatusFilter] =
     useState<CattyUserArtifactStatusInput | "ALL">("ACTIVE");
-  const [userFilter, setUserFilter] = useState("ALL");
+  const [userFilter, setUserFilter] = useState(
+    data.users.length === 1 ? data.users[0]?.id ?? "ALL" : "ALL",
+  );
   const canManage = viewerRole === "ADMIN" || viewerRole === "TEACHER";
   const filteredArtifacts = useMemo(
     () =>
@@ -204,19 +279,25 @@ export function CattyArtifactsPanel({
     userFilter === "ALL"
       ? null
       : data.users.find((user) => user.id === userFilter) ?? null;
-  const counts = useMemo(
-    () =>
-      cattyUserArtifactStatusValues.reduce(
-        (accumulator, status) => ({
-          ...accumulator,
-          [status]: data.artifacts.filter((artifact) => artifact.status === status)
-            .length,
-        }),
-        {} as Record<CattyUserArtifactStatusInput, number>,
-      ),
-    [data.artifacts],
-  );
   const activeUserLabel = selectedUser?.label ?? "Todos os alunos";
+  const selectedActiveMemories = useMemo(
+    () =>
+      userFilter === "ALL" || !memoryData
+        ? []
+        : memoryData.memories
+            .filter(
+              (memory) =>
+                memory.userId === userFilter && memory.status === "ACTIVE",
+            )
+            .slice(0, 5),
+    [memoryData, userFilter],
+  );
+  const activeMemoryCount =
+    memoryData?.memories.filter((memory) => memory.status === "ACTIVE").length ??
+    0;
+  const activeArtifactCount = data.artifacts.filter(
+    (artifact) => artifact.status === "ACTIVE",
+  ).length;
   const readyEnrichmentCount = filteredEnrichments.filter(
     (enrichment) => enrichment.status === "READY_FOR_REVIEW",
   ).length;
@@ -242,6 +323,36 @@ export function CattyArtifactsPanel({
     };
   }
 
+  function updateDraft(key: keyof ArtifactDraft, value: string) {
+    setDraft((current) => {
+      if (key === "label") {
+        return {
+          ...current,
+          label: value,
+          themeId:
+            current.themeId && current.themeId !== slugifyThemeLabel(current.label)
+              ? current.themeId
+              : slugifyThemeLabel(value),
+        };
+      }
+
+      return {
+        ...current,
+        [key]: value,
+      };
+    });
+  }
+
+  function generateDraftSuggestion() {
+    const label = draft.label.trim();
+    const suggestion = getThemeSuggestion(label, data.themeOptions);
+
+    setDraft({
+      ...suggestion,
+      label,
+    });
+  }
+
   function buildReviewInput(
     formData: FormData,
   ): CattyArtifactEnrichmentReviewInput {
@@ -264,6 +375,7 @@ export function CattyArtifactsPanel({
 
       if (result.ok) {
         form.reset();
+        setDraft(emptyDraft);
       }
     });
   }
@@ -349,92 +461,72 @@ export function CattyArtifactsPanel({
           />
           <div className="relative flex items-start gap-4">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-              <Palette aria-hidden="true" className="size-6" />
+              <Cat aria-hidden="true" className="size-6" />
             </span>
             <div className="min-w-0">
               <span className="inline-flex rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                Estilo por aluno
+                Catty por aluno
               </span>
               <h2 className="mt-3 text-2xl font-semibold text-primary">
-                Estilo da Catty
+                Catty Learning simples
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Cadastre gostos, revise buscas, aprove artefatos e controle o
-                que a Catty usa por aluno.
+                Escolha o aluno, escreva o que ele gosta e gere emojis, sons e
+                bordoes para a Catty usar de forma leve.
               </p>
             </div>
           </div>
 
-          <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
-            {cattyUserArtifactStatusValues.map((status) => {
-              const StatusIcon = statusIcons[status];
-
-              return (
-                <button
-                  key={status}
-                  type="button"
-                  onClick={() => setStatusFilter(status)}
-                  className={cn(
-                    "group rounded-2xl border p-4 text-left text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
-                    statusFilter === status
-                      ? "border-primary/40 bg-primary text-primary-foreground shadow-lg shadow-primary/18"
-                      : "border-primary/12 bg-white/78 text-muted-foreground hover:border-primary/25 hover:bg-white",
-                  )}
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span>
-                      <span className="block font-semibold">
-                        {statusLabels[status]}
-                      </span>
-                      <span
-                        className={cn(
-                          "mt-1 block text-xs leading-5",
-                          statusFilter === status
-                            ? "text-primary-foreground/78"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        {statusDescriptions[status]}
-                      </span>
-                    </span>
-                    <span
-                      className={cn(
-                        "flex size-9 shrink-0 items-center justify-center rounded-xl",
-                        statusFilter === status
-                          ? "bg-white/15 text-primary-foreground"
-                          : "bg-primary/8 text-primary",
-                      )}
-                    >
-                      <StatusIcon aria-hidden="true" className="size-4" />
-                    </span>
-                  </span>
-                  <strong
-                    className={cn(
-                      "mt-3 block text-2xl",
-                      statusFilter === status
-                        ? "text-primary-foreground"
-                        : "text-primary",
-                    )}
-                  >
-                    {counts[status]}
-                  </strong>
-                </button>
-              );
-            })}
+          <div className="relative mt-5 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-primary/12 bg-white/78 p-4 shadow-sm">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary/8 text-primary">
+                <UserRound aria-hidden="true" className="size-4" />
+              </span>
+              <strong className="mt-3 block text-2xl text-primary">
+                {data.users.length}
+              </strong>
+              <span className="text-xs text-muted-foreground">
+                alunos disponiveis
+              </span>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 shadow-sm">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-white text-emerald-700">
+                <Heart aria-hidden="true" className="size-4" />
+              </span>
+              <strong className="mt-3 block text-2xl text-emerald-800">
+                {activeArtifactCount}
+              </strong>
+              <span className="text-xs text-emerald-800/75">
+                gostos ativos
+              </span>
+            </div>
+            <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-4 shadow-sm">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-white text-fuchsia-700">
+                <BrainCircuit aria-hidden="true" className="size-4" />
+              </span>
+              <strong className="mt-3 block text-2xl text-fuchsia-800">
+                {activeMemoryCount}
+              </strong>
+              <span className="text-xs text-fuchsia-800/75">
+                memorias ativas
+              </span>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setStatusFilter("ALL")}
-            className={cn(
-              "relative mt-3 rounded-full border px-4 py-2 text-sm font-semibold transition",
-              statusFilter === "ALL"
-                ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                : "border-primary/15 bg-white/75 text-primary hover:border-primary/30 hover:bg-white",
-            )}
-          >
-            Ver todos
-          </button>
+          <div className="relative mt-4 grid gap-2">
+            <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+              <strong className="block text-primary">1. Aluno</strong>
+              Escolha para quem a Catty vai personalizar.
+            </div>
+            <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+              <strong className="block text-primary">2. Gosto</strong>
+              Ex.: capivara, carros, games, futebol, princesa.
+            </div>
+            <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+              <strong className="block text-primary">3. Estilo</strong>
+              A Catty gera emojis, sons, bordoes e salva como memoria leve.
+            </div>
+          </div>
         </section>
 
         <section className="ava-soft-card rounded-2xl border p-5">
@@ -475,15 +567,15 @@ export function CattyArtifactsPanel({
         <section className="ava-soft-card rounded-2xl border p-5">
           <div className="flex items-start gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm">
-              <Sparkles aria-hidden="true" />
+              <WandSparkles aria-hidden="true" />
             </span>
             <div>
               <h2 className="text-lg font-semibold">
-                {canManage ? "Cadastrar tema" : "Sugerir tema"}
+                {canManage ? "Adicionar gosto do aluno" : "Sugerir gosto"}
               </h2>
               <p className="text-sm leading-6 text-muted-foreground">
-                Use interesses leves: carros, capivara, games, futebol,
-                princesa ou outro tema seguro.
+                Simples assim: escolha o aluno, escreva o gosto e clique para
+                a Catty sugerir emojis, sons e bordoes.
               </p>
             </div>
           </div>
@@ -504,6 +596,7 @@ export function CattyArtifactsPanel({
                   id="catty-artifact-user"
                   name="targetUserId"
                   disabled={isPending || data.users.length <= 1}
+                  onChange={(event) => setUserFilter(event.target.value)}
                 >
                   {data.users.map((user) => (
                     <option key={user.id} value={user.id}>
@@ -514,54 +607,54 @@ export function CattyArtifactsPanel({
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="catty-artifact-status">Status</FieldLabel>
-                {canManage ? (
-                  <NativeSelect
-                    id="catty-artifact-status"
-                    name="status"
-                    defaultValue="ACTIVE"
-                    disabled={isPending}
-                  >
-                    {cattyUserArtifactStatusValues.map((status) => (
-                      <option key={status} value={status}>
-                        {statusLabels[status]}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                ) : (
-                  <>
-                    <Input value="Pendente de aprovacao" disabled />
-                    <input type="hidden" name="status" value="PENDING" />
-                  </>
-                )}
-              </Field>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="catty-artifact-theme">
-                  Chave do tema
-                </FieldLabel>
-                <Input
-                  id="catty-artifact-theme"
-                  name="themeId"
-                  list="catty-artifact-theme-options"
-                  placeholder="capybara, cars, games"
-                  disabled={isPending}
-                />
-              </Field>
-
-              <Field>
                 <FieldLabel htmlFor="catty-artifact-label">
-                  Nome visivel
+                  O que o aluno gosta?
                 </FieldLabel>
                 <Input
                   id="catty-artifact-label"
                   name="label"
-                  placeholder="capivara"
+                  placeholder="Ex.: capivara, carros, games"
+                  value={draft.label}
                   disabled={isPending}
+                  onChange={(event) => updateDraft("label", event.target.value)}
                 />
               </Field>
+            </div>
+
+            <input
+              type="hidden"
+              name="themeId"
+              value={draft.themeId || slugifyThemeLabel(draft.label)}
+            />
+            <input
+              type="hidden"
+              name="status"
+              value={canManage ? "ACTIVE" : "PENDING"}
+            />
+
+            <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                  <RefreshCw aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <strong className="block text-primary">
+                    Gerar estilo da Catty
+                  </strong>
+                  A geracao usa temas seguros ja conhecidos. Se o tema for novo,
+                  ela cria um estilo Candy generico e voce pode enriquecer depois.
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isPending || draft.label.trim().length < 2}
+                className="mt-3 gap-2"
+                onClick={generateDraftSuggestion}
+              >
+                <WandSparkles aria-hidden="true" />
+                Gerar emojis, sons e bordoes
+              </Button>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -570,8 +663,12 @@ export function CattyArtifactsPanel({
                 <Input
                   id="catty-artifact-emojis"
                   name="emojisText"
-                  placeholder="car, cat, sparkles"
+                  placeholder="A Catty pode gerar, ex.: 🐱, 🍬, ✨"
+                  value={draft.emojisText}
                   disabled={isPending}
+                  onChange={(event) =>
+                    updateDraft("emojisText", event.target.value)
+                  }
                 />
               </Field>
 
@@ -582,8 +679,12 @@ export function CattyArtifactsPanel({
                 <Input
                   id="catty-artifact-sounds"
                   name="soundsText"
-                  placeholder="vruum vruum, pling"
+                  placeholder="miauw, vruum vruum, plim"
+                  value={draft.soundsText}
                   disabled={isPending}
+                  onChange={(event) =>
+                    updateDraft("soundsText", event.target.value)
+                  }
                 />
               </Field>
             </div>
@@ -597,11 +698,15 @@ export function CattyArtifactsPanel({
                 name="catchphrasesText"
                 rows={3}
                 placeholder="modo capivara calma, passinho tranquilo"
+                value={draft.catchphrasesText}
                 disabled={isPending}
+                onChange={(event) =>
+                  updateDraft("catchphrasesText", event.target.value)
+                }
               />
             </Field>
 
-            <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-3">
               <Field>
                 <FieldLabel htmlFor="catty-artifact-example">
                   Exemplo curto
@@ -610,33 +715,65 @@ export function CattyArtifactsPanel({
                   id="catty-artifact-example"
                   name="example"
                   placeholder="The capybara is drinking water."
+                  value={draft.example}
                   disabled={isPending}
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="catty-artifact-blocked-reason">
-                  Motivo se nao usar
-                </FieldLabel>
-                <Input
-                  id="catty-artifact-blocked-reason"
-                  name="blockedReason"
-                  placeholder="Aluno pediu para parar"
-                  disabled={isPending}
+                  onChange={(event) => updateDraft("example", event.target.value)}
                 />
               </Field>
             </div>
 
-            <Field>
-              <FieldLabel htmlFor="catty-artifact-tone">Regra de tom</FieldLabel>
-              <Textarea
-                id="catty-artifact-tone"
-                name="toneRule"
-                rows={2}
-                placeholder="Usar como toque leve, sem repetir em toda resposta."
-                disabled={isPending}
-              />
-            </Field>
+            <details className="rounded-2xl border border-primary/10 bg-white/72 p-3">
+              <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                Ajustes avancados
+              </summary>
+              <div className="mt-3 grid gap-3">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Field>
+                    <FieldLabel htmlFor="catty-artifact-theme">
+                      Chave tecnica
+                    </FieldLabel>
+                    <Input
+                      id="catty-artifact-theme"
+                      list="catty-artifact-theme-options"
+                      value={draft.themeId || slugifyThemeLabel(draft.label)}
+                      disabled={isPending}
+                      onChange={(event) =>
+                        updateDraft("themeId", event.target.value)
+                      }
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="catty-artifact-blocked-reason">
+                      Motivo se nao usar
+                    </FieldLabel>
+                    <Input
+                      id="catty-artifact-blocked-reason"
+                      name="blockedReason"
+                      placeholder="Aluno pediu para parar"
+                      disabled={isPending}
+                    />
+                  </Field>
+                </div>
+
+                <Field>
+                  <FieldLabel htmlFor="catty-artifact-tone">
+                    Regra de tom
+                  </FieldLabel>
+                  <Textarea
+                    id="catty-artifact-tone"
+                    name="toneRule"
+                    rows={2}
+                    placeholder="Usar como toque leve, sem repetir em toda resposta."
+                    value={draft.toneRule}
+                    disabled={isPending}
+                    onChange={(event) =>
+                      updateDraft("toneRule", event.target.value)
+                    }
+                  />
+                </Field>
+              </div>
+            </details>
 
             {canManage ? (
               <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
@@ -678,7 +815,7 @@ export function CattyArtifactsPanel({
                 ) : (
                   <Sparkles aria-hidden="true" />
                 )}
-                {canManage ? "Salvar tema" : "Enviar sugestao"}
+                {canManage ? "Salvar gosto ativo" : "Enviar sugestao"}
               </Button>
 
               {canManage ? (
@@ -790,6 +927,47 @@ export function CattyArtifactsPanel({
                     {interest}
                   </span>
                 ))}
+              </div>
+            </div>
+          ) : null}
+
+          {userFilter !== "ALL" ? (
+            <div className="mt-4 rounded-2xl border border-fuchsia-100 bg-fuchsia-50/60 p-4 shadow-sm">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-fuchsia-700 shadow-sm">
+                  <BrainCircuit aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <p className="font-semibold text-primary">
+                    Memoria simples da Catty
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    Gostos salvos aqui tambem viram memoria leve para a Catty.
+                    A tela tecnica fica escondida do aluno.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 grid gap-2">
+                {selectedActiveMemories.length === 0 ? (
+                  <p className="rounded-xl border border-dashed border-primary/15 bg-white/70 p-3 text-sm text-muted-foreground">
+                    Nenhuma memoria ativa para este aluno ainda.
+                  </p>
+                ) : (
+                  selectedActiveMemories.map((memory) => (
+                    <div
+                      key={memory.id}
+                      className="rounded-xl border border-primary/10 bg-white/78 p-3 text-sm shadow-sm"
+                    >
+                      <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                        {memory.category}
+                      </span>
+                      <p className="mt-1 font-medium text-primary">
+                        {memory.value}
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           ) : null}

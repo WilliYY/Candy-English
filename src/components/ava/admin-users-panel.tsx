@@ -247,15 +247,15 @@ const taskMeta = {
   },
   "catty-learning": {
     icon: BrainCircuit,
-    title: "Catty Learning Center",
+    title: "Treinar Catty",
   },
   "catty-memory": {
     icon: BrainCircuit,
-    title: "Memoria da Catty",
+    title: "Memoria tecnica da Catty",
   },
   "catty-artifacts": {
     icon: Sparkles,
-    title: "Catty Learning: gostos",
+    title: "Catty dos alunos",
   },
   "editar-site": {
     icon: Wrench,
@@ -863,6 +863,7 @@ export function AdminUsersPanel({
           {activeTask === "catty-artifacts" ? (
             <CattyArtifactsPanel
               data={cattyArtifactData}
+              memoryData={cattyMemoryData}
               viewerRole="ADMIN"
             />
           ) : null}

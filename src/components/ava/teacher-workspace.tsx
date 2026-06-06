@@ -260,17 +260,17 @@ const taskMeta = {
   "catty-learning": {
     description: "Sugira exemplos e regras para a memoria aprovada da Catty.",
     icon: BrainCircuit,
-    title: "Catty Learning Center",
+    title: "Treinar Catty",
   },
   "catty-memory": {
-    description: "Revise memorias pessoais da Catty dos seus alunos.",
+    description: "Painel tecnico oculto de memoria da Catty.",
     icon: BrainCircuit,
-    title: "Memoria da Catty",
+    title: "Memoria tecnica da Catty",
   },
   "catty-artifacts": {
-    description: "Ajuste temas, emojis e bordoes seguros dos alunos.",
+    description: "Escolha aluno, gostos, emojis e sons da Catty.",
     icon: Palette,
-    title: "Catty Learning: gostos",
+    title: "Catty dos alunos",
   },
   contratos: {
     description: "Envie e visualize contratos PDF de alunos.",
@@ -680,6 +680,7 @@ export function TeacherWorkspace({
           {activeTask === "catty-artifacts" ? (
             <CattyArtifactsPanel
               data={cattyArtifactData}
+              memoryData={cattyMemoryData}
               viewerRole={currentUser.role === "ADMIN" ? "ADMIN" : "TEACHER"}
             />
           ) : null}

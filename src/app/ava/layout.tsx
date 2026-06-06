@@ -146,19 +146,13 @@ const navGroups = [
       {
         href: "/ava/admin?task=catty-learning",
         icon: BrainCircuit,
-        label: "Catty Learning",
-        section: "Sistema",
-      },
-      {
-        href: "/ava/admin?task=catty-memory",
-        icon: BrainCircuit,
-        label: "Memoria da Catty",
+        label: "Treinar Catty",
         section: "Sistema",
       },
       {
         href: "/ava/admin?task=catty-artifacts",
         icon: Palette,
-        label: "Catty Learning: gostos",
+        label: "Catty dos alunos",
         section: "Sistema",
       },
       {
@@ -214,19 +208,13 @@ const navGroups = [
       {
         href: "/ava/teacher?task=catty-learning",
         icon: BrainCircuit,
-        label: "Catty Learning",
-        section: "Comunicacao",
-      },
-      {
-        href: "/ava/teacher?task=catty-memory",
-        icon: BrainCircuit,
-        label: "Memoria da Catty",
+        label: "Treinar Catty",
         section: "Comunicacao",
       },
       {
         href: "/ava/teacher?task=catty-artifacts",
         icon: Palette,
-        label: "Catty Learning: gostos",
+        label: "Catty dos alunos",
         section: "Comunicacao",
       },
       {
