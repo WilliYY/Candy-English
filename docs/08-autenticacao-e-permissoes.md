@@ -111,10 +111,10 @@ Rotas protegidas:
 - `CattyUserMemory` e memoria pessoal por usuario: a rota de chat usa somente itens `ACTIVE` do proprio `session.user.id`; `STUDENT` nao recebe a lista tecnica de memorias na UI e ve apenas `Catty aprendendo`, `TEACHER` so acessa aluno vinculado por `StudentTeacherAssignment` e `ADMIN` pode supervisionar.
 - Memoria pessoal da Catty deve ser curta e segura; actions e helper bloqueiam senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao e dados privados antes de gravar ou corrigir.
 - Admin e Teacher podem preencher `Contexto Catty` somente ao criar/aceitar aluno `STUDENT`; o valor vira `CattyUserMemory.NOTE/contexto_catty` ativa, respeitando a mesma validacao de dados sensiveis e as mesmas permissoes da memoria pessoal.
-- `CattyUserArtifact` e estilo configuravel por usuario: `ADMIN` gerencia todos os alunos, `TEACHER` somente alunos vinculados e `STUDENT` somente o proprio usuario, podendo sugerir tema ou pedir para nao usar. Admin/Teacher podem marcar um tema ativo como principal; Student nao aprova nem prioriza sozinho. Somente `ACTIVE` entra na rota da Catty; `PENDING`, `DISABLED` e `ARCHIVED` ficam fora do prompt/fallback.
-- Actions de `Estilo da Catty` chamam `auth()`, validam role, dono/vinculo e Zod no servidor; elas bloqueiam senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API e temas sensiveis antes de gravar.
+- `CattyUserArtifact` e estilo configuravel por usuario: `ADMIN` gerencia todos os alunos e `TEACHER` somente alunos vinculados. `STUDENT` nao acessa a tela tecnica nem altera artefatos por action. Admin/Teacher podem marcar um tema ativo como principal. Somente `ACTIVE` entra na rota da Catty; `PENDING`, `DISABLED` e `ARCHIVED` ficam fora do prompt/fallback.
+- Actions de `Catty Learning: gostos` chamam `auth()`, validam role, dono/vinculo e Zod no servidor; elas bloqueiam senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API e temas sensiveis antes de gravar.
 - Quando um artefato fica `ACTIVE`, a action pode sincronizar uma memoria segura `FAVORITE_THEME/artifact_*`; quando fica `DISABLED`, sincroniza `STYLE/avoid_*` para a Catty respeitar o pedido de parar de usar aquele tema.
-- Enriquecimento de artefato em `Estilo da Catty` e permitido apenas para `ADMIN` ou `TEACHER`; `STUDENT` pode sugerir tema, mas nao aciona busca/crawler/cache nem aprova sugestao.
+- Enriquecimento de artefato em `Catty Learning: gostos` e permitido apenas para `ADMIN` ou `TEACHER`; `STUDENT` nao aciona busca/crawler/cache nem aprova sugestao.
 - `ADMIN` pode enriquecer/aprovar/recusar/arquivar sugestoes de qualquer aluno; `TEACHER` so pode fazer isso para alunos vinculados por `StudentTeacherAssignment`; a validacao acontece em server action e helper, nao apenas na UI.
 - Sugestoes de `CattyArtifactEnrichment` com status pendente, falho, recusado ou arquivado nunca entram no prompt/fallback da Catty; somente uma aprovacao humana cria/atualiza `CattyUserArtifact.ACTIVE`.
 - Senha, pagamento, contrato, API key, telefone e dados privados devem ser bloqueados pela validacao de feedback, aprendizado manual e auto-sugestao.
@@ -163,8 +163,8 @@ Rotas protegidas:
 - Aprovar aprendizado com dados sensiveis pode fazer a Catty repetir informacao privada em respostas futuras; revisar conteudo antes de aprovar e manter a validacao conservadora.
 - Expor todos os feedbacks da Catty para Teacher sem validar vinculo pode vazar conversa de aluno; manter o filtro por `StudentTeacherAssignment`.
 - Expor memoria pessoal da Catty sem filtro por `userId` ou sem validar vinculo teacher/aluno pode vazar interesses, dificuldades e observacoes pedagogicas leves entre usuarios.
-- Expor `CattyUserArtifact` sem filtro de dono/vinculo pode revelar gostos e preferencias de aluno; manter sempre filtro por Admin, Teacher vinculada ou proprio Student.
-- Permitir enriquecimento externo por Student ou sem validar vinculo teacher/aluno pode gerar custo, vazar preferencias e ativar temas sem revisao; manter busca apenas em fluxo Admin/Teacher protegido.
+- Expor `CattyUserArtifact` sem filtro de dono/vinculo pode revelar gostos e preferencias de aluno; manter sempre filtro por Admin ou Teacher vinculada.
+- Permitir enriquecimento externo por Student ou sem validar vinculo teacher/aluno pode gerar custo, vazar preferencias e ativar temas sem revisao; manter busca e alteracao apenas em fluxo Admin/Teacher protegido.
 
 ## Pendencias
 

@@ -8,7 +8,6 @@ import {
   FileText,
   Gift,
   MessageSquareText,
-  Palette,
   Radio,
   Sparkles,
   Target,
@@ -32,7 +31,6 @@ import {
   StudentCandyXpActivitiesPanel,
   type StudentCandyXpActivity,
 } from "@/components/ava/student-candy-xp-activities-panel";
-import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +39,6 @@ import {
   buildCandyStudentXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
-import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { Role } from "@/lib/roles";
 import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
 
@@ -52,7 +49,6 @@ export const studentTaskIds = [
   "homeworks",
   "candy-xp",
   "catty-memory",
-  "catty-artifacts",
   "mensagens",
   "contratos",
   "perfil",
@@ -125,7 +121,6 @@ type StudentWorkspaceProps = {
   activeTask: StudentTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   candyXpActivities: StudentCandyXpActivity[];
-  cattyArtifactData: CattyArtifactManagementData;
   chatThreads: ChatThreadRow[];
   contracts: {
     createdAt: Date;
@@ -202,11 +197,6 @@ const taskMeta = {
     description: "Entenda como a Catty aprende com voce de forma segura.",
     icon: BrainCircuit,
     title: "Catty aprendendo",
-  },
-  "catty-artifacts": {
-    description: "Sugira temas fofos para os exemplos e memes da Catty.",
-    icon: Palette,
-    title: "Estilo da Catty",
   },
   homeworks: {
     description: "Responda atividades online e acompanhe feedbacks.",
@@ -423,7 +413,7 @@ function StudentCattyLearningCard() {
 
           <p className="rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-primary">
             Se a Catty usar um exemplo estranho ou um tema que voce nao curte,
-            avise sua teacher ou ajuste em Estilo da Catty.
+            avise sua teacher para ela ajustar o estilo da Catty por voce.
           </p>
         </div>
       </div>
@@ -489,7 +479,6 @@ export function StudentWorkspace({
   activeTask,
   candyXpPersistence,
   candyXpActivities,
-  cattyArtifactData,
   chatThreads,
   contracts,
   currentUser,
@@ -695,13 +684,6 @@ export function StudentWorkspace({
 
           {activeTask === "catty-memory" ? (
             <StudentCattyLearningCard />
-          ) : null}
-
-          {activeTask === "catty-artifacts" ? (
-            <CattyArtifactsPanel
-              data={cattyArtifactData}
-              viewerRole="STUDENT"
-            />
           ) : null}
 
           {activeTask === "contratos" ? (

@@ -269,11 +269,6 @@ const navGroups = [
         label: "Catty aprendendo",
       },
       {
-        href: "/ava/student?task=catty-artifacts",
-        icon: Palette,
-        label: "Estilo da Catty",
-      },
-      {
         href: "/ava/student?task=mensagens",
         icon: MessageSquareText,
         label: "Mensagens",

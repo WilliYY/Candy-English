@@ -145,13 +145,8 @@ function joinArtifactText(input: {
 }
 
 function getStatusForActor(input: {
-  actorRole: Role;
   requestedStatus: CattyUserArtifactStatusInput;
 }) {
-  if (input.actorRole === "STUDENT") {
-    return input.requestedStatus === "DISABLED" ? "DISABLED" : "PENDING";
-  }
-
   return input.requestedStatus;
 }
 
@@ -214,7 +209,7 @@ async function getAccessibleStudentUserIds(input: ActorContext) {
     );
   }
 
-  return [input.actorUserId];
+  return [];
 }
 
 async function syncArtifactMemory(input: {
@@ -266,6 +261,14 @@ export async function upsertCattyUserArtifact(
     };
   }
 
+  if (input.actorRole === "STUDENT") {
+    return {
+      ok: false,
+      message:
+        "O estilo da Catty e configurado por Admin ou Teacher para cada aluno.",
+    };
+  }
+
   const canAccess = await canAccessCattyUserMemoryTarget({
     actorRole: input.actorRole,
     actorUserId: input.actorUserId,
@@ -281,7 +284,6 @@ export async function upsertCattyUserArtifact(
 
   const themeId = normalizeArtifactThemeId(parsed.data.themeId);
   const status = getStatusForActor({
-    actorRole: input.actorRole,
     requestedStatus: parsed.data.status,
   });
   const prisma = getPrisma();
@@ -374,12 +376,9 @@ export async function upsertCattyUserArtifact(
   return {
     artifactId: artifact.id,
     ok: true,
-    message:
-      input.actorRole === "STUDENT" && status === "PENDING"
-        ? "Sugestao enviada. A Candy precisa aprovar antes da Catty usar."
-        : existing
-          ? "Artefato da Catty atualizado."
-          : "Artefato da Catty salvo.",
+    message: existing
+      ? "Artefato da Catty atualizado."
+      : "Artefato da Catty salvo.",
   };
 }
 
@@ -392,6 +391,14 @@ export async function updateCattyUserArtifactStatus(
     return {
       ok: false,
       message: "Status invalido para o artefato da Catty.",
+    };
+  }
+
+  if (input.actorRole === "STUDENT") {
+    return {
+      ok: false,
+      message:
+        "O estilo da Catty e configurado por Admin ou Teacher para cada aluno.",
     };
   }
 
@@ -429,15 +436,7 @@ export async function updateCattyUserArtifactStatus(
     };
   }
 
-  if (input.actorRole === "STUDENT" && parsed.data.status === "ACTIVE") {
-    return {
-      ok: false,
-      message: "Aluno pode sugerir ou desativar tema, mas nao aprovar sozinho.",
-    };
-  }
-
   const status = getStatusForActor({
-    actorRole: input.actorRole,
     requestedStatus: parsed.data.status,
   });
 

@@ -39,7 +39,6 @@ async function requireCattyArtifactSession() {
 function revalidateCattyArtifacts() {
   revalidatePath("/ava/admin");
   revalidatePath("/ava/teacher");
-  revalidatePath("/ava/student");
 }
 
 export async function saveCattyUserArtifact(
@@ -51,6 +50,14 @@ export async function saveCattyUserArtifact(
     return {
       ok: false,
       message: "Entre no AVA para ajustar o estilo da Catty.",
+    };
+  }
+
+  if (session.user.role === "STUDENT") {
+    return {
+      ok: false,
+      message:
+        "O estilo da Catty e ajustado pela equipe Candy. Fale com sua teacher.",
     };
   }
 
@@ -76,6 +83,14 @@ export async function changeCattyUserArtifactStatus(
     return {
       ok: false,
       message: "Entre no AVA para alterar o estilo da Catty.",
+    };
+  }
+
+  if (session.user.role === "STUDENT") {
+    return {
+      ok: false,
+      message:
+        "O estilo da Catty e ajustado pela equipe Candy. Fale com sua teacher.",
     };
   }
 

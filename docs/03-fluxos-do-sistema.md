@@ -137,7 +137,7 @@ Helpers:
 5. Visualiza feedback.
 6. Edita dados pessoais permitidos, mas nao o nivel.
 7. Pode abrir `Catty aprendendo` para entender que a Catty usa memoria leve com supervisao da equipe, sem ver a tela tecnica de memorias.
-8. Pode abrir `Estilo da Catty` para sugerir um tema favorito ou pedir para nao usar um tema; sugestao de aluno fica pendente ate revisao humana e nao dispara busca web.
+8. Nao configura diretamente o estilo da Catty; se quiser mudar um tema ou parar um meme, conversa com a teacher, que ajusta em `Catty Learning: gostos`.
 
 ### Candy XP e jogos
 
@@ -200,7 +200,7 @@ Helpers:
 24. Depois da resposta, a rota pode detectar declaracoes explicitas e seguras do proprio usuario, como `gosto de capivara`, `tenho dificuldade com do/does` ou `prefiro exemplos com jogos`, e salvar resumo curto em `CattyUserMemory` com evento em `CattyMemoryEvent`; se a mensagem contradiz memoria ativa, como `nao gosto mais de capivara`, a memoria e marcada como `FLAGGED`, nao apagada automaticamente. Se a mensagem pede para parar de usar um tema, a Catty salva uma preferencia de estilo para evitar aquele artefato.
 25. Gemini e OpenAI recebem o mesmo contexto curto de memoria aprovada global, memoria pessoal relevante do proprio usuario, artefato sugerido quando houver, variacao recomendada e elementos recentes a evitar; se falharem, o fallback local pode usar uma resposta ideal aprovada do Learning Center, um toque leve da memoria pessoal e um artefato discreto quando a intencao combina e a resposta passa pelos filtros de seguranca.
 26. Admin/Teacher acessam `Memoria da Catty` conforme permissao: Admin ve tudo e Teacher ve somente a propria memoria e alunos vinculados. Student ve apenas uma tela informativa `Catty aprendendo`; memorias `FLAGGED` e `ARCHIVED` nao entram no prompt.
-27. Admin/Teacher/Student acessam `Catty Learning: gostos` conforme permissao: Admin ve todos os alunos, Teacher ve alunos vinculados e Student ve o proprio usuario. Admin/Teacher podem ativar, editar, marcar gosto principal, marcar como nao usar ou arquivar; Student pode sugerir tema e pedir para nao usar.
+27. Admin/Teacher acessam `Catty Learning: gostos` conforme permissao: Admin ve todos os alunos e Teacher ve alunos vinculados. Eles podem ativar, editar, marcar gosto principal, marcar como nao usar ou arquivar temas por aluno.
 28. Admin/Teacher podem pedir `Enriquecer tema` quando um interesse ainda nao tem emojis, sons, bordoes ou exemplos bons. `src/lib/catty-artifact-enrichment.ts` valida permissao, bloqueia tema sensivel, consulta cache por provedor/tema/label e, se necessario, usa o provedor configurado para buscar contexto curto fora do chat normal.
 29. O enriquecimento cria `CattyArtifactEnrichment.READY_FOR_REVIEW` com resumo seguro, fontes resumidas, vocabulario, emojis, sons, bordoes, exemplos, baloes e cautelas. Nada disso entra no prompt/fallback enquanto nao for aprovado.
 30. Admin/Teacher podem editar a sugestao antes de aprovar; a aprovacao cria ou atualiza `CattyUserArtifact.ACTIVE`. Sugestoes recusadas ou arquivadas ficam registradas e fora da Catty.
@@ -326,7 +326,7 @@ Helpers:
 - Catty Learning Center adiciona memoria aprovada e curta ao prompt/fallback sem virar RAG automatico nem coletar conversa inteira.
 - Catty User Memory adiciona memoria pessoal curta por usuario, com status ativo/pendente/flagged/arquivado, eventos de auditoria e bloqueio conservador de termos sensiveis.
 - Catty Memory Management adiciona uma tarefa simples em Admin/Teacher para listar, filtrar, corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado da Catty conforme permissao. Student ve apenas a explicacao leve `Catty aprendendo`.
-- Catty User Artifacts adiciona a tarefa `Catty Learning: gostos` em Admin/Teacher e `Estilo da Catty` em Student para configurar temas, gosto principal, emojis, sons e bordoes por aluno sem alterar codigo; somente status `ACTIVE` entra no prompt/fallback.
+- Catty User Artifacts adiciona a tarefa `Catty Learning: gostos` em Admin/Teacher para configurar temas, gosto principal, emojis, sons e bordoes por aluno sem alterar codigo; somente status `ACTIVE` entra no prompt/fallback.
 - Catty Artifact Enrichment adiciona cache e fila revisavel para gerar sugestoes de artefatos por interesse; busca web e opcional, configuravel e nunca entra direto na resposta do aluno.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.

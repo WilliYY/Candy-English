@@ -184,7 +184,7 @@ export function getEnvironmentCredentialDefinitions() {
   if (cattyArtifactSearchProvider) {
     definitions.push({
       kind: "CONFIG",
-      label: "Provider busca Estilo da Catty",
+      label: "Provider busca Catty Learning: gostos",
       notes:
         "Define o provider usado apenas no enriquecimento Admin/Teacher de interesses da Catty, nunca no chat normal.",
       service: "Catty Artifact Enrichment",
@@ -196,7 +196,7 @@ export function getEnvironmentCredentialDefinitions() {
   if (cattyArtifactSearchCacheDays) {
     definitions.push({
       kind: "CONFIG",
-      label: "Cache busca Estilo da Catty",
+      label: "Cache busca Catty Learning: gostos",
       notes:
         "Quantidade de dias para reutilizar sugestoes de enriquecimento de interesses da Catty.",
       service: "Catty Artifact Enrichment",

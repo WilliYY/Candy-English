@@ -686,7 +686,7 @@ export async function requestCattyArtifactEnrichment(
     return {
       ok: false,
       message:
-        "Aluno pode sugerir tema, mas enriquecimento e aprovacao ficam com Admin/Teacher.",
+        "O estilo da Catty e ajustado pela equipe Candy. Fale com sua teacher.",
     };
   }
 
