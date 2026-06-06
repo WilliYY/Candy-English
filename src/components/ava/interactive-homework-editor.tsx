@@ -1041,17 +1041,25 @@ function InteractiveHomeworkEditorItem({
     };
   }, [hasUnsavedChanges]);
 
-  function removeSelectedField() {
-    if (!selectedFieldId) {
-      return;
-    }
+  const removeSelectedField = useCallback(
+    (source: "button" | "keyboard" = "button") => {
+      if (!selectedFieldId || isSaving || isDeleting) {
+        return;
+      }
 
-    setFields((current) =>
-      current.filter((field) => field.id !== selectedFieldId),
-    );
-    setSelectedFieldId(null);
-    setMessage("Area removida. Salve para aplicar a mudanca.");
-  }
+      setFields((current) =>
+        current.filter((field) => field.id !== selectedFieldId),
+      );
+      setSelectedFieldId(null);
+      setMessage(
+        source === "keyboard"
+          ? "Area removida pelo teclado. O autosave vai aplicar a mudanca."
+          : "Area removida. O autosave vai aplicar a mudanca.",
+      );
+      setSaveStatus("idle");
+    },
+    [isDeleting, isSaving, selectedFieldId],
+  );
 
   function clearFields() {
     setFields([]);
@@ -1061,9 +1069,15 @@ function InteractiveHomeworkEditorItem({
 
   useEffect(() => {
     function removeSelectedFieldByKeyboard(event: KeyboardEvent) {
+      const isDeleteShortcut =
+        event.key === "Delete" || event.key === "Backspace";
+
       if (
-        event.key !== "Delete" ||
+        !isDeleteShortcut ||
         event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
         !selectedFieldId ||
         isSaving ||
         isDeleting ||
@@ -1073,11 +1087,7 @@ function InteractiveHomeworkEditorItem({
       }
 
       event.preventDefault();
-      setFields((current) =>
-        current.filter((field) => field.id !== selectedFieldId),
-      );
-      setSelectedFieldId(null);
-      setMessage("Area removida. Salve para aplicar a mudanca.");
+      removeSelectedField("keyboard");
     }
 
     window.addEventListener("keydown", removeSelectedFieldByKeyboard);
@@ -1085,7 +1095,7 @@ function InteractiveHomeworkEditorItem({
     return () => {
       window.removeEventListener("keydown", removeSelectedFieldByKeyboard);
     };
-  }, [isDeleting, isSaving, selectedFieldId]);
+  }, [isDeleting, isSaving, removeSelectedField, selectedFieldId]);
 
   const clearAutosaveTimer = useCallback(() => {
     if (autosaveTimerRef.current !== null) {
@@ -1105,14 +1115,6 @@ function InteractiveHomeworkEditorItem({
       }
 
       setMessage(null);
-
-      if (fields.length === 0) {
-        if (mode === "manual") {
-          setMessage("Desenhe pelo menos uma area antes de salvar.");
-          setSaveStatus("error");
-        }
-        return;
-      }
 
       const fieldsToSave = fields.map((field, index) => {
         const normalizedField = normalizeTextFieldType(field);
@@ -1231,8 +1233,7 @@ function InteractiveHomeworkEditorItem({
       !hasUnsavedChanges ||
       isDeleting ||
       isEditingGesture ||
-      isPersisting ||
-      fields.length === 0
+      isPersisting
     ) {
       return undefined;
     }
@@ -1245,7 +1246,6 @@ function InteractiveHomeworkEditorItem({
     return clearAutosaveTimer;
   }, [
     clearAutosaveTimer,
-    fields.length,
     hasUnsavedChanges,
     isDeleting,
     isEditingGesture,
@@ -1380,9 +1380,9 @@ function InteractiveHomeworkEditorItem({
 
               <Button
                 disabled={!selectedFieldId || isPersisting || isDeleting}
-                onClick={removeSelectedField}
+                onClick={() => removeSelectedField()}
                 size="sm"
-                title="Excluir area selecionada (Del)"
+                title="Excluir area selecionada (Del ou Backspace)"
                 type="button"
                 variant="outline"
               >
