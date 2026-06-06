@@ -447,6 +447,7 @@ export function TeacherWorkspace({
           name={currentUser.name}
           role={currentUser.role}
           userId={currentUser.id}
+          xp={xpSnapshot}
         />
       </div>
 

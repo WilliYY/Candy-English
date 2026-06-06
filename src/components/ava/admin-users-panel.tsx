@@ -727,6 +727,7 @@ export function AdminUsersPanel({
           name={currentUser.name}
           role={currentUser.role}
           userId={currentUser.id}
+          xp={xpSnapshot}
         />
       </div>
 

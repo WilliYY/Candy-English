@@ -344,6 +344,15 @@ a {
   backdrop-filter: blur(14px);
 }
 
+.ava-user-xp-panel {
+  background:
+    radial-gradient(circle at 10% 0%, rgb(255 255 255 / 0.9), transparent 36%),
+    linear-gradient(135deg, rgb(255 248 219 / 0.96), rgb(255 232 164 / 0.72) 58%, rgb(255 245 204 / 0.92));
+  box-shadow:
+    0 14px 28px rgb(132 73 0 / 0.1),
+    inset 0 1px 0 rgb(255 255 255 / 0.78);
+}
+
 .ava-profile-card {
   background:
     linear-gradient(135deg, rgb(255 255 255 / 0.98), rgb(254 251 250 / 0.95) 54%, rgb(248 239 255 / 0.92)),
@@ -402,6 +411,12 @@ a {
   inset: 0;
   position: absolute;
   transform: translateX(-100%);
+}
+
+.candy-user-xp-progress-fill {
+  animation: candy-user-xp-grow 800ms cubic-bezier(0.2, 0.72, 0.18, 1) both;
+  transform-origin: left center;
+  will-change: transform;
 }
 
 .candy-ava-button {
@@ -714,6 +729,16 @@ main:has(.site-institutional-page) + .candy-footer {
   75%,
   100% {
     transform: translateX(110%);
+  }
+}
+
+@keyframes candy-user-xp-grow {
+  from {
+    transform: scaleX(0.18);
+  }
+
+  to {
+    transform: scaleX(1);
   }
 }
 

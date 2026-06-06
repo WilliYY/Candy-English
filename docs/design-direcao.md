@@ -73,7 +73,7 @@ Cuidados:
 - Catty aparece nos paineis logados do AVA por pedido explicito; revisar posicionamento se cobrir botoes, formularios, contratos ou tarefas.
 - WhatsApp tambem nao aparece nos paineis logados do AVA, para nao disputar espaco com a operacao.
 - Teacher e student devem abrir uma tarefa por vez com `?task=`, como o admin.
-- Resumo do usuario no AVA usa card compacto, com email truncado e botoes dentro da propria caixa.
+- Resumo do usuario no AVA usa card compacto, com email truncado, botoes dentro da propria caixa e microbarra Candy XP animada quando houver snapshot de progresso da role logada.
 - Perfil interno do AVA usa cards suaves com fundo glass claro, hierarquia por icones e fotos com borda/ring discreto para dar acabamento sem perder leitura operacional.
 - Admin deve listar usuarios por role em colunas separadas para reduzir confusao visual.
 - O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
