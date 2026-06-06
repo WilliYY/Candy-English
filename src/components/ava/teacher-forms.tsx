@@ -1,7 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { FileUp, LoaderCircle, Plus } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  FileUp,
+  LoaderCircle,
+  Plus,
+  type LucideIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -42,6 +50,55 @@ type InteractiveAssetFormErrors = Partial<
 >;
 
 type InteractiveAssetMode = "homework" | "lesson";
+type InteractiveUploadStatus =
+  | "created"
+  | "error"
+  | "optimized"
+  | "sending"
+  | "waiting";
+
+type InteractiveUploadQueueItem = {
+  fileName: string;
+  id: string;
+  message?: string;
+  sizeBytes: number;
+  status: InteractiveUploadStatus;
+};
+
+const interactiveUploadStatusMeta = {
+  created: {
+    Icon: CheckCircle2,
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    label: "criado",
+  },
+  error: {
+    Icon: AlertCircle,
+    className: "border-red-200 bg-red-50 text-red-700",
+    label: "erro",
+  },
+  optimized: {
+    Icon: CheckCircle2,
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+    label: "otimizado",
+  },
+  sending: {
+    Icon: LoaderCircle,
+    className: "border-primary/20 bg-primary/5 text-primary",
+    label: "enviando",
+  },
+  waiting: {
+    Icon: Clock3,
+    className: "border-muted bg-background text-muted-foreground",
+    label: "aguardando",
+  },
+} as const satisfies Record<
+  InteractiveUploadStatus,
+  {
+    Icon: LucideIcon;
+    className: string;
+    label: string;
+  }
+>;
 
 const interactiveAssetCopy = {
   homework: {
@@ -81,6 +138,56 @@ const interactiveAssetCopy = {
   }
 >;
 
+function formatUploadSize(sizeBytes: number) {
+  if (sizeBytes >= 1024 * 1024) {
+    return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  return `${Math.max(1, Math.ceil(sizeBytes / 1024))} KB`;
+}
+
+function fileTitleFromName(fileName: string) {
+  const withoutExtension = fileName.replace(/\.[^/.]+$/, "");
+  const cleanTitle = withoutExtension
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleanTitle.length >= 3 ? cleanTitle.slice(0, 160) : "Material Candy";
+}
+
+function titleForInteractiveUpload(input: {
+  file: File;
+  fileCount: number;
+  title: string;
+}) {
+  const fileTitle = fileTitleFromName(input.file.name);
+
+  if (input.fileCount === 1) {
+    return input.title.length >= 3 ? input.title.slice(0, 160) : fileTitle;
+  }
+
+  if (!input.title) {
+    return fileTitle;
+  }
+
+  return `${input.title} - ${fileTitle}`.slice(0, 160);
+}
+
+function updateUploadQueueItem(
+  items: InteractiveUploadQueueItem[],
+  id: string,
+  update: Partial<InteractiveUploadQueueItem>,
+) {
+  return items.map((item) => (item.id === id ? { ...item, ...update } : item));
+}
+
+function wait(milliseconds: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
+}
+
 function InteractiveAssetUploadForm({
   mode,
   students,
@@ -94,14 +201,22 @@ function InteractiveAssetUploadForm({
   const copy = interactiveAssetCopy[mode];
   const formRef = useRef<HTMLFormElement | null>(null);
   const [errors, setErrors] = useState<InteractiveAssetFormErrors>({});
+  const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [uploadQueue, setUploadQueue] = useState<InteractiveUploadQueueItem[]>(
+    [],
+  );
+  const isPending = isUploading;
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const currentForm = event.currentTarget;
     const formData = new FormData(currentForm);
-    const asset = formData.get("asset");
+    const assetInput = currentForm.elements.namedItem("asset");
+    const assets =
+      assetInput instanceof HTMLInputElement && assetInput.files
+        ? Array.from(assetInput.files)
+        : [];
     const nextErrors: InteractiveAssetFormErrors = {};
     const title = String(formData.get("title") ?? "").trim();
     const teacherProfileId = String(formData.get("teacherProfileId") ?? "");
@@ -115,12 +230,12 @@ function InteractiveAssetUploadForm({
       nextErrors.studentProfileId = "Selecione um aluno.";
     }
 
-    if (title.length < 3) {
+    if (title.length > 0 && title.length < 3) {
       nextErrors.title = "Informe um titulo com pelo menos 3 caracteres.";
     }
 
-    if (!(asset instanceof File) || asset.size <= 0) {
-      nextErrors.asset = "Escolha um PDF ou imagem antes de criar.";
+    if (assets.length === 0 || assets.some((asset) => asset.size <= 0)) {
+      nextErrors.asset = "Escolha um ou mais PDFs/imagens antes de criar.";
     }
 
     if (Object.keys(nextErrors).length > 0) {
@@ -131,33 +246,133 @@ function InteractiveAssetUploadForm({
 
     setErrors({});
     setMessage(null);
-    startTransition(async () => {
+    const initialQueue = assets.map<InteractiveUploadQueueItem>((asset, index) => ({
+      fileName: asset.name,
+      id: `${asset.name}-${asset.size}-${asset.lastModified}-${index}`,
+      sizeBytes: asset.size,
+      status: "waiting",
+    }));
+
+    setUploadQueue(initialQueue);
+    setIsUploading(true);
+
+    let createdCount = 0;
+    let failedCount = 0;
+
+    for (const [index, asset] of assets.entries()) {
+      const queueItem = initialQueue[index];
+
+      setUploadQueue((current) =>
+        updateUploadQueueItem(current, queueItem.id, {
+          message: "Enviando arquivo para criacao.",
+          status: "sending",
+        }),
+      );
+
       try {
+        const itemFormData = new FormData();
+        itemFormData.set("teacherProfileId", teacherProfileId);
+        itemFormData.set("studentProfileId", studentProfileId);
+        itemFormData.set(
+          "title",
+          titleForInteractiveUpload({
+            file: asset,
+            fileCount: assets.length,
+            title,
+          }),
+        );
+        itemFormData.set(
+          "instructions",
+          String(formData.get("instructions") ?? ""),
+        );
+        itemFormData.set(
+          copy.dateField,
+          String(formData.get(copy.dateField) ?? ""),
+        );
+        itemFormData.set("asset", asset);
+
         const result =
           mode === "lesson"
-            ? await createInteractiveLesson(formData)
-            : await createInteractiveHomework(formData);
+            ? await createInteractiveLesson(itemFormData)
+            : await createInteractiveHomework(itemFormData);
 
-        setMessage(result.message);
-        setErrors(result.errors ?? {});
-
-        if (result.ok) {
-          formRef.current?.reset();
-          setErrors({});
-          router.refresh();
+        if (!result.ok) {
+          failedCount += 1;
+          setErrors(result.errors ?? {});
+          setUploadQueue((current) =>
+            updateUploadQueueItem(current, queueItem.id, {
+              message: result.message,
+              status: "error",
+            }),
+          );
+          continue;
         }
+
+        const wasOptimized = result.message.includes("PDF otimizado:");
+
+        if (wasOptimized) {
+          setUploadQueue((current) =>
+            updateUploadQueueItem(current, queueItem.id, {
+              message: result.message,
+              status: "optimized",
+            }),
+          );
+          await wait(350);
+        }
+
+        createdCount += 1;
+        setErrors({});
+        setUploadQueue((current) =>
+          updateUploadQueueItem(current, queueItem.id, {
+            message: result.message,
+            status: "created",
+          }),
+        );
+        router.refresh();
       } catch {
-        setMessage(
-          "A pagina estava desatualizada depois de uma publicacao. Atualize a pagina e tente enviar novamente.",
+        failedCount += 1;
+        setUploadQueue((current) =>
+          updateUploadQueueItem(current, queueItem.id, {
+            message:
+              "A pagina estava desatualizada ou a conexao falhou. Tente enviar este arquivo novamente.",
+            status: "error",
+          }),
         );
       }
-    });
+    }
+
+    if (assetInput instanceof HTMLInputElement) {
+      assetInput.value = "";
+    }
+
+    if (failedCount === 0) {
+      setMessage(
+        `${createdCount} arquivo(s) criado(s). Abra cada item na lista abaixo para desenhar as areas.`,
+      );
+
+      if (createdCount > 0) {
+        formRef.current?.reset();
+        setErrors({});
+        setUploadQueue((current) =>
+          current.map((item) => ({ ...item, status: "created" })),
+        );
+      }
+    } else {
+      setMessage(
+        `${createdCount} arquivo(s) criado(s), ${failedCount} com erro. Os arquivos com sucesso ja aparecem na lista.`,
+      );
+    }
+
+    setIsUploading(false);
+    router.refresh();
   }
 
   return (
     <form
       ref={formRef}
-      onSubmit={onSubmit}
+      onSubmit={(event) => {
+        void onSubmit(event);
+      }}
       className="rounded-lg border-2 border-primary/20 bg-white p-4 shadow-sm"
       noValidate
     >
@@ -215,7 +430,7 @@ function InteractiveAssetUploadForm({
             name="title"
             aria-invalid={Boolean(errors.title)}
             disabled={isPending}
-            placeholder={copy.titlePlaceholder}
+            placeholder={`${copy.titlePlaceholder} ou deixe vazio para usar o nome do arquivo`}
           />
           <FieldError errors={[{ message: errors.title }]} />
         </Field>
@@ -266,7 +481,7 @@ function InteractiveAssetUploadForm({
         </Field>
         <Field data-invalid={Boolean(errors.asset)}>
           <FieldLabel htmlFor={`interactive-${mode}-asset`}>
-            Arquivo PDF ou imagem
+            Arquivos PDF ou imagens
           </FieldLabel>
           <Input
             id={`interactive-${mode}-asset`}
@@ -275,7 +490,11 @@ function InteractiveAssetUploadForm({
             accept="application/pdf,image/png,image/jpeg,image/webp"
             aria-invalid={Boolean(errors.asset)}
             disabled={isPending}
+            multiple
           />
+          <p className="text-xs text-muted-foreground">
+            Cada arquivo vira uma atividade separada para o aluno selecionado.
+          </p>
           <FieldError errors={[{ message: errors.asset }]} />
         </Field>
         <Button
@@ -287,9 +506,51 @@ function InteractiveAssetUploadForm({
           ) : (
             <Plus data-icon="inline-start" />
           )}
-          {copy.buttonLabel}
+          {isPending ? "Criando fila..." : copy.buttonLabel}
         </Button>
       </div>
+
+      {uploadQueue.length > 0 ? (
+        <div className="mt-4 grid gap-2 rounded-lg border border-primary/15 bg-primary/[0.025] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <strong>Fila de uploads</strong>
+            <span className="text-xs text-muted-foreground">
+              {uploadQueue.length} arquivo(s)
+            </span>
+          </div>
+          <div className="grid gap-2">
+            {uploadQueue.map((item) => {
+              const meta = interactiveUploadStatusMeta[item.status];
+              const Icon = meta.Icon;
+
+              return (
+                <div
+                  key={item.id}
+                  className="grid gap-2 rounded-md border bg-white px-3 py-2 text-sm md:grid-cols-[1fr_auto] md:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{item.fileName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatUploadSize(item.sizeBytes)}
+                      {item.message ? ` - ${item.message}` : ""}
+                    </div>
+                  </div>
+                  <span
+                    className={`inline-flex w-fit items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${meta.className}`}
+                  >
+                    <Icon
+                      aria-hidden="true"
+                      className={item.status === "sending" ? "animate-spin" : ""}
+                      size={14}
+                    />
+                    {meta.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       {message ? (
         <p className="mt-3 rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">

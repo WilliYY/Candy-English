@@ -67,6 +67,7 @@ Tabelas e enums:
 - O PDF/imagem original deve permanecer visivel como fundo; areas editaveis sao overlays transparentes e nao devem redesenhar, cobrir ou substituir o arquivo.
 - Na tela do aluno, as areas de escrita, checkbox e desenho nao devem mostrar borda, fundo, placeholder ou caixa HTML propria; apenas a resposta digitada, a marca selecionada ou os tracos desenhados devem aparecer.
 - A criacao nova nasce sem campos automaticos; a teacher escolhe o tipo de area e desenha no tamanho desejado diretamente sobre a pagina.
+- A criacao de homework/aula interativa permite selecionar varios PDFs/imagens no mesmo formulario; cada arquivo e enviado em fila sequencial e vira uma atividade separada com titulo baseado no nome do arquivo quando o titulo manual fica vazio.
 - No editor da teacher, cada area manual deve exibir uma previa discreta do resultado final (`x` centralizado, texto exemplo alinhado como a resposta do aluno ou area de desenho) para deixar claro onde a resposta aparecera.
 - A teacher usa uma unica ferramenta `Texto` para areas de escrita; o editor escolhe internamente entre linha curta e area longa conforme a altura do quadro desenhado.
 - Campos de texto baixos devem aceitar lacunas precisas; campos maiores viram area de texto longa. O tamanho da fonte se adapta ao quadro desenhado pela teacher, usa toda a largura/altura util e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
@@ -101,6 +102,7 @@ Tabelas e enums:
 - A criacao interativa grava `fieldDetectionSource` como `manual` e nao cria `HomeworkInteractiveField` automaticamente.
 - A criacao de aula interativa grava `fieldDetectionSource` como `lesson-manual` e tambem nasce sem `HomeworkInteractiveField`.
 - A otimizacao de PDF reaproveita `src/lib/file-optimization.ts`, o mesmo helper do Candy XP, e retorna mensagem de tamanho original/final para a teacher quando houver tentativa.
+- O envio em lote nao cria endpoint novo: o client monta uma fila e chama a mesma server action segura uma vez por arquivo, em sequencia. Falha individual nao cancela arquivos ja criados, e a lista do editor e atualizada apos cada sucesso.
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
 - Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual por pixel e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
 - A marca de `CHECKBOX` deve ser exibida de forma adaptativa no editor, na resposta do aluno e na correcao, mantendo apenas o `X` visivel para o aluno.
@@ -123,7 +125,6 @@ Tabelas e enums:
 
 ## Pendencias
 
-- Nao ha importacao em lote de homeworks do Canva.
 - Nao ha exportacao da resposta preenchida como PDF final.
 - Nao ha auditoria especifica de cada autosave.
 
