@@ -75,6 +75,7 @@ Tabelas e enums:
 - A ferramenta `Desenho` cria uma area centralizada quando usada por clique e uma area livre quando usada por arrasto; o editor mostra uma previa discreta de canvas para orientar tamanho e posicao.
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar; a tecla `Delete` tambem remove a area selecionada quando o foco nao esta em um campo de texto.
 - O salvamento das areas deve confirmar a quantidade persistida no banco, devolver as areas salvas para reconciliar o estado local do editor e avisar a teacher quando houver alteracoes nao salvas antes de recarregar ou sair da pagina.
+- O editor salva automaticamente as areas alguns segundos depois que a teacher para de criar, mover, redimensionar ou excluir campos; o botao `Salvar areas` continua existindo para forcar a gravacao manual, e falha de autosave nao remove as areas da tela.
 - Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas, renderiza traco suavizado, aceita ponto por toque/clique e deve permitir desfazer o ultimo traco ou limpar o desenho sem apagar toda a atividade.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
@@ -105,6 +106,7 @@ Tabelas e enums:
 - A marca de `CHECKBOX` deve ser exibida de forma adaptativa no editor, na resposta do aluno e na correcao, mantendo apenas o `X` visivel para o aluno.
 - A interface mostra apenas `Texto` para criacao de escrita; no banco, a area e normalizada como `SHORT_TEXT` ou `LONG_TEXT` de acordo com a altura para manter compatibilidade com aluno, correcao e atividades antigas. A mesma base de estilo calcula fonte adaptativa e quantidade aproximada de linhas possiveis.
 - O salvamento do editor preserva IDs de areas ja existentes, cria apenas areas novas, remove as areas excluidas e valida a contagem final dentro da transacao. Isso evita que um save grande troque todos os IDs sem necessidade e reduz risco de diferenca entre editor, banco e tela do aluno.
+- O autosave do editor usa debounce, nao roda durante pointer drag e reaproveita a mesma server action segura do botao manual. Se a teacher continuar mexendo enquanto uma gravacao esta em andamento, o retorno apenas reconcilia IDs persistidos e deixa a nova alteracao pendente para o proximo autosave.
 - O desenho usa helper compartilhado para serializar, validar e renderizar os tracos no aluno e na correcao, evitando diferenca visual entre o que o aluno desenhou e o que a teacher revisa.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.

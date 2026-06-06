@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   useEffect,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -103,6 +104,13 @@ type FieldGeometry = {
   y: number;
 };
 
+type EditorSaveStatus =
+  | "idle"
+  | "saving"
+  | "manual-saved"
+  | "auto-saved"
+  | "error";
+
 type EditorAction =
   | {
       current: PagePoint;
@@ -128,6 +136,7 @@ type EditorAction =
 
 const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
+const AUTOSAVE_FIELDS_DELAY_MS = 2500;
 const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
   [
     [14, 62],
@@ -633,6 +642,7 @@ function InteractiveHomeworkCanvasEditor({
   selectedFieldId,
   selectedTool,
   setFields,
+  setIsEditingGesture,
   setSelectedFieldId,
 }: {
   fields: EditableHomeworkField[];
@@ -640,10 +650,12 @@ function InteractiveHomeworkCanvasEditor({
   selectedFieldId: string | null;
   selectedTool: EditorFieldTool;
   setFields: Dispatch<SetStateAction<EditableHomeworkField[]>>;
+  setIsEditingGesture: Dispatch<SetStateAction<boolean>>;
   setSelectedFieldId: Dispatch<SetStateAction<string | null>>;
 }) {
   const assetUrl = `/ava/homework-assets/${homework.id}`;
   const [activeAction, setActiveAction] = useState<EditorAction | null>(null);
+  const hasActiveAction = Boolean(activeAction);
 
   const draftGeometry = useMemo(() => {
     if (!activeAction || activeAction.kind !== "create") {
@@ -657,6 +669,16 @@ function InteractiveHomeworkCanvasEditor({
       activeAction.pageRect,
     );
   }, [activeAction, selectedTool]);
+
+  useEffect(() => {
+    setIsEditingGesture(hasActiveAction);
+
+    return () => {
+      if (hasActiveAction) {
+        setIsEditingGesture(false);
+      }
+    };
+  }, [hasActiveAction, setIsEditingGesture]);
 
   function beginCreate(
     event: ReactPointerEvent<HTMLDivElement>,
@@ -955,29 +977,37 @@ function InteractiveHomeworkEditorItem({
   const [savedFieldsSignature, setSavedFieldsSignature] = useState(
     initialFieldsSignature,
   );
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">(
-    "idle",
-  );
+  const [saveStatus, setSaveStatus] = useState<EditorSaveStatus>("idle");
+  const [isEditingGesture, setIsEditingGesture] = useState(false);
   const [selectedTool, setSelectedTool] = useState<EditorFieldTool>("TEXT");
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     homework.fields[0]?.id ?? null,
   );
+  const autosaveTimerRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
   const currentFieldsSignature = useMemo(
     () => getFieldsSignature(fields),
     [fields],
   );
+  const currentFieldsSignatureRef = useRef(currentFieldsSignature);
   const hasUnsavedChanges = currentFieldsSignature !== savedFieldsSignature;
   const isInteractiveLesson = homework.source === "LESSON";
   const entityLabel = isInteractiveLesson ? "aula interativa" : "homework";
+  const isPersisting = isSaving || saveStatus === "saving";
   const saveStatusLabel =
-    isSaving || saveInFlightRef.current
-      ? "Salvando"
+    isPersisting
+      ? "Salvando..."
       : saveStatus === "error"
         ? "Erro ao salvar"
         : hasUnsavedChanges
-          ? "Alteracoes nao salvas"
-          : "Salvo";
+          ? "Alteracoes pendentes"
+          : saveStatus === "auto-saved"
+            ? "Salvo automaticamente"
+            : "Salvo";
+
+  useEffect(() => {
+    currentFieldsSignatureRef.current = currentFieldsSignature;
+  }, [currentFieldsSignature]);
 
   useEffect(() => {
     setFields(homework.fields);
@@ -987,7 +1017,11 @@ function InteractiveHomeworkEditorItem({
         ? current
         : (homework.fields[0]?.id ?? null),
     );
-    setSaveStatus("idle");
+    setSaveStatus((current) =>
+      current === "auto-saved" || current === "manual-saved"
+        ? current
+        : "idle",
+    );
   }, [homework.fields, initialFieldsSignature]);
 
   useEffect(() => {
@@ -1053,78 +1087,178 @@ function InteractiveHomeworkEditorItem({
     };
   }, [isDeleting, isSaving, selectedFieldId]);
 
+  const clearAutosaveTimer = useCallback(() => {
+    if (autosaveTimerRef.current !== null) {
+      window.clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+  }, []);
+
+  const persistFields = useCallback(
+    (mode: "auto" | "manual") => {
+      if (saveInFlightRef.current || isSaving || isDeleting) {
+        return;
+      }
+
+      if (mode === "manual") {
+        clearAutosaveTimer();
+      }
+
+      setMessage(null);
+
+      if (fields.length === 0) {
+        if (mode === "manual") {
+          setMessage("Desenhe pelo menos uma area antes de salvar.");
+          setSaveStatus("error");
+        }
+        return;
+      }
+
+      const fieldsToSave = fields.map((field, index) => {
+        const normalizedField = normalizeTextFieldType(field);
+
+        return {
+          ...normalizedField,
+          label: normalizedField.label ?? undefined,
+          placeholder: normalizedField.placeholder ?? undefined,
+          sortOrder: index,
+        };
+      });
+      const expectedCount = fieldsToSave.length;
+      const selectedIndex = selectedFieldId
+        ? fields.findIndex((field) => field.id === selectedFieldId)
+        : -1;
+      const attemptSignature = currentFieldsSignature;
+
+      saveInFlightRef.current = true;
+      setSaveStatus("saving");
+
+      if (mode === "manual") {
+        setMessage(`Salvando ${expectedCount} area(s)...`);
+      }
+
+      startSaveTransition(async () => {
+        try {
+          const result = await saveInteractiveHomeworkFields({
+            fields: fieldsToSave,
+            homeworkId: homework.id,
+          });
+
+          if (!result.ok || !result.fields) {
+            setSaveStatus("error");
+            setMessage(
+              mode === "auto"
+                ? `Autosave falhou: ${result.message}`
+                : result.message,
+            );
+            return;
+          }
+
+          if (result.savedCount !== expectedCount) {
+            setSaveStatus("error");
+            setMessage(
+              `${result.savedCount ?? 0} de ${expectedCount} area(s) foram confirmadas. Revise antes de sair e tente salvar novamente.`,
+            );
+            return;
+          }
+
+          const persistedSignature = getFieldsSignature(result.fields);
+          const idByDraftId = new Map(
+            fieldsToSave
+              .map((field, index) => [field.id, result.fields?.[index]?.id])
+              .filter(
+                (entry): entry is [string, string] =>
+                  typeof entry[0] === "string" &&
+                  typeof entry[1] === "string",
+              ),
+          );
+
+          if (currentFieldsSignatureRef.current === attemptSignature) {
+            setFields(result.fields);
+            setSelectedFieldId(
+              result.fields[selectedIndex]?.id ??
+                result.fields[result.fields.length - 1]?.id ??
+                null,
+            );
+            setSaveStatus(mode === "auto" ? "auto-saved" : "manual-saved");
+          } else {
+            setFields((current) =>
+              current.map((field) => {
+                const persistedId = idByDraftId.get(field.id);
+
+                return persistedId && persistedId !== field.id
+                  ? { ...field, id: persistedId }
+                  : field;
+              }),
+            );
+            setSelectedFieldId((current) =>
+              current ? (idByDraftId.get(current) ?? current) : current,
+            );
+            setSaveStatus("idle");
+          }
+
+          setSavedFieldsSignature(persistedSignature);
+          setMessage(mode === "auto" ? null : result.message);
+          router.refresh();
+        } catch {
+          setSaveStatus("error");
+          setMessage(
+            mode === "auto"
+              ? "Autosave falhou. As areas continuam na tela; tente salvar novamente."
+              : "Erro ao salvar areas. Tente novamente antes de sair da pagina.",
+          );
+        } finally {
+          saveInFlightRef.current = false;
+        }
+      });
+    },
+    [
+      clearAutosaveTimer,
+      currentFieldsSignature,
+      fields,
+      homework.id,
+      isDeleting,
+      isSaving,
+      router,
+      selectedFieldId,
+    ],
+  );
+
+  useEffect(() => {
+    clearAutosaveTimer();
+
+    if (
+      !hasUnsavedChanges ||
+      isDeleting ||
+      isEditingGesture ||
+      isPersisting ||
+      fields.length === 0
+    ) {
+      return undefined;
+    }
+
+    autosaveTimerRef.current = window.setTimeout(() => {
+      autosaveTimerRef.current = null;
+      persistFields("auto");
+    }, AUTOSAVE_FIELDS_DELAY_MS);
+
+    return clearAutosaveTimer;
+  }, [
+    clearAutosaveTimer,
+    fields.length,
+    hasUnsavedChanges,
+    isDeleting,
+    isEditingGesture,
+    isPersisting,
+    persistFields,
+  ]);
+
   function saveFields() {
     if (saveInFlightRef.current || isSaving || isDeleting) {
       return;
     }
 
-    setMessage(null);
-
-    if (fields.length === 0) {
-      setMessage("Desenhe pelo menos uma area antes de salvar.");
-      setSaveStatus("error");
-      return;
-    }
-
-    const fieldsToSave = fields.map((field, index) => {
-      const normalizedField = normalizeTextFieldType(field);
-
-      return {
-        ...normalizedField,
-        label: normalizedField.label ?? undefined,
-        placeholder: normalizedField.placeholder ?? undefined,
-        sortOrder: index,
-      };
-    });
-    const expectedCount = fieldsToSave.length;
-    const selectedIndex = selectedFieldId
-      ? fields.findIndex((field) => field.id === selectedFieldId)
-      : -1;
-
-    saveInFlightRef.current = true;
-    setSaveStatus("idle");
-    setMessage(`Salvando ${expectedCount} area(s)...`);
-
-    startSaveTransition(async () => {
-      try {
-        const result = await saveInteractiveHomeworkFields({
-          fields: fieldsToSave,
-          homeworkId: homework.id,
-        });
-
-        if (!result.ok || !result.fields) {
-          setSaveStatus("error");
-          setMessage(result.message);
-          return;
-        }
-
-        if (result.savedCount !== expectedCount) {
-          setSaveStatus("error");
-          setMessage(
-            `${result.savedCount ?? 0} de ${expectedCount} area(s) foram confirmadas. Revise antes de sair e tente salvar novamente.`,
-          );
-          return;
-        }
-
-        setFields(result.fields);
-        setSavedFieldsSignature(getFieldsSignature(result.fields));
-        setSelectedFieldId(
-          result.fields[selectedIndex]?.id ??
-            result.fields[result.fields.length - 1]?.id ??
-            null,
-        );
-        setSaveStatus("saved");
-        setMessage(result.message);
-        router.refresh();
-      } catch {
-        setSaveStatus("error");
-        setMessage(
-          "Erro ao salvar areas. Tente novamente antes de sair da pagina.",
-        );
-      } finally {
-        saveInFlightRef.current = false;
-      }
-    });
+    persistFields("manual");
   }
 
   function deleteHomework() {
@@ -1177,7 +1311,7 @@ function InteractiveHomeworkEditorItem({
           <span
             className={cn(
               "rounded-full border px-2 py-1 font-semibold",
-              isSaving || saveInFlightRef.current
+              isPersisting
                 ? "border-amber-200 bg-amber-50 text-amber-700"
                 : saveStatus === "error"
                   ? "border-red-200 bg-red-50 text-red-700"
@@ -1189,7 +1323,7 @@ function InteractiveHomeworkEditorItem({
             {saveStatusLabel}
           </span>
           <Button
-            disabled={isDeleting || isSaving}
+            disabled={isDeleting || isPersisting}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
@@ -1245,7 +1379,7 @@ function InteractiveHomeworkEditorItem({
               })}
 
               <Button
-                disabled={!selectedFieldId || isSaving || isDeleting}
+                disabled={!selectedFieldId || isPersisting || isDeleting}
                 onClick={removeSelectedField}
                 size="sm"
                 title="Excluir area selecionada (Del)"
@@ -1257,7 +1391,7 @@ function InteractiveHomeworkEditorItem({
               </Button>
 
               <Button
-                disabled={fields.length === 0 || isSaving || isDeleting}
+                disabled={fields.length === 0 || isPersisting || isDeleting}
                 onClick={clearFields}
                 size="sm"
                 title="Remover todas as areas"
@@ -1269,12 +1403,12 @@ function InteractiveHomeworkEditorItem({
               </Button>
 
               <Button
-                disabled={isSaving || isDeleting || saveInFlightRef.current}
+                disabled={isPersisting || isDeleting || saveInFlightRef.current}
                 onClick={saveFields}
                 size="sm"
                 type="button"
               >
-                {isSaving ? (
+                {isPersisting ? (
                   <LoaderCircle
                     data-icon="inline-start"
                     className="animate-spin"
@@ -1282,7 +1416,7 @@ function InteractiveHomeworkEditorItem({
                 ) : (
                   <Save data-icon="inline-start" />
                 )}
-                {isSaving || saveInFlightRef.current
+                {isPersisting
                   ? "Salvando..."
                   : "Salvar areas"}
               </Button>
@@ -1302,6 +1436,7 @@ function InteractiveHomeworkEditorItem({
           selectedFieldId={selectedFieldId}
           selectedTool={selectedTool}
           setFields={setFields}
+          setIsEditingGesture={setIsEditingGesture}
           setSelectedFieldId={setSelectedFieldId}
         />
       </div>
