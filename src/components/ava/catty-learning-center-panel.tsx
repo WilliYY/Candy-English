@@ -1,17 +1,28 @@
 "use client";
 
 import {
+  AlertTriangle,
   Archive,
   BrainCircuit,
   CheckCircle2,
+  Clock3,
   Inbox,
   LoaderCircle,
+  MessageSquareText,
   RotateCcw,
   Send,
+  ShieldCheck,
   Sparkles,
+  WandSparkles,
   XCircle,
 } from "lucide-react";
-import { type FormEvent, useMemo, useState, useTransition } from "react";
+import {
+  type FormEvent,
+  type ReactNode,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import {
   createCattyLearningFromFeedback,
   createCattyLearningItem,
@@ -137,6 +148,73 @@ const statusStyles = {
   REJECTED: "border-rose-200 bg-rose-50 text-rose-700",
 } satisfies Record<CattyLearningStatusInput, string>;
 
+const statusToneStyles = {
+  APPROVED: {
+    bar: "bg-emerald-400",
+    buttonActive: "border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm",
+    buttonIdle:
+      "border-emerald-100 bg-white/85 text-emerald-800 hover:border-emerald-200 hover:bg-emerald-50/80",
+    hint: "Liberado para entrar no contexto.",
+    icon: "bg-emerald-100 text-emerald-700",
+  },
+  ARCHIVED: {
+    bar: "bg-slate-400",
+    buttonActive: "border-slate-300 bg-slate-50 text-slate-900 shadow-sm",
+    buttonIdle:
+      "border-slate-200 bg-white/85 text-slate-700 hover:border-slate-300 hover:bg-slate-50",
+    hint: "Guardado, nao entra no prompt.",
+    icon: "bg-slate-100 text-slate-600",
+  },
+  PENDING: {
+    bar: "bg-amber-400",
+    buttonActive: "border-amber-300 bg-amber-50 text-amber-900 shadow-sm",
+    buttonIdle:
+      "border-amber-100 bg-white/85 text-amber-800 hover:border-amber-200 hover:bg-amber-50/80",
+    hint: "Precisa de revisao humana.",
+    icon: "bg-amber-100 text-amber-700",
+  },
+  REJECTED: {
+    bar: "bg-rose-400",
+    buttonActive: "border-rose-300 bg-rose-50 text-rose-900 shadow-sm",
+    buttonIdle:
+      "border-rose-100 bg-white/85 text-rose-800 hover:border-rose-200 hover:bg-rose-50/80",
+    hint: "Nao sera usado pela Catty.",
+    icon: "bg-rose-100 text-rose-700",
+  },
+} satisfies Record<
+  CattyLearningStatusInput,
+  {
+    bar: string;
+    buttonActive: string;
+    buttonIdle: string;
+    hint: string;
+    icon: string;
+  }
+>;
+
+const statusAccentStyles = {
+  APPROVED: "border-l-emerald-300",
+  ARCHIVED: "border-l-slate-300",
+  PENDING: "border-l-amber-300",
+  REJECTED: "border-l-rose-300",
+} satisfies Record<CattyLearningStatusInput, string>;
+
+const feedbackKindStyles = {
+  CONFUSING: "border-amber-200 bg-amber-50 text-amber-800",
+  DISLIKED: "border-rose-200 bg-rose-50 text-rose-800",
+  LIKED: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  PATTERN_SUGGESTION: "border-sky-200 bg-sky-50 text-sky-800",
+  SHOULD_ANSWER: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800",
+} satisfies Record<CattyLearningFeedbackKindInput, string>;
+
+const feedbackKindAccentStyles = {
+  CONFUSING: "border-l-amber-300",
+  DISLIKED: "border-l-rose-300",
+  LIKED: "border-l-emerald-300",
+  PATTERN_SUGGESTION: "border-l-sky-300",
+  SHOULD_ANSWER: "border-l-fuchsia-300",
+} satisfies Record<CattyLearningFeedbackKindInput, string>;
+
 function parseTags(value: FormDataEntryValue | null) {
   if (typeof value !== "string") {
     return [];
@@ -160,6 +238,119 @@ function formatDate(value: string) {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function StatusIcon({ status }: { status: CattyLearningStatusInput }) {
+  if (status === "APPROVED") {
+    return <CheckCircle2 className="size-4" aria-hidden="true" />;
+  }
+
+  if (status === "REJECTED") {
+    return <XCircle className="size-4" aria-hidden="true" />;
+  }
+
+  if (status === "ARCHIVED") {
+    return <Archive className="size-4" aria-hidden="true" />;
+  }
+
+  return <Clock3 className="size-4" aria-hidden="true" />;
+}
+
+function StatusFilterButton({
+  active,
+  count,
+  onClick,
+  status,
+  unit,
+}: {
+  active: boolean;
+  count: number;
+  onClick: () => void;
+  status: CattyLearningStatusInput;
+  unit: string;
+}) {
+  const tone = statusToneStyles[status];
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-lg border p-3 text-left text-sm transition hover:-translate-y-0.5 hover:shadow-sm ${
+        active ? tone.buttonActive : tone.buttonIdle
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span
+          className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${tone.icon}`}
+        >
+          <StatusIcon status={status} />
+        </span>
+        {active ? (
+          <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em]">
+            Fila ativa
+          </span>
+        ) : null}
+      </div>
+      <span className="mt-3 block font-semibold">{statusLabels[status]}</span>
+      <span className="mt-1 block text-xs">
+        {count} {unit}
+      </span>
+      <span className="mt-2 block text-xs leading-5 opacity-80">{tone.hint}</span>
+      <span className={`mt-3 block h-1 rounded-full ${tone.bar}`} />
+    </button>
+  );
+}
+
+function AllFilterButton({
+  active,
+  label,
+  onClick,
+  total,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  total: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`w-fit rounded-lg border px-3 py-2 text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-sm ${
+        active
+          ? "border-primary bg-primary/10 text-primary"
+          : "border-border bg-white/80 text-muted-foreground hover:border-primary/25 hover:text-primary"
+      }`}
+    >
+      {label} <span className="ml-1 text-xs opacity-75">({total})</span>
+    </button>
+  );
+}
+
+function EmptyState({
+  description,
+  icon,
+  title,
+}: {
+  description: string;
+  icon: ReactNode;
+  title: string;
+}) {
+  return (
+    <div className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary">
+          {icon}
+        </span>
+        <div>
+          <p className="font-semibold text-foreground">{title}</p>
+          <p className="mt-1 leading-6">{description}</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function CattyLearningCenterPanel({
@@ -304,17 +495,30 @@ export function CattyLearningCenterPanel({
     <div className="grid gap-6 xl:grid-cols-[0.86fr_1.14fr]">
       <form
         onSubmit={handleCreate}
-        className="ava-soft-card flex flex-col gap-4 rounded-lg border p-5"
+        className="ava-soft-card flex flex-col gap-4 rounded-lg border p-5 shadow-sm"
       >
-        <div className="flex items-start gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <BrainCircuit aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="text-lg font-semibold">Catty Learning Center</h2>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Sugira uma memoria curta. A Catty so usa itens aprovados por Admin.
-            </p>
+        <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-primary/10 via-white to-fuchsia-50/70 p-4">
+          <div className="flex items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+              <BrainCircuit aria-hidden="true" />
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-white/80 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  Nova memoria
+                </span>
+                <span className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-amber-800">
+                  Revisao humana
+                </span>
+              </div>
+              <h2 className="mt-2 text-lg font-semibold">
+                Catty Learning Center
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Sugira uma regra, exemplo ou resposta curta. A Catty so usa
+                memoria aprovada por Admin.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -432,9 +636,14 @@ export function CattyLearningCenterPanel({
         </Field>
 
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-          Nao salve senha, pagamento, contrato, documento, telefone, token,
-          chave, email ou dados privados. A memoria deve ser exemplo curto e
-          aprovado.
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-1 size-4 shrink-0" aria-hidden="true" />
+            <p>
+              Nao salve senha, pagamento, contrato, documento, telefone, token,
+              chave, email ou dados privados. A memoria deve ser exemplo curto e
+              aprovado.
+            </p>
+          </div>
         </div>
 
         <Button type="submit" disabled={isPending} className="w-fit gap-2">
@@ -447,21 +656,26 @@ export function CattyLearningCenterPanel({
         </Button>
 
         {message ? (
-          <p className="rounded-lg border bg-white/80 p-3 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-primary/15 bg-primary/5 p-3 text-sm font-medium text-primary">
             {message}
           </p>
         ) : null}
       </form>
 
       <div className="flex flex-col gap-4">
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-lg border p-5 shadow-sm">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Inbox aria-hidden="true" />
               </span>
               <div>
-                <h2 className="text-lg font-semibold">Feedbacks recebidos</h2>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-semibold">Feedbacks recebidos</h2>
+                  <span className="rounded-full bg-primary/8 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+                    Fila do chat
+                  </span>
+                </div>
                 <p className="text-sm leading-6 text-muted-foreground">
                   Avaliacoes discretas feitas no chat da Catty. Edite antes de
                   transformar em aprendizado.
@@ -472,7 +686,7 @@ export function CattyLearningCenterPanel({
               {cattyLearningFeedbackKindValues.map((kind) => (
                 <span
                   key={kind}
-                  className="rounded-full bg-primary/8 px-2 py-1 font-semibold text-primary"
+                  className={`rounded-full border px-2 py-1 font-semibold ${feedbackKindStyles[kind]}`}
                 >
                   {feedbackKindLabels[kind]}: {feedbackKindCounts[kind]}
                 </span>
@@ -480,43 +694,38 @@ export function CattyLearningCenterPanel({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-2 md:grid-cols-4">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {cattyLearningStatusValues.map((status) => (
-              <button
+              <StatusFilterButton
                 key={status}
-                type="button"
+                active={feedbackStatusFilter === status}
+                count={feedbackCounts[status]}
                 onClick={() => setFeedbackStatusFilter(status)}
-                className={`rounded-lg border p-3 text-left text-sm transition ${
-                  feedbackStatusFilter === status
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-white/70 text-muted-foreground"
-                }`}
-              >
-                <span className="block font-semibold">
-                  {statusLabels[status]}
-                </span>
-                <span>{feedbackCounts[status]} feedback(s)</span>
-              </button>
+                status={status}
+                unit="feedback(s)"
+              />
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setFeedbackStatusFilter("ALL")}
-            className={`mt-3 w-fit rounded-lg border px-3 py-2 text-sm font-semibold transition ${
-              feedbackStatusFilter === "ALL"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-white/70 text-muted-foreground"
-            }`}
-          >
-            Ver todos os feedbacks
-          </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <AllFilterButton
+              active={feedbackStatusFilter === "ALL"}
+              label="Ver todos os feedbacks"
+              onClick={() => setFeedbackStatusFilter("ALL")}
+              total={feedbacks.length}
+            />
+            <span className="text-xs text-muted-foreground">
+              Use pendentes primeiro; aprovados viram referencia da Catty.
+            </span>
+          </div>
 
           <div className="mt-4 grid gap-3">
             {filteredFeedbacks.length === 0 ? (
-              <div className="rounded-lg border bg-white/70 p-4 text-sm text-muted-foreground">
-                Nenhum feedback nesta fila ainda.
-              </div>
+              <EmptyState
+                title="Nenhum feedback nesta fila"
+                description="Quando alguem avaliar uma resposta da Catty, ela aparece aqui com status e contexto."
+                icon={<MessageSquareText className="size-4" aria-hidden="true" />}
+              />
             ) : (
               filteredFeedbacks.map((feedback) => (
                 <FeedbackCard
@@ -532,51 +741,73 @@ export function CattyLearningCenterPanel({
           </div>
         </section>
 
-        <div className="flex items-center gap-2 pt-2">
-          <Sparkles aria-hidden="true" className="size-4 text-primary" />
-          <h2 className="text-lg font-semibold">Aprendizados da Catty</h2>
-        </div>
-        <div className="grid gap-3 md:grid-cols-4">
-          {cattyLearningStatusValues.map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => setStatusFilter(status)}
-              className={`rounded-lg border p-3 text-left text-sm transition ${
-                statusFilter === status
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-white/70 text-muted-foreground"
-              }`}
-            >
-              <span className="block font-semibold">{statusLabels[status]}</span>
-              <span>{counts[status]} item(ns)</span>
-            </button>
-          ))}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setStatusFilter("ALL")}
-          className={`w-fit rounded-lg border px-3 py-2 text-sm font-semibold transition ${
-            statusFilter === "ALL"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-border bg-white/70 text-muted-foreground"
-          }`}
-        >
-          Ver todos
-        </button>
-
-        {filteredItems.length === 0 ? (
-          <div className="ava-soft-card rounded-lg border p-5 text-sm text-muted-foreground">
-            Nenhum aprendizado nesta categoria ainda.
+        <section className="ava-soft-card rounded-lg border p-5 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-fuchsia-100 text-primary">
+                <Sparkles aria-hidden="true" />
+              </span>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-lg font-semibold">
+                    Aprendizados da Catty
+                  </h2>
+                  <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">
+                    Memoria aprovada
+                  </span>
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Itens aprovados entram no contexto. Pendentes ficam separados
+                  para revisao.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2 text-xs font-semibold text-emerald-800">
+              <ShieldCheck className="size-4" aria-hidden="true" />
+              <span>{counts.APPROVED} aprovado(s) em uso</span>
+            </div>
           </div>
-        ) : (
-          <div className="grid gap-3">
-            {filteredItems.map((item) => (
-              <article
-                key={item.id}
-                className="ava-soft-card rounded-lg border p-5"
-              >
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {cattyLearningStatusValues.map((status) => (
+              <StatusFilterButton
+                key={status}
+                active={statusFilter === status}
+                count={counts[status]}
+                onClick={() => setStatusFilter(status)}
+                status={status}
+                unit="item(ns)"
+              />
+            ))}
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <AllFilterButton
+              active={statusFilter === "ALL"}
+              label="Ver todos"
+              onClick={() => setStatusFilter("ALL")}
+              total={items.length}
+            />
+            <span className="text-xs text-muted-foreground">
+              Aprovado usa, pendente revisa, recusado bloqueia, arquivado guarda.
+            </span>
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="Nenhum aprendizado neste filtro"
+                description="Crie um aprendizado ou transforme um feedback em memoria para treinar a Catty com seguranca."
+                icon={<WandSparkles className="size-4" aria-hidden="true" />}
+              />
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-3">
+              {filteredItems.map((item) => (
+                <article
+                  key={item.id}
+                  className={`ava-soft-card rounded-lg border border-l-4 p-5 shadow-sm ${statusAccentStyles[item.status]}`}
+                >
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
@@ -691,10 +922,11 @@ export function CattyLearningCenterPanel({
                     </div>
                   ) : null}
                 </div>
-              </article>
-            ))}
-          </div>
-        )}
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );
@@ -710,11 +942,25 @@ function Block({
   value: string;
 }) {
   return (
-    <div className="rounded-lg border bg-white/70 p-3 text-sm">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+    <div
+      className={`rounded-lg border p-3 text-sm shadow-sm ${
+        strong
+          ? "border-emerald-200 bg-emerald-50/70"
+          : "border-border bg-white/75"
+      }`}
+    >
+      <span
+        className={`mb-1 block text-xs font-semibold uppercase tracking-[0.14em] ${
+          strong ? "text-emerald-700" : "text-muted-foreground"
+        }`}
+      >
         {label}
       </span>
-      <p className={strong ? "font-medium text-primary" : "text-muted-foreground"}>
+      <p
+        className={`whitespace-pre-wrap break-words leading-6 ${
+          strong ? "font-medium text-emerald-900" : "text-muted-foreground"
+        }`}
+      >
         {value}
       </p>
     </div>
@@ -767,14 +1013,18 @@ function FeedbackCard({
   const defaultTags = compactTags(feedback).join(", ");
 
   return (
-    <article className="rounded-lg border bg-white/75 p-4">
+    <article
+      className={`rounded-lg border border-l-4 bg-white/80 p-4 shadow-sm ${feedbackKindAccentStyles[feedback.kind]}`}
+    >
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold">
-                {feedbackKindLabels[feedback.kind]}
-              </h3>
+              <span
+                className={`rounded-full border px-2 py-1 text-xs font-semibold ${feedbackKindStyles[feedback.kind]}`}
+              >
+                Tipo: {feedbackKindLabels[feedback.kind]}
+              </span>
               <span
                 className={`rounded-full border px-2 py-1 text-xs font-semibold ${statusStyles[feedback.status]}`}
               >
@@ -787,7 +1037,7 @@ function FeedbackCard({
               {formatDate(feedback.createdAt)}
             </p>
           </div>
-          <span className="rounded-full bg-primary/8 px-2 py-1 text-xs font-semibold text-primary">
+          <span className="w-fit rounded-full border border-primary/10 bg-primary/8 px-2 py-1 text-xs font-semibold text-primary">
             {feedback.contextArea ?? "AVA"}
             {feedback.contextTask ? ` / ${feedback.contextTask}` : ""}
           </span>
@@ -813,9 +1063,12 @@ function FeedbackCard({
           </span>
         ) : null}
 
-        <details className="rounded-lg border bg-white/70 p-3">
+        <details className="rounded-lg border bg-white/75 p-3 shadow-sm">
           <summary className="cursor-pointer text-sm font-semibold text-primary">
-            {isAdmin ? "Editar e aprovar aprendizado" : "Editar e sugerir"}
+            <span className="inline-flex items-center gap-2">
+              <WandSparkles className="size-4" aria-hidden="true" />
+              {isAdmin ? "Editar e aprovar aprendizado" : "Editar e sugerir"}
+            </span>
           </summary>
           <form
             onSubmit={onCreateFromFeedback}
