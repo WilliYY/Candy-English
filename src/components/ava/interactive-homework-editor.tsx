@@ -1062,6 +1062,14 @@ function InteractiveHomeworkEditorItem({
   );
 
   function clearFields() {
+    const confirmed = window.confirm(
+      "Deseja mesmo limpar todas as areas?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     setFields([]);
     setSelectedFieldId(null);
     setMessage("Areas removidas. Desenhe novas areas no PDF e salve.");
