@@ -90,6 +90,7 @@ Cuidados:
 - A home nao usa mais o bloco intermediario do AVA; as entradas para o AVA ficam no header, hero, footer e rotas dedicadas.
 - Cards de admin/teacher devem usar contraste roxo suave, sem ficar em branco puro quando a tela precisar de hierarquia.
 - A barra lateral do AVA deve parecer uma area de trabalho clara: contraste maior que o fundo, grupos com borda suave e item ativo marcado com roxo solido.
+- A barra lateral do AVA deve acompanhar a rolagem da pagina, sem scroll interno proprio, para o card de perfil e os grupos abertos nao ficarem cortados ou sobrepostos.
 - No Student, a barra lateral pode ter acabamento mais gamificado e leve: card de perfil com ring/gradiente Candy, chips pequenos de estudo e bloco `Trilha Candy`, mantendo leitura operacional e sem expor telas tecnicas da Catty.
 - A area `Aulas e Materiais` do student deve usar aulas recolhidas por padrao, como lista operacional limpa; ao abrir uma aula, a atividade interativa ganha uma superficie ampla com status simples de conclusao em bolinha verde/vermelha.
 - Os paineis admin, teacher e student podem usar Candy XP como superficie de gamificacao: bordas de 8px, roxo/rosa da marca, barra amarela de progresso com brilho suave, trilha de niveis infinita, fontes de XP bem escaneaveis, streak, badges, ultimos eventos e slot de spotlight sem prometer jogo executavel antes da fase propria.

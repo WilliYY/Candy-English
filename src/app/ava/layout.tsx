@@ -316,7 +316,7 @@ export default async function AvaLayout({
     <div className="relative min-h-screen overflow-x-hidden bg-background">
       <AvaStudentBackdrop />
       <div className="relative z-10 grid min-h-screen lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="ava-sidebar-glass relative overflow-hidden border-b border-primary/15 backdrop-blur-2xl lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:border-primary/20">
+        <aside className="ava-sidebar-glass relative overflow-hidden border-b border-primary/15 backdrop-blur-2xl lg:border-b-0 lg:border-r lg:border-primary/20">
           <div className="flex h-full flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-5 lg:px-6 lg:py-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <BrandLogo
