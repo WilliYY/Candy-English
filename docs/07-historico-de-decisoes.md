@@ -417,9 +417,9 @@ Cada decisao deve conter:
 
 ### 2026-06-05 - Gestao humana da memoria pessoal da Catty
 
-- Decisao: criar `Memoria da Catty` em Admin, Teacher e Student. Admin gerencia tudo; Teacher ve a propria memoria e alunos vinculados; Student ve apenas a propria memoria e pode pedir correcao.
+- Decisao: criar `Memoria da Catty` para Admin e Teacher, mantendo Student apenas com a tela informativa `Catty aprendendo`. Admin gerencia tudo; Teacher ve a propria memoria e alunos vinculados.
 - Motivo: permitir que a Catty aprenda preferencias leves sem virar bagunca automatica, com revisao humana para corrigir erro, arquivar memoria, aprovar pendentes, remover dado sensivel e limpar historico pesado.
-- Impacto: `src/components/ava/catty-memory-panel.tsx`, `src/lib/catty-memory-management.ts`, `src/app/ava/catty-memory/actions.ts`, `src/lib/catty-history.ts`, `src/lib/catty-user-memory.ts`, paineis Admin/Teacher/Student, layout do AVA e docs oficiais.
+- Impacto: `src/components/ava/catty-memory-panel.tsx`, `src/lib/catty-memory-management.ts`, `src/app/ava/catty-memory/actions.ts`, `src/lib/catty-history.ts`, `src/lib/catty-user-memory.ts`, paineis Admin/Teacher, tela informativa Student, layout do AVA e docs oficiais.
 - Riscos/cuidados: memorias `FLAGGED`, `ARCHIVED` e `PENDING` nao entram no prompt; limpar historico apaga mensagens da Catty daquele contexto; remover dado sensivel nao deve registrar o valor anterior em evento.
 
 ### 2026-06-05 - Contexto Catty inicial no cadastro de aluno

@@ -33,7 +33,6 @@ import {
   type StudentCandyXpActivity,
 } from "@/components/ava/student-candy-xp-activities-panel";
 import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
-import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -43,7 +42,6 @@ import {
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
-import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
 import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
 
@@ -128,7 +126,6 @@ type StudentWorkspaceProps = {
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
   candyXpActivities: StudentCandyXpActivity[];
   cattyArtifactData: CattyArtifactManagementData;
-  cattyMemoryData: CattyMemoryManagementData;
   chatThreads: ChatThreadRow[];
   contracts: {
     createdAt: Date;
@@ -202,9 +199,9 @@ const taskMeta = {
     title: "Candy XP",
   },
   "catty-memory": {
-    description: "Veja preferencias leves que a Catty usa para te ajudar.",
+    description: "Entenda como a Catty aprende com voce de forma segura.",
     icon: BrainCircuit,
-    title: "Memoria da Catty",
+    title: "Catty aprendendo",
   },
   "catty-artifacts": {
     description: "Sugira temas fofos para os exemplos e memes da Catty.",
@@ -371,6 +368,89 @@ function ProfileCompletionCard({
   );
 }
 
+function StudentCattyLearningCard() {
+  return (
+    <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white/88 p-6 shadow-lg shadow-primary/10">
+        <div className="flex flex-col gap-5">
+          <div className="flex items-start gap-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+              <BrainCircuit aria-hidden="true" className="size-6" />
+            </span>
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-primary/10 bg-secondary/60 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                Study mode
+              </span>
+              <h3 className="mt-3 text-2xl font-semibold text-primary">
+                A Catty esta aprendendo com voce tambem
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Ela pode lembrar gostos, dificuldades e jeitos de explicar que
+                ajudam seu estudo. A parte de revisar e ajustar essas memorias
+                fica com a equipe Candy.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              {
+                label: "Seguro",
+                text: "Nada de senha, contrato, documento ou dado sensivel.",
+              },
+              {
+                label: "Leve",
+                text: "So resumos pequenos entram nas respostas.",
+              },
+              {
+                label: "Humano",
+                text: "Admin e teacher revisam quando precisar.",
+              },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-xl border border-primary/10 bg-secondary/35 p-4"
+              >
+                <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                  {item.label}
+                </p>
+                <p className="mt-2 text-sm leading-5 text-muted-foreground">
+                  {item.text}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-primary">
+            Se a Catty usar um exemplo estranho ou um tema que voce nao curte,
+            avise sua teacher ou ajuste em Estilo da Catty.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6 shadow-lg shadow-amber-200/30">
+        <div className="flex items-start gap-3">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-amber-950">
+            <Sparkles aria-hidden="true" className="size-5" />
+          </span>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-900">
+              Como isso aparece
+            </p>
+            <h4 className="mt-2 text-lg font-semibold text-primary">
+              Exemplos mais com a sua cara
+            </h4>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Com o tempo, a Catty pode usar temas que combinam com voce, como
+              games, futebol, desenhos, carros ou exemplos mais fofinhos.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function formatDateInput(value?: Date | null) {
   return value ? value.toISOString().slice(0, 10) : "";
 }
@@ -410,7 +490,6 @@ export function StudentWorkspace({
   candyXpPersistence,
   candyXpActivities,
   cattyArtifactData,
-  cattyMemoryData,
   chatThreads,
   contracts,
   currentUser,
@@ -615,7 +694,7 @@ export function StudentWorkspace({
           ) : null}
 
           {activeTask === "catty-memory" ? (
-            <CattyMemoryPanel data={cattyMemoryData} viewerRole="STUDENT" />
+            <StudentCattyLearningCard />
           ) : null}
 
           {activeTask === "catty-artifacts" ? (

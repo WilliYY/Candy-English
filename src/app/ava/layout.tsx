@@ -266,7 +266,7 @@ const navGroups = [
       {
         href: "/ava/student?task=catty-memory",
         icon: BrainCircuit,
-        label: "Memoria da Catty",
+        label: "Catty aprendendo",
       },
       {
         href: "/ava/student?task=catty-artifacts",
