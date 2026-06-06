@@ -1002,6 +1002,7 @@ model CattyUserArtifact {
   example         String?
   toneRule        String?
   status          CattyUserArtifactStatus   @default(PENDING)
+  isPrimary       Boolean                   @default(false)
   blockedReason   String?
   createdByUserId String?
   createdByUser   User?                     @relation("CattyUserArtifactCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
@@ -1015,6 +1016,7 @@ model CattyUserArtifact {
 
   @@unique([userId, themeId])
   @@index([userId, status])
+  @@index([userId, isPrimary])
   @@index([createdByUserId])
   @@index([updatedByUserId])
   @@index([status, updatedAt])

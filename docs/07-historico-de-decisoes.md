@@ -457,6 +457,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/layout.tsx`, `src/components/site/catty-widget.tsx`, `src/app/api/catty/chat/route.ts`, `src/lib/catty-artifact-balloons.ts`, smoke da Catty e docs oficiais.
 - Riscos/cuidados: carregar somente artefatos `ACTIVE` do proprio usuario, alternar com frases genericas, evitar repetir a frase atual no widget, respeitar `avoid_*`/status desativado e manter clareza em correcao ou explicacao seria.
 
+### 2026-06-06 - Catty Learning com gosto principal
+
+- Decisao: adicionar `CattyUserArtifact.isPrimary` e melhorar o painel `Catty Learning: gostos` para Admin/Teacher cadastrar gosto, marcar principal, pedir enriquecimento, revisar sugestoes, aprovar/recusar/arquivar e acompanhar uso/alertas.
+- Motivo: permitir que a equipe defina um gosto mais importante do aluno, como Betina/capivara ou Lucas/carros, sem aplicar automaticamente conteudo de busca e sem perder controle humano.
+- Impacto: `prisma/schema.prisma`, migration `20260606003000_catty_primary_artifacts`, `src/lib/catty-user-artifacts.ts`, `src/lib/catty-artifacts.ts`, `src/lib/validations/catty-artifacts.ts`, `src/components/ava/catty-artifacts-panel.tsx`, menus Admin/Teacher e docs oficiais.
+- Riscos/cuidados: `isPrimary` so prioriza artefato `ACTIVE`, Student nao marca principal sozinho, cada usuario deve ter no maximo um principal ativo por vez, contexto pesado vira alerta operacional e busca continua revisavel antes de ativar.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

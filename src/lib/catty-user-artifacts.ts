@@ -48,6 +48,7 @@ export type CattyUserArtifactRow = {
   emojis: string[];
   example: string | null;
   id: string;
+  isPrimary: boolean;
   label: string;
   lastUsedAt: string | null;
   sounds: string[];
@@ -101,6 +102,8 @@ export type CattyArtifactManagementData = {
 
 const ARTIFACT_CONTEXT_LIMIT = 8;
 const ARTIFACT_PANEL_LIMIT = 260;
+const CATTY_HEAVY_CONTEXT_WARNING_MESSAGES = 5000;
+const CATTY_HEAVY_CONTEXT_DANGER_MESSAGES = 25000;
 
 function toIso(value: Date | null | undefined) {
   return value ? value.toISOString() : null;
@@ -150,6 +153,16 @@ function getStatusForActor(input: {
   }
 
   return input.requestedStatus;
+}
+
+function getPrimaryForActor(input: {
+  actorRole: Role;
+  requestedPrimary?: boolean;
+  status: CattyUserArtifactStatusInput;
+}) {
+  return input.actorRole !== "STUDENT" &&
+    input.status === "ACTIVE" &&
+    Boolean(input.requestedPrimary);
 }
 
 function getMemorySourceForActor(role: Role) {
@@ -309,27 +322,45 @@ export async function upsertCattyUserArtifact(
     catchphrases: parsed.data.catchphrasesText,
     emojis: parsed.data.emojisText,
     example: parsed.data.example ?? null,
+    isPrimary: getPrimaryForActor({
+      actorRole: input.actorRole,
+      requestedPrimary: parsed.data.isPrimary,
+      status,
+    }),
     label: compactText(parsed.data.label, 64),
     sounds: parsed.data.soundsText,
     status,
     toneRule: parsed.data.toneRule ?? null,
     updatedByUserId: input.actorUserId,
   };
-  const artifact = existing
-    ? await prisma.cattyUserArtifact.update({
-        data,
-        where: {
-          id: existing.id,
-        },
-      })
-    : await prisma.cattyUserArtifact.create({
+  const artifact = await prisma.$transaction(async (tx) => {
+    if (data.isPrimary) {
+      await tx.cattyUserArtifact.updateMany({
         data: {
-          ...data,
-          createdByUserId: input.actorUserId,
-          themeId,
+          isPrimary: false,
+        },
+        where: {
           userId: parsed.data.targetUserId,
         },
       });
+    }
+
+    return existing
+      ? tx.cattyUserArtifact.update({
+          data,
+          where: {
+            id: existing.id,
+          },
+        })
+      : tx.cattyUserArtifact.create({
+          data: {
+            ...data,
+            createdByUserId: input.actorUserId,
+            themeId,
+            userId: parsed.data.targetUserId,
+          },
+        });
+  });
 
   await syncArtifactMemory({
     actorRole: input.actorRole,
@@ -410,20 +441,42 @@ export async function updateCattyUserArtifactStatus(
     requestedStatus: parsed.data.status,
   });
 
-  await prisma.cattyUserArtifact.update({
-    data: {
-      blockedReason:
-        status === "DISABLED"
-          ? parsed.data.blockedReason ?? "Tema marcado para nao usar."
-          : status === "ARCHIVED"
-            ? parsed.data.blockedReason ?? "Artefato arquivado."
-            : null,
-      status,
-      updatedByUserId: input.actorUserId,
-    },
-    where: {
-      id: artifact.id,
-    },
+  const shouldUpdatePrimary =
+    typeof parsed.data.isPrimary === "boolean" || status !== "ACTIVE";
+  const nextPrimary = getPrimaryForActor({
+    actorRole: input.actorRole,
+    requestedPrimary: parsed.data.isPrimary,
+    status,
+  });
+
+  await prisma.$transaction(async (tx) => {
+    if (nextPrimary) {
+      await tx.cattyUserArtifact.updateMany({
+        data: {
+          isPrimary: false,
+        },
+        where: {
+          userId: artifact.userId,
+        },
+      });
+    }
+
+    await tx.cattyUserArtifact.update({
+      data: {
+        blockedReason:
+          status === "DISABLED"
+            ? parsed.data.blockedReason ?? "Tema marcado para nao usar."
+            : status === "ARCHIVED"
+              ? parsed.data.blockedReason ?? "Artefato arquivado."
+              : null,
+        ...(shouldUpdatePrimary ? { isPrimary: nextPrimary } : {}),
+        status,
+        updatedByUserId: input.actorUserId,
+      },
+      where: {
+        id: artifact.id,
+      },
+    });
   });
 
   await syncArtifactMemory({
@@ -449,6 +502,9 @@ export async function getCattyUserArtifactContext(input: {
   const artifacts = await prisma.cattyUserArtifact.findMany({
     orderBy: [
       {
+        isPrimary: "desc",
+      },
+      {
         usageCount: "desc",
       },
       {
@@ -460,6 +516,7 @@ export async function getCattyUserArtifactContext(input: {
       emojis: true,
       example: true,
       id: true,
+      isPrimary: true,
       label: true,
       sounds: true,
       themeId: true,
@@ -555,7 +612,9 @@ function isCattyArtifactRecentUsageRow(
 
 function buildArtifactAlerts(input: {
   artifacts: CattyUserArtifactRow[];
+  conversationMessageCounts: Map<string, number>;
   recentUsages: CattyArtifactRecentUsageRow[];
+  users: CattyArtifactUserOption[];
 }) {
   const alerts: CattyArtifactAlertRow[] = [];
   const pendingByUser = new Map<string, { count: number; userName: string }>();
@@ -623,6 +682,31 @@ function buildArtifactAlerts(input: {
     }
   }
 
+  for (const [userId, totalMessages] of input.conversationMessageCounts.entries()) {
+    const userName =
+      input.artifacts.find((artifact) => artifact.userId === userId)?.userName ??
+      input.users.find((user) => user.id === userId)?.label ??
+      "Aluno";
+
+    if (totalMessages >= CATTY_HEAVY_CONTEXT_DANGER_MESSAGES) {
+      alerts.push({
+        id: `context-danger:${userId}`,
+        message: `${userName} tem ${totalMessages} mensagens da Catty guardadas. Revisar e limpar historico se estiver pesado.`,
+        severity: "danger",
+        userId,
+        userName,
+      });
+    } else if (totalMessages >= CATTY_HEAVY_CONTEXT_WARNING_MESSAGES) {
+      alerts.push({
+        id: `context-warning:${userId}`,
+        message: `${userName} tem ${totalMessages} mensagens da Catty guardadas. Monitorar contexto acumulado.`,
+        severity: "warning",
+        userId,
+        userName,
+      });
+    }
+  }
+
   return alerts.slice(0, 50);
 }
 
@@ -649,7 +733,8 @@ export async function getCattyArtifactManagementData(
     };
   }
 
-  const [users, artifacts, enrichments, messages] = await Promise.all([
+  const [users, artifacts, enrichments, messages, conversations] =
+    await Promise.all([
     prisma.user.findMany({
       orderBy: [{ name: "asc" }, { email: "asc" }],
       select: {
@@ -697,6 +782,7 @@ export async function getCattyArtifactManagementData(
         emojis: true,
         example: true,
         id: true,
+        isPrimary: true,
         label: true,
         lastUsedAt: true,
         sounds: true,
@@ -728,7 +814,7 @@ export async function getCattyArtifactManagementData(
       },
     }),
     getCattyArtifactEnrichmentsForUsers(accessibleUserIds),
-    prisma.cattyMessage.findMany({
+      prisma.cattyMessage.findMany({
       orderBy: {
         createdAt: "desc",
       },
@@ -758,8 +844,23 @@ export async function getCattyArtifactManagementData(
         },
         role: "CATTY",
       },
-    }),
-  ]);
+      }),
+      prisma.cattyConversation.findMany({
+        select: {
+          _count: {
+            select: {
+              messages: true,
+            },
+          },
+          userId: true,
+        },
+        where: {
+          userId: {
+            in: accessibleUserIds,
+          },
+        },
+      }),
+    ]);
 
   const userRows: CattyArtifactUserOption[] = users.map((user) => ({
     detectedInterests: user.cattyUserMemories
@@ -780,6 +881,7 @@ export async function getCattyArtifactManagementData(
     emojis: artifact.emojis,
     example: artifact.example,
     id: artifact.id,
+    isPrimary: artifact.isPrimary,
     label: artifact.label,
     lastUsedAt: toIso(artifact.lastUsedAt),
     sounds: artifact.sounds,
@@ -826,11 +928,21 @@ export async function getCattyArtifactManagementData(
         .filter(isCattyArtifactRecentUsageRow);
     })
     .slice(0, 40);
+  const conversationMessageCounts = conversations.reduce((map, conversation) => {
+    map.set(
+      conversation.userId,
+      (map.get(conversation.userId) ?? 0) + conversation._count.messages,
+    );
+
+    return map;
+  }, new Map<string, number>());
 
   return {
     alerts: buildArtifactAlerts({
       artifacts: artifactRows,
+      conversationMessageCounts,
       recentUsages,
+      users: userRows,
     }),
     artifacts: artifactRows,
     enrichments,

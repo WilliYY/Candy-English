@@ -10,6 +10,7 @@ import {
   PencilLine,
   ShieldAlert,
   Sparkles,
+  Star,
 } from "lucide-react";
 import { type FormEvent, useMemo, useState, useTransition } from "react";
 import {
@@ -57,9 +58,9 @@ const statusStyles = {
 const enrichmentStatusLabels = {
   APPROVED: "Aprovada",
   ARCHIVED: "Arquivada",
-  FAILED: "Com aviso",
-  PENDING: "Na fila",
-  READY_FOR_REVIEW: "Revisar",
+  FAILED: "Erro/aviso",
+  PENDING: "Pendente",
+  READY_FOR_REVIEW: "Sugestao pronta",
   REJECTED: "Recusada",
 } satisfies Record<CattyArtifactEnrichmentStatusInput, string>;
 
@@ -93,6 +94,10 @@ function getText(formData: FormData, key: string) {
   const value = formData.get(key);
 
   return typeof value === "string" ? value : "";
+}
+
+function getBoolean(formData: FormData, key: string) {
+  return formData.get(key) === "on" || formData.get(key) === "true";
 }
 
 function listToText(items: string[]) {
@@ -167,6 +172,7 @@ export function CattyArtifactsPanel({
       catchphrasesText: getText(formData, "catchphrasesText"),
       emojisText: getText(formData, "emojisText"),
       example: getText(formData, "example"),
+      isPrimary: getBoolean(formData, "isPrimary"),
       label: getText(formData, "label"),
       soundsText: getText(formData, "soundsText"),
       status: canManage
@@ -234,11 +240,13 @@ export function CattyArtifactsPanel({
     artifactId: string,
     status: CattyUserArtifactStatusInput,
     blockedReason?: string,
+    isPrimary?: boolean,
   ) {
     startTransition(async () => {
       const result = await changeCattyUserArtifactStatus({
         artifactId,
         blockedReason,
+        isPrimary,
         status,
       });
 
@@ -282,10 +290,12 @@ export function CattyArtifactsPanel({
               <Palette aria-hidden="true" />
             </span>
             <div>
-              <h2 className="text-lg font-semibold">Estilo da Catty</h2>
+              <h2 className="text-lg font-semibold">
+                Catty Learning: gostos e artefatos
+              </h2>
               <p className="text-sm leading-6 text-muted-foreground">
-                Ajuste temas, emojis e bordoes por aluno. So estilos ativos
-                entram nas respostas reais da Catty.
+                Cadastre gostos, revise buscas, aprove artefatos e controle o
+                que a Catty usa por aluno.
               </p>
             </div>
           </div>
@@ -526,6 +536,24 @@ export function CattyArtifactsPanel({
               />
             </Field>
 
+            {canManage ? (
+              <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                <input
+                  type="checkbox"
+                  name="isPrimary"
+                  className="mt-1 size-4 accent-primary"
+                  disabled={isPending}
+                />
+                <span>
+                  <strong className="block text-foreground">
+                    Marcar como gosto principal
+                  </strong>
+                  A Catty prioriza este tema quando ele combinar naturalmente
+                  com a mensagem.
+                </span>
+              </label>
+            ) : null}
+
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={isPending} className="gap-2">
                 {isPending ? (
@@ -635,11 +663,11 @@ export function CattyArtifactsPanel({
                 </span>
                 <div>
                   <h2 className="text-lg font-semibold">
-                    Sugestoes enriquecidas
+                    Sugestoes de busca e enriquecimento
                   </h2>
                   <p className="text-sm leading-6 text-muted-foreground">
-                    Busca/cache criam sugestoes, mas a Catty so usa depois de
-                    aprovacao humana.
+                    Status: pendente, sugestao pronta, aprovada, recusada,
+                    arquivada ou erro. Nada entra na Catty sem revisao humana.
                   </p>
                 </div>
               </div>
@@ -696,6 +724,14 @@ export function CattyArtifactsPanel({
                           Atualizado: {formatDateTime(enrichment.updatedAt)}
                         </span>
                         {enrichment.cacheId ? <span>cache ativo</span> : null}
+                        {enrichment.reviewedByName ? (
+                          <span>Revisado por: {enrichment.reviewedByName}</span>
+                        ) : null}
+                        {enrichment.reviewedAt ? (
+                          <span>
+                            Revisado: {formatDateTime(enrichment.reviewedAt)}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -928,6 +964,22 @@ export function CattyArtifactsPanel({
                             />
                           </Field>
 
+                          <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              name="isPrimary"
+                              className="mt-1 size-4 accent-primary"
+                              disabled={isPending}
+                            />
+                            <span>
+                              <strong className="block text-foreground">
+                                Aprovar como gosto principal
+                              </strong>
+                              Use se este for o tema que a Catty deve priorizar
+                              para esse aluno.
+                            </span>
+                          </label>
+
                           <input type="hidden" name="blockedReason" value="" />
 
                           <Button
@@ -998,8 +1050,14 @@ export function CattyArtifactsPanel({
                           statusStyles[artifact.status],
                         )}
                       >
-                        {statusLabels[artifact.status]}
-                      </span>
+                          {statusLabels[artifact.status]}
+                        </span>
+                      {artifact.isPrimary ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                          <Star className="size-3.5" aria-hidden="true" />
+                          Principal
+                        </span>
+                      ) : null}
                       <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
                         {artifact.themeId}
                       </span>
@@ -1116,6 +1174,23 @@ export function CattyArtifactsPanel({
                         </Field>
                       </div>
 
+                      <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                        <input
+                          type="checkbox"
+                          name="isPrimary"
+                          defaultChecked={artifact.isPrimary}
+                          className="mt-1 size-4 accent-primary"
+                          disabled={isPending || artifact.status !== "ACTIVE"}
+                        />
+                        <span>
+                          <strong className="block text-foreground">
+                            Gosto principal
+                          </strong>
+                          Use para priorizar este artefato quando houver mais
+                          de um tema ativo do aluno.
+                        </span>
+                      </label>
+
                       <div className="grid gap-3 md:grid-cols-2">
                         <Field>
                           <FieldLabel htmlFor={`artifact-emojis-${artifact.id}`}>
@@ -1219,6 +1294,22 @@ export function CattyArtifactsPanel({
                       >
                         <CheckCircle2 aria-hidden="true" />
                         Ativar
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={
+                          isPending ||
+                          artifact.status !== "ACTIVE" ||
+                          artifact.isPrimary
+                        }
+                        onClick={() =>
+                          updateStatus(artifact.id, "ACTIVE", undefined, true)
+                        }
+                      >
+                        <Star aria-hidden="true" />
+                        Principal
                       </Button>
                       <Button
                         type="button"

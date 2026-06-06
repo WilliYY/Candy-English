@@ -270,7 +270,7 @@ const taskMeta = {
   "catty-artifacts": {
     description: "Ajuste temas, emojis e bordoes seguros dos alunos.",
     icon: Palette,
-    title: "Estilo da Catty",
+    title: "Catty Learning: gostos",
   },
   contratos: {
     description: "Envie e visualize contratos PDF de alunos.",

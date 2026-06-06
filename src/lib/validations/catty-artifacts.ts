@@ -111,6 +111,7 @@ export const cattyUserArtifactUpsertSchema = z
       140,
       "O exemplo pode ter no maximo 140 caracteres.",
     ),
+    isPrimary: z.boolean().optional().default(false),
     label: z
       .string()
       .trim()
@@ -197,6 +198,7 @@ export const cattyUserArtifactStatusUpdateSchema = z
       220,
       "O motivo pode ter no maximo 220 caracteres.",
     ),
+    isPrimary: z.boolean().optional(),
     status: z.enum(cattyUserArtifactStatusValues),
   })
   .superRefine((value, ctx) => {

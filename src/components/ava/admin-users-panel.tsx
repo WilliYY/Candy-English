@@ -255,7 +255,7 @@ const taskMeta = {
   },
   "catty-artifacts": {
     icon: Sparkles,
-    title: "Estilo da Catty",
+    title: "Catty Learning: gostos",
   },
   "editar-site": {
     icon: Wrench,

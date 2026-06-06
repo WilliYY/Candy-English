@@ -153,9 +153,9 @@ Enums:
 - `CattyUserMemory.NOTE` com key `contexto_catty` pode ser semeada no cadastro direto de aluno ou no aceite de pre-cadastro, criando uma memoria inicial curta para a Catty usar quando ainda nao houver contexto suficiente do aluno.
 - `CattyMemoryEvent` registra criacao, atualizacao, mudanca de status, correcao, conflito marcado, remocao de dado sensivel e sugestao de limpeza da memoria pessoal sem salvar conversa inteira.
 - Memoria pessoal da Catty deve ser resumo curto e nao pode conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API, pix, cartao ou dado privado.
-- `CattyUserArtifact` guarda temas configuraveis por usuario para a Catty usar como artefato de personalidade: tema, label, emojis permitidos, bordoes, sons, exemplo curto, regra de tom, status, uso recente e autores de criacao/alteracao.
+- `CattyUserArtifact` guarda temas configuraveis por usuario para a Catty usar como artefato de personalidade: tema, label, emojis permitidos, bordoes, sons, exemplo curto, regra de tom, status, marcador `isPrimary`, uso recente e autores de criacao/alteracao.
 - `CattyUserArtifact.status=ACTIVE` e o unico status que entra no prompt/fallback; `PENDING` fica aguardando aprovacao, `DISABLED` bloqueia o tema para aquele usuario e `ARCHIVED` preserva historico sem uso.
-- `CattyUserArtifact.userId + themeId` e unico para evitar varios cadastros do mesmo tema no mesmo aluno. Admin pode gerenciar todos, Teacher apenas alunos vinculados e Student apenas sugerir/desativar o proprio tema.
+- `CattyUserArtifact.userId + themeId` e unico para evitar varios cadastros do mesmo tema no mesmo aluno. `isPrimary=true` marca o gosto principal daquele aluno e ganha prioridade leve no contexto; quando outro tema vira principal, os demais do mesmo usuario sao desmarcados. Admin pode gerenciar todos, Teacher apenas alunos vinculados e Student apenas sugerir/desativar o proprio tema.
 - Artefatos da Catty nao podem conter senha, pagamento, contrato, documento, telefone, endereco, email, token, chave/API ou tema sensivel/inadequado. Quando um tema fica ativo, a helper tambem sincroniza memoria `FAVORITE_THEME/artifact_*`; quando fica desativado, sincroniza `STYLE/avoid_*`.
 - `CattyArtifactEnrichmentCache` guarda sugestoes cacheadas por provedor/tema/label para evitar pesquisar o mesmo interesse repetidamente. O cache salva apenas resumo curto, arrays de emojis/sons/bordoes/exemplos, vocabulario curto, cautelas e fontes resumidas; nao deve guardar textos longos copiados da internet.
 - `CattyArtifactEnrichment` guarda a fila de enriquecimento de temas para um usuario alvo. `READY_FOR_REVIEW`/`PENDING`/`FAILED` ficam aguardando revisao, `APPROVED` registra aprovacao e vinculo ao `CattyUserArtifact`, `REJECTED` e `ARCHIVED` ficam fora da Catty.
@@ -195,6 +195,7 @@ Enums:
 - Migration `20260605230000_catty_user_memory` adiciona memoria pessoal da Catty por usuario e eventos de auditoria/limpeza.
 - Migration `20260605234500_catty_user_artifacts` adiciona artefatos configuraveis da Catty por usuario.
 - Migration `20260605235500_catty_artifact_enrichment` adiciona cache e fila revisavel para enriquecimento de artefatos da Catty.
+- Migration `20260606003000_catty_primary_artifacts` adiciona `CattyUserArtifact.isPrimary` e indice por usuario/principal para priorizar um gosto aprovado.
 
 ## Riscos ao alterar esta parte
 

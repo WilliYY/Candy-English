@@ -158,7 +158,7 @@ const navGroups = [
       {
         href: "/ava/admin?task=catty-artifacts",
         icon: Palette,
-        label: "Estilo da Catty",
+        label: "Catty Learning: gostos",
         section: "Sistema",
       },
       {
@@ -226,7 +226,7 @@ const navGroups = [
       {
         href: "/ava/teacher?task=catty-artifacts",
         icon: Palette,
-        label: "Estilo da Catty",
+        label: "Catty Learning: gostos",
         section: "Comunicacao",
       },
       {

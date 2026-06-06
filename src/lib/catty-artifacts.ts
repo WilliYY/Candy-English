@@ -31,6 +31,7 @@ export type CattyArtifactDefinition = {
   example: string;
   genericHints: string[];
   id: CattyArtifactThemeId;
+  isPrimary?: boolean;
   keywords: string[];
   label: string;
   sounds: string[];
@@ -66,6 +67,7 @@ export type CattyArtifactCustomItem = {
   emojis: string[];
   example?: string | null;
   id: string;
+  isPrimary?: boolean;
   label: string;
   sounds: string[];
   themeId: string;
@@ -328,6 +330,7 @@ function mergeCustomArtifactWithTheme(
     emojis: custom.emojis.length > 0 ? custom.emojis : base.emojis,
     example: custom.example || base.example,
     genericHints: catchphrases.length > 0 ? catchphrases : base.genericHints,
+    isPrimary: custom.isPrimary,
     keywords: [...new Set([...base.keywords, ...getCustomArtifactKeywords(custom)])],
     label: custom.label || base.label,
     sounds,
@@ -350,6 +353,7 @@ function customArtifactToDefinition(
     example: custom.example || `I like ${custom.label}.`,
     genericHints: catchphrases,
     id: custom.themeId,
+    isPrimary: custom.isPrimary,
     keywords: [...new Set(getCustomArtifactKeywords(custom))],
     label: custom.label,
     sounds,
@@ -426,6 +430,7 @@ function scoreArtifactFromMemory(input: {
 
   return (
     6 +
+    (input.theme.isPrimary ? 3 : 0) +
     (messageHit ? 7 : 0) +
     Math.min(input.memory.confidence / 25, 4) +
     Math.min(input.memory.usageCount ?? 0, 6) * 0.2
