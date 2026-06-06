@@ -86,13 +86,13 @@ const navGroups = [
       {
         href: "/ava/teacher?task=criar-aula",
         icon: BookOpen,
-        label: "Criar aula",
+        label: "Criar/Ver Aulas",
         section: "Aulas",
       },
       {
         href: "/ava/teacher?task=criar-homework",
         icon: ClipboardCheck,
-        label: "Criar homework",
+        label: "Criar/Ver Homework",
         section: "Aulas",
       },
       {
@@ -184,13 +184,13 @@ const navGroups = [
       {
         href: "/ava/teacher?task=criar-aula",
         icon: BookOpen,
-        label: "Criar aula",
+        label: "Criar/Ver Aulas",
         section: "Aulas",
       },
       {
         href: "/ava/teacher?task=criar-homework",
         icon: ClipboardCheck,
-        label: "Criar homework",
+        label: "Criar/Ver Homework",
         section: "Aulas",
       },
       {

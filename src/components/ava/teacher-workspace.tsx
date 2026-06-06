@@ -283,14 +283,14 @@ const taskMeta = {
     title: "Corrigir homework",
   },
   "criar-aula": {
-    description: "Crie uma aula interativa por PDF ou imagem do Canva.",
+    description: "Crie e veja aulas interativas por PDF ou imagem do Canva.",
     icon: BookOpen,
-    title: "Criar aula",
+    title: "Criar/Ver Aulas",
   },
   "criar-homework": {
-    description: "Crie uma atividade online ligada a uma aula.",
+    description: "Crie e veja homeworks online ligadas a uma aula.",
     icon: ClipboardCheck,
-    title: "Criar homework",
+    title: "Criar/Ver Homework",
   },
   mensagens: {
     description: "Espaco de conversa com alunos vinculados a teacher.",

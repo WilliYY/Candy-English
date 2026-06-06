@@ -47,8 +47,8 @@ Ao receber o prompt minimo, o agente deve:
 - Teacher desenha campos manualmente sobre o arquivo.
 - Campos do aluno ficam invisiveis; aparecem apenas texto, marcacoes e desenhos preenchidos.
 - Campo de desenho funciona com mouse/dedo e permite desfazer o ultimo traco.
-- Atividades criadas por `Criar aula` aparecem em `Aulas e Materiais`.
-- Atividades criadas por `Criar homework` aparecem em `Responder homework`.
+- Atividades criadas por `Criar/Ver Aulas` aparecem em `Aulas e Materiais`.
+- Atividades criadas por `Criar/Ver Homework` aparecem em `Responder homework`.
 - Corrigir homework mostra o PDF com a entrega marcada e separa `Aguardando correcao` de `Corrigidos`.
 - Itens de correcao ficam minimizados por padrao.
 - Contratos PDF sao visualizados no AVA por rota protegida.
