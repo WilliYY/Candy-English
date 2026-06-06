@@ -96,6 +96,7 @@ function assertPromptContext(input: string, id: string) {
     "Regra de escopo",
     "Memoria aprovada da Catty",
     "Memoria pessoal segura do usuario",
+    "Continuidade conversacional",
     "Artefato de personalidade sugerido",
     "Regra para ADMIN/TEACHER",
     "Conversa recente",
@@ -273,6 +274,81 @@ function main() {
     !sensitiveReply.includes("Ana"),
     "fallback usou nome em mensagem sensivel de senha.",
   );
+
+  const simpleConversationCases = [
+    {
+      history: [],
+      mustInclude: ["What else do you like", "chocolate"],
+      topic: "chocolate",
+      userMessage: "I like chocolate.",
+    },
+    {
+      history: [],
+      mustInclude: ["vruum", "What color cars"],
+      topic: "cars",
+      userMessage: "I like cars.",
+    },
+    {
+      history: [],
+      mustInclude: ["capybara", "My favorite animal is a capybara"],
+      topic: "capybara",
+      userMessage: "My favorite animal is capybara.",
+    },
+    {
+      history: [],
+      mustInclude: ["past sentence", "one more thing in the past"],
+      topic: "soccer yesterday",
+      userMessage: "I played soccer yesterday.",
+    },
+    {
+      history: [{ from: "user" as const, text: "I like chocolate." }],
+      mustInclude: ["almost there", "Complete it"],
+      topic: "chocolate",
+      userMessage: "I like",
+    },
+  ];
+
+  for (const example of simpleConversationCases) {
+    const plan = buildCattyResponsePlan(
+      example.userMessage,
+      { area: "student", task: "resumo" },
+      example.history,
+      { firstName: "Ana", role: "STUDENT" },
+    );
+    const prompt = buildCattyInput(
+      example.userMessage,
+      example.history,
+      { area: "student", task: "resumo" },
+      plan,
+      { firstName: "Ana", role: "STUDENT" },
+    );
+    const normalizedFallback = normalizeText(plan.fallbackReply);
+
+    assertCondition(
+      plan.intent === "practice_english",
+      `${example.userMessage}: frase simples nao virou pratica de ingles.`,
+    );
+    assertCondition(
+      Boolean(plan.continuity),
+      `${example.userMessage}: plano nao tem continuidade conversacional.`,
+    );
+    assertCondition(
+      prompt.includes("Continuidade conversacional") &&
+        prompt.includes(example.topic),
+      `${example.userMessage}: prompt nao levou assunto da continuidade.`,
+    );
+    assertCondition(
+      !normalizedFallback.includes("write one small english sentence"),
+      `${example.userMessage}: fallback voltou a responder generico.`,
+    );
+
+    for (const expected of example.mustInclude) {
+      assertCondition(
+        normalizedFallback.includes(normalizeText(expected)),
+        `${example.userMessage}: fallback nao contem "${expected}". Resposta: ${plan.fallbackReply}`,
+      );
+    }
+  }
 
   const learningPlan = buildCattyResponsePlan("corrige", {
     area: "student",

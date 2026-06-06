@@ -30,6 +30,7 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 - Puxar assunto aleatorio para vocabulario, frase curta ou pratica de English.
 - Pedir contexto quando faltar texto, frase, enunciado ou palavra.
 - Fazer no maximo uma pergunta de continuidade.
+- Quando o aluno mandar uma frase curta em ingles, manter o mesmo assunto, corrigir so o necessario e fazer uma pergunta relacionada.
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
 - Usar artefatos por interesse como tempero leve, no maximo um por resposta, somente quando combinarem com a mensagem.
@@ -41,6 +42,28 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 - Usar gestao humana para corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado sem colocar `FLAGGED`, `ARCHIVED` ou `PENDING` no prompt.
 - Usar feedback do widget apenas como fila de revisao; Teacher sugere, Admin aprova globalmente.
 - Usar auto-sugestao apenas como fila pendente; nunca aprender conteudo automaticamente direto do usuario.
+
+## Continuidade conversacional
+
+A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don't like...`, `My favorite...`, `I have...`, `I can...`, `I want...`, `I am...`, `She/He likes...`, `Today I...`, `Yesterday I...`, `I went...`, `I played...`). Quando isso acontece, o plano de resposta guarda o padrao, o assunto principal, uma microcorrecao quando houver e uma pergunta curta sugerida. Esse mini-contexto entra no prompt da IA e no fallback local, junto com historico recente, memorias pessoais e artefatos aprovados do aluno.
+
+| # | Antes generico | Depois esperado |
+|---|---|---|
+| 1 | `I like chocolate.` -> `Write one small English sentence.` | `Awnn, nice sentence. What else do you like? Try: I like chocolate and ____.` |
+| 2 | `I like cars.` -> `Let's practice English.` | `Uwau, vruum vruum. You like cars! What color cars do you like?` |
+| 3 | `My favorite animal is capybara.` -> `Nice.` | `Miauw, capybara mode. Cute choice! Can you say: My favorite animal is a capybara?` |
+| 4 | `I don't like broccoli.` -> `Ok.` | `Awnn, good sentence. What do you like instead? Try: I like ____.` |
+| 5 | `I have a dog.` -> `Send a sentence.` | `Uwau, good sentence. Can you add a color, number or detail?` |
+| 6 | `I can swim.` -> `Practice more.` | `Uwau, good sentence. Can you make one more sentence with I can?` |
+| 7 | `I want pizza.` -> `Tell me more.` | `Uwau, good sentence. Can you add why? Try: I want pizza because ____.` |
+| 8 | `I am happy.` -> `Good.` | `Uwau, good sentence. Can you add why? Try: I am happy because ____.` |
+| 9 | `She likes games.` -> `Great.` | `Uwau, good sentence. Who likes it too?` |
+| 10 | `Today I study.` -> `Good practice.` | `Miauw, good time sentence. What will you do next today?` |
+| 11 | `Yesterday I watched a movie.` -> `Ok.` | `Miauw, good time sentence. Can you say one more thing in the past?` |
+| 12 | `I went to school.` -> `Nice.` | `Uwau, past sentence spotted. Who went with you?` |
+| 13 | `I played soccer yesterday.` -> `Good.` | `Uwau, past sentence spotted. Can you say one more thing in the past?` |
+| 14 | `I like` -> `I don't understand.` | `Awnn, almost there. Complete it with one small word or idea.` |
+| 15 | Historico `I like chocolate.` e depois `I like` -> resposta sem memoria | `Awnn, almost there. Complete it...` mantendo `chocolate` como assunto recente no prompt. |
 
 ## Exemplos internos
 

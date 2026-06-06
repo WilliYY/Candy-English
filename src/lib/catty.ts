@@ -60,8 +60,33 @@ type CattyScopeTopic =
   | "health"
   | "legal";
 
+type CattySimpleEnglishPattern =
+  | "am"
+  | "can"
+  | "dislike"
+  | "favorite"
+  | "have"
+  | "like"
+  | "played"
+  | "third_person_likes"
+  | "today"
+  | "want"
+  | "went"
+  | "yesterday";
+
+export type CattyConversationContinuityPlan = {
+  correction?: string;
+  historyTopic?: string;
+  isIncomplete: boolean;
+  pattern: CattySimpleEnglishPattern;
+  prompt: string;
+  question: string;
+  topic: string;
+};
+
 export type CattyResponsePlan = {
   confidence: "high" | "medium" | "low";
+  continuity?: CattyConversationContinuityPlan;
   fallbackReply: string;
   intent: CattyIntent;
   instruction: string;
@@ -180,6 +205,7 @@ const englishSignals = [
   "do",
   "does",
   "english",
+  "favorite",
   "good",
   "grammar",
   "has",
@@ -189,11 +215,15 @@ const englishSignals = [
   "help",
   "hi",
   "how",
+  "i",
   "is",
+  "like",
+  "likes",
   "learn",
   "mean",
   "practice",
   "phrase",
+  "played",
   "say",
   "sentence",
   "she",
@@ -201,10 +231,12 @@ const englishSignals = [
   "should",
   "study",
   "they",
+  "today",
   "what",
   "went",
   "why",
   "word",
+  "yesterday",
 ];
 
 const disallowedCattyTerms = [
@@ -743,6 +775,362 @@ function getRecentUserContext(history: CattyMessage[], currentText: string) {
     );
 }
 
+function stripCattyAddress(text: string) {
+  return text.replace(/^\/?catty\b[:,\s-]*/i, "").trim();
+}
+
+function cleanSimpleEnglishTopic(value: string) {
+  return value
+    .replace(/[_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/[.!?,;:]+$/g, "")
+    .trim()
+    .slice(0, 80);
+}
+
+function isIncompleteSimpleEnglishTopic(value: string) {
+  const normalized = normalizeText(value).replace(/[_\s.]+/g, " ").trim();
+
+  return (
+    normalized.length === 0 ||
+    normalized === "and" ||
+    normalized === "because" ||
+    normalized === "to" ||
+    normalized === "very"
+  );
+}
+
+function startsWithArticle(value: string) {
+  return /^(?:a|an|the)\s+/i.test(value.trim());
+}
+
+function needsFavoriteAnimalArticle(topic: string) {
+  const normalizedTopic = normalizeText(topic);
+  const words = getWordTokens(topic);
+
+  return (
+    words.length > 0 &&
+    words.length <= 2 &&
+    !startsWithArticle(topic) &&
+    !normalizedTopic.endsWith("s")
+  );
+}
+
+function getSimpleEnglishFavoriteCorrection(
+  favoriteKind: string,
+  topic: string,
+) {
+  const normalizedKind = normalizeText(favoriteKind);
+
+  if (!normalizedKind.includes("animal") || !needsFavoriteAnimalArticle(topic)) {
+    return "";
+  }
+
+  return `My favorite animal is a ${topic}.`;
+}
+
+function getSimpleEnglishPracticeMatch(text: string):
+  | {
+      favoriteKind?: string;
+      pattern: CattySimpleEnglishPattern;
+      topic: string;
+    }
+  | null {
+  const sentence = stripCattyAddress(text)
+    .replace(/[“”]/g, '"')
+    .replace(/[’]/g, "'")
+    .trim();
+  const patterns: Array<{
+    favoriteKindIndex?: number;
+    pattern: CattySimpleEnglishPattern;
+    regex: RegExp;
+    topicIndex: number;
+  }> = [
+    {
+      pattern: "dislike",
+      regex: /^i\s+don'?t\s+like\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "like",
+      regex: /^i\s+like\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      favoriteKindIndex: 1,
+      pattern: "favorite",
+      regex: /^my\s+favorite\s+([a-zA-Z\s-]{2,32})\s+is\s*(.*)$/i,
+      topicIndex: 2,
+    },
+    {
+      pattern: "have",
+      regex: /^i\s+have\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "can",
+      regex: /^i\s+can\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "want",
+      regex: /^i\s+want\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "am",
+      regex: /^i\s+am\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "third_person_likes",
+      regex: /^(?:she|he)\s+likes\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "today",
+      regex: /^today\s+i\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "yesterday",
+      regex: /^yesterday\s+i\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "went",
+      regex: /^i\s+went\s*(.*)$/i,
+      topicIndex: 1,
+    },
+    {
+      pattern: "played",
+      regex: /^i\s+played\s*(.*)$/i,
+      topicIndex: 1,
+    },
+  ];
+
+  for (const pattern of patterns) {
+    const match = sentence.match(pattern.regex);
+
+    if (!match) {
+      continue;
+    }
+
+    return {
+      favoriteKind:
+        pattern.favoriteKindIndex === undefined
+          ? undefined
+          : cleanSimpleEnglishTopic(match[pattern.favoriteKindIndex] ?? ""),
+      pattern: pattern.pattern,
+      topic: cleanSimpleEnglishTopic(match[pattern.topicIndex] ?? ""),
+    };
+  }
+
+  return null;
+}
+
+function isSimpleEnglishPracticeCandidate(text: string) {
+  const sentence = stripCattyAddress(text);
+  const normalized = normalizeText(sentence);
+  const tokens = getWordTokens(sentence);
+
+  if (
+    tokens.length < 2 ||
+    tokens.length > 16 ||
+    /[?]/.test(sentence) ||
+    hasAny(normalized, [
+      "answer",
+      "api",
+      "code",
+      "correct",
+      "exercise",
+      "help",
+      "homework",
+      "question",
+      "teacher",
+      "translate",
+    ])
+  ) {
+    return false;
+  }
+
+  return Boolean(getSimpleEnglishPracticeMatch(sentence));
+}
+
+function getRecentSimpleEnglishTopic(
+  history: CattyMessage[],
+  currentText: string,
+) {
+  const normalizedCurrent = normalizeText(stripCattyAddress(currentText)).trim();
+
+  for (const message of [...history].reverse()) {
+    if (message.from !== "user") {
+      continue;
+    }
+
+    const normalizedMessage = normalizeText(stripCattyAddress(message.text)).trim();
+
+    if (normalizedMessage === normalizedCurrent) {
+      continue;
+    }
+
+    const match = getSimpleEnglishPracticeMatch(message.text);
+
+    if (match?.topic && !isIncompleteSimpleEnglishTopic(match.topic)) {
+      return match.topic;
+    }
+  }
+
+  return "";
+}
+
+function buildSimpleEnglishContinuationQuestion(input: {
+  favoriteKind?: string;
+  pattern: CattySimpleEnglishPattern;
+  topic: string;
+}) {
+  const normalizedTopic = normalizeText(input.topic);
+
+  if (isIncompleteSimpleEnglishTopic(input.topic)) {
+    if (input.pattern === "favorite") {
+      return "Complete it with one favorite thing: My favorite animal is ____.";
+    }
+
+    if (input.pattern === "dislike") {
+      return "Complete it like this: I don't like ____, but I like ____.";
+    }
+
+    return "Complete it with one small word or idea.";
+  }
+
+  if (input.pattern === "like") {
+    if (/\b(?:car|cars)\b/.test(normalizedTopic)) {
+      return "What color cars do you like?";
+    }
+
+    return `What else do you like? Try: I like ${input.topic} and ____.`;
+  }
+
+  if (input.pattern === "dislike") {
+    return "What do you like instead? Try: I like ____.";
+  }
+
+  if (input.pattern === "favorite") {
+    const correction = getSimpleEnglishFavoriteCorrection(
+      input.favoriteKind ?? "",
+      input.topic,
+    );
+
+    if (correction) {
+      return `Can you say: ${correction}`;
+    }
+
+    return `Nice choice. Why do you like ${input.topic}?`;
+  }
+
+  if (input.pattern === "have") {
+    return "Can you add a color, number or detail?";
+  }
+
+  if (input.pattern === "can") {
+    return "Can you make one more sentence with I can?";
+  }
+
+  if (input.pattern === "want") {
+    return `Can you add why? Try: I want ${input.topic} because ____.`;
+  }
+
+  if (input.pattern === "am") {
+    return "Can you add why? Try: I am happy because ____.";
+  }
+
+  if (input.pattern === "third_person_likes") {
+    return "Who likes it too?";
+  }
+
+  if (input.pattern === "today") {
+    return "What will you do next today?";
+  }
+
+  if (input.pattern === "went") {
+    return "Who went with you?";
+  }
+
+  if (input.pattern === "played" || input.pattern === "yesterday") {
+    return "Can you say one more thing in the past?";
+  }
+
+  return "Tell me one more thing.";
+}
+
+function buildCattyConversationContinuityPlan(
+  text: string,
+  history: CattyMessage[] = [],
+): CattyConversationContinuityPlan | undefined {
+  if (!isSimpleEnglishPracticeCandidate(text)) {
+    return undefined;
+  }
+
+  const match = getSimpleEnglishPracticeMatch(text);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const isIncomplete = isIncompleteSimpleEnglishTopic(match.topic);
+  const correction =
+    match.pattern === "favorite" && !isIncomplete
+      ? getSimpleEnglishFavoriteCorrection(match.favoriteKind ?? "", match.topic)
+      : "";
+  const question = buildSimpleEnglishContinuationQuestion(match);
+  const historyTopic = getRecentSimpleEnglishTopic(history, text);
+  const topic = isIncomplete && historyTopic ? historyTopic : match.topic;
+
+  return {
+    correction: correction || undefined,
+    historyTopic: historyTopic || undefined,
+    isIncomplete,
+    pattern: match.pattern,
+    prompt: [
+      `Frase simples de pratica detectada (${match.pattern}).`,
+      topic ? `Assunto principal: ${topic}.` : "Assunto principal incompleto.",
+      historyTopic ? `Assunto recente do aluno: ${historyTopic}.` : "",
+      correction ? `Microcorrecao sugerida: ${correction}` : "",
+      `Pergunta curta sugerida: ${question}`,
+      "Continue o mesmo assunto; elogie ou corrija de leve e faca apenas uma pergunta relacionada.",
+    ]
+      .filter(Boolean)
+      .join(" "),
+    question,
+    topic,
+  };
+}
+
+function formatCattyContinuityPromptContext(
+  continuity?: CattyConversationContinuityPlan,
+) {
+  if (!continuity) {
+    return "Nenhuma frase simples detectada.";
+  }
+
+  return [
+    `Padrao: ${continuity.pattern}.`,
+    continuity.topic
+      ? `Assunto principal: ${continuity.topic}.`
+      : "Assunto principal incompleto.",
+    continuity.historyTopic
+      ? `Assunto recente no historico: ${continuity.historyTopic}.`
+      : "",
+    continuity.correction
+      ? `Microcorrecao: ${continuity.correction}`
+      : "",
+    `Pergunta sugerida: ${continuity.question}`,
+    continuity.prompt,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function hasRecentContext(history: CattyMessage[], currentText: string) {
   return Boolean(getRecentUserContext(history, currentText));
 }
@@ -824,6 +1212,10 @@ function detectCattyIntent(
 
   if (hasTranslationSignal(text)) {
     return { confidence: "high", intent: "translate_sentence" };
+  }
+
+  if (isSimpleEnglishPracticeCandidate(text)) {
+    return { confidence: "high", intent: "practice_english" };
   }
 
   if (scopeTopic) {
@@ -1317,6 +1709,57 @@ function personalizeCattyReply(
   );
 }
 
+function buildSimpleEnglishContinuityReply(
+  continuity: CattyConversationContinuityPlan,
+) {
+  const normalizedTopic = normalizeText(continuity.topic);
+
+  if (continuity.isIncomplete) {
+    return `Awnn, almost there 😺 ${continuity.question}`;
+  }
+
+  if (
+    continuity.pattern === "favorite" &&
+    continuity.correction &&
+    hasAny(normalizedTopic, ["capivara", "capybara"])
+  ) {
+    return "Miauw, capybara mode 🦫✨ Cute choice! Can you say: My favorite animal is a capybara?";
+  }
+
+  if (
+    continuity.pattern === "like" &&
+    /\b(?:car|cars)\b/.test(normalizedTopic)
+  ) {
+    return "Uwau, vruum vruum 🚗 You like cars! What color cars do you like?";
+  }
+
+  if (continuity.correction) {
+    return `Awnn, tiny fix 😺 ${continuity.correction} ${continuity.question}`;
+  }
+
+  if (continuity.pattern === "like") {
+    return `Awnn, nice sentence 😺 ${continuity.question}`;
+  }
+
+  if (continuity.pattern === "dislike") {
+    return `Awnn, good sentence 😺 ${continuity.question}`;
+  }
+
+  if (continuity.pattern === "favorite") {
+    return `Miauw, cute choice ✨ ${continuity.question}`;
+  }
+
+  if (continuity.pattern === "played" || continuity.pattern === "went") {
+    return `Uwau, past sentence spotted 🎯 ${continuity.question}`;
+  }
+
+  if (continuity.pattern === "today" || continuity.pattern === "yesterday") {
+    return `Miauw, good time sentence ✨ ${continuity.question}`;
+  }
+
+  return `Uwau, good sentence 😺 ${continuity.question}`;
+}
+
 function buildPlannedEnglishReply(
   text: string,
   context: CattyPageContext | undefined,
@@ -1329,6 +1772,7 @@ function buildPlannedEnglishReply(
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
+  const continuity = buildCattyConversationContinuityPlan(text, history);
 
   if (intent === "code_api_request") {
     return buildCodeApiEnglishReply();
@@ -1362,6 +1806,17 @@ function buildPlannedEnglishReply(
 
   if (intent === "lesson_material") {
     return buildLessonMaterialEnglishReply();
+  }
+
+  if (intent === "practice_english" && continuity) {
+    return personalizeCattyReply(buildSimpleEnglishContinuityReply(continuity), {
+      context,
+      history,
+      intent,
+      language: "English",
+      sessionContext,
+      text,
+    });
   }
 
   if (intent === "ready_answer_request") {
@@ -1815,10 +2270,12 @@ export function buildCattyResponsePlan(
   sessionContext?: CattySessionContext,
 ): CattyResponsePlan {
   const { confidence, intent } = detectCattyIntent(text, context);
+  const continuity = buildCattyConversationContinuityPlan(text, history);
   const language = isEnglishMessage(text) ? "English" : "Portuguese";
 
   return {
     confidence,
+    continuity,
     fallbackReply: buildPlannedFallbackReply(
       text,
       context,
@@ -2039,6 +2496,7 @@ export function buildCattyInput(
     "Regra de uso do nome: se houver primeiro nome seguro, use de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao em toda resposta nem em assunto sensivel.",
     "Regra de roteamento interno: Gemini e o padrao; OpenAI so quando a mensagem chama Catty; se provedores falharem, usar fallback local; baloes automaticos nao chamam IA.",
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
+    "Regra de continuidade: quando a mensagem atual for uma frase curta em ingles, mantenha o mesmo assunto, elogie ou corrija de leve e faca uma pergunta curta relacionada. Nao responda generico nem troque de tema.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",
     "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
     "Regra de memoria aprovada: use no maximo 3 memorias do Catty Learning Center apenas como guia de estilo, exemplo ou vocabulario; nao trate como dado interno do aluno e nao invente informacoes.",
@@ -2052,6 +2510,8 @@ export function buildCattyInput(
     getCattyLearningPromptLine(learningContext),
     "Memoria pessoal segura do usuario:",
     getCattyUserMemoryPromptLine(userMemoryContext),
+    "Continuidade conversacional:",
+    formatCattyContinuityPromptContext(plan.continuity),
     "Artefato de personalidade sugerido:",
     formatCattyArtifactPromptContext(artifactSelection, {
       history,
