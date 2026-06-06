@@ -4,16 +4,27 @@ import {
   Archive,
   BrainCircuit,
   CheckCircle2,
+  Clock3,
   Database,
   Eraser,
   Flag,
   LoaderCircle,
+  MessageSquareText,
   PencilLine,
   ShieldAlert,
   Sparkles,
   Trash2,
+  UserRound,
 } from "lucide-react";
-import { type FormEvent, useMemo, useState, useTransition } from "react";
+import {
+  type ComponentType,
+  type FormEvent,
+  type ReactNode,
+  type SVGProps,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import {
   changeCattyUserMemoryStatus,
   clearCattyConversationHistory,
@@ -59,6 +70,23 @@ const statusLabels = {
   PENDING: "Pendente",
 } satisfies Record<CattyUserMemoryStatusInput, string>;
 
+const statusDescriptions = {
+  ACTIVE: "Entra no contexto da Catty",
+  ARCHIVED: "Guardada fora do prompt",
+  FLAGGED: "Precisa de revisao humana",
+  PENDING: "Aguardando aprovacao",
+} satisfies Record<CattyUserMemoryStatusInput, string>;
+
+const statusIcons = {
+  ACTIVE: CheckCircle2,
+  ARCHIVED: Archive,
+  FLAGGED: ShieldAlert,
+  PENDING: Sparkles,
+} satisfies Record<
+  CattyUserMemoryStatusInput,
+  ComponentType<SVGProps<SVGSVGElement>>
+>;
+
 const statusStyles = {
   ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700",
   ARCHIVED: "border-slate-200 bg-slate-50 text-slate-600",
@@ -102,6 +130,30 @@ function getText(formData: FormData, key: string) {
   const value = formData.get(key);
 
   return typeof value === "string" ? value : "";
+}
+
+function EmptyCard({
+  children,
+  icon: Icon,
+  title,
+}: {
+  children: ReactNode;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  title: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-primary/20 bg-white/72 p-6 text-sm text-muted-foreground shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary">
+          <Icon aria-hidden="true" className="size-5" />
+        </span>
+        <div>
+          <p className="font-semibold text-primary">{title}</p>
+          <p className="mt-1 leading-6">{children}</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
@@ -156,6 +208,14 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
       ),
     [data.memories],
   );
+  const activeUserLabel =
+    userFilter === "ALL"
+      ? "Todos os usuarios"
+      : data.users.find((user) => user.id === userFilter)?.label ??
+        "Usuario filtrado";
+  const heavyConversationCount = filteredConversations.filter(
+    (conversation) => conversation.isHeavy,
+  ).length;
 
   function handleCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -231,60 +291,106 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(280px,0.88fr)_minmax(0,1.12fr)]">
       <div className="flex flex-col gap-4">
-        <section className="ava-soft-card rounded-lg border p-5">
-          <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <BrainCircuit aria-hidden="true" />
+        <section className="ava-soft-card relative overflow-hidden rounded-2xl border p-5">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-primary/12 via-secondary/55 to-amber-100/70"
+          />
+          <div className="relative flex items-start gap-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+              <BrainCircuit aria-hidden="true" className="size-6" />
             </span>
-            <div>
-              <h2 className="text-lg font-semibold">Memoria da Catty</h2>
-              <p className="text-sm leading-6 text-muted-foreground">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                Controle seguro
+              </span>
+              <h2 className="mt-3 text-2xl font-semibold text-primary">
+                Memoria da Catty
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Preferencias leves, dificuldades e estilo por usuario. Apenas
                 memorias ativas entram no prompt da Catty.
               </p>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {cattyUserMemoryStatusValues.map((status) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() => setStatusFilter(status)}
-                className={cn(
-                  "rounded-lg border p-3 text-left text-sm transition",
-                  statusFilter === status
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-white/70 text-muted-foreground",
-                )}
-              >
-                <span className="block font-semibold">
-                  {statusLabels[status]}
-                </span>
-                <span>{counts[status]} item(ns)</span>
-              </button>
-            ))}
+          <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
+            {cattyUserMemoryStatusValues.map((status) => {
+              const StatusIcon = statusIcons[status];
+
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={cn(
+                    "group rounded-2xl border p-4 text-left text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+                    statusFilter === status
+                      ? "border-primary/40 bg-primary text-primary-foreground shadow-lg shadow-primary/18"
+                      : "border-primary/12 bg-white/78 text-muted-foreground hover:border-primary/25 hover:bg-white",
+                  )}
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span>
+                      <span className="block font-semibold">
+                        {statusLabels[status]}
+                      </span>
+                      <span
+                        className={cn(
+                          "mt-1 block text-xs leading-5",
+                          statusFilter === status
+                            ? "text-primary-foreground/78"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {statusDescriptions[status]}
+                      </span>
+                    </span>
+                    <span
+                      className={cn(
+                        "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                        statusFilter === status
+                          ? "bg-white/15 text-primary-foreground"
+                          : "bg-primary/8 text-primary",
+                      )}
+                    >
+                      <StatusIcon aria-hidden="true" className="size-4" />
+                    </span>
+                  </span>
+                  <strong
+                    className={cn(
+                      "mt-3 block text-2xl",
+                      statusFilter === status
+                        ? "text-primary-foreground"
+                        : "text-primary",
+                    )}
+                  >
+                    {counts[status]}
+                  </strong>
+                </button>
+              );
+            })}
           </div>
 
           <button
             type="button"
             onClick={() => setStatusFilter("ALL")}
             className={cn(
-              "mt-3 rounded-lg border px-3 py-2 text-sm font-semibold transition",
+              "relative mt-3 rounded-full border px-4 py-2 text-sm font-semibold transition",
               statusFilter === "ALL"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-white/70 text-muted-foreground",
+                ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "border-primary/15 bg-white/75 text-primary hover:border-primary/30 hover:bg-white",
             )}
           >
             Ver todas
           </button>
         </section>
 
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-sm">
               <ShieldAlert aria-hidden="true" />
             </span>
             <div>
@@ -298,15 +404,15 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
 
           <div className="mt-4 grid gap-2">
             {data.alerts.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-white/70 p-4 text-sm text-muted-foreground">
-                Tudo calmo por aqui. Sem alertas de memoria no momento.
-              </p>
+              <EmptyCard icon={CheckCircle2} title="Tudo calmo por aqui">
+                Sem alertas de memoria no momento.
+              </EmptyCard>
             ) : (
               data.alerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={cn(
-                    "rounded-lg border p-3 text-sm leading-6",
+                    "rounded-2xl border p-3 text-sm leading-6 shadow-sm",
                     alertStyles[alert.severity],
                   )}
                 >
@@ -320,10 +426,10 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
         {canManage ? (
           <form
             onSubmit={handleCreate}
-            className="ava-soft-card rounded-lg border p-5"
+            className="ava-soft-card rounded-2xl border p-5"
           >
             <div className="flex items-start gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm">
                 <Sparkles aria-hidden="true" />
               </span>
               <div>
@@ -444,14 +550,37 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
         ) : null}
 
         {message ? (
-          <p className="rounded-lg border bg-white/85 p-3 text-sm text-muted-foreground">
+          <p className="rounded-2xl border border-primary/15 bg-white/90 p-3 text-sm font-medium text-primary shadow-sm">
             {message}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-4">
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/60">
+                Filtros e revisao
+              </p>
+              <h3 className="mt-1 text-lg font-semibold text-primary">
+                {activeUserLabel}
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+              <span className="rounded-full border border-primary/10 bg-white/75 px-3 py-1.5">
+                {filteredMemories.length} memoria(s)
+              </span>
+              <span className="rounded-full border border-primary/10 bg-white/75 px-3 py-1.5">
+                {filteredConversations.length} historico(s)
+              </span>
+              {heavyConversationCount > 0 ? (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-800">
+                  {heavyConversationCount} pesado(s)
+                </span>
+              ) : null}
+            </div>
+          </div>
           <div className="grid gap-3 md:grid-cols-3">
             <Field>
               <FieldLabel htmlFor="catty-memory-user-filter">
@@ -519,58 +648,80 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
 
         <section className="grid gap-3">
           {filteredMemories.length === 0 ? (
-            <p className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
-              Nenhuma memoria encontrada para estes filtros.
-            </p>
+            <EmptyCard icon={BrainCircuit} title="Nenhuma memoria encontrada">
+              Ajuste os filtros ou cadastre uma memoria leve para orientar a
+              Catty com seguranca.
+            </EmptyCard>
           ) : (
             filteredMemories.map((memory) => (
               <article
                 key={memory.id}
-                className="ava-soft-card rounded-lg border p-5"
+                className="ava-soft-card overflow-hidden rounded-2xl border p-0"
               >
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
-                          statusStyles[memory.status],
-                        )}
-                      >
-                        {statusLabels[memory.status]}
-                      </span>
-                      <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
-                        {categoryLabels[memory.category]}
-                      </span>
-                      <span className="rounded-full bg-secondary/60 px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
-                        {memory.userRole}
-                      </span>
+                <div className="border-b border-primary/10 bg-white/62 px-5 py-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
+                            statusStyles[memory.status],
+                          )}
+                        >
+                          {statusLabels[memory.status]}
+                        </span>
+                        <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
+                          {categoryLabels[memory.category]}
+                        </span>
+                        <span className="rounded-full bg-secondary/60 px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+                          {memory.userRole}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-lg font-semibold">
+                        {memory.userName}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {memory.userEmail}
+                      </p>
                     </div>
-                    <h3 className="mt-3 text-lg font-semibold">
-                      {memory.userName}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {memory.userEmail}
-                    </p>
-                  </div>
-                  <div className="grid gap-1 text-sm text-muted-foreground md:text-right">
-                    <span>Usada {memory.usageCount} vez(es)</span>
-                    <span>Ultimo uso: {formatDateTime(memory.lastUsedAt)}</span>
-                    <span>Atualizada: {formatDateTime(memory.updatedAt)}</span>
+                    <div className="grid gap-2 text-sm text-muted-foreground md:min-w-44 md:text-right">
+                      <span className="inline-flex items-center justify-start gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1 md:justify-end">
+                        <Clock3 aria-hidden="true" className="size-3.5" />
+                        Usada {memory.usageCount} vez(es)
+                      </span>
+                      <span>
+                        Ultimo uso: {formatDateTime(memory.lastUsedAt)}
+                      </span>
+                      <span>Atualizada: {formatDateTime(memory.updatedAt)}</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border bg-white/75 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    {memory.key} - confianca {memory.confidence}%
-                  </p>
-                  <p className="mt-2 text-sm leading-6">{memory.value}</p>
-                  {memory.flaggedReason ? (
-                    <p className="mt-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-xs text-rose-700">
-                      {memory.flaggedReason}
+                <div className="p-5">
+                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-4 shadow-sm">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                        {memory.key}
+                      </p>
+                      <span className="text-xs font-bold text-primary">
+                        confianca {memory.confidence}%
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary via-fuchsia-400 to-amber-300"
+                        style={{ width: `${memory.confidence}%` }}
+                      />
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-primary/90">
+                      {memory.value}
                     </p>
-                  ) : null}
-                </div>
+                    {memory.flaggedReason ? (
+                      <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-700">
+                        {memory.flaggedReason}
+                      </p>
+                    ) : null}
+                  </div>
 
                 {canManage ? (
                   <form
@@ -685,7 +836,7 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
                 </div>
 
                 {memory.recentEvents.length > 0 ? (
-                  <details className="mt-4 rounded-lg border bg-primary/[0.03] p-3">
+                  <details className="mt-4 rounded-2xl border border-primary/10 bg-primary/[0.03] p-3">
                     <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
                       Eventos recentes
                     </summary>
@@ -693,7 +844,7 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
                       {memory.recentEvents.map((event) => (
                         <div
                           key={event.id}
-                          className="rounded-lg bg-white/80 p-3 text-xs text-muted-foreground"
+                          className="rounded-xl bg-white/85 p-3 text-xs text-muted-foreground shadow-sm"
                         >
                           <strong className="text-foreground">
                             {event.action}
@@ -710,14 +861,15 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
                     </div>
                   </details>
                 ) : null}
+                </div>
               </article>
             ))
           )}
         </section>
 
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
               <Database aria-hidden="true" />
             </span>
             <div>
@@ -732,18 +884,18 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
 
           <div className="mt-4 grid gap-3">
             {filteredConversations.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-white/70 p-4 text-sm text-muted-foreground">
+              <EmptyCard icon={MessageSquareText} title="Sem historico filtrado">
                 Nenhum historico de conversa para estes filtros.
-              </p>
+              </EmptyCard>
             ) : (
               filteredConversations.map((conversation) => (
                 <div
                   key={conversation.id}
                   className={cn(
-                    "rounded-lg border bg-white/80 p-4",
+                    "rounded-2xl border bg-white/82 p-4 shadow-sm",
                     conversation.isHeavy
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-border",
+                      ? "border-amber-200 bg-amber-50/90"
+                      : "border-primary/10",
                   )}
                 >
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -756,7 +908,8 @@ export function CattyMemoryPanel({ data, viewerRole }: CattyMemoryPanelProps) {
                           {conversation.task ?? "default"}
                         </span>
                       </div>
-                      <p className="mt-2 font-semibold">
+                      <p className="mt-3 flex items-center gap-2 font-semibold text-primary">
+                        <UserRound aria-hidden="true" className="size-4" />
                         {conversation.userName}
                       </p>
                       <p className="text-sm text-muted-foreground">

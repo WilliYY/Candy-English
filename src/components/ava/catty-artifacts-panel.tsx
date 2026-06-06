@@ -6,13 +6,23 @@ import {
   CheckCircle2,
   Clock3,
   LoaderCircle,
+  MessageSquareText,
   Palette,
   PencilLine,
   ShieldAlert,
   Sparkles,
   Star,
+  UserRound,
 } from "lucide-react";
-import { type FormEvent, useMemo, useState, useTransition } from "react";
+import {
+  type ComponentType,
+  type FormEvent,
+  type ReactNode,
+  type SVGProps,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import {
   changeCattyUserArtifactStatus,
   approveCattyArtifactSuggestion,
@@ -47,6 +57,23 @@ const statusLabels = {
   DISABLED: "Nao usar",
   PENDING: "Pendente",
 } satisfies Record<CattyUserArtifactStatusInput, string>;
+
+const statusDescriptions = {
+  ACTIVE: "Liberado para contexto",
+  ARCHIVED: "Guardado fora do uso",
+  DISABLED: "Tema bloqueado",
+  PENDING: "Aguardando revisao",
+} satisfies Record<CattyUserArtifactStatusInput, string>;
+
+const statusIcons = {
+  ACTIVE: CheckCircle2,
+  ARCHIVED: Archive,
+  DISABLED: Ban,
+  PENDING: Sparkles,
+} satisfies Record<
+  CattyUserArtifactStatusInput,
+  ComponentType<SVGProps<SVGSVGElement>>
+>;
 
 const statusStyles = {
   ACTIVE: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -108,6 +135,30 @@ function getUserOptionLabel(user: CattyArtifactManagementData["users"][number]) 
   return `${user.label} - ${user.role}`;
 }
 
+function EmptyCard({
+  children,
+  icon: Icon,
+  title,
+}: {
+  children: ReactNode;
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  title: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-primary/20 bg-white/72 p-6 text-sm text-muted-foreground shadow-sm">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/8 text-primary">
+          <Icon aria-hidden="true" className="size-5" />
+        </span>
+        <div>
+          <p className="font-semibold text-primary">{title}</p>
+          <p className="mt-1 leading-6">{children}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function CattyArtifactsPanel({
   data,
   viewerRole,
@@ -165,6 +216,13 @@ export function CattyArtifactsPanel({
       ),
     [data.artifacts],
   );
+  const activeUserLabel = selectedUser?.label ?? "Todos os alunos";
+  const readyEnrichmentCount = filteredEnrichments.filter(
+    (enrichment) => enrichment.status === "READY_FOR_REVIEW",
+  ).length;
+  const pendingEnrichmentCount = filteredEnrichments.filter((enrichment) =>
+    ["FAILED", "PENDING", "READY_FOR_REVIEW"].includes(enrichment.status),
+  ).length;
 
   function buildInput(formData: FormData): CattyUserArtifactUpsertInput {
     return {
@@ -282,62 +340,106 @@ export function CattyArtifactsPanel({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(280px,0.86fr)_minmax(0,1.14fr)]">
       <div className="flex flex-col gap-4">
-        <section className="ava-soft-card rounded-lg border p-5">
-          <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Palette aria-hidden="true" />
+        <section className="ava-soft-card relative overflow-hidden rounded-2xl border p-5">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-primary/12 via-secondary/55 to-fuchsia-100/70"
+          />
+          <div className="relative flex items-start gap-4">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+              <Palette aria-hidden="true" className="size-6" />
             </span>
-            <div>
-              <h2 className="text-lg font-semibold">
-                Catty Learning: gostos e artefatos
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                Estilo por aluno
+              </span>
+              <h2 className="mt-3 text-2xl font-semibold text-primary">
+                Estilo da Catty
               </h2>
-              <p className="text-sm leading-6 text-muted-foreground">
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 Cadastre gostos, revise buscas, aprove artefatos e controle o
                 que a Catty usa por aluno.
               </p>
             </div>
           </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {cattyUserArtifactStatusValues.map((status) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() => setStatusFilter(status)}
-                className={cn(
-                  "rounded-lg border p-3 text-left text-sm transition",
-                  statusFilter === status
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-white/70 text-muted-foreground",
-                )}
-              >
-                <span className="block font-semibold">
-                  {statusLabels[status]}
-                </span>
-                <span>{counts[status]} tema(s)</span>
-              </button>
-            ))}
+          <div className="relative mt-5 grid gap-3 sm:grid-cols-2">
+            {cattyUserArtifactStatusValues.map((status) => {
+              const StatusIcon = statusIcons[status];
+
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={cn(
+                    "group rounded-2xl border p-4 text-left text-sm shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+                    statusFilter === status
+                      ? "border-primary/40 bg-primary text-primary-foreground shadow-lg shadow-primary/18"
+                      : "border-primary/12 bg-white/78 text-muted-foreground hover:border-primary/25 hover:bg-white",
+                  )}
+                >
+                  <span className="flex items-start justify-between gap-3">
+                    <span>
+                      <span className="block font-semibold">
+                        {statusLabels[status]}
+                      </span>
+                      <span
+                        className={cn(
+                          "mt-1 block text-xs leading-5",
+                          statusFilter === status
+                            ? "text-primary-foreground/78"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        {statusDescriptions[status]}
+                      </span>
+                    </span>
+                    <span
+                      className={cn(
+                        "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                        statusFilter === status
+                          ? "bg-white/15 text-primary-foreground"
+                          : "bg-primary/8 text-primary",
+                      )}
+                    >
+                      <StatusIcon aria-hidden="true" className="size-4" />
+                    </span>
+                  </span>
+                  <strong
+                    className={cn(
+                      "mt-3 block text-2xl",
+                      statusFilter === status
+                        ? "text-primary-foreground"
+                        : "text-primary",
+                    )}
+                  >
+                    {counts[status]}
+                  </strong>
+                </button>
+              );
+            })}
           </div>
 
           <button
             type="button"
             onClick={() => setStatusFilter("ALL")}
             className={cn(
-              "mt-3 rounded-lg border px-3 py-2 text-sm font-semibold transition",
+              "relative mt-3 rounded-full border px-4 py-2 text-sm font-semibold transition",
               statusFilter === "ALL"
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-white/70 text-muted-foreground",
+                ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "border-primary/15 bg-white/75 text-primary hover:border-primary/30 hover:bg-white",
             )}
           >
             Ver todos
           </button>
         </section>
 
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-sm">
               <ShieldAlert aria-hidden="true" />
             </span>
             <div>
@@ -351,15 +453,15 @@ export function CattyArtifactsPanel({
 
           <div className="mt-4 grid gap-2">
             {data.alerts.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-white/70 p-4 text-sm text-muted-foreground">
+              <EmptyCard icon={CheckCircle2} title="Tudo leve por aqui">
                 Tudo leve por aqui. Sem repeticao excessiva no momento.
-              </p>
+              </EmptyCard>
             ) : (
               data.alerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={cn(
-                    "rounded-lg border p-3 text-sm leading-6",
+                    "rounded-2xl border p-3 text-sm leading-6 shadow-sm",
                     alertStyles[alert.severity],
                   )}
                 >
@@ -370,9 +472,9 @@ export function CattyArtifactsPanel({
           </div>
         </section>
 
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm">
               <Sparkles aria-hidden="true" />
             </span>
             <div>
@@ -468,7 +570,7 @@ export function CattyArtifactsPanel({
                 <Input
                   id="catty-artifact-emojis"
                   name="emojisText"
-                  placeholder="🦫 🌿 ✨"
+                  placeholder="car, cat, sparkles"
                   disabled={isPending}
                 />
               </Field>
@@ -537,7 +639,7 @@ export function CattyArtifactsPanel({
             </Field>
 
             {canManage ? (
-              <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+              <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
                 <input
                   type="checkbox"
                   name="isPrimary"
@@ -553,6 +655,21 @@ export function CattyArtifactsPanel({
                 </span>
               </label>
             ) : null}
+
+            <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <span className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                  <MessageSquareText aria-hidden="true" className="size-4" />
+                </span>
+                <p>
+                  <strong className="block text-primary">
+                    Preview de uso
+                  </strong>
+                  A Catty usa esse tema como toque leve: nome do aluno,
+                  bordao curto, emoji e exemplo em English quando combinar.
+                </p>
+              </div>
+            </div>
 
             <div className="flex flex-wrap gap-2">
               <Button type="submit" disabled={isPending} className="gap-2">
@@ -585,14 +702,38 @@ export function CattyArtifactsPanel({
         </section>
 
         {message ? (
-          <p className="rounded-lg border bg-white/85 p-3 text-sm text-muted-foreground">
+          <p className="rounded-2xl border border-primary/15 bg-white/90 p-3 text-sm font-medium text-primary shadow-sm">
             {message}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-4">
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/60">
+                Filtros e revisao
+              </p>
+              <h3 className="mt-1 flex items-center gap-2 text-lg font-semibold text-primary">
+                <UserRound aria-hidden="true" className="size-4" />
+                {activeUserLabel}
+              </h3>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+              <span className="rounded-full border border-primary/10 bg-white/75 px-3 py-1.5">
+                {filteredArtifacts.length} tema(s)
+              </span>
+              <span className="rounded-full border border-primary/10 bg-white/75 px-3 py-1.5">
+                {filteredEnrichments.length} sugestoes
+              </span>
+              {readyEnrichmentCount > 0 ? (
+                <span className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1.5 text-fuchsia-700">
+                  {readyEnrichmentCount} pronta(s)
+                </span>
+              ) : null}
+            </div>
+          </div>
           <div className="grid gap-3 md:grid-cols-2">
             <Field>
               <FieldLabel htmlFor="catty-artifact-user-filter">
@@ -636,7 +777,7 @@ export function CattyArtifactsPanel({
           </div>
 
           {selectedUser?.detectedInterests.length ? (
-            <div className="mt-4 rounded-lg border bg-primary/[0.03] p-3">
+            <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Interesses detectados
               </p>
@@ -656,9 +797,9 @@ export function CattyArtifactsPanel({
 
         {canManage ? (
           <section className="grid gap-3">
-            <div className="ava-soft-card rounded-lg border p-5">
+            <div className="ava-soft-card rounded-2xl border p-5">
               <div className="flex items-start gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-fuchsia-100 text-fuchsia-700">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-700 shadow-sm">
                   <Sparkles aria-hidden="true" />
                 </span>
                 <div>
@@ -669,14 +810,19 @@ export function CattyArtifactsPanel({
                     Status: pendente, sugestao pronta, aprovada, recusada,
                     arquivada ou erro. Nada entra na Catty sem revisao humana.
                   </p>
+                  {pendingEnrichmentCount > 0 ? (
+                    <p className="mt-2 inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-700">
+                      {pendingEnrichmentCount} item(ns) pedem atencao
+                    </p>
+                  ) : null}
                 </div>
               </div>
             </div>
 
             {filteredEnrichments.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
+              <EmptyCard icon={Sparkles} title="Nenhuma sugestao por aqui">
                 Nenhuma sugestao de enriquecimento para estes filtros.
-              </p>
+              </EmptyCard>
             ) : (
               filteredEnrichments.map((enrichment) => {
                 const canReview = [
@@ -691,8 +837,9 @@ export function CattyArtifactsPanel({
                 return (
                   <article
                     key={enrichment.id}
-                    className="ava-soft-card rounded-lg border p-5"
+                    className="ava-soft-card overflow-hidden rounded-2xl border p-0"
                   >
+                    <div className="border-b border-primary/10 bg-white/62 px-5 py-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -734,21 +881,24 @@ export function CattyArtifactsPanel({
                         ) : null}
                       </div>
                     </div>
+                    </div>
+
+                    <div className="p-5">
 
                     {enrichment.safeSummary ? (
-                      <p className="mt-4 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                      <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
                         {enrichment.safeSummary}
                       </p>
                     ) : null}
 
                     {enrichment.failureReason ? (
-                      <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
+                      <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800 shadow-sm">
                         {enrichment.failureReason}
                       </p>
                     ) : null}
 
                     <div className="mt-4 grid gap-3 md:grid-cols-3">
-                      <div className="rounded-lg border bg-white/75 p-3">
+                      <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Emojis
                         </p>
@@ -757,7 +907,7 @@ export function CattyArtifactsPanel({
                             "Sem emojis"}
                         </p>
                       </div>
-                      <div className="rounded-lg border bg-white/75 p-3">
+                      <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Sons
                         </p>
@@ -766,7 +916,7 @@ export function CattyArtifactsPanel({
                             "Sem sons"}
                         </p>
                       </div>
-                      <div className="rounded-lg border bg-white/75 p-3">
+                      <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                           Bordoes
                         </p>
@@ -1023,6 +1173,7 @@ export function CattyArtifactsPanel({
                         </Button>
                       </div>
                     ) : null}
+                    </div>
                   </article>
                 );
               })
@@ -1032,15 +1183,16 @@ export function CattyArtifactsPanel({
 
         <section className="grid gap-3">
           {filteredArtifacts.length === 0 ? (
-            <p className="rounded-lg border border-dashed bg-white/70 p-5 text-sm text-muted-foreground">
+            <EmptyCard icon={Palette} title="Nenhum tema encontrado">
               Nenhum tema encontrado para estes filtros.
-            </p>
+            </EmptyCard>
           ) : (
             filteredArtifacts.map((artifact) => (
               <article
                 key={artifact.id}
-                className="ava-soft-card rounded-lg border p-5"
+                className="ava-soft-card overflow-hidden rounded-2xl border p-0"
               >
+                <div className="border-b border-primary/10 bg-white/62 px-5 py-4">
                 <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -1050,8 +1202,8 @@ export function CattyArtifactsPanel({
                           statusStyles[artifact.status],
                         )}
                       >
-                          {statusLabels[artifact.status]}
-                        </span>
+                        {statusLabels[artifact.status]}
+                      </span>
                       {artifact.isPrimary ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
                           <Star className="size-3.5" aria-hidden="true" />
@@ -1070,14 +1222,36 @@ export function CattyArtifactsPanel({
                     </p>
                   </div>
                   <div className="grid gap-1 text-sm text-muted-foreground md:text-right">
-                    <span>Usado {artifact.usageCount} vez(es)</span>
+                    <span className="inline-flex items-center justify-start gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1 md:justify-end">
+                      <Clock3 aria-hidden="true" className="size-3.5" />
+                      Usado {artifact.usageCount} vez(es)
+                    </span>
                     <span>Ultimo uso: {formatDateTime(artifact.lastUsedAt)}</span>
                     <span>Atualizado: {formatDateTime(artifact.updatedAt)}</span>
                   </div>
                 </div>
+                </div>
+
+                <div className="p-5">
+                <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                      <MessageSquareText aria-hidden="true" className="size-4" />
+                    </span>
+                    <p>
+                      <strong className="block text-primary">
+                        Preview Candy
+                      </strong>
+                      Miauw, {artifact.userName.split(" ")[0]}{" "}
+                      {artifact.emojis[0] ?? "✨"}{" "}
+                      {artifact.catchphrases[0] ??
+                        "uma frase por vez ja conta."}
+                    </p>
+                  </div>
+                </div>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-lg border bg-white/75 p-3">
+                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Emojis
                     </p>
@@ -1085,7 +1259,7 @@ export function CattyArtifactsPanel({
                       {artifact.emojis.join(" ") || "Sem emojis"}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-white/75 p-3">
+                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Sons
                     </p>
@@ -1093,7 +1267,7 @@ export function CattyArtifactsPanel({
                       {artifact.sounds.join(", ") || "Sem sons"}
                     </p>
                   </div>
-                  <div className="rounded-lg border bg-white/75 p-3">
+                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       Bordoes
                     </p>
@@ -1106,17 +1280,17 @@ export function CattyArtifactsPanel({
                 {artifact.example || artifact.toneRule || artifact.blockedReason ? (
                   <div className="mt-3 grid gap-3 md:grid-cols-2">
                     {artifact.example ? (
-                      <p className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                      <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 shadow-sm">
                         <strong>Exemplo:</strong> {artifact.example}
                       </p>
                     ) : null}
                     {artifact.toneRule ? (
-                      <p className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                      <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 shadow-sm">
                         <strong>Tom:</strong> {artifact.toneRule}
                       </p>
                     ) : null}
                     {artifact.blockedReason ? (
-                      <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-700">
+                      <p className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-700 shadow-sm">
                         <strong>Motivo:</strong> {artifact.blockedReason}
                       </p>
                     ) : null}
@@ -1124,7 +1298,7 @@ export function CattyArtifactsPanel({
                 ) : null}
 
                 {canManage ? (
-                  <details className="mt-4 rounded-lg border bg-primary/[0.03] p-3">
+                  <details className="mt-4 rounded-2xl border border-primary/10 bg-primary/[0.03] p-3">
                     <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
                       Editar tema
                     </summary>
@@ -1174,7 +1348,7 @@ export function CattyArtifactsPanel({
                         </Field>
                       </div>
 
-                      <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                      <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground">
                         <input
                           type="checkbox"
                           name="isPrimary"
@@ -1363,14 +1537,15 @@ export function CattyArtifactsPanel({
                     </Button>
                   )}
                 </div>
+                </div>
               </article>
             ))
           )}
         </section>
 
-        <section className="ava-soft-card rounded-lg border p-5">
+        <section className="ava-soft-card rounded-2xl border p-5">
           <div className="flex items-start gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
               <Clock3 aria-hidden="true" />
             </span>
             <div>
@@ -1384,14 +1559,14 @@ export function CattyArtifactsPanel({
 
           <div className="mt-4 grid gap-2">
             {filteredRecentUsages.length === 0 ? (
-              <p className="rounded-lg border border-dashed bg-white/70 p-4 text-sm text-muted-foreground">
+              <EmptyCard icon={Clock3} title="Sem uso recente">
                 Ainda nao encontrei uso recente destes temas.
-              </p>
+              </EmptyCard>
             ) : (
               filteredRecentUsages.map((usage) => (
                 <div
                   key={usage.id}
-                  className="rounded-lg border bg-white/80 p-3 text-sm"
+                  className="rounded-2xl border border-primary/10 bg-white/82 p-3 text-sm shadow-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
