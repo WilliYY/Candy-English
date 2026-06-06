@@ -73,7 +73,7 @@ Tabelas e enums:
 - No editor da teacher, campos de texto mostram guias discretas de linha e contador de linhas enquanto a area e criada ou selecionada; essas guias nao aparecem para o aluno nem na correcao final.
 - A ferramenta `Marcar` cria uma marca pequena e centralizada quando a teacher clica no PDF; se arrastar, mantem um quadrado proporcional em pixels para alinhar melhor com caixas, parenteses e lacunas ja impressas no material.
 - A ferramenta `Desenho` cria uma area centralizada quando usada por clique e uma area livre quando usada por arrasto; o editor mostra uma previa discreta de canvas para orientar tamanho e posicao.
-- O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
+- O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar; a tecla `Delete` tambem remove a area selecionada quando o foco nao esta em um campo de texto.
 - Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas, renderiza traco suavizado, aceita ponto por toque/clique e deve permitir desfazer o ultimo traco ou limpar o desenho sem apagar toda a atividade.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.

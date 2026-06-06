@@ -243,6 +243,19 @@ function formatSize(sizeBytes?: number | null) {
   return `${Math.ceil(sizeBytes / 1024)} KB`;
 }
 
+function isEditableKeyboardTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    target.tagName === "INPUT" ||
+    target.tagName === "SELECT" ||
+    target.tagName === "TEXTAREA"
+  );
+}
+
 function getPageRect(element: Element): PageRect | null {
   const pageElement = element.closest("[data-homework-page]");
 
@@ -941,6 +954,34 @@ function InteractiveHomeworkEditorItem({
     setMessage("Areas removidas. Desenhe novas areas no PDF e salve.");
   }
 
+  useEffect(() => {
+    function removeSelectedFieldByKeyboard(event: KeyboardEvent) {
+      if (
+        event.key !== "Delete" ||
+        event.repeat ||
+        !selectedFieldId ||
+        isSaving ||
+        isDeleting ||
+        isEditableKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      setFields((current) =>
+        current.filter((field) => field.id !== selectedFieldId),
+      );
+      setSelectedFieldId(null);
+      setMessage("Area removida. Salve para aplicar a mudanca.");
+    }
+
+    window.addEventListener("keydown", removeSelectedFieldByKeyboard);
+
+    return () => {
+      window.removeEventListener("keydown", removeSelectedFieldByKeyboard);
+    };
+  }, [isDeleting, isSaving, selectedFieldId]);
+
   function saveFields() {
     setMessage(null);
 
@@ -1079,12 +1120,12 @@ function InteractiveHomeworkEditorItem({
                 disabled={!selectedFieldId || isSaving || isDeleting}
                 onClick={removeSelectedField}
                 size="sm"
-                title="Excluir area selecionada"
+                title="Excluir area selecionada (Del)"
                 type="button"
                 variant="outline"
               >
                 <Trash2 data-icon="inline-start" />
-                Excluir area
+                Excluir selecionado
               </Button>
 
               <Button
@@ -1096,7 +1137,7 @@ function InteractiveHomeworkEditorItem({
                 variant="outline"
               >
                 <Trash2 data-icon="inline-start" />
-                Limpar
+                Limpar tudo
               </Button>
 
               <Button
