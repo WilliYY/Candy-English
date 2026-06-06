@@ -128,7 +128,7 @@ export const saveInteractiveHomeworkFieldsSchema = z.object({
   fields: z
     .array(interactiveHomeworkFieldSchema)
     .min(1, "Mantenha pelo menos um campo de resposta.")
-    .max(40, "Use no maximo 40 campos por homework."),
+    .max(120, "Use no maximo 120 areas por homework."),
   homeworkId: z.string().min(1, "Homework invalida."),
 });
 
@@ -183,6 +183,9 @@ export type InteractiveHomeworkFieldInput = z.input<
   typeof interactiveHomeworkFieldSchema
 >;
 export type SaveInteractiveHomeworkFieldsInput = z.input<
+  typeof saveInteractiveHomeworkFieldsSchema
+>;
+export type SaveInteractiveHomeworkFieldsOutput = z.output<
   typeof saveInteractiveHomeworkFieldsSchema
 >;
 export type DeleteInteractiveHomeworkInput = z.input<

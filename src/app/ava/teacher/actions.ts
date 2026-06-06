@@ -21,6 +21,7 @@ import {
   type HomeworkSubmissionIdInput,
   type ReviewSubmissionInput,
   type SaveInteractiveHomeworkFieldsInput,
+  type SaveInteractiveHomeworkFieldsOutput,
 } from "@/lib/validations/learning";
 
 type ActionResult<TInput extends Record<string, unknown>> = {
@@ -28,6 +29,27 @@ type ActionResult<TInput extends Record<string, unknown>> = {
   message: string;
   ok: boolean;
 };
+
+type SavedInteractiveHomeworkField = {
+  height: number;
+  id: string;
+  label: string | null;
+  page: number;
+  placeholder: string | null;
+  required: boolean;
+  sortOrder: number;
+  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+  width: number;
+  x: number;
+  y: number;
+};
+
+type SaveInteractiveHomeworkFieldsResult =
+  ActionResult<SaveInteractiveHomeworkFieldsInput> & {
+    expectedCount?: number;
+    fields?: SavedInteractiveHomeworkField[];
+    savedCount?: number;
+  };
 
 type InteractiveAssetFormErrors = Partial<
   Record<
@@ -83,6 +105,37 @@ function getInteractiveFieldMinimums(type: string) {
   }
 
   return { height: 4, width: 8 };
+}
+
+function isPersistedInteractiveFieldId(
+  id: string | undefined,
+  existingIds: Set<string>,
+) {
+  return Boolean(id && existingIds.has(id));
+}
+
+function normalizeInteractiveFieldForSave(
+  field: SaveInteractiveHomeworkFieldsOutput["fields"][number],
+  index: number,
+) {
+  const minimums = getInteractiveFieldMinimums(field.type);
+  const x = Math.min(field.x, 100 - minimums.width);
+  const y = Math.min(field.y, 100 - minimums.height);
+  const width = Math.max(minimums.width, Math.min(field.width, 100 - x));
+  const height = Math.max(minimums.height, Math.min(field.height, 100 - y));
+
+  return {
+    height,
+    label: field.label,
+    page: field.page,
+    placeholder: field.placeholder,
+    required: field.required,
+    sortOrder: index,
+    type: field.type,
+    width,
+    x,
+    y,
+  };
 }
 
 async function getTeacherActor() {
@@ -636,7 +689,7 @@ export async function createInteractiveLesson(
 
 export async function saveInteractiveHomeworkFields(
   input: SaveInteractiveHomeworkFieldsInput,
-): Promise<ActionResult<SaveInteractiveHomeworkFieldsInput>> {
+): Promise<SaveInteractiveHomeworkFieldsResult> {
   const actor = await getTeacherActor();
 
   if (!actor) {
@@ -649,12 +702,14 @@ export async function saveInteractiveHomeworkFields(
   const parsed = saveInteractiveHomeworkFieldsSchema.safeParse(input);
 
   if (!parsed.success) {
+    const errors = fieldErrors<SaveInteractiveHomeworkFieldsInput>(
+      parsed.error.issues,
+    );
+
     return {
-      errors: fieldErrors<SaveInteractiveHomeworkFieldsInput>(
-        parsed.error.issues,
-      ),
+      errors,
       ok: false,
-      message: "Revise os campos da homework.",
+      message: errors.fields ?? "Revise os campos da homework.",
     };
   }
 
@@ -683,56 +738,124 @@ export async function saveInteractiveHomeworkFields(
     };
   }
 
-  await prisma.$transaction([
-    prisma.homeworkInteractiveField.deleteMany({
-      where: { homeworkId: homework.id },
-    }),
-    prisma.homeworkInteractiveField.createMany({
-      data: parsed.data.fields.map((field, index) => {
-        const minimums = getInteractiveFieldMinimums(field.type);
-        const x = Math.min(field.x, 100 - minimums.width);
-        const y = Math.min(field.y, 100 - minimums.height);
-        const width = Math.max(
-          minimums.width,
-          Math.min(field.width, 100 - x),
-        );
-        const height = Math.max(
-          minimums.height,
-          Math.min(field.height, 100 - y),
+  const expectedCount = parsed.data.fields.length;
+  let savedFields: SavedInteractiveHomeworkField[];
+
+  try {
+    savedFields = await prisma.$transaction(async (tx) => {
+      const existingFields = await tx.homeworkInteractiveField.findMany({
+        where: { homeworkId: homework.id },
+        select: { id: true },
+      });
+      const existingIds = new Set(existingFields.map((field) => field.id));
+      const retainedIds = parsed.data.fields
+        .map((field) => field.id)
+        .filter((id): id is string =>
+          isPersistedInteractiveFieldId(id, existingIds),
         );
 
-        return {
-          height,
-          homeworkId: homework.id,
-          label: field.label,
-          page: field.page,
-          placeholder: field.placeholder,
-          required: field.required,
-          sortOrder: index,
-          type: field.type,
-          width,
-          x,
-          y,
-        };
-      }),
-    }),
-    prisma.homework.update({
-      where: { id: homework.id },
-      data: {
-        fieldDetectionSource:
-          homework.fieldDetectionSource === "lesson-manual"
-            ? "lesson-manual"
-            : "manual",
-      },
-    }),
-  ]);
+      await tx.homeworkInteractiveField.deleteMany({
+        where:
+          retainedIds.length > 0
+            ? {
+                homeworkId: homework.id,
+                id: { notIn: retainedIds },
+              }
+            : { homeworkId: homework.id },
+      });
+
+      for (const [index, field] of parsed.data.fields.entries()) {
+        const data = normalizeInteractiveFieldForSave(field, index);
+
+        if (isPersistedInteractiveFieldId(field.id, existingIds)) {
+          await tx.homeworkInteractiveField.update({
+            where: { id: field.id },
+            data,
+          });
+          continue;
+        }
+
+        await tx.homeworkInteractiveField.create({
+          data: {
+            ...data,
+            homeworkId: homework.id,
+          },
+        });
+      }
+
+      await tx.homework.update({
+        where: { id: homework.id },
+        data: {
+          fieldDetectionSource:
+            homework.fieldDetectionSource === "lesson-manual"
+              ? "lesson-manual"
+              : "manual",
+        },
+      });
+
+      const confirmedCount = await tx.homeworkInteractiveField.count({
+        where: { homeworkId: homework.id },
+      });
+
+      if (confirmedCount !== expectedCount) {
+        throw new Error(
+          `Interactive homework field count mismatch: expected ${expectedCount}, saved ${confirmedCount}.`,
+        );
+      }
+
+      return tx.homeworkInteractiveField.findMany({
+        where: { homeworkId: homework.id },
+        orderBy: { sortOrder: "asc" },
+        select: {
+          height: true,
+          id: true,
+          label: true,
+          page: true,
+          placeholder: true,
+          required: true,
+          sortOrder: true,
+          type: true,
+          width: true,
+          x: true,
+          y: true,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("Failed to save interactive homework fields", {
+      error,
+      expectedCount,
+      homeworkId: homework.id,
+    });
+
+    return {
+      expectedCount,
+      ok: false,
+      message:
+        "Erro ao salvar areas. As alteracoes nao foram confirmadas; tente salvar novamente antes de sair.",
+      savedCount: 0,
+    };
+  }
+
+  if (savedFields.length !== expectedCount) {
+    return {
+      expectedCount,
+      fields: savedFields,
+      ok: false,
+      message: `${savedFields.length} de ${expectedCount} areas foram salvas. Revise antes de sair e tente salvar novamente.`,
+      savedCount: savedFields.length,
+    };
+  }
 
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");
 
   return {
+    expectedCount,
+    fields: savedFields,
     ok: true,
-    message: "Campos da homework salvos.",
+    message: `${savedFields.length} area(s) salvas com sucesso.`,
+    savedCount: savedFields.length,
   };
 }
 
