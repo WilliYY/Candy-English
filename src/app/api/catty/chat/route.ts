@@ -31,7 +31,10 @@ import {
   getCattyUserMemoryContext,
   maybeCreateCattyUserMemoryFromMessage,
 } from "@/lib/catty-user-memory";
-import { pickCattyArtifactForContext } from "@/lib/catty-artifacts";
+import {
+  applyCattyArtifactToReply,
+  pickCattyArtifactForContext,
+} from "@/lib/catty-artifacts";
 import {
   getCattyUserArtifactContext,
   recordCattyUserArtifactUsage,
@@ -924,8 +927,15 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const aiReplyWithArtifact = applyCattyArtifactToReply({
+    history: cattyHistory,
+    intent: responsePlan.intent,
+    message,
+    reply: aiReply.reply,
+    selection: selectedArtifact,
+  });
   const persistedExchange = await persistCattyExchangeSafely({
-    cattyReply: aiReply.reply,
+    cattyReply: aiReplyWithArtifact,
     context,
     source: toStoredReplySource(aiReply.source),
     userId: session.user.id,
@@ -937,7 +947,7 @@ export async function POST(request: NextRequest) {
     learningContext,
     message,
     plan: responsePlan,
-    reply: aiReply.reply,
+    reply: aiReplyWithArtifact,
     source: aiReply.source,
     userId: session.user.id,
   });
@@ -953,7 +963,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     messageId: persistedExchange?.cattyMessageId,
     ok: true,
-    reply: aiReply.reply,
+    reply: aiReplyWithArtifact,
     source: aiReply.source,
   });
 }

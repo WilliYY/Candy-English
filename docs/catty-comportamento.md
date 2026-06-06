@@ -31,6 +31,7 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
 - Usar artefatos por interesse como tempero leve, no maximo um por resposta, somente quando combinarem com a mensagem.
+- Usar artefatos ativos tambem nos baloes locais do AVA logado, com primeiro nome + gosto aprovado, alternando com frases Candy genericas e sem chamar IA.
 - Usar enriquecimento de artefatos apenas como fila revisavel; nunca buscar internet nem ativar sugestao durante uma conversa normal.
 - Variar entre som, emoji, mini-bordao ou exemplo curto conforme historico recente.
 - Respeitar preferencias `avoid_*` para nao insistir em tema que o usuario pediu para parar.

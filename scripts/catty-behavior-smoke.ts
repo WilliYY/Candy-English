@@ -28,6 +28,11 @@ import {
   pickCattyArtifactForContext,
   pickCattyArtifactReplyVariant,
 } from "../src/lib/catty-artifacts";
+import {
+  buildCattyArtifactBalloonTemplates,
+  buildCattyLoggedInBalloonPool,
+  pickCattyLoggedInBalloon,
+} from "../src/lib/catty-artifact-balloons";
 import { cattyLearningFeedbackCreateSchema } from "../src/lib/validations/catty-learning";
 import {
   cattyArtifactEnrichmentRequestSchema,
@@ -524,6 +529,21 @@ function main() {
     }),
     reply: "Miauw, vamos praticar uma frase curtinha.",
   });
+  const dinoBalloons = buildCattyArtifactBalloonTemplates({
+    artifact: customArtifactContext[0],
+    name: "Pedro",
+  });
+  const dinoBalloonPool = buildCattyLoggedInBalloonPool({
+    artifacts: customArtifactContext,
+    greeting: "Good afternoon",
+    name: "Pedro",
+  });
+  const pickedDinoBalloon = pickCattyLoggedInBalloon({
+    artifacts: customArtifactContext,
+    current: dinoBalloons[0],
+    greeting: "Good afternoon",
+    name: "Pedro",
+  });
   const validArtifactForm = cattyUserArtifactUpsertSchema.safeParse({
     catchphrasesText: "modo dino curioso",
     emojisText: "🦖 ✨",
@@ -610,6 +630,30 @@ function main() {
     customArtifactFallback.includes("dino") ||
       customArtifactFallback.includes("🦖"),
     "fallback nao aplicou artefato customizado.",
+  );
+  assertCondition(
+    dinoBalloons.some(
+      (balloon) =>
+        balloon.includes("Pedro") &&
+        (balloon.includes("dino") ||
+          balloon.includes("jurassico") ||
+          balloon.includes("rawr")),
+    ),
+    "baloes personalizados nao usam nome + artefato aprovado.",
+  );
+  assertCondition(
+    dinoBalloonPool.some((balloon) => balloon.includes("Pedro")) &&
+      dinoBalloonPool.some(
+        (balloon) =>
+          balloon.includes("dino") ||
+          balloon.includes("jurassico") ||
+          balloon.includes("rawr"),
+      ),
+    "pool de baloes logados nao incluiu artefato aprovado.",
+  );
+  assertCondition(
+    pickedDinoBalloon !== dinoBalloons[0],
+    "seletor de balao repetiu a frase atual mesmo com alternativas.",
   );
   assertCondition(
     validArtifactForm.success,

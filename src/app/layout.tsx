@@ -4,6 +4,7 @@ import { Providers } from "./providers";
 import { CattyWidget } from "@/components/site/catty-widget";
 import { WhatsAppWidget } from "@/components/site/whatsapp-widget";
 import { auth } from "@/lib/auth";
+import { getCattyUserArtifactContext } from "@/lib/catty-user-artifacts";
 
 export const metadata: Metadata = {
   icons: {
@@ -23,8 +24,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  const cattyArtifacts = session?.user?.id
+    ? await getCattyUserArtifactContext({
+        userId: session.user.id,
+      }).catch(() => [])
+    : [];
   const cattySessionUser = session?.user?.id
     ? {
+        artifacts: cattyArtifacts,
         name: session.user.name ?? null,
       }
     : null;

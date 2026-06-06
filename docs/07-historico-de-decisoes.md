@@ -450,6 +450,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260605235500_catty_artifact_enrichment`, `src/lib/catty-artifact-enrichment.ts`, `src/lib/catty-user-artifacts.ts`, `src/lib/validations/catty-artifacts.ts`, `src/app/ava/catty-artifacts/actions.ts`, `src/components/ava/catty-artifacts-panel.tsx`, `.env.example`, `src/lib/admin-credentials.ts`, smoke da Catty e docs oficiais.
 - Riscos/cuidados: busca web e opcional e so roda no fluxo Admin/Teacher; resultado vira sugestao curta/cacheada, nunca resposta direta; Student nao aprova; tema sensivel e bloqueado; marcas/personagens devem ser usados so como inspiracao educativa, sem fingir conteudo oficial nem copiar textos longos.
 
+### 2026-06-05 - Artefatos da Catty em respostas e baloes logados
+
+- Decisao: aplicar `CattyUserArtifact.ACTIVE` tambem no retorno final da IA e nos baloes locais da Catty para usuarios logados, usando nome + gosto aprovado quando combinar.
+- Motivo: deixar a Catty mais viva para cada aluno sem chamar IA para baloes, sem vazar gosto entre usuarios e sem depender so do prompt para que Gemini/OpenAI usem o artefato.
+- Impacto: `src/app/layout.tsx`, `src/components/site/catty-widget.tsx`, `src/app/api/catty/chat/route.ts`, `src/lib/catty-artifact-balloons.ts`, smoke da Catty e docs oficiais.
+- Riscos/cuidados: carregar somente artefatos `ACTIVE` do proprio usuario, alternar com frases genericas, evitar repetir a frase atual no widget, respeitar `avoid_*`/status desativado e manter clareza em correcao ou explicacao seria.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

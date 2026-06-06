@@ -28,10 +28,11 @@ import {
   type CattyMessage,
   type CattyPageContext,
 } from "@/lib/catty";
+import { pickCattyLoggedInBalloon } from "@/lib/catty-artifact-balloons";
+import type { CattyArtifactCustomItem } from "@/lib/catty-artifacts";
 import {
   CATTY_AUTH_REQUIRED_REPLY,
   CATTY_INITIAL_MESSAGE,
-  CATTY_LOGGED_IN_BALLOON_TEMPLATES,
   CATTY_PUBLIC_BALLOON_TEMPLATES,
   CATTY_PUBLIC_LOCKED_REPLY,
 } from "@/lib/catty-personality";
@@ -44,6 +45,7 @@ type QuickReply = {
 
 type CattyWidgetProps = {
   sessionUser?: {
+    artifacts?: CattyArtifactCustomItem[];
     name: string | null;
   } | null;
 };
@@ -405,22 +407,19 @@ function getCattyGreeting() {
   return "Good evening";
 }
 
-function getRandomLoggedInBalloon(name: string, current?: string) {
+function getRandomLoggedInBalloon(
+  name: string,
+  artifacts: CattyArtifactCustomItem[],
+  current?: string,
+) {
   const greeting = getCattyGreeting();
-  const availableTemplates = CATTY_LOGGED_IN_BALLOON_TEMPLATES.filter((template) => {
-    const rendered = template
-      .replace(/\{name\}/g, name)
-      .replace(/\{greeting\}/g, greeting);
 
-    return rendered !== current;
+  return pickCattyLoggedInBalloon({
+    artifacts,
+    current,
+    greeting,
+    name,
   });
-  const templates =
-    availableTemplates.length > 0
-      ? availableTemplates
-      : CATTY_LOGGED_IN_BALLOON_TEMPLATES;
-  const template = templates[Math.floor(Math.random() * templates.length)];
-
-  return template.replace(/\{name\}/g, name).replace(/\{greeting\}/g, greeting);
 }
 
 function getRandomPublicBalloon(current?: string) {
@@ -476,6 +475,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const displayName = useMemo(
     () => getFirstDisplayName(sessionUser?.name),
     [sessionUser?.name],
+  );
+  const sessionArtifacts = useMemo(
+    () => sessionUser?.artifacts ?? [],
+    [sessionUser?.artifacts],
   );
   const canUseCattyChat = Boolean(sessionUser && isLoggedInAvaArea(context));
   const showLoggedInBalloons = canUseCattyChat;
@@ -584,17 +587,17 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     }
 
     setLoggedInBalloon((current) =>
-      getRandomLoggedInBalloon(displayName, current),
+      getRandomLoggedInBalloon(displayName, sessionArtifacts, current),
     );
 
     const intervalId = window.setInterval(() => {
       setLoggedInBalloon((current) =>
-        getRandomLoggedInBalloon(displayName, current),
+        getRandomLoggedInBalloon(displayName, sessionArtifacts, current),
       );
     }, LOGGED_IN_BALLOON_INTERVAL_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [displayName, showLoggedInBalloons]);
+  }, [displayName, sessionArtifacts, showLoggedInBalloons]);
 
   useEffect(() => {
     if (!showPublicBalloons) {
