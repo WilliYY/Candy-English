@@ -183,7 +183,7 @@ export function InteractiveHomeworkReview({
                 <InteractiveHomeworkTextFrame key={field.id} style={style}>
                   <div
                     aria-label={field.label ?? `Campo ${index + 1}`}
-                    className="flex size-full items-center overflow-hidden whitespace-nowrap px-[0.25em] font-semibold text-primary"
+                    className="flex size-full min-w-0 items-center overflow-hidden whitespace-nowrap px-[0.25em] text-left font-semibold text-primary"
                     style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
                   >
                     {value}
@@ -196,7 +196,7 @@ export function InteractiveHomeworkReview({
               <InteractiveHomeworkTextFrame key={field.id} style={style}>
                 <div
                   aria-label={field.label ?? `Campo ${index + 1}`}
-                  className="size-full overflow-hidden whitespace-pre-wrap px-[0.3em] py-[0.2em] font-semibold text-primary"
+                  className="block size-full min-h-0 min-w-0 overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em] text-left font-semibold text-primary"
                   style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
                 >
                   {value}

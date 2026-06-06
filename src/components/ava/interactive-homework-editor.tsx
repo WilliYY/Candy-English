@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type Dispatch,
@@ -27,7 +28,10 @@ import {
 } from "@/app/ava/teacher/actions";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
-import { getInteractiveHomeworkTextStyle } from "@/components/ava/interactive-homework-text";
+import {
+  getInteractiveHomeworkTextLineCount,
+  getInteractiveHomeworkTextStyle,
+} from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -117,7 +121,7 @@ type EditorAction =
       start: PagePoint;
     };
 
-const TEXT_FIELD_LONG_THRESHOLD = 5.6;
+const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
 
 const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
@@ -420,7 +424,83 @@ function resizeFieldGeometry(
   });
 }
 
-function FieldAnswerPreview({ field }: { field: EditableHomeworkField }) {
+function FieldTextGuide({
+  kind,
+  showCount = false,
+}: {
+  kind: "LONG_TEXT" | "SHORT_TEXT";
+  showCount?: boolean;
+}) {
+  const guideRef = useRef<HTMLDivElement>(null);
+  const [lineCount, setLineCount] = useState(1);
+
+  useEffect(() => {
+    const guideElement = guideRef.current;
+
+    if (!guideElement || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    function updateLineCount() {
+      if (!guideElement) {
+        return;
+      }
+
+      const rect = guideElement.getBoundingClientRect();
+
+      setLineCount(
+        getInteractiveHomeworkTextLineCount(kind, {
+          height: rect.height,
+          width: rect.width,
+        }),
+      );
+    }
+
+    updateLineCount();
+
+    const resizeObserver = new ResizeObserver(updateLineCount);
+    resizeObserver.observe(guideElement);
+
+    return () => resizeObserver.disconnect();
+  }, [kind]);
+
+  const lineHeight = kind === "LONG_TEXT" ? "1.22em" : "1em";
+  const lines = Array.from({ length: lineCount });
+
+  return (
+    <span
+      ref={guideRef}
+      className="pointer-events-none absolute inset-0 block overflow-hidden rounded-[2px] px-[0.3em] py-[0.2em] text-primary/65"
+      style={getInteractiveHomeworkTextStyle(kind)}
+    >
+      <span className="absolute inset-x-[0.3em] top-[0.2em] flex flex-col">
+        {lines.map((_, index) => (
+          <span
+            key={index}
+            className="block border-b border-dashed border-primary/35"
+            style={{ height: lineHeight }}
+          />
+        ))}
+      </span>
+      <span className="absolute left-[0.35em] top-[0.15em] font-semibold text-primary/45">
+        texto
+      </span>
+      {showCount ? (
+        <span className="absolute right-1 top-1 rounded-full border border-primary/20 bg-white/85 px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary shadow-sm">
+          {lineCount} {lineCount === 1 ? "linha" : "linhas"}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function FieldAnswerPreview({
+  field,
+  selected = false,
+}: {
+  field: EditableHomeworkField;
+  selected?: boolean;
+}) {
   if (field.type === "CHECKBOX") {
     return (
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -430,25 +510,11 @@ function FieldAnswerPreview({ field }: { field: EditableHomeworkField }) {
   }
 
   if (field.type === "SHORT_TEXT") {
-    return (
-      <span
-        className="pointer-events-none absolute inset-0 flex items-center overflow-hidden whitespace-nowrap px-[0.25em] font-semibold text-primary/70"
-        style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
-      >
-        texto
-      </span>
-    );
+    return <FieldTextGuide kind="SHORT_TEXT" showCount={selected} />;
   }
 
   if (field.type === "LONG_TEXT") {
-    return (
-      <span
-        className="pointer-events-none absolute inset-0 overflow-hidden px-[0.3em] py-[0.2em] font-semibold text-primary/70"
-        style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
-      >
-        texto
-      </span>
-    );
+    return <FieldTextGuide kind="LONG_TEXT" showCount={selected} />;
   }
 
   return (
@@ -724,6 +790,12 @@ function InteractiveHomeworkCanvasEditor({
               {selectedTool === "CHECKBOX" ? (
                 <InteractiveHomeworkMark className="text-primary/85" />
               ) : null}
+              {selectedTool === "TEXT" ? (
+                <FieldTextGuide
+                  kind={textFieldTypeForGeometry(draftGeometry)}
+                  showCount
+                />
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -751,7 +823,7 @@ function InteractiveHomeworkCanvasEditor({
             }}
             title={field.label || `Area ${index + 1}`}
           >
-            <FieldAnswerPreview field={field} />
+            <FieldAnswerPreview field={field} selected={selected} />
             {selected ? (
               <button
                 aria-label="Redimensionar area"

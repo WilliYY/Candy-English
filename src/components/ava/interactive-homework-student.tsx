@@ -548,7 +548,7 @@ export function InteractiveHomeworkStudent({
           pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
           renderField={(field, index, style) => {
               const commonClass =
-                "size-full min-w-0 appearance-none border-0 bg-transparent font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
+                "block size-full max-h-none max-w-none min-h-0 min-w-0 appearance-none border-0 bg-transparent text-left font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
 
               if (field.type === "CHECKBOX") {
                 return (
@@ -622,17 +622,18 @@ export function InteractiveHomeworkStudent({
                   className="pointer-events-auto"
                   style={style}
                 >
-                  <textarea
-                    aria-label={field.label ?? `Campo ${index + 1}`}
-                    className={`${commonClass} resize-none overflow-hidden px-[0.3em] py-[0.2em]`}
-                    disabled={isLocked}
-                    onChange={(event) =>
-                      updateValue(field.id, event.target.value)
-                    }
-                    placeholder={field.placeholder ?? "Resposta"}
-                    style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
-                    value={values[field.id] ?? ""}
-                  />
+                    <textarea
+                      aria-label={field.label ?? `Campo ${index + 1}`}
+                      className={`${commonClass} resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
+                      disabled={isLocked}
+                      onChange={(event) =>
+                        updateValue(field.id, event.target.value)
+                      }
+                      placeholder={field.placeholder ?? "Resposta"}
+                      style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+                      value={values[field.id] ?? ""}
+                      wrap="soft"
+                    />
                 </InteractiveHomeworkTextFrame>
               );
           }}
