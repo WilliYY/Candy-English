@@ -535,7 +535,7 @@ export function StudentWorkspace({
 
   return (
     <section className="relative isolate mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-8 px-6 py-10 text-white lg:px-8">
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,410px)]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/90 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
             <BookOpen aria-hidden="true" />

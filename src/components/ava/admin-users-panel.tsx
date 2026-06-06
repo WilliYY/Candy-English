@@ -708,7 +708,7 @@ export function AdminUsersPanel({
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-10 lg:px-8">
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,410px)]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
             <ShieldCheck aria-hidden="true" />
