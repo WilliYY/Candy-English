@@ -288,13 +288,13 @@ const navGroups = [
 ];
 
 const navPanelLinkClassName =
-  "flex items-center gap-2 rounded-xl border border-primary/15 bg-white/75 px-3 py-2.5 text-sm font-semibold text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-secondary/80 hover:shadow-md";
+  "relative flex items-center gap-2 overflow-hidden rounded-xl border border-primary/15 bg-white/75 px-3 py-2.5 text-sm font-semibold text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-secondary/80 hover:shadow-md";
 const navPanelActiveClassName =
-  "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90";
+  "ava-nav-active-glow border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90";
 const navItemLinkClassName =
-  "group/nav-item flex items-center gap-2 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-primary/75 transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary/10 hover:text-primary hover:shadow-sm";
+  "group/nav-item relative flex items-center gap-2 overflow-hidden rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-primary/75 transition-all hover:-translate-y-0.5 hover:border-primary/20 hover:bg-primary/10 hover:text-primary hover:shadow-sm";
 const navItemActiveClassName =
-  "border-primary/40 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:text-primary-foreground [&_[data-nav-icon]]:bg-white/15 [&_[data-nav-icon]]:text-primary-foreground";
+  "ava-nav-active-glow border-primary/40 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:text-primary-foreground [&_[data-nav-icon]]:bg-white/15 [&_[data-nav-icon]]:text-primary-foreground";
 
 export default async function AvaLayout({
   children,
@@ -343,23 +343,39 @@ export default async function AvaLayout({
               </Button>
             </div>
 
-            <div className="rounded-[1.25rem] border border-primary/15 bg-white/80 p-4 shadow-[0_14px_34px_rgb(44_19_56_/_0.08)] backdrop-blur-xl lg:p-5">
-              <div className="flex items-center gap-3">
+            <div
+              className={
+                role === "STUDENT"
+                  ? "ava-sidebar-user-card ava-sidebar-user-card--student rounded-[1.25rem] border p-4 shadow-[0_14px_34px_rgb(44_19_56_/_0.08)] backdrop-blur-xl lg:p-5"
+                  : "ava-sidebar-user-card rounded-[1.25rem] border p-4 shadow-[0_14px_34px_rgb(44_19_56_/_0.08)] backdrop-blur-xl lg:p-5"
+              }
+            >
+              <div className="relative z-10 flex items-center gap-3">
                 <UserAvatar
                   avatarPath={currentUser?.avatarPath}
-                  className="size-10 rounded-lg"
+                  className="size-12 rounded-2xl border-white/80 shadow-md ring-2 ring-accent/20"
                   iconClassName="size-5"
                   userId={userId}
                 />
                 <div className="min-w-0 text-sm">
-                  <p className="truncate font-semibold">
+                  <p className="mb-1 text-[0.62rem] font-bold uppercase tracking-[0.2em] text-primary/50">
+                    {role === "STUDENT" ? "Study zone" : "Perfil"}
+                  </p>
+                  <p className="truncate text-base font-bold leading-tight text-primary">
                     {currentUser?.name ?? session.user.name ?? "Visitante"}
                   </p>
-                  <p className="truncate text-muted-foreground">
+                  <p className="truncate text-xs font-semibold text-muted-foreground">
                     {role ? ROLE_LABELS[role] : "Sem login"}
                   </p>
                 </div>
               </div>
+              {role === "STUDENT" ? (
+                <div className="relative z-10 mt-4 grid grid-cols-3 gap-2">
+                  <span className="ava-sidebar-study-chip">XP</span>
+                  <span className="ava-sidebar-study-chip">Aulas</span>
+                  <span className="ava-sidebar-study-chip">Catty</span>
+                </div>
+              ) : null}
             </div>
 
             <div className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-primary/60">
@@ -375,13 +391,25 @@ export default async function AvaLayout({
                   return (
                     <div
                       key={group.href}
-                      className="rounded-[1.15rem] border border-primary/15 bg-white/75 p-3 shadow-sm backdrop-blur-xl lg:p-4"
+                      className="ava-sidebar-student-nav rounded-[1.15rem] border border-primary/15 bg-white/75 p-3 shadow-sm backdrop-blur-xl lg:p-4"
                     >
-                      <div className="mb-2 flex items-center gap-2 px-2 py-1 text-sm font-bold text-primary">
-                        <group.icon aria-hidden="true" className="size-4" />
-                        Student
+                      <div className="relative z-10 mb-3 flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/70 px-3 py-2.5 text-sm font-bold text-primary shadow-sm">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                            <group.icon aria-hidden="true" className="size-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate">Trilha Candy</span>
+                            <span className="block text-[0.64rem] font-bold uppercase tracking-[0.16em] text-primary/50">
+                              Student
+                            </span>
+                          </span>
+                        </span>
+                        <span className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[0.68rem] font-bold text-secondary-foreground">
+                          {group.links.length + 1} mod
+                        </span>
                       </div>
-                      <div className="flex flex-col gap-2">
+                      <div className="relative z-10 flex flex-col gap-2">
                         <AvaNavAlertLink
                           href={group.href}
                           signature={navAlertSignatures[group.href]}
