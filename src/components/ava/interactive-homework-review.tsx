@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
   getInteractiveHomeworkTextStyle,
   InteractiveHomeworkTextFrame,
@@ -141,10 +142,10 @@ export function InteractiveHomeworkReview({
                 <div
                   key={field.id}
                   aria-label={field.label ?? `Campo ${index + 1}`}
-                  className="absolute flex items-center justify-center rounded-[3px] text-lg font-bold text-primary"
-                  style={style}
+                  className="absolute flex items-center justify-center rounded-[3px] text-primary"
+                  style={{ ...style, containerType: "size" }}
                 >
-                  {value === "true" ? "X" : null}
+                  {value === "true" ? <InteractiveHomeworkMark /> : null}
                 </div>
               );
             }

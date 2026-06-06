@@ -26,6 +26,7 @@ import {
   saveInteractiveHomeworkFields,
 } from "@/app/ava/teacher/actions";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import { getInteractiveHomeworkTextStyle } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -117,6 +118,7 @@ type EditorAction =
     };
 
 const TEXT_FIELD_LONG_THRESHOLD = 5.6;
+const POINTER_CLICK_THRESHOLD_PIXELS = 10;
 
 const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
   "TEXT",
@@ -127,13 +129,13 @@ const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
 const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
   CHECKBOX: {
     Icon: CheckSquare,
-    defaultHeight: 2.4,
-    defaultPixelSize: 24,
-    defaultWidth: 2.4,
+    defaultHeight: 1.6,
+    defaultPixelSize: 18,
+    defaultWidth: 1.6,
     label: "Marcar",
-    minHeight: 2,
-    minPixelSize: 18,
-    minWidth: 2,
+    minHeight: 1,
+    minPixelSize: 14,
+    minWidth: 1,
     placeholder: null,
     resizeMode: "square",
   },
@@ -259,9 +261,18 @@ function geometryFromPixelSize(
   sizePixels: number,
 ) {
   const meta = FIELD_TOOL_META[type];
-  const width = clampNumber((sizePixels / pageRect.width) * 100, meta.minWidth, 100);
+  const safeSizePixels = clampNumber(
+    sizePixels,
+    meta.minPixelSize ?? 1,
+    Math.min(pageRect.width, pageRect.height),
+  );
+  const width = clampNumber(
+    (safeSizePixels / pageRect.width) * 100,
+    meta.minWidth,
+    100,
+  );
   const height = clampNumber(
-    (sizePixels / pageRect.height) * 100,
+    (safeSizePixels / pageRect.height) * 100,
     meta.minHeight,
     100,
   );
@@ -305,14 +316,16 @@ function geometryFromPoints(
   const meta = FIELD_TOOL_META[type];
   const rawWidth = Math.abs(current.x - start.x);
   const rawHeight = Math.abs(current.y - start.y);
+  const rawWidthPixels = (rawWidth / 100) * pageRect.width;
+  const rawHeightPixels = (rawHeight / 100) * pageRect.height;
 
-  if (rawWidth < 1.5 && rawHeight < 1.5) {
+  if (
+    Math.max(rawWidthPixels, rawHeightPixels) < POINTER_CLICK_THRESHOLD_PIXELS
+  ) {
     return defaultGeometryFromPoint(type, start, pageRect);
   }
 
   if (meta.resizeMode === "square") {
-    const rawWidthPixels = (rawWidth / 100) * pageRect.width;
-    const rawHeightPixels = (rawHeight / 100) * pageRect.height;
     const sizePixels = Math.max(
       meta.minPixelSize ?? 18,
       rawWidthPixels,
@@ -410,8 +423,8 @@ function resizeFieldGeometry(
 function FieldAnswerPreview({ field }: { field: EditableHomeworkField }) {
   if (field.type === "CHECKBOX") {
     return (
-      <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-bold leading-none text-primary/85">
-        x
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <InteractiveHomeworkMark className="text-primary/90" />
       </span>
     );
   }
@@ -694,25 +707,39 @@ function InteractiveHomeworkCanvasEditor({
           activeAction.page === pageNumber &&
           draftGeometry ? (
             <div
-              className="absolute rounded-[3px] border-2 border-primary bg-primary/10 shadow-[0_0_0_1px_rgba(65,42,76,0.16)]"
+              className={cn(
+                "absolute rounded-[3px] border-2 border-primary shadow-[0_0_0_1px_rgba(65,42,76,0.16)]",
+                selectedTool === "CHECKBOX"
+                  ? "flex items-center justify-center bg-white/50"
+                  : "bg-primary/10",
+              )}
               style={{
+                containerType: "size",
                 height: `${draftGeometry.height}%`,
                 left: `${draftGeometry.x}%`,
                 top: `${draftGeometry.y}%`,
                 width: `${draftGeometry.width}%`,
               }}
-            />
+            >
+              {selectedTool === "CHECKBOX" ? (
+                <InteractiveHomeworkMark className="text-primary/85" />
+              ) : null}
+            </div>
           ) : null}
         </div>
       )}
       renderField={(field, index, style) => {
         const selected = selectedFieldId === field.id;
+        const isMarkField = field.type === "CHECKBOX";
 
         return (
           <div
             key={field.id}
             className={cn(
-              "absolute z-10 cursor-move touch-none rounded-[3px] border-2 bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
+              "absolute z-10 cursor-move touch-none rounded-[3px] border-2",
+              isMarkField
+                ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
+                : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
                 ? "border-primary ring-2 ring-primary/25"
                 : "border-dashed border-primary/55 hover:border-primary",
@@ -728,7 +755,12 @@ function InteractiveHomeworkCanvasEditor({
             {selected ? (
               <button
                 aria-label="Redimensionar area"
-                className="absolute -bottom-2 -right-2 size-5 cursor-nwse-resize rounded-full border border-primary/30 bg-white text-primary shadow-sm"
+                className={cn(
+                  "absolute cursor-nwse-resize rounded-full border border-primary/30 bg-white text-primary shadow-sm",
+                  isMarkField
+                    ? "-bottom-1.5 -right-1.5 size-3.5"
+                    : "-bottom-2 -right-2 size-5",
+                )}
                 onPointerDown={(event) => beginResize(event, field)}
                 type="button"
               />

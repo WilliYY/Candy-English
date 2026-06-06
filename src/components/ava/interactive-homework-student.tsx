@@ -24,6 +24,7 @@ import {
   submitInteractiveHomework,
 } from "@/app/ava/student/actions";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
   getInteractiveHomeworkTextStyle,
   InteractiveHomeworkTextFrame,
@@ -553,9 +554,13 @@ export function InteractiveHomeworkStudent({
                 return (
                   <label
                     key={field.id}
-                    className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-lg font-bold leading-none text-primary"
-                    style={style}
+                    className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-primary"
+                    style={{ ...style, containerType: "size" }}
                   >
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    />
                     <input
                       aria-label={field.label ?? `Campo ${index + 1}`}
                       checked={values[field.id] === "true"}
@@ -570,7 +575,7 @@ export function InteractiveHomeworkStudent({
                       type="checkbox"
                     />
                     {values[field.id] === "true" ? (
-                      <span aria-hidden="true">X</span>
+                      <InteractiveHomeworkMark />
                     ) : null}
                   </label>
                 );

@@ -71,7 +71,7 @@ function withOptimizationMessage(baseMessage: string, optimizationMessage: strin
 
 function getInteractiveFieldMinimums(type: string) {
   if (type === "CHECKBOX") {
-    return { height: 2, width: 2 };
+    return { height: 1, width: 1 };
   }
 
   if (type === "SHORT_TEXT") {
