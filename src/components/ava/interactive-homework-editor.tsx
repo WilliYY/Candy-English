@@ -26,6 +26,10 @@ import {
   deleteInteractiveHomework,
   saveInteractiveHomeworkFields,
 } from "@/app/ava/teacher/actions";
+import {
+  type DrawingStroke,
+  InteractiveHomeworkDrawingStrokes,
+} from "@/components/ava/interactive-homework-drawing";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
@@ -67,6 +71,7 @@ type FieldTool = EditableHomeworkField["type"];
 type EditorFieldTool = "CHECKBOX" | "DRAWING" | "TEXT";
 
 type FieldToolMeta = {
+  defaultAnchor?: "center" | "top-left";
   Icon: LucideIcon;
   defaultHeight: number;
   defaultPixelSize?: number;
@@ -123,6 +128,16 @@ type EditorAction =
 
 const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
+const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
+  [
+    [14, 62],
+    [26, 44],
+    [39, 55],
+    [55, 35],
+    [73, 48],
+    [86, 28],
+  ],
+];
 
 const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
   "TEXT",
@@ -144,9 +159,10 @@ const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
     resizeMode: "square",
   },
   DRAWING: {
+    defaultAnchor: "center",
     Icon: Pencil,
-    defaultHeight: 14,
-    defaultWidth: 34,
+    defaultHeight: 12,
+    defaultWidth: 32,
     label: "Desenho",
     minHeight: 6,
     minWidth: 8,
@@ -302,12 +318,20 @@ function defaultGeometryFromPoint(
 
   const width = meta.defaultWidth;
   const height = meta.defaultHeight;
+  const x =
+    meta.defaultAnchor === "center"
+      ? point.x - width / 2
+      : point.x;
+  const y =
+    meta.defaultAnchor === "center"
+      ? point.y - height / 2
+      : point.y;
 
   return cleanGeometry({
     height,
     width,
-    x: clampNumber(point.x, 0, 100 - width),
-    y: clampNumber(point.y, 0, 100 - height),
+    x: clampNumber(x, 0, 100 - width),
+    y: clampNumber(y, 0, 100 - height),
   });
 }
 
@@ -388,8 +412,8 @@ function resizeFieldGeometry(
   pageRect: PageRect,
 ) {
   const meta = metaForFieldType(field.type);
-  const minWidth = meta.resizeMode === "square" ? meta.minWidth : 4;
-  const minHeight = meta.resizeMode === "square" ? meta.minHeight : 4;
+  const minWidth = isTextFieldType(field.type) ? 4 : meta.minWidth;
+  const minHeight = isTextFieldType(field.type) ? 4 : meta.minHeight;
   const x = clampNumber(field.x, 0, 100 - minWidth);
   const y = clampNumber(field.y, 0, 100 - minHeight);
 
@@ -518,7 +542,24 @@ function FieldAnswerPreview({
   }
 
   return (
-    <span className="pointer-events-none absolute inset-2 rounded border border-dashed border-primary/25" />
+    <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-[3px]">
+      <span className="absolute inset-2 rounded border border-dashed border-primary/25 bg-white/20" />
+      <svg
+        aria-hidden="true"
+        className="absolute inset-[12%] size-[76%] text-primary/45"
+        viewBox="0 0 100 100"
+      >
+        <InteractiveHomeworkDrawingStrokes
+          strokeWidth={3}
+          strokes={DRAWING_PREVIEW_STROKES}
+        />
+      </svg>
+      {selected ? (
+        <span className="absolute bottom-1 left-1 rounded-full border border-primary/15 bg-white/85 px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary/70 shadow-sm">
+          desenhar
+        </span>
+      ) : null}
+    </span>
   );
 }
 
@@ -777,7 +818,9 @@ function InteractiveHomeworkCanvasEditor({
                 "absolute rounded-[3px] border-2 border-primary shadow-[0_0_0_1px_rgba(65,42,76,0.16)]",
                 selectedTool === "CHECKBOX"
                   ? "flex items-center justify-center bg-white/50"
-                  : "bg-primary/10",
+                  : selectedTool === "DRAWING"
+                    ? "bg-white/35"
+                    : "bg-primary/10",
               )}
               style={{
                 containerType: "size",
@@ -796,6 +839,21 @@ function InteractiveHomeworkCanvasEditor({
                   showCount
                 />
               ) : null}
+              {selectedTool === "DRAWING" ? (
+                <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-[3px]">
+                  <span className="absolute inset-2 rounded border border-dashed border-primary/25 bg-white/20" />
+                  <svg
+                    aria-hidden="true"
+                    className="absolute inset-[12%] size-[76%] text-primary/45"
+                    viewBox="0 0 100 100"
+                  >
+                    <InteractiveHomeworkDrawingStrokes
+                      strokeWidth={3}
+                      strokes={DRAWING_PREVIEW_STROKES}
+                    />
+                  </svg>
+                </span>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -803,6 +861,7 @@ function InteractiveHomeworkCanvasEditor({
       renderField={(field, index, style) => {
         const selected = selectedFieldId === field.id;
         const isMarkField = field.type === "CHECKBOX";
+        const isDrawingField = field.type === "DRAWING";
 
         return (
           <div
@@ -811,7 +870,9 @@ function InteractiveHomeworkCanvasEditor({
               "absolute z-10 cursor-move touch-none rounded-[3px] border-2",
               isMarkField
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
-                : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
+                : isDrawingField
+                  ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
+                  : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
                 ? "border-primary ring-2 ring-primary/25"
                 : "border-dashed border-primary/55 hover:border-primary",

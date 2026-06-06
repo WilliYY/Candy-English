@@ -72,8 +72,9 @@ Tabelas e enums:
 - Campos de texto baixos devem aceitar lacunas precisas; campos maiores viram area de texto longa. O tamanho da fonte se adapta ao quadro desenhado pela teacher, usa toda a largura/altura util e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
 - No editor da teacher, campos de texto mostram guias discretas de linha e contador de linhas enquanto a area e criada ou selecionada; essas guias nao aparecem para o aluno nem na correcao final.
 - A ferramenta `Marcar` cria uma marca pequena e centralizada quando a teacher clica no PDF; se arrastar, mantem um quadrado proporcional em pixels para alinhar melhor com caixas, parenteses e lacunas ja impressas no material.
+- A ferramenta `Desenho` cria uma area centralizada quando usada por clique e uma area livre quando usada por arrasto; o editor mostra uma previa discreta de canvas para orientar tamanho e posicao.
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar.
-- Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas e deve permitir desfazer o ultimo traco sem apagar todo o desenho.
+- Campos podem ser `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas, renderiza traco suavizado, aceita ponto por toque/clique e deve permitir desfazer o ultimo traco ou limpar o desenho sem apagar toda a atividade.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.
@@ -102,6 +103,7 @@ Tabelas e enums:
 - Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual por pixel e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
 - A marca de `CHECKBOX` deve ser exibida de forma adaptativa no editor, na resposta do aluno e na correcao, mantendo apenas o `X` visivel para o aluno.
 - A interface mostra apenas `Texto` para criacao de escrita; no banco, a area e normalizada como `SHORT_TEXT` ou `LONG_TEXT` de acordo com a altura para manter compatibilidade com aluno, correcao e atividades antigas. A mesma base de estilo calcula fonte adaptativa e quantidade aproximada de linhas possiveis.
+- O desenho usa helper compartilhado para serializar, validar e renderizar os tracos no aluno e na correcao, evitando diferenca visual entre o que o aluno desenhou e o que a teacher revisa.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.
 

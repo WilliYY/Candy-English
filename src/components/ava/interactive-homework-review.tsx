@@ -1,6 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import {
+  InteractiveHomeworkDrawingStrokes,
+  parseInteractiveHomeworkDrawingValue,
+} from "@/components/ava/interactive-homework-drawing";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
@@ -34,9 +38,6 @@ type InteractiveHomeworkReviewProps = {
   title: string;
 };
 
-type DrawingPoint = [number, number];
-type DrawingStroke = DrawingPoint[];
-
 function answersToMap(answers: unknown) {
   const values: Record<string, string> = {};
 
@@ -58,50 +59,6 @@ function answersToMap(answers: unknown) {
   }
 
   return values;
-}
-
-function parseDrawingValue(value?: string): DrawingStroke[] {
-  if (!value) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(value) as { strokes?: unknown };
-
-    if (!Array.isArray(parsed.strokes)) {
-      return [];
-    }
-
-    return parsed.strokes
-      .map((stroke) => {
-        if (!Array.isArray(stroke)) {
-          return [];
-        }
-
-        return stroke
-          .map((point) => {
-            if (
-              !Array.isArray(point) ||
-              typeof point[0] !== "number" ||
-              typeof point[1] !== "number"
-            ) {
-              return null;
-            }
-
-            return [point[0], point[1]] satisfies DrawingPoint;
-          })
-          .filter((point): point is DrawingPoint => Boolean(point));
-      })
-      .filter((stroke) => stroke.length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function drawingPath(stroke: DrawingStroke) {
-  return stroke
-    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`)
-    .join(" ");
 }
 
 export function InteractiveHomeworkReview({
@@ -151,7 +108,7 @@ export function InteractiveHomeworkReview({
             }
 
             if (field.type === "DRAWING") {
-              const strokes = parseDrawingValue(value);
+              const strokes = parseInteractiveHomeworkDrawingValue(value);
 
               return (
                 <svg
@@ -162,18 +119,7 @@ export function InteractiveHomeworkReview({
                   style={style}
                   viewBox="0 0 100 100"
                 >
-                  {strokes.map((stroke, strokeIndex) => (
-                    <path
-                      key={`${strokeIndex}-${stroke.length}`}
-                      d={drawingPath(stroke)}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.4"
-                      vectorEffect="non-scaling-stroke"
-                    />
-                  ))}
+                  <InteractiveHomeworkDrawingStrokes strokes={strokes} />
                 </svg>
               );
             }

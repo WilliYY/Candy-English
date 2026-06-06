@@ -3,6 +3,7 @@
 import {
   CheckCircle2,
   ClipboardCheck,
+  Eraser,
   LoaderCircle,
   RotateCcw,
   Save,
@@ -23,6 +24,13 @@ import {
   saveInteractiveHomeworkDraft,
   submitInteractiveHomework,
 } from "@/app/ava/student/actions";
+import {
+  type DrawingPoint,
+  type DrawingStroke,
+  InteractiveHomeworkDrawingStrokes,
+  parseInteractiveHomeworkDrawingValue,
+  serializeInteractiveHomeworkDrawingValue,
+} from "@/components/ava/interactive-homework-drawing";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
@@ -128,67 +136,8 @@ function isCompleteStatus(status?: string) {
   return status === "SUBMITTED" || status === "REVIEWED";
 }
 
-type DrawingPoint = [number, number];
-type DrawingStroke = DrawingPoint[];
-
 function roundPoint(value: number) {
   return Math.round(value * 10) / 10;
-}
-
-function parseDrawingValue(value?: string): DrawingStroke[] {
-  if (!value) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(value) as { strokes?: unknown };
-
-    if (!Array.isArray(parsed.strokes)) {
-      return [];
-    }
-
-    return parsed.strokes
-      .slice(0, 30)
-      .map((stroke) => {
-        if (!Array.isArray(stroke)) {
-          return [];
-        }
-
-        return stroke
-          .slice(0, 160)
-          .map((point) => {
-            if (
-              !Array.isArray(point) ||
-              typeof point[0] !== "number" ||
-              typeof point[1] !== "number"
-            ) {
-              return null;
-            }
-
-            return [
-              Math.min(100, Math.max(0, roundPoint(point[0]))),
-              Math.min(100, Math.max(0, roundPoint(point[1]))),
-            ] satisfies DrawingPoint;
-          })
-          .filter((point): point is DrawingPoint => Boolean(point));
-      })
-      .filter((stroke) => stroke.length > 0);
-  } catch {
-    return [];
-  }
-}
-
-function serializeDrawingValue(strokes: DrawingStroke[]) {
-  return JSON.stringify({
-    strokes,
-    v: 1,
-  });
-}
-
-function drawingPath(stroke: DrawingStroke) {
-  return stroke
-    .map(([x, y], index) => `${index === 0 ? "M" : "L"} ${x} ${y}`)
-    .join(" ");
 }
 
 function pointDistance(a: DrawingPoint, b: DrawingPoint) {
@@ -232,15 +181,19 @@ function DrawingField({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const isDrawing = useRef(false);
   const [strokes, setStrokes] = useState<DrawingStroke[]>(() =>
-    parseDrawingValue(value),
+    parseInteractiveHomeworkDrawingValue(value),
   );
 
   useEffect(() => {
-    setStrokes(parseDrawingValue(value));
+    setStrokes(parseInteractiveHomeworkDrawingValue(value));
   }, [value]);
 
   function commit(nextStrokes: DrawingStroke[]) {
-    onChange(serializeDrawingValue(nextStrokes));
+    onChange(
+      nextStrokes.length > 0
+        ? serializeInteractiveHomeworkDrawingValue(nextStrokes)
+        : "",
+    );
     return nextStrokes;
   }
 
@@ -267,7 +220,7 @@ function DrawingField({
     const point = pointerToDrawingPoint(svgRef.current, event);
 
     setStrokes((current) => {
-      if (totalDrawingPoints(current) >= 420) {
+      if (totalDrawingPoints(current) >= 520) {
         return current;
       }
 
@@ -279,7 +232,7 @@ function DrawingField({
 
       const lastPoint = lastStroke[lastStroke.length - 1];
 
-      if (lastPoint && pointDistance(lastPoint, point) < 0.8) {
+      if (lastPoint && pointDistance(lastPoint, point) < 0.55) {
         return current;
       }
 
@@ -303,6 +256,10 @@ function DrawingField({
     setStrokes((current) => commit(current.slice(0, -1)));
   }
 
+  function clearDrawing() {
+    setStrokes(() => commit([]));
+  }
+
   return (
     <div
       className="pointer-events-auto group absolute bg-transparent"
@@ -311,7 +268,7 @@ function DrawingField({
       <svg
         ref={svgRef}
         aria-label={ariaLabel}
-        className="size-full touch-none rounded-[3px] outline-none"
+        className="size-full cursor-crosshair touch-none rounded-[3px] text-primary outline-none"
         onPointerCancel={endStroke}
         onPointerDown={startStroke}
         onPointerMove={continueStroke}
@@ -320,29 +277,27 @@ function DrawingField({
         tabIndex={disabled ? -1 : 0}
         viewBox="0 0 100 100"
       >
-        {strokes.map((stroke, index) => (
-          <path
-            key={`${index}-${stroke.length}`}
-            d={drawingPath(stroke)}
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.4"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
+        <InteractiveHomeworkDrawingStrokes strokes={strokes} />
       </svg>
       {!disabled && strokes.length > 0 ? (
-        <span className="absolute right-0 top-0 flex gap-1">
+        <span className="absolute right-0 top-0 flex gap-1 rounded-full bg-white/70 p-0.5 shadow-sm backdrop-blur-sm">
           <button
             aria-label="Desfazer ultimo desenho"
-            className="flex size-6 items-center justify-center rounded bg-white/90 text-primary shadow-sm hover:bg-white"
+            className="flex size-6 items-center justify-center rounded-full text-primary hover:bg-white"
             onClick={undoStroke}
             onPointerDown={(event) => event.stopPropagation()}
             type="button"
           >
             <RotateCcw aria-hidden="true" className="size-3.5" />
+          </button>
+          <button
+            aria-label="Limpar desenho"
+            className="flex size-6 items-center justify-center rounded-full text-primary hover:bg-white"
+            onClick={clearDrawing}
+            onPointerDown={(event) => event.stopPropagation()}
+            type="button"
+          >
+            <Eraser aria-hidden="true" className="size-3.5" />
           </button>
         </span>
       ) : null}
