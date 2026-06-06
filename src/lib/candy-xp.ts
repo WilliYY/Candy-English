@@ -18,8 +18,8 @@ export const CANDY_XP_REWARDS = {
   student: {
     candyXpActivityCompleted: 80,
     feedbackReviewed: 25,
-    homeworkSubmitted: 50,
-    lessonActivitySubmitted: 40,
+    homeworkSubmitted: 150,
+    lessonActivitySubmitted: 80,
     profileReady: STUDENT_PROFILE_COMPLETION_MAX_XP,
   },
   teacher: {

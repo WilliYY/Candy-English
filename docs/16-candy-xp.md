@@ -73,8 +73,8 @@ Rotas das atividades:
 Student:
 
 - `Perfil preparado`: percentual dos dados importantes do perfil, rendendo ate 300 XP.
-- `Aulas finalizadas`: atividade interativa criada pelo fluxo de aula e entregue.
-- `Homeworks enviadas`: homework entregue.
+- `Aulas finalizadas`: atividade interativa criada pelo fluxo de aula e entregue, valendo 80 XP por aula finalizada.
+- `Homeworks enviadas`: homework entregue, valendo 150 XP por envio.
 - `Feedbacks recebidos`: submissao revisada pela teacher.
 - `Candy XP`: historias e missoes Candy XP concluidas.
 
