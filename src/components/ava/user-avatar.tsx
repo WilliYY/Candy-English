@@ -22,7 +22,7 @@ export function UserAvatar({
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary text-primary-foreground",
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/70 bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/12",
         className,
       )}
     >

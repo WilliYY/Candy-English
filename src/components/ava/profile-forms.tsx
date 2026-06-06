@@ -1,7 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Camera, LoaderCircle, Save } from "lucide-react";
+import {
+  Camera,
+  ContactRound,
+  HeartHandshake,
+  ImagePlus,
+  LoaderCircle,
+  Save,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -66,9 +73,19 @@ export function ProfileForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <FieldGroup>
-        <div className="rounded-lg border bg-white p-4 shadow-sm">
-          <div className="mb-4">
-            <h3 className="text-base font-semibold">Dados principais</h3>
+        <div className="ava-profile-card rounded-2xl border p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <ContactRound aria-hidden="true" className="size-5" />
+            </span>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+                Perfil
+              </p>
+              <h3 className="mt-1 text-base font-semibold">
+                Dados principais
+              </h3>
+            </div>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
@@ -116,11 +133,19 @@ export function ProfileForm({
         </div>
 
         {showStudentFields ? (
-          <div className="rounded-lg border bg-white p-4 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-base font-semibold">
-                Dados do aluno e responsavel
-              </h3>
+          <div className="ava-profile-card rounded-2xl border p-5">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                <HeartHandshake aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+                  Student
+                </p>
+                <h3 className="mt-1 text-base font-semibold">
+                  Dados do aluno e responsavel
+                </h3>
+              </div>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               <Field data-invalid={Boolean(form.formState.errors.studentPhone)}>
@@ -299,7 +324,7 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
 
   return (
     <form
-      className="flex flex-col gap-4 rounded-lg border bg-white p-4 shadow-sm"
+      className="ava-profile-card flex flex-col gap-5 rounded-2xl border p-5"
       onSubmit={async (event) => {
         event.preventDefault();
         setMessage(null);
@@ -337,23 +362,31 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
       }}
     >
       <div className="flex items-center gap-4">
-        {previewUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={previewUrl}
-            alt="Previa da nova foto"
-            className="size-20 shrink-0 rounded-full border bg-muted object-cover"
-          />
-        ) : (
-          <UserAvatar
-            avatarPath={avatarPath}
-            className="size-20 rounded-full border bg-muted text-primary"
-            iconClassName="size-9"
-            userId={userId}
-          />
-        )}
+        <span className="relative shrink-0 rounded-full bg-gradient-to-br from-secondary via-white to-primary/10 p-1 shadow-sm ring-1 ring-primary/10">
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={previewUrl}
+              alt="Previa da nova foto"
+              className="size-24 rounded-full border border-white/80 bg-muted object-cover shadow-inner ring-1 ring-primary/15"
+            />
+          ) : (
+            <UserAvatar
+              avatarPath={avatarPath}
+              className="size-24 rounded-full bg-muted text-primary"
+              iconClassName="size-10"
+              userId={userId}
+            />
+          )}
+          <span className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-full border border-white/80 bg-primary text-primary-foreground shadow-sm">
+            <ImagePlus aria-hidden="true" className="size-4" />
+          </span>
+        </span>
         <div className="min-w-0">
-          <h3 className="font-semibold">Foto do perfil</h3>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+            Foto
+          </p>
+          <h3 className="mt-1 font-semibold">Foto do perfil</h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             Use uma foto quadrada ou centralizada para aparecer bem no AVA.
           </p>
