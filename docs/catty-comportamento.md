@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento registra exemplos internos para manter a Catty com voz de mascote-professora da Candy English. Ele serve como guia humano e como base para o smoke `npm run audit:catty-behavior`, que valida as mesmas intencoes em `src/lib/catty-examples.ts`.
+Este documento registra exemplos internos para manter a Catty com voz de mascote-professora da Candy English. Ele serve como guia humano e como base para o smoke `npm run audit:catty-behavior`, que valida as mesmas intencoes em `src/lib/catty-examples.ts` e o repertorio ampliado em `src/lib/catty-scenarios.ts`.
 
 A identidade viva da personagem fica em `src/lib/catty-personality.ts`. Esse arquivo concentra bordoes, aberturas, frases de incentivo, recuperacao de erro, homework, correcao, teacher, visitante sem login, baloes publicos/logados e regras para evitar repeticao.
 
@@ -15,6 +15,12 @@ A memoria pessoal da Catty fica em `CattyUserMemory`, separada por usuario logad
 Os artefatos de personalidade ficam em `src/lib/catty-artifacts.ts` e podem ser ajustados por usuario no painel `Catty dos alunos` para Admin/Teacher (`/ava/admin?task=catty-artifacts` e `/ava/teacher?task=catty-artifacts`). Eles transformam interesses seguros do aluno em pequenos memes de fala, como carros, capivara, Pokemon, princesa/contos de fadas, futebol, games ou tema customizado aprovado. Cada tema tem emojis permitidos, sons, mini-bordoes e um exemplo curto. A rota sugere no maximo um artefato quando a mensagem atual, a memoria pessoal ou um `CattyUserArtifact.ACTIVE` combinam com a intencao; se nao combinar, a Catty ignora. Quando um tema ativo esta marcado como `isPrimary`, ele ganha prioridade leve no desempate. A variacao usa o historico recente da propria Catty para evitar repetir o mesmo bordao ou emoji em sequencia. Se o usuario pedir para parar de usar um tema, isso vira uma memoria de estilo `avoid_*`, e a equipe pode desativar o artefato no painel sem apagar o interesse antigo.
 
 O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e aparece na mesma tela `Catty dos alunos` apenas para Admin/Teacher. Quando um tema novo ainda nao tem contexto bom, a equipe pode clicar em `Enriquecer tema`; o sistema consulta cache por provedor/tema/label, pode usar busca web configurada apenas nesse fluxo de preparacao, gera resumo curto, emojis, sons, bordoes, exemplos, vocabulario e cautelas, e salva tudo como `CattyArtifactEnrichment.READY_FOR_REVIEW`. A Catty nunca usa resultado da internet diretamente no chat. A sugestao precisa ser editada/aprovada por humano para virar `CattyUserArtifact.ACTIVE`; Student nao aciona busca nem aprova.
+
+## Repertorio de cenarios
+
+O arquivo `src/lib/catty-scenarios.ts` guarda uma base tipada com 51 cenarios curados para a Catty. Cada item tem nome, intencao, entrada do usuario, contexto opcional, memoria opcional do aluno, resposta ruim a evitar, resposta ideal, regra usada e tags. A selecao local pontua intencao, texto, contexto e memorias pessoais seguras para escolher ate 4 cenarios relevantes por mensagem.
+
+Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gemini/OpenAI seguirem o mesmo padrao de tom e regra pedagogica. No fallback do servidor, quando nao ha IA e existe match forte, a rota pode usar a resposta ideal curada antes do fallback generico. O repertorio cobre gostos pessoais, comida, animais, carros, games, temas geek genericos, rotina, simple past, futuro com `will`, perguntas com `do/does/did`, `was/were`, `there is/there are`, `would like`, shopping, restaurante, homework, Candy XP, teacher, admin, mensagens, confusao, aluno cansado e pedidos de resposta pronta.
 
 ## Regras que os exemplos protegem
 
@@ -154,7 +160,7 @@ Frases de teste e resposta esperada do fallback local:
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, as 20 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 51 cenarios de repertorio, as 20 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

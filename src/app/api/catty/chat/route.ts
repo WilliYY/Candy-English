@@ -26,6 +26,7 @@ import {
   maybeCreateCattyLearningAutoSuggestion,
   pickCattyLearningFallbackReply,
 } from "@/lib/catty-learning";
+import { pickCattyScenarioFallbackReply } from "@/lib/catty-scenarios";
 import {
   applyCattyUserMemoryToFallbackReply,
   getCattyUserMemoryContext,
@@ -77,6 +78,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Quando a intencao for pedido de resposta pronta, negue com carinho e ofereca uma pista ou exemplo parecido.",
   "Quando a IA estiver insegura, prefira uma resposta simples e util em vez de tentar parecer completa.",
   "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
+  "Quando o prompt trouxer cenarios de repertorio da Catty, use-os como guia de tom, formato e regra pedagogica; adapte ao contexto atual e nao vire lista.",
   "Quando o aluno mandar uma frase curta em ingles, continue o mesmo assunto: elogie ou faca microcorrecao, use historico/memoria se combinar e faca uma unica pergunta relacionada.",
   "Quando uma correcao local aparecer no prompt, nao peca a frase de novo: reaja curto, escreva `Melhor: ...`, explique em uma frase simples e continue o mesmo assunto.",
   "Em correcao dentro de homework, nao entregue gabarito final; mostre a estrutura parecida e peca para o aluno aplicar o padrao.",
@@ -870,6 +872,12 @@ export async function POST(request: NextRequest) {
     memories: userMemoryContext,
     message,
   });
+  const scenarioFallbackReply = pickCattyScenarioFallbackReply({
+    context,
+    memories: userMemoryContext,
+    message,
+    plan: responsePlan,
+  });
   const fallbackReply = applyCattyUserMemoryToFallbackReply({
     artifacts: userArtifactContext,
     history: cattyHistory,
@@ -878,6 +886,7 @@ export async function POST(request: NextRequest) {
     plan: responsePlan,
     reply:
       pickCattyLearningFallbackReply(responsePlan, learningContext, message) ??
+      (scenarioFallbackReply ? sanitizeCattyReply(scenarioFallbackReply) : null) ??
       responsePlan.fallbackReply,
   });
   const input = buildCattyInput(

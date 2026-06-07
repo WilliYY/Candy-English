@@ -18,6 +18,12 @@ import {
   pickCattyLearningFallbackReply,
 } from "../src/lib/catty-learning";
 import {
+  CATTY_SCENARIOS,
+  formatCattyScenarioPromptContext,
+  pickCattyScenarioFallbackReply,
+  selectCattyScenariosForPrompt,
+} from "../src/lib/catty-scenarios";
+import {
   applyCattyUserMemoryToFallbackReply,
   extractCattyUserMemoryCandidates,
   extractCattyUserMemoryContradictions,
@@ -103,6 +109,7 @@ function assertPromptContext(input: string, id: string) {
     "Continuidade conversacional",
     "Correcao local detectada",
     "Artefato de personalidade sugerido",
+    "Cenarios de repertorio da Catty",
     "Regra para ADMIN/TEACHER",
     "Conversa recente",
   ]) {
@@ -148,6 +155,117 @@ function assertIntentSafety(id: string, intent: string, fallbackReply: string) {
         "endpoint pronto",
       ].some((term) => normalized.includes(term)),
       `${id}: fallback parece resposta tecnica de codigo/API.`,
+    );
+  }
+}
+
+const requiredScenarioCategories = [
+  "admin",
+  "animals",
+  "candy_xp",
+  "cars",
+  "code_api",
+  "confusion",
+  "correction",
+  "food",
+  "fragment",
+  "future_will",
+  "games",
+  "geek",
+  "homework",
+  "memory_artifact",
+  "messages",
+  "motivation",
+  "out_of_scope",
+  "preference",
+  "questions",
+  "ready_answer",
+  "restaurant",
+  "routine",
+  "shopping",
+  "simple_past",
+  "teacher",
+  "there_is_are",
+  "was_were",
+  "would_like",
+];
+
+function assertCattyScenarioBase() {
+  assertCondition(
+    CATTY_SCENARIOS.length >= 40,
+    `base de cenarios deveria ter pelo menos 40 itens, recebeu ${CATTY_SCENARIOS.length}.`,
+  );
+
+  const ids = new Set<string>();
+  const categories = new Set(CATTY_SCENARIOS.map((scenario) => scenario.category));
+
+  for (const category of requiredScenarioCategories) {
+    assertCondition(
+      categories.has(category as (typeof CATTY_SCENARIOS)[number]["category"]),
+      `base de cenarios nao cobre categoria ${category}.`,
+    );
+  }
+
+  for (const scenario of CATTY_SCENARIOS) {
+    assertCondition(!ids.has(scenario.id), `${scenario.id}: id duplicado.`);
+    ids.add(scenario.id);
+    assertCondition(scenario.name.length > 3, `${scenario.id}: nome vazio.`);
+    assertCondition(
+      scenario.userInput.length > 1,
+      `${scenario.id}: entrada do usuario vazia.`,
+    );
+    assertCondition(
+      scenario.badReply.length > 8,
+      `${scenario.id}: resposta ruim vazia.`,
+    );
+    assertCondition(
+      scenario.idealReply.length > 12,
+      `${scenario.id}: resposta ideal vazia.`,
+    );
+    assertCondition(
+      scenario.rule.length > 12,
+      `${scenario.id}: regra usada vazia.`,
+    );
+    assertCondition(
+      scenario.tags.length > 0,
+      `${scenario.id}: cenario sem tags.`,
+    );
+    assertCondition(
+      includesSignature(scenario.idealReply),
+      `${scenario.id}: resposta ideal sem voz da Catty.`,
+    );
+    assertCondition(
+      !hasTooManyCattyCatchphrases(scenario.idealReply),
+      `${scenario.id}: resposta ideal tem bordoes demais.`,
+    );
+    assertCondition(
+      countEmojis(scenario.idealReply) <= 2,
+      `${scenario.id}: resposta ideal tem emojis demais.`,
+    );
+    assertNoGenericOpening(scenario.idealReply, `${scenario.id}: cenario ideal`);
+    assertIntentSafety(scenario.id, scenario.intent, scenario.idealReply);
+  }
+
+  for (const requiredId of [
+    "preference-correct-chocolate",
+    "preference-error-i-likes",
+    "preference-cars-memory",
+    "fragment-red-cars",
+    "age-have-years-old",
+    "simple-past-school-yesterday",
+    "she-like-pizza",
+    "do-she-like-cats",
+    "i-were-happy",
+    "vague-nao-entendi",
+    "ready-answer-generic",
+    "teacher-feedback-short",
+    "admin-ava-sensitive",
+    "salad-to-english",
+    "api-request-redirect",
+  ]) {
+    assertCondition(
+      CATTY_SCENARIOS.some((scenario) => scenario.id === requiredId),
+      `cenario obrigatorio ausente: ${requiredId}.`,
     );
   }
 }
@@ -224,6 +342,61 @@ function main() {
   assertCondition(
     CATTY_BEHAVIOR_EXAMPLES.length === expectedExampleCount,
     `Esperava ${expectedExampleCount} exemplos, recebeu ${CATTY_BEHAVIOR_EXAMPLES.length}.`,
+  );
+  assertCattyScenarioBase();
+
+  const scenarioPromptPlan = buildCattyResponsePlan(
+    "I like cars.",
+    { area: "student", task: "resumo" },
+  );
+  const scenarioPromptMemory: CattyUserMemoryPromptItem[] = [
+    {
+      category: "INTEREST",
+      confidence: 90,
+      id: "memory-cars",
+      key: "cars",
+      source: "TEACHER_NOTE",
+      value: "gosta de carros",
+    },
+  ];
+  const selectedScenarios = selectCattyScenariosForPrompt({
+    context: { area: "student", task: "resumo" },
+    intent: scenarioPromptPlan.intent,
+    memories: scenarioPromptMemory,
+    message: "I like cars.",
+  });
+  const scenarioPrompt = buildCattyInput(
+    "I like cars.",
+    [],
+    { area: "student", task: "resumo" },
+    scenarioPromptPlan,
+    { firstName: "Ana", role: "STUDENT" },
+    [],
+    scenarioPromptMemory,
+  );
+  const scenarioFallback = pickCattyScenarioFallbackReply({
+    context: { area: "student", task: "resumo" },
+    memories: scenarioPromptMemory,
+    message: "I like cars.",
+    plan: scenarioPromptPlan,
+  });
+
+  assertCondition(
+    selectedScenarios.some((scenario) => scenario.id === "preference-cars-memory"),
+    "seletor de cenarios nao priorizou gosto de carros com memoria.",
+  );
+  assertCondition(
+    formatCattyScenarioPromptContext(selectedScenarios).includes("Gosto pessoal com memoria"),
+    "formatador de cenarios nao incluiu nome do cenario selecionado.",
+  );
+  assertCondition(
+    scenarioPrompt.includes("Cenarios de repertorio da Catty") &&
+      scenarioPrompt.includes("Uwau, vruum vruum"),
+    "prompt da Catty nao incluiu repertorio de cenarios relevante.",
+  );
+  assertCondition(
+    Boolean(scenarioFallback?.includes("What color cars")),
+    "fallback por cenario nao retornou resposta curada de carros.",
   );
 
   const ids = new Set<string>();
@@ -1247,7 +1420,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, 20 correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 correcoes e 6 sequencias validadas.`,
   );
 }
 
