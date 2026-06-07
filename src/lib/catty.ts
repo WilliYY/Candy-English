@@ -77,10 +77,12 @@ type CattySimpleEnglishPattern =
 export type CattyConversationContinuityPlan = {
   correction?: string;
   historyTopic?: string;
+  isFragment?: boolean;
   isIncomplete: boolean;
   pattern: CattySimpleEnglishPattern;
   prompt: string;
   question: string;
+  suggestedSentence?: string;
   topic: string;
 };
 
@@ -1367,12 +1369,12 @@ function getSimpleEnglishPracticeMatch(text: string):
   }> = [
     {
       pattern: "dislike",
-      regex: /^i\s+don'?t\s+like\s*(.*)$/i,
+      regex: /^i\s+don'?t\s+like(?:\s+(.*))?$/i,
       topicIndex: 1,
     },
     {
       pattern: "like",
-      regex: /^i\s+like\s*(.*)$/i,
+      regex: /^i\s+like(?:\s+(.*))?$/i,
       topicIndex: 1,
     },
     {
@@ -1403,7 +1405,7 @@ function getSimpleEnglishPracticeMatch(text: string):
     },
     {
       pattern: "third_person_likes",
-      regex: /^(?:she|he)\s+likes\s*(.*)$/i,
+      regex: /^(?:she|he)\s+likes(?:\s+(.*))?$/i,
       topicIndex: 1,
     },
     {
@@ -1503,12 +1505,171 @@ function getRecentSimpleEnglishTopic(
   return "";
 }
 
+function extractLikeTopicFromText(text: string) {
+  const correction = buildCommonEnglishCorrectionPlan(text);
+  const candidates = [
+    stripCattyAddress(text),
+    correction?.correctedSentence ?? "",
+  ];
+
+  for (const candidate of candidates) {
+    const match = cleanCorrectionSentence(candidate).match(
+      /\bi\s+like\s+([a-zA-Z][a-zA-Z\s-]{0,80})(?:[.!?]|$)/i,
+    );
+    const topic = cleanSimpleEnglishTopic(match?.[1] ?? "").replace(
+      /\s+and\s*$/i,
+      "",
+    );
+
+    if (topic && !isIncompleteSimpleEnglishTopic(topic)) {
+      return topic;
+    }
+  }
+
+  return "";
+}
+
+function getRecentLikeTopic(history: CattyMessage[], currentText: string) {
+  const normalizedCurrent = normalizeText(stripCattyAddress(currentText)).trim();
+
+  for (const message of [...history].reverse()) {
+    if (message.from !== "user") {
+      continue;
+    }
+
+    const normalizedMessage = normalizeText(stripCattyAddress(message.text)).trim();
+
+    if (normalizedMessage === normalizedCurrent) {
+      continue;
+    }
+
+    const topic = extractLikeTopicFromText(message.text);
+
+    if (topic) {
+      return topic;
+    }
+  }
+
+  return "";
+}
+
+function getSimpleEnglishFragment(text: string) {
+  const fragment = cleanSimpleEnglishTopic(stripCattyAddress(text));
+  const normalized = normalizeText(fragment);
+  const tokens = getWordTokens(fragment);
+
+  if (
+    tokens.length < 1 ||
+    tokens.length > 4 ||
+    /[?]/.test(fragment) ||
+    !/^[a-zA-Z][a-zA-Z\s-]*$/.test(fragment) ||
+    getSimpleEnglishPracticeMatch(fragment) ||
+    buildCommonEnglishCorrectionPlan(fragment) ||
+    hasAny(normalized, [
+      "answer",
+      "api",
+      "code",
+      "correct",
+      "exercise",
+      "help",
+      "homework",
+      "nao entendi",
+      "question",
+      "teacher",
+      "translate",
+    ])
+  ) {
+    return "";
+  }
+
+  return fragment;
+}
+
+function getTopicTokenVariants(token: string) {
+  const variants = new Set([token]);
+
+  if (token.endsWith("s") && token.length > 3) {
+    variants.add(token.slice(0, -1));
+  } else if (token.length > 2) {
+    variants.add(`${token}s`);
+  }
+
+  return variants;
+}
+
+function fragmentOverlapsTopic(fragment: string, topic: string) {
+  const fragmentTokens = getWordTokens(fragment).map((token) =>
+    normalizeText(token),
+  );
+  const topicTokens = getWordTokens(topic).map((token) => normalizeText(token));
+
+  return topicTokens.some((topicToken) => {
+    const variants = getTopicTokenVariants(topicToken);
+
+    return fragmentTokens.some((fragmentToken) => variants.has(fragmentToken));
+  });
+}
+
+function buildFragmentContinuationQuestion(fragment: string, historyTopic: string) {
+  const normalizedFragment = normalizeText(fragment);
+  const normalizedHistoryTopic = normalizeText(historyTopic);
+
+  if (
+    /\b(?:car|cars)\b/.test(normalizedFragment) ||
+    /\b(?:car|cars)\b/.test(normalizedHistoryTopic)
+  ) {
+    return "Can you make one more car sentence?";
+  }
+
+  return `Can you add one more sentence about ${historyTopic}?`;
+}
+
+function buildCattyFragmentContinuityPlan(
+  text: string,
+  history: CattyMessage[],
+): CattyConversationContinuityPlan | undefined {
+  const fragment = getSimpleEnglishFragment(text);
+
+  if (!fragment) {
+    return undefined;
+  }
+
+  const historyTopic = getRecentLikeTopic(history, text);
+
+  if (!historyTopic || !fragmentOverlapsTopic(fragment, historyTopic)) {
+    return undefined;
+  }
+
+  const suggestedSentence = formatCorrectionSentence(`I like ${fragment}`);
+  const question = buildFragmentContinuationQuestion(fragment, historyTopic);
+
+  return {
+    historyTopic,
+    isFragment: true,
+    isIncomplete: false,
+    pattern: "like",
+    prompt: [
+      "Fragmento curto de continuidade detectado.",
+      `Assunto recente do aluno: ${historyTopic}.`,
+      `Fragmento atual: ${fragment}.`,
+      `Frase sugerida: ${suggestedSentence}`,
+      `Pergunta curta sugerida: ${question}`,
+      "Ajude a transformar o fragmento em frase completa e mantenha o mesmo assunto.",
+    ].join(" "),
+    question,
+    suggestedSentence,
+    topic: fragment,
+  };
+}
+
 function buildSimpleEnglishContinuationQuestion(input: {
   favoriteKind?: string;
+  historyTopic?: string;
   pattern: CattySimpleEnglishPattern;
   topic: string;
 }) {
   const normalizedTopic = normalizeText(input.topic);
+  const normalizedHistoryTopic = normalizeText(input.historyTopic ?? "");
 
   if (isIncompleteSimpleEnglishTopic(input.topic)) {
     if (input.pattern === "favorite") {
@@ -1523,6 +1684,14 @@ function buildSimpleEnglishContinuationQuestion(input: {
   }
 
   if (input.pattern === "like") {
+    if (
+      input.historyTopic &&
+      normalizedHistoryTopic &&
+      normalizedHistoryTopic !== normalizedTopic
+    ) {
+      return `Can you join them with and? Try: I like ${input.historyTopic} and ${input.topic}.`;
+    }
+
     if (/\b(?:car|cars)\b/.test(normalizedTopic)) {
       return "What color cars do you like?";
     }
@@ -1587,7 +1756,7 @@ function buildCattyConversationContinuityPlan(
   history: CattyMessage[] = [],
 ): CattyConversationContinuityPlan | undefined {
   if (!isSimpleEnglishPracticeCandidate(text)) {
-    return undefined;
+    return buildCattyFragmentContinuityPlan(text, history);
   }
 
   const match = getSimpleEnglishPracticeMatch(text);
@@ -1601,8 +1770,13 @@ function buildCattyConversationContinuityPlan(
     match.pattern === "favorite" && !isIncomplete
       ? getSimpleEnglishFavoriteCorrection(match.favoriteKind ?? "", match.topic)
       : "";
-  const question = buildSimpleEnglishContinuationQuestion(match);
   const historyTopic = getRecentSimpleEnglishTopic(history, text);
+  const likeHistoryTopic =
+    match.pattern === "like" ? getRecentLikeTopic(history, text) : "";
+  const question = buildSimpleEnglishContinuationQuestion({
+    ...match,
+    historyTopic: likeHistoryTopic || undefined,
+  });
   const topic = isIncomplete && historyTopic ? historyTopic : match.topic;
 
   return {
@@ -1634,11 +1808,15 @@ function formatCattyContinuityPromptContext(
 
   return [
     `Padrao: ${continuity.pattern}.`,
+    continuity.isFragment ? "Mensagem atual e fragmento de continuidade." : "",
     continuity.topic
       ? `Assunto principal: ${continuity.topic}.`
       : "Assunto principal incompleto.",
     continuity.historyTopic
       ? `Assunto recente no historico: ${continuity.historyTopic}.`
+      : "",
+    continuity.suggestedSentence
+      ? `Frase completa sugerida: ${continuity.suggestedSentence}`
       : "",
     continuity.correction
       ? `Microcorrecao: ${continuity.correction}`
@@ -2247,6 +2425,10 @@ function buildSimpleEnglishContinuityReply(
     return `Awnn, almost there 😺 ${continuity.question}`;
   }
 
+  if (continuity.isFragment && continuity.suggestedSentence) {
+    return `Awnn, nice detail 😺 You can say: ${continuity.suggestedSentence} ${continuity.question}`;
+  }
+
   if (
     continuity.pattern === "favorite" &&
     continuity.correction &&
@@ -2830,8 +3012,10 @@ function buildPlannedFallbackReply(
   history: CattyMessage[],
   sessionContext?: CattySessionContext,
   correction?: CattyGrammarCorrectionPlan,
+  continuity?: CattyConversationContinuityPlan,
 ) {
-  const plannedReply = isEnglishMessage(text)
+  const shouldUseEnglishReply = isEnglishMessage(text) || Boolean(continuity);
+  const plannedReply = shouldUseEnglishReply
     ? buildPlannedEnglishReply(
         text,
         context,
@@ -2851,7 +3035,7 @@ function buildPlannedFallbackReply(
 
   return (
     plannedReply ||
-    (isEnglishMessage(text)
+    (shouldUseEnglishReply
       ? buildEnglishReply(text, context)
       : buildPortugueseReply(text, context))
   );
@@ -2863,10 +3047,16 @@ export function buildCattyResponsePlan(
   history: CattyMessage[] = [],
   sessionContext?: CattySessionContext,
 ): CattyResponsePlan {
-  const { confidence, intent } = detectCattyIntent(text, context);
+  let { confidence, intent } = detectCattyIntent(text, context);
   const correction = buildCommonEnglishCorrectionPlan(text);
   const continuity = buildCattyConversationContinuityPlan(text, history);
-  const language = isEnglishMessage(text) ? "English" : "Portuguese";
+
+  if (continuity?.isFragment && intent === "confusing_question") {
+    confidence = "high";
+    intent = "practice_english";
+  }
+
+  const language = isEnglishMessage(text) || continuity ? "English" : "Portuguese";
 
   return {
     confidence,
@@ -2879,6 +3069,7 @@ export function buildCattyResponsePlan(
       history,
       sessionContext,
       correction,
+      continuity,
     ),
     intent,
     instruction: intentInstructions[intent],

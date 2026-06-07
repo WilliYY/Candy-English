@@ -4,6 +4,9 @@ import {
   buildFallbackCattyReply,
   hasDisallowedCattyText,
   shouldUseOpenAiForCatty,
+  type CattyMessage,
+  type CattyPageContext,
+  type CattySessionContext,
 } from "../src/lib/catty";
 import { CATTY_BEHAVIOR_EXAMPLES } from "../src/lib/catty-examples";
 import {
@@ -20,6 +23,7 @@ import {
   extractCattyUserMemoryContradictions,
   formatCattyUserMemoryPromptContext,
   selectRelevantCattyUserMemories,
+  type CattyUserMemoryPromptItem,
 } from "../src/lib/catty-user-memory";
 import {
   applyCattyArtifactToReply,
@@ -146,6 +150,74 @@ function assertIntentSafety(id: string, intent: string, fallbackReply: string) {
       `${id}: fallback parece resposta tecnica de codigo/API.`,
     );
   }
+}
+
+function assertConversationalReply(text: string, label: string) {
+  assertCondition(
+    !/\n\s*(?:[-*]|\d+[.)])\s+/.test(text),
+    `${label}: resposta virou lista.`,
+  );
+  assertCondition(
+    includesSignature(text),
+    `${label}: resposta sequencial sem voz da Catty.`,
+  );
+  assertCondition(
+    !hasTooManyCattyCatchphrases(text),
+    `${label}: resposta sequencial tem bordoes demais.`,
+  );
+  assertCondition(
+    countEmojis(text) <= 2,
+    `${label}: resposta sequencial tem emojis demais.`,
+  );
+  assertNoGenericOpening(text, label);
+}
+
+function buildRouteLikeFallbackTurn(input: {
+  context?: CattyPageContext;
+  history: CattyMessage[];
+  message: string;
+  sessionContext?: CattySessionContext;
+  userMemoryContext?: CattyUserMemoryPromptItem[];
+}) {
+  const context: CattyPageContext =
+    input.context ?? { area: "student", task: "resumo" };
+  const sessionContext: CattySessionContext =
+    input.sessionContext ?? { firstName: "Ana", role: "STUDENT" };
+  const userMemoryContext = input.userMemoryContext ?? [];
+  const plan = buildCattyResponsePlan(
+    input.message,
+    context,
+    input.history,
+    sessionContext,
+  );
+  const prompt = buildCattyInput(
+    input.message,
+    input.history,
+    context,
+    plan,
+    sessionContext,
+    [],
+    userMemoryContext,
+  );
+  const reply = applyCattyUserMemoryToFallbackReply({
+    history: input.history,
+    memories: userMemoryContext,
+    message: input.message,
+    plan,
+    reply: plan.fallbackReply,
+  });
+
+  input.history.push(
+    { from: "user", text: input.message },
+    { from: "catty", text: reply },
+  );
+
+  return {
+    normalizedReply: normalizeText(reply),
+    plan,
+    prompt,
+    reply,
+  };
 }
 
 function main() {
@@ -344,6 +416,133 @@ function main() {
       );
     }
   }
+
+  const sequenceOneHistory: CattyMessage[] = [];
+  const sequenceOneFirst = buildRouteLikeFallbackTurn({
+    history: sequenceOneHistory,
+    message: "I like chocolate.",
+  });
+  const sequenceOneSecond = buildRouteLikeFallbackTurn({
+    history: sequenceOneHistory,
+    message: "I like pizza.",
+  });
+
+  assertConversationalReply(sequenceOneFirst.reply, "sequencia 1 turno 1");
+  assertConversationalReply(sequenceOneSecond.reply, "sequencia 1 turno 2");
+  assertCondition(
+    sequenceOneFirst.plan.intent === "practice_english" &&
+      sequenceOneFirst.normalizedReply.includes("what else do you like") &&
+      sequenceOneFirst.normalizedReply.includes("chocolate"),
+    "sequencia 1 turno 1 nao continuou perguntando outro gosto.",
+  );
+  assertCondition(
+    sequenceOneSecond.plan.intent === "practice_english" &&
+      sequenceOneSecond.plan.continuity?.historyTopic === "chocolate" &&
+      sequenceOneSecond.normalizedReply.includes("chocolate and pizza"),
+    "sequencia 1 turno 2 nao reconheceu gostos anteriores para juntar com and.",
+  );
+  assertCondition(
+    sequenceOneSecond.prompt.includes("Assunto recente no historico: chocolate") &&
+      sequenceOneSecond.prompt.includes("I like chocolate and pizza"),
+    "sequencia 1 nao levou a continuidade com and para o prompt da IA.",
+  );
+
+  const sequenceTwoHistory: CattyMessage[] = [];
+  const sequenceTwoFirst = buildRouteLikeFallbackTurn({
+    history: sequenceTwoHistory,
+    message: "I likes cars.",
+  });
+  const sequenceTwoSecond = buildRouteLikeFallbackTurn({
+    history: sequenceTwoHistory,
+    message: "red cars",
+  });
+
+  assertConversationalReply(sequenceTwoFirst.reply, "sequencia 2 turno 1");
+  assertConversationalReply(sequenceTwoSecond.reply, "sequencia 2 turno 2");
+  assertCondition(
+    sequenceTwoFirst.plan.intent === "correct_sentence" &&
+      sequenceTwoFirst.normalizedReply.includes("melhor: i like cars") &&
+      sequenceTwoFirst.normalizedReply.includes("like sem -s"),
+    "sequencia 2 turno 1 nao corrigiu I likes cars.",
+  );
+  assertCondition(
+    sequenceTwoSecond.plan.intent === "practice_english" &&
+      sequenceTwoSecond.plan.continuity?.isFragment === true &&
+      sequenceTwoSecond.normalizedReply.includes("i like red cars") &&
+      !sequenceTwoSecond.normalizedReply.includes("exact bit") &&
+      !sequenceTwoSecond.normalizedReply.includes("trecho exato"),
+    "sequencia 2 turno 2 nao transformou red cars em frase completa.",
+  );
+  assertCondition(
+    sequenceTwoSecond.prompt.includes("Mensagem atual e fragmento") &&
+      sequenceTwoSecond.prompt.includes("Frase completa sugerida: I like red cars."),
+    "sequencia 2 nao levou fragmento e frase sugerida para o prompt da IA.",
+  );
+
+  const capybaraMemoryContext: CattyUserMemoryPromptItem[] = [
+    {
+      category: "INTEREST",
+      confidence: 90,
+      id: "memory-capybara",
+      key: "animal",
+      source: "TEACHER_NOTE",
+      value: "capivara",
+    },
+  ];
+  const sequenceThreeHistory: CattyMessage[] = [];
+  const sequenceThreeFirst = buildRouteLikeFallbackTurn({
+    history: sequenceThreeHistory,
+    message: "My favorite animal is capybara.",
+    userMemoryContext: capybaraMemoryContext,
+  });
+
+  assertConversationalReply(sequenceThreeFirst.reply, "sequencia 3");
+  assertCondition(
+    sequenceThreeFirst.plan.intent === "correct_sentence" &&
+      sequenceThreeFirst.normalizedReply.includes(
+        "my favorite animal is a capybara",
+      ) &&
+      sequenceThreeFirst.normalizedReply.includes("animal sentence"),
+    "sequencia 3 nao corrigiu artigo em capybara e continuou com animal.",
+  );
+  assertCondition(
+    sequenceThreeFirst.prompt.includes("capivara") &&
+      sequenceThreeFirst.prompt.includes("Correcao local detectada"),
+    "sequencia 3 nao incluiu memoria de capivara e correcao no prompt.",
+  );
+
+  const sequenceFour = buildRouteLikeFallbackTurn({
+    history: [],
+    message: "She like chocolate.",
+  });
+  const sequenceFive = buildRouteLikeFallbackTurn({
+    history: [],
+    message: "I have 12 years old.",
+  });
+  const sequenceSix = buildRouteLikeFallbackTurn({
+    history: [],
+    message: "I go to school yesterday.",
+  });
+
+  assertConversationalReply(sequenceFour.reply, "sequencia 4");
+  assertConversationalReply(sequenceFive.reply, "sequencia 5");
+  assertConversationalReply(sequenceSix.reply, "sequencia 6");
+  assertCondition(
+    sequenceFour.normalizedReply.includes("melhor: she likes chocolate") &&
+      sequenceFour.normalizedReply.includes("does she like chocolate"),
+    "sequencia 4 nao corrigiu she like chocolate com continuacao relacionada.",
+  );
+  assertCondition(
+    sequenceFive.normalizedReply.includes("melhor: i am 12 years old") &&
+      sequenceFive.normalizedReply.includes("say your age again"),
+    "sequencia 5 nao corrigiu idade com I am e pedido para repetir.",
+  );
+  assertCondition(
+    sequenceSix.normalizedReply.includes("melhor: i went to school yesterday") &&
+      sequenceSix.normalizedReply.includes("yesterday") &&
+      sequenceSix.normalizedReply.includes("passado"),
+    "sequencia 6 nao corrigiu yesterday + presente para passado.",
+  );
 
   const grammarCorrectionCases = [
     {
@@ -1048,7 +1247,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos validados.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, 20 correcoes e 6 sequencias validadas.`,
   );
 }
 

@@ -31,6 +31,8 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 - Pedir contexto quando faltar texto, frase, enunciado ou palavra.
 - Fazer no maximo uma pergunta de continuidade.
 - Quando o aluno mandar uma frase curta em ingles, manter o mesmo assunto, corrigir so o necessario e fazer uma pergunta relacionada.
+- Quando o aluno continuar um gosto em outro turno, sugerir juntar as ideias com `and`.
+- Quando o aluno mandar um fragmento curto que combine com o tema recente, ajudar a formar uma frase completa sem pedir o trecho de novo.
 - Quando a frase curta em ingles ja tiver erro comum detectavel, corrigir direto em vez de pedir a frase de novo.
 - A correcao conversacional deve seguir: reacao curta da Catty, `Melhor: ...`, explicacao simples em uma frase e pergunta relacionada ao mesmo assunto.
 - Em homework, a Catty nao deve entregar gabarito final; quando corrigir, deve tratar como estrutura parecida e pedir para o aluno aplicar o padrao.
@@ -50,6 +52,8 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 
 A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don't like...`, `My favorite...`, `I have...`, `I can...`, `I want...`, `I am...`, `She/He likes...`, `Today I...`, `Yesterday I...`, `I went...`, `I played...`). Quando isso acontece, o plano de resposta guarda o padrao, o assunto principal, uma microcorrecao quando houver e uma pergunta curta sugerida. Esse mini-contexto entra no prompt da IA e no fallback local, junto com historico recente, memorias pessoais e artefatos aprovados do aluno.
 
+Em sequencias curtas, o plano tambem usa o historico recente para manter o fio da conversa: se o aluno disser `I like chocolate.` e depois `I like pizza.`, a Catty pede para juntar com `and`; se corrigiu `I likes cars.` e o aluno responde `red cars`, o fallback forma `I like red cars.` e continua no tema de carros. Fragmentos so sao usados quando combinam com o assunto recente, para evitar transformar mensagens vagas em frase inventada.
+
 | # | Antes generico | Depois esperado |
 |---|---|---|
 | 1 | `I like chocolate.` -> `Write one small English sentence.` | `Awnn, nice sentence. What else do you like? Try: I like chocolate and ____.` |
@@ -67,6 +71,8 @@ A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don'
 | 13 | `I played soccer yesterday.` -> `Good.` | `Uwau, past sentence spotted. Can you say one more thing in the past?` |
 | 14 | `I like` -> `I don't understand.` | `Awnn, almost there. Complete it with one small word or idea.` |
 | 15 | Historico `I like chocolate.` e depois `I like` -> resposta sem memoria | `Awnn, almost there. Complete it...` mantendo `chocolate` como assunto recente no prompt. |
+| 16 | Historico `I like chocolate.` e depois `I like pizza.` -> pergunta generica | `Awnn, nice sentence. Can you join them with and? Try: I like chocolate and pizza.` |
+| 17 | Historico `I likes cars.` corrigido e depois `red cars` -> `Me manda o trecho exato.` | `Awnn, nice detail. You can say: I like red cars. Can you make one more car sentence?` |
 
 ## Correcao conversacional
 
@@ -148,7 +154,7 @@ Frases de teste e resposta esperada do fallback local:
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, as 20 frases de correcao conversacional, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, as 20 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 
