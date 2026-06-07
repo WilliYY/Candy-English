@@ -2,6 +2,7 @@ import {
   CalendarCheck2,
   CalendarDays,
   BrainCircuit,
+  CircleAlert,
   FileText,
   GraduationCap,
   HardDrive,
@@ -16,6 +17,7 @@ import {
   UsersRound,
   WalletCards,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import {
@@ -150,6 +152,14 @@ type AdminContractRow = {
   title: string;
 };
 
+type AdminUserStat = {
+  accentClassName: string;
+  description: string;
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+};
+
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
@@ -207,6 +217,18 @@ const roleIcons = {
   TEACHER: GraduationCap,
   STUDENT: UserRound,
 } satisfies Record<Role, ComponentType<SVGProps<SVGSVGElement>>>;
+
+const roleLabels = {
+  ADMIN: "Admins",
+  STUDENT: "Alunos",
+  TEACHER: "Teachers",
+} satisfies Record<Role, string>;
+
+const roleDescriptions = {
+  ADMIN: "Controle e seguranca",
+  STUDENT: "Acesso de estudo",
+  TEACHER: "Rotina pedagogica",
+} satisfies Record<Role, string>;
 
 const taskMeta = {
   "criar-admin": {
@@ -357,15 +379,179 @@ function getUserHistory(user: AdminUserRow) {
   ];
 }
 
+function getUserInitials(user: AdminUserRow) {
+  const words = user.name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+
+  const initials = words.map((word) => word.charAt(0).toUpperCase()).join("");
+
+  return initials || user.email.charAt(0).toUpperCase();
+}
+
+function getUserAttentionLabel(user: AdminUserRow) {
+  if (!user.isActive) {
+    return "Acesso inativo";
+  }
+
+  if (user.role === "STUDENT") {
+    const assignments = user.studentProfile?._count.teacherAssignments ?? 0;
+
+    if (assignments === 0) {
+      return "Sem teacher";
+    }
+
+    if (!user.studentProfile?.level) {
+      return "Nivel pendente";
+    }
+
+    return "Aluno pronto";
+  }
+
+  if (user.role === "TEACHER") {
+    const assignments = user.teacherProfile?._count.studentAssignments ?? 0;
+
+    if (assignments === 0) {
+      return "Sem alunos";
+    }
+
+    if (!user.teacherProfile?.bio) {
+      return "Bio pendente";
+    }
+
+    return "Teacher pronta";
+  }
+
+  return "Admin ativo";
+}
+
+function AdminUserStatCard({ stat }: { stat: AdminUserStat }) {
+  const Icon = stat.icon;
+
+  return (
+    <div className="ava-stat-card group flex min-w-0 items-center justify-between gap-4 rounded-lg border p-4 shadow-sm sm:p-5">
+      <div className="min-w-0">
+        <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+          {stat.label}
+        </p>
+        <strong className="mt-2 block truncate text-2xl font-semibold leading-none text-primary sm:text-3xl">
+          {stat.value}
+        </strong>
+        <p className="mt-2 truncate text-xs text-muted-foreground">
+          {stat.description}
+        </p>
+      </div>
+      <span
+        className={cn(
+          "flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-transform duration-200 group-hover:-translate-y-0.5",
+          stat.accentClassName,
+        )}
+      >
+        <Icon aria-hidden="true" className="size-5" />
+      </span>
+    </div>
+  );
+}
+
+function UsersOverview({
+  inactiveCount,
+  totals,
+}: {
+  inactiveCount: number;
+  totals: Record<Role, number> & {
+    active: number;
+    total: number;
+  };
+}) {
+  const roles = (["ADMIN", "TEACHER", "STUDENT"] as const).map((role) => {
+    const Icon = roleIcons[role];
+
+    return {
+      Icon,
+      count: totals[role],
+      role,
+    };
+  });
+
+  return (
+    <section className="ava-soft-card overflow-hidden rounded-lg border">
+      <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-center">
+        <div className="flex min-w-0 gap-4">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <UsersRound aria-hidden="true" className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-primary/60">
+              Usuarios do AVA
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold tracking-normal text-primary">
+              Base organizada por role
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Acompanhe acesso, cadastros e sinais de pendencia sem misturar
+              permissao de admin, teacher e aluno.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="rounded-lg border border-primary/10 bg-white/82 p-3 shadow-sm shadow-primary/5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                <Power aria-hidden="true" className="size-4" />
+                Ativos
+              </span>
+              <strong className="text-xl font-semibold text-primary">
+                {totals.active}
+              </strong>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {inactiveCount} inativo(s) preservado(s) no historico.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {roles.map(({ Icon, count, role }) => (
+              <div
+                key={role}
+                className="rounded-lg border border-primary/10 bg-white/82 p-3 text-center shadow-sm shadow-primary/5"
+              >
+                <Icon
+                  aria-hidden="true"
+                  className="mx-auto size-4 text-primary/70"
+                />
+                <strong className="mt-2 block text-lg font-semibold text-primary">
+                  {count}
+                </strong>
+                <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                  {roleLabels[role]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function UsersByRole({ users }: { users: AdminUserRow[] }) {
   if (users.length === 0) {
     return (
-      <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
-        <UsersRound aria-hidden="true" />
-        <p className="max-w-sm text-sm text-muted-foreground">
-          Nenhum usuario cadastrado ainda. Use as opcoes da lateral para criar o
-          primeiro acesso.
-        </p>
+      <div className="ava-soft-card flex min-h-56 flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-6 text-center">
+        <span className="flex size-12 items-center justify-center rounded-lg border border-primary/15 bg-primary/10 text-primary">
+          <UsersRound aria-hidden="true" className="size-5" />
+        </span>
+        <div className="max-w-sm">
+          <h2 className="text-lg font-semibold text-primary">
+            Nenhum usuario cadastrado ainda.
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            Use as opcoes da lateral para criar o primeiro acesso do AVA.
+          </p>
+        </div>
       </div>
     );
   }
@@ -380,31 +566,44 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
     <div className="grid gap-4 xl:grid-cols-3">
       {columns.map((column) => {
         const columnUsers = users.filter((user) => user.role === column.role);
+        const activeCount = columnUsers.filter((user) => user.isActive).length;
+        const inactiveCount = columnUsers.length - activeCount;
         const Icon = roleIcons[column.role];
 
         return (
           <details
             key={column.role}
-            className="ava-role-column group min-w-0 rounded-lg border p-4"
+            className="ava-role-column group min-w-0 overflow-hidden rounded-lg border"
             open
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b pb-3 [&::-webkit-details-marker]:hidden">
-              <div className="flex min-w-0 items-center gap-3">
+            <summary className="flex cursor-pointer list-none items-start justify-between gap-3 border-b border-primary/10 bg-white/72 p-4 [&::-webkit-details-marker]:hidden">
+              <div className="flex min-w-0 gap-3">
                 <span
                   className={cn(
-                    "flex size-10 shrink-0 items-center justify-center rounded-lg border",
+                    "flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm",
                     roleStyles[column.role],
                   )}
                 >
                   <Icon aria-hidden="true" className="size-5" />
                 </span>
                 <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold">
+                  <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                    {roleDescriptions[column.role]}
+                  </p>
+                  <h2 className="mt-1 truncate text-lg font-semibold text-primary">
                     {column.title}
                   </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {columnUsers.length} usuario(s)
-                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
+                    <span>{columnUsers.length} usuario(s)</span>
+                    <span className="size-1 rounded-full bg-primary/25" />
+                    <span>{activeCount} ativo(s)</span>
+                    {inactiveCount > 0 ? (
+                      <>
+                        <span className="size-1 rounded-full bg-primary/25" />
+                        <span>{inactiveCount} inativo(s)</span>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
               </div>
               <span className="rounded-full border bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground transition-colors group-open:bg-primary group-open:text-primary-foreground">
@@ -419,85 +618,135 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
               </span>
             </summary>
 
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 p-4">
               {columnUsers.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-4 text-sm text-primary/70">
-                {column.empty}
-              </p>
-            ) : (
-              <>
-                {columnUsers.map((user) => (
-                  <article
-                    key={user.id}
-                    className="ava-soft-card flex min-w-0 flex-col gap-4 rounded-lg border p-4"
-                  >
-                    <div className="flex min-w-0 items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-base font-semibold">
-                          {user.name}
-                        </h3>
-                        <p
-                          className="mt-1 flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
-                          title={user.email}
-                        >
-                          <Mail aria-hidden="true" className="size-4 shrink-0" />
-                          <span className="truncate">{user.email}</span>
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          "inline-flex shrink-0 items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold",
-                          user.isActive
-                            ? "border-primary/20 bg-primary/10 text-primary"
-                            : "border-border bg-muted text-muted-foreground",
-                        )}
+                <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-4 text-sm text-primary/70">
+                  {column.empty}
+                </p>
+              ) : (
+                <>
+                  {columnUsers.map((user) => {
+                    const history = getUserHistory(user);
+                    const attentionLabel = getUserAttentionLabel(user);
+
+                    return (
+                      <article
+                        key={user.id}
+                        className="ava-soft-card flex min-w-0 flex-col gap-4 rounded-lg border p-4"
                       >
-                        <UserCheck aria-hidden="true" className="size-4" />
-                        {user.isActive ? "Ativo" : "Inativo"}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-muted-foreground">
-                      {getProfileSummary(user)}
-                    </p>
-
-                    <details className="group/history rounded-lg border border-primary/10 bg-primary/5 p-3">
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
-                        Historico
-                        <span className="rounded-full bg-white px-2 py-1 text-[0.68rem] tracking-normal">
-                          <span className="group-open/history:hidden">
-                            abrir
+                        <div className="flex min-w-0 items-start gap-3">
+                          <span
+                            className={cn(
+                              "flex size-11 shrink-0 items-center justify-center rounded-lg border text-sm font-semibold shadow-sm",
+                              roleStyles[user.role],
+                            )}
+                          >
+                            {getUserInitials(user)}
                           </span>
-                          <span className="hidden group-open/history:inline">
-                            minimizar
-                          </span>
-                        </span>
-                      </summary>
-                      <ul className="grid gap-1.5 text-sm text-muted-foreground">
-                        {getUserHistory(user).map((item) => (
-                          <li key={item} className="flex items-start gap-2">
-                            <CalendarDays
-                              aria-hidden="true"
-                              className="mt-0.5 size-4 shrink-0"
-                            />
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <h3 className="truncate text-base font-semibold text-primary">
+                                  {user.name}
+                                </h3>
+                                <p
+                                  className="mt-1 flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
+                                  title={user.email}
+                                >
+                                  <Mail
+                                    aria-hidden="true"
+                                    className="size-4 shrink-0"
+                                  />
+                                  <span className="truncate">{user.email}</span>
+                                </p>
+                              </div>
+                              <span
+                                className={cn(
+                                  "inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold",
+                                  user.isActive
+                                    ? "border-primary/20 bg-primary/10 text-primary"
+                                    : "border-border bg-muted text-muted-foreground",
+                                )}
+                              >
+                                <UserCheck
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
+                                {user.isActive ? "Ativo" : "Inativo"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                    <AdminUserStatusButton
-                      isActive={user.isActive}
-                      userId={user.id}
-                    />
-                    <AdminUserPasswordResetForm
-                      userId={user.id}
-                      userName={user.name}
-                    />
-                  </article>
-                ))}
-              </>
-            )}
+                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                          <div className="rounded-lg border border-primary/10 bg-white/78 p-3 shadow-sm shadow-primary/5">
+                            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                              Perfil
+                            </p>
+                            <p className="mt-1 text-sm text-foreground/85">
+                              {getProfileSummary(user)}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border border-primary/10 bg-white/78 p-3 shadow-sm shadow-primary/5">
+                            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                              Sinal
+                            </p>
+                            <p className="mt-1 inline-flex items-center gap-2 text-sm text-foreground/85">
+                              <CircleAlert
+                                aria-hidden="true"
+                                className="size-4 text-primary/65"
+                              />
+                              {attentionLabel}
+                            </p>
+                          </div>
+                        </div>
+
+                        <details className="group/history rounded-lg border border-primary/10 bg-primary/5 p-3">
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                            <span className="inline-flex items-center gap-2">
+                              <CalendarDays
+                                aria-hidden="true"
+                                className="size-4"
+                              />
+                              Historico
+                            </span>
+                            <span className="rounded-full bg-white px-2 py-1 text-[0.68rem] tracking-normal">
+                              <span className="group-open/history:hidden">
+                                abrir
+                              </span>
+                              <span className="hidden group-open/history:inline">
+                                minimizar
+                              </span>
+                            </span>
+                          </summary>
+                          <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
+                            {history.map((item) => (
+                              <li key={item} className="flex items-start gap-2">
+                                <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary/35" />
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+
+                        <div
+                          className="grid gap-3 border-t border-primary/10 pt-3"
+                          aria-label={`Acoes de acesso de ${user.name}`}
+                        >
+                          <AdminUserStatusButton
+                            isActive={user.isActive}
+                            userId={user.id}
+                          />
+                          <AdminUserPasswordResetForm
+                            userId={user.id}
+                            userName={user.name}
+                          />
+                        </div>
+                      </article>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </details>
         );
@@ -630,34 +879,45 @@ export function AdminUsersPanel({
       total: 0,
     },
   );
+  const inactiveUsersCount = totals.total - totals.active;
 
   const stats = [
     {
+      accentClassName: "border-primary/20 bg-primary/10 text-primary",
+      description: "Base completa",
       icon: UsersRound,
       label: "Usuarios",
       value: totals.total,
     },
     {
+      accentClassName: "border-accent/20 bg-accent/10 text-accent",
+      description: "Equipe pedagogica",
       icon: GraduationCap,
       label: "Teachers",
       value: totals.TEACHER,
     },
     {
+      accentClassName: "border-primary/15 bg-white text-primary",
+      description: "Contas STUDENT",
       icon: UserRound,
       label: "Alunos",
       value: totals.STUDENT,
     },
     {
+      accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      description: `${inactiveUsersCount} inativo(s)`,
       icon: Power,
       label: "Ativos",
       value: totals.active,
     },
     {
+      accentClassName: "border-amber-200 bg-amber-50 text-amber-800",
+      description: "Storage protegido",
       icon: HardDrive,
       label: "Arquivos",
       value: formatBytes(storageUsageBytes),
     },
-  ];
+  ] satisfies AdminUserStat[];
   const task = taskMeta[activeTask];
   const TaskIcon = task.icon;
   const paidPaymentsCount = financeStudents.reduce(
@@ -751,24 +1011,13 @@ export function AdminUsersPanel({
                 title={`Nivel ${xpSnapshot.level} admin`}
                 xp={xpSnapshot}
               />
+              <UsersOverview
+                inactiveCount={inactiveUsersCount}
+                totals={totals}
+              />
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 {stats.map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="ava-stat-card flex items-center justify-between gap-4 rounded-lg border p-5"
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm text-muted-foreground">
-                        {stat.label}
-                      </span>
-                      <strong className="text-3xl font-semibold">
-                        {stat.value}
-                      </strong>
-                    </div>
-                    <span className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <stat.icon aria-hidden="true" />
-                    </span>
-                  </div>
+                  <AdminUserStatCard key={stat.label} stat={stat} />
                 ))}
               </div>
               <UsersByRole users={users} />

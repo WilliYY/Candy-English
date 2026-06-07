@@ -82,11 +82,12 @@ export function AdminUserStatusButton({
   }
 
   return (
-    <div className="flex flex-col items-start gap-2">
+    <div className="flex w-full flex-col items-start gap-2">
       <Button
         type="button"
         variant={isActive ? "outline" : "secondary"}
         size="sm"
+        className="w-full justify-start"
         disabled={isPending}
         onClick={handleClick}
       >
@@ -100,7 +101,7 @@ export function AdminUserStatusButton({
         {isActive ? "Desativar" : "Reativar"}
       </Button>
       {message ? (
-        <span className="max-w-44 text-xs leading-5 text-muted-foreground">
+        <span className="max-w-full text-xs leading-5 text-muted-foreground">
           {message}
         </span>
       ) : null}
@@ -201,7 +202,12 @@ export function AdminUserPasswordResetForm({
           </p>
         ) : null}
 
-        <Button type="submit" size="sm" disabled={isPending}>
+        <Button
+          type="submit"
+          size="sm"
+          className="w-full justify-start"
+          disabled={isPending}
+        >
           {isPending ? (
             <LoaderCircle data-icon="inline-start" className="animate-spin" />
           ) : (
