@@ -111,6 +111,7 @@ function assertPromptContext(input: string, id: string) {
     "Memoria pessoal segura do usuario",
     "Continuidade conversacional",
     "Correcao local detectada",
+    "Pergunta pedida pelo aluno",
     "Artefato de personalidade sugerido",
     "Cenarios de repertorio da Catty",
     "Regra para ADMIN/TEACHER",
@@ -745,7 +746,7 @@ function main() {
   );
   assertCondition(
     sequenceFive.normalizedReply.includes("melhor: i am 12 years old") &&
-      sequenceFive.normalizedReply.includes("say your age again"),
+      sequenceFive.normalizedReply.includes("say it again"),
     "sequencia 5 nao corrigiu idade com I am e pedido para repetir.",
   );
   assertCondition(
@@ -768,25 +769,25 @@ function main() {
     {
       expectedAiSource: "openai",
       expectedIntent: "correct_sentence",
-      fallbackMustInclude: ["I like chocolate", "like sem -s"],
+      fallbackMustInclude: ["I like chocolate", "erro esta em likes"],
       id: "scenario-openai-correction",
       message: "Catty, corrige: I likes chocolate.",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
       expectedAiSource: "gemini",
       expectedIntent: "correct_sentence",
-      fallbackMustInclude: ["I like chocolate", "What else do you like"],
+      fallbackMustInclude: ["I like chocolate", "erro esta em likes"],
       id: "scenario-i-likes",
       message: "I likes chocolate.",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
       expectedAiSource: "gemini",
       expectedIntent: "correct_sentence",
-      fallbackMustInclude: ["She likes pizza", "verbo ganha -s"],
+      fallbackMustInclude: ["She likes pizza", "erro esta em like"],
       id: "scenario-she-like",
       message: "She like pizza.",
       scenarioFallback: false,
@@ -795,16 +796,16 @@ function main() {
     {
       expectedAiSource: "gemini",
       expectedIntent: "correct_sentence",
-      fallbackMustInclude: ["I am 10 years old", "idade"],
+      fallbackMustInclude: ["I am 10 years old", "erro esta em have"],
       id: "scenario-age",
       message: "I have 10 years old.",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
       expectedAiSource: "gemini",
       expectedIntent: "correct_sentence",
-      fallbackMustInclude: ["I went to school yesterday", "passado"],
+      fallbackMustInclude: ["I went to school yesterday", "erro esta em go"],
       id: "scenario-yesterday",
       message: "I go to school yesterday.",
       scenarioFallback: false,
@@ -812,17 +813,17 @@ function main() {
     },
     {
       expectedAiSource: "gemini",
-      expectedIntent: "confusing_question",
-      fallbackMustInclude: ["I like red cars", "blue"],
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like red cars", "blue cars"],
       id: "scenario-red-cars-isolated",
       message: "red cars",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
       expectedAiSource: "gemini",
       expectedIntent: "practice_english",
-      fallbackMustInclude: ["I like red cars"],
+      fallbackMustInclude: ["I like red cars", "blue cars"],
       history: [
         { from: "user" as const, text: "I likes cars." },
         {
@@ -832,25 +833,25 @@ function main() {
       ],
       id: "scenario-red-cars-history",
       message: "red cars",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
       expectedAiSource: "gemini",
       expectedIntent: "confusing_question",
-      fallbackMustInclude: ["palavra", "frase", "exercicio"],
+      fallbackMustInclude: ["pergunta", "correcao", "dica"],
       id: "scenario-nao-entendi",
       message: "nao entendi",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
       expectedAiSource: "gemini",
       expectedIntent: "correct_sentence",
-      fallbackMustInclude: ["frase que voce quer corrigir"],
+      fallbackMustInclude: ["frase que voce quer corrigir", "onde esta o erro"],
       id: "scenario-corrige",
       message: "corrige",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
@@ -1003,49 +1004,288 @@ function main() {
     }
   }
 
+  const interactiveFallbackCases: ScenarioFallbackChecklistCase[] = [
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["What food do you like"],
+      id: "interactive-question-pt",
+      message: "faz uma pergunta",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["What do you like to do on weekends"],
+      id: "interactive-question-en",
+      message: "ask me a question",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["What did you do yesterday"],
+      id: "interactive-question-simple-past",
+      message: "faz pergunta sobre simple past",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "openai",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["What do you like to do on weekends"],
+      id: "interactive-question-openai",
+      message: "Catty, ask me a question",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["What else do you like"],
+      id: "interactive-correct-like",
+      message: "I like chocolate.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I like chocolate", "erro esta em likes", "What else"],
+      id: "interactive-i-likes",
+      message: "I likes chocolate.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["She likes pizza", "erro esta em like", "Does she"],
+      id: "interactive-she-like",
+      message: "She like pizza.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I am 12 years old", "erro esta em have", "say it again"],
+      id: "interactive-age",
+      message: "I have 12 years old.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I went to school yesterday", "erro esta em go", "at school"],
+      id: "interactive-yesterday",
+      message: "I go to school yesterday.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I went to school", "erro esta em in", "What did you do there"],
+      id: "interactive-went-in",
+      message: "I went in school.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["Does she like cats", "erro esta em do"],
+      id: "interactive-do-she",
+      message: "Do she like cats?",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["Do you like pizza", "erro esta em does"],
+      id: "interactive-does-you",
+      message: "Does you like pizza?",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I like pizza", "erro esta em am like"],
+      id: "interactive-am-like",
+      message: "I am like pizza.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I like cars", "erro esta em car"],
+      id: "interactive-like-car",
+      message: "I like car.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["My favorite animal is a capybara", "erro esta em capybara"],
+      id: "interactive-capybara-memory",
+      message: "My favorite animal is capybara.",
+      scenarioFallback: false,
+      userMemoryContext: capybaraMemoryContext,
+      usesMemoryOrArtifact: true,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like chocolate", "pizza"],
+      id: "interactive-fragment-chocolate",
+      message: "chocolate",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like red cars", "blue cars"],
+      id: "interactive-fragment-red-cars",
+      message: "red cars",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "confusing_question",
+      fallbackMustInclude: ["pergunta", "correcao", "dica"],
+      id: "interactive-nao-entendi",
+      message: "nao entendi",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["frase que voce quer corrigir", "onde esta o erro"],
+      id: "interactive-corrige-empty",
+      message: "corrige",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like blue cars", "red cars"],
+      history: [
+        { from: "user" as const, text: "I like cars." },
+        {
+          from: "catty" as const,
+          text: "Uwau, vruum vruum. What color cars do you like?",
+        },
+      ],
+      id: "interactive-fragment-blue-cars-history",
+      message: "blue cars",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+  ];
+
+  assertCondition(
+    interactiveFallbackCases.length === 20,
+    "checklist interativo da Catty deve ter 20 entradas.",
+  );
+
+  for (const example of interactiveFallbackCases) {
+    const result = buildRouteLikeFallbackTurn({
+      context: example.context,
+      history: [...(example.history ?? [])],
+      message: example.message,
+      sessionContext: example.sessionContext,
+      userMemoryContext: example.userMemoryContext,
+    });
+    const usesOpenAi = shouldUseOpenAiForCatty(example.message);
+
+    assertConversationalReply(result.reply, example.id);
+    assertCondition(
+      result.plan.intent === example.expectedIntent,
+      `${example.id}: intencao ${result.plan.intent} diferente de ${example.expectedIntent}.`,
+    );
+    assertCondition(
+      usesOpenAi === (example.expectedAiSource === "openai"),
+      `${example.id}: roteamento IA esperado ${example.expectedAiSource}, recebeu ${usesOpenAi ? "openai" : "gemini"}.`,
+    );
+    assertCondition(
+      Boolean(result.scenarioFallbackReply) === example.scenarioFallback,
+      `${example.id}: fallback por cenario esperado ${example.scenarioFallback}.`,
+    );
+    assertCondition(
+      result.prompt.includes("Pergunta pedida pelo aluno"),
+      `${example.id}: prompt nao incluiu bloco de pergunta pedida para Gemini/OpenAI.`,
+    );
+
+    for (const expected of example.fallbackMustInclude) {
+      assertCondition(
+        result.normalizedReply.includes(normalizeText(expected)),
+        `${example.id}: fallback nao contem "${expected}". Resposta: ${result.reply}`,
+      );
+    }
+
+    if (example.usesMemoryOrArtifact) {
+      assertCondition(
+        result.prompt.includes("capivara") || result.reply.includes("capybara"),
+        `${example.id}: teste marcado como memoria/artefato nao levou contexto pessoal.`,
+      );
+    }
+  }
+
   const grammarCorrectionCases = [
     {
-      expected: ["Melhor", "I like chocolate", "like sem -s", "What else"],
+      expected: ["Melhor", "I like chocolate", "erro esta em likes", "What else"],
       userMessage: "I likes chocolate.",
     },
     {
-      expected: ["Melhor", "She likes pizza", "verbo ganha -s", "Does she"],
+      expected: ["Melhor", "She likes pizza", "erro esta em like", "Does she"],
       userMessage: "She like pizza.",
     },
     {
-      expected: ["Melhor", "He likes games", "verbo ganha -s", "Does he"],
+      expected: ["Melhor", "He likes games", "erro esta em like", "Does he"],
       userMessage: "He like games.",
     },
     {
-      expected: ["Melhor", "I have a dog", "usamos have", "What else"],
+      expected: ["Melhor", "I have a dog", "erro esta em has", "What else"],
       userMessage: "I has a dog.",
     },
     {
-      expected: ["Melhor", "She has a cat", "usamos has", "What else"],
+      expected: ["Melhor", "She has a cat", "erro esta em have", "What else"],
       userMessage: "She have a cat.",
     },
     {
-      expected: ["Melhor", "I like pizza", "sem am", "What else"],
+      expected: ["Melhor", "I like pizza", "erro esta em am like", "What else"],
       userMessage: "I am like pizza.",
     },
     {
-      expected: ["Melhor", "I am 10 years old", "idade", "say your age"],
+      expected: ["Melhor", "I am 10 years old", "erro esta em have", "say it again"],
       userMessage: "I have 10 years old.",
     },
     {
-      expected: ["Melhor", "I went to school yesterday", "went to", "What did"],
+      expected: ["Melhor", "I went to school yesterday", "erro esta em in", "What did"],
       userMessage: "I went in school yesterday.",
     },
     {
-      expected: ["Melhor", "I went to school yesterday", "passado", "yesterday"],
+      expected: ["Melhor", "I went to school yesterday", "erro esta em go", "yesterday"],
       userMessage: "I go to school yesterday.",
     },
     {
-      expected: ["Melhor", "Yesterday I watched a movie", "passado", "one more"],
+      expected: ["Melhor", "Yesterday I watched a movie", "erro esta em watch", "one more"],
       userMessage: "Yesterday I watch a movie.",
     },
     {
-      expected: ["Melhor", "I like cars", "plural", "What kind"],
+      expected: ["Melhor", "I like cars", "erro esta em car", "What kind"],
       userMessage: "I like car.",
     },
     {
@@ -1706,7 +1946,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 interacoes, 20 correcoes e 6 sequencias validadas.`,
   );
 }
 

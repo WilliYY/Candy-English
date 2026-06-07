@@ -36,11 +36,12 @@ Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gem
 - Puxar assunto aleatorio para vocabulario, frase curta ou pratica de English.
 - Pedir contexto quando faltar texto, frase, enunciado ou palavra.
 - Fazer no maximo uma pergunta de continuidade.
+- Quando o aluno pedir uma pergunta, fazer a pergunta diretamente, usando o tema pedido quando existir.
 - Quando o aluno mandar uma frase curta em ingles, manter o mesmo assunto, corrigir so o necessario e fazer uma pergunta relacionada.
 - Quando o aluno continuar um gosto em outro turno, sugerir juntar as ideias com `and`.
-- Quando o aluno mandar um fragmento curto que combine com o tema recente, ajudar a formar uma frase completa sem pedir o trecho de novo.
+- Quando o aluno mandar um fragmento curto seguro, como `chocolate`, `red cars` ou outro fragmento que combine com o tema recente, ajudar a formar uma frase completa sem pedir o trecho de novo.
 - Quando a frase curta em ingles ja tiver erro comum detectavel, corrigir direto em vez de pedir a frase de novo.
-- A correcao conversacional deve seguir: reacao curta da Catty, `Melhor: ...`, explicacao simples em uma frase e pergunta relacionada ao mesmo assunto.
+- A correcao conversacional deve seguir: reacao curta da Catty, `Melhor: ...`, onde esta o erro em uma frase simples e pergunta relacionada ao mesmo assunto.
 - Em homework, a Catty nao deve entregar gabarito final; quando corrigir, deve tratar como estrutura parecida e pedir para o aluno aplicar o padrao.
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
@@ -58,7 +59,7 @@ Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gem
 
 A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don't like...`, `My favorite...`, `I have...`, `I can...`, `I want...`, `I am...`, `She/He likes...`, `Today I...`, `Yesterday I...`, `I went...`, `I played...`). Quando isso acontece, o plano de resposta guarda o padrao, o assunto principal, uma microcorrecao quando houver e uma pergunta curta sugerida. Esse mini-contexto entra no prompt da IA e no fallback local, junto com historico recente, memorias pessoais e artefatos aprovados do aluno.
 
-Em sequencias curtas, o plano tambem usa o historico recente para manter o fio da conversa: se o aluno disser `I like chocolate.` e depois `I like pizza.`, a Catty pede para juntar com `and`; se corrigiu `I likes cars.` e o aluno responde `red cars`, o fallback forma `I like red cars.` e continua no tema de carros. Fragmentos so sao usados quando combinam com o assunto recente, para evitar transformar mensagens vagas em frase inventada.
+Em sequencias curtas, o plano tambem usa o historico recente para manter o fio da conversa: se o aluno disser `I like chocolate.` e depois `I like pizza.`, a Catty pede para juntar com `and`; se corrigiu `I likes cars.` e o aluno responde `red cars`, o fallback forma `I like red cars.` e continua no tema de carros. Fragmentos seguros como `chocolate`, `red cars`, `blue cars` e `cars` tambem podem virar frases completas mesmo sem historico; mensagens vagas continuam pedindo uma acao concreta, como pergunta, correcao ou dica.
 
 | # | Antes generico | Depois esperado |
 |---|---|---|
@@ -78,11 +79,22 @@ Em sequencias curtas, o plano tambem usa o historico recente para manter o fio d
 | 14 | `I like` -> `I don't understand.` | `Awnn, almost there. Complete it with one small word or idea.` |
 | 15 | Historico `I like chocolate.` e depois `I like` -> resposta sem memoria | `Awnn, almost there. Complete it...` mantendo `chocolate` como assunto recente no prompt. |
 | 16 | Historico `I like chocolate.` e depois `I like pizza.` -> pergunta generica | `Awnn, nice sentence. Can you join them with and? Try: I like chocolate and pizza.` |
-| 17 | Historico `I likes cars.` corrigido e depois `red cars` -> `Me manda o trecho exato.` | `Awnn, nice detail. You can say: I like red cars. Can you make one more car sentence?` |
+| 17 | Historico `I likes cars.` corrigido e depois `red cars` -> `Me manda o trecho exato.` | `Uwau, da para virar frase: I like red cars. Vruum vruum. Quer tentar com blue cars?` |
+
+## Pedido de pergunta
+
+A Catty tambem detecta quando o aluno pede uma pergunta de pratica. Esse plano entra no prompt como `Pergunta pedida pelo aluno` e tambem funciona no fallback local. Quando o tema vem junto, a pergunta respeita o tema; quando nao vem, a Catty escolhe uma pergunta curta de pratica.
+
+| Entrada | Resposta esperada |
+|---|---|
+| `faz uma pergunta` | `Miauw. What food do you like?` |
+| `ask me a question` | `Uwau, let's practice! What do you like to do on weekends?` |
+| `faz pergunta sobre simple past` | `Pss pss, simple past time. What did you do yesterday?` |
+| `faz pergunta sobre carros` | `Uwau, vruum vruum. What color cars do you like?` |
 
 ## Correcao conversacional
 
-A Catty agora possui um detector local de erros comuns em `src/lib/catty.ts`. Esse detector roda antes do fallback e tambem entra no prompt enviado a Gemini/OpenAI como `Correcao local detectada`. Quando houver uma correcao local, a IA recebe a frase corrigida, a explicacao simples e a pergunta de continuidade; se a IA falhar, o fallback local usa os mesmos dados sem depender de provedor externo.
+A Catty agora possui um detector local de erros comuns em `src/lib/catty.ts`. Esse detector roda antes do fallback e tambem entra no prompt enviado a Gemini/OpenAI como `Correcao local detectada`. Quando houver uma correcao local, a IA recebe a frase corrigida, a explicacao que aponta onde esta o erro e a pergunta de continuidade; se a IA falhar, o fallback local usa os mesmos dados sem depender de provedor externo.
 
 Regras criadas:
 
@@ -99,6 +111,8 @@ Regras criadas:
 - uso de `is/are/am`.
 
 Frases de teste e resposta esperada do fallback local:
+
+Observacao: nas correcoes atuais, a explicacao deve sempre apontar o trecho errado com `O erro esta em ...` quando houver erro detectavel. Exemplos principais: `I likes chocolate.` vira `Melhor: I like chocolate. O erro esta em likes...`; `She like pizza.` vira `Melhor: She likes pizza. O erro esta em like...`; `I have 10 years old.` vira `Melhor: I am 10 years old. O erro esta em have...`; `I go to school yesterday.` vira `Melhor: I went to school yesterday. O erro esta em go...`.
 
 | # | Frase do aluno | Resposta esperada |
 |---|---|---|
@@ -160,7 +174,7 @@ Frases de teste e resposta esperada do fallback local:
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, as 20 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, as 20 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

@@ -991,20 +991,44 @@ export function pickCattyScenarioFallbackReply(input: {
     return null;
   }
 
+  const normalizedBestReply = normalizeScenarioText(best.scenario.idealReply);
+  const normalizedMessage = normalizeScenarioText(input.message);
+
   if (
     input.plan.correction &&
     best.scenario.category !== "homework" &&
-    !hasScenarioContinuation(best.scenario.idealReply)
+    (!hasScenarioContinuation(best.scenario.idealReply) ||
+      !normalizedBestReply.includes("erro esta"))
   ) {
+    return null;
+  }
+
+  if (
+    input.plan.intent === "correct_sentence" &&
+    !input.plan.correction &&
+    normalizedMessage === "corrige" &&
+    !normalizedBestReply.includes("erro")
+  ) {
+    return null;
+  }
+
+  if (
+    input.plan.intent === "confusing_question" &&
+    normalizedMessage.includes("nao entendi") &&
+    (!normalizedBestReply.includes("correcao") ||
+      !normalizedBestReply.includes("dica"))
+  ) {
+    return null;
+  }
+
+  if (input.plan.continuity?.isFragment) {
     return null;
   }
 
   if (
     input.plan.continuity?.historyTopic &&
     best.scenario.category !== "fragment" &&
-    !normalizeScenarioText(best.scenario.idealReply).includes(
-      normalizeScenarioText(input.plan.continuity.historyTopic),
-    )
+    !normalizedBestReply.includes(normalizeScenarioText(input.plan.continuity.historyTopic))
   ) {
     return null;
   }
