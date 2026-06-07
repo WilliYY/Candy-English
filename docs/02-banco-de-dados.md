@@ -128,7 +128,7 @@ Enums:
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
 - `Homework.fieldDetectionSource=manual` identifica homework interativo criado pela aba de homework; `lesson-manual` identifica aula interativa criada pela aba de aula usando o mesmo motor.
 - `HomeworkInteractiveField` guarda tipo, pagina e posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
-- `HomeworkFieldType` aceita `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX`, `DRAWING` e `LISTENING`; `TINY_TEXT` guarda respostas curtas normalizadas para letras/numeros, `DRAWING` salva tracos normalizados no JSON de `HomeworkSubmission.answers`, e `LISTENING` guarda a frase a ouvir no `placeholder` do campo sem exigir nem salvar resposta do aluno.
+- `HomeworkFieldType` aceita `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX`, `DRAWING` e `LISTENING`; `TINY_TEXT` guarda respostas curtas normalizadas para letras/numeros, `DRAWING` salva tracos normalizados no JSON de `HomeworkSubmission.answers`, e `LISTENING` guarda o texto a ouvir no `placeholder` do campo sem exigir nem salvar resposta do aluno.
 - Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.
 - `SubmissionStatus.DRAFT` e autosave do aluno e nao deve disparar evento novo para teacher/admin; `SUBMITTED` e entrega, `RETURNED` e refazer liberado, `REVIEWED` e correcao final.
 - Contratos podem ser gerais ou vinculados a um aluno.

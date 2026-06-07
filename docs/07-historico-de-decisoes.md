@@ -480,17 +480,17 @@ Cada decisao deve conter:
 
 ### 2026-06-07 - Campo Listening no homework interativo
 
-- Decisao: adicionar `HomeworkFieldType.LISTENING` para a teacher desenhar uma area sobre sentencas do PDF/imagem, guardar a frase falada no `placeholder` do campo e tocar audio por `/ava/homework-listening/[fieldId]`.
+- Decisao: adicionar `HomeworkFieldType.LISTENING` para a teacher desenhar uma area sobre sentencas do PDF/imagem, guardar o texto falado no `placeholder` do campo e tocar audio por `/ava/homework-listening/[fieldId]`.
 - Motivo: permitir atividades de listening sem transformar o campo em resposta do aluno, mantendo coordenadas percentuais, editor manual e permissao por homework.
 - Impacto: `prisma/schema.prisma`, migration `20260607173000_homework_listening_field`, `src/lib/interactive-homework-fields.ts`, `src/app/ava/homework-listening/[fieldId]/route.ts`, editor/aluno/revisao do homework, `.env.example`, cofre admin e docs oficiais.
 - Riscos/cuidados: a rota deve validar role e acesso por dado antes de chamar OpenAI; `LISTENING` nao deve entrar como resposta obrigatoria nem salvar valor em `HomeworkSubmission.answers`; o audio tem custo por clique e precisa manter disclosure de voz gerada por IA.
 
-### 2026-06-07 - Leitura automatica da frase do Listening
+### 2026-06-07 - Leitura automatica do texto do Listening
 
-- Decisao: ao criar ou reler um campo `LISTENING`, o editor chama `/ava/homework-listening-detect` com `homeworkId`, pagina e coordenadas percentuais do box para a OpenAI ler apenas a frase marcada no PDF/imagem e preencher o `placeholder` conferivel pela teacher.
-- Motivo: reduzir digitacao manual e posicionar naturalmente o volume no fim da propria frase desenhada, sem tentar gerar campos automaticos no arquivo inteiro.
+- Decisao: ao criar ou reler um campo `LISTENING`, o editor chama `/ava/homework-listening-detect` com `homeworkId`, pagina e coordenadas percentuais do box para a OpenAI ler apenas o texto marcado no PDF/imagem e preencher o `placeholder` conferivel pela teacher.
+- Motivo: reduzir digitacao manual e posicionar naturalmente o volume no fim do proprio texto desenhado, sem tentar gerar campos automaticos no arquivo inteiro.
 - Impacto: nova rota server-side protegida para Admin/Teacher, validacao Zod em `src/lib/validations/learning.ts`, editor com estado de deteccao/releitura, documentacao de ambiente e fallback de voz `nova` para um tom feminino/animado no TTS.
-- Riscos/cuidados: a deteccao envia o arquivo pedagogico protegido para OpenAI quando `OPENAI_API_KEY` existe; Student nao pode acessar a rota; a teacher deve conferir a frase detectada antes de salvar, principalmente em areas pequenas ou com texto vizinho.
+- Riscos/cuidados: a deteccao envia o arquivo pedagogico protegido para OpenAI quando `OPENAI_API_KEY` existe; Student nao pode acessar a rota; a teacher deve conferir o texto detectado antes de salvar, principalmente em areas pequenas ou com texto vizinho.
 
 ## Regras de negocio que precisam ser preservadas
 

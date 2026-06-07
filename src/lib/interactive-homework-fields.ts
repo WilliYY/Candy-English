@@ -11,7 +11,7 @@ export type InteractiveHomeworkFieldType =
   (typeof HOMEWORK_FIELD_TYPES)[number];
 
 export const TINY_TEXT_MAX_LENGTH = 2;
-export const LISTENING_SENTENCE_MAX_LENGTH = 500;
+export const LISTENING_SENTENCE_MAX_LENGTH = 1000;
 
 export function normalizeTinyTextAnswer(value: string) {
   return value

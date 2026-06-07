@@ -133,7 +133,7 @@ export async function GET(
   const input = normalizeListeningSentence(field.placeholder ?? "");
 
   if (!input) {
-    return new NextResponse("Frase do listening nao configurada.", {
+    return new NextResponse("Texto do listening nao configurado.", {
       status: 400,
     });
   }

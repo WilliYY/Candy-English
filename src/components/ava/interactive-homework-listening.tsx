@@ -76,7 +76,7 @@ export function InteractiveHomeworkListeningPreview({
       </span>
       {selected ? (
         <span className="absolute -top-7 right-0 max-w-[min(280px,70vw)] truncate rounded-[3px] border border-primary/15 bg-white/90 px-2 py-1 text-[10px] font-semibold leading-none text-primary shadow-sm">
-          {text || "Digite a frase do listening"}
+          {text || "Digite o texto do listening"}
         </span>
       ) : null}
     </span>

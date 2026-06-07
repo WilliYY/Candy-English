@@ -41,7 +41,7 @@ import {
   InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   LISTENING_SENTENCE_MAX_LENGTH,
   normalizeListeningSentence,
@@ -1213,7 +1213,9 @@ function InteractiveHomeworkEditorItem({
       return;
     }
 
-    const sentence = normalizeListeningSentence(value);
+    const sentence = value
+      .replace(/\r\n?/g, "\n")
+      .slice(0, LISTENING_SENTENCE_MAX_LENGTH);
 
     setListeningDetectionMessage(null);
     setFields((current) =>
@@ -1251,10 +1253,10 @@ function InteractiveHomeworkEditorItem({
         mode === "auto"
           ? imageDataUrl
             ? "Lendo o recorte do box..."
-            : "Lendo a frase dentro do box..."
+            : "Lendo o texto dentro do box..."
           : imageDataUrl
             ? "Relendo o recorte marcado..."
-            : "Relendo a frase marcada no box...",
+            : "Relendo o texto marcado no box...",
       );
 
       try {
@@ -1285,7 +1287,7 @@ function InteractiveHomeworkEditorItem({
         if (!response.ok) {
           setListeningDetectionMessage(
             payload.message ??
-              "Nao consegui ler automaticamente. Digite a frase do listening.",
+              "Nao consegui ler automaticamente. Digite o texto do listening.",
           );
           return;
         }
@@ -1295,7 +1297,7 @@ function InteractiveHomeworkEditorItem({
         if (!sentence) {
           setListeningDetectionMessage(
             payload.message ??
-              "Nao encontrei uma frase clara nesse box. Digite manualmente.",
+              "Nao encontrei texto claro nesse box. Digite manualmente.",
           );
           return;
         }
@@ -1326,8 +1328,8 @@ function InteractiveHomeworkEditorItem({
         setSaveStatus("idle");
         setListeningDetectionMessage(
           payload.confidence === "high"
-            ? `Frase detectada: "${sentence}"`
-            : `Frase detectada com cuidado: "${sentence}". Confira antes de salvar.`,
+            ? `Texto detectado: "${sentence}"`
+            : `Texto detectado com cuidado: "${sentence}". Confira antes de salvar.`,
         );
       } catch {
         if (controller.signal.aborted) {
@@ -1335,7 +1337,7 @@ function InteractiveHomeworkEditorItem({
         }
 
         setListeningDetectionMessage(
-          "Nao consegui ler automaticamente. Digite a frase do listening.",
+          "Nao consegui ler automaticamente. Digite o texto do listening.",
         );
       } finally {
         if (listeningDetectionSequenceRef.current === requestId) {
@@ -1810,12 +1812,12 @@ function InteractiveHomeworkEditorItem({
             </div>
           </div>
 
-          <div className="grid min-h-[74px] rounded-lg border border-primary/15 bg-white/75 p-2.5 shadow-[0_8px_22px_rgba(65,42,76,0.06)]">
+          <div className="grid min-h-[136px] rounded-lg border border-primary/15 bg-white/75 p-2.5 shadow-[0_8px_22px_rgba(65,42,76,0.06)]">
             {selectedField?.type === "LISTENING" ? (
               <div className="grid gap-2 md:grid-cols-[minmax(260px,1fr)_auto] md:items-end">
                 <label className="grid min-w-0 gap-1 text-sm font-semibold text-primary">
                   <span className="flex min-w-0 flex-wrap items-center gap-2">
-                    <span className="shrink-0">Frase do listening</span>
+                    <span className="shrink-0">Texto do listening</span>
                     <span
                       className={cn(
                         "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase leading-none tracking-[0.08em]",
@@ -1829,17 +1831,18 @@ function InteractiveHomeworkEditorItem({
                       {isDetectingSelectedListening
                         ? "lendo"
                         : selectedListeningSentence
-                          ? "pronta"
+                          ? "pronto"
                           : "auto"}
                     </span>
                   </span>
-                  <Input
-                    className="h-10 bg-white/95 font-medium"
+                  <Textarea
+                    className="min-h-16 max-h-16 resize-none overflow-auto bg-white/95 px-3 py-2 font-medium leading-5"
                     maxLength={LISTENING_SENTENCE_MAX_LENGTH}
                     onChange={(event) =>
                       updateSelectedListeningSentence(event.target.value)
                     }
-                    placeholder="Desenhe sobre a frase, ou digite aqui"
+                    placeholder="Desenhe sobre o texto, ou corrija aqui"
+                    rows={2}
                     value={selectedField.placeholder ?? ""}
                   />
                 </label>
@@ -1869,11 +1872,11 @@ function InteractiveHomeworkEditorItem({
                 </div>
                 <p className="min-w-0 truncate text-xs font-medium text-muted-foreground md:col-span-2">
                   {listeningDetectionMessage ??
-                    "A frase fica no box selecionado; o botao de volume toca normal/devagar."}
+                    "O texto fica no box selecionado; corrija aqui antes de salvar."}
                 </p>
               </div>
             ) : (
-              <div className="flex min-h-[50px] flex-wrap items-center justify-between gap-3 text-sm">
+              <div className="flex min-h-[112px] flex-wrap items-center justify-between gap-3 text-sm">
                 <span className="font-semibold text-primary">
                   {selectedField
                     ? `Area selecionada: ${getFieldPreviewLabel(selectedField)}`

@@ -167,7 +167,7 @@ export async function POST(request: Request) {
 
   if (!apiKey) {
     return NextResponse.json(
-      { message: "OpenAI nao configurada. Digite a frase manualmente." },
+      { message: "OpenAI nao configurada. Digite o texto manualmente." },
       { status: 503 },
     );
   }
@@ -206,8 +206,8 @@ export async function POST(request: Request) {
             };
       })();
   const areaInstruction = imageDataUrl
-    ? "A imagem enviada ja e o recorte da area desenhada. Leia somente a frase legivel dentro desse recorte. "
-    : `A area esta na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. `;
+    ? "A imagem enviada ja e o recorte da area desenhada. Leia somente o texto legivel dentro desse recorte, preservando uma ou mais frases quando existirem. "
+    : `A area esta na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. Leia o texto majoritariamente dentro dessa area, preservando uma ou mais frases quando existirem. `;
 
   if (!mediaContent) {
     return NextResponse.json(
@@ -226,13 +226,13 @@ export async function POST(request: Request) {
               {
                 text:
                   "Voce esta ajudando a teacher da Candy English a criar um campo Listening. " +
-                  "Leia somente a frase impressa dentro da area desenhada pela teacher no PDF/imagem. " +
+                  "Leia somente o texto em ingles impresso dentro da area desenhada pela teacher no PDF/imagem. " +
                   areaInstruction +
-                  "A frase detectada sera usada em text-to-speech e o botao de volume ficara no fim direito da area. " +
+                  "O texto detectado sera usado em text-to-speech e o botao de volume ficara no fim direito da area. " +
                   "Preserve os espacos entre palavras, pontuacao e maiusculas/minusculas como aparecem no material. " +
                   "Nao junte palavras, por exemplo retorne 'Do you like pizza?' e nunca 'doyoulikepizza'. " +
-                  "Se a area pegar texto vizinho, escolha apenas a frase majoritariamente dentro do box. " +
-                  "Se nao houver frase legivel, retorne text vazio. Responda apenas com o JSON solicitado.",
+                  "Se a area pegar texto vizinho, escolha apenas as palavras e frases majoritariamente dentro do box. " +
+                  "Se nao houver texto legivel, retorne text vazio. Responda apenas com o JSON solicitado.",
                 type: "input_text",
               },
             ],
@@ -243,7 +243,7 @@ export async function POST(request: Request) {
         model,
         text: {
           format: {
-            name: "listening_sentence_detection",
+            name: "listening_text_detection",
             schema: {
               additionalProperties: false,
               properties: {
@@ -276,7 +276,7 @@ export async function POST(request: Request) {
       console.warn(`Listening OCR failed: status ${response.status}`);
 
       return NextResponse.json(
-        { message: "Nao consegui ler a frase automaticamente." },
+        { message: "Nao consegui ler o texto automaticamente." },
         { status: 502 },
       );
     }
@@ -288,7 +288,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           confidence: detection.confidence,
-          message: "Nao encontrei uma frase clara nessa area.",
+          message: "Nao encontrei texto claro nessa area.",
           text: "",
         },
         { status: 422 },
@@ -299,13 +299,13 @@ export async function POST(request: Request) {
       confidence: detection.confidence,
       message:
         detection.confidence === "high"
-          ? "Frase lida automaticamente."
-          : "Frase detectada. Confira antes de salvar.",
+          ? "Texto lido automaticamente."
+          : "Texto detectado. Confira antes de salvar.",
       text: detection.sentence,
     });
   } catch {
     return NextResponse.json(
-      { message: "Nao consegui ler a frase automaticamente." },
+      { message: "Nao consegui ler o texto automaticamente." },
       { status: 502 },
     );
   }
