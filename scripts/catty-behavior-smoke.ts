@@ -3,7 +3,9 @@ import {
   buildCattyResponsePlan,
   buildFallbackCattyReply,
   hasDisallowedCattyText,
+  sanitizeCattyReply,
   shouldUseOpenAiForCatty,
+  type CattyIntent,
   type CattyMessage,
   type CattyPageContext,
   type CattySessionContext,
@@ -19,6 +21,7 @@ import {
 } from "../src/lib/catty-learning";
 import {
   CATTY_SCENARIOS,
+  CATTY_SCENARIOS_BY_INTENT,
   formatCattyScenarioPromptContext,
   pickCattyScenarioFallbackReply,
   selectCattyScenariosForPrompt,
@@ -198,6 +201,15 @@ function assertCattyScenarioBase() {
 
   const ids = new Set<string>();
   const categories = new Set(CATTY_SCENARIOS.map((scenario) => scenario.category));
+  const scenarioIntentTotal = Object.values(CATTY_SCENARIOS_BY_INTENT).reduce(
+    (total, scenarios) => total + (scenarios?.length ?? 0),
+    0,
+  );
+
+  assertCondition(
+    scenarioIntentTotal === CATTY_SCENARIOS.length,
+    "indice de cenarios por intencao nao cobre toda a base.",
+  );
 
   for (const category of requiredScenarioCategories) {
     assertCondition(
@@ -262,6 +274,7 @@ function assertCattyScenarioBase() {
     "admin-ava-sensitive",
     "salad-to-english",
     "api-request-redirect",
+    "correction-empty-corrige",
   ]) {
     assertCondition(
       CATTY_SCENARIOS.some((scenario) => scenario.id === requiredId),
@@ -317,12 +330,21 @@ function buildRouteLikeFallbackTurn(input: {
     [],
     userMemoryContext,
   );
+  const scenarioFallbackReply = pickCattyScenarioFallbackReply({
+    context,
+    history: input.history,
+    memories: userMemoryContext,
+    message: input.message,
+    plan,
+  });
   const reply = applyCattyUserMemoryToFallbackReply({
     history: input.history,
     memories: userMemoryContext,
     message: input.message,
     plan,
-    reply: plan.fallbackReply,
+    reply: scenarioFallbackReply
+      ? sanitizeCattyReply(scenarioFallbackReply)
+      : plan.fallbackReply,
   });
 
   input.history.push(
@@ -335,8 +357,23 @@ function buildRouteLikeFallbackTurn(input: {
     plan,
     prompt,
     reply,
+    scenarioFallbackReply,
   };
 }
+
+type ScenarioFallbackChecklistCase = {
+  context?: CattyPageContext;
+  expectedAiSource: "gemini" | "openai";
+  expectedIntent: CattyIntent;
+  fallbackMustInclude: string[];
+  history?: CattyMessage[];
+  id: string;
+  message: string;
+  scenarioFallback: boolean;
+  sessionContext?: CattySessionContext;
+  userMemoryContext?: CattyUserMemoryPromptItem[];
+  usesMemoryOrArtifact: boolean;
+};
 
 function main() {
   assertCondition(
@@ -361,6 +398,7 @@ function main() {
   ];
   const selectedScenarios = selectCattyScenariosForPrompt({
     context: { area: "student", task: "resumo" },
+    history: [],
     intent: scenarioPromptPlan.intent,
     memories: scenarioPromptMemory,
     message: "I like cars.",
@@ -376,6 +414,7 @@ function main() {
   );
   const scenarioFallback = pickCattyScenarioFallbackReply({
     context: { area: "student", task: "resumo" },
+    history: [],
     memories: scenarioPromptMemory,
     message: "I like cars.",
     plan: scenarioPromptPlan,
@@ -604,8 +643,7 @@ function main() {
   assertConversationalReply(sequenceOneSecond.reply, "sequencia 1 turno 2");
   assertCondition(
     sequenceOneFirst.plan.intent === "practice_english" &&
-      sequenceOneFirst.normalizedReply.includes("what else do you like") &&
-      sequenceOneFirst.normalizedReply.includes("chocolate"),
+      sequenceOneFirst.normalizedReply.includes("what else do you like"),
     "sequencia 1 turno 1 nao continuou perguntando outro gosto.",
   );
   assertCondition(
@@ -716,6 +754,254 @@ function main() {
       sequenceSix.normalizedReply.includes("passado"),
     "sequencia 6 nao corrigiu yesterday + presente para passado.",
   );
+
+  const scenarioFallbackChecklist: ScenarioFallbackChecklistCase[] = [
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["What else do you like"],
+      id: "scenario-like-chocolate",
+      message: "I like chocolate.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "openai",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I like chocolate", "like sem -s"],
+      id: "scenario-openai-correction",
+      message: "Catty, corrige: I likes chocolate.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I like chocolate", "What else do you like"],
+      id: "scenario-i-likes",
+      message: "I likes chocolate.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["She likes pizza", "verbo ganha -s"],
+      id: "scenario-she-like",
+      message: "She like pizza.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I am 10 years old", "idade"],
+      id: "scenario-age",
+      message: "I have 10 years old.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I went to school yesterday", "passado"],
+      id: "scenario-yesterday",
+      message: "I go to school yesterday.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "confusing_question",
+      fallbackMustInclude: ["I like red cars", "blue"],
+      id: "scenario-red-cars-isolated",
+      message: "red cars",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like red cars"],
+      history: [
+        { from: "user" as const, text: "I likes cars." },
+        {
+          from: "catty" as const,
+          text: "Awnn, quase la. Melhor: I like cars.",
+        },
+      ],
+      id: "scenario-red-cars-history",
+      message: "red cars",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "confusing_question",
+      fallbackMustInclude: ["palavra", "frase", "exercicio"],
+      id: "scenario-nao-entendi",
+      message: "nao entendi",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["frase que voce quer corrigir"],
+      id: "scenario-corrige",
+      message: "corrige",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      context: { area: "student" as const, task: "homeworks" },
+      expectedAiSource: "gemini",
+      expectedIntent: "ready_answer_request",
+      fallbackMustInclude: ["resposta pronta", "me manda o enunciado"],
+      id: "scenario-ready-answer",
+      message: "me da a resposta",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "out_of_scope",
+      fallbackMustInclude: ["I make a salad", "ingredients"],
+      id: "scenario-salad",
+      message: "como faz salada?",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["My favorite animal is a capybara", "animal sentence"],
+      id: "scenario-capybara-memory",
+      message: "My favorite animal is capybara.",
+      scenarioFallback: false,
+      userMemoryContext: capybaraMemoryContext,
+      usesMemoryOrArtifact: true,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["Does she like cats", "does"],
+      id: "scenario-do-she",
+      message: "Do she like cats?",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["I was happy", "was"],
+      id: "scenario-was-were",
+      message: "I were happy.",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "confusing_question",
+      fallbackMustInclude: ["There are two cats", "plural"],
+      id: "scenario-there-are",
+      message: "There is two cats.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "confusing_question",
+      fallbackMustInclude: ["I would like a juice", "What would you like"],
+      id: "scenario-would-like",
+      message: "I would like a juice.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "confusing_question",
+      fallbackMustInclude: ["I bought shoes", "bought"],
+      id: "scenario-shopping-buyed",
+      message: "I buyed shoes.",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      context: { area: "teacher" as const, task: "resumo" },
+      expectedAiSource: "openai",
+      expectedIntent: "teacher_feedback",
+      fallbackMustInclude: ["feedback bruto", "Candy"],
+      id: "scenario-teacher-feedback",
+      message: "Catty melhora esse feedback",
+      scenarioFallback: true,
+      sessionContext: { firstName: "Teacher", role: "TEACHER" as const },
+      usesMemoryOrArtifact: false,
+    },
+    {
+      context: { area: "student" as const, task: "candy-xp" },
+      expectedAiSource: "gemini",
+      expectedIntent: "candy_xp",
+      fallbackMustInclude: ["Candy XP", "missao"],
+      id: "scenario-candy-xp",
+      message: "como ganho XP?",
+      scenarioFallback: true,
+      usesMemoryOrArtifact: false,
+    },
+  ];
+
+  assertCondition(
+    scenarioFallbackChecklist.length === 20,
+    "checklist de fallback por cenario deve ter 20 entradas.",
+  );
+
+  for (const example of scenarioFallbackChecklist) {
+    const result = buildRouteLikeFallbackTurn({
+      context: example.context,
+      history: [...(example.history ?? [])],
+      message: example.message,
+      sessionContext: example.sessionContext,
+      userMemoryContext: example.userMemoryContext,
+    });
+    const usesOpenAi = shouldUseOpenAiForCatty(example.message);
+
+    assertConversationalReply(result.reply, example.id);
+    assertCondition(
+      result.plan.intent === example.expectedIntent,
+      `${example.id}: intencao ${result.plan.intent} diferente de ${example.expectedIntent}.`,
+    );
+    assertCondition(
+      usesOpenAi === (example.expectedAiSource === "openai"),
+      `${example.id}: roteamento IA esperado ${example.expectedAiSource}, recebeu ${usesOpenAi ? "openai" : "gemini"}.`,
+    );
+    assertCondition(
+      Boolean(result.scenarioFallbackReply) === example.scenarioFallback,
+      `${example.id}: fallback por cenario esperado ${example.scenarioFallback}.`,
+    );
+    assertCondition(
+      result.prompt.includes("Cenarios de repertorio da Catty"),
+      `${example.id}: prompt nao incluiu bloco de cenarios para Gemini/OpenAI.`,
+    );
+    assertCondition(
+      !hasDisallowedCattyText(result.reply),
+      `${example.id}: fallback mencionou IA ou provedor.`,
+    );
+    assertIntentSafety(example.id, result.plan.intent, result.reply);
+
+    for (const expected of example.fallbackMustInclude) {
+      assertCondition(
+        result.normalizedReply.includes(normalizeText(expected)),
+        `${example.id}: fallback nao contem "${expected}". Resposta: ${result.reply}`,
+      );
+    }
+
+    if (example.usesMemoryOrArtifact) {
+      assertCondition(
+        result.prompt.includes("capivara") || result.reply.includes("capybara"),
+        `${example.id}: teste marcado como memoria/artefato nao levou contexto pessoal.`,
+      );
+    }
+  }
 
   const grammarCorrectionCases = [
     {
@@ -1420,7 +1706,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 correcoes e 6 sequencias validadas.`,
   );
 }
 

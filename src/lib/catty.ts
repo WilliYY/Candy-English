@@ -3276,6 +3276,7 @@ export function buildCattyInput(
   });
   const scenarioSelection = selectCattyScenariosForPrompt({
     context,
+    history,
     intent: plan.intent,
     memories: userMemoryContext,
     message,

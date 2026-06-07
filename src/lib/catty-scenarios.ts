@@ -1,4 +1,9 @@
-import type { CattyIntent, CattyPageContext, CattyResponsePlan } from "./catty";
+import type {
+  CattyIntent,
+  CattyMessage,
+  CattyPageContext,
+  CattyResponsePlan,
+} from "./catty";
 
 export type CattyScenarioCategory =
   | "admin"
@@ -109,7 +114,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "age-have-years-old",
     idealReply:
-      "Awnn, em ingles fica: I am 10 years old. Para idade, usamos I am.",
+      "Awnn, em ingles fica: I am 10 years old. Para idade, usamos I am. Can you say your age again?",
     intent: "correct_sentence",
     name: "Idade errada",
     rule: "Para idade, usar I am, nao I have.",
@@ -226,7 +231,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "salad-to-english",
     idealReply:
-      "Uwau, vamos transformar isso em English? You can say: I make a salad.",
+      "Uwau, vamos transformar isso em English? You can say: I make a salad. Want to add the ingredients?",
     intent: "out_of_scope",
     name: "Assunto fora do ingles",
     rule: "Nao ensinar receita; puxar para frase curta em ingles.",
@@ -245,6 +250,19 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     rule: "Nao criar codigo/API; redirecionar para linguagem e estudo.",
     tags: ["api", "code", "out-of-scope"],
     userInput: "faz uma API pra mim",
+  },
+  {
+    badReply: "Envie mais detalhes para eu avaliar.",
+    category: "correction",
+    context: { area: "student", task: "resumo" },
+    id: "correction-empty-corrige",
+    idealReply:
+      "Miauw, me manda a frase que voce quer corrigir. A Catty ajusta e explica rapidinho.",
+    intent: "correct_sentence",
+    name: "Correcao sem frase",
+    rule: "Quando o aluno pede correcao sem enviar a frase, pedir a frase exata.",
+    tags: ["correction", "corrige", "sentence"],
+    userInput: "corrige",
   },
   {
     badReply: "Nice. Keep writing.",
@@ -719,6 +737,18 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
   },
 ];
 
+export const CATTY_SCENARIOS_BY_INTENT = CATTY_SCENARIOS.reduce(
+  (map, scenario) => {
+    const scenarios = map[scenario.intent] ?? [];
+
+    scenarios.push(scenario);
+    map[scenario.intent] = scenarios;
+
+    return map;
+  },
+  {} as Partial<Record<CattyIntent, CattyScenario[]>>,
+);
+
 function normalizeScenarioText(text: string) {
   return text
     .normalize("NFD")
@@ -728,6 +758,10 @@ function normalizeScenarioText(text: string) {
 
 function getScenarioTokens(text: string) {
   return normalizeScenarioText(text).match(/[a-z0-9]+/g) ?? [];
+}
+
+function isExactScenarioMessage(message: string, scenario: CattyScenario) {
+  return normalizeScenarioText(message) === normalizeScenarioText(scenario.userInput);
 }
 
 function compactScenarioText(text: string, maxLength: number) {
@@ -780,8 +814,69 @@ function getMemoryScore(
   }, 0);
 }
 
+function getHistoryScore(history: CattyMessage[] = [], scenario: CattyScenario) {
+  if (history.length === 0) {
+    return 0;
+  }
+
+  const historyText = normalizeScenarioText(
+    history
+      .slice(-6)
+      .map((message) => message.text)
+      .join(" "),
+  );
+
+  if (!historyText) {
+    return 0;
+  }
+
+  const historySignals = [
+    scenario.userInput,
+    scenario.tags.join(" "),
+    scenario.studentMemory?.join(" ") ?? "",
+  ].join(" ");
+  const tokens = [...new Set(getScenarioTokens(historySignals))].filter(
+    (token) => token.length >= 4,
+  );
+  const matches = tokens.filter((token) => historyText.includes(token)).length;
+
+  return Math.min(matches * 2, 8);
+}
+
+function getScenarioCandidates(intent: CattyIntent, message: string) {
+  const candidates = new Map<string, CattyScenario>();
+
+  for (const scenario of CATTY_SCENARIOS_BY_INTENT[intent] ?? []) {
+    candidates.set(scenario.id, scenario);
+  }
+
+  for (const scenario of CATTY_SCENARIOS) {
+    if (isExactScenarioMessage(message, scenario)) {
+      candidates.set(scenario.id, scenario);
+    }
+  }
+
+  return [...candidates.values()];
+}
+
+function hasScenarioContinuation(reply: string) {
+  const normalized = normalizeScenarioText(reply);
+
+  return [
+    "can you",
+    "what ",
+    "want to",
+    "quer ",
+    "agora tenta",
+    "me manda",
+    "does she like chocolate",
+    "does he like chocolate",
+  ].some((signal) => normalized.includes(signal));
+}
+
 function scoreCattyScenario(input: {
   context?: CattyPageContext;
+  history?: CattyMessage[];
   intent: CattyIntent;
   memories?: CattyScenarioMemoryItem[];
   message: string;
@@ -804,16 +899,16 @@ function scoreCattyScenario(input: {
   if (input.scenario.intent === input.intent) {
     score += 10;
   } else {
-    score -= 8;
+    score -= 6;
   }
 
   if (normalizedMessage === normalizedScenarioInput) {
-    score += 24;
+    score += 30;
   } else if (
     normalizedMessage.includes(normalizedScenarioInput) ||
     normalizedScenarioInput.includes(normalizedMessage)
   ) {
-    score += 8;
+    score += 10;
   }
 
   for (const token of messageTokens) {
@@ -823,6 +918,7 @@ function scoreCattyScenario(input: {
   }
 
   score += getContextScore(input.context, input.scenario);
+  score += getHistoryScore(input.history, input.scenario);
   score += getMemoryScore(input.memories, input.scenario);
 
   return score;
@@ -830,6 +926,7 @@ function scoreCattyScenario(input: {
 
 export function selectCattyScenariosForPrompt(input: {
   context?: CattyPageContext;
+  history?: CattyMessage[];
   intent: CattyIntent;
   limit?: number;
   memories?: CattyScenarioMemoryItem[];
@@ -837,46 +934,90 @@ export function selectCattyScenariosForPrompt(input: {
 }) {
   const limit = Math.min(Math.max(input.limit ?? 4, 1), 4);
 
-  return CATTY_SCENARIOS.map((scenario) => ({
-    scenario,
-    score: scoreCattyScenario({
-      context: input.context,
-      intent: input.intent,
-      memories: input.memories,
-      message: input.message,
+  return getScenarioCandidates(input.intent, input.message)
+    .map((scenario) => ({
+      exact: isExactScenarioMessage(input.message, scenario),
       scenario,
-    }),
-  }))
-    .filter((entry) => entry.score >= 8)
-    .sort((first, second) => second.score - first.score)
+      score: scoreCattyScenario({
+        context: input.context,
+        history: input.history,
+        intent: input.intent,
+        memories: input.memories,
+        message: input.message,
+        scenario,
+      }),
+    }))
+    .filter((entry) => entry.exact || entry.score >= 8)
+    .sort((first, second) => {
+      if (first.exact !== second.exact) {
+        return first.exact ? -1 : 1;
+      }
+
+      return second.score - first.score;
+    })
     .slice(0, limit)
     .map((entry) => entry.scenario);
 }
 
 export function pickCattyScenarioFallbackReply(input: {
   context?: CattyPageContext;
+  history?: CattyMessage[];
   memories?: CattyScenarioMemoryItem[];
   message: string;
   plan: CattyResponsePlan;
 }) {
-  const best = CATTY_SCENARIOS.map((scenario) => ({
-    scenario,
-    score: scoreCattyScenario({
-      context: input.context,
-      intent: input.plan.intent,
-      memories: input.memories,
-      message: input.message,
+  const best = getScenarioCandidates(input.plan.intent, input.message)
+    .map((scenario) => ({
+      exact: isExactScenarioMessage(input.message, scenario),
       scenario,
-    }),
-  }))
-    .filter((entry) => entry.scenario.intent === input.plan.intent)
-    .sort((first, second) => second.score - first.score)[0];
+      score: scoreCattyScenario({
+        context: input.context,
+        history: input.history,
+        intent: input.plan.intent,
+        memories: input.memories,
+        message: input.message,
+        scenario,
+      }),
+    }))
+    .sort((first, second) => {
+      if (first.exact !== second.exact) {
+        return first.exact ? -1 : 1;
+      }
 
-  if (!best || best.score < 24) {
+      return second.score - first.score;
+    })[0];
+
+  if (!best) {
     return null;
   }
 
-  return best.scenario.idealReply;
+  if (
+    input.plan.correction &&
+    best.scenario.category !== "homework" &&
+    !hasScenarioContinuation(best.scenario.idealReply)
+  ) {
+    return null;
+  }
+
+  if (
+    input.plan.continuity?.historyTopic &&
+    best.scenario.category !== "fragment" &&
+    !normalizeScenarioText(best.scenario.idealReply).includes(
+      normalizeScenarioText(input.plan.continuity.historyTopic),
+    )
+  ) {
+    return null;
+  }
+
+  if (best.exact && best.score >= 18) {
+    return best.scenario.idealReply;
+  }
+
+  if (best.scenario.intent === input.plan.intent && best.score >= 24) {
+    return best.scenario.idealReply;
+  }
+
+  return null;
 }
 
 export function formatCattyScenarioPromptContext(scenarios: CattyScenario[]) {
