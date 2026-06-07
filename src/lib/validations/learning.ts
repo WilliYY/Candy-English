@@ -140,6 +140,15 @@ export const deleteInteractiveHomeworkSchema = z.object({
 export const detectListeningTextSchema = z.object({
   height: z.coerce.number().min(1, "Altura minima 1%.").max(100),
   homeworkId: z.string().min(1, "Homework invalida."),
+  imageDataUrl: z
+    .string()
+    .max(2_200_000, "Recorte da area muito grande.")
+    .refine(
+      (value) =>
+        /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value),
+      "Recorte da area invalido.",
+    )
+    .optional(),
   page: z.coerce.number().int().min(1).max(20),
   width: z.coerce.number().min(1, "Largura minima 1%.").max(100),
   x: z.coerce.number().min(0).max(100),

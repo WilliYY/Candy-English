@@ -157,6 +157,9 @@ type EditorAction =
 const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
 const AUTOSAVE_FIELDS_DELAY_MS = 2500;
+const LISTENING_AUTO_DETECTION_DELAY_MS = 450;
+const LISTENING_CROP_MAX_DIMENSION = 1400;
+const LISTENING_CROP_MAX_DATA_URL_LENGTH = 2_100_000;
 const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
   [
     [14, 62],
@@ -335,6 +338,103 @@ function isEditableKeyboardTarget(target: EventTarget | null) {
     target.tagName === "SELECT" ||
     target.tagName === "TEXTAREA"
   );
+}
+
+function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
+  if (typeof document === "undefined") {
+    return undefined;
+  }
+
+  const pageElement = document.querySelector<HTMLElement>(
+    `[data-homework-page="${field.page}"]`,
+  );
+  const mediaElement = pageElement?.querySelector<
+    HTMLCanvasElement | HTMLImageElement
+  >("[data-homework-page-media]");
+
+  if (!mediaElement) {
+    return undefined;
+  }
+
+  const isCanvas = mediaElement instanceof HTMLCanvasElement;
+  const sourceWidth = isCanvas
+    ? mediaElement.width
+    : mediaElement.naturalWidth;
+  const sourceHeight = isCanvas
+    ? mediaElement.height
+    : mediaElement.naturalHeight;
+
+  if (
+    sourceWidth <= 0 ||
+    sourceHeight <= 0 ||
+    (!isCanvas && !mediaElement.complete)
+  ) {
+    return undefined;
+  }
+
+  try {
+    const paddingX = Math.max(8, sourceWidth * 0.008);
+    const paddingY = Math.max(6, sourceHeight * 0.008);
+    const rawX = (field.x / 100) * sourceWidth;
+    const rawY = (field.y / 100) * sourceHeight;
+    const rawWidth = (field.width / 100) * sourceWidth;
+    const rawHeight = (field.height / 100) * sourceHeight;
+    const sx = clampNumber(rawX - paddingX, 0, sourceWidth - 1);
+    const sy = clampNumber(rawY - paddingY, 0, sourceHeight - 1);
+    const sw = clampNumber(
+      rawWidth + paddingX * 2,
+      1,
+      sourceWidth - sx,
+    );
+    const sh = clampNumber(
+      rawHeight + paddingY * 2,
+      1,
+      sourceHeight - sy,
+    );
+    const maxSide = Math.max(sw, sh);
+    const scale =
+      maxSide > LISTENING_CROP_MAX_DIMENSION
+        ? LISTENING_CROP_MAX_DIMENSION / maxSide
+        : Math.min(2, LISTENING_CROP_MAX_DIMENSION / maxSide);
+    const targetWidth = Math.max(1, Math.round(sw * scale));
+    const targetHeight = Math.max(1, Math.round(sh * scale));
+    const cropCanvas = document.createElement("canvas");
+    const context = cropCanvas.getContext("2d");
+
+    if (!context) {
+      return undefined;
+    }
+
+    cropCanvas.width = targetWidth;
+    cropCanvas.height = targetHeight;
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, targetWidth, targetHeight);
+    context.drawImage(
+      mediaElement,
+      sx,
+      sy,
+      sw,
+      sh,
+      0,
+      0,
+      targetWidth,
+      targetHeight,
+    );
+
+    const pngDataUrl = cropCanvas.toDataURL("image/png");
+
+    if (pngDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH) {
+      return pngDataUrl;
+    }
+
+    const jpegDataUrl = cropCanvas.toDataURL("image/jpeg", 0.92);
+
+    return jpegDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH
+      ? jpegDataUrl
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function getPageRect(element: Element): PageRect | null {
@@ -1067,7 +1167,9 @@ function InteractiveHomeworkEditorItem({
   >(null);
   const autosaveTimerRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
+  const listeningDetectionAbortRef = useRef<AbortController | null>(null);
   const listeningDetectionRequestsRef = useRef<Set<string>>(new Set());
+  const listeningDetectionSequenceRef = useRef(0);
   const currentFieldsSignature = useMemo(
     () => getFieldsSignature(fields),
     [fields],
@@ -1100,6 +1202,12 @@ function InteractiveHomeworkEditorItem({
       : "",
   );
 
+  useEffect(() => {
+    return () => {
+      listeningDetectionAbortRef.current?.abort();
+    };
+  }, []);
+
   function updateSelectedListeningSentence(value: string) {
     if (!selectedFieldId) {
       return;
@@ -1131,11 +1239,22 @@ function InteractiveHomeworkEditorItem({
         return;
       }
 
+      const requestId = listeningDetectionSequenceRef.current + 1;
+      const controller = new AbortController();
+      const imageDataUrl = getListeningFieldCropDataUrl(field);
+
+      listeningDetectionSequenceRef.current = requestId;
+      listeningDetectionAbortRef.current?.abort();
+      listeningDetectionAbortRef.current = controller;
       setListeningDetectionFieldId(field.id);
       setListeningDetectionMessage(
         mode === "auto"
-          ? "Lendo a frase dentro do box..."
-          : "Relendo a frase marcada no box...",
+          ? imageDataUrl
+            ? "Lendo o recorte do box..."
+            : "Lendo a frase dentro do box..."
+          : imageDataUrl
+            ? "Relendo o recorte marcado..."
+            : "Relendo a frase marcada no box...",
       );
 
       try {
@@ -1143,6 +1262,7 @@ function InteractiveHomeworkEditorItem({
           body: JSON.stringify({
             height: field.height,
             homeworkId: homework.id,
+            imageDataUrl,
             page: field.page,
             width: field.width,
             x: field.x,
@@ -1152,10 +1272,15 @@ function InteractiveHomeworkEditorItem({
             "Content-Type": "application/json",
           },
           method: "POST",
+          signal: controller.signal,
         });
         const payload = (await response
           .json()
           .catch(() => ({}))) as ListeningDetectionResponse;
+
+        if (listeningDetectionSequenceRef.current !== requestId) {
+          return;
+        }
 
         if (!response.ok) {
           setListeningDetectionMessage(
@@ -1205,13 +1330,20 @@ function InteractiveHomeworkEditorItem({
             : `Frase detectada com cuidado: "${sentence}". Confira antes de salvar.`,
         );
       } catch {
+        if (controller.signal.aborted) {
+          return;
+        }
+
         setListeningDetectionMessage(
           "Nao consegui ler automaticamente. Digite a frase do listening.",
         );
       } finally {
-        setListeningDetectionFieldId((current) =>
-          current === field.id ? null : current,
-        );
+        if (listeningDetectionSequenceRef.current === requestId) {
+          listeningDetectionAbortRef.current = null;
+          setListeningDetectionFieldId((current) =>
+            current === field.id ? null : current,
+          );
+        }
       }
     },
     [homework.id],
@@ -1262,8 +1394,13 @@ function InteractiveHomeworkEditorItem({
       return;
     }
 
-    listeningDetectionRequestsRef.current.add(selectedField.id);
-    void detectListeningSentenceForField(selectedField, "auto");
+    const field = selectedField;
+    const timer = window.setTimeout(() => {
+      listeningDetectionRequestsRef.current.add(field.id);
+      void detectListeningSentenceForField(field, "auto");
+    }, LISTENING_AUTO_DETECTION_DELAY_MS);
+
+    return () => window.clearTimeout(timer);
   }, [detectListeningSentenceForField, isEditingGesture, selectedField]);
 
   useEffect(() => {
@@ -1673,12 +1810,12 @@ function InteractiveHomeworkEditorItem({
             </div>
           </div>
 
-          {selectedField?.type === "LISTENING" ? (
-            <div className="grid gap-3 rounded-lg border border-primary/15 bg-white/80 p-3 shadow-[0_10px_28px_rgba(65,42,76,0.08)]">
-              <div className="flex flex-wrap items-end gap-3">
-                <label className="grid min-w-[240px] flex-1 gap-1 text-sm font-semibold text-primary">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span>Frase do listening</span>
+          <div className="grid min-h-[74px] rounded-lg border border-primary/15 bg-white/75 p-2.5 shadow-[0_8px_22px_rgba(65,42,76,0.06)]">
+            {selectedField?.type === "LISTENING" ? (
+              <div className="grid gap-2 md:grid-cols-[minmax(260px,1fr)_auto] md:items-end">
+                <label className="grid min-w-0 gap-1 text-sm font-semibold text-primary">
+                  <span className="flex min-w-0 flex-wrap items-center gap-2">
+                    <span className="shrink-0">Frase do listening</span>
                     <span
                       className={cn(
                         "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase leading-none tracking-[0.08em]",
@@ -1690,14 +1827,14 @@ function InteractiveHomeworkEditorItem({
                       )}
                     >
                       {isDetectingSelectedListening
-                        ? "lendo box"
+                        ? "lendo"
                         : selectedListeningSentence
-                          ? "frase pronta"
-                          : "auto leitura"}
+                          ? "pronta"
+                          : "auto"}
                     </span>
                   </span>
                   <Input
-                    className="bg-white/95 font-medium"
+                    className="h-10 bg-white/95 font-medium"
                     maxLength={LISTENING_SENTENCE_MAX_LENGTH}
                     onChange={(event) =>
                       updateSelectedListeningSentence(event.target.value)
@@ -1706,42 +1843,48 @@ function InteractiveHomeworkEditorItem({
                     value={selectedField.placeholder ?? ""}
                   />
                 </label>
-                <Button
-                  disabled={isDetectingSelectedListening}
-                  onClick={retrySelectedListeningDetection}
-                  size="sm"
-                  title="Ler novamente o texto dentro do box selecionado"
-                  type="button"
-                  variant="outline"
-                >
-                  {isDetectingSelectedListening ? (
-                    <LoaderCircle
-                      className="animate-spin"
-                      data-icon="inline-start"
-                    />
-                  ) : (
-                    <Wand2 data-icon="inline-start" />
-                  )}
-                  {isDetectingSelectedListening ? "Lendo..." : "Ler box"}
-                </Button>
-              </div>
-              <div className="grid gap-2 text-xs leading-5 text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">
-                <p>
-                  Desenhe do inicio ao fim da frase impressa. A IA tenta ler o
-                  texto automaticamente, e o volume fica no canto direito do box
-                  para tocar normal/devagar.
+                <div className="flex min-w-0 items-center gap-2">
+                  <Button
+                    className="shrink-0"
+                    disabled={isDetectingSelectedListening}
+                    onClick={retrySelectedListeningDetection}
+                    size="sm"
+                    title="Ler novamente o texto dentro do box selecionado"
+                    type="button"
+                    variant="outline"
+                  >
+                    {isDetectingSelectedListening ? (
+                      <LoaderCircle
+                        className="animate-spin"
+                        data-icon="inline-start"
+                      />
+                    ) : (
+                      <Wand2 data-icon="inline-start" />
+                    )}
+                    {isDetectingSelectedListening ? "Lendo..." : "Ler box"}
+                  </Button>
+                  <span className="hidden rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70 xl:inline-flex">
+                    voz feminina
+                  </span>
+                </div>
+                <p className="min-w-0 truncate text-xs font-medium text-muted-foreground md:col-span-2">
+                  {listeningDetectionMessage ??
+                    "A frase fica no box selecionado; o botao de volume toca normal/devagar."}
                 </p>
-                <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 font-semibold text-primary/70">
-                  voz feminina animada
+              </div>
+            ) : (
+              <div className="flex min-h-[50px] flex-wrap items-center justify-between gap-3 text-sm">
+                <span className="font-semibold text-primary">
+                  {selectedField
+                    ? `Area selecionada: ${getFieldPreviewLabel(selectedField)}`
+                    : `Ferramenta: ${FIELD_TOOL_META[selectedTool].label}`}
+                </span>
+                <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70">
+                  {fields.length} area(s) no arquivo
                 </span>
               </div>
-              {listeningDetectionMessage ? (
-                <p className="rounded-md border border-primary/10 bg-primary/[0.035] px-3 py-2 text-xs font-medium text-primary/80">
-                  {listeningDetectionMessage}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+            )}
+          </div>
 
           {message ? (
             <p className="rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">

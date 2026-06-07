@@ -172,32 +172,49 @@ export async function POST(request: Request) {
     );
   }
 
-  let file: Buffer;
+  const assetMimeType = homework.assetMimeType;
+  const assetStoragePath = homework.assetStoragePath;
+  const model = process.env.OPENAI_HOMEWORK_OCR_MODEL?.trim() || "gpt-4.1-mini";
+  const { height, imageDataUrl, page, width, x, y } = parsed.data;
+  const mediaContent = imageDataUrl
+    ? {
+        detail: "high",
+        image_url: imageDataUrl,
+        type: "input_image",
+      }
+    : await (async () => {
+        let file: Buffer;
 
-  try {
-    file = await readFile(getStoragePath(homework.assetStoragePath));
-  } catch {
+        try {
+          file = await readFile(getStoragePath(assetStoragePath));
+        } catch {
+          return null;
+        }
+
+        const base64 = file.toString("base64");
+
+        return assetMimeType === "application/pdf"
+          ? {
+              file_data: `data:${assetMimeType};base64,${base64}`,
+              filename: homework.assetFileName ?? "homework.pdf",
+              type: "input_file",
+            }
+          : {
+              detail: "high",
+              image_url: `data:${assetMimeType};base64,${base64}`,
+              type: "input_image",
+            };
+      })();
+  const areaInstruction = imageDataUrl
+    ? "A imagem enviada ja e o recorte da area desenhada. Leia somente a frase legivel dentro desse recorte. "
+    : `A area esta na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. `;
+
+  if (!mediaContent) {
     return NextResponse.json(
       { message: "Arquivo da atividade nao encontrado." },
       { status: 404 },
     );
   }
-
-  const model = process.env.OPENAI_HOMEWORK_OCR_MODEL?.trim() || "gpt-4.1-mini";
-  const base64 = file.toString("base64");
-  const mediaContent =
-    homework.assetMimeType === "application/pdf"
-      ? {
-          file_data: `data:${homework.assetMimeType};base64,${base64}`,
-          filename: homework.assetFileName ?? "homework.pdf",
-          type: "input_file",
-        }
-      : {
-          detail: "high",
-          image_url: `data:${homework.assetMimeType};base64,${base64}`,
-          type: "input_image",
-        };
-  const { height, page, width, x, y } = parsed.data;
 
   try {
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -210,7 +227,7 @@ export async function POST(request: Request) {
                 text:
                   "Voce esta ajudando a teacher da Candy English a criar um campo Listening. " +
                   "Leia somente a frase impressa dentro da area desenhada pela teacher no PDF/imagem. " +
-                  `A area esta na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. ` +
+                  areaInstruction +
                   "A frase detectada sera usada em text-to-speech e o botao de volume ficara no fim direito da area. " +
                   "Preserve os espacos entre palavras, pontuacao e maiusculas/minusculas como aparecem no material. " +
                   "Nao junte palavras, por exemplo retorne 'Do you like pizza?' e nunca 'doyoulikepizza'. " +

@@ -153,6 +153,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- Protected homework assets use the authenticated route. */}
         <img
+          data-homework-page-media="1"
           alt={`Homework ${title}`}
           className="absolute inset-0 z-0 size-full object-fill"
           onLoad={(event) => {
@@ -296,6 +297,7 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
     >
       <canvas
         ref={canvasRef}
+        data-homework-page-media={pageNumber}
         aria-label={`Pagina ${pageNumber}`}
         className="absolute inset-0 z-0 size-full bg-white"
       />
