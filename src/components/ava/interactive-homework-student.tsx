@@ -36,6 +36,7 @@ import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-m
 import {
   getInteractiveHomeworkTextStyle,
   InteractiveHomeworkTextFrame,
+  InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
 
@@ -556,9 +557,13 @@ export function InteractiveHomeworkStudent({
                     className="pointer-events-auto"
                     style={style}
                   >
+                    <InteractiveHomeworkTextLineGuide
+                      kind="SHORT_TEXT"
+                      variant="student"
+                    />
                     <input
                       aria-label={field.label ?? `Campo ${index + 1}`}
-                      className={`${commonClass} overflow-hidden whitespace-nowrap px-[0.25em]`}
+                      className={`${commonClass} relative z-10 overflow-hidden whitespace-nowrap px-[0.25em]`}
                       disabled={isLocked}
                       onChange={(event) =>
                         updateValue(field.id, event.target.value)
@@ -577,18 +582,22 @@ export function InteractiveHomeworkStudent({
                   className="pointer-events-auto"
                   style={style}
                 >
-                    <textarea
-                      aria-label={field.label ?? `Campo ${index + 1}`}
-                      className={`${commonClass} resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
-                      disabled={isLocked}
-                      onChange={(event) =>
-                        updateValue(field.id, event.target.value)
-                      }
-                      placeholder={field.placeholder ?? "Resposta"}
-                      style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
-                      value={values[field.id] ?? ""}
-                      wrap="soft"
-                    />
+                  <InteractiveHomeworkTextLineGuide
+                    kind="LONG_TEXT"
+                    variant="student"
+                  />
+                  <textarea
+                    aria-label={field.label ?? `Campo ${index + 1}`}
+                    className={`${commonClass} relative z-10 resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
+                    disabled={isLocked}
+                    onChange={(event) =>
+                      updateValue(field.id, event.target.value)
+                    }
+                    placeholder={field.placeholder ?? "Resposta"}
+                    style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+                    value={values[field.id] ?? ""}
+                    wrap="soft"
+                  />
                 </InteractiveHomeworkTextFrame>
               );
           }}

@@ -45,7 +45,7 @@ Ao receber o prompt minimo, o agente deve:
 - Upload de PDF do Candy XP, homework interativo e aula interativa tenta otimizar com Ghostscript no servidor via `src/lib/file-optimization.ts`; se falhar, salva o original.
 - Homework e aula interativa usam PDF/imagem original como fundo protegido.
 - Teacher desenha campos manualmente sobre o arquivo.
-- Campos do aluno ficam invisiveis; aparecem apenas texto, marcacoes e desenhos preenchidos.
+- Campos de texto do aluno mostram guias discretas com `texto` em cada linha para indicar onde escrever; campos de marcar/desenho continuam aparecendo apenas como a marca ou os tracos preenchidos.
 - Campo de desenho funciona com mouse/dedo e permite desfazer o ultimo traco.
 - Atividades criadas por `Criar/Ver Aulas` aparecem em `Aulas e Materiais`.
 - Atividades criadas por `Criar/Ver Homework` aparecem em `Responder homework`.

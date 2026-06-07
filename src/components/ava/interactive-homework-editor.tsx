@@ -34,8 +34,7 @@ import {
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
-  getInteractiveHomeworkTextLineCount,
-  getInteractiveHomeworkTextStyle,
+  InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -498,79 +497,12 @@ function FieldTextGuide({
   selected?: boolean;
   showCount?: boolean;
 }) {
-  const guideRef = useRef<HTMLDivElement>(null);
-  const [lineCount, setLineCount] = useState(1);
-
-  useEffect(() => {
-    const guideElement = guideRef.current;
-
-    if (!guideElement || typeof ResizeObserver === "undefined") {
-      return undefined;
-    }
-
-    function updateLineCount() {
-      if (!guideElement) {
-        return;
-      }
-
-      const rect = guideElement.getBoundingClientRect();
-
-      setLineCount(
-        getInteractiveHomeworkTextLineCount(kind, {
-          height: rect.height,
-          width: rect.width,
-        }),
-      );
-    }
-
-    updateLineCount();
-
-    const resizeObserver = new ResizeObserver(updateLineCount);
-    resizeObserver.observe(guideElement);
-
-    return () => resizeObserver.disconnect();
-  }, [kind]);
-
-  const lineHeight = kind === "LONG_TEXT" ? "1.22em" : "1em";
-  const lines = Array.from({ length: lineCount });
-
   return (
-    <span
-      ref={guideRef}
-      className={cn(
-        "pointer-events-none absolute inset-0 block overflow-hidden rounded-[3px] px-[0.3em] py-[0.2em] transition-colors duration-200",
-        selected
-          ? "bg-white/50 text-primary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]"
-          : "text-primary/62",
-      )}
-      style={getInteractiveHomeworkTextStyle(kind)}
-    >
-      <span className="absolute inset-x-[0.3em] top-[0.2em] flex flex-col">
-        {lines.map((_, index) => (
-          <span
-            key={index}
-            className={cn(
-              "block border-b border-dashed",
-              selected ? "border-primary/50" : "border-primary/30",
-            )}
-            style={{ height: lineHeight }}
-          />
-        ))}
-      </span>
-      <span
-        className={cn(
-          "absolute left-[0.35em] top-[0.15em] font-semibold",
-          selected ? "text-primary/62" : "text-primary/42",
-        )}
-      >
-        texto
-      </span>
-      {showCount ? (
-        <span className="absolute right-1 top-1 rounded-[3px] border border-white/70 bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground shadow-[0_4px_12px_rgba(65,42,76,0.22)]">
-          {lineCount} {lineCount === 1 ? "linha" : "linhas"}
-        </span>
-      ) : null}
-    </span>
+    <InteractiveHomeworkTextLineGuide
+      kind={kind}
+      selected={selected}
+      showCount={showCount}
+    />
   );
 }
 

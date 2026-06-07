@@ -1,6 +1,12 @@
 "use client";
 
-import type { CSSProperties, ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 
 type InteractiveTextKind = "LONG_TEXT" | "SHORT_TEXT";
@@ -74,7 +80,113 @@ export function getInteractiveHomeworkTextLineCount(
   const verticalPadding = fontSize * metrics.verticalPaddingFactor;
   const availableHeight = Math.max(0, box.height - verticalPadding);
 
-  return clampNumber(Math.floor(availableHeight / lineHeight), 1, 12);
+  return clampNumber(Math.floor(availableHeight / lineHeight), 1, 120);
+}
+
+export function InteractiveHomeworkTextLineGuide({
+  className,
+  kind,
+  selected = false,
+  showCount = false,
+  variant = "editor",
+}: {
+  className?: string;
+  kind: InteractiveTextKind;
+  selected?: boolean;
+  showCount?: boolean;
+  variant?: "editor" | "student";
+}) {
+  const guideRef = useRef<HTMLSpanElement>(null);
+  const [lineCount, setLineCount] = useState(1);
+
+  useEffect(() => {
+    const guideElement = guideRef.current;
+
+    if (!guideElement || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    function updateLineCount() {
+      if (!guideElement) {
+        return;
+      }
+
+      const rect = guideElement.getBoundingClientRect();
+
+      setLineCount(
+        getInteractiveHomeworkTextLineCount(kind, {
+          height: rect.height,
+          width: rect.width,
+        }),
+      );
+    }
+
+    updateLineCount();
+
+    const resizeObserver = new ResizeObserver(updateLineCount);
+    resizeObserver.observe(guideElement);
+
+    return () => resizeObserver.disconnect();
+  }, [kind]);
+
+  const isStudentVariant = variant === "student";
+  const lineHeight =
+    kind === "LONG_TEXT"
+      ? `${adaptiveTextMetrics.LONG_TEXT.lineHeight}em`
+      : `${adaptiveTextMetrics.SHORT_TEXT.lineHeight}em`;
+  const lines = Array.from({ length: lineCount });
+
+  return (
+    <span
+      ref={guideRef}
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute inset-0 block overflow-hidden rounded-[3px] px-[0.3em] py-[0.2em] transition-colors duration-200",
+        selected
+          ? "bg-white/50 text-primary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]"
+          : isStudentVariant
+            ? "bg-white/5 text-primary/45"
+            : "text-primary/62",
+        className,
+      )}
+      style={getInteractiveHomeworkTextStyle(kind)}
+    >
+      <span className="absolute inset-x-[0.3em] top-[0.2em] flex flex-col">
+        {lines.map((_, index) => (
+          <span
+            key={index}
+            className={cn(
+              "relative block border-b border-dashed",
+              selected
+                ? "border-primary/50"
+                : isStudentVariant
+                  ? "border-primary/18"
+                  : "border-primary/30",
+            )}
+            style={{ height: lineHeight }}
+          >
+            <span
+              className={cn(
+                "absolute left-0 top-0 font-semibold leading-none",
+                selected
+                  ? "text-primary/62"
+                  : isStudentVariant
+                    ? "text-primary/24"
+                    : "text-primary/42",
+              )}
+            >
+              texto
+            </span>
+          </span>
+        ))}
+      </span>
+      {showCount ? (
+        <span className="absolute right-1 top-1 rounded-[3px] border border-white/70 bg-primary px-1.5 py-0.5 text-[10px] font-bold leading-none text-primary-foreground shadow-[0_4px_12px_rgba(65,42,76,0.22)]">
+          {lineCount} {lineCount === 1 ? "linha" : "linhas"}
+        </span>
+      ) : null}
+    </span>
+  );
 }
 
 export function InteractiveHomeworkTextFrame({
