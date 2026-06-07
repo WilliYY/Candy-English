@@ -43,6 +43,18 @@ type QuickReply = {
   text: string;
 };
 
+type CattyHeaderChip = {
+  icon: QuickReply["icon"];
+  label: string;
+};
+
+type CattyContextCopy = {
+  chips: CattyHeaderChip[];
+  eyebrow: string;
+  line: string;
+  title: string;
+};
+
 type CattyWidgetProps = {
   sessionUser?: {
     artifacts?: CattyArtifactCustomItem[];
@@ -207,45 +219,75 @@ function getCurrentPageContext(): CattyPageContext {
   return { area: "site", task };
 }
 
-function getContextCopy(context: CattyPageContext) {
+function getContextCopy(context: CattyPageContext): CattyContextCopy {
   if (context.area === "student" && context.task === "homeworks") {
     return {
-      line: "Pss pss, te dou dica sem entregar resposta pronta.",
-      title: "Homework Catty",
+      chips: [
+        { icon: "lightbulb", label: "Dica guiada" },
+        { icon: "practice", label: "Treino parecido" },
+      ],
+      eyebrow: "Homework",
+      line: "Pistas curtas para entender o enunciado sem resolver por voce.",
+      title: "Apoio no homework",
     };
   }
 
   if (context.area === "student" && context.task === "aulas") {
     return {
-      line: "Miauw, manda uma palavra e eu explico simples.",
-      title: "Aula Catty",
+      chips: [
+        { icon: "book", label: "Vocabulario" },
+        { icon: "pencil", label: "Frase curta" },
+      ],
+      eyebrow: "Aula",
+      line: "Mande uma palavra ou frase da aula para revisar comigo.",
+      title: "Pratica leve",
     };
   }
 
   if (context.task === "mensagens") {
     return {
-      line: "Posso montar uma mensagem educada em ingles ou portugues.",
-      title: "Message helper",
+      chips: [
+        { icon: "pencil", label: "Texto claro" },
+        { icon: "heart", label: "Tom gentil" },
+      ],
+      eyebrow: "Mensagens",
+      line: "Ajudo a deixar mensagens curtas, claras e educadas.",
+      title: "Escrita com carinho",
     };
   }
 
   if (context.area === "teacher") {
     return {
-      line: "Te ajudo com instrucoes, feedback e exemplos para aula.",
-      title: "Teacher helper",
+      chips: [
+        { icon: "pencil", label: "Feedback" },
+        { icon: "book", label: "Exemplo curto" },
+      ],
+      eyebrow: "Teacher",
+      line: "Ideias rapidas para instrucoes, feedbacks e exemplos de aula.",
+      title: "Apoio de aula",
     };
   }
 
   if (context.area === "admin") {
     return {
-      line: "Oriento caminhos do AVA, sem tocar em dados sensiveis.",
-      title: "Admin helper",
+      chips: [
+        { icon: "practice", label: "Praticar ingles" },
+        { icon: "lightbulb", label: "Dica curta" },
+      ],
+      eyebrow: "Study mode",
+      line: "Pratique ingles, corrija frases e tire duvidas curtas durante o AVA.",
+      title: "Apoio rapido",
     };
   }
 
   return {
+    chips: [
+      { icon: "practice", label: "Praticar ingles" },
+      { icon: "book", label: "Explicar palavra" },
+    ],
+    eyebrow: "English",
     line: "Bora estudar um pouquinho comigo agora.",
-    title: "Study Catty",
+    title: "Pratica com Catty",
   };
 }
 
@@ -496,12 +538,18 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     : "Catty chama";
   const hasWhatsAppWidget =
     !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
-  const visibleContextCopy = canUseCattyChat
+  const lockedContextCopy: CattyContextCopy = {
+    chips: [
+      { icon: "practice", label: "Entrar no AVA" },
+      { icon: "heart", label: "Study mode" },
+    ],
+    eyebrow: "Acesso Candy",
+    line: "Entra na sua conta do AVA para conversar comigo.",
+    title: "Catty no AVA",
+  };
+  const visibleContextCopy: CattyContextCopy = canUseCattyChat
     ? contextCopy
-    : {
-        line: "Entra na sua conta do AVA para conversar comigo.",
-        title: "Catty no AVA",
-      };
+    : lockedContextCopy;
 
   useEffect(() => {
     if (!open) return;
@@ -782,15 +830,18 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                     priority={false}
                   />
                 </span>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <strong className="truncate text-lg">Catty</strong>
-                    <Sparkles aria-hidden="true" className="size-4" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <strong className="truncate text-lg leading-none">Catty</strong>
+                    <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-primary-foreground/85">
+                      <Sparkles aria-hidden="true" className="size-3" />
+                      {visibleContextCopy.eyebrow}
+                    </span>
                   </div>
-                  <span className="text-xs font-medium text-primary-foreground/80">
-                    {visibleContextCopy.title} da Candy
-                  </span>
-                  <p className="mt-1 max-w-64 text-xs leading-5 text-primary-foreground/80">
+                  <p className="mt-1 text-sm font-semibold leading-5 text-primary-foreground">
+                    {visibleContextCopy.title}
+                  </p>
+                  <p className="mt-1 max-w-64 text-xs leading-5 text-primary-foreground/80 sm:max-w-72">
                     {visibleContextCopy.line}
                   </p>
                 </div>
@@ -807,14 +858,19 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
               </Button>
             </div>
             <div className="relative mt-4 flex flex-wrap gap-2 text-xs">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1">
-                <Heart aria-hidden="true" className="size-3.5" />
-                study mode
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1">
-                <BookOpen aria-hidden="true" className="size-3.5" />
-                dica sem resposta pronta
-              </span>
+              {visibleContextCopy.chips.map((chip) => {
+                const Icon = quickReplyIcons[chip.icon];
+
+                return (
+                  <span
+                    key={`${chip.icon}-${chip.label}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 font-medium text-primary-foreground/90"
+                  >
+                    <Icon aria-hidden="true" className="size-3.5" />
+                    {chip.label}
+                  </span>
+                );
+              })}
             </div>
           </header>
 
