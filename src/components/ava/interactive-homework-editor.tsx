@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CaseUpper,
   CheckSquare,
   FileText,
   LoaderCircle,
@@ -34,9 +35,11 @@ import {
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
+  InteractiveHomeworkTinyTextPreview,
   InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import { cn } from "@/lib/utils";
 
 export type EditableHomeworkField = {
@@ -47,7 +50,7 @@ export type EditableHomeworkField = {
   placeholder: string | null;
   required: boolean;
   sortOrder: number;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+  type: InteractiveHomeworkFieldType;
   width: number;
   x: number;
   y: number;
@@ -68,7 +71,7 @@ export type InteractiveHomeworkEditorRow = {
 };
 
 type FieldTool = EditableHomeworkField["type"];
-type EditorFieldTool = "CHECKBOX" | "DRAWING" | "TEXT";
+type EditorFieldTool = "CHECKBOX" | "DRAWING" | "TEXT" | "TINY_TEXT";
 
 type FieldToolMeta = {
   defaultAnchor?: "center" | "top-left";
@@ -149,6 +152,7 @@ const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
 
 const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
   "TEXT",
+  "TINY_TEXT",
   "CHECKBOX",
   "DRAWING",
 ];
@@ -164,6 +168,18 @@ const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
     minPixelSize: 14,
     minWidth: 1,
     placeholder: null,
+    resizeMode: "square",
+  },
+  TINY_TEXT: {
+    Icon: CaseUpper,
+    defaultHeight: 2,
+    defaultPixelSize: 28,
+    defaultWidth: 2,
+    label: "Letra/Num",
+    minHeight: 1,
+    minPixelSize: 18,
+    minWidth: 1,
+    placeholder: "A",
     resizeMode: "square",
   },
   DRAWING: {
@@ -191,6 +207,10 @@ function isTextFieldType(type: FieldTool): type is "LONG_TEXT" | "SHORT_TEXT" {
   return type === "SHORT_TEXT" || type === "LONG_TEXT";
 }
 
+function isTinyTextFieldType(type: FieldTool): type is "TINY_TEXT" {
+  return type === "TINY_TEXT";
+}
+
 function textFieldTypeForGeometry(
   geometry: Pick<FieldGeometry, "height">,
 ): "LONG_TEXT" | "SHORT_TEXT" {
@@ -200,7 +220,13 @@ function textFieldTypeForGeometry(
 }
 
 function metaForFieldType(type: FieldTool) {
-  return FIELD_TOOL_META[isTextFieldType(type) ? "TEXT" : type];
+  return FIELD_TOOL_META[
+    isTextFieldType(type)
+      ? "TEXT"
+      : isTinyTextFieldType(type)
+        ? "TINY_TEXT"
+        : type
+  ];
 }
 
 function normalizeTextFieldType(field: EditableHomeworkField) {
@@ -521,6 +547,17 @@ function FieldAnswerPreview({
     );
   }
 
+  if (field.type === "TINY_TEXT") {
+    return (
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <InteractiveHomeworkTinyTextPreview
+          selected={selected}
+          value="A"
+        />
+      </span>
+    );
+  }
+
   if (field.type === "SHORT_TEXT") {
     return (
       <FieldTextGuide
@@ -566,6 +603,10 @@ function FieldAnswerPreview({
 function getFieldPreviewLabel(field: EditableHomeworkField) {
   if (field.type === "CHECKBOX") {
     return "Marcar";
+  }
+
+  if (field.type === "TINY_TEXT") {
+    return "Letra/Num";
   }
 
   if (field.type === "DRAWING") {
@@ -843,9 +884,11 @@ function InteractiveHomeworkCanvasEditor({
                 "absolute rounded-[3px] border-2 border-primary shadow-[0_0_0_1px_rgba(65,42,76,0.16)]",
                 selectedTool === "CHECKBOX"
                   ? "flex items-center justify-center bg-white/50"
-                  : selectedTool === "DRAWING"
-                    ? "bg-white/35"
-                    : "bg-white/45 shadow-[0_14px_34px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.72)]",
+                  : selectedTool === "TINY_TEXT"
+                    ? "flex items-center justify-center bg-white/50"
+                    : selectedTool === "DRAWING"
+                      ? "bg-white/35"
+                      : "bg-white/45 shadow-[0_14px_34px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.72)]",
               )}
               style={{
                 containerType: "size",
@@ -857,6 +900,9 @@ function InteractiveHomeworkCanvasEditor({
             >
               {selectedTool === "CHECKBOX" ? (
                 <InteractiveHomeworkMark className="text-primary/85" />
+              ) : null}
+              {selectedTool === "TINY_TEXT" ? (
+                <InteractiveHomeworkTinyTextPreview selected value="A" />
               ) : null}
               {selectedTool === "TEXT" ? (
                 <FieldTextGuide
@@ -887,7 +933,9 @@ function InteractiveHomeworkCanvasEditor({
       renderField={(field, index, style) => {
         const selected = selectedFieldId === field.id;
         const isMarkField = field.type === "CHECKBOX";
+        const isTinyTextField = field.type === "TINY_TEXT";
         const isDrawingField = field.type === "DRAWING";
+        const isSmallBoxField = isMarkField || isTinyTextField;
 
         return (
           <div
@@ -896,9 +944,11 @@ function InteractiveHomeworkCanvasEditor({
               "absolute z-10 cursor-move touch-none rounded-[3px] border-2 transition-[border-color,background-color,box-shadow] duration-200 ease-out",
               isMarkField
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
-                : isDrawingField
-                  ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
-                  : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
+                : isTinyTextField
+                  ? "bg-white/40 shadow-[0_1px_5px_rgba(65,42,76,0.14)]"
+                  : isDrawingField
+                    ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
+                    : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
                 ? "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
                 : "border-dashed border-primary/55 hover:border-primary",
@@ -921,7 +971,7 @@ function InteractiveHomeworkCanvasEditor({
                 aria-label="Redimensionar area"
                 className={cn(
                   "absolute cursor-nwse-resize rounded-full border-2 border-white bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)] ring-2 ring-primary/20 transition-transform duration-200 hover:scale-110",
-                  isMarkField
+                  isSmallBoxField
                     ? "-bottom-1.5 -right-1.5 size-4"
                     : "-bottom-2.5 -right-2.5 size-5",
                 )}

@@ -128,7 +128,7 @@ Enums:
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
 - `Homework.fieldDetectionSource=manual` identifica homework interativo criado pela aba de homework; `lesson-manual` identifica aula interativa criada pela aba de aula usando o mesmo motor.
 - `HomeworkInteractiveField` guarda tipo, pagina e posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
-- `HomeworkFieldType` aceita `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` e `DRAWING`; respostas de desenho ficam no JSON de `HomeworkSubmission.answers` como tracos normalizados.
+- `HomeworkFieldType` aceita `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` e `DRAWING`; `TINY_TEXT` guarda respostas curtas normalizadas para letras/numeros, e respostas de desenho ficam no JSON de `HomeworkSubmission.answers` como tracos normalizados.
 - Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.
 - `SubmissionStatus.DRAFT` e autosave do aluno e nao deve disparar evento novo para teacher/admin; `SUBMITTED` e entrega, `RETURNED` e refazer liberado, `REVIEWED` e correcao final.
 - Contratos podem ser gerais ou vinculados a um aluno.
@@ -183,6 +183,7 @@ Enums:
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
+- Migration `20260606120000_interactive_homework_tiny_text_field` adiciona o tipo `TINY_TEXT` ao enum `HomeworkFieldType`.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.

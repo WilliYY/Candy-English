@@ -34,11 +34,17 @@ import {
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
+  getInteractiveHomeworkTinyTextStyle,
   getInteractiveHomeworkTextStyle,
   InteractiveHomeworkTextFrame,
   InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
+import {
+  normalizeTinyTextAnswer,
+  TINY_TEXT_MAX_LENGTH,
+  type InteractiveHomeworkFieldType,
+} from "@/lib/interactive-homework-fields";
 
 export type StudentInteractiveField = {
   height: number;
@@ -48,7 +54,7 @@ export type StudentInteractiveField = {
   placeholder: string | null;
   required: boolean;
   sortOrder: number;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+  type: InteractiveHomeworkFieldType;
   width: number;
   x: number;
   y: number;
@@ -547,6 +553,34 @@ export function InteractiveHomeworkStudent({
                     style={style}
                     value={values[field.id] ?? ""}
                   />
+                );
+              }
+
+              if (field.type === "TINY_TEXT") {
+                return (
+                  <InteractiveHomeworkTextFrame
+                    key={field.id}
+                    className="pointer-events-auto"
+                    style={style}
+                  >
+                    <input
+                      aria-label={field.label ?? `Campo ${index + 1}`}
+                      autoCapitalize="characters"
+                      className="block size-full min-h-0 min-w-0 appearance-none rounded-[3px] border border-primary/35 bg-white/55 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.12)] outline-none transition focus:border-primary focus:bg-white/80 focus:ring-2 focus:ring-primary/20 disabled:bg-white/30 disabled:text-primary disabled:opacity-100"
+                      disabled={isLocked}
+                      inputMode="text"
+                      maxLength={TINY_TEXT_MAX_LENGTH}
+                      onChange={(event) =>
+                        updateValue(
+                          field.id,
+                          normalizeTinyTextAnswer(event.target.value),
+                        )
+                      }
+                      placeholder={field.placeholder ?? "A"}
+                      style={getInteractiveHomeworkTinyTextStyle()}
+                      value={values[field.id] ?? ""}
+                    />
+                  </InteractiveHomeworkTextFrame>
                 );
               }
 

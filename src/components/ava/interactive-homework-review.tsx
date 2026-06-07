@@ -8,9 +8,11 @@ import {
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
+  InteractiveHomeworkTinyTextPreview,
   getInteractiveHomeworkTextStyle,
   InteractiveHomeworkTextFrame,
 } from "@/components/ava/interactive-homework-text";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import { cn } from "@/lib/utils";
 
 export type ReviewInteractiveField = {
@@ -21,7 +23,7 @@ export type ReviewInteractiveField = {
   placeholder: string | null;
   required: boolean;
   sortOrder: number;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+  type: InteractiveHomeworkFieldType;
   width: number;
   x: number;
   y: number;
@@ -121,6 +123,17 @@ export function InteractiveHomeworkReview({
                 >
                   <InteractiveHomeworkDrawingStrokes strokes={strokes} />
                 </svg>
+              );
+            }
+
+            if (field.type === "TINY_TEXT") {
+              return (
+                <InteractiveHomeworkTextFrame key={field.id} style={style}>
+                  <InteractiveHomeworkTinyTextPreview
+                    variant="review"
+                    value={value}
+                  />
+                </InteractiveHomeworkTextFrame>
               );
             }
 

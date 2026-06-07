@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import {
   createInteractiveHomeworkSchema,
   createInteractiveLessonSchema,
@@ -38,7 +39,7 @@ type SavedInteractiveHomeworkField = {
   placeholder: string | null;
   required: boolean;
   sortOrder: number;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+  type: InteractiveHomeworkFieldType;
   width: number;
   x: number;
   y: number;
@@ -93,6 +94,10 @@ function withOptimizationMessage(baseMessage: string, optimizationMessage: strin
 
 function getInteractiveFieldMinimums(type: string) {
   if (type === "CHECKBOX") {
+    return { height: 1, width: 1 };
+  }
+
+  if (type === "TINY_TEXT") {
     return { height: 1, width: 1 };
   }
 

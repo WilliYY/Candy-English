@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
+import { normalizeTinyTextAnswer } from "@/lib/interactive-homework-fields";
 import {
   interactiveHomeworkAnswerSchema,
   submitHomeworkSchema,
@@ -120,14 +121,21 @@ function isInteractiveLessonEntity(homework: { fieldDetectionSource: string | nu
 
 function normalizeInteractiveAnswers(
   answers: InteractiveHomeworkAnswerInput["answers"],
-  allowedFieldIds: Set<string>,
+  allowedFields: Map<string, { type: string }>,
 ) {
   return answers
-    .filter((answer) => allowedFieldIds.has(answer.fieldId))
-    .map((answer) => ({
-      fieldId: answer.fieldId,
-      value: answer.value,
-    }));
+    .filter((answer) => allowedFields.has(answer.fieldId))
+    .map((answer) => {
+      const field = allowedFields.get(answer.fieldId);
+
+      return {
+        fieldId: answer.fieldId,
+        value:
+          field?.type === "TINY_TEXT"
+            ? normalizeTinyTextAnswer(answer.value)
+            : answer.value,
+      };
+    });
 }
 
 function hasDrawingContent(value: string) {
@@ -368,8 +376,10 @@ export async function saveInteractiveHomeworkDraft(
     };
   }
 
-  const allowedFieldIds = new Set(homework.interactiveFields.map((field) => field.id));
-  const answers = normalizeInteractiveAnswers(parsed.data.answers, allowedFieldIds);
+  const allowedFields = new Map(
+    homework.interactiveFields.map((field) => [field.id, { type: field.type }]),
+  );
+  const answers = normalizeInteractiveAnswers(parsed.data.answers, allowedFields);
 
   await prisma.homeworkSubmission.upsert({
     where: {
@@ -456,8 +466,10 @@ export async function submitInteractiveHomework(
     };
   }
 
-  const allowedFieldIds = new Set(homework.interactiveFields.map((field) => field.id));
-  const answers = normalizeInteractiveAnswers(parsed.data.answers, allowedFieldIds);
+  const allowedFields = new Map(
+    homework.interactiveFields.map((field) => [field.id, { type: field.type }]),
+  );
+  const answers = normalizeInteractiveAnswers(parsed.data.answers, allowedFields);
   const answerMap = new Map(answers.map((answer) => [answer.fieldId, answer.value]));
   const hasMissingRequired = homework.interactiveFields.some((field) => {
     if (!field.required) {

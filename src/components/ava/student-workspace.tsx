@@ -39,6 +39,7 @@ import {
   buildCandyStudentXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import type { Role } from "@/lib/roles";
 import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
 
@@ -74,7 +75,7 @@ type StudentLesson = {
       placeholder: string | null;
       required: boolean;
       sortOrder: number;
-      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+      type: InteractiveHomeworkFieldType;
       width: number;
       x: number;
       y: number;

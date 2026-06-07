@@ -56,6 +56,7 @@ import {
   buildCandyTeacherXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
@@ -104,7 +105,7 @@ type TeacherLesson = {
       placeholder: string | null;
       required: boolean;
       sortOrder: number;
-      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+      type: InteractiveHomeworkFieldType;
       width: number;
       x: number;
       y: number;
@@ -157,7 +158,7 @@ type TeacherSubmission = {
       placeholder: string | null;
       required: boolean;
       sortOrder: number;
-      type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+      type: InteractiveHomeworkFieldType;
       width: number;
       x: number;
       y: number;

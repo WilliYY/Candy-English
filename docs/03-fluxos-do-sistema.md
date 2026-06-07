@@ -243,10 +243,10 @@ Helpers:
 3. Quando o arquivo e PDF, o servidor tenta otimizar com Ghostscript antes de salvar; se a otimizacao falhar ou nao reduzir tamanho, o original e salvo.
 4. O sistema cria uma aula interna automaticamente para vincular a homework ao aluno e a teacher.
 5. O arquivo e salvo em `storage/homework-assets` e servido por `/ava/homework-assets/[homeworkId]`.
-6. A homework nasce sem campos automaticos: a teacher escolhe o tipo de area (`Texto curto`, `Texto longo`, `Marcar` ou `Desenho`) e desenha diretamente sobre o PDF/imagem.
-7. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar; o editor mostra uma previa do `x`, do texto exemplo ou da area de desenho para facilitar o posicionamento exato.
+6. A homework nasce sem campos automaticos: a teacher escolhe o tipo de area (`Texto`, `Letra/Num`, `Marcar` ou `Desenho`) e desenha diretamente sobre o PDF/imagem.
+7. Teacher pode mover, redimensionar, excluir uma area selecionada ou limpar todas as areas antes de salvar; o editor mostra uma previa do `x`, da letra pequena, do texto exemplo ou da area de desenho para facilitar o posicionamento exato.
 8. Teacher ou admin pode excluir uma homework interativa na lista de criacao; a exclusao remove campos, perguntas, respostas e a aula interna automatica quando ela ficou vazia.
-9. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina e as areas de resposta ficam invisiveis ate receberem texto, marca ou desenho.
+9. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina, campos `Letra/Num` aparecem como caixinha pequena centralizada, campos de texto mostram guias discretas e checkbox/desenho aparecem apenas quando recebem marca ou traco.
 10. Em areas `DRAWING`, o aluno pode desenhar com mouse ou dedo e desfazer o ultimo traco sem limpar todo o desenho.
 11. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
 12. Teacher ou admin corrige em uma tela com abas: `Aguardando correcao` para `SUBMITTED` e `Corrigidos` para `REVIEWED`/`RETURNED`.

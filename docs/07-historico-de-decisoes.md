@@ -310,6 +310,13 @@ Cada decisao deve conter:
 - Impacto: `src/components/ava/interactive-homework-editor.tsx`, `src/app/ava/teacher/actions.ts`, `src/lib/validations/learning.ts`, `AGENTS.md`, `docs/03-fluxos-do-sistema.md`, `docs/15-homework-interativo.md`.
 - Riscos/cuidados: na tela do aluno as areas continuam invisiveis; campos `CHECKBOX` agora podem ser menores e quadrados, entao manter validacao server-side coerente com o editor.
 
+### 2026-06-06 - Campo pequeno Letra/Num no homework interativo
+
+- Decisao: adicionar `HomeworkFieldType.TINY_TEXT` e uma ferramenta `Letra/Num` para respostas de 1 ou 2 caracteres, como V/F, A/B/C/D ou numeros curtos.
+- Motivo: o `SHORT_TEXT` ficava largo demais para verdadeiro/falso, alternativas e corresponda as colunas; o novo campo e uma caixinha centralizada diferente de `CHECKBOX`, que segue servindo apenas para marcar `x`.
+- Impacto: `prisma/schema.prisma`, migration `20260606120000_interactive_homework_tiny_text_field`, `src/lib/validations/learning.ts`, `src/lib/interactive-homework-fields.ts`, `src/app/ava/teacher/actions.ts`, `src/app/ava/student/actions.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `src/components/ava/interactive-homework-review.tsx`, workspaces teacher/student e docs oficiais.
+- Riscos/cuidados: a resposta pequena deve continuar normalizada no servidor para maiusculas e no maximo 2 caracteres; `CHECKBOX` nao deve virar campo de letra, e PDFs antigos com `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING` seguem compativeis.
+
 ### 2026-05-21 - Criar aula com o mesmo motor interativo
 
 - Decisao: a aba `/ava/teacher?task=criar-aula` passa a criar aula por PDF/imagem do Canva usando o mesmo editor manual de campos do homework interativo.

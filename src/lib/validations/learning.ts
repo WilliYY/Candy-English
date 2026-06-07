@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HOMEWORK_FIELD_TYPES } from "@/lib/interactive-homework-fields";
 
 const optionalText = (max: number, message: string) =>
   z
@@ -95,12 +96,7 @@ export const createInteractiveLessonSchema = z.object({
   scheduledAt: optionalDate,
 });
 
-const homeworkFieldTypeSchema = z.enum([
-  "SHORT_TEXT",
-  "LONG_TEXT",
-  "CHECKBOX",
-  "DRAWING",
-]);
+const homeworkFieldTypeSchema = z.enum(HOMEWORK_FIELD_TYPES);
 
 export const interactiveHomeworkFieldSchema = z.object({
   height: z.coerce.number().min(1, "Altura minima 1%.").max(100),

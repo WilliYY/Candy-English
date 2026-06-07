@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { TINY_TEXT_MAX_LENGTH } from "@/lib/interactive-homework-fields";
 import { cn } from "@/lib/utils";
 
 type InteractiveTextKind = "LONG_TEXT" | "SHORT_TEXT";
@@ -51,6 +52,12 @@ const adaptiveTextStyles = {
   },
 } satisfies Record<InteractiveTextKind, CSSProperties>;
 
+const tinyTextStyle = {
+  fontSize: "clamp(12px, min(78cqh, 34cqw), 26px)",
+  lineHeight: "1",
+  textTransform: "uppercase",
+} satisfies CSSProperties;
+
 function clampNumber(value: number, min: number, max: number) {
   if (!Number.isFinite(value)) {
     return min;
@@ -61,6 +68,10 @@ function clampNumber(value: number, min: number, max: number) {
 
 export function getInteractiveHomeworkTextStyle(kind: InteractiveTextKind) {
   return adaptiveTextStyles[kind];
+}
+
+export function getInteractiveHomeworkTinyTextStyle() {
+  return tinyTextStyle;
 }
 
 export function getInteractiveHomeworkTextLineCount(
@@ -185,6 +196,38 @@ export function InteractiveHomeworkTextLineGuide({
           {lineCount} {lineCount === 1 ? "linha" : "linhas"}
         </span>
       ) : null}
+    </span>
+  );
+}
+
+export function InteractiveHomeworkTinyTextPreview({
+  className,
+  selected = false,
+  value = "A",
+  variant = "editor",
+}: {
+  className?: string;
+  selected?: boolean;
+  value?: string;
+  variant?: "editor" | "review";
+}) {
+  const text = value.trim().slice(0, TINY_TEXT_MAX_LENGTH) || "A";
+
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none flex size-full items-center justify-center rounded-[3px] border text-center font-extrabold uppercase leading-none shadow-sm",
+        selected
+          ? "border-primary bg-white/70 text-primary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]"
+          : variant === "review"
+            ? "border-primary/18 bg-white/35 text-primary"
+            : "border-primary/35 bg-white/50 text-primary/80",
+        className,
+      )}
+      style={getInteractiveHomeworkTinyTextStyle()}
+    >
+      {text}
     </span>
   );
 }

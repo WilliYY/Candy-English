@@ -1,0 +1,1 @@
+ALTER TYPE "HomeworkFieldType" ADD VALUE 'TINY_TEXT';

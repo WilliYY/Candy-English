@@ -1,10 +1,12 @@
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
+
 export type DetectedHomeworkField = {
   height: number;
   label: string;
   page: number;
   placeholder: string;
   required: boolean;
-  type: "SHORT_TEXT" | "LONG_TEXT" | "CHECKBOX" | "DRAWING";
+  type: InteractiveHomeworkFieldType;
   width: number;
   x: number;
   y: number;
@@ -60,25 +62,42 @@ function normalizeField(value: unknown, index: number): DetectedHomeworkField {
       ? (value as Partial<DetectedHomeworkField>)
       : {};
   const type =
+    field.type === "TINY_TEXT" ||
     field.type === "SHORT_TEXT" ||
     field.type === "CHECKBOX" ||
     field.type === "DRAWING"
       ? field.type
       : "LONG_TEXT";
   const widthFallback =
-    type === "CHECKBOX" ? 5 : type === "SHORT_TEXT" ? 24 : 48;
+    type === "CHECKBOX" || type === "TINY_TEXT"
+      ? 5
+      : type === "SHORT_TEXT"
+        ? 24
+        : 48;
   const heightFallback =
-    type === "CHECKBOX" ? 5 : type === "SHORT_TEXT" ? 4 : 8;
+    type === "CHECKBOX" || type === "TINY_TEXT"
+      ? 5
+      : type === "SHORT_TEXT"
+        ? 4
+        : 8;
   const widthMax =
-    type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 42 : 92;
+    type === "CHECKBOX" || type === "TINY_TEXT"
+      ? 10
+      : type === "SHORT_TEXT"
+        ? 42
+        : 92;
   const heightMax =
-    type === "CHECKBOX" ? 10 : type === "SHORT_TEXT" ? 7 : 24;
+    type === "CHECKBOX" || type === "TINY_TEXT"
+      ? 10
+      : type === "SHORT_TEXT"
+        ? 7
+        : 24;
   const width = Math.max(
-    type === "CHECKBOX" ? 4 : 6,
+    type === "CHECKBOX" || type === "TINY_TEXT" ? 4 : 6,
     Math.min(widthMax, clampPercent(field.width, widthFallback)),
   );
   const height = Math.max(
-    4,
+    type === "TINY_TEXT" ? 3 : 4,
     Math.min(heightMax, clampPercent(field.height, heightFallback)),
   );
   const x = Math.min(100 - width, clampPercent(field.x, 8));
@@ -202,7 +221,7 @@ export async function detectHomeworkFields({
                   "Crie campos somente sobre espacos em branco, lacunas com underscores, linhas de resposta, caixas vazias ou checkboxes. " +
                   "Nao cubra enunciados, instrucoes, titulos, frases impressas, imagens decorativas ou texto que ja esteja respondido no PDF. " +
                   "Se uma frase tiver uma lacuna como 'I work __ home', posicione o campo apenas sobre a lacuna, nunca sobre a frase inteira. " +
-                  "Campos de linha devem ser baixos e justos; use SHORT_TEXT para lacunas pequenas, LONG_TEXT para areas grandes vazias, CHECKBOX para caixas de marcar e DRAWING para areas de desenho ou resposta manuscrita. " +
+                  "Campos de linha devem ser baixos e justos; use TINY_TEXT para caixinhas de V/F, A/B/C/D ou numero curto, SHORT_TEXT para lacunas pequenas, LONG_TEXT para areas grandes vazias, CHECKBOX para caixas de marcar X e DRAWING para areas de desenho ou resposta manuscrita. " +
                   "Use rotulos curtos como 'Resposta 1' e deixe placeholder vazio quando o texto do PDF ja indicar o que responder. " +
                   "Use no maximo 16 campos e preserve a pagina correta de cada campo.",
                 type: "input_text",
@@ -229,7 +248,13 @@ export async function detectHomeworkFields({
                       placeholder: { type: "string" },
                       required: { type: "boolean" },
                       type: {
-                        enum: ["SHORT_TEXT", "LONG_TEXT", "CHECKBOX", "DRAWING"],
+                        enum: [
+                          "TINY_TEXT",
+                          "SHORT_TEXT",
+                          "LONG_TEXT",
+                          "CHECKBOX",
+                          "DRAWING",
+                        ],
                         type: "string",
                       },
                       width: { maximum: 100, minimum: 1, type: "number" },
