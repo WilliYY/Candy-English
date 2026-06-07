@@ -32,6 +32,7 @@ import {
   serializeInteractiveHomeworkDrawingValue,
 } from "@/components/ava/interactive-homework-drawing";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { InteractiveHomeworkListeningPlayer } from "@/components/ava/interactive-homework-listening";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
   getInteractiveHomeworkTinyTextStyle,
@@ -581,6 +582,18 @@ export function InteractiveHomeworkStudent({
                       value={values[field.id] ?? ""}
                     />
                   </InteractiveHomeworkTextFrame>
+                );
+              }
+
+              if (field.type === "LISTENING") {
+                return (
+                  <InteractiveHomeworkListeningPlayer
+                    key={field.id}
+                    fieldId={field.id}
+                    label={field.label ?? `Listening ${index + 1}`}
+                    sentence={field.placeholder}
+                    style={style}
+                  />
                 );
               }
 

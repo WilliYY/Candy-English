@@ -44,8 +44,10 @@ Operacao por agente:
 - Deploy com migration deve aplicar migration antes de recriar o app.
 - `GEMINI_API_KEY` e opcional; quando existe, ativa a Catty com Gemini nas mensagens comuns de usuarios autorizados. Sem a chave, a Catty usa fallback local nesse modo.
 - `GEMINI_CATTY_MODEL` define o modelo Gemini da Catty, com fallback para `gemini-3.5-flash`.
-- `OPENAI_API_KEY` e opcional; quando existe, ativa o modo OpenAI da Catty apenas quando usuario autorizado chama Catty pelo nome e tambem pode ser usada pelo OCR opcional de homework. Sem a chave, esse modo cai para Gemini/fallback e homework segue manual.
+- `OPENAI_API_KEY` e opcional; quando existe, ativa o modo OpenAI da Catty apenas quando usuario autorizado chama Catty pelo nome, pode ser usada pelo OCR opcional de homework e pelos campos Listening de homework/aula interativa. Sem a chave, Catty cai para Gemini/fallback e Listening fica indisponivel.
 - `OPENAI_CATTY_MODEL` define o modelo OpenAI da Catty, com fallback para `gpt-5.4-nano`.
+- `OPENAI_LISTENING_TTS_MODEL` define o modelo OpenAI de text-to-speech dos campos Listening, com fallback para `gpt-4o-mini-tts`.
+- `OPENAI_LISTENING_TTS_VOICE` define a voz OpenAI dos campos Listening, com fallback para `coral`.
 - `PDF_OPTIMIZATION_ENABLED` controla a tentativa de otimizacao server-side de PDFs pedagogicos protegidos, como Candy XP, homework interativo e aulas interativas; por padrao fica ligada.
 - `PDF_OPTIMIZATION_PRESET` define o preset do Ghostscript, com `ebook` como padrao equilibrado.
 - `PDF_MAX_UPLOAD_MB` define o limite para esses PDFs pedagogicos, mantendo margem abaixo do limite de Server Actions.

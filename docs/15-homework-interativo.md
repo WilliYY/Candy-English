@@ -21,8 +21,10 @@ Arquivos principais:
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/interactive-homework-document.tsx`
 - `src/components/ava/interactive-homework-editor.tsx`
+- `src/components/ava/interactive-homework-listening.tsx`
 - `src/components/ava/interactive-homework-review.tsx`
 - `src/components/ava/interactive-homework-student.tsx`
+- `src/app/ava/homework-listening/[fieldId]/route.ts`
 - `src/lib/file-optimization.ts`
 - `src/lib/homework-ocr.ts`
 - `src/lib/storage.ts`
@@ -40,6 +42,7 @@ Rotas:
 - `/ava/student?task=aulas`
 - `/ava/student?task=homeworks`
 - `/ava/homework-assets/[homeworkId]`
+- `/ava/homework-listening/[fieldId]`
 
 Tabelas e enums:
 
@@ -72,6 +75,7 @@ Tabelas e enums:
 - A area selecionada no editor da teacher deve ficar mais visivel com borda forte, etiqueta do tipo de area, alca de redimensionamento destacada e, em campos de texto, contador de linhas legivel.
 - A teacher usa uma unica ferramenta `Texto` para areas de escrita; o editor escolhe internamente entre linha curta e area longa conforme a altura do quadro desenhado.
 - A teacher tambem pode usar a ferramenta `Letra/Num` para criar uma caixinha pequena `TINY_TEXT`, propria para V/F, A/B/C/D, numeros curtos ou letras de correspondencia, diferente de `CHECKBOX`.
+- A teacher pode usar a ferramenta `Listening` para desenhar uma area sobre uma sentenca do PDF/imagem, digitar a frase em ingles que sera falada e deixar o icone de volume automaticamente no fim direito do box.
 - Campos de texto baixos devem aceitar lacunas precisas; campos maiores viram area de texto longa. O tamanho da fonte se adapta ao quadro desenhado pela teacher, usa toda a largura/altura util e deve aparecer de forma equivalente no editor, na resposta do aluno e na correcao.
 - No editor da teacher, campos de texto mostram guias discretas de linha, `texto` em cada linha e contador de linhas enquanto a area e criada ou selecionada; no aluno, a mesma guia aparece de forma mais leve para orientar redacoes, e na correcao final continua aparecendo apenas a resposta entregue.
 - Campos `TINY_TEXT` aparecem para o aluno como caixinha pequena, centralizada, aceitam ate 2 caracteres e normalizam letras/numeros para maiusculas tambem no servidor antes de salvar.
@@ -80,7 +84,8 @@ Tabelas e enums:
 - O editor deve permitir mover, redimensionar, excluir a area selecionada e limpar todas as areas antes de salvar; o botao `Limpar tudo` pede confirmacao antes de apagar todas as areas, e as teclas `Delete` e `Backspace` tambem removem a area selecionada quando o foco nao esta em um campo de texto.
 - O salvamento das areas deve confirmar a quantidade persistida no banco, devolver as areas salvas para reconciliar o estado local do editor e avisar a teacher quando houver alteracoes nao salvas antes de recarregar ou sair da pagina.
 - O editor salva automaticamente as areas alguns segundos depois que a teacher para de criar, mover, redimensionar ou excluir campos; o botao `Salvar areas` continua existindo para forcar a gravacao manual, e falha de autosave nao remove as areas da tela.
-- Campos podem ser `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` ou `DRAWING`; `TINY_TEXT` salva letras/numeros curtos, e `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas, renderiza traco suavizado, aceita ponto por toque/clique e deve permitir desfazer o ultimo traco ou limpar o desenho sem apagar toda a atividade.
+- Campos podem ser `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX`, `DRAWING` ou `LISTENING`; `TINY_TEXT` salva letras/numeros curtos, `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas, e `LISTENING` nao salva resposta do aluno, apenas toca a frase configurada pela teacher.
+- O botao de `LISTENING` alterna por clique entre velocidade normal e um pouco mais devagar, usando a rota protegida `/ava/homework-listening/[fieldId]` e OpenAI text-to-speech no servidor quando `OPENAI_API_KEY` estiver configurada.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.
@@ -109,6 +114,7 @@ Tabelas e enums:
 - O editor manual cria `HomeworkInteractiveField` somente quando a teacher desenha e salva as areas sobre o arquivo.
 - Campos de texto usam um helper visual compartilhado para calcular a quantidade de linhas pelo tamanho real do quadro desenhado, com limite alto o suficiente para redacoes em areas grandes; a teacher define o limite pratico aumentando ou reduzindo a altura do campo.
 - Campos `TINY_TEXT` usam helper compartilhado para limitar a resposta a 2 caracteres alfanumericos, mostrar preview `A` no editor e renderizar a entrega centralizada no aluno e na correcao.
+- Campos `LISTENING` usam o `placeholder` de `HomeworkInteractiveField` para guardar a frase falada, normalizam espacos e limitam o texto configurado; o editor mostra preview do icone, o aluno/revisor ve apenas o botao de volume ancorado no fim direito da area e a rota de audio valida role e acesso ao homework antes de chamar OpenAI.
 - Campos `CHECKBOX` usam criacao/redimensionamento em quadrado visual por pixel e podem ser menores que campos de texto para alinhar a marca exatamente dentro de parenteses ou caixinhas ja existentes no PDF.
 - A marca de `CHECKBOX` deve ser exibida de forma adaptativa no editor, na resposta do aluno e na correcao, mantendo apenas o `X` visivel para o aluno.
 - A interface mostra apenas `Texto` para criacao de escrita; no banco, a area e normalizada como `SHORT_TEXT` ou `LONG_TEXT` de acordo com a altura para manter compatibilidade com aluno, correcao e atividades antigas. A mesma base de estilo calcula fonte adaptativa e quantidade aproximada de linhas possiveis.
@@ -126,6 +132,7 @@ Tabelas e enums:
 - Reintroduzir criacao automatica por IA pode recriar caixas indevidas sobre o PDF e precisa de controle explicito da teacher.
 - Mudar coordenadas para pixels fixos prejudica responsividade.
 - A OpenAI pode ter custo por uso; validar modelo, limites, privacidade e volume antes de reativar OCR em uploads reais.
+- Campos `LISTENING` tambem usam OpenAI por clique no botao de audio; manter frase curta, disclosure de voz gerada por IA e rota protegida para nao expor chave ou permitir acesso fora do aluno/teacher/admin autorizado.
 - Usar preset de PDF agressivo pode reduzir legibilidade de materiais do Canva; manter `ebook` salvo motivo claro e revisar PDF pesado manualmente.
 
 ## Pendencias

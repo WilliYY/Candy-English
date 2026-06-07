@@ -9,6 +9,7 @@ import {
   Save,
   Trash2,
   Type,
+  Volume2,
   Wand2,
   type LucideIcon,
 } from "lucide-react";
@@ -33,13 +34,19 @@ import {
   InteractiveHomeworkDrawingStrokes,
 } from "@/components/ava/interactive-homework-drawing";
 import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homework-document";
+import { InteractiveHomeworkListeningPreview } from "@/components/ava/interactive-homework-listening";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
   InteractiveHomeworkTinyTextPreview,
   InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
-import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
+import { Input } from "@/components/ui/input";
+import {
+  LISTENING_SENTENCE_MAX_LENGTH,
+  normalizeListeningSentence,
+  type InteractiveHomeworkFieldType,
+} from "@/lib/interactive-homework-fields";
 import { cn } from "@/lib/utils";
 
 export type EditableHomeworkField = {
@@ -71,7 +78,12 @@ export type InteractiveHomeworkEditorRow = {
 };
 
 type FieldTool = EditableHomeworkField["type"];
-type EditorFieldTool = "CHECKBOX" | "DRAWING" | "TEXT" | "TINY_TEXT";
+type EditorFieldTool =
+  | "CHECKBOX"
+  | "DRAWING"
+  | "LISTENING"
+  | "TEXT"
+  | "TINY_TEXT";
 
 type FieldToolMeta = {
   defaultAnchor?: "center" | "top-left";
@@ -155,6 +167,7 @@ const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
   "TINY_TEXT",
   "CHECKBOX",
   "DRAWING",
+  "LISTENING",
 ];
 
 const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
@@ -190,6 +203,15 @@ const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
     label: "Desenho",
     minHeight: 6,
     minWidth: 8,
+    placeholder: null,
+  },
+  LISTENING: {
+    Icon: Volume2,
+    defaultHeight: 2.8,
+    defaultWidth: 24,
+    label: "Listening",
+    minHeight: 1.6,
+    minWidth: 4,
     placeholder: null,
   },
   TEXT: {
@@ -558,6 +580,15 @@ function FieldAnswerPreview({
     );
   }
 
+  if (field.type === "LISTENING") {
+    return (
+      <InteractiveHomeworkListeningPreview
+        selected={selected}
+        sentence={field.placeholder}
+      />
+    );
+  }
+
   if (field.type === "SHORT_TEXT") {
     return (
       <FieldTextGuide
@@ -613,6 +644,10 @@ function getFieldPreviewLabel(field: EditableHomeworkField) {
     return "Desenho";
   }
 
+  if (field.type === "LISTENING") {
+    return "Listening";
+  }
+
   return "Texto";
 }
 
@@ -639,7 +674,7 @@ function createEditableField({
     label: `${meta.label} ${sortOrder + 1}`,
     page,
     placeholder: meta.placeholder,
-    required: fieldType !== "CHECKBOX",
+    required: fieldType !== "CHECKBOX" && fieldType !== "LISTENING",
     sortOrder,
     type: fieldType,
     width: geometry.width,
@@ -888,7 +923,9 @@ function InteractiveHomeworkCanvasEditor({
                     ? "flex items-center justify-center bg-white/50"
                     : selectedTool === "DRAWING"
                       ? "bg-white/35"
-                      : "bg-white/45 shadow-[0_14px_34px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.72)]",
+                      : selectedTool === "LISTENING"
+                        ? "bg-white/30 shadow-[0_8px_22px_rgba(65,42,76,0.14)]"
+                        : "bg-white/45 shadow-[0_14px_34px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.72)]",
               )}
               style={{
                 containerType: "size",
@@ -910,6 +947,9 @@ function InteractiveHomeworkCanvasEditor({
                   selected
                   showCount
                 />
+              ) : null}
+              {selectedTool === "LISTENING" ? (
+                <InteractiveHomeworkListeningPreview selected />
               ) : null}
               {selectedTool === "DRAWING" ? (
                 <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-[3px]">
@@ -935,6 +975,7 @@ function InteractiveHomeworkCanvasEditor({
         const isMarkField = field.type === "CHECKBOX";
         const isTinyTextField = field.type === "TINY_TEXT";
         const isDrawingField = field.type === "DRAWING";
+        const isListeningField = field.type === "LISTENING";
         const isSmallBoxField = isMarkField || isTinyTextField;
 
         return (
@@ -946,9 +987,11 @@ function InteractiveHomeworkCanvasEditor({
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
                 : isTinyTextField
                   ? "bg-white/40 shadow-[0_1px_5px_rgba(65,42,76,0.14)]"
-                  : isDrawingField
-                    ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
-                    : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
+                : isDrawingField
+                  ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
+                : isListeningField
+                  ? "bg-white/20 shadow-[0_6px_18px_rgba(65,42,76,0.12)]"
+                : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
                 ? "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
                 : "border-dashed border-primary/55 hover:border-primary",
@@ -1016,6 +1059,10 @@ function InteractiveHomeworkEditorItem({
     () => getFieldsSignature(fields),
     [fields],
   );
+  const selectedField = useMemo(
+    () => fields.find((field) => field.id === selectedFieldId) ?? null,
+    [fields, selectedFieldId],
+  );
   const currentFieldsSignatureRef = useRef(currentFieldsSignature);
   const hasUnsavedChanges = currentFieldsSignature !== savedFieldsSignature;
   const isInteractiveLesson = homework.source === "LESSON";
@@ -1031,6 +1078,27 @@ function InteractiveHomeworkEditorItem({
           : saveStatus === "auto-saved"
             ? "Salvo automaticamente"
             : "Salvo";
+
+  function updateSelectedListeningSentence(value: string) {
+    if (!selectedFieldId) {
+      return;
+    }
+
+    const sentence = normalizeListeningSentence(value);
+
+    setFields((current) =>
+      current.map((field) =>
+        field.id === selectedFieldId && field.type === "LISTENING"
+          ? {
+              ...field,
+              placeholder: sentence,
+              required: false,
+            }
+          : field,
+      ),
+    );
+    setSaveStatus("idle");
+  }
 
   useEffect(() => {
     currentFieldsSignatureRef.current = currentFieldsSignature;
@@ -1457,6 +1525,27 @@ function InteractiveHomeworkEditorItem({
               </Button>
             </div>
           </div>
+
+          {selectedField?.type === "LISTENING" ? (
+            <div className="grid gap-2 rounded-md border border-primary/15 bg-white/70 p-3 md:grid-cols-[1fr_auto] md:items-end">
+              <label className="grid gap-1 text-sm font-semibold text-primary">
+                Frase do listening
+                <Input
+                  maxLength={LISTENING_SENTENCE_MAX_LENGTH}
+                  onChange={(event) =>
+                    updateSelectedListeningSentence(event.target.value)
+                  }
+                  placeholder="Digite a frase em ingles que o aluno vai ouvir"
+                  value={selectedField.placeholder ?? ""}
+                />
+              </label>
+              <p className="rounded-md border border-primary/10 bg-primary/[0.04] px-3 py-2 text-xs leading-5 text-muted-foreground md:max-w-80">
+                Desenhe a area do inicio ao fim da frase no PDF. O volume fica
+                automaticamente no canto direito do box e toca voz gerada por
+                IA em velocidade normal/devagar.
+              </p>
+            </div>
+          ) : null}
 
           {message ? (
             <p className="rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">

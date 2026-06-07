@@ -124,7 +124,11 @@ function normalizeInteractiveAnswers(
   allowedFields: Map<string, { type: string }>,
 ) {
   return answers
-    .filter((answer) => allowedFields.has(answer.fieldId))
+    .filter((answer) => {
+      const field = allowedFields.get(answer.fieldId);
+
+      return Boolean(field && field.type !== "LISTENING");
+    })
     .map((answer) => {
       const field = allowedFields.get(answer.fieldId);
 
@@ -484,6 +488,10 @@ export async function submitInteractiveHomework(
 
     if (field.type === "DRAWING") {
       return !hasDrawingContent(value);
+    }
+
+    if (field.type === "LISTENING") {
+      return false;
     }
 
     return !value.trim();

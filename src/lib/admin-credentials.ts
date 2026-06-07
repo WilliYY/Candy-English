@@ -112,6 +112,8 @@ export function getEnvironmentCredentialDefinitions() {
   const openAiKey = getOptionalEnvValue("OPENAI_API_KEY");
   const openAiCattyModel = getOptionalEnvValue("OPENAI_CATTY_MODEL");
   const homeworkModel = getOptionalEnvValue("OPENAI_HOMEWORK_OCR_MODEL");
+  const listeningTtsModel = getOptionalEnvValue("OPENAI_LISTENING_TTS_MODEL");
+  const listeningTtsVoice = getOptionalEnvValue("OPENAI_LISTENING_TTS_VOICE");
   const cattyArtifactSearchProvider = getOptionalEnvValue(
     "CATTY_ARTIFACT_SEARCH_PROVIDER",
   );
@@ -178,6 +180,30 @@ export function getEnvironmentCredentialDefinitions() {
       service: "OpenAI",
       sourceKey: "env:OPENAI_HOMEWORK_OCR_MODEL",
       value: homeworkModel,
+    });
+  }
+
+  if (listeningTtsModel) {
+    definitions.push({
+      kind: "CONFIG",
+      label: "Modelo TTS Listening",
+      notes:
+        "Modelo OpenAI usado para gerar audio dos campos Listening em homework/aula interativa.",
+      service: "OpenAI",
+      sourceKey: "env:OPENAI_LISTENING_TTS_MODEL",
+      value: listeningTtsModel,
+    });
+  }
+
+  if (listeningTtsVoice) {
+    definitions.push({
+      kind: "CONFIG",
+      label: "Voz TTS Listening",
+      notes:
+        "Voz OpenAI usada nos botoes de volume dos campos Listening.",
+      service: "OpenAI",
+      sourceKey: "env:OPENAI_LISTENING_TTS_VOICE",
+      value: listeningTtsVoice,
     });
   }
 

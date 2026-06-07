@@ -6,7 +6,10 @@ import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
-import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
+import {
+  normalizeListeningSentence,
+  type InteractiveHomeworkFieldType,
+} from "@/lib/interactive-homework-fields";
 import {
   createInteractiveHomeworkSchema,
   createInteractiveLessonSchema,
@@ -109,6 +112,10 @@ function getInteractiveFieldMinimums(type: string) {
     return { height: 6, width: 8 };
   }
 
+  if (type === "LISTENING") {
+    return { height: 1.6, width: 4 };
+  }
+
   return { height: 4, width: 8 };
 }
 
@@ -133,8 +140,11 @@ function normalizeInteractiveFieldForSave(
     height,
     label: field.label,
     page: field.page,
-    placeholder: field.placeholder,
-    required: field.required,
+    placeholder:
+      field.type === "LISTENING"
+        ? normalizeListeningSentence(field.placeholder ?? "")
+        : field.placeholder,
+    required: field.type === "LISTENING" ? false : field.required,
     sortOrder: index,
     type: field.type,
     width,

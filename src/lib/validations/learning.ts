@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { HOMEWORK_FIELD_TYPES } from "@/lib/interactive-homework-fields";
+import {
+  HOMEWORK_FIELD_TYPES,
+  LISTENING_SENTENCE_MAX_LENGTH,
+} from "@/lib/interactive-homework-fields";
 
 const optionalText = (max: number, message: string) =>
   z
@@ -110,7 +113,10 @@ export const interactiveHomeworkFieldSchema = z.object({
   placeholder: z
     .string()
     .trim()
-    .max(120, "O placeholder pode ter no maximo 120 caracteres.")
+    .max(
+      LISTENING_SENTENCE_MAX_LENGTH,
+      `O texto do campo pode ter no maximo ${LISTENING_SENTENCE_MAX_LENGTH} caracteres.`,
+    )
     .optional(),
   required: z.boolean().default(false),
   sortOrder: z.coerce.number().int().min(0).max(200).default(0),

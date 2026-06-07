@@ -478,6 +478,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/layout.tsx`, `src/components/ava/catty-artifacts-panel.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/components/ava/teacher-workspace.tsx`, README e docs oficiais.
 - Riscos/cuidados: Student continua sem tela tecnica; permissoes e actions do servidor seguem as mesmas; URL antiga deve continuar renderizando tela compativel para nao quebrar links.
 
+### 2026-06-07 - Campo Listening no homework interativo
+
+- Decisao: adicionar `HomeworkFieldType.LISTENING` para a teacher desenhar uma area sobre sentencas do PDF/imagem, guardar a frase falada no `placeholder` do campo e tocar audio por `/ava/homework-listening/[fieldId]`.
+- Motivo: permitir atividades de listening sem transformar o campo em resposta do aluno, mantendo coordenadas percentuais, editor manual e permissao por homework.
+- Impacto: `prisma/schema.prisma`, migration `20260607173000_homework_listening_field`, `src/lib/interactive-homework-fields.ts`, `src/app/ava/homework-listening/[fieldId]/route.ts`, editor/aluno/revisao do homework, `.env.example`, cofre admin e docs oficiais.
+- Riscos/cuidados: a rota deve validar role e acesso por dado antes de chamar OpenAI; `LISTENING` nao deve entrar como resposta obrigatoria nem salvar valor em `HomeworkSubmission.answers`; o audio tem custo por clique e precisa manter disclosure de voz gerada por IA.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -95,6 +95,7 @@ enum HomeworkFieldType {
   LONG_TEXT
   CHECKBOX
   DRAWING
+  LISTENING
 }
 
 enum SubmissionStatus {
