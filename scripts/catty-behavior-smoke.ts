@@ -903,11 +903,11 @@ function main() {
     },
     {
       expectedAiSource: "gemini",
-      expectedIntent: "confusing_question",
-      fallbackMustInclude: ["There are two cats", "plural"],
+      expectedIntent: "correct_sentence",
+      fallbackMustInclude: ["There are two cats", "erro esta em is"],
       id: "scenario-there-are",
       message: "There is two cats.",
-      scenarioFallback: true,
+      scenarioFallback: false,
       usesMemoryOrArtifact: false,
     },
     {
@@ -1324,11 +1324,207 @@ function main() {
       expected: ["Melhor", "They are happy", "usamos are", "are"],
       userMessage: "They is happy.",
     },
+    {
+      expected: ["Melhor", "He plays soccer", "erro esta em play", "soccer"],
+      userMessage: "He play soccer.",
+    },
+    {
+      expected: ["Melhor", "They play games", "erro esta em plays", "sem -s"],
+      userMessage: "They plays games.",
+    },
+    {
+      expected: ["Melhor", "My mother works every day", "erro esta em work", "mother"],
+      userMessage: "My mother work every day.",
+    },
+    {
+      expected: ["Melhor", "Do you play soccer?", "erro esta em does", "do question"],
+      userMessage: "Does you play soccer?",
+    },
+    {
+      expected: ["Melhor", "She doesn't like milk", "erro esta em don't", "doesn't"],
+      userMessage: "She don't like milk.",
+    },
+    {
+      expected: ["Melhor", "He doesn't study", "erro esta em don't", "doesn't"],
+      userMessage: "He don't study.",
+    },
+    {
+      expected: ["Melhor", "I don't like coffee", "erro esta em doesn't", "don't"],
+      userMessage: "I doesn't like coffee.",
+    },
+    {
+      expected: ["Melhor", "I am happy", "erro esta em is/are", "I am"],
+      userMessage: "I is happy.",
+    },
+    {
+      expected: ["Melhor", "You are my friend", "erro esta em is", "are"],
+      userMessage: "You is my friend.",
+    },
+    {
+      expected: ["Melhor", "She is tired", "erro esta em are", "is"],
+      userMessage: "She are tired.",
+    },
+    {
+      expected: ["Melhor", "I have a dog", "erro esta em am have", "posse"],
+      userMessage: "I am have a dog.",
+    },
+    {
+      expected: ["Melhor", "She is 8 years old", "erro esta em has", "idade"],
+      userMessage: "She has 8 years old.",
+    },
+    {
+      expected: ["Melhor", "My brother is 12 years old", "erro esta em have", "idade"],
+      userMessage: "My brother have 12 years old.",
+    },
+    {
+      expected: ["Melhor", "She ate pizza yesterday", "erro esta em eat", "yesterday"],
+      userMessage: "She eat pizza yesterday.",
+    },
+    {
+      expected: ["Melhor", "They played yesterday", "erro esta em play", "yesterday"],
+      userMessage: "They play yesterday.",
+    },
+    {
+      expected: ["Melhor", "Did you watch TV yesterday?", "erro esta em watched", "did"],
+      userMessage: "I watched TV yesterday?",
+    },
+    {
+      expected: ["Melhor", "Did you go?", "erro esta em went", "did"],
+      userMessage: "Did you went?",
+    },
+    {
+      expected: ["Melhor", "She was at home", "erro esta em were", "was"],
+      userMessage: "She were at home.",
+    },
+    {
+      expected: ["Melhor", "We were friends", "erro esta em was", "were"],
+      userMessage: "We was friends.",
+    },
+    {
+      expected: ["Melhor", "I will go tomorrow", "erro esta em goes", "will"],
+      userMessage: "I will goes tomorrow.",
+    },
+    {
+      expected: ["Melhor", "She will play soccer", "erro esta em plays", "will"],
+      userMessage: "She will plays soccer.",
+    },
+    {
+      expected: ["Melhor", "Will you like it?", "erro esta em likes", "will"],
+      userMessage: "Will you likes it?",
+    },
+    {
+      expected: ["Melhor", "I will not go", "erro esta em no will", "will not"],
+      userMessage: "I no will go.",
+    },
+    {
+      expected: ["Melhor", "There are two dogs", "erro esta em is", "there are"],
+      userMessage: "There is two dogs.",
+    },
+    {
+      expected: ["Melhor", "There is a cat", "erro esta em are", "there is"],
+      userMessage: "There are a cat.",
+    },
+    {
+      expected: ["Melhor", "There is a book on the table", "erro esta em have", "there is"],
+      userMessage: "Have a book on the table.",
+    },
+    {
+      expected: ["Melhor", "She has a dog", "erro esta em dog", "a or an"],
+      userMessage: "She has dog.",
+    },
+    {
+      expected: ["Melhor", "I like chocolate", "erro esta em the chocolate", "What else"],
+      userMessage: "I like the chocolate.",
+    },
+    {
+      expected: ["Melhor", "I have two cats", "erro esta em cat", "plural"],
+      userMessage: "I have two cat.",
+    },
+    {
+      expected: ["Melhor", "There are many books", "erro esta em book", "plural"],
+      userMessage: "There are many book.",
+    },
+    {
+      expected: ["Melhor", "She likes dogs", "erro esta em dog", "gosto geral"],
+      userMessage: "She likes dog.",
+    },
+    {
+      expected: ["Melhor", "I am at home", "erro esta em in", "at home"],
+      userMessage: "I am in home.",
+    },
+    {
+      expected: ["Melhor", "I go home", "erro esta em to home", "go home"],
+      userMessage: "I go to home.",
+    },
+    {
+      expected: ["Melhor", "I live in Brazil", "erro esta em at", "in"],
+      userMessage: "I live at Brazil.",
+    },
+    {
+      expected: ["Melhor", "Do you like chocolate?", "ordem", "do"],
+      userMessage: "You like chocolate?",
+    },
+    {
+      expected: ["Melhor", "Where do you live?", "ordem", "live"],
+      userMessage: "Where you live?",
+    },
+    {
+      expected: ["Melhor", "Why is she sad?", "ordem", "is"],
+      userMessage: "Why she is sad?",
+    },
+    {
+      expected: ["Melhor", "What did you do yesterday?", "faltando do", "yesterday"],
+      userMessage: "What did you yesterday?",
+    },
+    {
+      expected: ["Melhor", "I would like to eat pizza", "erro esta em eat", "would like"],
+      userMessage: "I would like eat pizza.",
+    },
+    {
+      expected: ["Melhor", "I like pizza", "erro esta em to pizza", "I like"],
+      userMessage: "I like to pizza.",
+    },
+    {
+      expected: ["Melhor", "I want to eat", "erro esta em eat", "to + verbo"],
+      userMessage: "I want eat.",
+    },
+    {
+      expected: ["Melhor", "She wants to go", "erro esta em go", "to + verbo"],
+      userMessage: "She wants go.",
+    },
+    {
+      expected: ["Melhor", "I can swim", "erro esta em to", "can"],
+      userMessage: "I can to swim.",
+    },
+    {
+      expected: ["Melhor", "She can play", "erro esta em plays", "can"],
+      userMessage: "She can plays.",
+    },
+    {
+      expected: ["Melhor", "Can you help me?", "erro esta em to", "can"],
+      userMessage: "Can you to help me?",
+    },
+    {
+      expected: ["Melhor", "His name is Bob", "erro esta em he", "his"],
+      userMessage: "He name is Bob.",
+    },
+    {
+      expected: ["Melhor", "Her name is Anna", "erro esta em she", "her"],
+      userMessage: "She name is Anna.",
+    },
+    {
+      expected: ["Melhor", "My mother's name", "erro esta em mother name", "complete"],
+      userMessage: "My mother name.",
+    },
+    {
+      expected: ["Melhor", "This is my book", "erro esta em me", "my"],
+      userMessage: "This is me book.",
+    },
   ];
 
   assertCondition(
-    grammarCorrectionCases.length === 20,
-    "smoke deve cobrir 20 frases de correcao conversacional.",
+    grammarCorrectionCases.length >= 40,
+    "smoke deve cobrir pelo menos 40 frases de correcao conversacional.",
   );
 
   for (const example of grammarCorrectionCases) {
@@ -1946,7 +2142,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 interacoes, 20 correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 interacoes, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
   );
 }
 

@@ -1057,8 +1057,101 @@ const pastVerbMap: Record<string, string> = {
   watch: "watched",
 };
 
+const pastToBaseVerbMap: Record<string, string> = {
+  ate: "eat",
+  did: "do",
+  had: "have",
+  made: "make",
+  played: "play",
+  read: "read",
+  saw: "see",
+  studied: "study",
+  visited: "visit",
+  walked: "walk",
+  watched: "watch",
+  went: "go",
+};
+
+const thirdPersonVerbMap: Record<string, string> = {
+  do: "does",
+  eat: "eats",
+  go: "goes",
+  have: "has",
+  like: "likes",
+  live: "lives",
+  make: "makes",
+  play: "plays",
+  read: "reads",
+  study: "studies",
+  visit: "visits",
+  walk: "walks",
+  want: "wants",
+  watch: "watches",
+  work: "works",
+};
+
+const thirdPersonVerbBaseMap: Record<string, string> = Object.entries(
+  thirdPersonVerbMap,
+).reduce<Record<string, string>>((accumulator, [base, thirdPerson]) => {
+  accumulator[thirdPerson] = base;
+  return accumulator;
+}, {});
+
 function getArticleForWord(word: string) {
   return /^[aeiou]/i.test(word.trim()) ? "an" : "a";
+}
+
+function pluralizePracticeWord(word: string) {
+  const normalized = normalizeText(word);
+  const mapped = pluralPracticeWords[normalized];
+
+  if (mapped) {
+    return mapped;
+  }
+
+  if (normalized.endsWith("y")) {
+    return `${normalized.slice(0, -1)}ies`;
+  }
+
+  if (normalized.endsWith("s")) {
+    return normalized;
+  }
+
+  return `${normalized}s`;
+}
+
+function formatThirdPersonVerb(verb: string) {
+  const normalized = normalizeText(verb);
+
+  return thirdPersonVerbMap[normalized] ?? `${normalized}s`;
+}
+
+function getBaseVerbFromThirdPerson(verb: string) {
+  const normalized = normalizeText(verb);
+
+  if (thirdPersonVerbBaseMap[normalized]) {
+    return thirdPersonVerbBaseMap[normalized];
+  }
+
+  if (normalized.endsWith("ies")) {
+    return `${normalized.slice(0, -3)}y`;
+  }
+
+  if (normalized.endsWith("es")) {
+    return normalized.slice(0, -2);
+  }
+
+  if (normalized.endsWith("s")) {
+    return normalized.slice(0, -1);
+  }
+
+  return normalized;
+}
+
+function formatQuestionSubject(subject: string) {
+  const formatted = formatEnglishSubject(subject, "middle");
+
+  return normalizeText(formatted) === "i" ? "you" : formatted;
 }
 
 function addArticleIfNeeded(value: string) {
@@ -1149,6 +1242,121 @@ function buildCommonEnglishCorrectionPlan(
     }
   }
 
+  match = sentence.match(/^did\s+(i|you|she|he|we|they)\s+([a-z]+)(.*)$/i);
+  if (match) {
+    const subject = formatQuestionSubject(match[1] ?? "you");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const baseVerb = pastToBaseVerbMap[verb];
+
+    if (baseVerb) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `Did ${subject} ${baseVerb}${rest ? ` ${rest}` : ""}`,
+          "?",
+        ),
+        explanation: `O erro esta em ${verb}: depois de did usamos o verbo base ${baseVerb}.`,
+        question: "Can you ask one more past question?",
+        rule: "did + base verb",
+      });
+    }
+  }
+
+  if (hasQuestionMark) {
+    match = sentence.match(/^i\s+(watched|played|studied|visited|walked|went|ate|saw|did|had|made|read)\b\s*(.*)$/i);
+    if (match) {
+      const pastVerb = normalizeText(match[1] ?? "");
+      const rest = cleanCorrectionSentence(match[2] ?? "");
+      const baseVerb = pastToBaseVerbMap[pastVerb];
+
+      if (baseVerb) {
+        return buildCorrectionPlan({
+          correctedSentence: formatCorrectionSentence(
+            `Did you ${baseVerb}${rest ? ` ${rest}` : ""}`,
+            "?",
+          ),
+          explanation: `O erro esta em ${pastVerb}: em pergunta no passado usamos did + verbo base.`,
+          question: "Can you answer with yes or no?",
+          rule: "past statement with question mark -> did question",
+        });
+      }
+    }
+  }
+
+  match = sentence.match(/^will\s+(i|you|she|he|we|they)\s+([a-z]+)(.*)$/i);
+  if (match) {
+    const subject = formatQuestionSubject(match[1] ?? "you");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const baseVerb = getBaseVerbFromThirdPerson(verb);
+
+    if (baseVerb !== verb) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `Will ${subject} ${baseVerb}${rest ? ` ${rest}` : ""}`,
+          "?",
+        ),
+        explanation: `O erro esta em ${verb}: depois de will usamos o verbo base ${baseVerb}.`,
+        question: "Can you make one more will question?",
+        rule: "will question + base verb",
+      });
+    }
+  }
+
+  match = sentence.match(/^can\s+(i|you|she|he|we|they)\s+to\s+(.+)$/i);
+  if (match) {
+    const subject = formatQuestionSubject(match[1] ?? "you");
+    const action = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Can ${subject} ${action}`, "?"),
+      explanation: "O erro esta em to: depois de can usamos o verbo sem to.",
+      question: "What else can you do?",
+      rule: "can question without to",
+    });
+  }
+
+  match = sentence.match(/^where\s+(i|you|we|they|she|he)\s+live$/i);
+  if (match) {
+    const subject = formatQuestionSubject(match[1] ?? "you");
+    const auxiliary = ["she", "he"].includes(normalizeText(subject)) ? "does" : "do";
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `Where ${auxiliary} ${subject} live`,
+        "?",
+      ),
+      explanation: `O erro esta na ordem da pergunta: usamos ${auxiliary} antes do sujeito.`,
+      question: "Can you answer: I live in ____?",
+      rule: "where question word order",
+    });
+  }
+
+  match = sentence.match(/^why\s+(she|he|it)\s+is\s+(.+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "middle");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Why is ${subject} ${rest}`, "?"),
+      explanation: "O erro esta na ordem da pergunta: com be, colocamos is antes do sujeito.",
+      question: `Can you answer why ${subject} is ${rest}?`,
+      rule: "why be question word order",
+    });
+  }
+
+  match = sentence.match(/^what\s+did\s+(i|you|she|he|we|they)\s+yesterday$/i);
+  if (match) {
+    const subject = formatQuestionSubject(match[1] ?? "you");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`What did ${subject} do yesterday`, "?"),
+      explanation: "O erro esta faltando do: depois de what did, usamos do para a acao.",
+      question: "What did you do yesterday?",
+      rule: "what did + do",
+    });
+  }
+
   match = sentence.match(/^i\s+likes\s+(.+)$/i);
   if (match) {
     const topic = cleanCorrectionSentence(match[1] ?? "");
@@ -1199,6 +1407,46 @@ function buildCommonEnglishCorrectionPlan(
     });
   }
 
+  match = sentence.match(/^(she|he|it)\s+don'?t\s+(.+)$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "she");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `${subject} doesn't ${rest}`,
+      ),
+      explanation: `O erro esta em don't: com ${subject.toLowerCase()} usamos doesn't.`,
+      question: `What doesn't ${subject.toLowerCase()} like?`,
+      rule: "she/he/it don't -> doesn't",
+    });
+  }
+
+  match = sentence.match(/^(i|you|we|they)\s+doesn'?t\s+(.+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "I", "start");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} don't ${rest}`),
+      explanation: `O erro esta em doesn't: com ${subject} usamos don't.`,
+      question: "What do you like instead?",
+      rule: "I/you/we/they doesn't -> don't",
+    });
+  }
+
+  match = sentence.match(/^i\s+am\s+have\s+(.+)$/i);
+  if (match) {
+    const object = addArticleIfNeeded(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I have ${object}`),
+      explanation: "O erro esta em am have: para posse usamos I have, sem am.",
+      question: "What else do you have?",
+      rule: "I am have -> I have",
+    });
+  }
+
   match = sentence.match(/^i\s+am\s+like\s+(.+)$/i);
   if (match) {
     const topic = cleanCorrectionSentence(match[1] ?? "");
@@ -1221,6 +1469,32 @@ function buildCommonEnglishCorrectionPlan(
       explanation: "O erro esta em have: para idade usamos am.",
       question: "Can you say it again?",
       rule: "I have years old -> I am years old",
+    });
+  }
+
+  match = sentence.match(/^(she|he)\s+has\s+(\d{1,3})\s+years?\s+old$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "she");
+    const age = match[2] ?? "";
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} is ${age} years old`),
+      explanation: `O erro esta em has: para idade com ${subject.toLowerCase()}, usamos is.`,
+      question: `Can you say ${subject.toLowerCase()}'s age again?`,
+      rule: "she/he has years old -> is years old",
+    });
+  }
+
+  match = sentence.match(/^(my\s+(?:brother|sister|mother|father))\s+have\s+(\d{1,3})\s+years?\s+old$/i);
+  if (match) {
+    const subject = capitalizeFirstWord(match[1] ?? "my brother");
+    const age = match[2] ?? "";
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} is ${age} years old`),
+      explanation: `O erro esta em have: para idade de ${subject.toLowerCase()}, usamos is.`,
+      question: "Can you make one more family sentence?",
+      rule: "family member have years old -> is years old",
     });
   }
 
@@ -1279,6 +1553,341 @@ function buildCommonEnglishCorrectionPlan(
         rule: "yesterday before present verb -> past verb",
       });
     }
+  }
+
+  match = sentence.match(/^(she|he|it|my\s+(?:mother|father|brother|sister))\s+(play|work|study|go|watch|eat|like|want|live|read|walk|visit|make)\b\s*(.*)$/i);
+  if (match && !normalized.includes("yesterday")) {
+    const subject = capitalizeFirstWord(match[1] ?? "she");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const correctedVerb = formatThirdPersonVerb(verb);
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `${subject} ${correctedVerb}${rest ? ` ${rest}` : ""}`,
+      ),
+      explanation: `O erro esta em ${verb}: com ${subject.toLowerCase()}, o verbo ganha -s no presente.`,
+      question: `Can you make one more sentence about ${subject.toLowerCase()}?`,
+      rule: "third person present simple needs -s",
+    });
+  }
+
+  match = sentence.match(/^(i|you|we|they)\s+(plays|works|studies|goes|watches|eats|likes|wants|lives|reads|walks|visits|makes)\b\s*(.*)$/i);
+  if (match && !normalized.includes("yesterday")) {
+    const subject = formatEnglishSubject(match[1] ?? "they", "start");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const baseVerb = getBaseVerbFromThirdPerson(verb);
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `${subject} ${baseVerb}${rest ? ` ${rest}` : ""}`,
+      ),
+      explanation: `O erro esta em ${verb}: com ${subject}, usamos o verbo sem -s.`,
+      question: "Can you make one more present sentence?",
+      rule: "I/you/we/they present simple without -s",
+    });
+  }
+
+  match = sentence.match(/^(i|you|she|he|we|they)\s+will\s+([a-z]+)\b\s*(.*)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "I", "start");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const baseVerb = getBaseVerbFromThirdPerson(verb);
+
+    if (baseVerb !== verb) {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `${subject} will ${baseVerb}${rest ? ` ${rest}` : ""}`,
+        ),
+        explanation: `O erro esta em ${verb}: depois de will usamos o verbo base ${baseVerb}.`,
+        question: "What will you do tomorrow?",
+        rule: "will + base verb",
+      });
+    }
+  }
+
+  match = sentence.match(/^i\s+no\s+will\s+(.+)$/i);
+  if (match) {
+    const action = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I will not ${action}`),
+      explanation: "O erro esta em no will: para negar no futuro usamos will not.",
+      question: "What will you do instead?",
+      rule: "no will -> will not",
+    });
+  }
+
+  match = sentence.match(/^there\s+is\s+((?:two|three|four|five|many)\s+.+)$/i);
+  if (match) {
+    const rest = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`There are ${rest}`),
+      explanation: "O erro esta em is: com quantidade plural usamos there are.",
+      question: "Can you make one more there are sentence?",
+      rule: "there is with plural quantity -> there are",
+    });
+  }
+
+  match = sentence.match(/^there\s+are\s+(a|an)\s+(.+)$/i);
+  if (match) {
+    const article = normalizeText(match[1] ?? "a");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`There is ${article} ${rest}`),
+      explanation: "O erro esta em are: com uma coisa singular usamos there is.",
+      question: "What else is there?",
+      rule: "there are with singular article -> there is",
+    });
+  }
+
+  match = sentence.match(/^have\s+(a|an)\s+(.+)\s+on\s+the\s+table$/i);
+  if (match) {
+    const article = normalizeText(match[1] ?? "a");
+    const object = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `There is ${article} ${object} on the table`,
+      ),
+      explanation: "O erro esta em have: para dizer que algo existe em um lugar, usamos there is.",
+      question: "What else is on the table?",
+      rule: "have on the table -> there is",
+    });
+  }
+
+  match = sentence.match(/^i\s+like\s+the\s+([a-z]+)$/i);
+  if (match) {
+    const topic = normalizeText(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I like ${topic}`),
+      explanation: `O erro esta em the ${topic}: para gosto geral, normalmente nao usamos the.`,
+      question: `What else do you like?`,
+      rule: "general like without the",
+    });
+  }
+
+  match = sentence.match(/^i\s+have\s+(\d+|two|three|four|five)\s+([a-z]+)$/i);
+  if (match) {
+    const quantity = normalizeText(match[1] ?? "two");
+    const noun = normalizeText(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `I have ${quantity} ${pluralizePracticeWord(noun)}`,
+      ),
+      explanation: `O erro esta em ${noun}: depois de ${quantity}, usamos plural.`,
+      question: "How many do you have?",
+      rule: "quantity needs plural noun",
+    });
+  }
+
+  match = sentence.match(/^there\s+are\s+(many|two|three|four|five)\s+([a-z]+)$/i);
+  if (match) {
+    const quantity = normalizeText(match[1] ?? "many");
+    const noun = normalizeText(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `There are ${quantity} ${pluralizePracticeWord(noun)}`,
+      ),
+      explanation: `O erro esta em ${noun}: com ${quantity}, usamos plural.`,
+      question: "Can you make one more plural sentence?",
+      rule: "there are quantity needs plural noun",
+    });
+  }
+
+  match = sentence.match(/^(she|he|i|you|we|they)\s+likes?\s+([a-z]+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "start");
+    const noun = normalizeText(match[2] ?? "");
+    const plural = pluralPracticeWords[noun];
+
+    if (plural) {
+      const verb = ["she", "he"].includes(normalizeText(subject)) ? "likes" : "like";
+
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(`${subject} ${verb} ${plural}`),
+        explanation: `O erro esta em ${noun}: para gosto geral, usamos plural.`,
+        question: `What kind of ${plural} do you like?`,
+        rule: "general like with plural noun",
+      });
+    }
+  }
+
+  match = sentence.match(/^i\s+am\s+in\s+home$/i);
+  if (match) {
+    return buildCorrectionPlan({
+      correctedSentence: "I am at home.",
+      explanation: "O erro esta em in: com home parado, usamos at home.",
+      question: "Are you at home now?",
+      rule: "in home -> at home",
+    });
+  }
+
+  match = sentence.match(/^i\s+go\s+to\s+home$/i);
+  if (match) {
+    return buildCorrectionPlan({
+      correctedSentence: "I go home.",
+      explanation: "O erro esta em to home: com go home, nao usamos to.",
+      question: "When do you go home?",
+      rule: "go to home -> go home",
+    });
+  }
+
+  match = sentence.match(/^i\s+live\s+at\s+(.+)$/i);
+  if (match) {
+    const place = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I live in ${place}`),
+      explanation: `O erro esta em at: para pais ou cidade, usamos in.`,
+      question: `Can you say one more sentence about ${place}?`,
+      rule: "live at country/city -> live in",
+    });
+  }
+
+  match = sentence.match(/^i\s+went\s+in\s+(.+)$/i);
+  if (match) {
+    const place = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I went to ${place}`),
+      explanation: "O erro esta em in: com go/went para destino usamos to.",
+      question: "What did you do there?",
+      rule: "went in -> went to",
+    });
+  }
+
+  match = sentence.match(/^i\s+would\s+like\s+([a-z]+)\b\s*(.*)$/i);
+  if (match) {
+    const verb = normalizeText(match[1] ?? "");
+    const rest = cleanCorrectionSentence(match[2] ?? "");
+
+    if (pastVerbMap[verb] || verb === "eat" || verb === "go") {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `I would like to ${verb}${rest ? ` ${rest}` : ""}`,
+        ),
+        explanation: `O erro esta em ${verb}: depois de would like usamos to + verbo.`,
+        question: "What would you like to do?",
+        rule: "would like to + verb",
+      });
+    }
+  }
+
+  match = sentence.match(/^i\s+like\s+to\s+([a-z]+)$/i);
+  if (match) {
+    const topic = normalizeText(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`I like ${topic}`),
+      explanation: `O erro esta em to ${topic}: para gostar de comida/coisa, usamos I like ${topic}.`,
+      question: `What else do you like?`,
+      rule: "like to noun -> like noun",
+    });
+  }
+
+  match = sentence.match(/^(i|she|he)\s+wants?\s+([a-z]+)\b\s*(.*)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "I", "start");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const wantVerb = ["she", "he"].includes(normalizeText(subject)) ? "wants" : "want";
+
+    if (pastVerbMap[verb] || verb === "go" || verb === "eat") {
+      return buildCorrectionPlan({
+        correctedSentence: formatCorrectionSentence(
+          `${subject} ${wantVerb} to ${verb}${rest ? ` ${rest}` : ""}`,
+        ),
+        explanation: `O erro esta em ${verb}: depois de ${wantVerb} usamos to + verbo.`,
+        question: "What do you want to do next?",
+        rule: "want/wants to + verb",
+      });
+    }
+  }
+
+  match = sentence.match(/^(i|she|he|you|we|they)\s+can\s+to\s+(.+)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "I", "start");
+    const action = cleanCorrectionSentence(match[2] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`${subject} can ${action}`),
+      explanation: "O erro esta em to: depois de can usamos o verbo sem to.",
+      question: "What else can you do?",
+      rule: "can without to",
+    });
+  }
+
+  match = sentence.match(/^(she|he|i|you|we|they)\s+can\s+([a-z]+s)\b\s*(.*)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "start");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+    const baseVerb = getBaseVerbFromThirdPerson(verb);
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `${subject} can ${baseVerb}${rest ? ` ${rest}` : ""}`,
+      ),
+      explanation: `O erro esta em ${verb}: depois de can usamos o verbo base ${baseVerb}.`,
+      question: "What else can you do?",
+      rule: "can + base verb",
+    });
+  }
+
+  match = sentence.match(/^he\s+name\s+is\s+(.+)$/i);
+  if (match) {
+    const name = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`His name is ${name}`),
+      explanation: "O erro esta em he: para posse usamos his.",
+      question: "Can you say one more name sentence?",
+      rule: "he name -> his name",
+    });
+  }
+
+  match = sentence.match(/^she\s+name\s+is\s+(.+)$/i);
+  if (match) {
+    const name = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`Her name is ${name}`),
+      explanation: "O erro esta em she: para posse usamos her.",
+      question: "Can you say one more name sentence?",
+      rule: "she name -> her name",
+    });
+  }
+
+  match = sentence.match(/^my\s+(mother|father|brother|sister)\s+name$/i);
+  if (match) {
+    const person = normalizeText(match[1] ?? "mother");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`My ${person}'s name`),
+      explanation: `O erro esta em ${person} name: para posse, usamos ${person}'s name.`,
+      question: "Can you complete it with a name?",
+      rule: "family member possessive 's",
+    });
+  }
+
+  match = sentence.match(/^this\s+is\s+me\s+(.+)$/i);
+  if (match) {
+    const object = cleanCorrectionSentence(match[1] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(`This is my ${object}`),
+      explanation: "O erro esta em me: para posse usamos my.",
+      question: "Can you show one more thing you have?",
+      rule: "me book -> my book",
+    });
   }
 
   match = sentence.match(/^i\s+like\s+([a-z]+)$/i);
@@ -1370,6 +1979,23 @@ function buildCommonEnglishCorrectionPlan(
     });
   }
 
+  match = sentence.match(/^does\s+(i|you|we|they)\s+(play|like|study|work|go|eat|watch|read|want|live)\b\s*(.*)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "you", "middle");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `Do ${subject} ${verb}${rest ? ` ${rest}` : ""}`,
+        "?",
+      ),
+      explanation: `O erro esta em does: com ${subject} usamos do.`,
+      question: "Can you make one more do question?",
+      rule: "does I/you/we/they -> do I/you/we/they",
+    });
+  }
+
   match = sentence.match(/^does\s+(i|you|we|they)\s+like\s+(.+)$/i);
   if (match) {
     const subject = formatEnglishSubject(match[1] ?? "you", "middle");
@@ -1380,6 +2006,23 @@ function buildCommonEnglishCorrectionPlan(
       explanation: `O erro esta em does: com ${subject} usamos do.`,
       question: "Can you make one more do question?",
       rule: "does I/you/we/they -> do I/you/we/they",
+    });
+  }
+
+  match = sentence.match(/^do\s+(she|he|it)\s+(play|like|study|work|go|eat|watch|read|want|live)\b\s*(.*)$/i);
+  if (match) {
+    const subject = formatEnglishSubject(match[1] ?? "she", "middle");
+    const verb = normalizeText(match[2] ?? "");
+    const rest = cleanCorrectionSentence(match[3] ?? "");
+
+    return buildCorrectionPlan({
+      correctedSentence: formatCorrectionSentence(
+        `Does ${subject} ${verb}${rest ? ` ${rest}` : ""}`,
+        "?",
+      ),
+      explanation: `O erro esta em do: com ${subject} a pergunta usa does.`,
+      question: "Can you make another does question?",
+      rule: "do she/he/it -> does she/he/it",
     });
   }
 

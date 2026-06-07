@@ -98,21 +98,27 @@ A Catty agora possui um detector local de erros comuns em `src/lib/catty.ts`. Es
 
 Regras criadas:
 
-- concordancia basica: `I likes`, `She/He like`, `I has`, `She/He have`;
-- gosto com estrutura errada: `I am like...`;
-- idade: `I have ___ years old`;
-- destino com preposicao: `I went in school`;
-- passado com `yesterday`, incluindo `I go... yesterday` e `Yesterday I watch...`;
-- plural de categoria apos `I like`, como `I like car`;
-- artigo `a/an` faltando em animal/fruta favorita ou substantivo contavel simples;
-- ordem de perguntas simples com `do/does`;
-- uso de `do/does` antes de verbo com ou sem `-s`;
-- uso de `was/were`;
-- uso de `is/are/am`.
+- present simple: `I likes`, `She/He like`, `He play`, `They plays`, `My mother work`;
+- `do/does`: `Do she`, `Does you`, `She don't`, `He don't`, `I doesn't`;
+- verbo `to be`: `I is`, `You is`, `They is`, `She are`, `I am have`;
+- idade: `I have ___ years old`, `She has ___ years old`, `My brother have ___ years old`;
+- simple past: `I go... yesterday`, `She eat... yesterday`, `I watched... yesterday?`, `Did you went?`;
+- `was/were`: `I were`, `They was`, `She were`, `We was`;
+- futuro com `will`: `I will goes`, `She will plays`, `Will you likes`, `I no will`;
+- `there is/there are`: plural, singular com `a/an` e `Have a book on the table`;
+- artigos: `My favorite animal is capybara`, `I have apple`, `She has dog`, `I like the chocolate` quando for gosto geral;
+- plural: `I like car`, `I have two cat`, `There are many book`, `She likes dog`;
+- preposicoes: `I went in school`, `I am in home`, `I go to home`, `I live at Brazil`;
+- ordem de palavras: `You like chocolate?`, `What you like?`, `Where you live?`, `Why she is sad?`, `What did you yesterday?`;
+- `like/would like/want`: `I would like eat`, `I like to pizza`, `I want eat`, `She wants go`;
+- `can`: `I can to swim`, `She can plays`, `Can you to help me?`;
+- possessivos: `He name`, `She name`, `My mother name`, `This is me book`.
 
 Frases de teste e resposta esperada do fallback local:
 
 Observacao: nas correcoes atuais, a explicacao deve sempre apontar o trecho errado com `O erro esta em ...` quando houver erro detectavel. Exemplos principais: `I likes chocolate.` vira `Melhor: I like chocolate. O erro esta em likes...`; `She like pizza.` vira `Melhor: She likes pizza. O erro esta em like...`; `I have 10 years old.` vira `Melhor: I am 10 years old. O erro esta em have...`; `I go to school yesterday.` vira `Melhor: I went to school yesterday. O erro esta em go...`.
+
+A tabela abaixo e uma amostra curta; a lista completa fica no smoke `scripts/catty-behavior-smoke.ts`, com pelo menos 40 frases erradas e resposta esperada por substring.
 
 | # | Frase do aluno | Resposta esperada |
 |---|---|---|
@@ -174,7 +180,7 @@ Observacao: nas correcoes atuais, a explicacao deve sempre apontar o trecho erra
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, as 20 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 
