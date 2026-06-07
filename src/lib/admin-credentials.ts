@@ -176,7 +176,8 @@ export function getEnvironmentCredentialDefinitions() {
     definitions.push({
       kind: "CONFIG",
       label: "Modelo OCR homework",
-      notes: "Modelo reservado para sugestoes futuras de campos em homework.",
+      notes:
+        "Modelo OpenAI usado pelo OCR opcional de homework e pela leitura automatica da frase do Listening.",
       service: "OpenAI",
       sourceKey: "env:OPENAI_HOMEWORK_OCR_MODEL",
       value: homeworkModel,

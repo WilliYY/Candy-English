@@ -485,6 +485,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260607173000_homework_listening_field`, `src/lib/interactive-homework-fields.ts`, `src/app/ava/homework-listening/[fieldId]/route.ts`, editor/aluno/revisao do homework, `.env.example`, cofre admin e docs oficiais.
 - Riscos/cuidados: a rota deve validar role e acesso por dado antes de chamar OpenAI; `LISTENING` nao deve entrar como resposta obrigatoria nem salvar valor em `HomeworkSubmission.answers`; o audio tem custo por clique e precisa manter disclosure de voz gerada por IA.
 
+### 2026-06-07 - Leitura automatica da frase do Listening
+
+- Decisao: ao criar ou reler um campo `LISTENING`, o editor chama `/ava/homework-listening-detect` com `homeworkId`, pagina e coordenadas percentuais do box para a OpenAI ler apenas a frase marcada no PDF/imagem e preencher o `placeholder` conferivel pela teacher.
+- Motivo: reduzir digitacao manual e posicionar naturalmente o volume no fim da propria frase desenhada, sem tentar gerar campos automaticos no arquivo inteiro.
+- Impacto: nova rota server-side protegida para Admin/Teacher, validacao Zod em `src/lib/validations/learning.ts`, editor com estado de deteccao/releitura, documentacao de ambiente e fallback de voz `nova` para um tom feminino/animado no TTS.
+- Riscos/cuidados: a deteccao envia o arquivo pedagogico protegido para OpenAI quando `OPENAI_API_KEY` existe; Student nao pode acessar a rota; a teacher deve conferir a frase detectada antes de salvar, principalmente em areas pequenas ou com texto vizinho.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

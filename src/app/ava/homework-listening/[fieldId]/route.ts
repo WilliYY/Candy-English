@@ -31,9 +31,9 @@ function getListeningSpeedMode(request: Request): ListeningSpeedMode {
 }
 
 function getOpenAiVoice() {
-  const voice = process.env.OPENAI_LISTENING_TTS_VOICE?.trim() || "coral";
+  const voice = process.env.OPENAI_LISTENING_TTS_VOICE?.trim() || "nova";
 
-  return OPENAI_TTS_VOICES.has(voice) ? voice : "coral";
+  return OPENAI_TTS_VOICES.has(voice) ? voice : "nova";
 }
 
 function getOpenAiSpeechBody(input: string, mode: ListeningSpeedMode) {
@@ -58,8 +58,8 @@ function getOpenAiSpeechBody(input: string, mode: ListeningSpeedMode) {
   if (model.includes("gpt-4o")) {
     body.instructions =
       mode === "slow"
-        ? "Speak the English sentence clearly and a little slower for a beginner English student."
-        : "Speak the English sentence clearly with a friendly English teacher tone.";
+        ? "Speak the English sentence with a lively, cheerful female English teacher tone, a little slower for a beginner student. Keep pronunciation clear and warm."
+        : "Speak the English sentence with a lively, cheerful female English teacher tone. Keep pronunciation clear, natural, and encouraging.";
   }
 
   return body;

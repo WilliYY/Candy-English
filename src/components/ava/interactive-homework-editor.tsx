@@ -125,6 +125,12 @@ type EditorSaveStatus =
   | "auto-saved"
   | "error";
 
+type ListeningDetectionResponse = {
+  confidence?: "high" | "medium" | "low";
+  message?: string;
+  text?: string;
+};
+
 type EditorAction =
   | {
       current: PagePoint;
@@ -1053,8 +1059,15 @@ function InteractiveHomeworkEditorItem({
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(
     homework.fields[0]?.id ?? null,
   );
+  const [listeningDetectionFieldId, setListeningDetectionFieldId] = useState<
+    string | null
+  >(null);
+  const [listeningDetectionMessage, setListeningDetectionMessage] = useState<
+    string | null
+  >(null);
   const autosaveTimerRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
+  const listeningDetectionRequestsRef = useRef<Set<string>>(new Set());
   const currentFieldsSignature = useMemo(
     () => getFieldsSignature(fields),
     [fields],
@@ -1078,6 +1091,14 @@ function InteractiveHomeworkEditorItem({
           : saveStatus === "auto-saved"
             ? "Salvo automaticamente"
             : "Salvo";
+  const isDetectingSelectedListening =
+    selectedField?.type === "LISTENING" &&
+    listeningDetectionFieldId === selectedField.id;
+  const selectedListeningSentence = normalizeListeningSentence(
+    selectedField?.type === "LISTENING"
+      ? (selectedField.placeholder ?? "")
+      : "",
+  );
 
   function updateSelectedListeningSentence(value: string) {
     if (!selectedFieldId) {
@@ -1086,6 +1107,7 @@ function InteractiveHomeworkEditorItem({
 
     const sentence = normalizeListeningSentence(value);
 
+    setListeningDetectionMessage(null);
     setFields((current) =>
       current.map((field) =>
         field.id === selectedFieldId && field.type === "LISTENING"
@@ -1099,6 +1121,110 @@ function InteractiveHomeworkEditorItem({
     );
     setSaveStatus("idle");
   }
+
+  const detectListeningSentenceForField = useCallback(
+    async (
+      field: EditableHomeworkField,
+      mode: "auto" | "manual" = "auto",
+    ) => {
+      if (field.type !== "LISTENING") {
+        return;
+      }
+
+      setListeningDetectionFieldId(field.id);
+      setListeningDetectionMessage(
+        mode === "auto"
+          ? "Lendo a frase dentro do box..."
+          : "Relendo a frase marcada no box...",
+      );
+
+      try {
+        const response = await fetch("/ava/homework-listening-detect", {
+          body: JSON.stringify({
+            height: field.height,
+            homeworkId: homework.id,
+            page: field.page,
+            width: field.width,
+            x: field.x,
+            y: field.y,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        });
+        const payload = (await response
+          .json()
+          .catch(() => ({}))) as ListeningDetectionResponse;
+
+        if (!response.ok) {
+          setListeningDetectionMessage(
+            payload.message ??
+              "Nao consegui ler automaticamente. Digite a frase do listening.",
+          );
+          return;
+        }
+
+        const sentence = normalizeListeningSentence(payload.text ?? "");
+
+        if (!sentence) {
+          setListeningDetectionMessage(
+            payload.message ??
+              "Nao encontrei uma frase clara nesse box. Digite manualmente.",
+          );
+          return;
+        }
+
+        setFields((current) =>
+          current.map((currentField) => {
+            if (
+              currentField.id !== field.id ||
+              currentField.type !== "LISTENING"
+            ) {
+              return currentField;
+            }
+
+            if (
+              mode === "auto" &&
+              normalizeListeningSentence(currentField.placeholder ?? "")
+            ) {
+              return currentField;
+            }
+
+            return {
+              ...currentField,
+              placeholder: sentence,
+              required: false,
+            };
+          }),
+        );
+        setSaveStatus("idle");
+        setListeningDetectionMessage(
+          payload.confidence === "high"
+            ? `Frase detectada: "${sentence}"`
+            : `Frase detectada com cuidado: "${sentence}". Confira antes de salvar.`,
+        );
+      } catch {
+        setListeningDetectionMessage(
+          "Nao consegui ler automaticamente. Digite a frase do listening.",
+        );
+      } finally {
+        setListeningDetectionFieldId((current) =>
+          current === field.id ? null : current,
+        );
+      }
+    },
+    [homework.id],
+  );
+
+  const retrySelectedListeningDetection = useCallback(() => {
+    if (!selectedField || selectedField.type !== "LISTENING") {
+      return;
+    }
+
+    listeningDetectionRequestsRef.current.delete(selectedField.id);
+    void detectListeningSentenceForField(selectedField, "manual");
+  }, [detectListeningSentenceForField, selectedField]);
 
   useEffect(() => {
     currentFieldsSignatureRef.current = currentFieldsSignature;
@@ -1117,7 +1243,28 @@ function InteractiveHomeworkEditorItem({
         ? current
         : "idle",
     );
+    listeningDetectionRequestsRef.current.clear();
+    setListeningDetectionFieldId(null);
+    setListeningDetectionMessage(null);
   }, [homework.fields, initialFieldsSignature]);
+
+  useEffect(() => {
+    if (
+      !selectedField ||
+      selectedField.type !== "LISTENING" ||
+      isEditingGesture ||
+      normalizeListeningSentence(selectedField.placeholder ?? "")
+    ) {
+      return;
+    }
+
+    if (listeningDetectionRequestsRef.current.has(selectedField.id)) {
+      return;
+    }
+
+    listeningDetectionRequestsRef.current.add(selectedField.id);
+    void detectListeningSentenceForField(selectedField, "auto");
+  }, [detectListeningSentenceForField, isEditingGesture, selectedField]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -1527,23 +1674,72 @@ function InteractiveHomeworkEditorItem({
           </div>
 
           {selectedField?.type === "LISTENING" ? (
-            <div className="grid gap-2 rounded-md border border-primary/15 bg-white/70 p-3 md:grid-cols-[1fr_auto] md:items-end">
-              <label className="grid gap-1 text-sm font-semibold text-primary">
-                Frase do listening
-                <Input
-                  maxLength={LISTENING_SENTENCE_MAX_LENGTH}
-                  onChange={(event) =>
-                    updateSelectedListeningSentence(event.target.value)
-                  }
-                  placeholder="Digite a frase em ingles que o aluno vai ouvir"
-                  value={selectedField.placeholder ?? ""}
-                />
-              </label>
-              <p className="rounded-md border border-primary/10 bg-primary/[0.04] px-3 py-2 text-xs leading-5 text-muted-foreground md:max-w-80">
-                Desenhe a area do inicio ao fim da frase no PDF. O volume fica
-                automaticamente no canto direito do box e toca voz gerada por
-                IA em velocidade normal/devagar.
-              </p>
+            <div className="grid gap-3 rounded-lg border border-primary/15 bg-white/80 p-3 shadow-[0_10px_28px_rgba(65,42,76,0.08)]">
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="grid min-w-[240px] flex-1 gap-1 text-sm font-semibold text-primary">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span>Frase do listening</span>
+                    <span
+                      className={cn(
+                        "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase leading-none tracking-[0.08em]",
+                        isDetectingSelectedListening
+                          ? "border-amber-200 bg-amber-50 text-amber-700"
+                          : selectedListeningSentence
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-primary/15 bg-primary/[0.04] text-primary/70",
+                      )}
+                    >
+                      {isDetectingSelectedListening
+                        ? "lendo box"
+                        : selectedListeningSentence
+                          ? "frase pronta"
+                          : "auto leitura"}
+                    </span>
+                  </span>
+                  <Input
+                    className="bg-white/95 font-medium"
+                    maxLength={LISTENING_SENTENCE_MAX_LENGTH}
+                    onChange={(event) =>
+                      updateSelectedListeningSentence(event.target.value)
+                    }
+                    placeholder="Desenhe sobre a frase, ou digite aqui"
+                    value={selectedField.placeholder ?? ""}
+                  />
+                </label>
+                <Button
+                  disabled={isDetectingSelectedListening}
+                  onClick={retrySelectedListeningDetection}
+                  size="sm"
+                  title="Ler novamente o texto dentro do box selecionado"
+                  type="button"
+                  variant="outline"
+                >
+                  {isDetectingSelectedListening ? (
+                    <LoaderCircle
+                      className="animate-spin"
+                      data-icon="inline-start"
+                    />
+                  ) : (
+                    <Wand2 data-icon="inline-start" />
+                  )}
+                  {isDetectingSelectedListening ? "Lendo..." : "Ler box"}
+                </Button>
+              </div>
+              <div className="grid gap-2 text-xs leading-5 text-muted-foreground md:grid-cols-[1fr_auto] md:items-center">
+                <p>
+                  Desenhe do inicio ao fim da frase impressa. A IA tenta ler o
+                  texto automaticamente, e o volume fica no canto direito do box
+                  para tocar normal/devagar.
+                </p>
+                <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 font-semibold text-primary/70">
+                  voz feminina animada
+                </span>
+              </div>
+              {listeningDetectionMessage ? (
+                <p className="rounded-md border border-primary/10 bg-primary/[0.035] px-3 py-2 text-xs font-medium text-primary/80">
+                  {listeningDetectionMessage}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
