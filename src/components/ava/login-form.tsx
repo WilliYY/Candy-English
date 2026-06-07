@@ -1,7 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { HeartHandshake, LoaderCircle, LogIn } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  HeartHandshake,
+  LoaderCircle,
+  LogIn,
+} from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -37,6 +43,7 @@ export function LoginForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const [showPreRegistration, setShowPreRegistration] = useState(false);
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -95,14 +102,34 @@ export function LoginForm({
 
           <Field data-invalid={Boolean(passwordError)}>
             <FieldLabel htmlFor="password">Senha</FieldLabel>
-            <Input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              aria-invalid={Boolean(passwordError)}
-              disabled={isSubmitting}
-              {...form.register("password")}
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="current-password"
+                aria-invalid={Boolean(passwordError)}
+                className="pr-12"
+                disabled={isSubmitting}
+                {...form.register("password")}
+              />
+              <button
+                type="button"
+                aria-label={
+                  showPassword ? "Ocultar senha" : "Mostrar senha"
+                }
+                aria-pressed={showPassword}
+                className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-primary/62 transition hover:bg-primary/8 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-45"
+                disabled={isSubmitting}
+                onClick={() => setShowPassword((current) => !current)}
+                title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              >
+                {showPassword ? (
+                  <EyeOff aria-hidden="true" className="size-4" />
+                ) : (
+                  <Eye aria-hidden="true" className="size-4" />
+                )}
+              </button>
+            </div>
             <FieldError errors={[passwordError]} />
           </Field>
         </FieldGroup>
