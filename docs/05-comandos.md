@@ -14,6 +14,7 @@ Este documento centraliza comandos de desenvolvimento, validacao, Docker e deplo
 - `scripts/server-smoke.ts`
 - `scripts/auth-smoke.ts`
 - `scripts/avatar-smoke.ts`
+- `scripts/candy-xp-visibility-smoke.ts`
 - `scripts/catty-behavior-smoke.ts`
 
 ## Instalar
@@ -44,6 +45,7 @@ npm run build
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run audit:avatar-smoke
+npm run audit:candy-xp-visibility
 npm run audit:catty-behavior
 ```
 
@@ -63,6 +65,7 @@ docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-visibility
 docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior
 ```
 
@@ -111,6 +114,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 
 - `verify:*` roda smokes via Docker Compose.
 - `audit-server-smoke` depende do app healthy.
+- `audit:candy-xp-visibility` valida que atividade Candy XP publicada para todos aparece para qualquer student e atividade individual aparece so para o aluno atribuido.
 - `audit:catty-behavior` valida exemplos internos da Catty sem chamar Gemini nem OpenAI.
 - Docker usa perfil `tools` para comandos sob demanda.
 - `app-storage` e compartilhado para validar avatar/contratos.

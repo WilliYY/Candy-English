@@ -224,7 +224,7 @@ function ActivityCreateForm({
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 shadow-sm">
           <Coins aria-hidden="true" className="size-3.5" />
-          PDF + XP
+          Publica para todos
         </span>
       </div>
 
@@ -341,10 +341,11 @@ function ActivityCreateForm({
               <NativeSelect
                 id="candy-xp-status"
                 name="status"
+                defaultValue="PUBLISHED"
                 disabled={isPending}
               >
-                <option value="DRAFT">Rascunho</option>
                 <option value="PUBLISHED">Publicado</option>
+                <option value="DRAFT">Rascunho</option>
               </NativeSelect>
               <FieldError errors={[{ message: errors.status }]} />
             </Field>

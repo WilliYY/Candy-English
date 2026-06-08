@@ -47,10 +47,10 @@ Banco:
 ## Fluxo admin
 
 1. Admin abre `/ava/admin?task=candy-xp`.
-2. Admin cria uma atividade com titulo, descricao, nivel, categoria, XP e status inicial.
+2. Admin cria uma atividade com titulo, descricao, nivel, categoria e XP; no formulario atual, o padrao e `Publicado` para `Todos os alunos`.
 3. Admin envia PDF/imagem do Canva; se for PDF, o servidor tenta otimizar com Ghostscript antes de salvar.
 4. O arquivo final fica em `storage/candy-xp-assets`.
-5. Admin escolhe liberar para todos os alunos ou para um aluno especifico.
+5. Admin pode manter `Todos os alunos` para a atividade aparecer na aba Candy XP de todos os students, ou escolher um aluno especifico para liberar individualmente.
 6. Admin nao precisa cadastrar perguntas separadas; a atividade principal fica no proprio PDF/imagem.
 7. Admin pode editar a ficha da atividade e alternar entre rascunho, publicado e arquivado.
 8. Admin acompanha envios. Atividades novas em PDF sem perguntas concluem pelo envio do aluno e liberam XP automaticamente; atividades antigas com resposta escrita ainda podem aparecer para correcao manual.
@@ -58,7 +58,7 @@ Banco:
 ## Fluxo aluno
 
 1. Student abre `/ava/student?task=candy-xp`.
-2. O aluno ve apenas atividades `PUBLISHED` liberadas para todos ou atribuidas ao seu perfil.
+2. O aluno ve apenas atividades `PUBLISHED` liberadas para todos ou atribuidas ao seu perfil. Atividade publicada sem `CandyXpActivityAssignment` aparece para todos os alunos.
 3. O aluno abre o PDF/imagem pela rota protegida.
 4. O aluno le ou faz a atividade no PDF/imagem. Se a atividade antiga tiver perguntas, ele ainda pode responder e salvar progresso como `DRAFT`.
 5. Ao enviar:

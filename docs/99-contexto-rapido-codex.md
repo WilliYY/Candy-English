@@ -40,7 +40,7 @@ Ao receber o prompt minimo, o agente deve:
 - Student acessa aulas, homework, mensagens, contratos, perfil, avatar e ve a aula ao vivo em manutencao temporaria.
 - Admin, teacher e student veem Candy XP persistente nos seus paineis: nivel, barra amarela, fontes de XP, trilha infinita, streak, badges, ultimos eventos, roadmap e slot visual para jogos/missoes futuras.
 - Candy XP usa `src/lib/candy-xp.ts` para curva infinita e `src/lib/candy-xp-persistence.ts` para eventos `CandyXpEvent`, perfil/cache `CandyXpProfile`, badges e catalogo inicial de missoes com `sourceKey` anti-duplicacao.
-- Atividades Candy XP existem em `/ava/admin?task=candy-xp` e `/ava/student?task=candy-xp`: admin cria missao com PDF/imagem do Canva, liberacao e XP sem perguntas novas obrigatorias; student envia a missao e pode ganhar XP automaticamente, mantendo compatibilidade com atividades antigas que tinham perguntas.
+- Atividades Candy XP existem em `/ava/admin?task=candy-xp` e `/ava/student?task=candy-xp`: admin cria missao com PDF/imagem do Canva, liberacao e XP sem perguntas novas obrigatorias; o formulario cria por padrao como `Publicado` para `Todos os alunos`, entao aparece na aba Candy XP de todos os students, e student envia a missao e pode ganhar XP automaticamente, mantendo compatibilidade com atividades antigas que tinham perguntas.
 - Arquivos de atividades Candy XP sao servidos por `/ava/candy-xp-assets/[activityId]` com permissao por role/publicacao/assignment.
 - Upload de PDF do Candy XP, homework interativo e aula interativa tenta otimizar com Ghostscript no servidor via `src/lib/file-optimization.ts`; se falhar, salva o original.
 - Homework e aula interativa usam PDF/imagem original como fundo protegido.

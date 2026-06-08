@@ -63,7 +63,7 @@ Rotas das atividades:
 - Badges sao concedidos automaticamente por criterios simples: nivel, streak ou contagem de eventos.
 - Missoes futuras devem usar `CandyMission` + `CandyMissionAttempt` e gravar XP via server action/rota protegida.
 - Atividades Candy XP sao criadas e corrigidas apenas por `ADMIN`.
-- Student acessa apenas atividades publicadas e liberadas para o proprio perfil; atividade publicada sem assignment fica liberada para todos os students.
+- Student acessa apenas atividades publicadas e liberadas para o proprio perfil; atividade publicada sem assignment fica liberada para todos os students, e o formulario Admin cria novas atividades nesse modo por padrao.
 - Atividades novas podem ser criadas apenas com PDF/imagem, sem perguntas manuais separadas, e concluem pelo envio do aluno.
 - Respostas objetivas de atividades antigas podem ser corrigidas automaticamente; respostas escritas sempre ficam pendentes para revisao manual.
 - XP de atividade concluida usa `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` da submissao para impedir pontuacao duplicada.
