@@ -4,6 +4,7 @@ import {
   CaseUpper,
   CheckSquare,
   ChevronDown,
+  CircleAlert,
   FileText,
   Layers2,
   LoaderCircle,
@@ -1192,12 +1193,13 @@ function InteractiveHomeworkEditorItem({
   const saveStatusLabel = isPersisting
     ? "Salvando..."
     : saveStatus === "error"
-      ? "Erro ao salvar"
+      ? "Salvar novamente"
       : hasUnsavedChanges
         ? "Alteracoes pendentes"
         : saveStatus === "auto-saved"
           ? "Salvo automaticamente"
           : "Salvo";
+  const showSaveErrorMessage = saveStatus === "error" && Boolean(message);
   const isDetectingSelectedListening =
     selectedField?.type === "LISTENING" &&
     listeningDetectionFieldId === selectedField.id;
@@ -1537,7 +1539,7 @@ function InteractiveHomeworkEditorItem({
             setSaveStatus("error");
             setMessage(
               mode === "auto"
-                ? `Autosave falhou: ${result.message}`
+                ? `Nao consegui confirmar o autosave. ${result.message}`
                 : result.message,
             );
             return;
@@ -1592,7 +1594,7 @@ function InteractiveHomeworkEditorItem({
           setSaveStatus("error");
           setMessage(
             mode === "auto"
-              ? "Autosave falhou. As areas continuam na tela; tente salvar novamente."
+              ? "O autosave nao confirmou as alteracoes. As areas continuam na tela; salve manualmente antes de sair."
               : "Erro ao salvar areas. Tente novamente antes de sair da pagina.",
           );
         } finally {
@@ -1892,9 +1894,55 @@ function InteractiveHomeworkEditorItem({
           </div>
 
           {message ? (
-            <p className="rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">
-              {message}
-            </p>
+            showSaveErrorMessage ? (
+              <div
+                className="rounded-lg border border-red-200 bg-red-50/90 p-3 text-sm text-red-900 shadow-sm"
+                role="alert"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-white text-red-700 shadow-sm ring-1 ring-red-200">
+                      <CircleAlert aria-hidden="true" className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-semibold">
+                        As areas ainda nao foram confirmadas
+                      </p>
+                      <p className="mt-1 leading-5 text-red-800/85">
+                        {message}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    className="shrink-0 border-red-200 bg-white text-red-800 hover:bg-red-100 hover:text-red-900"
+                    disabled={
+                      isPersisting || isDeleting || saveInFlightRef.current
+                    }
+                    onClick={saveFields}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    {isPersisting ? (
+                      <LoaderCircle
+                        data-icon="inline-start"
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <Save data-icon="inline-start" />
+                    )}
+                    Salvar agora
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <p
+                className="rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground"
+                role="status"
+              >
+                {message}
+              </p>
+            )
           ) : null}
         </div>
 
