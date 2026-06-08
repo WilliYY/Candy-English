@@ -557,6 +557,12 @@ function isInteractiveLessonHomework(homework: StudentHomework) {
   );
 }
 
+function isStudentHomeworkComplete(homework: StudentHomework) {
+  const status = homework.submissions[0]?.status;
+
+  return status === "SUBMITTED" || status === "REVIEWED";
+}
+
 function isInternalHomeworkLesson(lesson: StudentLesson) {
   return (
     lesson.title.startsWith("Homework - ") &&
@@ -592,6 +598,17 @@ export function StudentWorkspace({
   const lessonActivityItems = visibleLessons.flatMap((lesson) =>
     lesson.homeworks.filter(isInteractiveLessonHomework),
   );
+  const completedLessonActivityCount = lessonActivityItems.filter(
+    isStudentHomeworkComplete,
+  ).length;
+  const lessonMaterialCount = visibleLessons.reduce(
+    (total, lesson) => total + lesson.materials.length,
+    0,
+  );
+  const lessonVocabularyCount = visibleLessons.reduce(
+    (total, lesson) => total + lesson.vocabularyItems.length,
+    0,
+  );
   const homeworkCount = homeworkItems.length;
   const reviewedCount = lessons.reduce(
     (total, lesson) =>
@@ -623,6 +640,40 @@ export function StudentWorkspace({
     { icon: ClipboardCheck, label: "Homeworks", value: homeworkCount },
     { icon: Sparkles, label: "Candy XP", value: candyXpActivities.length },
     { icon: MessageSquareText, label: "Feedbacks", value: reviewedCount },
+  ];
+  const lessonSummaryStats = [
+    {
+      accentClassName: "border-sky-200 bg-sky-50 text-sky-950",
+      helper: "aulas liberadas",
+      icon: BookOpen,
+      iconClassName: "bg-sky-100 text-sky-700",
+      label: "Aulas",
+      value: visibleLessons.length,
+    },
+    {
+      accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-950",
+      helper: "atividades prontas",
+      icon: CheckCircle2,
+      iconClassName: "bg-emerald-100 text-emerald-700",
+      label: "Concluidas",
+      value: completedLessonActivityCount,
+    },
+    {
+      accentClassName: "border-amber-200 bg-amber-50 text-amber-950",
+      helper: "arquivos e links",
+      icon: FileText,
+      iconClassName: "bg-amber-100 text-amber-700",
+      label: "Materiais",
+      value: lessonMaterialCount,
+    },
+    {
+      accentClassName: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-950",
+      helper: "palavras de apoio",
+      icon: Sparkles,
+      iconClassName: "bg-fuchsia-100 text-fuchsia-700",
+      label: "Vocabulario",
+      value: lessonVocabularyCount,
+    },
   ];
 
   return (
@@ -842,61 +893,133 @@ export function StudentWorkspace({
                 Nenhuma aula foi vinculada ao seu perfil ainda.
               </EmptyState>
             ) : (
-              <div className="mx-auto grid w-full max-w-5xl gap-3">
+              <div className="mx-auto grid w-full max-w-6xl gap-5">
+                <div className="overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-br from-white via-sky-50/80 to-primary/5 shadow-sm">
+                  <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.95fr)]">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-800 shadow-sm">
+                        <BookOpen aria-hidden="true" className="size-6" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-700">
+                          Area de estudo
+                        </span>
+                        <strong className="mt-1 block text-xl font-semibold text-primary">
+                          Aulas organizadas para revisar sem se perder
+                        </strong>
+                        <span className="mt-2 block max-w-2xl text-sm leading-6 text-muted-foreground">
+                          Abra uma aula para ver o material, revisar vocabulario
+                          e responder a atividade interativa quando existir.
+                        </span>
+                      </span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {lessonSummaryStats.map((stat) => {
+                        const StatIcon = stat.icon;
+
+                        return (
+                          <div
+                            key={stat.label}
+                            className={`flex items-center justify-between gap-3 rounded-xl border p-3 shadow-sm ${stat.accentClassName}`}
+                          >
+                            <span className="min-w-0">
+                              <span className="block text-xs font-semibold uppercase tracking-[0.12em] opacity-75">
+                                {stat.label}
+                              </span>
+                              <strong className="mt-1 block text-2xl font-semibold">
+                                {stat.value}
+                              </strong>
+                              <span className="block text-xs opacity-75">
+                                {stat.helper}
+                              </span>
+                            </span>
+                            <span
+                              className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${stat.iconClassName}`}
+                            >
+                              <StatIcon aria-hidden="true" className="size-5" />
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
                 {visibleLessons.map((lesson) => {
                   const lessonActivities = lesson.homeworks.filter(
                     isInteractiveLessonHomework,
                   );
                   const completedLessonActivities = lessonActivities.filter(
-                    (homework) => {
-                      const status = homework.submissions[0]?.status;
-
-                      return status === "SUBMITTED" || status === "REVIEWED";
-                    },
+                    isStudentHomeworkComplete,
                   );
                   const hasLessonActivities = lessonActivities.length > 0;
                   const isLessonComplete =
                     hasLessonActivities &&
                     completedLessonActivities.length ===
                       lessonActivities.length;
+                  const hasStudyAssets =
+                    lesson.materials.length > 0 ||
+                    lesson.vocabularyItems.length > 0 ||
+                    hasLessonActivities;
                   const lessonStatusLabel = hasLessonActivities
                     ? isLessonComplete
                       ? "Concluido"
                       : "Nao concluido"
-                    : "Sem aula";
+                    : "Material";
                   const lessonStatusClass = hasLessonActivities
                     ? isLessonComplete
                       ? "border-emerald-500/40 bg-emerald-50 text-emerald-900"
-                      : "border-red-500/40 bg-red-50 text-red-900"
-                    : "border-primary/15 bg-muted/50 text-muted-foreground";
+                      : "border-rose-500/40 bg-rose-50 text-rose-900"
+                    : "border-sky-500/30 bg-sky-50 text-sky-900";
                   const lessonStatusDotClass = hasLessonActivities
                     ? isLessonComplete
                       ? "bg-emerald-500"
-                      : "bg-red-600"
-                    : "bg-muted-foreground/60";
+                      : "bg-rose-600"
+                    : "bg-sky-500";
+                  const lessonAccentClass = hasLessonActivities
+                    ? isLessonComplete
+                      ? "bg-emerald-500"
+                      : "bg-rose-500"
+                    : "bg-sky-500";
+                  const lessonIconClass = hasLessonActivities
+                    ? isLessonComplete
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "bg-rose-100 text-rose-700"
+                    : "bg-sky-100 text-sky-700";
 
                   return (
                     <details
                       key={lesson.id}
-                      className="group overflow-hidden rounded-xl border border-primary/15 bg-white/95 shadow-sm transition hover:border-primary/25 hover:shadow-md"
+                      className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-white/95 shadow-sm transition hover:border-primary/25 hover:shadow-md"
                     >
-                      <summary className="flex cursor-pointer list-none flex-col gap-3 px-5 py-4 hover:bg-primary/5 sm:flex-row sm:items-center sm:justify-between [&::-webkit-details-marker]:hidden">
+                      <span
+                        aria-hidden="true"
+                        className={`absolute inset-x-0 top-0 h-1 ${lessonAccentClass}`}
+                      />
+                      <summary className="flex cursor-pointer list-none flex-col gap-4 px-5 py-5 hover:bg-primary/5 sm:flex-row sm:items-start sm:justify-between [&::-webkit-details-marker]:hidden">
                         <span className="flex min-w-0 items-start gap-3 sm:items-center">
-                          <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                            <BookOpen aria-hidden="true" />
+                          <span
+                            className={`flex size-12 shrink-0 items-center justify-center rounded-xl shadow-sm ${lessonIconClass}`}
+                          >
+                            <BookOpen aria-hidden="true" className="size-6" />
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate text-base font-semibold">
+                            <span className="block truncate text-lg font-semibold text-primary">
                               {lesson.title}
                             </span>
-                            <span className="mt-1 block truncate text-xs text-muted-foreground">
-                              {lesson.description ?? "Sem resumo cadastrado."}
+                            <span className="mt-1 block text-sm leading-5 text-muted-foreground sm:line-clamp-2">
+                              {lesson.description ??
+                                "Resumo da aula ainda nao cadastrado."}
                             </span>
-                            <span className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                              <span>
+                            <span className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1">
+                                <UserRound
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
                                 Teacher: {lesson.teacherProfile.user.name}
                               </span>
-                              <span className="inline-flex items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 py-1">
                                 <CalendarDays
                                   aria-hidden="true"
                                   className="size-3.5"
@@ -904,6 +1027,20 @@ export function StudentWorkspace({
                                 {lesson.scheduledAt
                                   ? dateFormatter.format(lesson.scheduledAt)
                                   : "Sem data"}
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900">
+                                <FileText
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
+                                {lesson.materials.length} material(is)
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-fuchsia-200 bg-fuchsia-50 px-2.5 py-1 text-fuchsia-900">
+                                <Sparkles
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
+                                {lesson.vocabularyItems.length} vocabulario(s)
                               </span>
                             </span>
                           </span>
@@ -918,6 +1055,9 @@ export function StudentWorkspace({
                             />
                             {lessonStatusLabel}
                           </span>
+                          <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+                            {hasStudyAssets ? "Abrir aula" : "Ver detalhes"}
+                          </span>
                           <ChevronDown
                             aria-hidden="true"
                             className="size-4 text-muted-foreground transition group-open:rotate-180"
@@ -927,14 +1067,30 @@ export function StudentWorkspace({
 
                       <div className="flex flex-col gap-5 border-t border-primary/10 px-5 pb-5 pt-4 md:px-6 md:pb-6">
                         <div className="grid gap-4 lg:grid-cols-2">
-                          <div className="rounded-lg bg-muted/50 p-4">
-                            <strong className="text-sm">Materiais</strong>
+                          <div className="rounded-xl border border-amber-200/70 bg-amber-50/70 p-4 shadow-sm">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="inline-flex items-center gap-2 text-sm font-semibold text-amber-950">
+                                <FileText
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                Materiais da aula
+                              </span>
+                              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-amber-900">
+                                {lesson.materials.length}
+                              </span>
+                            </div>
                             <ul className="mt-3 flex flex-col gap-3 text-sm text-muted-foreground">
                               {lesson.materials.length === 0 ? (
-                                <li>Nenhum material cadastrado.</li>
+                                <li className="rounded-lg border border-dashed border-amber-200 bg-white/70 p-3">
+                                  Nenhum material extra cadastrado nesta aula.
+                                </li>
                               ) : (
                                 lesson.materials.map((material) => (
-                                  <li key={material.id} className="leading-6">
+                                  <li
+                                    key={material.id}
+                                    className="rounded-lg border border-amber-100 bg-white/90 p-3 leading-6 shadow-sm"
+                                  >
                                     <span className="font-medium text-foreground">
                                       {material.title}
                                     </span>
@@ -953,12 +1109,12 @@ export function StudentWorkspace({
                                           />
                                         ) : null}
                                         <a
-                                          className="font-medium text-primary underline"
+                                          className="inline-flex w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 transition hover:bg-amber-100"
                                           href={material.url}
                                           rel="noreferrer"
                                           target="_blank"
                                         >
-                                          Abrir material em nova aba
+                                          Abrir material
                                         </a>
                                       </div>
                                     ) : null}
@@ -967,20 +1123,40 @@ export function StudentWorkspace({
                               )}
                             </ul>
                           </div>
-                          <div className="rounded-lg bg-muted/50 p-4">
-                            <strong className="text-sm">Vocabulario</strong>
+                          <div className="rounded-xl border border-fuchsia-200/70 bg-fuchsia-50/70 p-4 shadow-sm">
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="inline-flex items-center gap-2 text-sm font-semibold text-fuchsia-950">
+                                <Sparkles
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                Vocabulario de apoio
+                              </span>
+                              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-fuchsia-900">
+                                {lesson.vocabularyItems.length}
+                              </span>
+                            </div>
                             <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
                               {lesson.vocabularyItems.length === 0 ? (
-                                <li>Nenhum vocabulario cadastrado.</li>
+                                <li className="rounded-lg border border-dashed border-fuchsia-200 bg-white/70 p-3">
+                                  Nenhum vocabulario extra cadastrado.
+                                </li>
                               ) : (
                                 lesson.vocabularyItems.map((item) => (
-                                  <li key={item.id} className="leading-6">
-                                    <span className="font-medium text-foreground">
-                                      {item.term}
-                                    </span>{" "}
-                                    - {item.translation}
+                                  <li
+                                    key={item.id}
+                                    className="rounded-lg border border-fuchsia-100 bg-white/90 p-3 leading-6 shadow-sm"
+                                  >
+                                    <span className="flex flex-wrap items-center gap-2">
+                                      <span className="rounded-full bg-fuchsia-100 px-2.5 py-1 font-medium text-fuchsia-950">
+                                        {item.term}
+                                      </span>
+                                      <span className="font-medium text-foreground">
+                                        {item.translation}
+                                      </span>
+                                    </span>
                                     {item.example ? (
-                                      <p>{item.example}</p>
+                                      <p className="mt-2">{item.example}</p>
                                     ) : null}
                                   </li>
                                 ))
@@ -989,8 +1165,20 @@ export function StudentWorkspace({
                           </div>
                         </div>
                         {lessonActivities.length > 0 ? (
-                          <div className="mx-auto flex w-full flex-col gap-4 rounded-xl border border-primary/15 bg-white p-4 shadow-sm md:p-5">
-                            <strong className="text-sm">Aulas</strong>
+                          <div className="mx-auto flex w-full flex-col gap-4 rounded-2xl border border-sky-200 bg-gradient-to-br from-white via-sky-50/60 to-white p-4 shadow-sm md:p-5">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                              <span className="inline-flex items-center gap-2 text-sm font-semibold text-sky-950">
+                                <ClipboardCheck
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                Atividade interativa da aula
+                              </span>
+                              <span className="w-fit rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold text-sky-900">
+                                {completedLessonActivities.length}/
+                                {lessonActivities.length} concluida(s)
+                              </span>
+                            </div>
                             {lessonActivities.map((homework) => (
                               <InteractiveHomeworkStudent
                                 key={homework.id}
