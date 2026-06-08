@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Volume1, Volume2 } from "lucide-react";
+import { LoaderCircle, Pause, Volume1, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { normalizeListeningSentence } from "@/lib/interactive-homework-fields";
 import { cn } from "@/lib/utils";
@@ -92,6 +92,7 @@ export function InteractiveHomeworkListeningPlayer({
 }) {
   const sentenceText = normalizeListeningSentence(sentence ?? "");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState("");
   const [nextSpeed, setNextSpeed] = useState<ListeningSpeed>("normal");
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -101,6 +102,7 @@ export function InteractiveHomeworkListeningPlayer({
   useEffect(() => {
     return () => {
       audioRef.current?.pause();
+      audioRef.current = null;
       Object.values(objectUrlsRef.current).forEach((url) => {
         if (url) {
           URL.revokeObjectURL(url);
@@ -111,6 +113,7 @@ export function InteractiveHomeworkListeningPlayer({
 
   useEffect(() => {
     audioRef.current?.pause();
+    audioRef.current = null;
     Object.values(objectUrlsRef.current).forEach((url) => {
       if (url) {
         URL.revokeObjectURL(url);
@@ -118,6 +121,7 @@ export function InteractiveHomeworkListeningPlayer({
     });
     objectUrlsRef.current = {};
     setNextSpeed("normal");
+    setIsPlaying(false);
     setError("");
   }, [sentenceText]);
 
@@ -149,8 +153,24 @@ export function InteractiveHomeworkListeningPlayer({
     }
   }
 
-  async function playListening() {
+  function pauseCurrentAudio() {
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.pause();
+      audio.currentTime = 0;
+    }
+
+    setIsPlaying(false);
+  }
+
+  async function toggleListening() {
     if (!canPlay || isLoading) {
+      return;
+    }
+
+    if (isPlaying) {
+      pauseCurrentAudio();
       return;
     }
 
@@ -166,17 +186,29 @@ export function InteractiveHomeworkListeningPlayer({
 
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
+      audio.addEventListener(
+        "ended",
+        () => {
+          if (audioRef.current === audio) {
+            setIsPlaying(false);
+          }
+        },
+        { once: true },
+      );
       await audio.play();
+      setIsPlaying(true);
       setNextSpeed(nextSpeedAfterPlay);
       void warmNextListeningAudio(nextSpeedAfterPlay);
     } catch {
       setError("Nao foi possivel tocar agora.");
+      setIsPlaying(false);
     } finally {
       setIsLoading(false);
     }
   }
 
-  const Icon = nextSpeed === "slow" ? Volume1 : Volume2;
+  const Icon = isPlaying ? Pause : nextSpeed === "slow" ? Volume1 : Volume2;
+  const actionLabel = isPlaying ? "Pausar" : "Ouvir";
 
   return (
     <div
@@ -187,11 +219,16 @@ export function InteractiveHomeworkListeningPlayer({
       }}
     >
       <button
-        aria-label={`${label}. Ouvir frase em ingles.`}
-        className="group pointer-events-auto absolute right-0 top-1/2 z-20 flex h-[clamp(32px,48cqh,44px)] min-w-[clamp(58px,22cqw,82px)] -translate-y-1/2 items-center justify-center gap-1.5 rounded-full border-2 border-white bg-primary px-[clamp(9px,2cqw,13px)] text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.34)] ring-2 ring-primary/15 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-primary/92 hover:shadow-[0_12px_28px_rgba(65,42,76,0.42)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-55"
+        aria-label={`${label}. ${actionLabel} frase em ingles.`}
+        className={cn(
+          "group pointer-events-auto absolute right-0 top-1/2 z-20 flex h-[clamp(32px,48cqh,44px)] min-w-[clamp(58px,22cqw,82px)] -translate-y-1/2 items-center justify-center gap-1.5 rounded-full border-2 border-white px-[clamp(9px,2cqw,13px)] text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.34)] ring-2 ring-primary/15 transition hover:-translate-y-1/2 hover:scale-105 hover:shadow-[0_12px_28px_rgba(65,42,76,0.42)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-55",
+          isPlaying
+            ? "bg-[#e57cd8] hover:bg-[#d95bcf]"
+            : "bg-primary hover:bg-primary/92",
+        )}
         disabled={!canPlay || isLoading}
-        onClick={playListening}
-        title="Ouvir"
+        onClick={toggleListening}
+        title={actionLabel}
         type="button"
       >
         {isLoading ? (
@@ -200,7 +237,7 @@ export function InteractiveHomeworkListeningPlayer({
           <Icon aria-hidden="true" className="size-4" />
         )}
         <span className="text-[clamp(10px,13cqh,12px)] font-black leading-none tracking-normal">
-          Ouvir
+          {actionLabel}
         </span>
       </button>
       {error ? (
