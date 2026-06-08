@@ -176,18 +176,16 @@ export function InteractiveHomeworkTextLineGuide({
             )}
             style={{ height: lineHeight }}
           >
-            <span
-              className={cn(
-                "absolute left-0 top-0 font-semibold leading-none",
-                selected
-                  ? "text-primary/62"
-                  : isStudentVariant
-                    ? "text-primary/24"
-                    : "text-primary/42",
-              )}
-            >
-              texto
-            </span>
+            {isStudentVariant ? null : (
+              <span
+                className={cn(
+                  "absolute left-0 top-0 font-semibold leading-none",
+                  selected ? "text-primary/62" : "text-primary/42",
+                )}
+              >
+                texto
+              </span>
+            )}
           </span>
         ))}
       </span>
