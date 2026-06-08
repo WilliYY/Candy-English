@@ -615,6 +615,52 @@ function getStudentSubmissionStatusMeta(status?: string) {
   };
 }
 
+const studentHomeworkSubmittedXp = CANDY_XP_REWARDS.student.homeworkSubmitted;
+const studentHomeworkFeedbackXp = CANDY_XP_REWARDS.student.feedbackReviewed;
+const studentHomeworkReviewedXp =
+  studentHomeworkSubmittedXp + studentHomeworkFeedbackXp;
+
+function getStudentHomeworkXpMeta(status?: string) {
+  const amount =
+    status === "REVIEWED"
+      ? studentHomeworkReviewedXp
+      : studentHomeworkSubmittedXp;
+  const label =
+    status === "REVIEWED" || status === "SUBMITTED" || status === "RETURNED"
+      ? `Ganhou +${xpFormatter.format(amount)} XP`
+      : `Vale +${xpFormatter.format(amount)} XP`;
+
+  if (status === "REVIEWED") {
+    return {
+      className: "border-emerald-300 bg-emerald-50 text-emerald-900",
+      helper: "envio + feedback",
+      label,
+    };
+  }
+
+  if (status === "SUBMITTED") {
+    return {
+      className: "border-amber-300 bg-amber-50 text-amber-950",
+      helper: "envio registrado",
+      label,
+    };
+  }
+
+  if (status === "RETURNED") {
+    return {
+      className: "border-amber-300 bg-amber-50 text-amber-950",
+      helper: "XP preservado",
+      label,
+    };
+  }
+
+  return {
+    className: "border-primary/15 bg-white text-primary",
+    helper: "ao entregar",
+    label,
+  };
+}
+
 function isInternalHomeworkLesson(lesson: StudentLesson) {
   return (
     lesson.title.startsWith("Homework - ") &&
@@ -1419,6 +1465,7 @@ export function StudentWorkspace({
                   const statusMeta = getStudentSubmissionStatusMeta(
                     submission?.status,
                   );
+                  const xpMeta = getStudentHomeworkXpMeta(submission?.status);
 
                   if (homework.kind === "INTERACTIVE") {
                     return (
@@ -1486,7 +1533,21 @@ export function StudentWorkspace({
                             </span>
                           </span>
                         </span>
-                        <span className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                        <span className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm ${xpMeta.className}`}
+                          >
+                            <Zap
+                              aria-hidden="true"
+                              className="size-3.5 shrink-0"
+                            />
+                            <span className="leading-tight">
+                              <span className="block">{xpMeta.label}</span>
+                              <span className="block text-[10px] font-semibold opacity-70">
+                                {xpMeta.helper}
+                              </span>
+                            </span>
+                          </span>
                           <span
                             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badgeClassName}`}
                           >
@@ -1516,10 +1577,18 @@ export function StudentWorkspace({
                                 "Sem instrucoes adicionais."}
                             </p>
                           </div>
-                          <span
-                            className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badgeClassName}`}
-                          >
-                            {statusMeta.helper}
+                          <span className="flex flex-wrap items-center gap-2 md:justify-end">
+                            <span
+                              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${xpMeta.className}`}
+                            >
+                              <Zap aria-hidden="true" className="size-3.5" />
+                              {xpMeta.label}
+                            </span>
+                            <span
+                              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badgeClassName}`}
+                            >
+                              {statusMeta.helper}
+                            </span>
                           </span>
                         </div>
                         <div className="rounded-xl border border-primary/10 bg-white p-4 text-sm leading-6 shadow-sm">

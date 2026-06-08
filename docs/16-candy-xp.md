@@ -71,6 +71,7 @@ Rotas das atividades:
 - No admin, o painel Candy XP deve manter cards visiveis e escaneaveis para criacao, arquivo, liberacao, status, XP e respostas, sem alterar as regras de permissao ou premiacao.
 - O card reutilizavel de Candy XP deve manter as fontes de XP em cards responsivos por largura minima, evitando quatro colunas apertadas quando o painel estiver estreito.
 - Em `Aulas e Materiais`, o card de cada aula deve mostrar o XP ja ganho ou o XP possivel ao concluir, usando o valor real de `Aulas finalizadas`.
+- Em `Responder homework`, o card de cada homework deve mostrar o XP ja ganho ou o XP possivel: entrega gera `Homeworks enviadas` e homework corrigida soma tambem `Feedbacks recebidos`, sempre usando os valores reais de `CANDY_XP_REWARDS`.
 - Em mobile, o card reutilizavel deve empilhar fontes e metricas em uma coluna e manter a trilha de niveis com rolagem horizontal discreta, evitando tiles comprimidos.
 
 ## Fontes atuais de XP
@@ -80,7 +81,7 @@ Student:
 - `Perfil preparado`: percentual dos dados importantes do perfil, rendendo ate 300 XP.
 - `Aulas finalizadas`: atividade interativa criada pelo fluxo de aula e entregue, valendo 80 XP por aula finalizada.
 - `Homeworks enviadas`: homework entregue, valendo 150 XP por envio.
-- `Feedbacks recebidos`: submissao revisada pela teacher.
+- `Feedbacks recebidos`: submissao revisada pela teacher, valendo 25 XP por correcao liberada.
 - `Candy XP`: historias e missoes Candy XP concluidas.
 
 Teacher:

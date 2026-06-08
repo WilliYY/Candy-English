@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Save,
   Send,
+  Zap,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
@@ -48,6 +49,7 @@ import {
   TINY_TEXT_MAX_LENGTH,
   type InteractiveHomeworkFieldType,
 } from "@/lib/interactive-homework-fields";
+import { CANDY_XP_REWARDS } from "@/lib/candy-xp";
 
 export type StudentInteractiveField = {
   height: number;
@@ -326,6 +328,59 @@ function statusHelper(status?: string) {
   }
 
   return "Ainda nao entregue";
+}
+
+const studentHomeworkSubmittedXp = CANDY_XP_REWARDS.student.homeworkSubmitted;
+const studentHomeworkFeedbackXp = CANDY_XP_REWARDS.student.feedbackReviewed;
+const studentHomeworkReviewedXp =
+  studentHomeworkSubmittedXp + studentHomeworkFeedbackXp;
+
+function homeworkXpAmount(status?: string) {
+  return status === "REVIEWED"
+    ? studentHomeworkReviewedXp
+    : studentHomeworkSubmittedXp;
+}
+
+function homeworkXpLabel(status?: string) {
+  const amount = homeworkXpAmount(status);
+
+  if (
+    status === "REVIEWED" ||
+    status === "SUBMITTED" ||
+    status === "RETURNED"
+  ) {
+    return `Ganhou +${amount} XP`;
+  }
+
+  return `Vale +${amount} XP`;
+}
+
+function homeworkXpHelper(status?: string) {
+  if (status === "REVIEWED") {
+    return `envio + feedback`;
+  }
+
+  if (status === "SUBMITTED") {
+    return "envio registrado";
+  }
+
+  if (status === "RETURNED") {
+    return "XP preservado";
+  }
+
+  return "ao entregar";
+}
+
+function homeworkXpClass(status?: string) {
+  if (status === "REVIEWED") {
+    return "border-emerald-300 bg-emerald-50 text-emerald-900";
+  }
+
+  if (status === "SUBMITTED" || status === "RETURNED") {
+    return "border-amber-300 bg-amber-50 text-amber-950";
+  }
+
+  return "border-primary/15 bg-white text-primary";
 }
 
 function isCompleteStatus(status?: string) {
@@ -784,7 +839,18 @@ export function InteractiveHomeworkStudent({
             {isComplete ? "Concluido" : "Nao concluido"}
           </span>
         ) : (
-          <span className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
+          <span className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+            <span
+              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm ${homeworkXpClass(status)}`}
+            >
+              <Zap aria-hidden="true" className="size-3.5 shrink-0" />
+              <span className="leading-tight">
+                <span className="block">{homeworkXpLabel(status)}</span>
+                <span className="block text-[10px] font-semibold opacity-70">
+                  {homeworkXpHelper(status)}
+                </span>
+              </span>
+            </span>
             <span
               className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
             >
@@ -813,6 +879,14 @@ export function InteractiveHomeworkStudent({
             {homework.instructions ?? fallbackInstructions}
           </p>
           <span className="flex flex-wrap items-center gap-2">
+            {!isLessonContext ? (
+              <span
+                className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${homeworkXpClass(status)}`}
+              >
+                <Zap aria-hidden="true" className="size-3.5" />
+                {homeworkXpLabel(status)}
+              </span>
+            ) : null}
             {!isLessonContext ? (
               <span
                 className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
