@@ -1542,6 +1542,16 @@ function InteractiveHomeworkEditorItem({
       ? (selectedField.placeholder ?? "")
       : "",
   );
+  const selectionPanelMeta = selectedField
+    ? metaForFieldType(selectedField.type)
+    : FIELD_TOOL_META[selectedTool];
+  const SelectionPanelIcon = selectionPanelMeta.Icon;
+  const selectionPanelTitle = selectedField
+    ? `Selecionado: ${getFieldPreviewLabel(selectedField)}`
+    : `Ferramenta ativa: ${selectionPanelMeta.label}`;
+  const selectionPanelHint = selectedField
+    ? "Mova no PDF, ajuste pela bolinha roxa ou use Delete para excluir."
+    : "Desenhe a area no arquivo para criar o campo.";
 
   useEffect(() => {
     return () => {
@@ -2395,7 +2405,14 @@ function InteractiveHomeworkEditorItem({
             </div>
           </div>
 
-          <div className="grid min-h-[148px] rounded-lg border border-primary/15 bg-white/82 p-3 shadow-[0_8px_22px_rgba(65,42,76,0.06)]">
+          <div
+            className={cn(
+              "rounded-lg border border-primary/15 bg-white/82 shadow-[0_8px_22px_rgba(65,42,76,0.06)]",
+              selectedField?.type === "LISTENING"
+                ? "grid min-h-[148px] p-3"
+                : "flex items-center px-3 py-2.5",
+            )}
+          >
             {selectedField?.type === "LISTENING" ? (
               <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-start">
                 <label className="grid min-w-0 gap-1 text-sm font-semibold text-primary">
@@ -2486,14 +2503,30 @@ function InteractiveHomeworkEditorItem({
                 </div>
               </div>
             ) : (
-              <div className="flex min-h-[112px] flex-wrap items-center justify-between gap-3 text-sm">
-                <span className="font-semibold text-primary">
-                  {selectedField
-                    ? `Area selecionada: ${getFieldPreviewLabel(selectedField)}`
-                    : `Ferramenta: ${FIELD_TOOL_META[selectedTool].label}`}
-                </span>
-                <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70">
-                  {fields.length} area(s) no arquivo
+              <div className="flex w-full flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                    <SelectionPanelIcon aria-hidden="true" className="size-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-primary">
+                        {selectionPanelTitle}
+                      </span>
+                      {selectedField ? (
+                        <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-2.5 py-0.5 text-[11px] font-semibold text-primary/70">
+                          {Math.round(selectedField.width)}% x{" "}
+                          {Math.round(selectedField.height)}%
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {selectionPanelHint}
+                    </p>
+                  </div>
+                </div>
+                <span className="w-fit rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70">
+                  {fields.length} area(s)
                 </span>
               </div>
             )}
