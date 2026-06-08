@@ -3,14 +3,12 @@
 import {
   BookOpenCheck,
   CheckCircle2,
-  ClipboardList,
   Coins,
   FileText,
   FileUp,
   ImageUp,
   LoaderCircle,
   PencilLine,
-  Plus,
   RotateCcw,
   Sparkles,
   Target,
@@ -99,14 +97,6 @@ type AdminCandyXpPanelProps = {
   students: CandyXpStudentOption[];
 };
 
-type QuestionDraft = {
-  answerGuide: string;
-  id: string;
-  prompt: string;
-  required: boolean;
-  type: AdminCandyXpQuestionRow["type"];
-};
-
 const questionTypeLabels: Record<AdminCandyXpQuestionRow["type"], string> = {
   CHECKBOX: "Marcar X / checkbox",
   LONG_TEXT: "Resposta longa",
@@ -130,86 +120,6 @@ const submissionStatusLabels: Record<
   REVIEWED: "Concluida",
   SUBMITTED: "Aguardando correcao",
 };
-
-function createQuestionDraft(index: number): QuestionDraft {
-  return {
-    answerGuide: "",
-    id: `${Date.now()}-${index}`,
-    prompt: "",
-    required: true,
-    type: "MULTIPLE_CHOICE",
-  };
-}
-
-function parseAnswerGuide(draft: QuestionDraft) {
-  const lines = draft.answerGuide
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  if (draft.type === "MATCHING") {
-    return {
-      correctAnswers: [],
-      options: lines
-        .map((line) => {
-          const [left, ...rightParts] = line.split("=");
-          const right = rightParts.join("=").trim();
-
-          return {
-            match: right,
-            text: left.trim(),
-          };
-        })
-        .filter((option) => option.text && option.match),
-    };
-  }
-
-  if (draft.type === "MULTIPLE_CHOICE" || draft.type === "CHECKBOX") {
-    const options = lines.map((line) => ({
-      text: line.replace(/^\*/, "").trim(),
-    }));
-    const correctAnswers = lines
-      .filter((line) => line.startsWith("*"))
-      .map((line) => line.replace(/^\*/, "").trim())
-      .filter(Boolean);
-
-    return {
-      correctAnswers,
-      options,
-    };
-  }
-
-  return {
-    correctAnswers: lines,
-    options: [],
-  };
-}
-
-function buildQuestionsPayload(drafts: QuestionDraft[]) {
-  return drafts.map((draft) => {
-    const parsed = parseAnswerGuide(draft);
-
-    return {
-      correctAnswers: parsed.correctAnswers,
-      options: parsed.options,
-      prompt: draft.prompt,
-      required: draft.required,
-      type: draft.type,
-    };
-  });
-}
-
-function getQuestionHelp(type: QuestionDraft["type"]) {
-  if (type === "MATCHING") {
-    return "Use uma linha por par: apple = maca";
-  }
-
-  if (type === "MULTIPLE_CHOICE" || type === "CHECKBOX") {
-    return "Use uma alternativa por linha. Comece com * para marcar a correta.";
-  }
-
-  return "Opcional: escreva uma resposta guia para o admin corrigir depois.";
-}
 
 function getAnswerRows(answers: unknown) {
   if (!Array.isArray(answers)) {
@@ -266,37 +176,15 @@ function ActivityCreateForm({
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement | null>(null);
-  const [questions, setQuestions] = useState<QuestionDraft[]>([
-    createQuestionDraft(0),
-  ]);
   const [message, setMessage] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
-
-  function updateQuestion(id: string, patch: Partial<QuestionDraft>) {
-    setQuestions((current) =>
-      current.map((question) =>
-        question.id === id ? { ...question, ...patch } : question,
-      ),
-    );
-  }
-
-  function removeQuestion(id: string) {
-    setQuestions((current) =>
-      current.length === 1
-        ? current
-        : current.filter((question) => question.id !== id),
-    );
-  }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
-    formData.set(
-      "questionsJson",
-      JSON.stringify(buildQuestionsPayload(questions)),
-    );
+    formData.set("questionsJson", "[]");
     setErrors({});
     setMessage(null);
 
@@ -308,7 +196,6 @@ function ActivityCreateForm({
 
       if (result.ok) {
         formRef.current?.reset();
-        setQuestions([createQuestionDraft(0)]);
         router.refresh();
       }
     });
@@ -331,13 +218,13 @@ function ActivityCreateForm({
               Nova atividade Candy XP
             </div>
             <p className="text-sm text-muted-foreground">
-              Historia, perguntas e XP em um card mais claro.
+              PDF/imagem, liberacao e XP sem perguntas extras.
             </p>
           </div>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-800 shadow-sm">
           <Coins aria-hidden="true" className="size-3.5" />
-          {questions.length} pergunta(s)
+          PDF + XP
         </span>
       </div>
 
@@ -476,127 +363,6 @@ function ActivityCreateForm({
               />
               <FieldError errors={[{ message: errors.asset }]} />
             </Field>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-lg border border-primary/10 bg-primary/[0.025] p-3">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/10">
-                <ClipboardList aria-hidden="true" className="size-4" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-primary">Perguntas</p>
-                <p className="text-xs text-muted-foreground">
-                  {questions.length} card(s) de pergunta
-                </p>
-              </div>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={isPending}
-              onClick={() =>
-                setQuestions((current) => [
-                  ...current,
-                  createQuestionDraft(current.length),
-                ])
-              }
-            >
-              <Plus data-icon="inline-start" />
-              Pergunta
-            </Button>
-          </div>
-
-          <div className="grid gap-3">
-            {questions.map((question, index) => (
-              <div
-                key={question.id}
-                className="grid gap-3 rounded-lg border border-primary/15 bg-white p-3 shadow-sm lg:grid-cols-[minmax(220px,0.42fr)_1fr]"
-              >
-                <div className="grid gap-3 rounded-lg border border-primary/10 bg-primary/[0.025] p-3">
-                  <span className="inline-flex w-fit rounded-full border border-primary/15 bg-primary/[0.05] px-3 py-1 text-xs font-semibold text-primary/75">
-                    Pergunta {index + 1}
-                  </span>
-                  <Field>
-                    <FieldLabel>Tipo</FieldLabel>
-                    <NativeSelect
-                      value={question.type}
-                      disabled={isPending}
-                      onChange={(event) =>
-                        updateQuestion(question.id, {
-                          answerGuide: "",
-                          type: event.target.value as QuestionDraft["type"],
-                        })
-                      }
-                    >
-                      {Object.entries(questionTypeLabels).map(
-                        ([value, label]) => (
-                          <option key={value} value={value}>
-                            {label}
-                          </option>
-                        ),
-                      )}
-                    </NativeSelect>
-                  </Field>
-                  <label className="flex items-center gap-2 rounded-lg border border-primary/10 bg-white px-3 py-2 text-sm font-medium text-muted-foreground">
-                    <input
-                      type="checkbox"
-                      checked={question.required}
-                      disabled={isPending}
-                      onChange={(event) =>
-                        updateQuestion(question.id, {
-                          required: event.target.checked,
-                        })
-                      }
-                    />
-                    Obrigatoria
-                  </label>
-                </div>
-                <div className="grid gap-3">
-                  <Field>
-                    <FieldLabel>Enunciado</FieldLabel>
-                    <Textarea
-                      value={question.prompt}
-                      className="min-h-24 resize-y bg-white/95"
-                      disabled={isPending}
-                      placeholder="Escreva o enunciado que o aluno vai responder."
-                      onChange={(event) =>
-                        updateQuestion(question.id, {
-                          prompt: event.target.value,
-                        })
-                      }
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel>Alternativas / resposta guia</FieldLabel>
-                    <Textarea
-                      value={question.answerGuide}
-                      className="min-h-24 resize-y bg-white/95"
-                      disabled={isPending}
-                      placeholder={getQuestionHelp(question.type)}
-                      onChange={(event) =>
-                        updateQuestion(question.id, {
-                          answerGuide: event.target.value,
-                        })
-                      }
-                    />
-                  </Field>
-                  <div className="flex justify-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={isPending || questions.length === 1}
-                      onClick={() => removeQuestion(question.id)}
-                    >
-                      Remover pergunta
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -807,9 +573,15 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
               <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-800">
                 {completedCount}/{submissionCount} concluidas
               </span>
-              <span className="rounded-full border border-primary/10 bg-white px-3 py-1 text-primary/70">
-                {activity.questions.length} pergunta(s)
-              </span>
+              {activity.questions.length > 0 ? (
+                <span className="rounded-full border border-primary/10 bg-white px-3 py-1 text-primary/70">
+                  {activity.questions.length} pergunta(s)
+                </span>
+              ) : (
+                <span className="rounded-full border border-primary/10 bg-white px-3 py-1 text-primary/70">
+                  PDF sem perguntas extras
+                </span>
+              )}
             </span>
           </span>
         </span>
@@ -854,25 +626,27 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
                     .map((assignment) => assignment.studentName)
                     .join(", ")}
             </div>
-            <div className="rounded-lg border border-primary/10 bg-white p-3 shadow-sm">
-              <strong className="flex items-center gap-2 text-sm text-primary">
-                <ClipboardList aria-hidden="true" className="size-4" />
-                Perguntas
-              </strong>
-              <ul className="mt-2 grid gap-2 text-sm text-muted-foreground">
-                {activity.questions.map((question, index) => (
-                  <li
-                    key={question.id}
-                    className="rounded-md border border-primary/10 bg-primary/[0.025] p-2"
-                  >
-                    <span className="font-semibold text-foreground">
-                      {index + 1}. {questionTypeLabels[question.type]}
-                    </span>
-                    <p>{question.prompt}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {activity.questions.length > 0 ? (
+              <div className="rounded-lg border border-primary/10 bg-white p-3 shadow-sm">
+                <strong className="flex items-center gap-2 text-sm text-primary">
+                  <BookOpenCheck aria-hidden="true" className="size-4" />
+                  Perguntas antigas
+                </strong>
+                <ul className="mt-2 grid gap-2 text-sm text-muted-foreground">
+                  {activity.questions.map((question, index) => (
+                    <li
+                      key={question.id}
+                      className="rounded-md border border-primary/10 bg-primary/[0.025] p-2"
+                    >
+                      <span className="font-semibold text-foreground">
+                        {index + 1}. {questionTypeLabels[question.type]}
+                      </span>
+                      <p>{question.prompt}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
 
           <div className="grid gap-3">
@@ -881,8 +655,8 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
                 Respostas dos alunos
               </p>
               <p className="text-sm text-muted-foreground">
-                Objetivas podem fechar sozinhas; escritas ficam aqui para
-                correcao.
+                Missoes em PDF sem perguntas extras concluem pelo envio do
+                aluno; atividades antigas com escrita aparecem para correcao.
               </p>
             </div>
             {activity.submissions.length === 0 ? (
@@ -919,20 +693,26 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
                     </summary>
                     <div className="grid gap-3 border-t border-primary/10 p-3">
                       <div className="grid gap-2">
-                        {answerRows.map((answer) => (
-                          <div
-                            key={answer.questionId}
-                            className="rounded-md bg-white p-3 text-sm"
-                          >
-                            <strong className="block text-primary">
-                              {answerLabelByQuestion.get(answer.questionId) ??
-                                "Pergunta"}
-                            </strong>
-                            <span className="text-muted-foreground">
-                              {formatAnswer(answer.value)}
-                            </span>
-                          </div>
-                        ))}
+                        {answerRows.length > 0 ? (
+                          answerRows.map((answer) => (
+                            <div
+                              key={answer.questionId}
+                              className="rounded-md bg-white p-3 text-sm"
+                            >
+                              <strong className="block text-primary">
+                                {answerLabelByQuestion.get(answer.questionId) ??
+                                  "Pergunta"}
+                              </strong>
+                              <span className="text-muted-foreground">
+                                {formatAnswer(answer.value)}
+                              </span>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">
+                            Missao em PDF enviada sem respostas manuais.
+                          </p>
+                        )}
                       </div>
                       {submission.feedback ? (
                         <p className="rounded-md bg-secondary/70 p-3 text-sm">
@@ -977,9 +757,9 @@ export function AdminCandyXpPanel({
         <div>
           <h2 className="font-semibold">Esqueleto do game Candy XP</h2>
           <p className="mt-1 text-sm leading-6">
-            Crie uma historia em PDF, cadastre perguntas e publique. Se a missao
-            tiver apenas questoes objetivas e o aluno acertar, o XP entra na
-            hora. Se tiver escrita, fica pendente para sua correcao.
+            Crie uma missao com PDF/imagem do Canva e publique. O aluno abre o
+            material, conclui a missao e o XP entra pelo envio, sem precisar
+            cadastrar perguntas separadas nesta tela.
           </p>
         </div>
       </div>

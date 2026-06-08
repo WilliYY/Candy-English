@@ -4,7 +4,7 @@
 
 Candy XP e a fundacao de gamificacao da Candy English. Ele prepara uma evolucao estilo Duolingo para tarefas, homeworks, aulas, feedbacks, rotinas, atividades de historia e futuros jogos, sem expor ranking publico nem dados de outras roles.
 
-Nesta fase ja existe persistencia de XP, streaks, badges, catalogo inicial de missoes e atividades Candy XP com PDF/imagem do Canva, perguntas, progresso do aluno e correcao automatica/manual. Minijogos executaveis ainda nao foram criados.
+Nesta fase ja existe persistencia de XP, streaks, badges, catalogo inicial de missoes e atividades Candy XP com PDF/imagem do Canva, envio do aluno e XP automatico para missoes PDF sem perguntas manuais. Perguntas e correcao automatica/manual seguem apenas para compatibilidade com atividades antigas. Minijogos executaveis ainda nao foram criados.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -13,13 +13,13 @@ Arquivos principais:
 - `src/lib/candy-xp.ts`: curva infinita, snapshot visual e builders por role.
 - `src/lib/candy-xp-persistence.ts`: catalogo, ledger de eventos, streaks, badges e missoes.
 - `src/lib/student-profile-completion.ts`: calculo dos dados importantes do perfil student, percentual e XP proporcional.
-- `src/lib/candy-xp-activities.ts`: avaliacao automatica de perguntas objetivas e metadados do arquivo.
-- `src/lib/validations/candy-xp-activities.ts`: schemas Zod das atividades, perguntas, respostas e revisao.
+- `src/lib/candy-xp-activities.ts`: avaliacao automatica de perguntas objetivas antigas e metadados do arquivo.
+- `src/lib/validations/candy-xp-activities.ts`: schemas Zod das atividades, perguntas legadas, respostas e revisao.
 - `src/app/ava/candy-xp/actions.ts`: criacao, edicao simples, progresso, envio e correcao.
 - `src/app/ava/candy-xp-assets/[activityId]/route.ts`: rota protegida para PDF/imagem das atividades.
 - `src/components/ava/student-xp-card.tsx`: card reutilizavel para student, teacher e admin.
 - `src/components/ava/admin-candy-xp-panel.tsx`: painel admin para montar atividades e corrigir envios.
-- `src/components/ava/student-candy-xp-activities-panel.tsx`: experiencia do aluno com missoes, PDF, perguntas e progresso.
+- `src/components/ava/student-candy-xp-activities-panel.tsx`: experiencia do aluno com missoes, PDF/imagem, envio e progresso.
 - `src/app/ava/student/page.tsx`: sincroniza eventos XP do aluno.
 - `src/app/ava/teacher/page.tsx`: sincroniza eventos XP da teacher logada.
 - `src/app/ava/admin/page.tsx`: sincroniza eventos XP do admin logado.
@@ -64,10 +64,11 @@ Rotas das atividades:
 - Missoes futuras devem usar `CandyMission` + `CandyMissionAttempt` e gravar XP via server action/rota protegida.
 - Atividades Candy XP sao criadas e corrigidas apenas por `ADMIN`.
 - Student acessa apenas atividades publicadas e liberadas para o proprio perfil; atividade publicada sem assignment fica liberada para todos os students.
-- Respostas objetivas podem ser corrigidas automaticamente; respostas escritas sempre ficam pendentes para revisao manual.
+- Atividades novas podem ser criadas apenas com PDF/imagem, sem perguntas manuais separadas, e concluem pelo envio do aluno.
+- Respostas objetivas de atividades antigas podem ser corrigidas automaticamente; respostas escritas sempre ficam pendentes para revisao manual.
 - XP de atividade concluida usa `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` da submissao para impedir pontuacao duplicada.
 - PDF/imagem da atividade deve ser servido apenas pela rota protegida de asset.
-- No admin, o painel Candy XP deve manter cards visiveis e escaneaveis para criacao, perguntas, arquivo, liberacao, status, XP e respostas, sem alterar as regras de permissao ou premiacao.
+- No admin, o painel Candy XP deve manter cards visiveis e escaneaveis para criacao, arquivo, liberacao, status, XP e respostas, sem alterar as regras de permissao ou premiacao.
 - O card reutilizavel de Candy XP deve manter as fontes de XP em cards responsivos por largura minima, evitando quatro colunas apertadas quando o painel estiver estreito.
 - Em mobile, o card reutilizavel deve empilhar fontes e metricas em uma coluna e manter a trilha de niveis com rolagem horizontal discreta, evitando tiles comprimidos.
 
@@ -110,8 +111,8 @@ Admin:
 - `completeCandyMission` fica como ponto de entrada futuro para jogos/tarefas executaveis.
 - Eventos historicos nao sao removidos quando uma entidade deixa de existir; XP representa historico conquistado.
 - O evento `Perfil preparado` do student e tratado como bonus de estado atual: ele pode atualizar XP/metadados conforme a porcentagem dos dados importantes muda.
-- Atividades Candy XP usam models proprios para historia/PDF/perguntas/progresso, mas a premiacao continua centralizada no ledger `CandyXpEvent`.
-- A primeira versao permite editar dados principais da atividade; edicao completa de perguntas apos publicacao fica para fase posterior por risco de invalidar respostas ja enviadas.
+- Atividades Candy XP usam models proprios para historia/PDF/envio e ainda preservam perguntas antigas quando existirem, mas a premiacao continua centralizada no ledger `CandyXpEvent`.
+- A criacao nova nao exige perguntas separadas; a primeira versao permite editar dados principais da atividade e preserva perguntas antigas apenas por compatibilidade.
 
 ## Riscos ao alterar esta parte
 
@@ -129,7 +130,6 @@ Admin:
 - Criar historico detalhado de XP por usuario.
 - Criar temporadas sem ranking publico sensivel.
 - Adicionar testes especificos para permissao e anti-duplicacao do XP.
-- Criar editor completo para alterar perguntas Candy XP depois da criacao.
 - Criar relatorios/exportacao de respostas Candy XP.
 
 ## Como pode evoluir

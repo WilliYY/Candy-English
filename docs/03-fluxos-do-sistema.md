@@ -155,15 +155,13 @@ Helpers:
 1. Admin abre `/ava/admin?task=candy-xp`.
 2. Admin cadastra titulo, descricao, nivel, categoria, XP, status, liberacao para todos ou um aluno especifico e envia PDF/imagem exportado do Canva.
 3. Quando o arquivo e PDF, o servidor tenta otimizar com Ghostscript antes de salvar; se a otimizacao falhar ou nao reduzir tamanho, o original e salvo para nao quebrar o fluxo.
-4. Admin monta perguntas do tipo resposta curta, resposta longa, multipla escolha, checkbox ou matching.
-5. Alternativas objetivas podem ter resposta correta cadastrada; matching usa pares `esquerda = direita`.
-6. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
-7. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
-8. Aluno responde, pode salvar progresso como `DRAFT` e depois enviar.
-9. Se a atividade for toda objetiva e estiver correta, o sistema marca `REVIEWED` e concede XP automaticamente.
-10. Se a atividade objetiva tiver erro, o sistema devolve como `RETURNED` para o aluno revisar.
-11. Se houver resposta escrita, a submissao fica `SUBMITTED` para o admin corrigir manualmente.
-12. Ao aprovar manualmente, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
+4. A atividade principal fica no proprio PDF/imagem; a criacao nova nao exige perguntas manuais separadas.
+5. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
+6. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
+7. Aluno conclui a missao pelo material e envia.
+8. Atividades novas sem perguntas viram `REVIEWED` e concedem XP automaticamente pelo envio.
+9. Atividades antigas com perguntas seguem compativeis: objetivas podem virar `REVIEWED`/`RETURNED` automaticamente, e respostas escritas ficam `SUBMITTED` para correcao manual.
+10. Ao aprovar manualmente uma atividade antiga, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
 
 ### Contratos
 
@@ -330,7 +328,7 @@ Helpers:
 - Catty Artifact Enrichment adiciona cache e fila revisavel para gerar sugestoes de artefatos por interesse; busca web e opcional, configuravel e nunca entra direto na resposta do aluno.
 - O cofre admin criptografa valores sensiveis no servidor e usa `ADMIN_CREDENTIALS_SECRET` ou `AUTH_SECRET` como chave de protecao.
 - Candy XP fica nos paineis admin, teacher e student como gamificacao persistente e prepara a base de jogos/missoes sem alterar o fluxo de aula/homework.
-- Atividades Candy XP usam modelos proprios para historia/PDF/perguntas/progresso e reaproveitam o ledger Candy XP para pontuar conclusoes.
+- Atividades Candy XP usam modelos proprios para historia/PDF/envio/progresso, preservam perguntas antigas quando existirem e reaproveitam o ledger Candy XP para pontuar conclusoes.
 - Pre-cadastros usam a mesma tabela `StudentPreRegistration`; os status existentes sao traduzidos na UI como pendente, em analise, convertido em aluno e recusado.
 
 ## Riscos ao alterar esta parte
@@ -350,7 +348,7 @@ Helpers:
 - Edicao/delecao completa de aulas e materiais ainda nao existe; aula/homework interativa ja podem ser excluidas nas telas de criacao.
 - Upload livre de materiais fora dos fluxos interativos e editor Word embutido ainda nao existem.
 - Notificacoes por email/WhatsApp ainda nao existem.
-- Editor completo para alterar perguntas Candy XP apos a criacao ainda nao existe.
+- Exportacao de respostas Candy XP e liberacao em lote para multiplos alunos especificos ainda nao existem.
 
 ## Como pode evoluir
 

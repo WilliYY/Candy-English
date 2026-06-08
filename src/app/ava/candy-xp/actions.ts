@@ -29,7 +29,9 @@ export type CandyXpActivityCreateResult = {
   ok: boolean;
 };
 
-export type CandyXpActivityActionResult<TInput extends Record<string, unknown>> = {
+export type CandyXpActivityActionResult<
+  TInput extends Record<string, unknown>,
+> = {
   errors?: Partial<Record<keyof TInput, string>>;
   message: string;
   ok: boolean;
@@ -67,7 +69,11 @@ function parseQuestionsJson(value: string) {
   }
 }
 
-function buildQuestionPersistence(question: CandyXpActivityCreateInput["questions"][number]) {
+type CandyXpActivityQuestionCreateData = NonNullable<
+  CandyXpActivityCreateInput["questions"]
+>[number];
+
+function buildQuestionPersistence(question: CandyXpActivityQuestionCreateData) {
   const questionOptions = question.options ?? [];
   const correctAnswers = question.correctAnswers ?? [];
   const options =
@@ -349,20 +355,23 @@ export async function createCandyXpActivity(
               },
             }
           : undefined,
-      questions: {
-        create: data.questions.map((question, index) => {
-          const persistence = buildQuestionPersistence(question);
+      questions:
+        data.questions.length > 0
+          ? {
+              create: data.questions.map((question, index) => {
+                const persistence = buildQuestionPersistence(question);
 
-          return {
-            correctAnswer: persistence.correctAnswer,
-            options: persistence.options,
-            prompt: question.prompt,
-            required: question.required,
-            sortOrder: index,
-            type: question.type,
-          };
-        }),
-      },
+                return {
+                  correctAnswer: persistence.correctAnswer,
+                  options: persistence.options,
+                  prompt: question.prompt,
+                  required: question.required,
+                  sortOrder: index,
+                  type: question.type,
+                };
+              }),
+            }
+          : undefined,
     },
   });
 

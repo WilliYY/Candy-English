@@ -26,7 +26,12 @@ type StudentCandyXpQuestion = {
   prompt: string;
   required: boolean;
   sortOrder: number;
-  type: "CHECKBOX" | "LONG_TEXT" | "MATCHING" | "MULTIPLE_CHOICE" | "SHORT_TEXT";
+  type:
+    | "CHECKBOX"
+    | "LONG_TEXT"
+    | "MATCHING"
+    | "MULTIPLE_CHOICE"
+    | "SHORT_TEXT";
 };
 
 type StudentCandyXpSubmission = {
@@ -201,11 +206,15 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
   const [isPending, startTransition] = useTransition();
   const status = activity.submission?.status;
   const isLocked = status === "SUBMITTED" || status === "REVIEWED";
+  const isPdfOnly = activity.questions.length === 0;
   const answeredCount = activity.questions.filter((question) =>
     hasAnswer(question, values[question.id]),
   ).length;
-  const progressPercent =
-    activity.questions.length === 0
+  const progressPercent = isPdfOnly
+    ? status === "REVIEWED"
+      ? 100
+      : 0
+    : activity.questions.length === 0
       ? 0
       : Math.round((answeredCount / activity.questions.length) * 100);
 
@@ -314,7 +323,7 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
           <div className="rounded-lg border border-primary/10 bg-primary/[0.03] p-4">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="font-semibold text-primary">
-                Progresso da missao
+                {isPdfOnly ? "Missao em PDF" : "Progresso da missao"}
               </span>
               <span className="font-semibold text-primary">
                 {progressPercent}%
@@ -327,10 +336,26 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
               />
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              {answeredCount}/{activity.questions.length} pergunta(s)
-              respondida(s)
+              {isPdfOnly
+                ? status === "REVIEWED"
+                  ? "Missao concluida e XP registrado."
+                  : "Abra o material, complete a atividade e envie a missao quando terminar."
+                : `${answeredCount}/${activity.questions.length} pergunta(s) respondida(s)`}
             </p>
           </div>
+
+          {isPdfOnly ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4 text-sm leading-6 text-amber-950">
+              <strong className="flex items-center gap-2 text-primary">
+                <Sparkles aria-hidden="true" className="size-4" />
+                Atividade direto no PDF
+              </strong>
+              <p className="mt-2">
+                Use o material ao lado como missao principal. Quando terminar,
+                clique em enviar para registrar o Candy XP.
+              </p>
+            </div>
+          ) : null}
 
           {activity.questions.map((question, index) => {
             const options = getQuestionOptions(question.options);
@@ -391,7 +416,9 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
                           name={`question-${question.id}`}
                           checked={value === option.text}
                           disabled={isLocked}
-                          onChange={() => setQuestionValue(question.id, option.text)}
+                          onChange={() =>
+                            setQuestionValue(question.id, option.text)
+                          }
                         />
                         {option.text}
                       </label>
@@ -417,9 +444,14 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
                             onChange={(event) => {
                               const next = event.target.checked
                                 ? [...selected, option.text]
-                                : selected.filter((item) => item !== option.text);
+                                : selected.filter(
+                                    (item) => item !== option.text,
+                                  );
 
-                              setQuestionValue(question.id, JSON.stringify(next));
+                              setQuestionValue(
+                                question.id,
+                                JSON.stringify(next),
+                              );
                             }}
                           />
                           {option.text}
@@ -482,8 +514,8 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
 
           {activity.submission?.awardedXp ? (
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-300 bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">
-              <Trophy aria-hidden="true" />
-              +{activity.submission.awardedXp} XP recebido
+              <Trophy aria-hidden="true" />+{activity.submission.awardedXp} XP
+              recebido
             </div>
           ) : null}
 
@@ -494,26 +526,34 @@ function ActivityCard({ activity }: { activity: StudentCandyXpActivity }) {
           ) : null}
 
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isPending || isLocked}
-              onClick={saveDraft}
-            >
-              {isPending ? (
-                <LoaderCircle data-icon="inline-start" className="animate-spin" />
-              ) : (
-                <Save data-icon="inline-start" />
-              )}
-              Salvar progresso
-            </Button>
+            {!isPdfOnly ? (
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isPending || isLocked}
+                onClick={saveDraft}
+              >
+                {isPending ? (
+                  <LoaderCircle
+                    data-icon="inline-start"
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Save data-icon="inline-start" />
+                )}
+                Salvar progresso
+              </Button>
+            ) : null}
             <Button
               type="button"
               disabled={isPending || isLocked}
               onClick={submitActivity}
             >
               {isPending ? (
-                <LoaderCircle data-icon="inline-start" className="animate-spin" />
+                <LoaderCircle
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
               ) : (
                 <Send data-icon="inline-start" />
               )}

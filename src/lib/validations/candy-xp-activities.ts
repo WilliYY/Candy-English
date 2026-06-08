@@ -58,10 +58,7 @@ export const candyXpActivityQuestionSchema = z
     type: z.enum(CANDY_XP_QUESTION_TYPES),
   })
   .superRefine((question, ctx) => {
-    if (
-      question.type === "MULTIPLE_CHOICE" ||
-      question.type === "CHECKBOX"
-    ) {
+    if (question.type === "MULTIPLE_CHOICE" || question.type === "CHECKBOX") {
       if (question.options.length < 2) {
         ctx.addIssue({
           code: "custom",
@@ -127,8 +124,8 @@ export const candyXpActivityCreateSchema = z
       .max(80, "O nivel pode ter no maximo 80 caracteres."),
     questions: z
       .array(candyXpActivityQuestionSchema)
-      .min(1, "Cadastre pelo menos uma pergunta.")
-      .max(30, "Use no maximo 30 perguntas por atividade."),
+      .max(30, "Use no maximo 30 perguntas por atividade.")
+      .default([]),
     releaseMode: z.enum(["ALL", "STUDENT"]),
     status: z.enum(["DRAFT", "PUBLISHED"]),
     studentProfileId: optionalText(80, "Selecione um aluno valido."),
