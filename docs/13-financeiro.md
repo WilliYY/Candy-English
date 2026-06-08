@@ -53,7 +53,7 @@ Rota:
 - Exportacao PDF/Excel acontece no cliente com os dados ja carregados na pagina autorizada.
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
-- As linhas do financeiro usam layout compacto e alinhado em desktop, preservando leitura completa em telas menores.
+- As linhas do financeiro usam uma tabela visual estilo planilha em desktop, com cabecalho mensal, linhas coloridas por status, total mensal no rodape e detalhes expansiveis; em telas menores preservam leitura em cards compactos.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.
 - A migration `20260511110000_finance_month_snapshots` preenche snapshots e cria linhas mensais ausentes de 2026 para alunos ja existentes.
 

@@ -1360,10 +1360,22 @@ export function AdminFinancePanel({
         ) : null}
       </form>
 
-      <section className="flex flex-col gap-3">
-        <div className="hidden rounded-lg border border-primary/20 bg-primary/10 px-3 py-2.5 text-xs font-bold uppercase text-primary xl:grid xl:grid-cols-[minmax(135px,1fr)_112px_50px_118px_78px_minmax(190px,0.9fr)_48px] xl:items-center xl:gap-2.5 2xl:grid-cols-[minmax(160px,1.15fr)_120px_60px_125px_100px_minmax(190px,0.95fr)_112px]">
+      <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.12)]">
+        <div className="flex flex-col gap-3 bg-gradient-to-r from-primary via-[#7c3fa1] to-[#e57cd8] px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-2 text-lg font-semibold">
+            <FileSpreadsheet aria-hidden="true" className="size-5 shrink-0" />
+            <span className="truncate">
+              Controle de Pagamentos - {activeMonthLabel} 2026
+            </span>
+          </span>
+          <span className="w-fit rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-bold uppercase">
+            {monthRows.length} aluno(s)
+          </span>
+        </div>
+
+        <div className="hidden border-b border-primary/15 bg-primary/85 px-3 py-2.5 text-xs font-bold uppercase text-white xl:grid xl:grid-cols-[minmax(160px,1.2fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3">
           <span>Nome</span>
-          <span>Valor</span>
+          <span>Valor (R$)</span>
           <span>Dia</span>
           <span>Status</span>
           <span>Forma</span>
@@ -1372,7 +1384,7 @@ export function AdminFinancePanel({
         </div>
 
         {monthRows.length === 0 ? (
-          <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
+          <div className="m-3 flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-primary/5 text-center">
             <CircleDollarSign aria-hidden="true" />
             <p className="max-w-sm text-sm text-muted-foreground">
               Nenhum aluno no financeiro ainda.
@@ -1383,13 +1395,15 @@ export function AdminFinancePanel({
             <article
               key={`${row.id}-${activeMonth}-${row.payment?.updatedAt ?? "novo"}`}
               className={cn(
-                "rounded-lg border bg-white p-2 shadow-sm transition-colors",
-                row.isOverdue
-                  ? "border-amber-300 shadow-amber-100"
-                  : "border-primary/15",
+                "m-3 rounded-lg border p-3 shadow-sm transition-colors xl:m-0 xl:rounded-none xl:border-x-0 xl:border-t-0 xl:p-0 xl:shadow-none",
+                row.isPaid
+                  ? "border-emerald-200 bg-emerald-50/90 text-emerald-950"
+                  : row.isOverdue
+                    ? "border-amber-300 bg-amber-50/95 text-amber-950"
+                    : "border-primary/15 bg-white text-primary",
               )}
             >
-              <div className="grid gap-2.5 xl:min-h-14 xl:grid-cols-[minmax(135px,1fr)_112px_50px_118px_78px_minmax(190px,0.9fr)_48px] xl:items-center 2xl:grid-cols-[minmax(160px,1.15fr)_120px_60px_125px_100px_minmax(190px,0.95fr)_112px]">
+              <div className="grid gap-2.5 xl:min-h-[4.25rem] xl:grid-cols-[minmax(160px,1.2fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3 xl:px-3 xl:py-2">
                 <div className="min-w-0 break-words xl:flex xl:items-center xl:gap-2">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Nome
@@ -1437,7 +1451,7 @@ export function AdminFinancePanel({
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Forma
                   </span>
-                  <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-semibold leading-tight text-primary xl:mt-0">
+                  <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-white/70 px-3 py-1 text-sm font-semibold leading-tight text-primary shadow-sm xl:mt-0">
                     <WalletCards aria-hidden="true" className="size-4 shrink-0" />
                     <span className="min-w-0 break-words">
                       {formatPaymentMethod(row.paymentMethod)}
@@ -1453,17 +1467,17 @@ export function AdminFinancePanel({
                   size="sm"
                   aria-label={`Editar dados de ${row.name}`}
                   title="Editar dados"
-                  className="h-9 justify-between xl:h-8 xl:justify-center xl:px-0 2xl:justify-between 2xl:px-3"
+                  className="h-9 justify-between bg-white/85 xl:h-8 xl:justify-between xl:px-3"
                   onClick={() => toggleRowDetails(row.id)}
                 >
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Pencil aria-hidden="true" className="size-4 shrink-0" />
-                    <span className="truncate xl:hidden 2xl:inline">Editar</span>
+                    <span className="truncate">Editar</span>
                   </span>
                   <ChevronDown
                     aria-hidden="true"
                     className={cn(
-                      "size-4 shrink-0 transition-transform xl:hidden 2xl:block",
+                      "size-4 shrink-0 transition-transform",
                       openRows.has(row.id) ? "rotate-180" : "",
                     )}
                   />
@@ -1471,7 +1485,7 @@ export function AdminFinancePanel({
               </div>
 
               {openRows.has(row.id) ? (
-                <div className="mt-4 grid gap-5 rounded-lg border border-primary/15 bg-primary/5 p-3">
+                <div className="mx-3 mb-3 mt-2 grid gap-5 rounded-lg border border-primary/15 bg-white/80 p-3 xl:mx-0 xl:mb-0 xl:mt-0 xl:rounded-none xl:border-x-0 xl:border-b-0 xl:bg-white/70">
                   <div className="flex items-center justify-between gap-3 text-sm font-semibold text-primary">
                     <span>Dados extras e observacao</span>
                     <ChevronDown aria-hidden="true" className="size-4 rotate-180" />
@@ -1509,6 +1523,26 @@ export function AdminFinancePanel({
             </article>
           ))
         )}
+
+        {monthRows.length > 0 ? (
+          <div className="border-t border-primary/15 bg-[#ead0fb] px-4 py-3 text-sm font-bold text-primary xl:grid xl:grid-cols-[minmax(160px,1.2fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3">
+            <span className="block text-right xl:text-left">
+              Total mensal {"->"}
+            </span>
+            <span>{formatCurrency(monthSummary.total)}</span>
+            <span className="hidden xl:block" />
+            <span className="mt-2 block text-emerald-800 xl:mt-0">
+              Pago {formatCurrency(monthSummary.paid)}
+            </span>
+            <span className="hidden xl:block" />
+            <span className="mt-1 block text-red-800 xl:mt-0">
+              Pendente {formatCurrency(monthSummary.pending)}
+            </span>
+            <span className="mt-1 block text-amber-900 xl:mt-0">
+              {monthSummary.overdue} devedor(es)
+            </span>
+          </div>
+        ) : null}
       </section>
 
       <details
