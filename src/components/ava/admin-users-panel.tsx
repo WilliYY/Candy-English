@@ -157,8 +157,16 @@ type AdminContractRow = {
 
 type AdminUserStat = {
   accentClassName: string;
+  barClassName: string;
   cardClassName: string;
   description: string;
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+};
+
+type UserInsightMetric = {
+  className: string;
   icon: LucideIcon;
   label: string;
   value: number | string;
@@ -244,7 +252,7 @@ const roleVisualStyles: Record<
     summaryClassName:
       "border-amber-200/70 bg-gradient-to-r from-amber-100/80 via-white to-white",
     userCardClassName:
-      "border-amber-200/70 bg-gradient-to-br from-white via-amber-50/55 to-white shadow-[0_14px_30px_rgba(180,83,9,0.08)] before:bg-amber-400",
+      "border-amber-200/75 bg-gradient-to-br from-white via-amber-50/65 to-white shadow-[0_14px_30px_rgba(180,83,9,0.1)] before:bg-amber-400",
   },
   STUDENT: {
     bulletClassName: "bg-sky-400",
@@ -260,7 +268,7 @@ const roleVisualStyles: Record<
     summaryClassName:
       "border-sky-200/70 bg-gradient-to-r from-sky-100/80 via-white to-white",
     userCardClassName:
-      "border-sky-200/70 bg-gradient-to-br from-white via-sky-50/55 to-white shadow-[0_14px_30px_rgba(14,116,144,0.08)] before:bg-sky-400",
+      "border-sky-200/75 bg-gradient-to-br from-white via-sky-50/65 to-white shadow-[0_14px_30px_rgba(14,116,144,0.1)] before:bg-sky-400",
   },
   TEACHER: {
     bulletClassName: "bg-pink-400",
@@ -276,8 +284,14 @@ const roleVisualStyles: Record<
     summaryClassName:
       "border-pink-200/70 bg-gradient-to-r from-pink-100/80 via-white to-white",
     userCardClassName:
-      "border-pink-200/70 bg-gradient-to-br from-white via-pink-50/55 to-white shadow-[0_14px_30px_rgba(190,24,93,0.08)] before:bg-pink-400",
+      "border-pink-200/75 bg-gradient-to-br from-white via-pink-50/65 to-white shadow-[0_14px_30px_rgba(190,24,93,0.1)] before:bg-pink-400",
   },
+};
+
+const roleMetricStyles: Record<Role, string> = {
+  ADMIN: "border-amber-200/80 bg-amber-50/80 text-amber-900",
+  STUDENT: "border-sky-200/80 bg-sky-50/80 text-sky-900",
+  TEACHER: "border-pink-200/80 bg-pink-50/80 text-pink-900",
 };
 
 const roleIcons = {
@@ -506,16 +520,119 @@ function getUserAttentionClassName(user: AdminUserRow, label: string) {
   return "border-emerald-200 bg-emerald-50 text-emerald-800";
 }
 
+function getUserActionHint(user: AdminUserRow, label: string) {
+  if (!user.isActive) {
+    return "Acesso pausado";
+  }
+
+  if (label === "Sem teacher") {
+    return "Vincular teacher";
+  }
+
+  if (label === "Nivel pendente") {
+    return "Definir nivel";
+  }
+
+  if (label === "Sem alunos") {
+    return "Vincular alunos";
+  }
+
+  if (label === "Bio pendente") {
+    return "Completar bio";
+  }
+
+  return "Cadastro pronto";
+}
+
+function getUserInsightMetrics(user: AdminUserRow): UserInsightMetric[] {
+  const baseClassName = roleMetricStyles[user.role];
+
+  if (user.role === "STUDENT") {
+    const counts = user.studentProfile?._count;
+
+    return [
+      {
+        className: baseClassName,
+        icon: Link2,
+        label: "Teachers",
+        value: counts?.teacherAssignments ?? 0,
+      },
+      {
+        className: baseClassName,
+        icon: CalendarDays,
+        label: "Aulas",
+        value: counts?.lessons ?? 0,
+      },
+      {
+        className: baseClassName,
+        icon: CheckCircle2,
+        label: "Envios",
+        value: counts?.submissions ?? 0,
+      },
+    ];
+  }
+
+  if (user.role === "TEACHER") {
+    const counts = user.teacherProfile?._count;
+
+    return [
+      {
+        className: baseClassName,
+        icon: UserRound,
+        label: "Alunos",
+        value: counts?.studentAssignments ?? 0,
+      },
+      {
+        className: baseClassName,
+        icon: CalendarDays,
+        label: "Aulas",
+        value: counts?.lessons ?? 0,
+      },
+      {
+        className: baseClassName,
+        icon: FileText,
+        label: "Homework",
+        value: counts?.homeworks ?? 0,
+      },
+    ];
+  }
+
+  return [
+    {
+      className: baseClassName,
+      icon: FileText,
+      label: "Contratos",
+      value: user._count.uploadedContracts,
+    },
+    {
+      className: baseClassName,
+      icon: Mail,
+      label: "Mensagens",
+      value: user._count.sentChatMessages,
+    },
+    {
+      className: baseClassName,
+      icon: ShieldCheck,
+      label: "Permissao",
+      value: "Admin",
+    },
+  ];
+}
+
 function AdminUserStatCard({ stat }: { stat: AdminUserStat }) {
   const Icon = stat.icon;
 
   return (
     <div
       className={cn(
-        "group flex min-w-0 items-center justify-between gap-4 rounded-lg border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5",
+        "group relative flex min-w-0 items-center justify-between gap-4 overflow-hidden rounded-lg border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5",
         stat.cardClassName,
       )}
     >
+      <span
+        aria-hidden="true"
+        className={cn("absolute inset-x-0 top-0 h-1", stat.barClassName)}
+      />
       <div className="min-w-0">
         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
           {stat.label}
@@ -657,6 +774,10 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
         const columnUsers = users.filter((user) => user.role === column.role);
         const activeCount = columnUsers.filter((user) => user.isActive).length;
         const inactiveCount = columnUsers.length - activeCount;
+        const activePercent =
+          columnUsers.length > 0
+            ? Math.round((activeCount / columnUsers.length) * 100)
+            : 0;
         const Icon = roleIcons[column.role];
         const visual = roleVisualStyles[column.role];
 
@@ -671,64 +792,87 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
           >
             <summary
               className={cn(
-                "flex cursor-pointer list-none items-start justify-between gap-3 border-b p-4 [&::-webkit-details-marker]:hidden",
+                "cursor-pointer list-none border-b p-4 [&::-webkit-details-marker]:hidden",
                 visual.summaryClassName,
               )}
             >
-              <div className="flex min-w-0 gap-3">
-                <span
-                  className={cn(
-                    "flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm",
-                    roleStyles[column.role],
-                  )}
-                >
-                  <Icon aria-hidden="true" className="size-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
-                    {roleDescriptions[column.role]}
-                  </p>
-                  <h2 className="mt-1 truncate text-lg font-semibold text-primary">
-                    {column.title}
-                  </h2>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
-                    <span>{columnUsers.length} usuario(s)</span>
-                    <span
-                      className={cn(
-                        "size-1 rounded-full",
-                        visual.bulletClassName,
-                      )}
-                    />
-                    <span>{activeCount} ativo(s)</span>
-                    {inactiveCount > 0 ? (
-                      <>
-                        <span
-                          className={cn(
-                            "size-1 rounded-full",
-                            visual.bulletClassName,
-                          )}
-                        />
-                        <span>{inactiveCount} inativo(s)</span>
-                      </>
-                    ) : null}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 gap-3">
+                  <span
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-lg border shadow-sm",
+                      roleStyles[column.role],
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                      {roleDescriptions[column.role]}
+                    </p>
+                    <h2 className="mt-1 truncate text-lg font-semibold text-primary">
+                      {column.title}
+                    </h2>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
+                      <span>{columnUsers.length} usuario(s)</span>
+                      <span
+                        className={cn(
+                          "size-1 rounded-full",
+                          visual.bulletClassName,
+                        )}
+                      />
+                      <span>{activeCount} ativo(s)</span>
+                      {inactiveCount > 0 ? (
+                        <>
+                          <span
+                            className={cn(
+                              "size-1 rounded-full",
+                              visual.bulletClassName,
+                            )}
+                          />
+                          <span>{inactiveCount} inativo(s)</span>
+                        </>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
+                <span
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
+                    visual.countBadgeClassName,
+                  )}
+                >
+                  {columnUsers.length === 0 ? (
+                    "vazio"
+                  ) : (
+                    <>
+                      <span className="group-open:hidden">abrir</span>
+                      <span className="hidden group-open:inline">
+                        minimizar
+                      </span>
+                    </>
+                  )}
+                </span>
               </div>
-              <span
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-semibold transition-colors",
-                  visual.countBadgeClassName,
-                )}
-              >
-                {columnUsers.length === 0 ? (
-                  "vazio"
-                ) : (
-                  <>
-                    <span className="group-open:hidden">abrir</span>
-                    <span className="hidden group-open:inline">minimizar</span>
-                  </>
-                )}
-              </span>
+
+              <div className="mt-4 rounded-lg border border-white/70 bg-white/72 p-3 shadow-sm">
+                <div className="flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
+                  <span>Saude da role</span>
+                  <strong className="text-primary">
+                    {activePercent}% ativo
+                  </strong>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10">
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "block h-full rounded-full",
+                      visual.bulletClassName,
+                    )}
+                    style={{ width: `${activePercent}%` }}
+                  />
+                </div>
+              </div>
             </summary>
 
             <div className="flex flex-col gap-3 p-4">
@@ -750,6 +894,8 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                       user,
                       attentionLabel,
                     );
+                    const actionHint = getUserActionHint(user, attentionLabel);
+                    const insightMetrics = getUserInsightMetrics(user);
 
                     return (
                       <article
@@ -801,6 +947,35 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                               </span>
                             </div>
                           </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          {insightMetrics.map((metric) => {
+                            const MetricIcon = metric.icon;
+
+                            return (
+                              <div
+                                key={`${user.id}-${metric.label}`}
+                                className={cn(
+                                  "min-w-0 rounded-lg border p-2.5 shadow-sm",
+                                  metric.className,
+                                )}
+                              >
+                                <div className="flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] opacity-75">
+                                  <MetricIcon
+                                    aria-hidden="true"
+                                    className="size-3.5 shrink-0"
+                                  />
+                                  <span className="truncate">
+                                    {metric.label}
+                                  </span>
+                                </div>
+                                <strong className="mt-1 block truncate text-base font-semibold">
+                                  {metric.value}
+                                </strong>
+                              </div>
+                            );
+                          })}
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
@@ -878,6 +1053,12 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                           className="grid gap-3 border-t border-primary/10 pt-3"
                           aria-label={`Acoes de acesso de ${user.name}`}
                         >
+                          <div className="flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
+                            <span>Acoes de acesso</span>
+                            <span className="rounded-full border border-primary/10 bg-white/78 px-2.5 py-1 text-primary shadow-sm">
+                              {actionHint}
+                            </span>
+                          </div>
                           <AdminUserStatusButton
                             isActive={user.isActive}
                             userId={user.id}
@@ -1160,6 +1341,7 @@ export function AdminUsersPanel({
   const stats = [
     {
       accentClassName: "border-primary/20 bg-primary/10 text-primary",
+      barClassName: "bg-primary",
       cardClassName:
         "border-violet-200/80 bg-gradient-to-br from-white via-violet-50/85 to-white text-primary",
       description: "Base completa",
@@ -1169,6 +1351,7 @@ export function AdminUsersPanel({
     },
     {
       accentClassName: "border-pink-200 bg-pink-50 text-pink-800",
+      barClassName: "bg-pink-400",
       cardClassName:
         "border-pink-200/80 bg-gradient-to-br from-white via-pink-50/85 to-white text-pink-900",
       description: "Equipe pedagogica",
@@ -1178,6 +1361,7 @@ export function AdminUsersPanel({
     },
     {
       accentClassName: "border-sky-200 bg-sky-50 text-sky-800",
+      barClassName: "bg-sky-400",
       cardClassName:
         "border-sky-200/80 bg-gradient-to-br from-white via-sky-50/85 to-white text-sky-900",
       description: "Contas STUDENT",
@@ -1187,6 +1371,7 @@ export function AdminUsersPanel({
     },
     {
       accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      barClassName: "bg-emerald-400",
       cardClassName:
         "border-emerald-200/80 bg-gradient-to-br from-white via-emerald-50/85 to-white text-emerald-900",
       description: `${inactiveUsersCount} inativo(s)`,
@@ -1196,6 +1381,7 @@ export function AdminUsersPanel({
     },
     {
       accentClassName: "border-amber-200 bg-amber-50 text-amber-800",
+      barClassName: "bg-amber-400",
       cardClassName:
         "border-amber-200/80 bg-gradient-to-br from-white via-amber-50/85 to-white text-amber-900",
       description: "Storage protegido",
