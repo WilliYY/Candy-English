@@ -19,6 +19,13 @@ const checks: SmokeCheck[] = [
     expect: (response) => response.ok,
   },
   {
+    name: "pre-registration success banner",
+    path: "/?cadastro=sucesso",
+    expect: async (response) =>
+      response.ok &&
+      (await response.text()).includes("Cadastro enviado com sucesso"),
+  },
+  {
     name: "ava login",
     path: "/ava/login",
     expect: (response) => response.ok,

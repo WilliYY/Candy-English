@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { getPrisma } from "@/lib/prisma";
 import {
   studentPreRegistrationSchema,
@@ -110,8 +109,6 @@ export async function requestStudentPreRegistration(
       message: "Nao foi possivel enviar seu cadastro agora.",
     };
   }
-
-  revalidatePath("/ava/login");
 
   return {
     ok: true,

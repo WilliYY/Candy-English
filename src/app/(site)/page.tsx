@@ -1,11 +1,14 @@
 import {
   ArrowRight,
   BookOpen,
+  CheckCircle2,
   ClipboardCheck,
   Instagram,
   Mail,
   MessageSquareText,
+  X,
 } from "lucide-react";
+import Link from "next/link";
 import {
   HomeHero,
   homeLoopVideoUrl,
@@ -40,7 +43,8 @@ const whatsappUrl =
 
 const contactLinks = [
   {
-    description: "Canal principal para tirar duvidas e combinar proximos passos.",
+    description:
+      "Canal principal para tirar duvidas e combinar proximos passos.",
     detail: "+55 44 99738-2355",
     href: whatsappUrl,
     icon: WhatsAppIcon,
@@ -62,11 +66,44 @@ const contactLinks = [
   },
 ];
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<{
+    cadastro?: string;
+  }>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = searchParams ? await searchParams : undefined;
   const content = await getSitePageContent("home");
+  const showRegistrationSuccess = params?.cadastro === "sucesso";
 
   return (
     <>
+      {showRegistrationSuccess ? (
+        <div className="fixed inset-x-0 top-4 z-50 px-4 pt-[env(safe-area-inset-top)] sm:top-5">
+          <div className="mx-auto flex max-w-3xl items-start gap-3 rounded-lg border border-emerald-200 bg-white/96 px-4 py-3 text-primary shadow-2xl shadow-primary/18 ring-1 ring-white/80 backdrop-blur-md">
+            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+              <CheckCircle2 aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-emerald-900">
+                Cadastro enviado com sucesso.
+              </p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                A equipe Candy vai analisar seus dados e entrar em contato.
+              </p>
+            </div>
+            <Link
+              href="/"
+              aria-label="Fechar aviso de cadastro enviado"
+              className="flex size-8 shrink-0 items-center justify-center rounded-md text-primary/60 transition hover:bg-primary/8 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
       <HomeHero content={content} />
 
       <section className="home-method-video-section relative isolate flex overflow-hidden border-b text-white">
@@ -220,9 +257,7 @@ export default async function HomePage() {
                   key={item.label}
                   href={item.href}
                   target={item.href.startsWith("http") ? "_blank" : undefined}
-                  rel={
-                    item.href.startsWith("http") ? "noreferrer" : undefined
-                  }
+                  rel={item.href.startsWith("http") ? "noreferrer" : undefined}
                   className="group flex min-h-36 flex-col justify-between gap-5 rounded-lg border border-primary/12 bg-white/88 p-5 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-primary/28 hover:bg-white hover:shadow-xl hover:shadow-primary/10"
                 >
                   <span className="flex items-start justify-between gap-4">

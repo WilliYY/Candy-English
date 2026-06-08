@@ -88,7 +88,7 @@ Helpers:
 3. `requestStudentPreRegistration` valida os dados no servidor e grava `StudentPreRegistration` com status `PENDING`.
 4. O fluxo nao cria `User`, nao cria senha, nao define role e nao gera sessao.
 5. Se o email ja existir como usuario ou solicitacao, o sistema nao cria duplicidade e retorna a mesma mensagem amigavel para evitar exposicao de cadastro.
-6. A pessoa ve a confirmacao: `Recebemos seu cadastro. A equipe Candy vai analisar e entrar em contato.`
+6. No sucesso, a pessoa volta para a home (`/?cadastro=sucesso`) e ve a confirmacao: `Cadastro enviado com sucesso. A equipe Candy vai analisar seus dados e entrar em contato.`
 7. Admin ou Teacher abre `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`, revisa os dados e pode marcar `em analise`, recusar ou aceitar.
 8. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory`.
 9. Quando uma Teacher aceita o aluno, o sistema tambem cria o vinculo `StudentTeacherAssignment` com essa teacher; Admin aceita sem vinculo automatico e pode vincular depois.

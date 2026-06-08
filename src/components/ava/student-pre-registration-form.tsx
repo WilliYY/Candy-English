@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { requestStudentPreRegistration } from "@/app/ava/login/actions";
@@ -38,8 +39,8 @@ const defaultValues: StudentPreRegistrationInput = {
 };
 
 export function StudentPreRegistrationForm() {
+  const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
-  const [submitted, setSubmitted] = useState(false);
   const [isPending, startTransition] = useTransition();
   const form = useForm<StudentPreRegistrationInput>({
     resolver: zodResolver(studentPreRegistrationSchema, undefined, {
@@ -50,7 +51,6 @@ export function StudentPreRegistrationForm() {
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
-    setSubmitted(false);
 
     startTransition(async () => {
       const result = await requestStudentPreRegistration(values);
@@ -71,8 +71,7 @@ export function StudentPreRegistrationForm() {
       }
 
       form.reset(defaultValues);
-      setSubmitted(true);
-      setMessage(result.message);
+      router.replace("/?cadastro=sucesso");
     });
   });
 
@@ -94,11 +93,7 @@ export function StudentPreRegistrationForm() {
 
       {message ? (
         <p
-          className={`mb-4 rounded-xl border px-3 py-2 text-sm leading-6 ${
-            submitted
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-destructive/20 bg-destructive/8 text-destructive"
-          }`}
+          className="mb-4 rounded-xl border border-destructive/20 bg-destructive/8 px-3 py-2 text-sm leading-6 text-destructive"
           role="status"
         >
           {message}
@@ -142,9 +137,7 @@ export function StudentPreRegistrationForm() {
             </Field>
 
             <Field data-invalid={Boolean(form.formState.errors.phone)}>
-              <FieldLabel htmlFor="pre-registration-phone">
-                Telefone
-              </FieldLabel>
+              <FieldLabel htmlFor="pre-registration-phone">Telefone</FieldLabel>
               <Input
                 id="pre-registration-phone"
                 type="tel"
