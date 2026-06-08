@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock3,
+  Files,
   FileUp,
   LoaderCircle,
   Plus,
@@ -246,12 +247,14 @@ function InteractiveAssetUploadForm({
 
     setErrors({});
     setMessage(null);
-    const initialQueue = assets.map<InteractiveUploadQueueItem>((asset, index) => ({
-      fileName: asset.name,
-      id: `${asset.name}-${asset.size}-${asset.lastModified}-${index}`,
-      sizeBytes: asset.size,
-      status: "waiting",
-    }));
+    const initialQueue = assets.map<InteractiveUploadQueueItem>(
+      (asset, index) => ({
+        fileName: asset.name,
+        id: `${asset.name}-${asset.size}-${asset.lastModified}-${index}`,
+        sizeBytes: asset.size,
+        status: "waiting",
+      }),
+    );
 
     setUploadQueue(initialQueue);
     setIsUploading(true);
@@ -373,190 +376,232 @@ function InteractiveAssetUploadForm({
       onSubmit={(event) => {
         void onSubmit(event);
       }}
-      className="rounded-lg border-2 border-primary/20 bg-white p-4 shadow-sm"
+      className="overflow-hidden rounded-lg border border-primary/15 bg-white/95 shadow-[0_18px_45px_rgba(65,42,76,0.08)]"
       noValidate
     >
-      <div className="mb-4 flex items-center gap-2 font-semibold">
-        <FileUp aria-hidden="true" />
-        {copy.formTitle}
+      <div className="flex flex-col gap-3 border-b border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.08),rgba(229,124,216,0.08),rgba(252,229,216,0.24))] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]">
+            <FileUp aria-hidden="true" className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-base font-semibold text-primary">
+              {copy.formTitle}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Arquivo, aluno e prazo em um fluxo rapido.
+            </p>
+          </div>
+        </div>
+        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-primary/75 shadow-sm">
+          <Files aria-hidden="true" className="size-3.5" />
+          PDF ou imagem
+        </span>
       </div>
-      <div className="grid gap-3 lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
-        <Field data-invalid={Boolean(errors.teacherProfileId)}>
-          <FieldLabel htmlFor={`interactive-${mode}-teacher`}>
-            Teacher
-          </FieldLabel>
-          <NativeSelect
-            id={`interactive-${mode}-teacher`}
-            name="teacherProfileId"
-            aria-invalid={Boolean(errors.teacherProfileId)}
-            disabled={isPending || teachers.length === 0}
-          >
-            {teachers.length === 0 ? (
-              <option value="">Cadastre uma teacher</option>
-            ) : null}
-            {teachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldError errors={[{ message: errors.teacherProfileId }]} />
-        </Field>
-        <Field data-invalid={Boolean(errors.studentProfileId)}>
-          <FieldLabel htmlFor={`interactive-${mode}-student`}>Aluno</FieldLabel>
-          <NativeSelect
-            id={`interactive-${mode}-student`}
-            name="studentProfileId"
-            aria-invalid={Boolean(errors.studentProfileId)}
-            disabled={isPending || students.length === 0}
-          >
-            {students.length === 0 ? (
-              <option value="">Cadastre ou vincule um aluno</option>
-            ) : null}
-            {students.map((student) => (
-              <option key={student.id} value={student.id}>
-                {student.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <FieldError errors={[{ message: errors.studentProfileId }]} />
-        </Field>
-        <Field data-invalid={Boolean(errors.title)}>
-          <FieldLabel htmlFor={`interactive-${mode}-title`}>
-            {copy.titleLabel}
-          </FieldLabel>
-          <Input
-            id={`interactive-${mode}-title`}
-            name="title"
-            aria-invalid={Boolean(errors.title)}
-            disabled={isPending}
-            placeholder={`${copy.titlePlaceholder} ou deixe vazio para usar o nome do arquivo`}
-          />
-          <FieldError errors={[{ message: errors.title }]} />
-        </Field>
-        <Field
-          data-invalid={Boolean(
-            copy.dateField === "dueDate" ? errors.dueDate : errors.scheduledAt,
-          )}
-        >
-          <FieldLabel htmlFor={`interactive-${mode}-date`}>
-            {copy.dateLabel}
-          </FieldLabel>
-          <Input
-            id={`interactive-${mode}-date`}
-            name={copy.dateField}
-            type="date"
-            aria-invalid={Boolean(
+
+      <div className="p-4">
+        <div className="grid gap-3 rounded-lg border border-primary/10 bg-primary/[0.025] p-3 lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
+          <Field data-invalid={Boolean(errors.teacherProfileId)}>
+            <FieldLabel htmlFor={`interactive-${mode}-teacher`}>
+              Teacher
+            </FieldLabel>
+            <NativeSelect
+              id={`interactive-${mode}-teacher`}
+              name="teacherProfileId"
+              aria-invalid={Boolean(errors.teacherProfileId)}
+              disabled={isPending || teachers.length === 0}
+            >
+              {teachers.length === 0 ? (
+                <option value="">Cadastre uma teacher</option>
+              ) : null}
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldError errors={[{ message: errors.teacherProfileId }]} />
+          </Field>
+          <Field data-invalid={Boolean(errors.studentProfileId)}>
+            <FieldLabel htmlFor={`interactive-${mode}-student`}>
+              Aluno
+            </FieldLabel>
+            <NativeSelect
+              id={`interactive-${mode}-student`}
+              name="studentProfileId"
+              aria-invalid={Boolean(errors.studentProfileId)}
+              disabled={isPending || students.length === 0}
+            >
+              {students.length === 0 ? (
+                <option value="">Cadastre ou vincule um aluno</option>
+              ) : null}
+              {students.map((student) => (
+                <option key={student.id} value={student.id}>
+                  {student.label}
+                </option>
+              ))}
+            </NativeSelect>
+            <FieldError errors={[{ message: errors.studentProfileId }]} />
+          </Field>
+          <Field data-invalid={Boolean(errors.title)}>
+            <FieldLabel htmlFor={`interactive-${mode}-title`}>
+              {copy.titleLabel}
+            </FieldLabel>
+            <Input
+              id={`interactive-${mode}-title`}
+              name="title"
+              aria-invalid={Boolean(errors.title)}
+              disabled={isPending}
+              placeholder={`${copy.titlePlaceholder} ou use o nome do arquivo`}
+            />
+            <FieldError errors={[{ message: errors.title }]} />
+          </Field>
+          <Field
+            data-invalid={Boolean(
               copy.dateField === "dueDate"
                 ? errors.dueDate
                 : errors.scheduledAt,
             )}
-            disabled={isPending}
-          />
-          <FieldError
-            errors={[
-              {
-                message:
-                  copy.dateField === "dueDate"
-                    ? errors.dueDate
-                    : errors.scheduledAt,
-              },
-            ]}
-          />
-        </Field>
-      </div>
-      <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_0.8fr_auto] lg:items-end">
-        <Field data-invalid={Boolean(errors.instructions)}>
-          <FieldLabel htmlFor={`interactive-${mode}-instructions`}>
-            {copy.instructionsLabel}
-          </FieldLabel>
-          <Textarea
-            id={`interactive-${mode}-instructions`}
-            name="instructions"
-            aria-invalid={Boolean(errors.instructions)}
-            disabled={isPending}
-            placeholder={copy.instructionsPlaceholder}
-          />
-          <FieldError errors={[{ message: errors.instructions }]} />
-        </Field>
-        <Field data-invalid={Boolean(errors.asset)}>
-          <FieldLabel htmlFor={`interactive-${mode}-asset`}>
-            Arquivos PDF ou imagens
-          </FieldLabel>
-          <Input
-            id={`interactive-${mode}-asset`}
-            name="asset"
-            type="file"
-            accept="application/pdf,image/png,image/jpeg,image/webp"
-            aria-invalid={Boolean(errors.asset)}
-            disabled={isPending}
-            multiple
-          />
-          <p className="text-xs text-muted-foreground">
-            Cada arquivo vira uma atividade separada para o aluno selecionado.
-          </p>
-          <FieldError errors={[{ message: errors.asset }]} />
-        </Field>
-        <Button
-          type="submit"
-          disabled={isPending || students.length === 0 || teachers.length === 0}
-        >
-          {isPending ? (
-            <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <Plus data-icon="inline-start" />
-          )}
-          {isPending ? "Criando fila..." : copy.buttonLabel}
-        </Button>
-      </div>
+          >
+            <FieldLabel htmlFor={`interactive-${mode}-date`}>
+              {copy.dateLabel}
+            </FieldLabel>
+            <Input
+              id={`interactive-${mode}-date`}
+              name={copy.dateField}
+              type="date"
+              aria-invalid={Boolean(
+                copy.dateField === "dueDate"
+                  ? errors.dueDate
+                  : errors.scheduledAt,
+              )}
+              disabled={isPending}
+            />
+            <FieldError
+              errors={[
+                {
+                  message:
+                    copy.dateField === "dueDate"
+                      ? errors.dueDate
+                      : errors.scheduledAt,
+                },
+              ]}
+            />
+          </Field>
+        </div>
 
-      {uploadQueue.length > 0 ? (
-        <div className="mt-4 grid gap-2 rounded-lg border border-primary/15 bg-primary/[0.025] p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-            <strong>Fila de uploads</strong>
-            <span className="text-xs text-muted-foreground">
-              {uploadQueue.length} arquivo(s)
-            </span>
-          </div>
-          <div className="grid gap-2">
-            {uploadQueue.map((item) => {
-              const meta = interactiveUploadStatusMeta[item.status];
-              const Icon = meta.Icon;
+        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(320px,1fr)_minmax(300px,0.9fr)] xl:items-stretch">
+          <Field
+            className="rounded-lg border border-primary/10 bg-white p-3 shadow-sm"
+            data-invalid={Boolean(errors.instructions)}
+          >
+            <FieldLabel htmlFor={`interactive-${mode}-instructions`}>
+              {copy.instructionsLabel}
+            </FieldLabel>
+            <Textarea
+              id={`interactive-${mode}-instructions`}
+              name="instructions"
+              aria-invalid={Boolean(errors.instructions)}
+              className="min-h-24 resize-y bg-white/95"
+              disabled={isPending}
+              placeholder={copy.instructionsPlaceholder}
+            />
+            <FieldError errors={[{ message: errors.instructions }]} />
+          </Field>
 
-              return (
-                <div
-                  key={item.id}
-                  className="grid gap-2 rounded-md border bg-white px-3 py-2 text-sm md:grid-cols-[1fr_auto] md:items-center"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{item.fileName}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatUploadSize(item.sizeBytes)}
-                      {item.message ? ` - ${item.message}` : ""}
-                    </div>
-                  </div>
-                  <span
-                    className={`inline-flex w-fit items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${meta.className}`}
-                  >
-                    <Icon
-                      aria-hidden="true"
-                      className={item.status === "sending" ? "animate-spin" : ""}
-                      size={14}
-                    />
-                    {meta.label}
-                  </span>
-                </div>
-              );
-            })}
+          <div className="grid gap-3 rounded-lg border border-primary/10 bg-white p-3 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end">
+            <Field data-invalid={Boolean(errors.asset)}>
+              <FieldLabel htmlFor={`interactive-${mode}-asset`}>
+                Arquivos PDF ou imagens
+              </FieldLabel>
+              <Input
+                id={`interactive-${mode}-asset`}
+                name="asset"
+                type="file"
+                accept="application/pdf,image/png,image/jpeg,image/webp"
+                aria-invalid={Boolean(errors.asset)}
+                className="bg-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary"
+                disabled={isPending}
+                multiple
+              />
+              <p className="text-xs text-muted-foreground">
+                Cada arquivo vira uma atividade separada.
+              </p>
+              <FieldError errors={[{ message: errors.asset }]} />
+            </Field>
+
+            <Button
+              className="h-10 w-full sm:w-auto"
+              type="submit"
+              disabled={
+                isPending || students.length === 0 || teachers.length === 0
+              }
+            >
+              {isPending ? (
+                <LoaderCircle
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
+              ) : (
+                <Plus data-icon="inline-start" />
+              )}
+              {isPending ? "Criando fila..." : copy.buttonLabel}
+            </Button>
           </div>
         </div>
-      ) : null}
 
-      {message ? (
-        <p className="mt-3 rounded-lg border bg-background px-4 py-3 text-sm text-muted-foreground">
-          {message}
-        </p>
-      ) : null}
+        {uploadQueue.length > 0 ? (
+          <div className="mt-4 grid gap-2 rounded-lg border border-primary/15 bg-primary/[0.025] p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <strong>Fila de criacao</strong>
+              <span className="text-xs text-muted-foreground">
+                {uploadQueue.length} arquivo(s)
+              </span>
+            </div>
+            <div className="grid gap-2">
+              {uploadQueue.map((item) => {
+                const meta = interactiveUploadStatusMeta[item.status];
+                const Icon = meta.Icon;
+
+                return (
+                  <div
+                    key={item.id}
+                    className="grid gap-2 rounded-md border border-primary/10 bg-white px-3 py-2 text-sm shadow-sm md:grid-cols-[1fr_auto] md:items-center"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">
+                        {item.fileName}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatUploadSize(item.sizeBytes)}
+                        {item.message ? ` - ${item.message}` : ""}
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex w-fit items-center gap-1 rounded-full border px-2 py-1 text-xs font-semibold ${meta.className}`}
+                    >
+                      <Icon
+                        aria-hidden="true"
+                        className={
+                          item.status === "sending" ? "animate-spin" : ""
+                        }
+                        size={14}
+                      />
+                      {meta.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {message ? (
+          <p className="mt-3 rounded-lg border border-primary/10 bg-background px-4 py-3 text-sm text-muted-foreground">
+            {message}
+          </p>
+        ) : null}
+      </div>
     </form>
   );
 }

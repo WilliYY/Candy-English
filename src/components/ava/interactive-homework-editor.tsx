@@ -3,7 +3,9 @@
 import {
   CaseUpper,
   CheckSquare,
+  ChevronDown,
   FileText,
+  Layers2,
   LoaderCircle,
   Pencil,
   Save,
@@ -357,9 +359,7 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
   }
 
   const isCanvas = mediaElement instanceof HTMLCanvasElement;
-  const sourceWidth = isCanvas
-    ? mediaElement.width
-    : mediaElement.naturalWidth;
+  const sourceWidth = isCanvas ? mediaElement.width : mediaElement.naturalWidth;
   const sourceHeight = isCanvas
     ? mediaElement.height
     : mediaElement.naturalHeight;
@@ -381,16 +381,8 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     const rawHeight = (field.height / 100) * sourceHeight;
     const sx = clampNumber(rawX - paddingX, 0, sourceWidth - 1);
     const sy = clampNumber(rawY - paddingY, 0, sourceHeight - 1);
-    const sw = clampNumber(
-      rawWidth + paddingX * 2,
-      1,
-      sourceWidth - sx,
-    );
-    const sh = clampNumber(
-      rawHeight + paddingY * 2,
-      1,
-      sourceHeight - sy,
-    );
+    const sw = clampNumber(rawWidth + paddingX * 2, 1, sourceWidth - sx);
+    const sh = clampNumber(rawHeight + paddingY * 2, 1, sourceHeight - sy);
     const maxSide = Math.max(sw, sh);
     const scale =
       maxSide > LISTENING_CROP_MAX_DIMENSION
@@ -463,8 +455,16 @@ function pagePointFromEvent(
   pageRect: PageRect,
 ): PagePoint {
   return {
-    x: clampNumber(((event.clientX - pageRect.left) / pageRect.width) * 100, 0, 100),
-    y: clampNumber(((event.clientY - pageRect.top) / pageRect.height) * 100, 0, 100),
+    x: clampNumber(
+      ((event.clientX - pageRect.left) / pageRect.width) * 100,
+      0,
+      100,
+    ),
+    y: clampNumber(
+      ((event.clientY - pageRect.top) / pageRect.height) * 100,
+      0,
+      100,
+    ),
   };
 }
 
@@ -512,14 +512,8 @@ function defaultGeometryFromPoint(
 
   const width = meta.defaultWidth;
   const height = meta.defaultHeight;
-  const x =
-    meta.defaultAnchor === "center"
-      ? point.x - width / 2
-      : point.x;
-  const y =
-    meta.defaultAnchor === "center"
-      ? point.y - height / 2
-      : point.y;
+  const x = meta.defaultAnchor === "center" ? point.x - width / 2 : point.x;
+  const y = meta.defaultAnchor === "center" ? point.y - height / 2 : point.y;
 
   return cleanGeometry({
     height,
@@ -553,7 +547,11 @@ function geometryFromPoints(
       rawWidthPixels,
       rawHeightPixels,
     );
-    const width = clampNumber((sizePixels / pageRect.width) * 100, meta.minWidth, 100);
+    const width = clampNumber(
+      (sizePixels / pageRect.width) * 100,
+      meta.minWidth,
+      100,
+    );
     const height = clampNumber(
       (sizePixels / pageRect.height) * 100,
       meta.minHeight,
@@ -612,14 +610,24 @@ function resizeFieldGeometry(
   const y = clampNumber(field.y, 0, 100 - minHeight);
 
   if (meta.resizeMode === "square") {
-    const rawWidthPixels = Math.max(0, ((current.x - x) / 100) * pageRect.width);
-    const rawHeightPixels = Math.max(0, ((current.y - y) / 100) * pageRect.height);
+    const rawWidthPixels = Math.max(
+      0,
+      ((current.x - x) / 100) * pageRect.width,
+    );
+    const rawHeightPixels = Math.max(
+      0,
+      ((current.y - y) / 100) * pageRect.height,
+    );
     const sizePixels = Math.max(
       meta.minPixelSize ?? 18,
       rawWidthPixels,
       rawHeightPixels,
     );
-    const width = clampNumber((sizePixels / pageRect.width) * 100, minWidth, 100 - x);
+    const width = clampNumber(
+      (sizePixels / pageRect.width) * 100,
+      minWidth,
+      100 - x,
+    );
     const height = clampNumber(
       (sizePixels / pageRect.height) * 100,
       minHeight,
@@ -678,10 +686,7 @@ function FieldAnswerPreview({
   if (field.type === "TINY_TEXT") {
     return (
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <InteractiveHomeworkTinyTextPreview
-          selected={selected}
-          value="A"
-        />
+        <InteractiveHomeworkTinyTextPreview selected={selected} value="A" />
       </span>
     );
   }
@@ -771,8 +776,7 @@ function createEditableField({
   type: EditorFieldTool;
 }): EditableHomeworkField {
   const meta = FIELD_TOOL_META[type];
-  const fieldType =
-    type === "TEXT" ? textFieldTypeForGeometry(geometry) : type;
+  const fieldType = type === "TEXT" ? textFieldTypeForGeometry(geometry) : type;
 
   return normalizeTextFieldType({
     height: geometry.height,
@@ -1093,11 +1097,11 @@ function InteractiveHomeworkCanvasEditor({
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
                 : isTinyTextField
                   ? "bg-white/40 shadow-[0_1px_5px_rgba(65,42,76,0.14)]"
-                : isDrawingField
-                  ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
-                : isListeningField
-                  ? "bg-white/20 shadow-[0_6px_18px_rgba(65,42,76,0.12)]"
-                : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
+                  : isDrawingField
+                    ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
+                    : isListeningField
+                      ? "bg-white/20 shadow-[0_6px_18px_rgba(65,42,76,0.12)]"
+                      : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
                 ? "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
                 : "border-dashed border-primary/55 hover:border-primary",
@@ -1149,7 +1153,9 @@ function InteractiveHomeworkEditorItem({
   const [message, setMessage] = useState<string | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
-  const [fields, setFields] = useState<EditableHomeworkField[]>(homework.fields);
+  const [fields, setFields] = useState<EditableHomeworkField[]>(
+    homework.fields,
+  );
   const [savedFieldsSignature, setSavedFieldsSignature] = useState(
     initialFieldsSignature,
   );
@@ -1183,16 +1189,15 @@ function InteractiveHomeworkEditorItem({
   const isInteractiveLesson = homework.source === "LESSON";
   const entityLabel = isInteractiveLesson ? "aula interativa" : "homework";
   const isPersisting = isSaving || saveStatus === "saving";
-  const saveStatusLabel =
-    isPersisting
-      ? "Salvando..."
-      : saveStatus === "error"
-        ? "Erro ao salvar"
-        : hasUnsavedChanges
-          ? "Alteracoes pendentes"
-          : saveStatus === "auto-saved"
-            ? "Salvo automaticamente"
-            : "Salvo";
+  const saveStatusLabel = isPersisting
+    ? "Salvando..."
+    : saveStatus === "error"
+      ? "Erro ao salvar"
+      : hasUnsavedChanges
+        ? "Alteracoes pendentes"
+        : saveStatus === "auto-saved"
+          ? "Salvo automaticamente"
+          : "Salvo";
   const isDetectingSelectedListening =
     selectedField?.type === "LISTENING" &&
     listeningDetectionFieldId === selectedField.id;
@@ -1233,10 +1238,7 @@ function InteractiveHomeworkEditorItem({
   }
 
   const detectListeningSentenceForField = useCallback(
-    async (
-      field: EditableHomeworkField,
-      mode: "auto" | "manual" = "auto",
-    ) => {
+    async (field: EditableHomeworkField, mode: "auto" | "manual" = "auto") => {
       if (field.type !== "LISTENING") {
         return;
       }
@@ -1373,9 +1375,7 @@ function InteractiveHomeworkEditorItem({
         : (homework.fields[0]?.id ?? null),
     );
     setSaveStatus((current) =>
-      current === "auto-saved" || current === "manual-saved"
-        ? current
-        : "idle",
+      current === "auto-saved" || current === "manual-saved" ? current : "idle",
     );
     listeningDetectionRequestsRef.current.clear();
     setListeningDetectionFieldId(null);
@@ -1443,9 +1443,7 @@ function InteractiveHomeworkEditorItem({
   );
 
   function clearFields() {
-    const confirmed = window.confirm(
-      "Deseja mesmo limpar todas as areas?",
-    );
+    const confirmed = window.confirm("Deseja mesmo limpar todas as areas?");
 
     if (!confirmed) {
       return;
@@ -1559,8 +1557,7 @@ function InteractiveHomeworkEditorItem({
               .map((field, index) => [field.id, result.fields?.[index]?.id])
               .filter(
                 (entry): entry is [string, string] =>
-                  typeof entry[0] === "string" &&
-                  typeof entry[1] === "string",
+                  typeof entry[0] === "string" && typeof entry[1] === "string",
               ),
           );
 
@@ -1618,12 +1615,7 @@ function InteractiveHomeworkEditorItem({
   useEffect(() => {
     clearAutosaveTimer();
 
-    if (
-      !hasUnsavedChanges ||
-      isDeleting ||
-      isEditingGesture ||
-      isPersisting
-    ) {
+    if (!hasUnsavedChanges || isDeleting || isEditingGesture || isPersisting) {
       return undefined;
     }
 
@@ -1678,28 +1670,28 @@ function InteractiveHomeworkEditorItem({
   }
 
   return (
-    <details className="group rounded-lg border-2 border-primary/20 bg-white shadow-sm">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
+    <details className="group overflow-hidden rounded-lg border border-primary/15 bg-white/95 shadow-[0_12px_30px_rgba(65,42,76,0.06)]">
+      <summary className="grid cursor-pointer list-none gap-3 px-4 py-3 text-sm transition-colors hover:bg-primary/[0.035] md:grid-cols-[minmax(0,1fr)_auto] md:items-center [&::-webkit-details-marker]:hidden">
         <span className="flex min-w-0 items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-            <FileText aria-hidden="true" />
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/10">
+            <FileText aria-hidden="true" className="size-5" />
           </span>
           <span className="min-w-0">
             <span className="block truncate font-semibold">
               {homework.title}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
               {homework.studentName ?? "Aluno geral"} - {homework.lessonTitle}
             </span>
           </span>
         </span>
-        <span className="flex shrink-0 flex-wrap items-center justify-end gap-2 text-xs text-muted-foreground">
-          <span className="rounded-full border border-primary/20 px-2 py-1">
+        <span className="flex shrink-0 flex-wrap items-center gap-2 text-xs text-muted-foreground md:justify-end">
+          <span className="rounded-full border border-primary/15 bg-primary/[0.04] px-2.5 py-1 font-semibold text-primary/75">
             {fields.length} area(s)
           </span>
           <span
             className={cn(
-              "rounded-full border px-2 py-1 font-semibold",
+              "rounded-full border px-2.5 py-1 font-semibold",
               isPersisting
                 ? "border-amber-200 bg-amber-50 text-amber-700"
                 : saveStatus === "error"
@@ -1710,6 +1702,13 @@ function InteractiveHomeworkEditorItem({
             )}
           >
             {saveStatusLabel}
+          </span>
+          <span className="hidden items-center gap-1 rounded-full border border-primary/10 bg-background px-2.5 py-1 font-semibold text-primary/60 sm:inline-flex">
+            <ChevronDown
+              aria-hidden="true"
+              className="size-3.5 transition-transform duration-200 group-open:rotate-180"
+            />
+            Editor
           </span>
           <Button
             disabled={isDeleting || isPersisting}
@@ -1736,10 +1735,15 @@ function InteractiveHomeworkEditorItem({
         <div className="flex flex-col gap-3 rounded-lg border border-primary/15 bg-muted/10 p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-sm">
-              <Wand2 aria-hidden="true" className="size-4 shrink-0 text-primary" />
+              <Wand2
+                aria-hidden="true"
+                className="size-4 shrink-0 text-primary"
+              />
               <span className="min-w-0 truncate font-semibold">
                 {homework.assetFileName ??
-                  (isInteractiveLesson ? "Arquivo da aula" : "Arquivo da homework")}
+                  (isInteractiveLesson
+                    ? "Arquivo da aula"
+                    : "Arquivo da homework")}
               </span>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {formatSize(homework.assetSizeBytes)}
@@ -1805,9 +1809,7 @@ function InteractiveHomeworkEditorItem({
                 ) : (
                   <Save data-icon="inline-start" />
                 )}
-                {isPersisting
-                  ? "Salvando..."
-                  : "Salvar areas"}
+                {isPersisting ? "Salvando..." : "Salvar areas"}
               </Button>
             </div>
           </div>
@@ -1922,11 +1924,23 @@ export function InteractiveHomeworkEditor({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">{heading}</h2>
-        <span className="rounded-full border border-primary/20 px-3 py-1 text-xs font-semibold text-muted-foreground">
-          {homeworks.length}
+    <div className="rounded-lg border border-primary/15 bg-white/80 p-3 shadow-[0_16px_36px_rgba(65,42,76,0.06)]">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/10">
+            <Layers2 aria-hidden="true" className="size-4" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="truncate text-base font-semibold text-primary">
+              {heading}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Editor manual de areas
+            </p>
+          </div>
+        </div>
+        <span className="rounded-full border border-primary/15 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70">
+          {homeworks.length} item(ns)
         </span>
       </div>
       <div className="grid gap-3">

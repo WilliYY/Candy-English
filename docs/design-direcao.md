@@ -77,6 +77,7 @@ Cuidados:
 - Perfil interno do AVA usa cards suaves com fundo glass claro, hierarquia por icones, painel de completude student com barra amarela/roxa e recompensa de ate 300 XP, alem de fotos com borda/ring discreto para dar acabamento sem perder leitura operacional.
 - Admin deve listar usuarios por role em colunas separadas para reduzir confusao visual.
 - Formularios administrativos de criacao de aluno devem ser agrupados por acesso, perfil e dados do aluno, com superficies claras, icones discretos e acao final evidente para reduzir erro operacional.
+- A tela teacher `Criar/Ver Homework` deve parecer um painel operacional: formulario de criacao em blocos claros, upload visivel, fila de criacao com status e lista de atividades com aluno, salvamento e quantidade de areas escaneaveis.
 - O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
