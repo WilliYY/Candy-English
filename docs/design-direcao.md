@@ -76,6 +76,7 @@ Cuidados:
 - Resumo do usuario no AVA usa card glass compacto com respiro extra no topo dos paineis, email truncado, acoes dentro da propria caixa e microbarra Candy XP animada com metricas curtas quando houver snapshot de progresso da role logada; em mobile/tablet o topo deve empilhar sem cortes, os headers de tarefa devem centralizar icone/titulo e os cards de metricas so devem virar colunas quando houver largura real.
 - Perfil interno do AVA usa cards suaves com fundo glass claro, hierarquia por icones, painel de completude student com barra amarela/roxa e recompensa de ate 300 XP, alem de fotos com borda/ring discreto para dar acabamento sem perder leitura operacional.
 - Admin deve listar usuarios por role em colunas separadas para reduzir confusao visual.
+- Formularios administrativos de criacao de aluno devem ser agrupados por acesso, perfil e dados do aluno, com superficies claras, icones discretos e acao final evidente para reduzir erro operacional.
 - O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
