@@ -121,7 +121,7 @@ Helpers:
 3. Ve alunos vinculados.
 4. Cria aula interativa e homework interativo por arquivo do Canva.
 5. Corrige respostas e envia feedback.
-6. Pode abrir aula ao vivo e mensagens.
+6. Ve a area de aula ao vivo em manutencao temporaria e usa mensagens enquanto a integracao de video e revisada.
 7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos` e aceitar interessados como alunos `STUDENT` vinculados a sua teacher.
 8. Pode sugerir aprendizados e revisar feedbacks visiveis no `Catty Learning`, mas nao aprova memoria global.
 9. Pode usar `Catty dos alunos` somente para alunos vinculados, escolhendo aluno, gosto, emojis, sons e bordoes sem acessar alunos de outra teacher.
@@ -132,7 +132,7 @@ Helpers:
 
 1. Student entra em `/ava/student`.
 2. No resumo, ve o card Candy XP com nivel, barra amarela de progresso, fontes de XP, proximas metas e roadmap de jogos.
-3. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e aula ao vivo.
+3. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e o aviso de manutencao temporaria da aula ao vivo.
 4. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
 5. Visualiza feedback.
 6. Edita dados pessoais permitidos, mas nao o nivel.
@@ -216,13 +216,14 @@ Helpers:
 
 ### Aula ao vivo
 
-1. Teacher abre `/ava/teacher?task=aula-ao-vivo`.
-2. Configura teacher, aluno ou turma geral, titulo, link externo opcional e datas opcionais no bloco superior.
-3. Se o link externo ficar vazio, o AVA cria automaticamente uma sala Jitsi Meet embutida usando o dominio configurado em `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`.
-4. Se o link for Google Meet, a sala fica registrada e abre em nova aba; se for um dominio Jitsi aceito pelo AVA, o AVA tenta embutir a sala.
-5. A sala ativa aparece abaixo das opcoes, com o video centralizado como superficie principal.
-6. Student abre `/ava/student?task=aula-ao-vivo` e entra na mesma sala ativa liberada para ele.
-7. Teacher encerra ou reabre a sala pelo botao no topo do card da propria aula ao vivo.
+1. A area esta em manutencao temporaria por `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`.
+2. Teacher abre `/ava/teacher?task=aula-ao-vivo` e ve um card de manutencao, sem formulario para criar ou reabrir sala.
+3. Student abre `/ava/student?task=aula-ao-vivo` e ve o mesmo aviso de manutencao, sem tentativa de carregar Jitsi.
+4. `createLiveSession` e `toggleLiveSession` continuam validando login/role no servidor e depois retornam a mensagem de manutencao, sem gravar alteracoes.
+5. Ao reativar, o fluxo previsto volta a permitir teacher, aluno ou turma geral, titulo, link externo opcional e datas opcionais no bloco superior.
+6. Se o link externo ficar vazio, o AVA cria automaticamente uma sala Jitsi Meet embutida usando o dominio configurado em `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`.
+7. Se o link for Google Meet, a sala fica registrada e abre em nova aba; se for um dominio Jitsi aceito pelo AVA, o AVA tenta embutir a sala.
+8. A sala ativa aparece abaixo das opcoes, com o video centralizado como superficie principal.
 
 ### Aula interativa
 
@@ -299,7 +300,7 @@ Helpers:
 - Excluir homework interativa exige permissao server-side de admin ou teacher dona da homework.
 - Draft de homework interativo nao deve aparecer como resposta entregue para teacher.
 - Arquivo de homework interativo deve ser acessado apenas por admin, teacher dona da aula ou aluno dono da homework.
-- Aula ao vivo usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
+- Aula ao vivo esta temporariamente pausada por manutencao. Quando reativada, usa Jitsi embutido se nao houver link externo; a configuracao fica acima e o video deve ficar centralizado abaixo.
 - `meet.jit.si` publico exige conta para quem cria sala e nao deve ser tratado como embed de producao; para teacher/aluno sem conta Jitsi, usar dominio Jitsi dedicado/JaaS configurado no ambiente.
 - Catty nao deve solicitar senhas, chaves, documentos sensiveis ou prometer alterar dados internos; problemas de acesso, contratos, pagamentos e cadastro devem ser encaminhados para Candy, teacher ou admin.
 - Catty nao deve responder como especialista generica em receita, codigo, API tecnica, financas, saude, direito ou temas aleatorios; quando o assunto foge do ingles/AVA, ela deve transformar em vocabulario, frase curta ou conversacao em ingles.

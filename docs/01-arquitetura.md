@@ -17,7 +17,7 @@ Camadas principais:
 - `src/components/ui/`: componentes base shadcn/ui.
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
-- `src/lib/live-class.ts`: dominio Jitsi configuravel para aula ao vivo.
+- `src/lib/live-class.ts`: dominio Jitsi configuravel e flag de manutencao temporaria da aula ao vivo.
 - `src/lib/catty-personality.ts`: identidade viva da Catty, bordoes, baloes, frases por situacao, regras de uso de emoji/bordao e guias de personalidade/escopo.
 - `src/lib/catty.ts`: deteccao leve de intencao, plano de resposta com historico recente, fallback local, sanitizacao e montagem do contexto leve de tela da Catty.
 - `src/lib/catty-learning.ts`: busca ate 3 memorias aprovadas do Catty Learning Center por intencao/tags/texto, formata contexto para Gemini/OpenAI, escolhe fallback aprendido apenas quando seguro e cria auto-sugestoes pendentes quando houver lacuna de resposta.
@@ -83,7 +83,7 @@ Servicos Docker:
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
 - Ghostscript fica instalado no container para comprimir PDFs quando `PDF_OPTIMIZATION_ENABLED=true`.
 - Headers basicos de seguranca ficam em `next.config.ts`; `X-Frame-Options=SAMEORIGIN` permite previews internos protegidos, como contratos PDF no AVA, sem liberar embed por sites externos.
-- Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
+- Aula ao vivo esta pausada por manutencao temporaria; quando reativada, Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
 - Catty usa Gemini como provedor padrao quando `GEMINI_API_KEY` esta configurada, com `GEMINI_CATTY_MODEL` opcional; se a mensagem chamar Catty pelo nome, tenta OpenAI Responses API com `OPENAI_API_KEY` e `OPENAI_CATTY_MODEL`, caindo para Gemini/fallback autorizado quando a chave ou chamada falhar.

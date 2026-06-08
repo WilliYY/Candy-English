@@ -54,6 +54,7 @@ Operacao por agente:
 - `PDF_OPTIMIZATION_PRESET` define o preset do Ghostscript, com `ebook` como padrao equilibrado.
 - `PDF_MAX_UPLOAD_MB` define o limite para esses PDFs pedagogicos, mantendo margem abaixo do limite de Server Actions.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
+- A aula ao vivo pode ser pausada temporariamente pelo codigo com `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`; quando ativo, teacher/student veem aviso de manutencao e as actions bloqueiam criacao/reativacao apos validar role.
 - `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
 - O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: Gemini, OpenAI e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
 
@@ -70,7 +71,7 @@ Operacao por agente:
 - A imagem Docker instala Ghostscript para otimizar PDFs pedagogicos protegidos no runtime; ambientes sem Ghostscript usam fallback e salvam o original.
 - A imagem de ferramentas (`migrate`, `seed`, `audit-server-smoke`) gera o Prisma Client no build para que scripts de smoke e seed encontrem `src/generated/prisma/client`.
 - Catty Learning Center e feedback de treino da Catty nao exigem variavel de ambiente nova, mas deploy com esse modulo exige aplicar migration antes de recriar o app.
-- Aula ao vivo usa `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` para montar novas salas e liberar camera/microfone/display capture no `Permissions-Policy`.
+- Aula ao vivo esta em manutencao temporaria. Quando reativada, usa `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` para montar novas salas e liberar camera/microfone/display capture no `Permissions-Policy`.
 - Catty chama Gemini/OpenAI apenas pelo servidor em `/api/catty/chat` e somente depois de validar sessao/role; as chaves nunca devem ir para o client.
 - O painel `/ava/admin?task=apis-senhas` salva valores em `AdminCredential` criptografados no banco; a revelacao acontece apenas por server action protegida.
 

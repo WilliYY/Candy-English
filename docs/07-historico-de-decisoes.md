@@ -492,6 +492,13 @@ Cada decisao deve conter:
 - Impacto: rota server-side protegida para Admin/Teacher, validacao Zod em `src/lib/validations/learning.ts`, editor com estado de deteccao/releitura, documentacao de ambiente, `GEMINI_HOMEWORK_OCR_MODEL` opcional e fallback de voz `nova` para um tom feminino/animado no TTS.
 - Riscos/cuidados: a deteccao envia o recorte pedagogico protegido para Gemini quando `GEMINI_API_KEY` existe; Student nao pode acessar a rota; a teacher deve conferir o texto detectado antes de salvar, principalmente em areas pequenas ou com texto vizinho.
 
+### 2026-06-08 - Aula ao vivo em manutencao temporaria
+
+- Decisao: pausar a aula ao vivo com `LIVE_CLASS_MAINTENANCE_ENABLED=true` em `src/lib/live-class.ts`, mostrando aviso para Teacher/Student e bloqueando criacao ou reabertura por server action.
+- Motivo: evitar instabilidade da integracao de video enquanto a sala Jitsi/dominio dedicado e revisada, sem remover historico de `LiveSession` nem mexer nos outros modulos do AVA.
+- Impacto: `src/lib/live-class.ts`, `src/app/ava/actions.ts`, `src/components/ava/live-class-maintenance-panel.tsx`, workspaces Teacher/Student, README e docs oficiais.
+- Riscos/cuidados: as actions ainda precisam validar sessao e role antes de retornar manutencao; reativar exige novo build/deploy e validacao da rota de video, headers e dominio Jitsi.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

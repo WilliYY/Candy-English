@@ -1,4 +1,7 @@
 const DEFAULT_JITSI_DOMAIN = "meet.jit.si";
+export const LIVE_CLASS_MAINTENANCE_ENABLED = true;
+export const LIVE_CLASS_MAINTENANCE_MESSAGE =
+  "Aula ao vivo esta em manutencao enquanto revisamos a integracao de video.";
 
 function normalizeDomain(value?: string | null) {
   const rawValue = value?.trim();
@@ -33,9 +36,7 @@ export function getLiveClassJitsiDomain() {
 }
 
 export function getLiveClassJitsiDomains() {
-  return Array.from(
-    new Set([DEFAULT_JITSI_DOMAIN, getLiveClassJitsiDomain()]),
-  );
+  return Array.from(new Set([DEFAULT_JITSI_DOMAIN, getLiveClassJitsiDomain()]));
 }
 
 export function getLiveClassJitsiOrigin() {

@@ -6,7 +6,7 @@ Site institucional e AVA da Candy English.
 
 O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional e AVA com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
 
-O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, materiais, vocabulario, homework online, feedback, contratos PDF protegidos, aula ao vivo, financeiro interno e agenda administrativa.
+O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, materiais, vocabulario, homework online, feedback, contratos PDF protegidos, aula ao vivo em manutencao temporaria, financeiro interno e agenda administrativa.
 
 ## Status atual
 
@@ -18,8 +18,8 @@ Ja existe:
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - admin com cadastro de usuarios, aceite/recusa de pre-cadastros, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva;
-- teacher com aceite de pre-cadastros como alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, aula ao vivo, contratos, mensagens e card Teacher XP persistente;
-- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, aula ao vivo, card Student XP persistente no resumo e area Candy XP com missoes de historia, progresso e envio;
+- teacher com aceite de pre-cadastros como alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
+- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
 - pre-cadastro publico no login do AVA para interessados solicitarem contato, salvo como pendente sem criar usuario, senha ou sessao ate Admin/Teacher aceitar no modulo protegido `Aceitar alunos`;
 - contratos e avatar servidos por rotas protegidas;
@@ -120,6 +120,7 @@ Variaveis principais:
 - `PDF_OPTIMIZATION_PRESET`: preset do Ghostscript para PDF, por padrao `ebook`.
 - `PDF_MAX_UPLOAD_MB`: limite de upload para esses PDFs pedagogicos, por padrao `14`.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`: dominio Jitsi usado pela aula ao vivo embutida; use `meet.jit.si` localmente e um dominio dedicado, como `meet.candyenglish.com.br`, quando a infra estiver configurada.
+- `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`: pausa temporariamente a aula ao vivo; teacher/student veem manutencao e as actions bloqueiam criacao/reativacao apos validar role.
 - `GEMINI_API_KEY`: chave opcional usada pela Catty como provedor padrao; sem chave, a Catty usa fallback local nas mensagens comuns.
 - `GEMINI_CATTY_MODEL`: modelo Gemini usado pela Catty, exemplo `gemini-3.5-flash`.
 - `GEMINI_HOMEWORK_OCR_MODEL`: modelo Gemini usado para ler o texto dentro do box Listening, exemplo `gemini-3.5-flash`.

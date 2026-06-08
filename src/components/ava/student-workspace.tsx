@@ -20,10 +20,8 @@ import {
   ChatThreadPanel,
   type ChatThreadRow,
 } from "@/components/ava/chat-thread-panel";
-import {
-  AvatarUploadForm,
-  ProfileForm,
-} from "@/components/ava/profile-forms";
+import { AvatarUploadForm, ProfileForm } from "@/components/ava/profile-forms";
+import { LiveClassMaintenancePanel } from "@/components/ava/live-class-maintenance-panel";
 import { LiveClassRoom } from "@/components/ava/live-class-room";
 import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
@@ -40,6 +38,7 @@ import {
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
 import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
+import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
 import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
 
@@ -598,7 +597,9 @@ export function StudentWorkspace({
           ) : null}
 
           {activeTask === "aula-ao-vivo" ? (
-            liveSessions.some((session) => session.isLive) ? (
+            LIVE_CLASS_MAINTENANCE_ENABLED ? (
+              <LiveClassMaintenancePanel audience="student" />
+            ) : liveSessions.some((session) => session.isLive) ? (
               <div className="mx-auto grid w-full max-w-6xl gap-5">
                 {liveSessions
                   .filter((session) => session.isLive)
@@ -683,15 +684,11 @@ export function StudentWorkspace({
             </div>
           ) : null}
 
-          {activeTask === "catty-memory" ? (
-            <StudentCattyLearningCard />
-          ) : null}
+          {activeTask === "catty-memory" ? <StudentCattyLearningCard /> : null}
 
           {activeTask === "contratos" ? (
             contracts.length === 0 ? (
-              <EmptyState>
-                Contrato ainda nao adicionado.
-              </EmptyState>
+              <EmptyState>Contrato ainda nao adicionado.</EmptyState>
             ) : (
               <div className="grid gap-3">
                 {contracts.map((contract, index) => (
@@ -749,7 +746,9 @@ export function StudentWorkspace({
 
           {activeTask === "aulas" ? (
             visibleLessons.length === 0 ? (
-              <EmptyState>Nenhuma aula foi vinculada ao seu perfil ainda.</EmptyState>
+              <EmptyState>
+                Nenhuma aula foi vinculada ao seu perfil ainda.
+              </EmptyState>
             ) : (
               <div className="mx-auto grid w-full max-w-5xl gap-3">
                 {visibleLessons.map((lesson) => {
@@ -766,7 +765,8 @@ export function StudentWorkspace({
                   const hasLessonActivities = lessonActivities.length > 0;
                   const isLessonComplete =
                     hasLessonActivities &&
-                    completedLessonActivities.length === lessonActivities.length;
+                    completedLessonActivities.length ===
+                      lessonActivities.length;
                   const lessonStatusLabel = hasLessonActivities
                     ? isLessonComplete
                       ? "Concluido"
@@ -887,7 +887,9 @@ export function StudentWorkspace({
                                       {item.term}
                                     </span>{" "}
                                     - {item.translation}
-                                    {item.example ? <p>{item.example}</p> : null}
+                                    {item.example ? (
+                                      <p>{item.example}</p>
+                                    ) : null}
                                   </li>
                                 ))
                               )}
@@ -930,81 +932,81 @@ export function StudentWorkspace({
             ) : (
               <div className="grid gap-3">
                 {homeworkItems.map(({ homework }) => {
-                    const submission = homework.submissions[0];
+                  const submission = homework.submissions[0];
 
-                    if (homework.kind === "INTERACTIVE") {
-                      return (
-                        <InteractiveHomeworkStudent
-                          key={homework.id}
-                          homework={{
-                            assetFileName: homework.assetFileName,
-                            assetMimeType: homework.assetMimeType,
-                            assetPageCount: homework.assetPageCount,
-                            dueDate: homework.dueDate,
-                            fields: homework.interactiveFields,
-                            id: homework.id,
-                            instructions: homework.instructions,
-                            submission,
-                            title: homework.title,
-                          }}
-                        />
-                      );
-                    }
-
+                  if (homework.kind === "INTERACTIVE") {
                     return (
-                      <details
+                      <InteractiveHomeworkStudent
                         key={homework.id}
-                        className="group rounded-lg border-2 border-primary/20 bg-white shadow-sm"
-                      >
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
-                          <span className="flex min-w-0 items-center gap-3">
-                            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                              <ClipboardCheck aria-hidden="true" />
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block truncate font-semibold">
-                                {homework.title}
-                              </span>
-                              <span className="block truncate text-xs text-muted-foreground">
-                                Homework simples
-                              </span>
-                            </span>
-                          </span>
-                          <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/20 bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-                            <CheckCircle2 aria-hidden="true" />
-                            {submission?.status === "REVIEWED"
-                              ? "Corrigida"
-                              : submission
-                                ? "Enviada"
-                                : "Pendente"}
-                          </span>
-                        </summary>
-                        <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
-                          <div>
-                            <h3 className="font-semibold">{homework.title}</h3>
-                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                              {homework.instructions ??
-                                "Sem instrucoes adicionais."}
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
-                            <strong>Pergunta:</strong>{" "}
-                            {homework.questions[0]?.prompt ?? "Resposta livre"}
-                          </div>
-                          <StudentHomeworkForm
-                            homeworkId={homework.id}
-                            initialAnswer={getAnswerText(submission?.answers)}
-                            isReviewed={submission?.status === "REVIEWED"}
-                          />
-                          {submission?.feedback ? (
-                            <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
-                              <strong>Feedback:</strong> {submission.feedback}
-                            </div>
-                          ) : null}
-                        </div>
-                      </details>
+                        homework={{
+                          assetFileName: homework.assetFileName,
+                          assetMimeType: homework.assetMimeType,
+                          assetPageCount: homework.assetPageCount,
+                          dueDate: homework.dueDate,
+                          fields: homework.interactiveFields,
+                          id: homework.id,
+                          instructions: homework.instructions,
+                          submission,
+                          title: homework.title,
+                        }}
+                      />
                     );
-                  })}
+                  }
+
+                  return (
+                    <details
+                      key={homework.id}
+                      className="group rounded-lg border-2 border-primary/20 bg-white shadow-sm"
+                    >
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
+                        <span className="flex min-w-0 items-center gap-3">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                            <ClipboardCheck aria-hidden="true" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold">
+                              {homework.title}
+                            </span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                              Homework simples
+                            </span>
+                          </span>
+                        </span>
+                        <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/20 bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+                          <CheckCircle2 aria-hidden="true" />
+                          {submission?.status === "REVIEWED"
+                            ? "Corrigida"
+                            : submission
+                              ? "Enviada"
+                              : "Pendente"}
+                        </span>
+                      </summary>
+                      <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
+                        <div>
+                          <h3 className="font-semibold">{homework.title}</h3>
+                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                            {homework.instructions ??
+                              "Sem instrucoes adicionais."}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
+                          <strong>Pergunta:</strong>{" "}
+                          {homework.questions[0]?.prompt ?? "Resposta livre"}
+                        </div>
+                        <StudentHomeworkForm
+                          homeworkId={homework.id}
+                          initialAnswer={getAnswerText(submission?.answers)}
+                          isReviewed={submission?.status === "REVIEWED"}
+                        />
+                        {submission?.feedback ? (
+                          <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
+                            <strong>Feedback:</strong> {submission.feedback}
+                          </div>
+                        ) : null}
+                      </div>
+                    </details>
+                  );
+                })}
               </div>
             )
           ) : null}

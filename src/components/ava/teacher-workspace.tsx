@@ -23,10 +23,8 @@ import {
   ToggleLiveSessionButton,
 } from "@/components/ava/live-session-forms";
 import { LiveClassRoom } from "@/components/ava/live-class-room";
-import {
-  AvatarUploadForm,
-  ProfileForm,
-} from "@/components/ava/profile-forms";
+import { LiveClassMaintenancePanel } from "@/components/ava/live-class-maintenance-panel";
+import { AvatarUploadForm, ProfileForm } from "@/components/ava/profile-forms";
 import {
   HomeworkCorrectionTabs,
   type HomeworkCorrectionSubmission,
@@ -59,6 +57,7 @@ import {
 import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
+import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
 
 export const teacherTaskIds = [
@@ -495,7 +494,9 @@ export function TeacherWorkspace({
               <div className="flex flex-col gap-3">
                 <h2 className="text-lg font-semibold">Nivel dos alunos</h2>
                 {students.length === 0 ? (
-                  <EmptyState>Nenhum aluno vinculado a esta teacher.</EmptyState>
+                  <EmptyState>
+                    Nenhum aluno vinculado a esta teacher.
+                  </EmptyState>
                 ) : (
                   <div className="grid gap-3">
                     {students.map((student) => (
@@ -513,92 +514,101 @@ export function TeacherWorkspace({
           ) : null}
 
           {activeTask === "aula-ao-vivo" ? (
-            <div className="flex flex-col gap-6">
-              <section className="ava-soft-card rounded-xl border p-5">
-                <div className="mb-5 flex flex-col gap-1">
-                  <h2 className="text-lg font-semibold">
-                    Configurar aula ao vivo
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Escolha a teacher, o alcance da sala e inicie a chamada.
-                  </p>
-                </div>
-                <LiveSessionForm students={students} teachers={teachers} />
-              </section>
-
-              <section className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-lg font-semibold">Salas ao vivo</h2>
-                  <p className="text-sm text-muted-foreground">
-                    A chamada ativa aparece centralizada abaixo das opcoes da sala.
-                  </p>
-                </div>
-                {liveSessions.length === 0 ? (
-                  <EmptyState>Nenhuma sala ao vivo aberta ainda.</EmptyState>
-                ) : (
-                  <div className="grid gap-5">
-                    {liveSessions.map((session) => (
-                      <article
-                        key={session.id}
-                        className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-sm"
-                      >
-                        <div className="flex flex-col gap-3 border-b border-primary/10 bg-primary/5 p-4 lg:flex-row lg:items-center lg:justify-between">
-                          <div className="flex min-w-0 flex-col gap-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-                                <Radio aria-hidden="true" />
-                                {session.isLive ? "Ao vivo" : "Encerrada"}
-                              </span>
-                              {session.startsAt ? (
-                                <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-                                  <CalendarDays
-                                    aria-hidden="true"
-                                    className="size-3.5"
-                                  />
-                                  {dateFormatter.format(session.startsAt)}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div>
-                              <h2 className="font-semibold">{session.title}</h2>
-                              <p className="text-sm text-muted-foreground">
-                                Teacher: {session.teacherName}
-                                {session.studentName
-                                  ? ` - Aluno: ${session.studentName}`
-                                  : " - Turma geral"}
-                              </p>
-                            </div>
-                          </div>
-                          <ToggleLiveSessionButton
-                            isLive={session.isLive}
-                            liveSessionId={session.id}
-                          />
-                        </div>
-                        <div className="bg-primary/[0.03] p-4 md:p-6">
-                          {session.isLive ? (
-                            <LiveClassRoom
-                              className="max-w-5xl"
-                              displayName={currentUser.name ?? currentUser.email}
-                              meetingUrl={session.meetUrl}
-                              title={session.title}
-                            />
-                          ) : (
-                            <Link
-                              href={session.meetUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex rounded-full border bg-white px-4 py-2 text-sm font-semibold text-primary"
-                            >
-                              Abrir sala em nova aba
-                            </Link>
-                          )}
-                        </div>
-                      </article>
-                    ))}
+            LIVE_CLASS_MAINTENANCE_ENABLED ? (
+              <LiveClassMaintenancePanel audience="teacher" />
+            ) : (
+              <div className="flex flex-col gap-6">
+                <section className="ava-soft-card rounded-xl border p-5">
+                  <div className="mb-5 flex flex-col gap-1">
+                    <h2 className="text-lg font-semibold">
+                      Configurar aula ao vivo
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Escolha a teacher, o alcance da sala e inicie a chamada.
+                    </p>
                   </div>
-                )}
-              </section>
-            </div>
+                  <LiveSessionForm students={students} teachers={teachers} />
+                </section>
+
+                <section className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1">
+                    <h2 className="text-lg font-semibold">Salas ao vivo</h2>
+                    <p className="text-sm text-muted-foreground">
+                      A chamada ativa aparece centralizada abaixo das opcoes da
+                      sala.
+                    </p>
+                  </div>
+                  {liveSessions.length === 0 ? (
+                    <EmptyState>Nenhuma sala ao vivo aberta ainda.</EmptyState>
+                  ) : (
+                    <div className="grid gap-5">
+                      {liveSessions.map((session) => (
+                        <article
+                          key={session.id}
+                          className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-sm"
+                        >
+                          <div className="flex flex-col gap-3 border-b border-primary/10 bg-primary/5 p-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="flex min-w-0 flex-col gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="inline-flex w-fit items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
+                                  <Radio aria-hidden="true" />
+                                  {session.isLive ? "Ao vivo" : "Encerrada"}
+                                </span>
+                                {session.startsAt ? (
+                                  <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                                    <CalendarDays
+                                      aria-hidden="true"
+                                      className="size-3.5"
+                                    />
+                                    {dateFormatter.format(session.startsAt)}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div>
+                                <h2 className="font-semibold">
+                                  {session.title}
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                  Teacher: {session.teacherName}
+                                  {session.studentName
+                                    ? ` - Aluno: ${session.studentName}`
+                                    : " - Turma geral"}
+                                </p>
+                              </div>
+                            </div>
+                            <ToggleLiveSessionButton
+                              isLive={session.isLive}
+                              liveSessionId={session.id}
+                            />
+                          </div>
+                          <div className="bg-primary/[0.03] p-4 md:p-6">
+                            {session.isLive ? (
+                              <LiveClassRoom
+                                className="max-w-5xl"
+                                displayName={
+                                  currentUser.name ?? currentUser.email
+                                }
+                                meetingUrl={session.meetUrl}
+                                title={session.title}
+                              />
+                            ) : (
+                              <Link
+                                href={session.meetUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex rounded-full border bg-white px-4 py-2 text-sm font-semibold text-primary"
+                              >
+                                Abrir sala em nova aba
+                              </Link>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            )
           ) : null}
 
           {activeTask === "criar-aula" ? (
@@ -623,7 +633,10 @@ export function TeacherWorkspace({
             ) : (
               <div className="grid gap-4 lg:grid-cols-2">
                 {lessons.map((lesson) => (
-                  <article key={lesson.id} className="ava-soft-card rounded-lg border p-5">
+                  <article
+                    key={lesson.id}
+                    className="ava-soft-card rounded-lg border p-5"
+                  >
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col gap-2">
                         <h2 className="text-lg font-semibold">

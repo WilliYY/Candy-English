@@ -3,7 +3,11 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { getLiveClassJitsiOrigin } from "@/lib/live-class";
+import {
+  getLiveClassJitsiOrigin,
+  LIVE_CLASS_MAINTENANCE_ENABLED,
+  LIVE_CLASS_MAINTENANCE_MESSAGE,
+} from "@/lib/live-class";
 import { getPrisma } from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
 import { saveContractPdf } from "@/lib/storage";
@@ -230,6 +234,13 @@ export async function createLiveSession(
     };
   }
 
+  if (LIVE_CLASS_MAINTENANCE_ENABLED) {
+    return {
+      ok: false,
+      message: LIVE_CLASS_MAINTENANCE_MESSAGE,
+    };
+  }
+
   const parsed = createLiveSessionSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -309,6 +320,13 @@ export async function toggleLiveSession(
     return {
       ok: false,
       message: "Voce nao tem permissao para alterar aula ao vivo.",
+    };
+  }
+
+  if (LIVE_CLASS_MAINTENANCE_ENABLED) {
+    return {
+      ok: false,
+      message: LIVE_CLASS_MAINTENANCE_MESSAGE,
     };
   }
 
@@ -561,8 +579,7 @@ export async function sendChatMessage(
   if (!assignment) {
     return {
       ok: false,
-      message:
-        "Vincule este aluno a esta teacher antes de iniciar a conversa.",
+      message: "Vincule este aluno a esta teacher antes de iniciar a conversa.",
     };
   }
 
@@ -594,7 +611,11 @@ export async function sendChatMessage(
     }
   }
 
-  if (actor.role !== "ADMIN" && actor.role !== "TEACHER" && actor.role !== "STUDENT") {
+  if (
+    actor.role !== "ADMIN" &&
+    actor.role !== "TEACHER" &&
+    actor.role !== "STUDENT"
+  ) {
     return {
       ok: false,
       message: "Voce nao tem permissao para enviar mensagens.",
