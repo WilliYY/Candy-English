@@ -14,6 +14,7 @@ import {
   UserRound,
   Zap,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import type { ComponentType, SVGProps } from "react";
 import {
@@ -359,80 +360,171 @@ function ProfileCompletionCard({
 }
 
 function StudentCattyLearningCard() {
+  const learningPillars = [
+    {
+      className: "border-emerald-200 bg-emerald-50/85 text-emerald-900",
+      icon: CheckCircle2,
+      label: "Seguro",
+      text: "Nada de senha, contrato, documento ou dado sensivel.",
+    },
+    {
+      className: "border-sky-200 bg-sky-50/85 text-sky-900",
+      icon: BrainCircuit,
+      label: "Leve",
+      text: "So pequenos resumos entram nas respostas da Catty.",
+    },
+    {
+      className: "border-amber-200 bg-amber-50/85 text-amber-950",
+      icon: UserRound,
+      label: "Humano",
+      text: "Admin e teacher revisam quando precisar ajustar algo.",
+    },
+  ];
+
+  const exampleCards = [
+    {
+      label: "Gosto",
+      text: "Se voce curte games, carros ou desenhos, ela pode usar exemplos nesse tema.",
+    },
+    {
+      label: "Dificuldade",
+      text: "Se voce trava em perguntas, ela pode explicar devagar e pedir uma frase curta.",
+    },
+    {
+      label: "Estilo",
+      text: "Se um tema ficar estranho, sua teacher pode ajustar o jeito da Catty falar.",
+    },
+  ];
+
   return (
-    <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="overflow-hidden rounded-2xl border border-primary/10 bg-white/88 p-6 shadow-lg shadow-primary/10">
-        <div className="flex flex-col gap-5">
-          <div className="flex items-start gap-4">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
-              <BrainCircuit aria-hidden="true" className="size-6" />
+    <section className="grid gap-4 lg:grid-cols-[1.08fr_0.92fr]">
+      <div className="overflow-hidden rounded-2xl border border-primary/15 bg-white/92 shadow-xl shadow-primary/10">
+        <div className="border-b border-primary/10 bg-[linear-gradient(135deg,#fff_0%,#fbf2ff_58%,#fff4e9_100%)] p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <span className="relative flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="size-12 rounded-2xl object-cover ring-2 ring-white/80"
+                height={48}
+                src="/brand/catty.png"
+                width={48}
+              />
+              <span className="absolute -bottom-2 -right-2 grid size-8 place-items-center rounded-full bg-amber-300 text-primary shadow-sm ring-2 ring-white">
+                <BrainCircuit aria-hidden="true" className="size-4" />
+              </span>
             </span>
             <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-primary/10 bg-secondary/60 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+              <span className="inline-flex rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
                 Study mode
               </span>
-              <h3 className="mt-3 text-2xl font-semibold text-primary">
-                A Catty esta aprendendo com voce tambem
+              <h3 className="mt-3 text-2xl font-semibold leading-tight text-primary">
+                A Catty aprende seu jeito de estudar
               </h3>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Ela pode lembrar gostos, dificuldades e jeitos de explicar que
-                ajudam seu estudo. A parte de revisar e ajustar essas memorias
-                fica com a equipe Candy.
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Ela usa memorias leves para deixar exemplos, perguntas e
+                incentivos mais proximos de voce. A equipe Candy revisa tudo
+                quando precisar.
               </p>
             </div>
           </div>
+        </div>
 
+        <div className="grid gap-4 p-5">
           <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              {
-                label: "Seguro",
-                text: "Nada de senha, contrato, documento ou dado sensivel.",
-              },
-              {
-                label: "Leve",
-                text: "So resumos pequenos entram nas respostas.",
-              },
-              {
-                label: "Humano",
-                text: "Admin e teacher revisam quando precisar.",
-              },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-xl border border-primary/10 bg-secondary/35 p-4"
-              >
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                  {item.label}
-                </p>
-                <p className="mt-2 text-sm leading-5 text-muted-foreground">
-                  {item.text}
-                </p>
-              </div>
-            ))}
+            {learningPillars.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <div
+                  key={item.label}
+                  className={`rounded-xl border p-4 shadow-sm ${item.className}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/80 shadow-sm">
+                      <Icon aria-hidden="true" className="size-4" />
+                    </span>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em]">
+                      {item.label}
+                    </p>
+                  </div>
+                  <p className="mt-3 text-sm leading-5 opacity-85">
+                    {item.text}
+                  </p>
+                </div>
+              );
+            })}
           </div>
 
-          <p className="rounded-xl border border-dashed border-primary/20 bg-primary/5 px-4 py-3 text-sm leading-6 text-primary">
-            Se a Catty usar um exemplo estranho ou um tema que voce nao curte,
-            avise sua teacher para ela ajustar o estilo da Catty por voce.
-          </p>
+          <div className="grid gap-3 rounded-2xl border border-primary/10 bg-primary/[0.035] p-4 sm:grid-cols-[auto_1fr] sm:items-center">
+            <span className="grid size-11 place-items-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <Target aria-hidden="true" className="size-5" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-primary">
+                Voce continua no controle
+              </p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Se a Catty usar um exemplo estranho ou um tema que voce nao
+                curte, avise sua teacher para ela ajustar o estilo por voce.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-6 shadow-lg shadow-amber-200/30">
-        <div className="flex items-start gap-3">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-amber-950">
-            <Sparkles aria-hidden="true" className="size-5" />
-          </span>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-900">
-              Como isso aparece
-            </p>
-            <h4 className="mt-2 text-lg font-semibold text-primary">
-              Exemplos mais com a sua cara
-            </h4>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Com o tempo, a Catty pode usar temas que combinam com voce, como
-              games, futebol, desenhos, carros ou exemplos mais fofinhos.
+      <div className="grid gap-4">
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/90 p-5 shadow-lg shadow-amber-200/30">
+          <div className="flex items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-400 text-amber-950 shadow-sm">
+              <Sparkles aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-900">
+                Como isso aparece
+              </p>
+              <h4 className="mt-2 text-lg font-semibold text-primary">
+                Respostas mais com a sua cara
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Com o tempo, a Catty pode escolher exemplos melhores para seu
+                estudo, sem mostrar a lista tecnica de memorias.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          {exampleCards.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-xl border border-primary/10 bg-white/90 p-4 shadow-sm"
+            >
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-primary">
+                  <Zap aria-hidden="true" className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                    {item.label}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {item.text}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-2xl border border-primary/10 bg-white/88 p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+              <BookOpen aria-hidden="true" className="size-5" />
+            </span>
+            <p className="text-sm leading-6 text-muted-foreground">
+              A ideia e simples: praticar ingles com exemplos pequenos, seguros
+              e mais faceis de lembrar.
             </p>
           </div>
         </div>

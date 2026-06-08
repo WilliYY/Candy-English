@@ -113,6 +113,7 @@ Cuidados:
 - Catty deve parecer mais viva sem dominar a tela: botao com avatar maior, cabecalho contextual, estado de digitacao, atalhos de estudo adaptados a homework, aulas, mensagens, teacher ou admin, e baloes visuais locais para usuarios logados no AVA com primeiro nome e saudacao por horario. Fora do AVA logado, a Catty aparece como mascote publica com baloes aleatorios a cada 10 segundos, posicionada acima do WhatsApp quando ele existir, e no clique mostra apenas um aviso pequeno para entrar no AVA ou virar aluno Candy antes de conversa real.
 - Os baloes visuais da Catty usam fala compacta com rabicho, brilho Candy e variacao sutil para visitante, logado e aviso de acesso, sempre sem abrir chat real para visitante.
 - Admin e Teacher configuram personalizacao da Catty em uma entrada simples `Catty dos alunos`: selecionar aluno, informar gosto, gerar emojis/sons/bordoes e salvar como memoria leve; a tela tecnica de memoria nao deve aparecer como item separado para Student. O painel deve parecer operacional e escaneavel, com topo de metricas, fluxo rapido, filtros destacados, cards por status e cores distintas para alunos, gostos ativos, memorias, sugestoes e revisao.
+- A tela Student `Catty aprendendo` deve ser informativa e acolhedora, nao tecnica: explicar memoria leve com Catty visual, pilares de seguranca, exemplos praticos de personalizacao e aviso de revisao humana, sem expor lista interna de memorias.
 
 ## Fluxo Visual Do Site
 
