@@ -2,11 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  ArrowRight,
+  GraduationCap,
   KeyRound,
   Link2,
   LoaderCircle,
+  Mail,
   Power,
   PowerOff,
+  UserRound,
   UsersRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -242,6 +246,17 @@ export function AdminAssignTeacherForm({
       teacherProfileId: activeTeachers[0]?.id ?? "",
     },
   });
+  const selectedTeacherId = form.watch("teacherProfileId");
+  const selectedStudentId = form.watch("studentProfileId");
+  const selectedTeacher = activeTeachers.find(
+    (teacher) => teacher.id === selectedTeacherId,
+  );
+  const selectedStudent = activeStudents.find(
+    (student) => student.id === selectedStudentId,
+  );
+  const selectedTeacherLabel = selectedTeacher
+    ? selectedTeacher.label.replace(` - ${selectedTeacher.email}`, "")
+    : null;
 
   const canAssign = activeStudents.length > 0 && activeTeachers.length > 0;
 
@@ -272,8 +287,46 @@ export function AdminAssignTeacherForm({
   });
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-6" noValidate>
-      <FieldGroup>
+    <form
+      onSubmit={onSubmit}
+      className="flex flex-col gap-5 rounded-lg border border-primary/15 bg-white/82 p-4 shadow-sm sm:p-5"
+      noValidate
+    >
+      <div className="flex flex-col gap-3 border-b border-primary/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary">
+            <Link2 aria-hidden="true" className="size-3.5" />
+            Novo vinculo
+          </span>
+          <h2 className="mt-3 text-lg font-semibold text-primary">
+            Conectar teacher e aluno
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            Escolha quem ensina e quem passa a aparecer na area dessa teacher.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2">
+            <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              Teachers
+            </span>
+            <strong className="text-lg leading-none text-primary">
+              {activeTeachers.length}
+            </strong>
+          </div>
+          <div className="rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2">
+            <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+              Alunos
+            </span>
+            <strong className="text-lg leading-none text-primary">
+              {activeStudents.length}
+            </strong>
+          </div>
+        </div>
+      </div>
+
+      <FieldGroup className="gap-4">
         <Field data-invalid={Boolean(form.formState.errors.teacherProfileId)}>
           <FieldLabel htmlFor="assign-teacher">Teacher</FieldLabel>
           <NativeSelect
@@ -291,6 +344,9 @@ export function AdminAssignTeacherForm({
               </option>
             ))}
           </NativeSelect>
+          <FieldDescription>
+            Esta teacher vai enxergar o aluno vinculado nas areas pedagogicas.
+          </FieldDescription>
           <FieldError errors={[form.formState.errors.teacherProfileId]} />
         </Field>
 
@@ -318,13 +374,62 @@ export function AdminAssignTeacherForm({
         </Field>
       </FieldGroup>
 
+      <div className="rounded-lg border border-primary/12 bg-primary/[0.035] p-3">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
+          Previa do vinculo
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-stretch">
+          <div className="rounded-md border border-primary/10 bg-white/82 p-3">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+              <GraduationCap aria-hidden="true" className="size-3.5" />
+              Teacher
+            </span>
+            <p className="mt-2 truncate text-sm font-semibold text-primary">
+              {selectedTeacherLabel ?? "Selecione uma teacher"}
+            </p>
+            {selectedTeacher?.email ? (
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted-foreground">
+                <Mail aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="truncate">{selectedTeacher.email}</span>
+              </p>
+            ) : null}
+          </div>
+
+          <div className="flex items-center justify-center">
+            <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </span>
+          </div>
+
+          <div className="rounded-md border border-primary/10 bg-white/82 p-3">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+              <UserRound aria-hidden="true" className="size-3.5" />
+              Aluno
+            </span>
+            <p className="mt-2 truncate text-sm font-semibold text-primary">
+              {selectedStudent?.label ?? "Selecione um aluno"}
+            </p>
+            {selectedStudent?.email ? (
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-xs text-muted-foreground">
+                <Mail aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="truncate">{selectedStudent.email}</span>
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
       {message ? (
-        <p className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-primary/12 bg-muted px-4 py-3 text-sm text-muted-foreground">
           {message}
         </p>
       ) : null}
 
-      <Button type="submit" disabled={!canAssign || isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={!canAssign || isPending}
+      >
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
         ) : (

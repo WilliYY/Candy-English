@@ -1,7 +1,9 @@
 import {
+  ArrowRight,
   CalendarCheck2,
   CalendarDays,
   BrainCircuit,
+  CheckCircle2,
   CircleAlert,
   FileText,
   GraduationCap,
@@ -138,8 +140,10 @@ type AssignmentOption = {
 type AssignmentRow = {
   createdAt: Date;
   id: string;
+  studentEmail: string;
   studentName: string;
   studentProfileId: string;
+  teacherEmail: string;
   teacherName: string;
   teacherProfileId: string;
 };
@@ -767,26 +771,152 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
     );
   }
 
+  const teacherGroups = assignments.reduce<
+    Array<{
+      students: AssignmentRow[];
+      teacherEmail: string;
+      teacherName: string;
+      teacherProfileId: string;
+    }>
+  >((groups, assignment) => {
+    const group = groups.find(
+      (item) => item.teacherProfileId === assignment.teacherProfileId,
+    );
+
+    if (group) {
+      group.students.push(assignment);
+      return groups;
+    }
+
+    return [
+      ...groups,
+      {
+        students: [assignment],
+        teacherEmail: assignment.teacherEmail,
+        teacherName: assignment.teacherName,
+        teacherProfileId: assignment.teacherProfileId,
+      },
+    ];
+  }, []);
+  const uniqueStudentsCount = new Set(
+    assignments.map((assignment) => assignment.studentProfileId),
+  ).size;
+
   return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {assignments.map((assignment) => (
-        <div key={assignment.id} className="ava-soft-card rounded-lg border p-4">
-          <div className="flex items-center gap-3 text-sm">
-            <span className="flex size-9 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-              <GraduationCap aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate font-medium">{assignment.teacherName}</p>
-              <p className="truncate text-muted-foreground">
-                {assignment.studentName}
-              </p>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Criado em {formatDate(assignment.createdAt)}
-          </p>
+    <div className="grid gap-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border border-primary/12 bg-white/80 p-3 shadow-sm">
+          <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Teachers
+          </span>
+          <strong className="mt-1 block text-2xl leading-none text-primary">
+            {teacherGroups.length}
+          </strong>
         </div>
-      ))}
+        <div className="rounded-lg border border-primary/12 bg-white/80 p-3 shadow-sm">
+          <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            Alunos
+          </span>
+          <strong className="mt-1 block text-2xl leading-none text-primary">
+            {uniqueStudentsCount}
+          </strong>
+        </div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
+          <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em]">
+            Vinculos
+          </span>
+          <strong className="mt-1 block text-2xl leading-none">
+            {assignments.length}
+          </strong>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {teacherGroups.map((group) => (
+          <article
+            key={group.teacherProfileId}
+            className="overflow-hidden rounded-lg border border-primary/15 bg-white/86 shadow-sm"
+          >
+            <div className="border-b border-primary/10 bg-primary/[0.055] p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                    <GraduationCap aria-hidden="true" className="size-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-primary">
+                      {group.teacherName}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {group.teacherEmail}
+                    </p>
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-full border border-primary/15 bg-white px-2.5 py-1 text-xs font-semibold text-primary">
+                  {group.students.length} aluno(s)
+                </span>
+              </div>
+            </div>
+
+            <div className="grid gap-2 p-3">
+              {group.students.map((assignment) => (
+                <div
+                  key={assignment.id}
+                  className="grid gap-3 rounded-md border border-primary/10 bg-white/78 p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+                      <UserRound aria-hidden="true" className="size-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-primary">
+                        {assignment.studentName}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {assignment.studentEmail}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 sm:self-center">
+                    <CheckCircle2 aria-hidden="true" className="size-3.5" />
+                    desde {formatDate(assignment.createdAt)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AssignmentOverview({ assignments }: { assignments: AssignmentRow[] }) {
+  return (
+    <div className="grid gap-4">
+      <div className="rounded-lg border border-primary/12 bg-white/76 p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary">
+              <Link2 aria-hidden="true" className="size-3.5" />
+              Mapa de acesso
+            </span>
+            <h2 className="mt-3 text-lg font-semibold text-primary">
+              Quem esta vinculado a quem
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Cada card mostra uma teacher e os alunos que aparecem para ela no
+              AVA.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2 text-sm font-semibold text-primary">
+            <ArrowRight aria-hidden="true" className="size-4" />
+            Teacher para aluno
+          </div>
+        </div>
+      </div>
+
+      <AssignmentList assignments={assignments} />
     </div>
   );
 }
@@ -1050,12 +1180,9 @@ export function AdminUsersPanel({
           ) : null}
 
           {activeTask === "vincular-aluno" ? (
-            <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+            <div className="grid gap-6 xl:grid-cols-[0.78fr_1.22fr]">
               <AdminAssignTeacherForm students={students} teachers={teachers} />
-              <div className="flex flex-col gap-3">
-                <h2 className="text-lg font-semibold">Vinculos atuais</h2>
-                <AssignmentList assignments={assignments} />
-              </div>
+              <AssignmentOverview assignments={assignments} />
             </div>
           ) : null}
 

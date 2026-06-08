@@ -187,6 +187,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           select: {
             user: {
               select: {
+                email: true,
                 name: true,
               },
             },
@@ -196,6 +197,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           select: {
             user: {
               select: {
+                email: true,
                 name: true,
               },
             },
@@ -801,8 +803,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       assignments={assignments.map((assignment) => ({
         createdAt: assignment.createdAt,
         id: assignment.id,
+        studentEmail: assignment.studentProfile.user.email,
         studentName: assignment.studentProfile.user.name,
         studentProfileId: assignment.studentProfileId,
+        teacherEmail: assignment.teacherProfile.user.email,
         teacherName: assignment.teacherProfile.user.name,
         teacherProfileId: assignment.teacherProfileId,
       }))}
