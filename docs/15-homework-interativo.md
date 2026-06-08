@@ -89,7 +89,7 @@ Tabelas e enums:
 - O salvamento das areas deve confirmar a quantidade persistida no banco, devolver as areas salvas para reconciliar o estado local do editor e avisar a teacher quando houver alteracoes nao salvas antes de recarregar ou sair da pagina.
 - O editor salva automaticamente as areas alguns segundos depois que a teacher para de criar, mover, redimensionar ou excluir campos; o botao `Salvar areas` continua existindo para forcar a gravacao manual, e falha de autosave nao remove as areas da tela. Quando a falha acontece, o aviso deve deixar claro que as areas ainda nao foram confirmadas e oferecer acao manual para salvar novamente antes de sair.
 - Campos podem ser `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX`, `DRAWING` ou `LISTENING`; `TINY_TEXT` salva letras/numeros curtos, `DRAWING` salva tracos vetoriais normalizados dentro do JSON de respostas, e `LISTENING` nao salva resposta do aluno, apenas toca o texto configurado pela teacher.
-- O botao de `LISTENING` alterna por clique entre velocidade normal e um pouco mais devagar, usando a rota protegida `/ava/homework-listening/[fieldId]` e OpenAI text-to-speech no servidor quando `OPENAI_API_KEY` estiver configurada.
+- O botao de `LISTENING` aparece para o aluno como `Ouvir`, sem rotulo tecnico de IA ou velocidade; internamente alterna por clique entre velocidade normal e um pouco mais devagar, usando a rota protegida `/ava/homework-listening/[fieldId]` e OpenAI text-to-speech no servidor quando `OPENAI_API_KEY` estiver configurada.
 - A leitura automatica do texto do `LISTENING` usa a rota protegida `/ava/homework-listening-detect`; no editor, o client tenta primeiro ler e reutilizar em cache a camada de texto do PDF por pagina quando existir, depois envia um recorte maior, com contraste e retry curto da area renderizada para reduzir atraso e melhorar precisao, mantendo fallback para o PDF/imagem protegido com coordenadas percentuais quando o recorte nao estiver disponivel ou nao trouxer texto. A rota retorna apenas o texto detectado; `STUDENT` nao acessa essa rota.
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
@@ -137,7 +137,7 @@ Tabelas e enums:
 - Reintroduzir criacao automatica por IA pode recriar caixas indevidas sobre o PDF e precisa de controle explicito da teacher.
 - Mudar coordenadas para pixels fixos prejudica responsividade.
 - Gemini/OpenAI podem ter custo por uso; a leitura automatica de `LISTENING` usa Gemini e tenta enviar apenas o recorte do box para reduzir atraso e custo, entao deve ser usada em materiais pedagogicos autorizados e conferida pela teacher antes de salvar.
-- Campos `LISTENING` tambem usam OpenAI por clique no botao de audio; manter o texto curto e objetivo, disclosure de voz gerada por IA e rota protegida para nao expor chave ou permitir acesso fora do aluno/teacher/admin autorizado.
+- Campos `LISTENING` tambem usam OpenAI por clique no botao de audio; manter o texto curto e objetivo, interface amigavel para aluno e rota protegida para nao expor chave ou permitir acesso fora do aluno/teacher/admin autorizado.
 - Usar preset de PDF agressivo pode reduzir legibilidade de materiais do Canva; manter `ebook` salvo motivo claro e revisar PDF pesado manualmente.
 
 ## Pendencias

@@ -128,7 +128,7 @@ Variaveis principais:
 - `OPENAI_CATTY_MODEL`: modelo OpenAI usado pela Catty no modo acionado por chamada nominal, exemplo `gpt-5.4-nano`.
 - `OPENAI_HOMEWORK_OCR_MODEL`: modelo para OCR opcional de homework legado, exemplo `gpt-4.1-mini`.
 - `OPENAI_LISTENING_TTS_MODEL`: modelo OpenAI de text-to-speech usado pelos campos Listening, exemplo `gpt-4o-mini-tts`.
-- `OPENAI_LISTENING_TTS_VOICE`: voz OpenAI usada pelos campos Listening, exemplo `nova`.
+- `OPENAI_LISTENING_TTS_VOICE`: voz OpenAI usada pelos campos Listening, exemplo `coral`.
 - `CATTY_ARTIFACT_ENRICHMENT_ENABLED`: ativa/desativa enriquecimento de temas no painel Admin/Teacher `Catty dos alunos`; nao afeta o chat normal.
 - `CATTY_ARTIFACT_SEARCH_PROVIDER`: provedor usado no enriquecimento, por padrao `offline`; `brave` usa Brave Search quando houver chave.
 - `CATTY_ARTIFACT_SEARCH_CACHE_DAYS`: validade do cache de sugestoes de temas, por padrao `90`.

@@ -12,11 +12,6 @@ const nextListeningSpeed = {
   slow: "normal",
 } satisfies Record<ListeningSpeed, ListeningSpeed>;
 
-const listeningSpeedLabels = {
-  normal: "normal",
-  slow: "mais devagar",
-} satisfies Record<ListeningSpeed, string>;
-
 function hashListeningSentence(value: string) {
   let hash = 0;
 
@@ -182,7 +177,6 @@ export function InteractiveHomeworkListeningPlayer({
   }
 
   const Icon = nextSpeed === "slow" ? Volume1 : Volume2;
-  const speedLabel = listeningSpeedLabels[nextSpeed];
 
   return (
     <div
@@ -193,11 +187,11 @@ export function InteractiveHomeworkListeningPlayer({
       }}
     >
       <button
-        aria-label={`${label}. Ouvir frase em velocidade ${speedLabel}. Voz gerada por IA.`}
-        className="group pointer-events-auto absolute right-0 top-1/2 z-20 flex size-[clamp(30px,44cqh,42px)] -translate-y-1/2 items-center justify-center rounded-full border border-primary/25 bg-white/95 text-primary shadow-[0_8px_22px_rgba(65,42,76,0.22)] transition hover:-translate-y-1/2 hover:scale-105 hover:border-primary hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 disabled:cursor-not-allowed disabled:opacity-55"
+        aria-label={`${label}. Ouvir frase em ingles.`}
+        className="group pointer-events-auto absolute right-0 top-1/2 z-20 flex h-[clamp(32px,48cqh,44px)] min-w-[clamp(58px,22cqw,82px)] -translate-y-1/2 items-center justify-center gap-1.5 rounded-full border-2 border-white bg-primary px-[clamp(9px,2cqw,13px)] text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.34)] ring-2 ring-primary/15 transition hover:-translate-y-1/2 hover:scale-105 hover:bg-primary/92 hover:shadow-[0_12px_28px_rgba(65,42,76,0.42)] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-55"
         disabled={!canPlay || isLoading}
         onClick={playListening}
-        title={`Voz gerada por IA - proximo audio: ${speedLabel}`}
+        title="Ouvir"
         type="button"
       >
         {isLoading ? (
@@ -205,8 +199,8 @@ export function InteractiveHomeworkListeningPlayer({
         ) : (
           <Icon aria-hidden="true" className="size-4" />
         )}
-        <span className="pointer-events-none absolute -top-7 right-0 hidden whitespace-nowrap rounded-[3px] border border-primary/15 bg-white/95 px-2 py-1 text-[10px] font-bold text-primary shadow-sm group-hover:inline-flex group-focus-visible:inline-flex">
-          {canPlay ? `IA - ${speedLabel}` : "sem frase"}
+        <span className="text-[clamp(10px,13cqh,12px)] font-black leading-none tracking-normal">
+          Ouvir
         </span>
       </button>
       {error ? (

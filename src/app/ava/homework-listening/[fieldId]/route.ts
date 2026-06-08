@@ -23,6 +23,7 @@ const OPENAI_TTS_VOICES = new Set([
   "verse",
   "cedar",
 ]);
+const DEFAULT_OPENAI_TTS_VOICE = "coral";
 
 function getListeningSpeedMode(request: Request): ListeningSpeedMode {
   const speed = new URL(request.url).searchParams.get("speed");
@@ -31,9 +32,10 @@ function getListeningSpeedMode(request: Request): ListeningSpeedMode {
 }
 
 function getOpenAiVoice() {
-  const voice = process.env.OPENAI_LISTENING_TTS_VOICE?.trim() || "nova";
+  const voice =
+    process.env.OPENAI_LISTENING_TTS_VOICE?.trim() || DEFAULT_OPENAI_TTS_VOICE;
 
-  return OPENAI_TTS_VOICES.has(voice) ? voice : "nova";
+  return OPENAI_TTS_VOICES.has(voice) ? voice : DEFAULT_OPENAI_TTS_VOICE;
 }
 
 function getOpenAiSpeechBody(input: string, mode: ListeningSpeedMode) {
@@ -58,8 +60,8 @@ function getOpenAiSpeechBody(input: string, mode: ListeningSpeedMode) {
   if (model.includes("gpt-4o")) {
     body.instructions =
       mode === "slow"
-        ? "Speak the English sentence with a lively, cheerful female English teacher tone, a little slower for a beginner student. Keep pronunciation clear and warm."
-        : "Speak the English sentence with a lively, cheerful female English teacher tone. Keep pronunciation clear, natural, and encouraging.";
+        ? "Speak the English sentence with a warm, smiling, cheerful female English teacher tone, a little slower for a beginner student. Keep pronunciation clear, friendly, and encouraging."
+        : "Speak the English sentence with a warm, smiling, cheerful female English teacher tone. Keep pronunciation clear, natural, friendly, and encouraging.";
   }
 
   return body;
@@ -97,7 +99,11 @@ export async function GET(
     },
   });
 
-  if (!field || field.type !== "LISTENING" || field.homework.kind !== "INTERACTIVE") {
+  if (
+    !field ||
+    field.type !== "LISTENING" ||
+    field.homework.kind !== "INTERACTIVE"
+  ) {
     return new NextResponse("Audio nao encontrado.", { status: 404 });
   }
 
