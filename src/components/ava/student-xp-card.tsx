@@ -146,9 +146,9 @@ export function CandyXpCard({
                 ))}
               </div>
               {xp.persisted ? (
-                <div className="mt-4 grid gap-2 sm:grid-cols-3">
-                  <div className="rounded-md border border-primary/10 bg-white/75 p-3">
-                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
+                  <div className="rounded-lg border border-primary/12 bg-white/86 p-3 shadow-[0_8px_18px_rgba(65,42,76,0.05)]">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase leading-4 text-muted-foreground">
                       <Flame aria-hidden="true" className="size-3.5" />
                       Sequencia
                     </span>
@@ -156,8 +156,8 @@ export function CandyXpCard({
                       {xp.streakDays} dia(s)
                     </strong>
                   </div>
-                  <div className="rounded-md border border-primary/10 bg-white/75 p-3">
-                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  <div className="rounded-lg border border-primary/12 bg-white/86 p-3 shadow-[0_8px_18px_rgba(65,42,76,0.05)]">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase leading-4 text-muted-foreground">
                       <CalendarDays aria-hidden="true" className="size-3.5" />
                       Melhor
                     </span>
@@ -165,8 +165,8 @@ export function CandyXpCard({
                       {xp.longestStreakDays} dia(s)
                     </strong>
                   </div>
-                  <div className="rounded-md border border-primary/10 bg-white/75 p-3">
-                    <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  <div className="rounded-lg border border-primary/12 bg-white/86 p-3 shadow-[0_8px_18px_rgba(65,42,76,0.05)]">
+                    <span className="flex items-center gap-2 text-xs font-semibold uppercase leading-4 text-muted-foreground">
                       <Award aria-hidden="true" className="size-3.5" />
                       Badges
                     </span>
@@ -178,25 +178,26 @@ export function CandyXpCard({
               ) : null}
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(152px,1fr))] gap-3">
               {xp.sources.map((source) => (
                 <div
                   key={source.label}
-                  className="rounded-lg border border-primary/12 bg-white/76 p-3 shadow-sm"
+                  className="relative min-h-[150px] overflow-hidden rounded-lg border border-primary/15 bg-white/90 p-3.5 shadow-[0_12px_28px_rgba(65,42,76,0.07)] ring-1 ring-white/70"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#412a4c,#e57cd8,#f6c65b)]" />
+                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 pt-1">
+                    <span className="break-words text-[0.72rem] font-bold uppercase leading-4 text-primary/75">
                       {source.label}
                     </span>
-                    <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-bold text-amber-900">
+                    <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold leading-none text-amber-900 shadow-sm">
                       +{xpFormatter.format(source.xp)}
                     </span>
                   </div>
-                  <strong className="mt-3 block text-2xl text-primary">
+                  <strong className="mt-4 block text-3xl leading-none text-primary">
                     {source.value}
                     {source.valueSuffix ?? ""}
                   </strong>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
                     {source.description}
                   </p>
                 </div>
