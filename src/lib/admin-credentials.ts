@@ -109,6 +109,9 @@ export function getEnvironmentCredentialDefinitions() {
   const definitions: EnvironmentCredentialDefinition[] = [];
   const geminiKey = getOptionalEnvValue("GEMINI_API_KEY");
   const geminiCattyModel = getOptionalEnvValue("GEMINI_CATTY_MODEL");
+  const geminiHomeworkOcrModel = getOptionalEnvValue(
+    "GEMINI_HOMEWORK_OCR_MODEL",
+  );
   const openAiKey = getOptionalEnvValue("OPENAI_API_KEY");
   const openAiCattyModel = getOptionalEnvValue("OPENAI_CATTY_MODEL");
   const homeworkModel = getOptionalEnvValue("OPENAI_HOMEWORK_OCR_MODEL");
@@ -121,7 +124,9 @@ export function getEnvironmentCredentialDefinitions() {
     "CATTY_ARTIFACT_SEARCH_CACHE_DAYS",
   );
   const braveSearchKey = getOptionalEnvValue("BRAVE_SEARCH_API_KEY");
-  const jitsiDomain = getOptionalEnvValue("NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN");
+  const jitsiDomain = getOptionalEnvValue(
+    "NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN",
+  );
 
   if (geminiKey) {
     definitions.push({
@@ -144,6 +149,18 @@ export function getEnvironmentCredentialDefinitions() {
       service: "Google Gemini",
       sourceKey: "env:GEMINI_CATTY_MODEL",
       value: geminiCattyModel,
+    });
+  }
+
+  if (geminiHomeworkOcrModel) {
+    definitions.push({
+      kind: "CONFIG",
+      label: "Modelo Gemini OCR homework",
+      notes:
+        "Modelo Gemini usado para ler o texto dentro do box Listening no homework/aula interativa.",
+      service: "Google Gemini",
+      sourceKey: "env:GEMINI_HOMEWORK_OCR_MODEL",
+      value: geminiHomeworkOcrModel,
     });
   }
 
@@ -177,7 +194,7 @@ export function getEnvironmentCredentialDefinitions() {
       kind: "CONFIG",
       label: "Modelo OCR homework",
       notes:
-        "Modelo OpenAI usado pelo OCR opcional de homework e pela leitura automatica do texto do Listening.",
+        "Modelo OpenAI usado pelo OCR opcional de homework antigo; a leitura do Listening usa Gemini.",
       service: "OpenAI",
       sourceKey: "env:OPENAI_HOMEWORK_OCR_MODEL",
       value: homeworkModel,
@@ -200,8 +217,7 @@ export function getEnvironmentCredentialDefinitions() {
     definitions.push({
       kind: "CONFIG",
       label: "Voz TTS Listening",
-      notes:
-        "Voz OpenAI usada nos botoes de volume dos campos Listening.",
+      notes: "Voz OpenAI usada nos botoes de volume dos campos Listening.",
       service: "OpenAI",
       sourceKey: "env:OPENAI_LISTENING_TTS_VOICE",
       value: listeningTtsVoice,
@@ -260,7 +276,9 @@ export function getEnvironmentCredentialDefinitions() {
   return definitions;
 }
 
-export async function syncEnvironmentAdminCredentials(createdByUserId?: string) {
+export async function syncEnvironmentAdminCredentials(
+  createdByUserId?: string,
+) {
   const prisma = getPrisma();
   const definitions = getEnvironmentCredentialDefinitions();
   let created = 0;

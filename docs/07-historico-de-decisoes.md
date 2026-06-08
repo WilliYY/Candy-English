@@ -487,10 +487,10 @@ Cada decisao deve conter:
 
 ### 2026-06-07 - Leitura automatica do texto do Listening
 
-- Decisao: ao criar ou reler um campo `LISTENING`, o editor chama `/ava/homework-listening-detect` com `homeworkId`, pagina e coordenadas percentuais do box para a OpenAI ler apenas o texto marcado no PDF/imagem e preencher o `placeholder` conferivel pela teacher.
+- Decisao: ao criar ou reler um campo `LISTENING`, o editor chama `/ava/homework-listening-detect` com `homeworkId`, pagina, coordenadas percentuais e, quando possivel, um recorte leve do box para o Gemini ler apenas o texto marcado no PDF/imagem e preencher o `placeholder` conferivel pela teacher.
 - Motivo: reduzir digitacao manual e posicionar naturalmente o volume no fim do proprio texto desenhado, sem tentar gerar campos automaticos no arquivo inteiro.
-- Impacto: nova rota server-side protegida para Admin/Teacher, validacao Zod em `src/lib/validations/learning.ts`, editor com estado de deteccao/releitura, documentacao de ambiente e fallback de voz `nova` para um tom feminino/animado no TTS.
-- Riscos/cuidados: a deteccao envia o arquivo pedagogico protegido para OpenAI quando `OPENAI_API_KEY` existe; Student nao pode acessar a rota; a teacher deve conferir o texto detectado antes de salvar, principalmente em areas pequenas ou com texto vizinho.
+- Impacto: rota server-side protegida para Admin/Teacher, validacao Zod em `src/lib/validations/learning.ts`, editor com estado de deteccao/releitura, documentacao de ambiente, `GEMINI_HOMEWORK_OCR_MODEL` opcional e fallback de voz `nova` para um tom feminino/animado no TTS.
+- Riscos/cuidados: a deteccao envia o recorte pedagogico protegido para Gemini quando `GEMINI_API_KEY` existe; Student nao pode acessar a rota; a teacher deve conferir o texto detectado antes de salvar, principalmente em areas pequenas ou com texto vizinho.
 
 ## Regras de negocio que precisam ser preservadas
 

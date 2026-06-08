@@ -1,12 +1,7 @@
 "use client";
 
 import { LoaderCircle, Volume1, Volume2 } from "lucide-react";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { normalizeListeningSentence } from "@/lib/interactive-homework-fields";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +27,11 @@ function hashListeningSentence(value: string) {
   return Math.abs(hash).toString(36);
 }
 
-function listeningUrl(fieldId: string, speed: ListeningSpeed, sentence: string) {
+function listeningUrl(
+  fieldId: string,
+  speed: ListeningSpeed,
+  sentence: string,
+) {
   const params = new URLSearchParams({
     speed,
     v: hashListeningSentence(sentence),
@@ -56,14 +55,14 @@ export function InteractiveHomeworkListeningPreview({
     <span
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-0 flex items-center rounded-[3px]",
+        "pointer-events-none absolute inset-0 flex items-center rounded-[4px] border transition",
         selected
-          ? "bg-white/35 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.75)]"
-          : "bg-white/10",
+          ? "border-primary/55 bg-white/55 shadow-[0_10px_22px_rgba(65,42,76,0.12),inset_0_0_0_1px_rgba(255,255,255,0.78)]"
+          : "border-primary/20 bg-white/24 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.5)]",
         className,
       )}
     >
-      <span className="absolute inset-x-1 top-1/2 border-t border-dashed border-primary/25" />
+      <span className="absolute inset-x-2 top-1/2 border-t border-dashed border-primary/22" />
       <span
         className={cn(
           "absolute right-0 top-1/2 flex -translate-y-1/2 items-center justify-center rounded-full border shadow-sm",
@@ -72,11 +71,14 @@ export function InteractiveHomeworkListeningPreview({
             : "size-8 border-primary/25 bg-white/85 text-primary",
         )}
       >
-        <Volume2 aria-hidden="true" className={selected ? "size-4" : "size-3.5"} />
+        <Volume2
+          aria-hidden="true"
+          className={selected ? "size-4" : "size-3.5"}
+        />
       </span>
-      {selected ? (
-        <span className="absolute -top-7 right-0 max-w-[min(280px,70vw)] truncate rounded-[3px] border border-primary/15 bg-white/90 px-2 py-1 text-[10px] font-semibold leading-none text-primary shadow-sm">
-          {text || "Digite o texto do listening"}
+      {selected && !text ? (
+        <span className="absolute -top-7 right-0 rounded-[3px] border border-primary/15 bg-white/95 px-2 py-1 text-[10px] font-semibold leading-none text-primary shadow-sm">
+          texto pendente
         </span>
       ) : null}
     </span>
@@ -141,7 +143,9 @@ export function InteractiveHomeworkListeningPlayer({
       let audioUrl = objectUrlsRef.current[speed];
 
       if (!audioUrl) {
-        const response = await fetch(listeningUrl(fieldId, speed, sentenceText));
+        const response = await fetch(
+          listeningUrl(fieldId, speed, sentenceText),
+        );
 
         if (!response.ok) {
           throw new Error("Audio indisponivel.");
@@ -178,7 +182,11 @@ export function InteractiveHomeworkListeningPlayer({
     >
       <span
         aria-hidden="true"
-        className="absolute inset-x-1 top-1/2 border-t border-dashed border-primary/18"
+        className="absolute inset-0 rounded-[4px] border border-primary/8 bg-white/[0.03]"
+      />
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-2 top-1/2 border-t border-dashed border-primary/18"
       />
       <button
         aria-label={`${label}. Ouvir frase em velocidade ${speedLabel}. Voz gerada por IA.`}

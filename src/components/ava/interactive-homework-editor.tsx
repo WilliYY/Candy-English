@@ -160,9 +160,9 @@ type EditorAction =
 const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
 const AUTOSAVE_FIELDS_DELAY_MS = 2500;
-const LISTENING_AUTO_DETECTION_DELAY_MS = 450;
-const LISTENING_CROP_MAX_DIMENSION = 1400;
-const LISTENING_CROP_MAX_DATA_URL_LENGTH = 2_100_000;
+const LISTENING_AUTO_DETECTION_DELAY_MS = 300;
+const LISTENING_CROP_MAX_DIMENSION = 1150;
+const LISTENING_CROP_MAX_DATA_URL_LENGTH = 1_350_000;
 const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
   [
     [14, 62],
@@ -374,12 +374,12 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
   }
 
   try {
-    const paddingX = Math.max(8, sourceWidth * 0.008);
-    const paddingY = Math.max(6, sourceHeight * 0.008);
     const rawX = (field.x / 100) * sourceWidth;
     const rawY = (field.y / 100) * sourceHeight;
     const rawWidth = (field.width / 100) * sourceWidth;
     const rawHeight = (field.height / 100) * sourceHeight;
+    const paddingX = clampNumber(rawWidth * 0.025, 3, 14);
+    const paddingY = clampNumber(rawHeight * 0.08, 2, 8);
     const sx = clampNumber(rawX - paddingX, 0, sourceWidth - 1);
     const sy = clampNumber(rawY - paddingY, 0, sourceHeight - 1);
     const sw = clampNumber(rawWidth + paddingX * 2, 1, sourceWidth - sx);
@@ -400,8 +400,11 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
 
     cropCanvas.width = targetWidth;
     cropCanvas.height = targetHeight;
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, targetWidth, targetHeight);
+    context.filter = "contrast(1.12) saturate(0.92)";
     context.drawImage(
       mediaElement,
       sx,
@@ -413,17 +416,18 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
       targetWidth,
       targetHeight,
     );
+    context.filter = "none";
+
+    const jpegDataUrl = cropCanvas.toDataURL("image/jpeg", 0.9);
+
+    if (jpegDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH) {
+      return jpegDataUrl;
+    }
 
     const pngDataUrl = cropCanvas.toDataURL("image/png");
 
-    if (pngDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH) {
-      return pngDataUrl;
-    }
-
-    const jpegDataUrl = cropCanvas.toDataURL("image/jpeg", 0.92);
-
-    return jpegDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH
-      ? jpegDataUrl
+    return pngDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH
+      ? pngDataUrl
       : undefined;
   } catch {
     return undefined;
@@ -1332,8 +1336,8 @@ function InteractiveHomeworkEditorItem({
         setSaveStatus("idle");
         setListeningDetectionMessage(
           payload.confidence === "high"
-            ? `Texto detectado: "${sentence}"`
-            : `Texto detectado com cuidado: "${sentence}". Confira antes de salvar.`,
+            ? "Gemini leu o texto do box. Confira antes de salvar."
+            : "Gemini leu com baixa confianca. Confira o texto acima antes de salvar.",
         );
       } catch {
         if (controller.signal.aborted) {
@@ -1822,6 +1826,9 @@ function InteractiveHomeworkEditorItem({
                 <label className="grid min-w-0 gap-1 text-sm font-semibold text-primary">
                   <span className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className="shrink-0">Texto do listening</span>
+                    <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-bold uppercase leading-none tracking-[0.08em] text-sky-700">
+                      Gemini
+                    </span>
                     <span
                       className={cn(
                         "rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase leading-none tracking-[0.08em]",
@@ -1840,13 +1847,13 @@ function InteractiveHomeworkEditorItem({
                     </span>
                   </span>
                   <Textarea
-                    className="min-h-16 max-h-16 resize-none overflow-auto bg-white/95 px-3 py-2 font-medium leading-5"
+                    className="min-h-24 max-h-48 resize-y overflow-auto bg-white/95 px-3 py-2 font-medium leading-6 shadow-inner shadow-primary/[0.03]"
                     maxLength={LISTENING_SENTENCE_MAX_LENGTH}
                     onChange={(event) =>
                       updateSelectedListeningSentence(event.target.value)
                     }
-                    placeholder="Desenhe sobre o texto, ou corrija aqui"
-                    rows={2}
+                    placeholder="Digite ou confira aqui uma ou mais frases em ingles"
+                    rows={3}
                     value={selectedField.placeholder ?? ""}
                   />
                 </label>
@@ -1874,9 +1881,9 @@ function InteractiveHomeworkEditorItem({
                     voz feminina
                   </span>
                 </div>
-                <p className="min-w-0 truncate text-xs font-medium text-muted-foreground md:col-span-2">
+                <p className="min-w-0 text-xs font-medium leading-5 text-muted-foreground md:col-span-2">
                   {listeningDetectionMessage ??
-                    "O texto fica no box selecionado; corrija aqui antes de salvar."}
+                    "O texto do audio fica neste campo. Para textos maiores, escreva ou cole varias frases e salve o box."}
                 </p>
               </div>
             ) : (

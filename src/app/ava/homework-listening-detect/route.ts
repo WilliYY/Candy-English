@@ -21,54 +21,171 @@ const SUPPORTED_LISTENING_OCR_MIME_TYPES = new Set([
   "image/webp",
 ]);
 
-function extractOutputText(payload: unknown) {
+const LISTENING_FULL_ASSET_FALLBACK_MAX_BYTES = 4_000_000;
+
+function buildGeminiUrl(model: string) {
+  const normalizedModel = model.replace(/^models\//, "");
+
+  return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+    normalizedModel,
+  )}:generateContent`;
+}
+
+function extractGeminiResponseText(payload: unknown) {
   if (typeof payload !== "object" || payload === null) {
     return "";
   }
 
-  if (
-    "output_text" in payload &&
-    typeof (payload as { output_text?: unknown }).output_text === "string"
-  ) {
-    return (payload as { output_text: string }).output_text;
-  }
+  const candidates = (payload as { candidates?: unknown }).candidates;
 
-  const output = (payload as { output?: unknown }).output;
-  if (!Array.isArray(output)) {
+  if (!Array.isArray(candidates)) {
     return "";
   }
 
-  for (const item of output) {
+  for (const candidate of candidates) {
     const content =
-      typeof item === "object" && item !== null
-        ? (item as { content?: unknown }).content
+      typeof candidate === "object" && candidate !== null
+        ? (candidate as { content?: unknown }).content
+        : null;
+    const parts =
+      typeof content === "object" && content !== null
+        ? (content as { parts?: unknown }).parts
         : null;
 
-    if (!Array.isArray(content)) {
+    if (!Array.isArray(parts)) {
       continue;
     }
 
-    for (const part of content) {
-      if (
+    const text = parts
+      .map((part) =>
         typeof part === "object" &&
         part !== null &&
         "text" in part &&
         typeof (part as { text?: unknown }).text === "string"
-      ) {
-        return (part as { text: string }).text;
-      }
+          ? (part as { text: string }).text
+          : "",
+      )
+      .filter(Boolean)
+      .join(" ");
+
+    if (text) {
+      return text;
     }
   }
 
   return "";
 }
 
+function stripJsonFence(text: string) {
+  return text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function parseDataUrl(value: string) {
+  const match = value.match(
+    /^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    base64: match[2],
+    mimeType: match[1],
+  };
+}
+
+async function getGeminiMediaPart({
+  assetMimeType,
+  assetSizeBytes,
+  assetStoragePath,
+  imageDataUrl,
+}: {
+  assetMimeType: string;
+  assetSizeBytes?: number | null;
+  assetStoragePath: string;
+  imageDataUrl?: string;
+}) {
+  if (imageDataUrl) {
+    const parsed = parseDataUrl(imageDataUrl);
+
+    if (parsed) {
+      return {
+        inline_data: {
+          data: parsed.base64,
+          mime_type: parsed.mimeType,
+        },
+      };
+    }
+  }
+
+  if (
+    assetSizeBytes &&
+    assetSizeBytes > LISTENING_FULL_ASSET_FALLBACK_MAX_BYTES
+  ) {
+    return null;
+  }
+
+  try {
+    const file = await readFile(getStoragePath(assetStoragePath));
+
+    return {
+      inline_data: {
+        data: file.toString("base64"),
+        mime_type: assetMimeType,
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildListeningDetectionPrompt({
+  hasCrop,
+  height,
+  page,
+  width,
+  x,
+  y,
+}: {
+  hasCrop: boolean;
+  height: number;
+  page: number;
+  width: number;
+  x: number;
+  y: number;
+}) {
+  const areaInstruction = hasCrop
+    ? "A imagem enviada ja e o recorte exato da area desenhada. Leia apenas o texto visivel dentro desse recorte."
+    : `A area fica na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. Leia apenas o texto majoritariamente dentro dessa area.`;
+
+  return (
+    "Voce esta fazendo OCR para um campo Listening da Candy English. " +
+    `${areaInstruction} ` +
+    "Extraia somente texto em ingles que deve virar audio. " +
+    "Preserve espacos entre palavras, pontuacao, maiusculas/minusculas e a ordem natural de leitura. " +
+    "Se houver varias frases dentro do box, mantenha todas em uma frase ou paragrafo curto. " +
+    "Nunca junte palavras: retorne 'Do you like pizza?' e nunca 'doyoulikepizza'. " +
+    "Ignore titulos, numeros de exercicio, alternativas, respostas ou texto vizinho parcialmente cortado quando nao forem o alvo central do box. " +
+    "Se o box pegar linhas de resposta abaixo da frase, ignore essas linhas. " +
+    "Se nao houver texto claro, use texto vazio. " +
+    `Limite o texto a ${LISTENING_SENTENCE_MAX_LENGTH} caracteres. ` +
+    'Responda somente JSON valido no formato {"text":"...","confidence":"high|medium|low"}.'
+  );
+}
+
 function parseDetectionPayload(text: string): {
   confidence: DetectionConfidence;
   sentence: string;
 } {
+  const clean = stripJsonFence(text);
+
   try {
-    const parsed = JSON.parse(text) as {
+    const parsed = JSON.parse(clean) as {
       confidence?: unknown;
       text?: unknown;
     };
@@ -87,7 +204,80 @@ function parseDetectionPayload(text: string): {
   } catch {
     return {
       confidence: "low",
-      sentence: normalizeListeningSentence(text),
+      sentence: normalizeListeningSentence(clean),
+    };
+  }
+}
+
+async function requestGeminiListeningDetection({
+  hasCrop,
+  mediaPart,
+  prompt,
+}: {
+  hasCrop: boolean;
+  mediaPart: unknown;
+  prompt: string;
+}) {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+
+  if (!apiKey) {
+    return {
+      error: "Gemini nao configurado. Digite o texto manualmente.",
+      status: 503,
+    };
+  }
+
+  const model =
+    process.env.GEMINI_HOMEWORK_OCR_MODEL?.trim() ||
+    process.env.GEMINI_CATTY_MODEL?.trim() ||
+    "gemini-3.5-flash";
+
+  try {
+    const response = await fetch(buildGeminiUrl(model), {
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              mediaPart,
+              {
+                text: prompt,
+              },
+            ],
+            role: "user",
+          },
+        ],
+        generationConfig: {
+          maxOutputTokens: 320,
+          responseMimeType: "application/json",
+          temperature: 0,
+        },
+      }),
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      method: "POST",
+      signal: AbortSignal.timeout(hasCrop ? 12_000 : 18_000),
+    });
+
+    if (!response.ok) {
+      console.warn(`Listening Gemini OCR failed: status ${response.status}`);
+
+      return {
+        error: "Nao consegui ler o texto automaticamente.",
+        status: 502,
+      };
+    }
+
+    const payload = (await response.json()) as unknown;
+
+    return {
+      detection: parseDetectionPayload(extractGeminiResponseText(payload)),
+    };
+  } catch {
+    return {
+      error: "Nao consegui ler o texto automaticamente.",
+      status: 502,
     };
   }
 }
@@ -117,9 +307,9 @@ export async function POST(request: Request) {
   const homework = await prisma.homework.findUnique({
     where: { id: parsed.data.homeworkId },
     select: {
-      assetFileName: true,
       assetMimeType: true,
       assetPageCount: true,
+      assetSizeBytes: true,
       assetStoragePath: true,
       kind: true,
       teacherProfileId: true,
@@ -139,10 +329,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (
-    homework.assetPageCount &&
-    parsed.data.page > homework.assetPageCount
-  ) {
+  if (homework.assetPageCount && parsed.data.page > homework.assetPageCount) {
     return NextResponse.json(
       { message: "Pagina da area invalida." },
       { status: 400 },
@@ -155,158 +342,69 @@ export async function POST(request: Request) {
       select: { id: true },
     });
 
-    if (
-      !teacherProfile ||
-      homework.teacherProfileId !== teacherProfile.id
-    ) {
+    if (!teacherProfile || homework.teacherProfileId !== teacherProfile.id) {
       return NextResponse.json({ message: "Nao autorizado." }, { status: 403 });
     }
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-
-  if (!apiKey) {
-    return NextResponse.json(
-      { message: "OpenAI nao configurada. Digite o texto manualmente." },
-      { status: 503 },
-    );
-  }
-
-  const assetMimeType = homework.assetMimeType;
-  const assetStoragePath = homework.assetStoragePath;
-  const model = process.env.OPENAI_HOMEWORK_OCR_MODEL?.trim() || "gpt-4.1-mini";
   const { height, imageDataUrl, page, width, x, y } = parsed.data;
-  const mediaContent = imageDataUrl
-    ? {
-        detail: "high",
-        image_url: imageDataUrl,
-        type: "input_image",
-      }
-    : await (async () => {
-        let file: Buffer;
+  const hasCrop = Boolean(imageDataUrl);
+  const mediaPart = await getGeminiMediaPart({
+    assetMimeType: homework.assetMimeType,
+    assetSizeBytes: homework.assetSizeBytes,
+    assetStoragePath: homework.assetStoragePath,
+    imageDataUrl,
+  });
 
-        try {
-          file = await readFile(getStoragePath(assetStoragePath));
-        } catch {
-          return null;
-        }
-
-        const base64 = file.toString("base64");
-
-        return assetMimeType === "application/pdf"
-          ? {
-              file_data: `data:${assetMimeType};base64,${base64}`,
-              filename: homework.assetFileName ?? "homework.pdf",
-              type: "input_file",
-            }
-          : {
-              detail: "high",
-              image_url: `data:${assetMimeType};base64,${base64}`,
-              type: "input_image",
-            };
-      })();
-  const areaInstruction = imageDataUrl
-    ? "A imagem enviada ja e o recorte da area desenhada. Leia somente o texto legivel dentro desse recorte, preservando uma ou mais frases quando existirem. "
-    : `A area esta na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. Leia o texto majoritariamente dentro dessa area, preservando uma ou mais frases quando existirem. `;
-
-  if (!mediaContent) {
+  if (!mediaPart) {
     return NextResponse.json(
-      { message: "Arquivo da atividade nao encontrado." },
-      { status: 404 },
-    );
-  }
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      body: JSON.stringify({
-        input: [
-          {
-            content: [
-              mediaContent,
-              {
-                text:
-                  "Voce esta ajudando a teacher da Candy English a criar um campo Listening. " +
-                  "Leia somente o texto em ingles impresso dentro da area desenhada pela teacher no PDF/imagem. " +
-                  areaInstruction +
-                  "O texto detectado sera usado em text-to-speech e o botao de volume ficara no fim direito da area. " +
-                  "Preserve os espacos entre palavras, pontuacao e maiusculas/minusculas como aparecem no material. " +
-                  "Nao junte palavras, por exemplo retorne 'Do you like pizza?' e nunca 'doyoulikepizza'. " +
-                  "Se a area pegar texto vizinho, escolha apenas as palavras e frases majoritariamente dentro do box. " +
-                  "Se nao houver texto legivel, retorne text vazio. Responda apenas com o JSON solicitado.",
-                type: "input_text",
-              },
-            ],
-            role: "user",
-          },
-        ],
-        max_output_tokens: 400,
-        model,
-        text: {
-          format: {
-            name: "listening_text_detection",
-            schema: {
-              additionalProperties: false,
-              properties: {
-                confidence: {
-                  enum: ["high", "medium", "low"],
-                  type: "string",
-                },
-                text: {
-                  maxLength: LISTENING_SENTENCE_MAX_LENGTH,
-                  type: "string",
-                },
-              },
-              required: ["text", "confidence"],
-              type: "object",
-            },
-            strict: true,
-            type: "json_schema",
-          },
-        },
-      }),
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+      {
+        message:
+          "Nao consegui preparar o recorte. Aguarde a pagina carregar ou digite o texto manualmente.",
       },
-      method: "POST",
-      signal: AbortSignal.timeout(25_000),
-    });
-
-    if (!response.ok) {
-      console.warn(`Listening OCR failed: status ${response.status}`);
-
-      return NextResponse.json(
-        { message: "Nao consegui ler o texto automaticamente." },
-        { status: 502 },
-      );
-    }
-
-    const payload = (await response.json()) as unknown;
-    const detection = parseDetectionPayload(extractOutputText(payload));
-
-    if (!detection.sentence) {
-      return NextResponse.json(
-        {
-          confidence: detection.confidence,
-          message: "Nao encontrei texto claro nessa area.",
-          text: "",
-        },
-        { status: 422 },
-      );
-    }
-
-    return NextResponse.json({
-      confidence: detection.confidence,
-      message:
-        detection.confidence === "high"
-          ? "Texto lido automaticamente."
-          : "Texto detectado. Confira antes de salvar.",
-      text: detection.sentence,
-    });
-  } catch {
-    return NextResponse.json(
-      { message: "Nao consegui ler o texto automaticamente." },
-      { status: 502 },
+      { status: 422 },
     );
   }
+
+  const result = await requestGeminiListeningDetection({
+    hasCrop,
+    mediaPart,
+    prompt: buildListeningDetectionPrompt({
+      hasCrop,
+      height,
+      page,
+      width,
+      x,
+      y,
+    }),
+  });
+
+  if ("error" in result) {
+    return NextResponse.json(
+      { message: result.error },
+      { status: result.status },
+    );
+  }
+
+  const detection = result.detection;
+
+  if (!detection.sentence) {
+    return NextResponse.json(
+      {
+        confidence: detection.confidence,
+        message: "Nao encontrei texto claro nessa area.",
+        text: "",
+      },
+      { status: 422 },
+    );
+  }
+
+  return NextResponse.json({
+    confidence: detection.confidence,
+    message:
+      detection.confidence === "high"
+        ? "Gemini leu o texto do box."
+        : "Gemini leu o texto com baixa confianca. Confira antes de salvar.",
+    text: detection.sentence,
+  });
 }
