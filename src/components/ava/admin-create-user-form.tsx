@@ -2,9 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
+  AtSign,
   BrainCircuit,
   CalendarDays,
   GraduationCap,
+  KeyRound,
   LoaderCircle,
   Phone,
   Plus,
@@ -32,11 +34,59 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 const roleDescriptions: Record<Role, string> = {
   ADMIN: "Acesso total ao AVA.",
   TEACHER: "Organiza aulas e acompanha alunos.",
   STUDENT: "Acessa materiais e atividades.",
+};
+
+const roleCreateTone: Record<
+  Role,
+  {
+    field: string;
+    icon: string;
+    profile: string;
+    shell: string;
+    submit: string;
+    tag: string;
+  }
+> = {
+  ADMIN: {
+    field:
+      "border-amber-200/75 bg-white/90 shadow-[0_10px_24px_rgba(180,83,9,0.08)]",
+    icon: "bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.22)]",
+    profile:
+      "border-amber-200/85 bg-gradient-to-r from-amber-50 via-white to-[#fce5d8]/80",
+    shell:
+      "border-amber-200/85 bg-gradient-to-br from-white via-amber-50/55 to-[#fce5d8]/70 shadow-[0_18px_48px_rgba(180,83,9,0.12)]",
+    submit:
+      "border-primary/20 bg-gradient-to-r from-white via-amber-50/70 to-[#fce5d8]/70",
+    tag: "border-amber-200 bg-amber-100 text-amber-950",
+  },
+  STUDENT: {
+    field:
+      "border-primary/10 bg-white/90 shadow-[0_10px_24px_rgba(65,42,76,0.05)]",
+    icon: "bg-primary text-primary-foreground shadow-sm",
+    profile:
+      "border-sky-200/75 bg-gradient-to-r from-sky-50 via-white to-secondary/55",
+    shell:
+      "border-primary/15 bg-white/80 shadow-[0_16px_44px_rgba(65,42,76,0.08)]",
+    submit: "border-primary/15 bg-white/80",
+    tag: "border-primary/15 bg-primary/[0.04] text-primary",
+  },
+  TEACHER: {
+    field:
+      "border-pink-200/65 bg-white/90 shadow-[0_10px_24px_rgba(190,24,93,0.07)]",
+    icon: "bg-primary text-primary-foreground shadow-sm",
+    profile:
+      "border-pink-200/75 bg-gradient-to-r from-pink-50 via-white to-secondary/55",
+    shell:
+      "border-primary/15 bg-white/80 shadow-[0_16px_44px_rgba(65,42,76,0.08)]",
+    submit: "border-primary/15 bg-white/80",
+    tag: "border-pink-200 bg-pink-50 text-pink-950",
+  },
 };
 
 const defaultValues: AdminCreateUserInput = {
@@ -122,7 +172,10 @@ export function AdminCreateUserForm({
   const role = fixedRole ?? form.watch("role");
   const age = calculateAge(watchedBirthDate);
   const FixedIcon = fixedRole ? getRoleIcon(fixedRole) : null;
+  const HeaderIcon = FixedIcon ?? UserRound;
   const finalSubmitLabel = submitLabel ?? "Cadastrar usuario";
+  const roleTone = roleCreateTone[role];
+  const isAdminProfile = role === "ADMIN";
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
@@ -157,11 +210,21 @@ export function AdminCreateUserForm({
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
       <FieldGroup className="gap-5">
-        <section className="rounded-lg border border-primary/15 bg-white/80 p-4 shadow-[0_16px_44px_rgba(65,42,76,0.08)]">
+        <section
+          className={cn(
+            "overflow-hidden rounded-lg border p-4 transition-colors",
+            roleTone.shell,
+          )}
+        >
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="flex min-w-0 items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <UserRound aria-hidden="true" className="size-5" />
+              <span
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-lg",
+                  roleTone.icon,
+                )}
+              >
+                <HeaderIcon aria-hidden="true" className="size-5" />
               </span>
               <span className="min-w-0">
                 <strong className="block text-base text-primary">
@@ -172,13 +235,60 @@ export function AdminCreateUserForm({
                 </span>
               </span>
             </span>
-            <span className="w-fit rounded-full border border-primary/15 bg-primary/[0.04] px-3 py-1 text-xs font-bold uppercase text-primary">
+            <span
+              className={cn(
+                "w-fit rounded-full border px-3 py-1 text-xs font-bold uppercase",
+                roleTone.tag,
+              )}
+            >
               Login
             </span>
           </div>
 
+          {isAdminProfile ? (
+            <div className="mb-4 grid gap-3 md:grid-cols-3">
+              {[
+                {
+                  Icon: ShieldCheck,
+                  label: "Permissao",
+                  value: "Admin total",
+                },
+                {
+                  Icon: AtSign,
+                  label: "Entrada",
+                  value: "Email do AVA",
+                },
+                {
+                  Icon: KeyRound,
+                  label: "Senha",
+                  value: "Provisoria",
+                },
+              ].map(({ Icon, label, value }) => (
+                <span
+                  key={label}
+                  className="flex min-w-0 items-center gap-3 rounded-lg border border-amber-200/80 bg-white/82 p-3 text-sm shadow-sm"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-900">
+                    <Icon aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-amber-900/70">
+                      {label}
+                    </span>
+                    <strong className="mt-0.5 block truncate text-primary">
+                      {value}
+                    </strong>
+                  </span>
+                </span>
+              ))}
+            </div>
+          ) : null}
+
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(220px,0.8fr)]">
-            <Field data-invalid={Boolean(form.formState.errors.name)}>
+            <Field
+              className={cn("rounded-lg border p-3", roleTone.field)}
+              data-invalid={Boolean(form.formState.errors.name)}
+            >
               <FieldLabel htmlFor="admin-user-name">Nome completo</FieldLabel>
               <Input
                 id="admin-user-name"
@@ -191,7 +301,10 @@ export function AdminCreateUserForm({
               <FieldError errors={[form.formState.errors.name]} />
             </Field>
 
-            <Field data-invalid={Boolean(form.formState.errors.email)}>
+            <Field
+              className={cn("rounded-lg border p-3", roleTone.field)}
+              data-invalid={Boolean(form.formState.errors.email)}
+            >
               <FieldLabel htmlFor="admin-user-email">
                 Email / usuario de login
               </FieldLabel>
@@ -210,7 +323,10 @@ export function AdminCreateUserForm({
               <FieldError errors={[form.formState.errors.email]} />
             </Field>
 
-            <Field data-invalid={Boolean(form.formState.errors.password)}>
+            <Field
+              className={cn("rounded-lg border p-3", roleTone.field)}
+              data-invalid={Boolean(form.formState.errors.password)}
+            >
               <FieldLabel htmlFor="admin-user-password">
                 Senha provisoria
               </FieldLabel>
@@ -223,25 +339,47 @@ export function AdminCreateUserForm({
                 placeholder="Ex: candy123"
                 {...form.register("password")}
               />
-              <FieldDescription>
-                Envie por um canal seguro.
-              </FieldDescription>
+              <FieldDescription>Envie por um canal seguro.</FieldDescription>
               <FieldError errors={[form.formState.errors.password]} />
             </Field>
           </div>
         </section>
 
         {fixedRole && FixedIcon ? (
-          <section className="flex items-start gap-3 rounded-lg border border-primary/15 bg-gradient-to-r from-primary/[0.06] to-[#fce5d8]/70 p-4 text-sm text-muted-foreground shadow-sm">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <FixedIcon aria-hidden="true" />
+          <section
+            className={cn(
+              "flex flex-col gap-4 rounded-lg border p-4 text-sm text-muted-foreground shadow-sm sm:flex-row sm:items-center sm:justify-between",
+              roleTone.profile,
+            )}
+          >
+            <span className="flex min-w-0 items-start gap-3">
+              <span
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-lg",
+                  roleTone.icon,
+                )}
+              >
+                <FixedIcon aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-base text-primary">
+                  Perfil: {ROLE_LABELS[fixedRole]}
+                </strong>
+                <span className="mt-1 block">
+                  {roleDescriptions[fixedRole]}
+                </span>
+              </span>
             </span>
-            <span className="min-w-0">
-              <strong className="block text-base text-primary">
-                Perfil: {ROLE_LABELS[fixedRole]}
-              </strong>
-              <span className="mt-1 block">{roleDescriptions[fixedRole]}</span>
-            </span>
+            {isAdminProfile ? (
+              <span className="grid gap-2 rounded-lg border border-amber-200/80 bg-white/80 p-3 text-xs text-amber-950 shadow-sm sm:min-w-52">
+                <span className="font-bold uppercase tracking-[0.08em]">
+                  Cuidado de seguranca
+                </span>
+                <span className="leading-5 text-amber-900/80">
+                  Use para equipe que gerencia dados sensiveis.
+                </span>
+              </span>
+            ) : null}
           </section>
         ) : (
           <FieldSet className="rounded-lg border border-primary/15 bg-white/80 p-4 shadow-sm">
@@ -318,7 +456,9 @@ export function AdminCreateUserForm({
                 <FieldError errors={[form.formState.errors.studentPhone]} />
               </Field>
 
-              <Field data-invalid={Boolean(form.formState.errors.studentPhoneAlt)}>
+              <Field
+                data-invalid={Boolean(form.formState.errors.studentPhoneAlt)}
+              >
                 <FieldLabel htmlFor="admin-user-student-phone-alt">
                   Segundo contato do aluno
                 </FieldLabel>
@@ -476,11 +616,16 @@ export function AdminCreateUserForm({
         </p>
       ) : null}
 
-      <div className="rounded-lg border border-primary/15 bg-white/80 p-2 shadow-[0_14px_36px_rgba(65,42,76,0.08)]">
+      <div
+        className={cn(
+          "rounded-lg border p-2 shadow-[0_14px_36px_rgba(65,42,76,0.08)]",
+          roleTone.submit,
+        )}
+      >
         <Button
           type="submit"
           size="lg"
-          className="h-11 w-full shadow-sm"
+          className="h-12 w-full shadow-sm"
           disabled={isPending}
         >
           {isPending ? (
