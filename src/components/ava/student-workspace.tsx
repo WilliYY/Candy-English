@@ -37,6 +37,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   applyCandyXpPersistence,
   buildCandyStudentXpSnapshot,
+  CANDY_XP_REWARDS,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
 import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
@@ -652,6 +653,10 @@ export function StudentWorkspace({
   const completedLessonActivityCount = lessonActivityItems.filter(
     isStudentHomeworkComplete,
   ).length;
+  const lessonActivityXpReward =
+    CANDY_XP_REWARDS.student.lessonActivitySubmitted;
+  const completedLessonActivityXp =
+    completedLessonActivityCount * lessonActivityXpReward;
   const lessonMaterialCount = visibleLessons.reduce(
     (total, lesson) => total + lesson.materials.length,
     0,
@@ -727,11 +732,11 @@ export function StudentWorkspace({
     },
     {
       accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-950",
-      helper: "atividades prontas",
-      icon: CheckCircle2,
+      helper: `${completedLessonActivityCount} concluida(s)`,
+      icon: Zap,
       iconClassName: "bg-emerald-100 text-emerald-700",
-      label: "Concluidas",
-      value: completedLessonActivityCount,
+      label: "XP aulas",
+      value: `+${xpFormatter.format(completedLessonActivityXp)} XP`,
     },
     {
       accentClassName: "border-amber-200 bg-amber-50 text-amber-950",
@@ -1066,6 +1071,28 @@ export function StudentWorkspace({
                     hasLessonActivities &&
                     completedLessonActivities.length ===
                       lessonActivities.length;
+                  const earnedLessonXp =
+                    completedLessonActivities.length * lessonActivityXpReward;
+                  const availableLessonXp =
+                    lessonActivities.length * lessonActivityXpReward;
+                  const lessonXpLabel =
+                    earnedLessonXp > 0
+                      ? `Ganhou +${xpFormatter.format(earnedLessonXp)} XP`
+                      : availableLessonXp > 0
+                        ? `Vale +${xpFormatter.format(availableLessonXp)} XP`
+                        : "Sem XP";
+                  const lessonXpHelper =
+                    earnedLessonXp > 0
+                      ? "ao completar"
+                      : availableLessonXp > 0
+                        ? "ao concluir"
+                        : "sem atividade";
+                  const lessonXpClass =
+                    earnedLessonXp > 0
+                      ? "border-amber-300 bg-amber-50 text-amber-950 shadow-amber-100/80"
+                      : availableLessonXp > 0
+                        ? "border-primary/20 bg-primary/5 text-primary shadow-primary/5"
+                        : "border-muted bg-muted/50 text-muted-foreground shadow-transparent";
                   const hasStudyAssets =
                     lesson.materials.length > 0 ||
                     lesson.vocabularyItems.length > 0 ||
@@ -1154,7 +1181,18 @@ export function StudentWorkspace({
                             </span>
                           </span>
                         </span>
-                        <span className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                        <span className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm ${lessonXpClass}`}
+                          >
+                            <Zap aria-hidden="true" className="size-3.5" />
+                            <span className="flex flex-col leading-tight">
+                              <span>{lessonXpLabel}</span>
+                              <span className="text-[10px] font-medium opacity-70">
+                                {lessonXpHelper}
+                              </span>
+                            </span>
+                          </span>
                           <span
                             className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${lessonStatusClass}`}
                           >
@@ -1286,6 +1324,10 @@ export function StudentWorkspace({
                               <span className="w-fit rounded-full border border-sky-200 bg-white px-3 py-1 text-xs font-semibold text-sky-900">
                                 {completedLessonActivities.length}/
                                 {lessonActivities.length} concluida(s)
+                              </span>
+                              <span className="w-fit rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950">
+                                +{xpFormatter.format(lessonActivityXpReward)} XP
+                                cada
                               </span>
                             </div>
                             {lessonActivities.map((homework) => (

@@ -60,7 +60,7 @@ Tabelas e enums:
 - Apenas `ADMIN` ou `TEACHER` vinculada ao aluno pode criar e ajustar homework interativo.
 - A aba `Criar/Ver Aulas` usa a mesma base tecnica do homework interativo, mas marca a atividade como `fieldDetectionSource=lesson-manual` para separar a lista de aulas interativas da lista de homeworks interativas.
 - Para o aluno, `fieldDetectionSource=lesson-manual` aparece dentro de `Aulas e Materiais`; a aba `Responder homework` mostra apenas homeworks reais.
-- Em `Aulas e Materiais`, cada aula deve aparecer recolhida por padrao, em estilo de lista operacional com resumo superior, contadores e chips de teacher/data/material/vocabulario; ao abrir, materiais, vocabulario e atividade interativa aparecem em blocos separados, e a atividade interativa fica como um card maior e centralizado, com estado `Concluido`/`Nao concluido` marcado por bolinha verde/vermelha.
+- Em `Aulas e Materiais`, cada aula deve aparecer recolhida por padrao, em estilo de lista operacional com resumo superior, contadores, chips de teacher/data/material/vocabulario e selo de XP ganho/possivel pela atividade de aula; ao abrir, materiais, vocabulario e atividade interativa aparecem em blocos separados, e a atividade interativa fica como um card maior e centralizado, com estado `Concluido`/`Nao concluido` marcado por bolinha verde/vermelha.
 - A criacao de homework seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para manter o vinculo de permissao do homework.
 - Na criacao de aula interativa, o sistema cria uma aula real com titulo/resumo/data e vincula uma atividade `Homework.kind=INTERACTIVE` a ela.
 - Homework interativo precisa continuar ligado a uma aula com aluno definido, mesmo quando essa aula for criada automaticamente.
