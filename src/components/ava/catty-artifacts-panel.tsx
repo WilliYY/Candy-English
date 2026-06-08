@@ -7,7 +7,6 @@ import {
   Cat,
   CheckCircle2,
   Clock3,
-  Heart,
   LoaderCircle,
   MessageSquareText,
   Palette,
@@ -72,6 +71,13 @@ const statusStyles = {
   PENDING: "border-amber-200 bg-amber-50 text-amber-700",
 } satisfies Record<CattyUserArtifactStatusInput, string>;
 
+const artifactHeaderStyles = {
+  ACTIVE: "border-emerald-100 bg-emerald-50/72",
+  ARCHIVED: "border-slate-100 bg-slate-50/72",
+  DISABLED: "border-rose-100 bg-rose-50/72",
+  PENDING: "border-amber-100 bg-amber-50/72",
+} satisfies Record<CattyUserArtifactStatusInput, string>;
+
 const enrichmentStatusLabels = {
   APPROVED: "Aprovada",
   ARCHIVED: "Arquivada",
@@ -88,6 +94,15 @@ const enrichmentStatusStyles = {
   PENDING: "border-sky-200 bg-sky-50 text-sky-700",
   READY_FOR_REVIEW: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
   REJECTED: "border-rose-200 bg-rose-50 text-rose-700",
+} satisfies Record<CattyArtifactEnrichmentStatusInput, string>;
+
+const enrichmentHeaderStyles = {
+  APPROVED: "border-emerald-100 bg-emerald-50/72",
+  ARCHIVED: "border-slate-100 bg-slate-50/72",
+  FAILED: "border-amber-100 bg-amber-50/72",
+  PENDING: "border-sky-100 bg-sky-50/72",
+  READY_FOR_REVIEW: "border-fuchsia-100 bg-fuchsia-50/72",
+  REJECTED: "border-rose-100 bg-rose-50/72",
 } satisfies Record<CattyArtifactEnrichmentStatusInput, string>;
 
 const alertStyles = {
@@ -137,7 +152,9 @@ function listToText(items: string[]) {
   return items.join(", ");
 }
 
-function getUserOptionLabel(user: CattyArtifactManagementData["users"][number]) {
+function getUserOptionLabel(
+  user: CattyArtifactManagementData["users"][number],
+) {
   return `${user.label} - ${user.role}`;
 }
 
@@ -238,10 +255,11 @@ export function CattyArtifactsPanel({
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [draft, setDraft] = useState<ArtifactDraft>(emptyDraft);
-  const [statusFilter, setStatusFilter] =
-    useState<CattyUserArtifactStatusInput | "ALL">("ACTIVE");
+  const [statusFilter, setStatusFilter] = useState<
+    CattyUserArtifactStatusInput | "ALL"
+  >("ACTIVE");
   const [userFilter, setUserFilter] = useState(
-    data.users.length === 1 ? data.users[0]?.id ?? "ALL" : "ALL",
+    data.users.length === 1 ? (data.users[0]?.id ?? "ALL") : "ALL",
   );
   const canManage = viewerRole === "ADMIN" || viewerRole === "TEACHER";
   const filteredArtifacts = useMemo(
@@ -278,7 +296,7 @@ export function CattyArtifactsPanel({
   const selectedUser =
     userFilter === "ALL"
       ? null
-      : data.users.find((user) => user.id === userFilter) ?? null;
+      : (data.users.find((user) => user.id === userFilter) ?? null);
   const activeUserLabel = selectedUser?.label ?? "Todos os alunos";
   const selectedActiveMemories = useMemo(
     () =>
@@ -293,8 +311,8 @@ export function CattyArtifactsPanel({
     [memoryData, userFilter],
   );
   const activeMemoryCount =
-    memoryData?.memories.filter((memory) => memory.status === "ACTIVE").length ??
-    0;
+    memoryData?.memories.filter((memory) => memory.status === "ACTIVE")
+      .length ?? 0;
   const activeArtifactCount = data.artifacts.filter(
     (artifact) => artifact.status === "ACTIVE",
   ).length;
@@ -330,7 +348,8 @@ export function CattyArtifactsPanel({
           ...current,
           label: value,
           themeId:
-            current.themeId && current.themeId !== slugifyThemeLabel(current.label)
+            current.themeId &&
+            current.themeId !== slugifyThemeLabel(current.label)
               ? current.themeId
               : slugifyThemeLabel(value),
         };
@@ -452,809 +471,1194 @@ export function CattyArtifactsPanel({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(280px,0.86fr)_minmax(0,1.14fr)]">
-      <div className="flex flex-col gap-4">
-        <section className="ava-soft-card relative overflow-hidden rounded-2xl border p-5">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-primary/12 via-secondary/55 to-fuchsia-100/70"
-          />
-          <div className="relative flex items-start gap-4">
+    <div className="grid gap-5">
+      <section className="ava-soft-card overflow-hidden rounded-2xl border border-primary/12 p-0 shadow-[0_18px_45px_rgba(65,42,76,0.08)]">
+        <div className="grid gap-4 bg-[linear-gradient(135deg,rgba(65,42,76,0.1),rgba(252,229,216,0.72),rgba(229,124,216,0.18))] p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex min-w-0 items-start gap-4">
             <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
               <Cat aria-hidden="true" className="size-6" />
             </span>
             <div className="min-w-0">
-              <span className="inline-flex rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
-                Catty por aluno
+              <span className="inline-flex rounded-full border border-primary/15 bg-white/85 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary shadow-sm">
+                Catty dos alunos
               </span>
               <h2 className="mt-3 text-2xl font-semibold text-primary">
-                Catty Learning simples
+                Personalizacao segura da Catty
               </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Escolha o aluno, escreva o que ele gosta e gere emojis, sons e
-                bordoes para a Catty usar de forma leve.
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Escolha aluno, gosto e estilo. A Catty usa so memorias leves e
+                temas aprovados, com revisao humana antes de qualquer
+                enriquecimento.
               </p>
             </div>
           </div>
-
-          <div className="relative mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-primary/12 bg-white/78 p-4 shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-primary/8 text-primary">
-                <UserRound aria-hidden="true" className="size-4" />
+          <div className="grid gap-2 sm:grid-cols-4 lg:min-w-[520px]">
+            <div className="rounded-2xl border border-sky-100 bg-sky-50/85 p-3 shadow-sm">
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-sky-700">
+                Alunos
               </span>
-              <strong className="mt-3 block text-2xl text-primary">
+              <strong className="mt-1 block text-2xl text-sky-900">
                 {data.users.length}
               </strong>
-              <span className="text-xs text-muted-foreground">
-                alunos disponiveis
-              </span>
             </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-white text-emerald-700">
-                <Heart aria-hidden="true" className="size-4" />
+            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/85 p-3 shadow-sm">
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-emerald-700">
+                Ativos
               </span>
-              <strong className="mt-3 block text-2xl text-emerald-800">
+              <strong className="mt-1 block text-2xl text-emerald-900">
                 {activeArtifactCount}
               </strong>
-              <span className="text-xs text-emerald-800/75">
-                gostos ativos
-              </span>
             </div>
-            <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-4 shadow-sm">
-              <span className="flex size-9 items-center justify-center rounded-xl bg-white text-fuchsia-700">
-                <BrainCircuit aria-hidden="true" className="size-4" />
+            <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/85 p-3 shadow-sm">
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-fuchsia-700">
+                Memorias
               </span>
-              <strong className="mt-3 block text-2xl text-fuchsia-800">
+              <strong className="mt-1 block text-2xl text-fuchsia-900">
                 {activeMemoryCount}
               </strong>
-              <span className="text-xs text-fuchsia-800/75">
-                memorias ativas
+            </div>
+            <div className="rounded-2xl border border-amber-100 bg-amber-50/85 p-3 shadow-sm">
+              <span className="text-xs font-bold uppercase tracking-[0.12em] text-amber-700">
+                Revisao
               </span>
+              <strong className="mt-1 block text-2xl text-amber-900">
+                {readyEnrichmentCount}
+              </strong>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="relative mt-4 grid gap-2">
-            <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
-              <strong className="block text-primary">1. Aluno</strong>
-              Escolha para quem a Catty vai personalizar.
+      <div className="grid gap-5 xl:grid-cols-[minmax(300px,0.84fr)_minmax(0,1.16fr)]">
+        <div className="flex flex-col gap-4">
+          <section className="ava-soft-card relative overflow-hidden rounded-2xl border border-primary/12 bg-white/88 p-5">
+            <div className="relative flex items-start gap-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+                <Palette aria-hidden="true" className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <span className="inline-flex rounded-full border border-primary/15 bg-primary/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-primary">
+                  Fluxo rapido
+                </span>
+                <h2 className="mt-3 text-xl font-semibold text-primary">
+                  Como configurar
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Tres passos para deixar a Catty mais parecida com o aluno sem
+                  vazar dados privados.
+                </p>
+              </div>
             </div>
-            <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
-              <strong className="block text-primary">2. Gosto</strong>
-              Ex.: capivara, carros, games, futebol, princesa.
-            </div>
-            <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
-              <strong className="block text-primary">3. Estilo</strong>
-              A Catty gera emojis, sons, bordoes e salva como memoria leve.
-            </div>
-          </div>
-        </section>
 
-        <section className="ava-soft-card rounded-2xl border p-5">
-          <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-sm">
-              <ShieldAlert aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold">Sinais de repeticao</h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                Alertas aparecem quando ha sugestao pendente, repeticao demais
-                ou possivel tema sensivel.
-              </p>
+            <div className="relative mt-4 grid gap-2">
+              <div className="rounded-2xl border border-sky-100 bg-sky-50/75 p-3 text-sm leading-6 text-sky-900 shadow-sm">
+                <strong className="block text-sky-900">1. Aluno</strong>
+                Escolha quem vai receber esse estilo.
+              </div>
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/75 p-3 text-sm leading-6 text-emerald-900 shadow-sm">
+                <strong className="block text-emerald-900">2. Gosto</strong>
+                Informe um tema seguro, como carros, games ou capivara.
+              </div>
+              <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/75 p-3 text-sm leading-6 text-fuchsia-900 shadow-sm">
+                <strong className="block text-fuchsia-900">3. Estilo</strong>
+                Revise emojis, sons, bordoes e salve como gosto ativo.
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="mt-4 grid gap-2">
-            {data.alerts.length === 0 ? (
-              <EmptyCard icon={CheckCircle2} title="Tudo leve por aqui">
-                Tudo leve por aqui. Sem repeticao excessiva no momento.
-              </EmptyCard>
-            ) : (
-              data.alerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className={cn(
-                    "rounded-2xl border p-3 text-sm leading-6 shadow-sm",
-                    alertStyles[alert.severity],
-                  )}
-                >
-                  {alert.message}
+          <section className="ava-soft-card rounded-2xl border border-amber-100 bg-amber-50/40 p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 shadow-sm">
+                <ShieldAlert aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold">Sinais de repeticao</h2>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Alertas aparecem quando ha sugestao pendente, repeticao demais
+                  ou possivel tema sensivel.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              {data.alerts.length === 0 ? (
+                <EmptyCard icon={CheckCircle2} title="Tudo leve por aqui">
+                  Tudo leve por aqui. Sem repeticao excessiva no momento.
+                </EmptyCard>
+              ) : (
+                data.alerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className={cn(
+                      "rounded-2xl border p-3 text-sm leading-6 shadow-sm",
+                      alertStyles[alert.severity],
+                    )}
+                  >
+                    {alert.message}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="ava-soft-card overflow-hidden rounded-2xl border border-primary/12 bg-white/90 p-0">
+            <div className="border-b border-primary/10 bg-[linear-gradient(135deg,rgba(252,229,216,0.76),rgba(255,255,255,0.86),rgba(229,124,216,0.14))] p-5">
+              <div className="flex items-start gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm">
+                  <WandSparkles aria-hidden="true" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-primary">
+                    {canManage ? "Adicionar gosto do aluno" : "Sugerir gosto"}
+                  </h2>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    Escolha o aluno, descreva o gosto e revise o estilo antes de
+                    salvar para a Catty.
+                  </p>
                 </div>
-              ))
-            )}
-          </div>
-        </section>
-
-        <section className="ava-soft-card rounded-2xl border p-5">
-          <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground shadow-sm">
-              <WandSparkles aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold">
-                {canManage ? "Adicionar gosto do aluno" : "Sugerir gosto"}
-              </h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                Simples assim: escolha o aluno, escreva o gosto e clique para
-                a Catty sugerir emojis, sons e bordoes.
-              </p>
+              </div>
             </div>
-          </div>
 
-          <form onSubmit={handleCreate} className="mt-4 grid gap-3">
-            <datalist id="catty-artifact-theme-options">
-              {data.themeOptions.map((theme) => (
-                <option key={theme.id} value={theme.id}>
-                  {theme.label}
-                </option>
-              ))}
-            </datalist>
+            <form onSubmit={handleCreate} className="grid gap-3 p-5">
+              <datalist id="catty-artifact-theme-options">
+                {data.themeOptions.map((theme) => (
+                  <option key={theme.id} value={theme.id}>
+                    {theme.label}
+                  </option>
+                ))}
+              </datalist>
 
-            <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="catty-artifact-user">Aluno</FieldLabel>
+                  <NativeSelect
+                    id="catty-artifact-user"
+                    name="targetUserId"
+                    disabled={isPending || data.users.length <= 1}
+                    onChange={(event) => setUserFilter(event.target.value)}
+                  >
+                    {data.users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {getUserOptionLabel(user)}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="catty-artifact-label">
+                    O que o aluno gosta?
+                  </FieldLabel>
+                  <Input
+                    id="catty-artifact-label"
+                    name="label"
+                    placeholder="Ex.: capivara, carros, games"
+                    value={draft.label}
+                    disabled={isPending}
+                    onChange={(event) =>
+                      updateDraft("label", event.target.value)
+                    }
+                  />
+                </Field>
+              </div>
+
+              <input
+                type="hidden"
+                name="themeId"
+                value={draft.themeId || slugifyThemeLabel(draft.label)}
+              />
+              <input
+                type="hidden"
+                name="status"
+                value={canManage ? "ACTIVE" : "PENDING"}
+              />
+
+              <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-4 text-sm leading-6 text-fuchsia-950 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-fuchsia-700 shadow-sm">
+                    <RefreshCw aria-hidden="true" className="size-4" />
+                  </span>
+                  <div>
+                    <strong className="block text-fuchsia-950">
+                      Gerar estilo da Catty
+                    </strong>
+                    A geracao usa temas seguros ja conhecidos. Se o tema for
+                    novo, ela cria um estilo Candy generico e voce pode
+                    enriquecer depois.
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isPending || draft.label.trim().length < 2}
+                  className="mt-3 gap-2"
+                  onClick={generateDraftSuggestion}
+                >
+                  <WandSparkles aria-hidden="true" />
+                  Gerar emojis, sons e bordoes
+                </Button>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="catty-artifact-emojis">
+                    Emojis
+                  </FieldLabel>
+                  <Input
+                    id="catty-artifact-emojis"
+                    name="emojisText"
+                    placeholder="A Catty pode gerar, ex.: 🐱, 🍬, ✨"
+                    value={draft.emojisText}
+                    disabled={isPending}
+                    onChange={(event) =>
+                      updateDraft("emojisText", event.target.value)
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="catty-artifact-sounds">Sons</FieldLabel>
+                  <Input
+                    id="catty-artifact-sounds"
+                    name="soundsText"
+                    placeholder="miauw, vruum vruum, plim"
+                    value={draft.soundsText}
+                    disabled={isPending}
+                    onChange={(event) =>
+                      updateDraft("soundsText", event.target.value)
+                    }
+                  />
+                </Field>
+              </div>
+
               <Field>
-                <FieldLabel htmlFor="catty-artifact-user">Aluno</FieldLabel>
+                <FieldLabel htmlFor="catty-artifact-catchphrases">
+                  Bordoes
+                </FieldLabel>
+                <Textarea
+                  id="catty-artifact-catchphrases"
+                  name="catchphrasesText"
+                  rows={3}
+                  placeholder="modo capivara calma, passinho tranquilo"
+                  value={draft.catchphrasesText}
+                  disabled={isPending}
+                  onChange={(event) =>
+                    updateDraft("catchphrasesText", event.target.value)
+                  }
+                />
+              </Field>
+
+              <div className="grid gap-3">
+                <Field>
+                  <FieldLabel htmlFor="catty-artifact-example">
+                    Exemplo curto
+                  </FieldLabel>
+                  <Input
+                    id="catty-artifact-example"
+                    name="example"
+                    placeholder="The capybara is drinking water."
+                    value={draft.example}
+                    disabled={isPending}
+                    onChange={(event) =>
+                      updateDraft("example", event.target.value)
+                    }
+                  />
+                </Field>
+              </div>
+
+              <details className="rounded-2xl border border-primary/10 bg-white/72 p-3">
+                <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                  Ajustes avancados
+                </summary>
+                <div className="mt-3 grid gap-3">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field>
+                      <FieldLabel htmlFor="catty-artifact-theme">
+                        Chave tecnica
+                      </FieldLabel>
+                      <Input
+                        id="catty-artifact-theme"
+                        list="catty-artifact-theme-options"
+                        value={draft.themeId || slugifyThemeLabel(draft.label)}
+                        disabled={isPending}
+                        onChange={(event) =>
+                          updateDraft("themeId", event.target.value)
+                        }
+                      />
+                    </Field>
+
+                    <Field>
+                      <FieldLabel htmlFor="catty-artifact-blocked-reason">
+                        Motivo se nao usar
+                      </FieldLabel>
+                      <Input
+                        id="catty-artifact-blocked-reason"
+                        name="blockedReason"
+                        placeholder="Aluno pediu para parar"
+                        disabled={isPending}
+                      />
+                    </Field>
+                  </div>
+
+                  <Field>
+                    <FieldLabel htmlFor="catty-artifact-tone">
+                      Regra de tom
+                    </FieldLabel>
+                    <Textarea
+                      id="catty-artifact-tone"
+                      name="toneRule"
+                      rows={2}
+                      placeholder="Usar como toque leve, sem repetir em toda resposta."
+                      value={draft.toneRule}
+                      disabled={isPending}
+                      onChange={(event) =>
+                        updateDraft("toneRule", event.target.value)
+                      }
+                    />
+                  </Field>
+                </div>
+              </details>
+
+              {canManage ? (
+                <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+                  <input
+                    type="checkbox"
+                    name="isPrimary"
+                    className="mt-1 size-4 accent-primary"
+                    disabled={isPending}
+                  />
+                  <span>
+                    <strong className="block text-foreground">
+                      Marcar como gosto principal
+                    </strong>
+                    A Catty prioriza este tema quando ele combinar naturalmente
+                    com a mensagem.
+                  </span>
+                </label>
+              ) : null}
+
+              <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                    <MessageSquareText aria-hidden="true" className="size-4" />
+                  </span>
+                  <p>
+                    <strong className="block text-primary">
+                      Preview de uso
+                    </strong>
+                    A Catty usa esse tema como toque leve: nome do aluno, bordao
+                    curto, emoji e exemplo em English quando combinar.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button type="submit" disabled={isPending} className="gap-2">
+                  {isPending ? (
+                    <LoaderCircle className="animate-spin" aria-hidden="true" />
+                  ) : (
+                    <Sparkles aria-hidden="true" />
+                  )}
+                  {canManage ? "Salvar gosto ativo" : "Enviar sugestao"}
+                </Button>
+
+                {canManage ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isPending}
+                    className="gap-2"
+                    onClick={(event) => {
+                      if (event.currentTarget.form) {
+                        handleEnrich(event.currentTarget.form);
+                      }
+                    }}
+                  >
+                    <Sparkles aria-hidden="true" />
+                    Enriquecer tema
+                  </Button>
+                ) : null}
+              </div>
+            </form>
+          </section>
+
+          {message ? (
+            <p className="rounded-2xl border border-primary/15 bg-white/90 p-3 text-sm font-medium text-primary shadow-sm">
+              {message}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <section className="ava-soft-card overflow-hidden rounded-2xl border border-primary/12 bg-white/90 p-0">
+            <div className="flex flex-col gap-3 border-b border-primary/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(240,249,255,0.8),rgba(253,244,255,0.72))] p-5 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/60">
+                  Filtros e revisao
+                </p>
+                <h3 className="mt-1 flex items-center gap-2 text-lg font-semibold text-primary">
+                  <UserRound aria-hidden="true" className="size-4" />
+                  {activeUserLabel}
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+                <span className="rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-sky-800">
+                  {filteredArtifacts.length} tema(s)
+                </span>
+                <span className="rounded-full border border-fuchsia-100 bg-fuchsia-50 px-3 py-1.5 text-fuchsia-800">
+                  {filteredEnrichments.length} sugestoes
+                </span>
+                {readyEnrichmentCount > 0 ? (
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-800">
+                    {readyEnrichmentCount} pronta(s)
+                  </span>
+                ) : null}
+              </div>
+            </div>
+            <div className="grid gap-3 p-5 md:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="catty-artifact-user-filter">
+                  Aluno
+                </FieldLabel>
                 <NativeSelect
-                  id="catty-artifact-user"
-                  name="targetUserId"
-                  disabled={isPending || data.users.length <= 1}
+                  id="catty-artifact-user-filter"
+                  value={userFilter}
                   onChange={(event) => setUserFilter(event.target.value)}
                 >
+                  <option value="ALL">Todos</option>
                   {data.users.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {getUserOptionLabel(user)}
+                      {user.label}
                     </option>
                   ))}
                 </NativeSelect>
               </Field>
 
               <Field>
-                <FieldLabel htmlFor="catty-artifact-label">
-                  O que o aluno gosta?
+                <FieldLabel htmlFor="catty-artifact-status-filter">
+                  Status
                 </FieldLabel>
-                <Input
-                  id="catty-artifact-label"
-                  name="label"
-                  placeholder="Ex.: capivara, carros, games"
-                  value={draft.label}
-                  disabled={isPending}
-                  onChange={(event) => updateDraft("label", event.target.value)}
-                />
+                <NativeSelect
+                  id="catty-artifact-status-filter"
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(
+                      event.target.value as
+                        | CattyUserArtifactStatusInput
+                        | "ALL",
+                    )
+                  }
+                >
+                  <option value="ALL">Todos</option>
+                  {cattyUserArtifactStatusValues.map((status) => (
+                    <option key={status} value={status}>
+                      {statusLabels[status]}
+                    </option>
+                  ))}
+                </NativeSelect>
               </Field>
             </div>
 
-            <input
-              type="hidden"
-              name="themeId"
-              value={draft.themeId || slugifyThemeLabel(draft.label)}
-            />
-            <input
-              type="hidden"
-              name="status"
-              value={canManage ? "ACTIVE" : "PENDING"}
-            />
-
-            <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground">
-              <div className="flex items-start gap-3">
-                <span className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
-                  <RefreshCw aria-hidden="true" className="size-4" />
-                </span>
-                <div>
-                  <strong className="block text-primary">
-                    Gerar estilo da Catty
-                  </strong>
-                  A geracao usa temas seguros ja conhecidos. Se o tema for novo,
-                  ela cria um estilo Candy generico e voce pode enriquecer depois.
+            {selectedUser?.detectedInterests.length ? (
+              <div className="mx-5 mb-5 rounded-2xl border border-sky-100 bg-sky-50/65 p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Interesses detectados
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedUser.detectedInterests.map((interest) => (
+                    <span
+                      key={interest}
+                      className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-muted-foreground"
+                    >
+                      {interest}
+                    </span>
+                  ))}
                 </div>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPending || draft.label.trim().length < 2}
-                className="mt-3 gap-2"
-                onClick={generateDraftSuggestion}
-              >
-                <WandSparkles aria-hidden="true" />
-                Gerar emojis, sons e bordoes
-              </Button>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="catty-artifact-emojis">Emojis</FieldLabel>
-                <Input
-                  id="catty-artifact-emojis"
-                  name="emojisText"
-                  placeholder="A Catty pode gerar, ex.: 🐱, 🍬, ✨"
-                  value={draft.emojisText}
-                  disabled={isPending}
-                  onChange={(event) =>
-                    updateDraft("emojisText", event.target.value)
-                  }
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="catty-artifact-sounds">
-                  Sons
-                </FieldLabel>
-                <Input
-                  id="catty-artifact-sounds"
-                  name="soundsText"
-                  placeholder="miauw, vruum vruum, plim"
-                  value={draft.soundsText}
-                  disabled={isPending}
-                  onChange={(event) =>
-                    updateDraft("soundsText", event.target.value)
-                  }
-                />
-              </Field>
-            </div>
-
-            <Field>
-              <FieldLabel htmlFor="catty-artifact-catchphrases">
-                Bordoes
-              </FieldLabel>
-              <Textarea
-                id="catty-artifact-catchphrases"
-                name="catchphrasesText"
-                rows={3}
-                placeholder="modo capivara calma, passinho tranquilo"
-                value={draft.catchphrasesText}
-                disabled={isPending}
-                onChange={(event) =>
-                  updateDraft("catchphrasesText", event.target.value)
-                }
-              />
-            </Field>
-
-            <div className="grid gap-3">
-              <Field>
-                <FieldLabel htmlFor="catty-artifact-example">
-                  Exemplo curto
-                </FieldLabel>
-                <Input
-                  id="catty-artifact-example"
-                  name="example"
-                  placeholder="The capybara is drinking water."
-                  value={draft.example}
-                  disabled={isPending}
-                  onChange={(event) => updateDraft("example", event.target.value)}
-                />
-              </Field>
-            </div>
-
-            <details className="rounded-2xl border border-primary/10 bg-white/72 p-3">
-              <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
-                Ajustes avancados
-              </summary>
-              <div className="mt-3 grid gap-3">
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Field>
-                    <FieldLabel htmlFor="catty-artifact-theme">
-                      Chave tecnica
-                    </FieldLabel>
-                    <Input
-                      id="catty-artifact-theme"
-                      list="catty-artifact-theme-options"
-                      value={draft.themeId || slugifyThemeLabel(draft.label)}
-                      disabled={isPending}
-                      onChange={(event) =>
-                        updateDraft("themeId", event.target.value)
-                      }
-                    />
-                  </Field>
-
-                  <Field>
-                    <FieldLabel htmlFor="catty-artifact-blocked-reason">
-                      Motivo se nao usar
-                    </FieldLabel>
-                    <Input
-                      id="catty-artifact-blocked-reason"
-                      name="blockedReason"
-                      placeholder="Aluno pediu para parar"
-                      disabled={isPending}
-                    />
-                  </Field>
-                </div>
-
-                <Field>
-                  <FieldLabel htmlFor="catty-artifact-tone">
-                    Regra de tom
-                  </FieldLabel>
-                  <Textarea
-                    id="catty-artifact-tone"
-                    name="toneRule"
-                    rows={2}
-                    placeholder="Usar como toque leve, sem repetir em toda resposta."
-                    value={draft.toneRule}
-                    disabled={isPending}
-                    onChange={(event) =>
-                      updateDraft("toneRule", event.target.value)
-                    }
-                  />
-                </Field>
-              </div>
-            </details>
-
-            {canManage ? (
-              <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
-                <input
-                  type="checkbox"
-                  name="isPrimary"
-                  className="mt-1 size-4 accent-primary"
-                  disabled={isPending}
-                />
-                <span>
-                  <strong className="block text-foreground">
-                    Marcar como gosto principal
-                  </strong>
-                  A Catty prioriza este tema quando ele combinar naturalmente
-                  com a mensagem.
-                </span>
-              </label>
             ) : null}
 
-            <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground">
-              <div className="flex items-start gap-3">
-                <span className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
-                  <MessageSquareText aria-hidden="true" className="size-4" />
-                </span>
-                <p>
-                  <strong className="block text-primary">
-                    Preview de uso
-                  </strong>
-                  A Catty usa esse tema como toque leve: nome do aluno,
-                  bordao curto, emoji e exemplo em English quando combinar.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={isPending} className="gap-2">
-                {isPending ? (
-                  <LoaderCircle className="animate-spin" aria-hidden="true" />
-                ) : (
-                  <Sparkles aria-hidden="true" />
-                )}
-                {canManage ? "Salvar gosto ativo" : "Enviar sugestao"}
-              </Button>
-
-              {canManage ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isPending}
-                  className="gap-2"
-                  onClick={(event) => {
-                    if (event.currentTarget.form) {
-                      handleEnrich(event.currentTarget.form);
-                    }
-                  }}
-                >
-                  <Sparkles aria-hidden="true" />
-                  Enriquecer tema
-                </Button>
-              ) : null}
-            </div>
-          </form>
-        </section>
-
-        {message ? (
-          <p className="rounded-2xl border border-primary/15 bg-white/90 p-3 text-sm font-medium text-primary shadow-sm">
-            {message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <section className="ava-soft-card rounded-2xl border p-5">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/60">
-                Filtros e revisao
-              </p>
-              <h3 className="mt-1 flex items-center gap-2 text-lg font-semibold text-primary">
-                <UserRound aria-hidden="true" className="size-4" />
-                {activeUserLabel}
-              </h3>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
-              <span className="rounded-full border border-primary/10 bg-white/75 px-3 py-1.5">
-                {filteredArtifacts.length} tema(s)
-              </span>
-              <span className="rounded-full border border-primary/10 bg-white/75 px-3 py-1.5">
-                {filteredEnrichments.length} sugestoes
-              </span>
-              {readyEnrichmentCount > 0 ? (
-                <span className="rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1.5 text-fuchsia-700">
-                  {readyEnrichmentCount} pronta(s)
-                </span>
-              ) : null}
-            </div>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="catty-artifact-user-filter">
-                Aluno
-              </FieldLabel>
-              <NativeSelect
-                id="catty-artifact-user-filter"
-                value={userFilter}
-                onChange={(event) => setUserFilter(event.target.value)}
-              >
-                <option value="ALL">Todos</option>
-                {data.users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="catty-artifact-status-filter">
-                Status
-              </FieldLabel>
-              <NativeSelect
-                id="catty-artifact-status-filter"
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(
-                    event.target.value as CattyUserArtifactStatusInput | "ALL",
-                  )
-                }
-              >
-                <option value="ALL">Todos</option>
-                {cattyUserArtifactStatusValues.map((status) => (
-                  <option key={status} value={status}>
-                    {statusLabels[status]}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-          </div>
-
-          {selectedUser?.detectedInterests.length ? (
-            <div className="mt-4 rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Interesses detectados
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {selectedUser.detectedInterests.map((interest) => (
-                  <span
-                    key={interest}
-                    className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-muted-foreground"
-                  >
-                    {interest}
+            {userFilter !== "ALL" ? (
+              <div className="mx-5 mb-5 rounded-2xl border border-fuchsia-100 bg-fuchsia-50/65 p-4 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-fuchsia-700 shadow-sm">
+                    <BrainCircuit aria-hidden="true" className="size-5" />
                   </span>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {userFilter !== "ALL" ? (
-            <div className="mt-4 rounded-2xl border border-fuchsia-100 bg-fuchsia-50/60 p-4 shadow-sm">
-              <div className="flex items-start gap-3">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-fuchsia-700 shadow-sm">
-                  <BrainCircuit aria-hidden="true" className="size-5" />
-                </span>
-                <div>
-                  <p className="font-semibold text-primary">
-                    Memoria simples da Catty
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    Gostos salvos aqui tambem viram memoria leve para a Catty.
-                    A tela tecnica fica escondida do aluno.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-2">
-                {selectedActiveMemories.length === 0 ? (
-                  <p className="rounded-xl border border-dashed border-primary/15 bg-white/70 p-3 text-sm text-muted-foreground">
-                    Nenhuma memoria ativa para este aluno ainda.
-                  </p>
-                ) : (
-                  selectedActiveMemories.map((memory) => (
-                    <div
-                      key={memory.id}
-                      className="rounded-xl border border-primary/10 bg-white/78 p-3 text-sm shadow-sm"
-                    >
-                      <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        {memory.category}
-                      </span>
-                      <p className="mt-1 font-medium text-primary">
-                        {memory.value}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          ) : null}
-        </section>
-
-        {canManage ? (
-          <section className="grid gap-3">
-            <div className="ava-soft-card rounded-2xl border p-5">
-              <div className="flex items-start gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-700 shadow-sm">
-                  <Sparkles aria-hidden="true" />
-                </span>
-                <div>
-                  <h2 className="text-lg font-semibold">
-                    Sugestoes de busca e enriquecimento
-                  </h2>
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    Status: pendente, sugestao pronta, aprovada, recusada,
-                    arquivada ou erro. Nada entra na Catty sem revisao humana.
-                  </p>
-                  {pendingEnrichmentCount > 0 ? (
-                    <p className="mt-2 inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-700">
-                      {pendingEnrichmentCount} item(ns) pedem atencao
+                  <div>
+                    <p className="font-semibold text-primary">
+                      Memoria simples da Catty
                     </p>
-                  ) : null}
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                      Gostos salvos aqui tambem viram memoria leve para a Catty.
+                      A tela tecnica fica escondida do aluno.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid gap-2">
+                  {selectedActiveMemories.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-primary/15 bg-white/70 p-3 text-sm text-muted-foreground">
+                      Nenhuma memoria ativa para este aluno ainda.
+                    </p>
+                  ) : (
+                    selectedActiveMemories.map((memory) => (
+                      <div
+                        key={memory.id}
+                        className="rounded-xl border border-primary/10 bg-white/78 p-3 text-sm shadow-sm"
+                      >
+                        <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                          {memory.category}
+                        </span>
+                        <p className="mt-1 font-medium text-primary">
+                          {memory.value}
+                        </p>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
-            </div>
+            ) : null}
+          </section>
 
-            {filteredEnrichments.length === 0 ? (
-              <EmptyCard icon={Sparkles} title="Nenhuma sugestao por aqui">
-                Nenhuma sugestao de enriquecimento para estes filtros.
+          {canManage ? (
+            <section className="grid gap-3">
+              <div className="ava-soft-card rounded-2xl border border-fuchsia-100 bg-fuchsia-50/45 p-5">
+                <div className="flex items-start gap-3">
+                  <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-fuchsia-100 text-fuchsia-700 shadow-sm">
+                    <Sparkles aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h2 className="text-lg font-semibold">
+                      Sugestoes de busca e enriquecimento
+                    </h2>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      Status: pendente, sugestao pronta, aprovada, recusada,
+                      arquivada ou erro. Nada entra na Catty sem revisao humana.
+                    </p>
+                    {pendingEnrichmentCount > 0 ? (
+                      <p className="mt-2 inline-flex rounded-full border border-fuchsia-200 bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-700">
+                        {pendingEnrichmentCount} item(ns) pedem atencao
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {filteredEnrichments.length === 0 ? (
+                <EmptyCard icon={Sparkles} title="Nenhuma sugestao por aqui">
+                  Nenhuma sugestao de enriquecimento para estes filtros.
+                </EmptyCard>
+              ) : (
+                filteredEnrichments.map((enrichment) => {
+                  const canReview = [
+                    "FAILED",
+                    "PENDING",
+                    "READY_FOR_REVIEW",
+                  ].includes(enrichment.status);
+                  const defaultTone =
+                    enrichment.cautions[0] ||
+                    "Usar como toque leve, sem repetir em toda resposta.";
+
+                  return (
+                    <article
+                      key={enrichment.id}
+                      className="ava-soft-card overflow-hidden rounded-2xl border border-primary/10 p-0 shadow-[0_12px_28px_rgba(65,42,76,0.07)]"
+                    >
+                      <div
+                        className={cn(
+                          "border-b px-5 py-4",
+                          enrichmentHeaderStyles[enrichment.status],
+                        )}
+                      >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
+                                  enrichmentStatusStyles[enrichment.status],
+                                )}
+                              >
+                                {enrichmentStatusLabels[enrichment.status]}
+                              </span>
+                              <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
+                                {enrichment.themeId}
+                              </span>
+                              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                                {enrichment.provider}
+                              </span>
+                            </div>
+                            <h3 className="mt-3 text-lg font-semibold">
+                              {enrichment.label}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {enrichment.targetUserName ??
+                                "Aluno nao informado"}
+                            </p>
+                          </div>
+                          <div className="grid gap-1 text-sm text-muted-foreground md:text-right">
+                            <span>
+                              Criado: {formatDateTime(enrichment.createdAt)}
+                            </span>
+                            <span>
+                              Atualizado: {formatDateTime(enrichment.updatedAt)}
+                            </span>
+                            {enrichment.cacheId ? (
+                              <span>cache ativo</span>
+                            ) : null}
+                            {enrichment.reviewedByName ? (
+                              <span>
+                                Revisado por: {enrichment.reviewedByName}
+                              </span>
+                            ) : null}
+                            {enrichment.reviewedAt ? (
+                              <span>
+                                Revisado:{" "}
+                                {formatDateTime(enrichment.reviewedAt)}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-5">
+                        {enrichment.safeSummary ? (
+                          <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+                            {enrichment.safeSummary}
+                          </p>
+                        ) : null}
+
+                        {enrichment.failureReason ? (
+                          <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800 shadow-sm">
+                            {enrichment.failureReason}
+                          </p>
+                        ) : null}
+
+                        <div className="mt-4 grid gap-3 md:grid-cols-3">
+                          <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-3 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-800/70">
+                              Emojis
+                            </p>
+                            <p className="mt-2 text-lg">
+                              {enrichment.suggestedEmojis.join(" ") ||
+                                "Sem emojis"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-3 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-800/70">
+                              Sons
+                            </p>
+                            <p className="mt-2 text-sm leading-6">
+                              {enrichment.suggestedSounds.join(", ") ||
+                                "Sem sons"}
+                            </p>
+                          </div>
+                          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 shadow-sm">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800/70">
+                              Bordoes
+                            </p>
+                            <p className="mt-2 text-sm leading-6">
+                              {enrichment.suggestedCatchphrases.join(", ") ||
+                                "Sem bordoes"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                          <div className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                              Exemplos
+                            </p>
+                            <p className="mt-2 text-muted-foreground">
+                              {enrichment.suggestedExamples.join(" | ") ||
+                                "Sem exemplos"}
+                            </p>
+                          </div>
+                          <div className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                              Cuidados
+                            </p>
+                            <p className="mt-2 text-muted-foreground">
+                              {enrichment.cautions.join(" | ") ||
+                                "Sem cuidados extras"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {enrichment.suggestedVocabulary.length > 0 ? (
+                          <div className="mt-3 rounded-lg border bg-white/75 p-3 text-sm leading-6">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                              Vocabulario sugerido
+                            </p>
+                            <div className="mt-2 grid gap-2">
+                              {enrichment.suggestedVocabulary.map((item) => (
+                                <p key={`${enrichment.id}-${item.word}`}>
+                                  <strong>{item.word}</strong>: {item.meaning}
+                                  {item.example ? ` - ${item.example}` : ""}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {enrichment.sources.length > 0 ? (
+                          <details className="mt-3 rounded-lg border bg-primary/[0.03] p-3">
+                            <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                              Fontes da busca
+                            </summary>
+                            <div className="mt-3 grid gap-2">
+                              {enrichment.sources.map((source) => (
+                                <a
+                                  key={`${enrichment.id}-${source.url}`}
+                                  href={source.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="rounded-lg border bg-white/80 p-3 text-sm leading-6 transition hover:border-primary/30"
+                                >
+                                  <strong className="block text-foreground">
+                                    {source.title || source.url}
+                                  </strong>
+                                  {source.snippet ? (
+                                    <span className="text-muted-foreground">
+                                      {source.snippet}
+                                    </span>
+                                  ) : null}
+                                </a>
+                              ))}
+                            </div>
+                          </details>
+                        ) : null}
+
+                        {canReview ? (
+                          <details className="mt-4 rounded-lg border bg-fuchsia-50/40 p-3">
+                            <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                              Aprovar editando
+                            </summary>
+                            <form
+                              onSubmit={handleApproveEnrichment}
+                              className="mt-4 grid gap-3"
+                            >
+                              <input
+                                type="hidden"
+                                name="enrichmentId"
+                                value={enrichment.id}
+                              />
+                              <input
+                                type="hidden"
+                                name="targetUserId"
+                                value={enrichment.targetUserId ?? ""}
+                              />
+                              <input
+                                type="hidden"
+                                name="themeId"
+                                value={enrichment.themeId}
+                              />
+                              <input
+                                type="hidden"
+                                name="status"
+                                value="ACTIVE"
+                              />
+
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <Field>
+                                  <FieldLabel
+                                    htmlFor={`enrichment-label-${enrichment.id}`}
+                                  >
+                                    Nome
+                                  </FieldLabel>
+                                  <Input
+                                    id={`enrichment-label-${enrichment.id}`}
+                                    name="label"
+                                    defaultValue={enrichment.label}
+                                    disabled={isPending}
+                                  />
+                                </Field>
+                                <Field>
+                                  <FieldLabel
+                                    htmlFor={`enrichment-emojis-${enrichment.id}`}
+                                  >
+                                    Emojis
+                                  </FieldLabel>
+                                  <Input
+                                    id={`enrichment-emojis-${enrichment.id}`}
+                                    name="emojisText"
+                                    defaultValue={listToText(
+                                      enrichment.suggestedEmojis,
+                                    )}
+                                    disabled={isPending}
+                                  />
+                                </Field>
+                              </div>
+
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <Field>
+                                  <FieldLabel
+                                    htmlFor={`enrichment-sounds-${enrichment.id}`}
+                                  >
+                                    Sons
+                                  </FieldLabel>
+                                  <Input
+                                    id={`enrichment-sounds-${enrichment.id}`}
+                                    name="soundsText"
+                                    defaultValue={listToText(
+                                      enrichment.suggestedSounds,
+                                    )}
+                                    disabled={isPending}
+                                  />
+                                </Field>
+                                <Field>
+                                  <FieldLabel
+                                    htmlFor={`enrichment-example-${enrichment.id}`}
+                                  >
+                                    Exemplo curto
+                                  </FieldLabel>
+                                  <Input
+                                    id={`enrichment-example-${enrichment.id}`}
+                                    name="example"
+                                    defaultValue={
+                                      enrichment.suggestedExamples[0] ?? ""
+                                    }
+                                    disabled={isPending}
+                                  />
+                                </Field>
+                              </div>
+
+                              <Field>
+                                <FieldLabel
+                                  htmlFor={`enrichment-catchphrases-${enrichment.id}`}
+                                >
+                                  Bordoes
+                                </FieldLabel>
+                                <Textarea
+                                  id={`enrichment-catchphrases-${enrichment.id}`}
+                                  name="catchphrasesText"
+                                  defaultValue={listToText(
+                                    enrichment.suggestedCatchphrases,
+                                  )}
+                                  rows={2}
+                                  disabled={isPending}
+                                />
+                              </Field>
+
+                              <Field>
+                                <FieldLabel
+                                  htmlFor={`enrichment-tone-${enrichment.id}`}
+                                >
+                                  Regra de tom
+                                </FieldLabel>
+                                <Textarea
+                                  id={`enrichment-tone-${enrichment.id}`}
+                                  name="toneRule"
+                                  defaultValue={defaultTone}
+                                  rows={2}
+                                  disabled={isPending}
+                                />
+                              </Field>
+
+                              <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  name="isPrimary"
+                                  className="mt-1 size-4 accent-primary"
+                                  disabled={isPending}
+                                />
+                                <span>
+                                  <strong className="block text-foreground">
+                                    Aprovar como gosto principal
+                                  </strong>
+                                  Use se este for o tema que a Catty deve
+                                  priorizar para esse aluno.
+                                </span>
+                              </label>
+
+                              <input
+                                type="hidden"
+                                name="blockedReason"
+                                value=""
+                              />
+
+                              <Button
+                                type="submit"
+                                variant="outline"
+                                disabled={isPending}
+                                className="w-fit"
+                              >
+                                <CheckCircle2 aria-hidden="true" />
+                                Aprovar e ativar
+                              </Button>
+                            </form>
+                          </details>
+                        ) : null}
+
+                        {canReview ? (
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={isPending}
+                              onClick={() =>
+                                updateEnrichmentStatus(
+                                  enrichment.id,
+                                  "REJECTED",
+                                )
+                              }
+                            >
+                              <Ban aria-hidden="true" />
+                              Recusar
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={isPending}
+                              onClick={() =>
+                                updateEnrichmentStatus(
+                                  enrichment.id,
+                                  "ARCHIVED",
+                                )
+                              }
+                            >
+                              <Archive aria-hidden="true" />
+                              Arquivar
+                            </Button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </article>
+                  );
+                })
+              )}
+            </section>
+          ) : null}
+
+          <section className="grid gap-3">
+            {filteredArtifacts.length === 0 ? (
+              <EmptyCard icon={Palette} title="Nenhum tema encontrado">
+                Nenhum tema encontrado para estes filtros.
               </EmptyCard>
             ) : (
-              filteredEnrichments.map((enrichment) => {
-                const canReview = [
-                  "FAILED",
-                  "PENDING",
-                  "READY_FOR_REVIEW",
-                ].includes(enrichment.status);
-                const defaultTone =
-                  enrichment.cautions[0] ||
-                  "Usar como toque leve, sem repetir em toda resposta.";
-
-                return (
-                  <article
-                    key={enrichment.id}
-                    className="ava-soft-card overflow-hidden rounded-2xl border p-0"
+              filteredArtifacts.map((artifact) => (
+                <article
+                  key={artifact.id}
+                  className="ava-soft-card overflow-hidden rounded-2xl border border-primary/10 p-0 shadow-[0_12px_28px_rgba(65,42,76,0.07)]"
+                >
+                  <div
+                    className={cn(
+                      "border-b px-5 py-4",
+                      artifactHeaderStyles[artifact.status],
+                    )}
                   >
-                    <div className="border-b border-primary/10 bg-white/62 px-5 py-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span
                             className={cn(
                               "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
-                              enrichmentStatusStyles[enrichment.status],
+                              statusStyles[artifact.status],
                             )}
                           >
-                            {enrichmentStatusLabels[enrichment.status]}
+                            {statusLabels[artifact.status]}
                           </span>
+                          {artifact.isPrimary ? (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                              <Star className="size-3.5" aria-hidden="true" />
+                              Principal
+                            </span>
+                          ) : null}
                           <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
-                            {enrichment.themeId}
-                          </span>
-                          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-                            {enrichment.provider}
+                            {artifact.themeId}
                           </span>
                         </div>
                         <h3 className="mt-3 text-lg font-semibold">
-                          {enrichment.label}
+                          {artifact.label}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {enrichment.targetUserName ?? "Aluno nao informado"}
+                          {artifact.userName} - {artifact.userEmail}
                         </p>
                       </div>
                       <div className="grid gap-1 text-sm text-muted-foreground md:text-right">
-                        <span>Criado: {formatDateTime(enrichment.createdAt)}</span>
-                        <span>
-                          Atualizado: {formatDateTime(enrichment.updatedAt)}
+                        <span className="inline-flex items-center justify-start gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1 md:justify-end">
+                          <Clock3 aria-hidden="true" className="size-3.5" />
+                          Usado {artifact.usageCount} vez(es)
                         </span>
-                        {enrichment.cacheId ? <span>cache ativo</span> : null}
-                        {enrichment.reviewedByName ? (
-                          <span>Revisado por: {enrichment.reviewedByName}</span>
-                        ) : null}
-                        {enrichment.reviewedAt ? (
-                          <span>
-                            Revisado: {formatDateTime(enrichment.reviewedAt)}
-                          </span>
-                        ) : null}
+                        <span>
+                          Ultimo uso: {formatDateTime(artifact.lastUsedAt)}
+                        </span>
+                        <span>
+                          Atualizado: {formatDateTime(artifact.updatedAt)}
+                        </span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground shadow-sm">
+                      <div className="flex items-start gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
+                          <MessageSquareText
+                            aria-hidden="true"
+                            className="size-4"
+                          />
+                        </span>
+                        <p>
+                          <strong className="block text-primary">
+                            Preview Candy
+                          </strong>
+                          Miauw, {artifact.userName.split(" ")[0]}{" "}
+                          {artifact.emojis[0] ?? "✨"}{" "}
+                          {artifact.catchphrases[0] ??
+                            "uma frase por vez ja conta."}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="p-5">
-
-                    {enrichment.safeSummary ? (
-                      <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground shadow-sm">
-                        {enrichment.safeSummary}
-                      </p>
-                    ) : null}
-
-                    {enrichment.failureReason ? (
-                      <p className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800 shadow-sm">
-                        {enrichment.failureReason}
-                      </p>
-                    ) : null}
-
                     <div className="mt-4 grid gap-3 md:grid-cols-3">
-                      <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-3 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-fuchsia-800/70">
                           Emojis
                         </p>
                         <p className="mt-2 text-lg">
-                          {enrichment.suggestedEmojis.join(" ") ||
-                            "Sem emojis"}
+                          {artifact.emojis.join(" ") || "Sem emojis"}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      <div className="rounded-2xl border border-sky-100 bg-sky-50/70 p-3 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-800/70">
                           Sons
                         </p>
                         <p className="mt-2 text-sm leading-6">
-                          {enrichment.suggestedSounds.join(", ") ||
-                            "Sem sons"}
+                          {artifact.sounds.join(", ") || "Sem sons"}
                         </p>
                       </div>
-                      <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 shadow-sm">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-800/70">
                           Bordoes
                         </p>
                         <p className="mt-2 text-sm leading-6">
-                          {enrichment.suggestedCatchphrases.join(", ") ||
-                            "Sem bordoes"}
+                          {artifact.catchphrases.join(", ") || "Sem bordoes"}
                         </p>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid gap-3 md:grid-cols-2">
-                      <div className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Exemplos
-                        </p>
-                        <p className="mt-2 text-muted-foreground">
-                          {enrichment.suggestedExamples.join(" | ") ||
-                            "Sem exemplos"}
-                        </p>
-                      </div>
-                      <div className="rounded-lg border bg-white/75 p-3 text-sm leading-6">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Cuidados
-                        </p>
-                        <p className="mt-2 text-muted-foreground">
-                          {enrichment.cautions.join(" | ") ||
-                            "Sem cuidados extras"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {enrichment.suggestedVocabulary.length > 0 ? (
-                      <div className="mt-3 rounded-lg border bg-white/75 p-3 text-sm leading-6">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                          Vocabulario sugerido
-                        </p>
-                        <div className="mt-2 grid gap-2">
-                          {enrichment.suggestedVocabulary.map((item) => (
-                            <p key={`${enrichment.id}-${item.word}`}>
-                              <strong>{item.word}</strong>: {item.meaning}
-                              {item.example ? ` - ${item.example}` : ""}
-                            </p>
-                          ))}
-                        </div>
+                    {artifact.example ||
+                    artifact.toneRule ||
+                    artifact.blockedReason ? (
+                      <div className="mt-3 grid gap-3 md:grid-cols-2">
+                        {artifact.example ? (
+                          <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 shadow-sm">
+                            <strong>Exemplo:</strong> {artifact.example}
+                          </p>
+                        ) : null}
+                        {artifact.toneRule ? (
+                          <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 shadow-sm">
+                            <strong>Tom:</strong> {artifact.toneRule}
+                          </p>
+                        ) : null}
+                        {artifact.blockedReason ? (
+                          <p className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-700 shadow-sm">
+                            <strong>Motivo:</strong> {artifact.blockedReason}
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
 
-                    {enrichment.sources.length > 0 ? (
-                      <details className="mt-3 rounded-lg border bg-primary/[0.03] p-3">
+                    {canManage ? (
+                      <details className="mt-4 rounded-2xl border border-primary/10 bg-primary/[0.03] p-3">
                         <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
-                          Fontes da busca
-                        </summary>
-                        <div className="mt-3 grid gap-2">
-                          {enrichment.sources.map((source) => (
-                            <a
-                              key={`${enrichment.id}-${source.url}`}
-                              href={source.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-lg border bg-white/80 p-3 text-sm leading-6 transition hover:border-primary/30"
-                            >
-                              <strong className="block text-foreground">
-                                {source.title || source.url}
-                              </strong>
-                              {source.snippet ? (
-                                <span className="text-muted-foreground">
-                                  {source.snippet}
-                                </span>
-                              ) : null}
-                            </a>
-                          ))}
-                        </div>
-                      </details>
-                    ) : null}
-
-                    {canReview ? (
-                      <details className="mt-4 rounded-lg border bg-fuchsia-50/40 p-3">
-                        <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
-                          Aprovar editando
+                          Editar tema
                         </summary>
                         <form
-                          onSubmit={handleApproveEnrichment}
+                          onSubmit={handleUpdate}
                           className="mt-4 grid gap-3"
                         >
                           <input
                             type="hidden"
-                            name="enrichmentId"
-                            value={enrichment.id}
-                          />
-                          <input
-                            type="hidden"
                             name="targetUserId"
-                            value={enrichment.targetUserId ?? ""}
+                            value={artifact.userId}
                           />
                           <input
                             type="hidden"
                             name="themeId"
-                            value={enrichment.themeId}
+                            value={artifact.themeId}
                           />
-                          <input type="hidden" name="status" value="ACTIVE" />
 
                           <div className="grid gap-3 md:grid-cols-2">
                             <Field>
                               <FieldLabel
-                                htmlFor={`enrichment-label-${enrichment.id}`}
+                                htmlFor={`artifact-label-${artifact.id}`}
                               >
                                 Nome
                               </FieldLabel>
                               <Input
-                                id={`enrichment-label-${enrichment.id}`}
+                                id={`artifact-label-${artifact.id}`}
                                 name="label"
-                                defaultValue={enrichment.label}
+                                defaultValue={artifact.label}
                                 disabled={isPending}
                               />
                             </Field>
                             <Field>
                               <FieldLabel
-                                htmlFor={`enrichment-emojis-${enrichment.id}`}
+                                htmlFor={`artifact-status-${artifact.id}`}
                               >
-                                Emojis
+                                Status
                               </FieldLabel>
-                              <Input
-                                id={`enrichment-emojis-${enrichment.id}`}
-                                name="emojisText"
-                                defaultValue={listToText(
-                                  enrichment.suggestedEmojis,
-                                )}
+                              <NativeSelect
+                                id={`artifact-status-${artifact.id}`}
+                                name="status"
+                                defaultValue={artifact.status}
                                 disabled={isPending}
-                              />
+                              >
+                                {cattyUserArtifactStatusValues.map((status) => (
+                                  <option key={status} value={status}>
+                                    {statusLabels[status]}
+                                  </option>
+                                ))}
+                              </NativeSelect>
                             </Field>
                           </div>
+
+                          <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground">
+                            <input
+                              type="checkbox"
+                              name="isPrimary"
+                              defaultChecked={artifact.isPrimary}
+                              className="mt-1 size-4 accent-primary"
+                              disabled={
+                                isPending || artifact.status !== "ACTIVE"
+                              }
+                            />
+                            <span>
+                              <strong className="block text-foreground">
+                                Gosto principal
+                              </strong>
+                              Use para priorizar este artefato quando houver
+                              mais de um tema ativo do aluno.
+                            </span>
+                          </label>
 
                           <div className="grid gap-3 md:grid-cols-2">
                             <Field>
                               <FieldLabel
-                                htmlFor={`enrichment-sounds-${enrichment.id}`}
+                                htmlFor={`artifact-emojis-${artifact.id}`}
                               >
-                                Sons
+                                Emojis
                               </FieldLabel>
                               <Input
-                                id={`enrichment-sounds-${enrichment.id}`}
-                                name="soundsText"
-                                defaultValue={listToText(
-                                  enrichment.suggestedSounds,
-                                )}
+                                id={`artifact-emojis-${artifact.id}`}
+                                name="emojisText"
+                                defaultValue={listToText(artifact.emojis)}
                                 disabled={isPending}
                               />
                             </Field>
                             <Field>
                               <FieldLabel
-                                htmlFor={`enrichment-example-${enrichment.id}`}
+                                htmlFor={`artifact-sounds-${artifact.id}`}
                               >
-                                Exemplo curto
+                                Sons
                               </FieldLabel>
                               <Input
-                                id={`enrichment-example-${enrichment.id}`}
-                                name="example"
-                                defaultValue={
-                                  enrichment.suggestedExamples[0] ?? ""
-                                }
+                                id={`artifact-sounds-${artifact.id}`}
+                                name="soundsText"
+                                defaultValue={listToText(artifact.sounds)}
                                 disabled={isPending}
                               />
                             </Field>
@@ -1262,53 +1666,62 @@ export function CattyArtifactsPanel({
 
                           <Field>
                             <FieldLabel
-                              htmlFor={`enrichment-catchphrases-${enrichment.id}`}
+                              htmlFor={`artifact-catchphrases-${artifact.id}`}
                             >
                               Bordoes
                             </FieldLabel>
                             <Textarea
-                              id={`enrichment-catchphrases-${enrichment.id}`}
+                              id={`artifact-catchphrases-${artifact.id}`}
                               name="catchphrasesText"
-                              defaultValue={listToText(
-                                enrichment.suggestedCatchphrases,
-                              )}
+                              defaultValue={listToText(artifact.catchphrases)}
                               rows={2}
                               disabled={isPending}
                             />
                           </Field>
 
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Field>
+                              <FieldLabel
+                                htmlFor={`artifact-example-${artifact.id}`}
+                              >
+                                Exemplo
+                              </FieldLabel>
+                              <Input
+                                id={`artifact-example-${artifact.id}`}
+                                name="example"
+                                defaultValue={artifact.example ?? ""}
+                                disabled={isPending}
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel
+                                htmlFor={`artifact-reason-${artifact.id}`}
+                              >
+                                Motivo se nao usar
+                              </FieldLabel>
+                              <Input
+                                id={`artifact-reason-${artifact.id}`}
+                                name="blockedReason"
+                                defaultValue={artifact.blockedReason ?? ""}
+                                disabled={isPending}
+                              />
+                            </Field>
+                          </div>
+
                           <Field>
                             <FieldLabel
-                              htmlFor={`enrichment-tone-${enrichment.id}`}
+                              htmlFor={`artifact-tone-${artifact.id}`}
                             >
                               Regra de tom
                             </FieldLabel>
                             <Textarea
-                              id={`enrichment-tone-${enrichment.id}`}
+                              id={`artifact-tone-${artifact.id}`}
                               name="toneRule"
-                              defaultValue={defaultTone}
+                              defaultValue={artifact.toneRule ?? ""}
                               rows={2}
                               disabled={isPending}
                             />
                           </Field>
-
-                          <label className="flex items-start gap-3 rounded-lg border bg-white/75 p-3 text-sm leading-6 text-muted-foreground">
-                            <input
-                              type="checkbox"
-                              name="isPrimary"
-                              className="mt-1 size-4 accent-primary"
-                              disabled={isPending}
-                            />
-                            <span>
-                              <strong className="block text-foreground">
-                                Aprovar como gosto principal
-                              </strong>
-                              Use se este for o tema que a Catty deve priorizar
-                              para esse aluno.
-                            </span>
-                          </label>
-
-                          <input type="hidden" name="blockedReason" value="" />
 
                           <Button
                             type="submit"
@@ -1316,455 +1729,154 @@ export function CattyArtifactsPanel({
                             disabled={isPending}
                             className="w-fit"
                           >
-                            <CheckCircle2 aria-hidden="true" />
-                            Aprovar e ativar
+                            <PencilLine aria-hidden="true" />
+                            Salvar ajustes
                           </Button>
                         </form>
                       </details>
                     ) : null}
 
-                    {canReview ? (
-                      <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {canManage ? (
+                        <>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={isPending || artifact.status === "ACTIVE"}
+                            onClick={() => updateStatus(artifact.id, "ACTIVE")}
+                          >
+                            <CheckCircle2 aria-hidden="true" />
+                            Ativar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              isPending ||
+                              artifact.status !== "ACTIVE" ||
+                              artifact.isPrimary
+                            }
+                            onClick={() =>
+                              updateStatus(
+                                artifact.id,
+                                "ACTIVE",
+                                undefined,
+                                true,
+                              )
+                            }
+                          >
+                            <Star aria-hidden="true" />
+                            Principal
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              isPending || artifact.status === "DISABLED"
+                            }
+                            onClick={() =>
+                              updateStatus(
+                                artifact.id,
+                                "DISABLED",
+                                "Marcado para nao usar neste aluno.",
+                              )
+                            }
+                          >
+                            <Ban aria-hidden="true" />
+                            Nao usar
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={
+                              isPending || artifact.status === "ARCHIVED"
+                            }
+                            onClick={() =>
+                              updateStatus(
+                                artifact.id,
+                                "ARCHIVED",
+                                "Artefato arquivado por revisao humana.",
+                              )
+                            }
+                          >
+                            <Archive aria-hidden="true" />
+                            Arquivar
+                          </Button>
+                        </>
+                      ) : (
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          disabled={isPending}
+                          disabled={isPending || artifact.status === "DISABLED"}
                           onClick={() =>
-                            updateEnrichmentStatus(enrichment.id, "REJECTED")
+                            updateStatus(
+                              artifact.id,
+                              "DISABLED",
+                              "Aluno pediu para a Catty parar de usar este tema.",
+                            )
                           }
                         >
                           <Ban aria-hidden="true" />
-                          Recusar
+                          Pedir para nao usar
                         </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          disabled={isPending}
-                          onClick={() =>
-                            updateEnrichmentStatus(enrichment.id, "ARCHIVED")
-                          }
-                        >
-                          <Archive aria-hidden="true" />
-                          Arquivar
-                        </Button>
-                      </div>
-                    ) : null}
+                      )}
                     </div>
-                  </article>
-                );
-              })
-            )}
-          </section>
-        ) : null}
-
-        <section className="grid gap-3">
-          {filteredArtifacts.length === 0 ? (
-            <EmptyCard icon={Palette} title="Nenhum tema encontrado">
-              Nenhum tema encontrado para estes filtros.
-            </EmptyCard>
-          ) : (
-            filteredArtifacts.map((artifact) => (
-              <article
-                key={artifact.id}
-                className="ava-soft-card overflow-hidden rounded-2xl border p-0"
-              >
-                <div className="border-b border-primary/10 bg-white/62 px-5 py-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold",
-                          statusStyles[artifact.status],
-                        )}
-                      >
-                        {statusLabels[artifact.status]}
-                      </span>
-                      {artifact.isPrimary ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                          <Star className="size-3.5" aria-hidden="true" />
-                          Principal
-                        </span>
-                      ) : null}
-                      <span className="rounded-full bg-primary/8 px-2.5 py-1 text-xs font-semibold text-primary">
-                        {artifact.themeId}
-                      </span>
-                    </div>
-                    <h3 className="mt-3 text-lg font-semibold">
-                      {artifact.label}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {artifact.userName} - {artifact.userEmail}
-                    </p>
                   </div>
-                  <div className="grid gap-1 text-sm text-muted-foreground md:text-right">
-                    <span className="inline-flex items-center justify-start gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1 md:justify-end">
-                      <Clock3 aria-hidden="true" className="size-3.5" />
-                      Usado {artifact.usageCount} vez(es)
-                    </span>
-                    <span>Ultimo uso: {formatDateTime(artifact.lastUsedAt)}</span>
-                    <span>Atualizado: {formatDateTime(artifact.updatedAt)}</span>
-                  </div>
-                </div>
-                </div>
-
-                <div className="p-5">
-                <div className="rounded-2xl border border-primary/10 bg-primary/[0.03] p-4 text-sm leading-6 text-muted-foreground shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
-                      <MessageSquareText aria-hidden="true" className="size-4" />
-                    </span>
-                    <p>
-                      <strong className="block text-primary">
-                        Preview Candy
-                      </strong>
-                      Miauw, {artifact.userName.split(" ")[0]}{" "}
-                      {artifact.emojis[0] ?? "✨"}{" "}
-                      {artifact.catchphrases[0] ??
-                        "uma frase por vez ja conta."}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Emojis
-                    </p>
-                    <p className="mt-2 text-lg">
-                      {artifact.emojis.join(" ") || "Sem emojis"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Sons
-                    </p>
-                    <p className="mt-2 text-sm leading-6">
-                      {artifact.sounds.join(", ") || "Sem sons"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-primary/10 bg-white/78 p-3 shadow-sm">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                      Bordoes
-                    </p>
-                    <p className="mt-2 text-sm leading-6">
-                      {artifact.catchphrases.join(", ") || "Sem bordoes"}
-                    </p>
-                  </div>
-                </div>
-
-                {artifact.example || artifact.toneRule || artifact.blockedReason ? (
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    {artifact.example ? (
-                      <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 shadow-sm">
-                        <strong>Exemplo:</strong> {artifact.example}
-                      </p>
-                    ) : null}
-                    {artifact.toneRule ? (
-                      <p className="rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 shadow-sm">
-                        <strong>Tom:</strong> {artifact.toneRule}
-                      </p>
-                    ) : null}
-                    {artifact.blockedReason ? (
-                      <p className="rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-700 shadow-sm">
-                        <strong>Motivo:</strong> {artifact.blockedReason}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {canManage ? (
-                  <details className="mt-4 rounded-2xl border border-primary/10 bg-primary/[0.03] p-3">
-                    <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
-                      Editar tema
-                    </summary>
-                    <form
-                      onSubmit={handleUpdate}
-                      className="mt-4 grid gap-3"
-                    >
-                      <input
-                        type="hidden"
-                        name="targetUserId"
-                        value={artifact.userId}
-                      />
-                      <input
-                        type="hidden"
-                        name="themeId"
-                        value={artifact.themeId}
-                      />
-
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Field>
-                          <FieldLabel htmlFor={`artifact-label-${artifact.id}`}>
-                            Nome
-                          </FieldLabel>
-                          <Input
-                            id={`artifact-label-${artifact.id}`}
-                            name="label"
-                            defaultValue={artifact.label}
-                            disabled={isPending}
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor={`artifact-status-${artifact.id}`}>
-                            Status
-                          </FieldLabel>
-                          <NativeSelect
-                            id={`artifact-status-${artifact.id}`}
-                            name="status"
-                            defaultValue={artifact.status}
-                            disabled={isPending}
-                          >
-                            {cattyUserArtifactStatusValues.map((status) => (
-                              <option key={status} value={status}>
-                                {statusLabels[status]}
-                              </option>
-                            ))}
-                          </NativeSelect>
-                        </Field>
-                      </div>
-
-                      <label className="flex items-start gap-3 rounded-2xl border border-primary/10 bg-white/78 p-3 text-sm leading-6 text-muted-foreground">
-                        <input
-                          type="checkbox"
-                          name="isPrimary"
-                          defaultChecked={artifact.isPrimary}
-                          className="mt-1 size-4 accent-primary"
-                          disabled={isPending || artifact.status !== "ACTIVE"}
-                        />
-                        <span>
-                          <strong className="block text-foreground">
-                            Gosto principal
-                          </strong>
-                          Use para priorizar este artefato quando houver mais
-                          de um tema ativo do aluno.
-                        </span>
-                      </label>
-
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Field>
-                          <FieldLabel htmlFor={`artifact-emojis-${artifact.id}`}>
-                            Emojis
-                          </FieldLabel>
-                          <Input
-                            id={`artifact-emojis-${artifact.id}`}
-                            name="emojisText"
-                            defaultValue={listToText(artifact.emojis)}
-                            disabled={isPending}
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor={`artifact-sounds-${artifact.id}`}>
-                            Sons
-                          </FieldLabel>
-                          <Input
-                            id={`artifact-sounds-${artifact.id}`}
-                            name="soundsText"
-                            defaultValue={listToText(artifact.sounds)}
-                            disabled={isPending}
-                          />
-                        </Field>
-                      </div>
-
-                      <Field>
-                        <FieldLabel
-                          htmlFor={`artifact-catchphrases-${artifact.id}`}
-                        >
-                          Bordoes
-                        </FieldLabel>
-                        <Textarea
-                          id={`artifact-catchphrases-${artifact.id}`}
-                          name="catchphrasesText"
-                          defaultValue={listToText(artifact.catchphrases)}
-                          rows={2}
-                          disabled={isPending}
-                        />
-                      </Field>
-
-                      <div className="grid gap-3 md:grid-cols-2">
-                        <Field>
-                          <FieldLabel htmlFor={`artifact-example-${artifact.id}`}>
-                            Exemplo
-                          </FieldLabel>
-                          <Input
-                            id={`artifact-example-${artifact.id}`}
-                            name="example"
-                            defaultValue={artifact.example ?? ""}
-                            disabled={isPending}
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor={`artifact-reason-${artifact.id}`}>
-                            Motivo se nao usar
-                          </FieldLabel>
-                          <Input
-                            id={`artifact-reason-${artifact.id}`}
-                            name="blockedReason"
-                            defaultValue={artifact.blockedReason ?? ""}
-                            disabled={isPending}
-                          />
-                        </Field>
-                      </div>
-
-                      <Field>
-                        <FieldLabel htmlFor={`artifact-tone-${artifact.id}`}>
-                          Regra de tom
-                        </FieldLabel>
-                        <Textarea
-                          id={`artifact-tone-${artifact.id}`}
-                          name="toneRule"
-                          defaultValue={artifact.toneRule ?? ""}
-                          rows={2}
-                          disabled={isPending}
-                        />
-                      </Field>
-
-                      <Button
-                        type="submit"
-                        variant="outline"
-                        disabled={isPending}
-                        className="w-fit"
-                      >
-                        <PencilLine aria-hidden="true" />
-                        Salvar ajustes
-                      </Button>
-                    </form>
-                  </details>
-                ) : null}
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {canManage ? (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={isPending || artifact.status === "ACTIVE"}
-                        onClick={() => updateStatus(artifact.id, "ACTIVE")}
-                      >
-                        <CheckCircle2 aria-hidden="true" />
-                        Ativar
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={
-                          isPending ||
-                          artifact.status !== "ACTIVE" ||
-                          artifact.isPrimary
-                        }
-                        onClick={() =>
-                          updateStatus(artifact.id, "ACTIVE", undefined, true)
-                        }
-                      >
-                        <Star aria-hidden="true" />
-                        Principal
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={isPending || artifact.status === "DISABLED"}
-                        onClick={() =>
-                          updateStatus(
-                            artifact.id,
-                            "DISABLED",
-                            "Marcado para nao usar neste aluno.",
-                          )
-                        }
-                      >
-                        <Ban aria-hidden="true" />
-                        Nao usar
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={isPending || artifact.status === "ARCHIVED"}
-                        onClick={() =>
-                          updateStatus(
-                            artifact.id,
-                            "ARCHIVED",
-                            "Artefato arquivado por revisao humana.",
-                          )
-                        }
-                      >
-                        <Archive aria-hidden="true" />
-                        Arquivar
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={isPending || artifact.status === "DISABLED"}
-                      onClick={() =>
-                        updateStatus(
-                          artifact.id,
-                          "DISABLED",
-                          "Aluno pediu para a Catty parar de usar este tema.",
-                        )
-                      }
-                    >
-                      <Ban aria-hidden="true" />
-                      Pedir para nao usar
-                    </Button>
-                  )}
-                </div>
-                </div>
-              </article>
-            ))
-          )}
-        </section>
-
-        <section className="ava-soft-card rounded-2xl border p-5">
-          <div className="flex items-start gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-              <Clock3 aria-hidden="true" />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold">Uso recente</h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                Amostra dos artefatos que apareceram nas ultimas respostas da
-                Catty.
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-2">
-            {filteredRecentUsages.length === 0 ? (
-              <EmptyCard icon={Clock3} title="Sem uso recente">
-                Ainda nao encontrei uso recente destes temas.
-              </EmptyCard>
-            ) : (
-              filteredRecentUsages.map((usage) => (
-                <div
-                  key={usage.id}
-                  className="rounded-2xl border border-primary/10 bg-white/82 p-3 text-sm shadow-sm"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
-                      {usage.artifactLabel}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {formatDateTime(usage.createdAt)}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      elemento: {usage.matchedElement}
-                    </span>
-                  </div>
-                  <p className="mt-2 leading-6 text-muted-foreground">
-                    {usage.textPreview}
-                  </p>
-                </div>
+                </article>
               ))
             )}
-          </div>
-        </section>
+          </section>
+
+          <section className="ava-soft-card rounded-2xl border p-5">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+                <Clock3 aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-lg font-semibold">Uso recente</h2>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  Amostra dos artefatos que apareceram nas ultimas respostas da
+                  Catty.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-2">
+              {filteredRecentUsages.length === 0 ? (
+                <EmptyCard icon={Clock3} title="Sem uso recente">
+                  Ainda nao encontrei uso recente destes temas.
+                </EmptyCard>
+              ) : (
+                filteredRecentUsages.map((usage) => (
+                  <div
+                    key={usage.id}
+                    className="rounded-2xl border border-primary/10 bg-white/82 p-3 text-sm shadow-sm"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold text-secondary-foreground">
+                        {usage.artifactLabel}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(usage.createdAt)}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        elemento: {usage.matchedElement}
+                      </span>
+                    </div>
+                    <p className="mt-2 leading-6 text-muted-foreground">
+                      {usage.textPreview}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
