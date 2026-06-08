@@ -177,7 +177,11 @@ export function AdminUserPasswordResetForm({
       </summary>
 
       <form onSubmit={onSubmit} className="mt-3 flex flex-col gap-3" noValidate>
-        <input type="hidden" defaultValue={userId} {...form.register("userId")} />
+        <input
+          type="hidden"
+          defaultValue={userId}
+          {...form.register("userId")}
+        />
         <Field data-invalid={Boolean(form.formState.errors.newPassword)}>
           <FieldLabel htmlFor={`reset-password-${userId}`}>
             Nova senha de {userName}
@@ -289,12 +293,12 @@ export function AdminAssignTeacherForm({
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-5 rounded-lg border border-primary/15 bg-white/82 p-4 shadow-sm sm:p-5"
+      className="flex flex-col gap-5 rounded-lg border border-primary/15 bg-white/88 p-4 shadow-[0_16px_34px_rgba(65,42,76,0.08)] sm:p-5"
       noValidate
     >
-      <div className="flex flex-col gap-3 border-b border-primary/10 pb-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="grid gap-4 border-b border-primary/10 pb-4">
         <div className="min-w-0">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/8 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary">
             <Link2 aria-hidden="true" className="size-3.5" />
             Novo vinculo
           </span>
@@ -307,19 +311,19 @@ export function AdminAssignTeacherForm({
         </div>
 
         <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2">
-            <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-              Teachers
+          <div className="min-w-0 rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2.5">
+            <span className="block truncate text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              Teachers ativos
             </span>
-            <strong className="text-lg leading-none text-primary">
+            <strong className="mt-1 block text-xl leading-none text-primary">
               {activeTeachers.length}
             </strong>
           </div>
-          <div className="rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2">
-            <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-              Alunos
+          <div className="min-w-0 rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2.5">
+            <span className="block truncate text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+              Alunos ativos
             </span>
-            <strong className="text-lg leading-none text-primary">
+            <strong className="mt-1 block text-xl leading-none text-primary">
               {activeStudents.length}
             </strong>
           </div>
@@ -374,13 +378,18 @@ export function AdminAssignTeacherForm({
         </Field>
       </FieldGroup>
 
-      <div className="rounded-lg border border-primary/12 bg-primary/[0.035] p-3">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-          Previa do vinculo
-        </p>
+      <div className="rounded-lg border border-primary/12 bg-primary/[0.03] p-3 shadow-inner shadow-primary/[0.03]">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            Previa do vinculo
+          </p>
+          <span className="rounded-full border border-primary/10 bg-white/75 px-2.5 py-1 text-[0.68rem] font-semibold text-primary/70">
+            Teacher → aluno
+          </span>
+        </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-stretch">
-          <div className="rounded-md border border-primary/10 bg-white/82 p-3">
-            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+          <div className="min-w-0 rounded-md border border-primary/10 bg-white/88 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-primary">
               <GraduationCap aria-hidden="true" className="size-3.5" />
               Teacher
             </span>
@@ -396,13 +405,13 @@ export function AdminAssignTeacherForm({
           </div>
 
           <div className="flex items-center justify-center">
-            <span className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <span className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_10px_22px_rgba(65,42,76,0.18)]">
               <ArrowRight aria-hidden="true" className="size-4" />
             </span>
           </div>
 
-          <div className="rounded-md border border-primary/10 bg-white/82 p-3">
-            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+          <div className="min-w-0 rounded-md border border-primary/10 bg-white/88 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.08em] text-primary">
               <UserRound aria-hidden="true" className="size-3.5" />
               Aluno
             </span>

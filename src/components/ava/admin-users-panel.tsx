@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   CalendarCheck2,
   CalendarDays,
   BrainCircuit,
@@ -298,8 +297,7 @@ const taskMeta = {
 } satisfies Record<AdminTask, TaskMeta>;
 
 export function normalizeAdminTask(value: unknown): AdminTask {
-  return typeof value === "string" &&
-    adminTaskIds.includes(value as AdminTask)
+  return typeof value === "string" && adminTaskIds.includes(value as AdminTask)
     ? (value as AdminTask)
     : "usuarios";
 }
@@ -384,11 +382,7 @@ function getUserHistory(user: AdminUserRow) {
 }
 
 function getUserInitials(user: AdminUserRow) {
-  const words = user.name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2);
+  const words = user.name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
 
   const initials = words.map((word) => word.charAt(0).toUpperCase()).join("");
 
@@ -562,7 +556,11 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
 
   const columns = [
     { empty: "Nenhum admin cadastrado.", role: "ADMIN", title: "Admins" },
-    { empty: "Nenhuma teacher cadastrada.", role: "TEACHER", title: "Teachers" },
+    {
+      empty: "Nenhuma teacher cadastrada.",
+      role: "TEACHER",
+      title: "Teachers",
+    },
     { empty: "Nenhum aluno cadastrado.", role: "STUDENT", title: "Alunos" },
   ] satisfies { empty: string; role: Role; title: string }[];
 
@@ -798,46 +796,28 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
       },
     ];
   }, []);
-  const uniqueStudentsCount = new Set(
-    assignments.map((assignment) => assignment.studentProfileId),
-  ).size;
+  if (assignments.length === 0) {
+    return (
+      <div className="flex min-h-52 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/20 bg-primary/[0.035] p-6 text-center">
+        <span className="flex size-11 items-center justify-center rounded-lg bg-white text-primary shadow-sm ring-1 ring-primary/10">
+          <Link2 aria-hidden="true" className="size-5" />
+        </span>
+        <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+          Nenhum vinculo teacher-aluno foi criado ainda.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-primary/12 bg-white/80 p-3 shadow-sm">
-          <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            Teachers
-          </span>
-          <strong className="mt-1 block text-2xl leading-none text-primary">
-            {teacherGroups.length}
-          </strong>
-        </div>
-        <div className="rounded-lg border border-primary/12 bg-white/80 p-3 shadow-sm">
-          <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-            Alunos
-          </span>
-          <strong className="mt-1 block text-2xl leading-none text-primary">
-            {uniqueStudentsCount}
-          </strong>
-        </div>
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
-          <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em]">
-            Vinculos
-          </span>
-          <strong className="mt-1 block text-2xl leading-none">
-            {assignments.length}
-          </strong>
-        </div>
-      </div>
-
       <div className="grid gap-4 xl:grid-cols-2">
         {teacherGroups.map((group) => (
           <article
             key={group.teacherProfileId}
-            className="overflow-hidden rounded-lg border border-primary/15 bg-white/86 shadow-sm"
+            className="overflow-hidden rounded-lg border border-primary/15 bg-white/90 shadow-[0_12px_28px_rgba(65,42,76,0.07)]"
           >
-            <div className="border-b border-primary/10 bg-primary/[0.055] p-4">
+            <div className="border-b border-primary/10 bg-gradient-to-r from-primary/[0.08] to-secondary/30 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
@@ -852,7 +832,7 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
                     </p>
                   </div>
                 </div>
-                <span className="shrink-0 rounded-full border border-primary/15 bg-white px-2.5 py-1 text-xs font-semibold text-primary">
+                <span className="shrink-0 rounded-full border border-primary/15 bg-white/88 px-2.5 py-1 text-xs font-semibold text-primary shadow-sm">
                   {group.students.length} aluno(s)
                 </span>
               </div>
@@ -862,10 +842,10 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
               {group.students.map((assignment) => (
                 <div
                   key={assignment.id}
-                  className="grid gap-3 rounded-md border border-primary/10 bg-white/78 p-3 sm:grid-cols-[minmax(0,1fr)_auto]"
+                  className="grid gap-3 rounded-md border border-primary/10 bg-white/82 p-3 shadow-[0_6px_18px_rgba(65,42,76,0.04)] sm:grid-cols-[minmax(0,1fr)_auto]"
                 >
                   <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground ring-1 ring-primary/5">
                       <UserRound aria-hidden="true" className="size-4" />
                     </span>
                     <div className="min-w-0">
@@ -877,7 +857,7 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
                       </p>
                     </div>
                   </div>
-                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 sm:self-center">
+                  <span className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 sm:self-center">
                     <CheckCircle2 aria-hidden="true" className="size-3.5" />
                     desde {formatDate(assignment.createdAt)}
                   </span>
@@ -892,12 +872,19 @@ function AssignmentList({ assignments }: { assignments: AssignmentRow[] }) {
 }
 
 function AssignmentOverview({ assignments }: { assignments: AssignmentRow[] }) {
+  const teacherCount = new Set(
+    assignments.map((assignment) => assignment.teacherProfileId),
+  ).size;
+  const studentCount = new Set(
+    assignments.map((assignment) => assignment.studentProfileId),
+  ).size;
+
   return (
     <div className="grid gap-4">
-      <div className="rounded-lg border border-primary/12 bg-white/76 p-4 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="rounded-lg border border-primary/12 bg-gradient-to-br from-white/90 via-white/82 to-primary/[0.055] p-4 shadow-[0_12px_28px_rgba(65,42,76,0.07)]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
-            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary">
+            <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-primary/8 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary">
               <Link2 aria-hidden="true" className="size-3.5" />
               Mapa de acesso
             </span>
@@ -909,9 +896,25 @@ function AssignmentOverview({ assignments }: { assignments: AssignmentRow[] }) {
               AVA.
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2 rounded-lg border border-primary/12 bg-primary/[0.045] px-3 py-2 text-sm font-semibold text-primary">
-            <ArrowRight aria-hidden="true" className="size-4" />
-            Teacher para aluno
+          <div className="grid w-full gap-2 sm:grid-cols-3 lg:w-[23rem]">
+            <div className="rounded-lg border border-primary/10 bg-white/80 px-3 py-2 shadow-sm">
+              <span className="block text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                Teachers
+              </span>
+              <strong className="text-lg text-primary">{teacherCount}</strong>
+            </div>
+            <div className="rounded-lg border border-primary/10 bg-white/80 px-3 py-2 shadow-sm">
+              <span className="block text-[0.65rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                Alunos
+              </span>
+              <strong className="text-lg text-primary">{studentCount}</strong>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-emerald-900 shadow-sm">
+              <span className="block text-[0.65rem] font-bold uppercase tracking-[0.08em]">
+                Vinculos
+              </span>
+              <strong className="text-lg">{assignments.length}</strong>
+            </div>
           </div>
         </div>
       </div>
@@ -1166,7 +1169,10 @@ export function AdminUsersPanel({
           ) : null}
 
           {activeTask === "criar-aluno" ? (
-            <AdminCreateUserForm fixedRole="STUDENT" submitLabel="Criar aluno" />
+            <AdminCreateUserForm
+              fixedRole="STUDENT"
+              submitLabel="Criar aluno"
+            />
           ) : null}
 
           {activeTask === "aceitar-alunos" ? (
