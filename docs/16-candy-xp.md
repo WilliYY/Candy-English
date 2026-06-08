@@ -67,6 +67,7 @@ Rotas das atividades:
 - Respostas objetivas podem ser corrigidas automaticamente; respostas escritas sempre ficam pendentes para revisao manual.
 - XP de atividade concluida usa `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` da submissao para impedir pontuacao duplicada.
 - PDF/imagem da atividade deve ser servido apenas pela rota protegida de asset.
+- No admin, o painel Candy XP deve manter cards visiveis e escaneaveis para criacao, perguntas, arquivo, liberacao, status, XP e respostas, sem alterar as regras de permissao ou premiacao.
 
 ## Fontes atuais de XP
 

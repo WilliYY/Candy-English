@@ -94,7 +94,7 @@ Banco:
 - Se Ghostscript nao estiver disponivel, falhar ou gerar arquivo maior, o upload continua salvando o original e retorna mensagem amigavel ao admin.
 - A premiacao usa o ledger existente `CandyXpEvent` e atualiza `CandyXpProfile` por `recordCandyXpEventsForUser`.
 - A tela student mostra cards gamificados com nivel, categoria, XP, progresso e status.
-- A tela admin prioriza criacao rapida e acompanhamento; edicao completa de perguntas apos envios deve ser tratada com cuidado em fase futura.
+- A tela admin prioriza criacao rapida e acompanhamento, com cards mais destacados para cabecalho, perguntas, arquivo, liberacao e respostas; edicao completa de perguntas apos envios deve ser tratada com cuidado em fase futura.
 
 ## Riscos ao alterar esta parte
 
