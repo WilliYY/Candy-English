@@ -69,6 +69,7 @@ Rotas das atividades:
 - PDF/imagem da atividade deve ser servido apenas pela rota protegida de asset.
 - No admin, o painel Candy XP deve manter cards visiveis e escaneaveis para criacao, perguntas, arquivo, liberacao, status, XP e respostas, sem alterar as regras de permissao ou premiacao.
 - O card reutilizavel de Candy XP deve manter as fontes de XP em cards responsivos por largura minima, evitando quatro colunas apertadas quando o painel estiver estreito.
+- Em mobile, o card reutilizavel deve empilhar fontes e metricas em uma coluna e manter a trilha de niveis com rolagem horizontal discreta, evitando tiles comprimidos.
 
 ## Fontes atuais de XP
 

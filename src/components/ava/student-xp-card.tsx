@@ -61,18 +61,18 @@ export function CandyXpCard({
       )}
     >
       <div className="grid gap-0 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-        <div className="relative isolate overflow-hidden p-5 sm:p-6">
+        <div className="relative isolate overflow-hidden p-4 sm:p-6">
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(rgba(65,42,76,0.055)_1px,transparent_1px),linear-gradient(90deg,rgba(65,42,76,0.055)_1px,transparent_1px)] bg-[size:44px_44px]" />
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/80 bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-amber-900 shadow-sm">
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/80 bg-amber-100 px-3 py-1 text-xs font-bold uppercase tracking-normal text-amber-900 shadow-sm sm:tracking-[0.18em]">
                   <Zap aria-hidden="true" className="size-3.5" />
                   {badgeLabel}
                 </span>
                 <h2
                   id={titleId}
-                  className="mt-3 text-2xl font-semibold tracking-normal text-primary sm:text-3xl"
+                  className="mt-3 text-xl font-semibold tracking-normal text-primary sm:text-3xl"
                 >
                   {title}
                 </h2>
@@ -81,7 +81,7 @@ export function CandyXpCard({
                 </p>
               </div>
 
-              <div className="flex shrink-0 items-center gap-3 rounded-lg border border-primary/15 bg-white/80 px-4 py-3 text-primary shadow-sm">
+              <div className="flex w-full shrink-0 items-center gap-3 rounded-lg border border-primary/15 bg-white/80 px-4 py-3 text-primary shadow-sm sm:w-auto">
                 <span className="flex size-11 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <Trophy aria-hidden="true" />
                 </span>
@@ -122,31 +122,33 @@ export function CandyXpCard({
                 <span>{xpFormatter.format(xp.progressXp)} XP</span>
                 <span>{xpFormatter.format(xp.requiredXp)} XP</span>
               </div>
-              <div className="mt-4 grid grid-cols-7 gap-2">
-                {xp.track.map((item) => (
-                  <div
-                    key={item.level}
-                    className={cn(
-                      "flex min-h-14 flex-col items-center justify-center rounded-md border px-1 text-center",
-                      item.status === "done" &&
-                        "border-emerald-300 bg-emerald-50 text-emerald-800",
-                      item.status === "current" &&
-                        "border-amber-300 bg-amber-100 text-amber-950 shadow-sm",
-                      item.status === "next" &&
-                        "border-primary/10 bg-muted/50 text-muted-foreground",
-                    )}
-                  >
-                    <span className="text-[0.62rem] font-bold uppercase tracking-[0.1em]">
-                      Nv
-                    </span>
-                    <strong className="text-sm leading-none">
-                      {item.level}
-                    </strong>
-                  </div>
-                ))}
+              <div className="-mx-1 mt-4 overflow-x-auto pb-1 sm:mx-0">
+                <div className="grid min-w-[430px] grid-cols-7 gap-2 px-1 sm:min-w-0 sm:px-0">
+                  {xp.track.map((item) => (
+                    <div
+                      key={item.level}
+                      className={cn(
+                        "flex min-h-14 flex-col items-center justify-center rounded-md border px-1 text-center",
+                        item.status === "done" &&
+                          "border-emerald-300 bg-emerald-50 text-emerald-800",
+                        item.status === "current" &&
+                          "border-amber-300 bg-amber-100 text-amber-950 shadow-sm",
+                        item.status === "next" &&
+                          "border-primary/10 bg-muted/50 text-muted-foreground",
+                      )}
+                    >
+                      <span className="text-[0.62rem] font-bold uppercase tracking-[0.1em]">
+                        Nv
+                      </span>
+                      <strong className="text-sm leading-none">
+                        {item.level}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
               </div>
               {xp.persisted ? (
-                <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-2">
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
                   <div className="rounded-lg border border-primary/12 bg-white/86 p-3 shadow-[0_8px_18px_rgba(65,42,76,0.05)]">
                     <span className="flex items-center gap-2 text-xs font-semibold uppercase leading-4 text-muted-foreground">
                       <Flame aria-hidden="true" className="size-3.5" />
@@ -178,11 +180,11 @@ export function CandyXpCard({
               ) : null}
             </div>
 
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(152px,1fr))] gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[repeat(auto-fit,minmax(165px,1fr))]">
               {xp.sources.map((source) => (
                 <div
                   key={source.label}
-                  className="relative min-h-[150px] overflow-hidden rounded-lg border border-primary/15 bg-white/90 p-3.5 shadow-[0_12px_28px_rgba(65,42,76,0.07)] ring-1 ring-white/70"
+                  className="relative min-h-[132px] overflow-hidden rounded-lg border border-primary/15 bg-white/90 p-3.5 shadow-[0_12px_28px_rgba(65,42,76,0.07)] ring-1 ring-white/70 sm:min-h-[150px]"
                 >
                   <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#412a4c,#e57cd8,#f6c65b)]" />
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 pt-1">
@@ -193,7 +195,7 @@ export function CandyXpCard({
                       +{xpFormatter.format(source.xp)}
                     </span>
                   </div>
-                  <strong className="mt-4 block text-3xl leading-none text-primary">
+                  <strong className="mt-4 block text-2xl leading-none text-primary sm:text-3xl">
                     {source.value}
                     {source.valueSuffix ?? ""}
                   </strong>
