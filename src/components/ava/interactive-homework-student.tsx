@@ -104,6 +104,108 @@ function answersToMap(answers: unknown) {
   return values;
 }
 
+function buildAnswersPayload(
+  fields: StudentInteractiveField[],
+  values: Record<string, string>,
+) {
+  return fields.map((field) => ({
+    fieldId: field.id,
+    value: values[field.id] ?? "",
+  }));
+}
+
+function valuesSignature(values: Record<string, string>) {
+  return JSON.stringify(
+    Object.keys(values)
+      .sort()
+      .map((key) => [key, values[key] ?? ""]),
+  );
+}
+
+function draftStorageKey(homeworkId: string) {
+  return `candy:interactive-homework-draft:${homeworkId}`;
+}
+
+function readStoredDraft(homeworkId: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawDraft = window.localStorage.getItem(draftStorageKey(homeworkId));
+
+    if (!rawDraft) {
+      return null;
+    }
+
+    const parsed: unknown = JSON.parse(rawDraft);
+
+    if (!parsed || typeof parsed !== "object" || !("values" in parsed)) {
+      return null;
+    }
+
+    const maybeValues = (parsed as { values?: unknown }).values;
+
+    if (
+      !maybeValues ||
+      typeof maybeValues !== "object" ||
+      Array.isArray(maybeValues)
+    ) {
+      return null;
+    }
+
+    return Object.entries(maybeValues).reduce<Record<string, string>>(
+      (draft, [fieldId, value]) => {
+        if (typeof value === "string") {
+          draft[fieldId] = value;
+        }
+
+        return draft;
+      },
+      {},
+    );
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredDraft(homeworkId: string, values: Record<string, string>) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    const hasContent = Object.values(values).some((value) => value.length > 0);
+
+    if (!hasContent) {
+      window.localStorage.removeItem(draftStorageKey(homeworkId));
+      return;
+    }
+
+    window.localStorage.setItem(
+      draftStorageKey(homeworkId),
+      JSON.stringify({
+        savedAt: new Date().toISOString(),
+        values,
+      }),
+    );
+  } catch {
+    // localStorage is only a safety copy; autosave to the server remains primary.
+  }
+}
+
+function clearStoredDraft(homeworkId: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.removeItem(draftStorageKey(homeworkId));
+  } catch {
+    // Ignore storage cleanup failures.
+  }
+}
+
 function statusLabel(status?: string) {
   if (status === "REVIEWED") {
     return "Corrigida";
@@ -325,13 +427,20 @@ export function InteractiveHomeworkStudent({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
+  const [isOpen, setIsOpen] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(false);
   const [isPending, startTransition] = useTransition();
   const initialValues = useMemo(
     () => answersToMap(homework.submission?.answers),
     [homework.submission?.answers],
   );
   const [values, setValues] = useState<Record<string, string>>(initialValues);
+  const autosaveTimeout = useRef<number | null>(null);
+  const dirtyValues = useRef(false);
+  const homeworkId = useRef(homework.id);
   const mounted = useRef(false);
+  const saveRequest = useRef(0);
+  const valuesRef = useRef(values);
   const status = homework.submission?.status;
   const isLocked = status === "SUBMITTED" || status === "REVIEWED";
   const canReopen = status === "SUBMITTED";
@@ -350,11 +459,59 @@ export function InteractiveHomeworkStudent({
   const lessonStatusDotClass = isComplete ? "bg-emerald-500" : "bg-red-600";
 
   useEffect(() => {
-    setValues(initialValues);
-  }, [initialValues]);
+    valuesRef.current = values;
+  }, [values]);
 
   useEffect(() => {
+    if (homeworkId.current !== homework.id) {
+      homeworkId.current = homework.id;
+      dirtyValues.current = false;
+      mounted.current = false;
+      setDraftHydrated(false);
+      setMessage(null);
+      setSaveState("idle");
+      setValues(initialValues);
+      return;
+    }
+
+    if (!dirtyValues.current) {
+      setValues(initialValues);
+    }
+  }, [homework.id, initialValues]);
+
+  useEffect(() => {
+    mounted.current = false;
+    setDraftHydrated(false);
+
     if (isLocked) {
+      clearStoredDraft(homework.id);
+      setDraftHydrated(true);
+      return;
+    }
+
+    const storedValues = readStoredDraft(homework.id);
+
+    if (storedValues && Object.keys(storedValues).length > 0) {
+      dirtyValues.current = true;
+      setValues((current) => ({
+        ...current,
+        ...storedValues,
+      }));
+    }
+
+    setDraftHydrated(true);
+  }, [homework.id, isLocked]);
+
+  useEffect(() => {
+    if (!draftHydrated || isLocked) {
+      return;
+    }
+
+    writeStoredDraft(homework.id, values);
+  }, [draftHydrated, homework.id, isLocked, values]);
+
+  useEffect(() => {
+    if (isLocked || !draftHydrated) {
       return;
     }
 
@@ -364,43 +521,82 @@ export function InteractiveHomeworkStudent({
     }
 
     setSaveState("saving");
+    const valuesSnapshot = values;
+    const savedSignature = valuesSignature(valuesSnapshot);
+    const requestId = saveRequest.current + 1;
+
+    saveRequest.current = requestId;
+
     const timeout = window.setTimeout(async () => {
       const result = await saveInteractiveHomeworkDraft({
-        answers: homework.fields.map((field) => ({
-          fieldId: field.id,
-          value: values[field.id] ?? "",
-        })),
+        answers: buildAnswersPayload(homework.fields, valuesSnapshot),
         homeworkId: homework.id,
       });
 
-      setMessage(result.ok ? null : result.message);
-      setSaveState(result.ok ? "saved" : "idle");
+      if (requestId !== saveRequest.current) {
+        return;
+      }
+
+      if (!result.ok) {
+        setMessage(result.message);
+        setSaveState("idle");
+        return;
+      }
+
+      setMessage(null);
+
+      if (valuesSignature(valuesRef.current) === savedSignature) {
+        dirtyValues.current = false;
+        setSaveState("saved");
+      }
     }, 900);
 
-    return () => window.clearTimeout(timeout);
-  }, [homework.fields, homework.id, isLocked, values]);
+    autosaveTimeout.current = timeout;
+
+    return () => {
+      window.clearTimeout(timeout);
+
+      if (autosaveTimeout.current === timeout) {
+        autosaveTimeout.current = null;
+      }
+    };
+  }, [draftHydrated, homework.fields, homework.id, isLocked, values]);
 
   function updateValue(fieldId: string, value: string) {
-    setValues((current) => ({
-      ...current,
-      [fieldId]: value,
-    }));
+    dirtyValues.current = true;
+    setSaveState("idle");
+    setValues((current) => {
+      const nextValues = {
+        ...current,
+        [fieldId]: value,
+      };
+
+      valuesRef.current = nextValues;
+      return nextValues;
+    });
   }
 
   function submit() {
     setMessage(null);
+    if (autosaveTimeout.current) {
+      window.clearTimeout(autosaveTimeout.current);
+      autosaveTimeout.current = null;
+    }
+
+    const currentValues = valuesRef.current;
+
     startTransition(async () => {
       const result = await submitInteractiveHomework({
-        answers: homework.fields.map((field) => ({
-          fieldId: field.id,
-          value: values[field.id] ?? "",
-        })),
+        answers: buildAnswersPayload(homework.fields, currentValues),
         homeworkId: homework.id,
       });
 
       setMessage(result.message);
 
       if (result.ok) {
+        clearStoredDraft(homework.id);
+        dirtyValues.current = false;
+        setSaveState("saved");
         router.refresh();
       }
     });
@@ -423,6 +619,8 @@ export function InteractiveHomeworkStudent({
 
   return (
     <details
+      open={isOpen}
+      onToggle={(event) => setIsOpen(event.currentTarget.open)}
       className={
         isLessonContext
           ? "group overflow-hidden rounded-xl border border-primary/15 bg-white shadow-md shadow-primary/10"
@@ -510,119 +708,94 @@ export function InteractiveHomeworkStudent({
           fields={homework.fields}
           pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
           renderField={(field, index, style) => {
-              const commonClass =
-                "block size-full max-h-none max-w-none min-h-0 min-w-0 appearance-none border-0 bg-transparent text-left font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
+            const commonClass =
+              "block size-full max-h-none max-w-none min-h-0 min-w-0 appearance-none border-0 bg-transparent text-left font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
 
-              if (field.type === "CHECKBOX") {
-                return (
-                  <label
-                    key={field.id}
-                    className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-primary"
-                    style={{ ...style, containerType: "size" }}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                    />
-                    <input
-                      aria-label={field.label ?? `Campo ${index + 1}`}
-                      checked={values[field.id] === "true"}
-                      className="sr-only"
-                      disabled={isLocked}
-                      onChange={(event) =>
-                        updateValue(
-                          field.id,
-                          event.target.checked ? "true" : "false",
-                        )
-                      }
-                      type="checkbox"
-                    />
-                    {values[field.id] === "true" ? (
-                      <InteractiveHomeworkMark />
-                    ) : null}
-                  </label>
-                );
-              }
-
-              if (field.type === "DRAWING") {
-                return (
-                  <DrawingField
-                    key={field.id}
-                    ariaLabel={field.label ?? `Campo ${index + 1}`}
+            if (field.type === "CHECKBOX") {
+              return (
+                <label
+                  key={field.id}
+                  className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-primary"
+                  style={{ ...style, containerType: "size" }}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  />
+                  <input
+                    aria-label={field.label ?? `Campo ${index + 1}`}
+                    checked={values[field.id] === "true"}
+                    className="sr-only"
                     disabled={isLocked}
-                    onChange={(value) => updateValue(field.id, value)}
-                    style={style}
+                    onChange={(event) =>
+                      updateValue(
+                        field.id,
+                        event.target.checked ? "true" : "false",
+                      )
+                    }
+                    type="checkbox"
+                  />
+                  {values[field.id] === "true" ? (
+                    <InteractiveHomeworkMark />
+                  ) : null}
+                </label>
+              );
+            }
+
+            if (field.type === "DRAWING") {
+              return (
+                <DrawingField
+                  key={field.id}
+                  ariaLabel={field.label ?? `Campo ${index + 1}`}
+                  disabled={isLocked}
+                  onChange={(value) => updateValue(field.id, value)}
+                  style={style}
+                  value={values[field.id] ?? ""}
+                />
+              );
+            }
+
+            if (field.type === "TINY_TEXT") {
+              return (
+                <InteractiveHomeworkTextFrame
+                  key={field.id}
+                  className="pointer-events-auto"
+                  style={style}
+                >
+                  <input
+                    aria-label={field.label ?? `Campo ${index + 1}`}
+                    autoCapitalize="characters"
+                    className="block size-full min-h-0 min-w-0 appearance-none rounded-[3px] border border-primary/35 bg-white/55 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.12)] outline-none transition focus:border-primary focus:bg-white/80 focus:ring-2 focus:ring-primary/20 disabled:bg-white/30 disabled:text-primary disabled:opacity-100"
+                    disabled={isLocked}
+                    inputMode="text"
+                    maxLength={TINY_TEXT_MAX_LENGTH}
+                    onChange={(event) =>
+                      updateValue(
+                        field.id,
+                        normalizeTinyTextAnswer(event.target.value),
+                      )
+                    }
+                    placeholder={field.placeholder ?? "A"}
+                    style={getInteractiveHomeworkTinyTextStyle()}
                     value={values[field.id] ?? ""}
                   />
-                );
-              }
+                </InteractiveHomeworkTextFrame>
+              );
+            }
 
-              if (field.type === "TINY_TEXT") {
-                return (
-                  <InteractiveHomeworkTextFrame
-                    key={field.id}
-                    className="pointer-events-auto"
-                    style={style}
-                  >
-                    <input
-                      aria-label={field.label ?? `Campo ${index + 1}`}
-                      autoCapitalize="characters"
-                      className="block size-full min-h-0 min-w-0 appearance-none rounded-[3px] border border-primary/35 bg-white/55 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.12)] outline-none transition focus:border-primary focus:bg-white/80 focus:ring-2 focus:ring-primary/20 disabled:bg-white/30 disabled:text-primary disabled:opacity-100"
-                      disabled={isLocked}
-                      inputMode="text"
-                      maxLength={TINY_TEXT_MAX_LENGTH}
-                      onChange={(event) =>
-                        updateValue(
-                          field.id,
-                          normalizeTinyTextAnswer(event.target.value),
-                        )
-                      }
-                      placeholder={field.placeholder ?? "A"}
-                      style={getInteractiveHomeworkTinyTextStyle()}
-                      value={values[field.id] ?? ""}
-                    />
-                  </InteractiveHomeworkTextFrame>
-                );
-              }
+            if (field.type === "LISTENING") {
+              return (
+                <InteractiveHomeworkListeningPlayer
+                  key={field.id}
+                  fieldId={field.id}
+                  label={field.label ?? `Listening ${index + 1}`}
+                  sentence={field.placeholder}
+                  style={style}
+                />
+              );
+            }
 
-              if (field.type === "LISTENING") {
-                return (
-                  <InteractiveHomeworkListeningPlayer
-                    key={field.id}
-                    fieldId={field.id}
-                    label={field.label ?? `Listening ${index + 1}`}
-                    sentence={field.placeholder}
-                    style={style}
-                  />
-                );
-              }
-
-              if (field.type === "SHORT_TEXT") {
-                return (
-                  <InteractiveHomeworkTextFrame
-                    key={field.id}
-                    className="pointer-events-auto"
-                    style={style}
-                  >
-                    <InteractiveHomeworkTextLineGuide
-                      kind="SHORT_TEXT"
-                      variant="student"
-                    />
-                    <input
-                      aria-label={field.label ?? `Campo ${index + 1}`}
-                      className={`${commonClass} relative z-10 overflow-hidden whitespace-nowrap px-[0.25em]`}
-                      disabled={isLocked}
-                      onChange={(event) =>
-                        updateValue(field.id, event.target.value)
-                      }
-                      placeholder={field.placeholder ?? "Resposta"}
-                      style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
-                      value={values[field.id] ?? ""}
-                    />
-                  </InteractiveHomeworkTextFrame>
-                );
-              }
-
+            if (field.type === "SHORT_TEXT") {
               return (
                 <InteractiveHomeworkTextFrame
                   key={field.id}
@@ -630,23 +803,48 @@ export function InteractiveHomeworkStudent({
                   style={style}
                 >
                   <InteractiveHomeworkTextLineGuide
-                    kind="LONG_TEXT"
+                    kind="SHORT_TEXT"
                     variant="student"
                   />
-                  <textarea
+                  <input
                     aria-label={field.label ?? `Campo ${index + 1}`}
-                    className={`${commonClass} relative z-10 resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
+                    className={`${commonClass} relative z-10 overflow-hidden whitespace-nowrap px-[0.25em]`}
                     disabled={isLocked}
                     onChange={(event) =>
                       updateValue(field.id, event.target.value)
                     }
                     placeholder={field.placeholder ?? "Resposta"}
-                    style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+                    style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
                     value={values[field.id] ?? ""}
-                    wrap="soft"
                   />
                 </InteractiveHomeworkTextFrame>
               );
+            }
+
+            return (
+              <InteractiveHomeworkTextFrame
+                key={field.id}
+                className="pointer-events-auto"
+                style={style}
+              >
+                <InteractiveHomeworkTextLineGuide
+                  kind="LONG_TEXT"
+                  variant="student"
+                />
+                <textarea
+                  aria-label={field.label ?? `Campo ${index + 1}`}
+                  className={`${commonClass} relative z-10 resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
+                  disabled={isLocked}
+                  onChange={(event) =>
+                    updateValue(field.id, event.target.value)
+                  }
+                  placeholder={field.placeholder ?? "Resposta"}
+                  style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+                  value={values[field.id] ?? ""}
+                  wrap="soft"
+                />
+              </InteractiveHomeworkTextFrame>
+            );
           }}
           title={homework.title}
         />

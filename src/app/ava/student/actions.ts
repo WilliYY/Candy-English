@@ -109,13 +109,17 @@ async function getInteractiveHomeworkForStudent(
   });
 }
 
-function interactiveEntityLabel(homework: { fieldDetectionSource: string | null }) {
+function interactiveEntityLabel(homework: {
+  fieldDetectionSource: string | null;
+}) {
   return homework.fieldDetectionSource === "lesson-manual"
     ? "aula"
     : "homework";
 }
 
-function isInteractiveLessonEntity(homework: { fieldDetectionSource: string | null }) {
+function isInteractiveLessonEntity(homework: {
+  fieldDetectionSource: string | null;
+}) {
   return homework.fieldDetectionSource === "lesson-manual";
 }
 
@@ -383,7 +387,10 @@ export async function saveInteractiveHomeworkDraft(
   const allowedFields = new Map(
     homework.interactiveFields.map((field) => [field.id, { type: field.type }]),
   );
-  const answers = normalizeInteractiveAnswers(parsed.data.answers, allowedFields);
+  const answers = normalizeInteractiveAnswers(
+    parsed.data.answers,
+    allowedFields,
+  );
 
   await prisma.homeworkSubmission.upsert({
     where: {
@@ -403,8 +410,6 @@ export async function saveInteractiveHomeworkDraft(
       status: "DRAFT",
     },
   });
-
-  revalidatePath("/ava/student");
 
   return {
     ok: true,
@@ -473,8 +478,13 @@ export async function submitInteractiveHomework(
   const allowedFields = new Map(
     homework.interactiveFields.map((field) => [field.id, { type: field.type }]),
   );
-  const answers = normalizeInteractiveAnswers(parsed.data.answers, allowedFields);
-  const answerMap = new Map(answers.map((answer) => [answer.fieldId, answer.value]));
+  const answers = normalizeInteractiveAnswers(
+    parsed.data.answers,
+    allowedFields,
+  );
+  const answerMap = new Map(
+    answers.map((answer) => [answer.fieldId, answer.value]),
+  );
   const hasMissingRequired = homework.interactiveFields.some((field) => {
     if (!field.required) {
       return false;
@@ -546,9 +556,9 @@ export async function submitInteractiveHomework(
   };
 }
 
-export async function reopenInteractiveHomeworkDraft(
-  input: { homeworkId: string },
-): Promise<InteractiveHomeworkResult> {
+export async function reopenInteractiveHomeworkDraft(input: {
+  homeworkId: string;
+}): Promise<InteractiveHomeworkResult> {
   const studentProfile = await getStudentActor();
 
   if (!studentProfile) {

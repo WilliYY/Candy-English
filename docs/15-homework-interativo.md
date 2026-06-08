@@ -94,6 +94,7 @@ Tabelas e enums:
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.
+- No aluno, o autosave de `DRAFT` grava em segundo plano sem revalidar a pagina inteira, para nao fechar o card aberto nem sobrescrever texto digitado com dados antigos. A tela tambem mantem uma copia local temporaria do rascunho no navegador enquanto a atividade nao foi entregue/corrigida, como protecao contra falha de rede ou refresh acidental.
 - `SUBMITTED` e entrega oficial e gera evento para teacher/admin.
 - `RETURNED` libera o aluno para refazer.
 - `REVIEWED` bloqueia nova entrega e preserva feedback.
@@ -125,6 +126,7 @@ Tabelas e enums:
 - A interface mostra apenas `Texto` para criacao de escrita; no banco, a area e normalizada como `SHORT_TEXT` ou `LONG_TEXT` de acordo com a altura para manter compatibilidade com aluno, correcao e atividades antigas. A mesma base de estilo calcula fonte adaptativa e quantidade aproximada de linhas possiveis.
 - O salvamento do editor preserva IDs de areas ja existentes, cria apenas areas novas, remove as areas excluidas e valida a contagem final dentro da transacao. Isso evita que um save grande troque todos os IDs sem necessidade e reduz risco de diferenca entre editor, banco e tela do aluno.
 - O autosave do editor usa debounce curto, nao roda durante pointer drag e reaproveita a mesma server action segura do botao manual. O autosave reconcilia os campos pelo retorno da action sem atualizar a pagina inteira; se a teacher continuar mexendo enquanto uma gravacao esta em andamento, o retorno antigo apenas reconcilia IDs persistidos e enfileira outro autosave para confirmar a versao mais recente.
+- O autosave do aluno usa debounce curto e a server action `saveInteractiveHomeworkDraft`, mas nao chama `revalidatePath` a cada rascunho. O componente mantem o card controlado, guarda os valores atuais em memoria e em `localStorage`, ignora respostas antigas de autosave e limpa essa copia local quando a atividade e entregue ou ja esta bloqueada por `SUBMITTED`/`REVIEWED`.
 - O desenho usa helper compartilhado para serializar, validar e renderizar os tracos no aluno e na correcao, evitando diferenca visual entre o que o aluno desenhou e o que a teacher revisa.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.

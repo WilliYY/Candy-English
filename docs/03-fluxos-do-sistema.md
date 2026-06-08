@@ -247,7 +247,7 @@ Helpers:
 8. Teacher ou admin pode excluir uma homework interativa na lista de criacao; a exclusao remove campos, perguntas, respostas e a aula interna automatica quando ela ficou vazia.
 9. Student abre `/ava/student?task=homeworks`, clica no bloco recolhido e responde sobre o arquivo renderizado na proporcao original; PDFs aparecem pagina a pagina, campos `Letra/Num` aparecem como caixinha pequena centralizada, campos de texto mostram guias discretas e checkbox/desenho aparecem apenas quando recebem marca ou traco.
 10. Em areas `DRAWING`, o aluno pode desenhar com mouse ou dedo e desfazer o ultimo traco sem limpar todo o desenho.
-11. Enquanto edita, a submissao fica `DRAFT`; ao clicar em entregar, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
+11. Enquanto edita, a submissao fica `DRAFT`; o autosave grava em segundo plano sem recarregar a pagina inteira e o navegador mantem uma copia local temporaria para proteger contra refresh ou falha de rede. Ao clicar em entregar, a tela cancela o autosave pendente, envia os valores atuais, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
 12. Teacher ou admin corrige em uma tela com abas: `Aguardando correcao` para `SUBMITTED` e `Corrigidos` para `REVIEWED`/`RETURNED`.
 13. Cada entrega da fila fica recolhida por padrao; ao abrir, o PDF/imagem aparece com texto, marcas e desenhos entregues pelo aluno sobrepostos ao arquivo.
 14. No painel lateral da entrega aberta ficam aluno, professor responsavel, aula e nota/feedback para o aluno.
