@@ -182,9 +182,12 @@ type PdfTextItemLike = {
 };
 
 type ListeningTextCandidate = {
+  bottom: number;
   left: number;
+  right: number;
   text: string;
   top: number;
+  widthPercent: number;
 };
 
 const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
@@ -335,6 +338,16 @@ function getFieldsSignature(fields: EditableHomeworkField[]) {
   );
 }
 
+function getFieldGeometrySignature(field: EditableHomeworkField) {
+  return [
+    field.page,
+    roundPercent(field.x),
+    roundPercent(field.y),
+    roundPercent(field.width),
+    roundPercent(field.height),
+  ].join(":");
+}
+
 function formatSize(sizeBytes?: number | null) {
   if (!sizeBytes) {
     return "Arquivo";
@@ -364,6 +377,12 @@ function joinListeningTextSegments(segments: string[]) {
       .replace(/([([{])\s+/g, "$1")
       .replace(/\s+([)\]}])/g, "$1"),
   );
+}
+
+function waitForListeningCrop(milliseconds: number) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, milliseconds);
+  });
 }
 
 function hasVisibleCropContent(
@@ -453,8 +472,8 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     const rawY = (field.y / 100) * sourceHeight;
     const rawWidth = (field.width / 100) * sourceWidth;
     const rawHeight = (field.height / 100) * sourceHeight;
-    const paddingX = clampNumber(rawWidth * 0.08, 8, 34);
-    const paddingY = clampNumber(rawHeight * 0.48, 6, 26);
+    const paddingX = clampNumber(rawWidth * 0.12, 10, 44);
+    const paddingY = clampNumber(rawHeight * 0.65, 8, 34);
     const sx = clampNumber(rawX - paddingX, 0, sourceWidth - 1);
     const sy = clampNumber(rawY - paddingY, 0, sourceHeight - 1);
     const sw = clampNumber(rawWidth + paddingX * 2, 1, sourceWidth - sx);
@@ -479,7 +498,7 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     context.imageSmoothingQuality = "high";
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, targetWidth, targetHeight);
-    context.filter = "contrast(1.22) saturate(0.88) brightness(1.03)";
+    context.filter = "grayscale(1) contrast(1.42) brightness(1.06)";
     context.drawImage(
       mediaElement,
       sx,
@@ -513,17 +532,38 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
   }
 }
 
-async function getListeningFieldPdfText({
+async function getListeningFieldCropDataUrlWithRetry(
+  field: EditableHomeworkField,
+) {
+  let imageDataUrl = getListeningFieldCropDataUrl(field);
+
+  if (imageDataUrl) {
+    return imageDataUrl;
+  }
+
+  for (const delay of [220, 420]) {
+    await waitForListeningCrop(delay);
+    imageDataUrl = getListeningFieldCropDataUrl(field);
+
+    if (imageDataUrl) {
+      return imageDataUrl;
+    }
+  }
+
+  return undefined;
+}
+
+async function getListeningPdfTextCandidates({
   assetMimeType,
   assetUrl,
-  field,
+  pageNumber,
 }: {
   assetMimeType: string | null;
   assetUrl: string;
-  field: EditableHomeworkField;
+  pageNumber: number;
 }) {
   if (assetMimeType !== "application/pdf") {
-    return "";
+    return [];
   }
 
   const pdfjs = await import("pdfjs-dist");
@@ -540,30 +580,10 @@ async function getListeningFieldPdfText({
 
   try {
     const pdf = await loadingTask.promise;
-    const page = await pdf.getPage(field.page);
+    const page = await pdf.getPage(pageNumber);
     const viewport = page.getViewport({ scale: 1 });
     const textContent = await page.getTextContent();
     const candidates: ListeningTextCandidate[] = [];
-    const expandedLeft = clampNumber(
-      field.x - Math.max(1.2, field.width * 0.08),
-      0,
-      100,
-    );
-    const expandedRight = clampNumber(
-      field.x + field.width + Math.max(1.2, field.width * 0.08),
-      0,
-      100,
-    );
-    const expandedTop = clampNumber(
-      field.y - Math.max(1.8, field.height * 1.2),
-      0,
-      100,
-    );
-    const expandedBottom = clampNumber(
-      field.y + field.height + Math.max(1.8, field.height * 1.2),
-      0,
-      100,
-    );
 
     for (const item of textContent.items as PdfTextItemLike[]) {
       const text = normalizeListeningSentence(item.str ?? "");
@@ -586,68 +606,109 @@ async function getListeningFieldPdfText({
       const top = (Math.min(y1, y2) / viewport.height) * 100;
       const bottom = (Math.max(y1, y2) / viewport.height) * 100;
       const widthPercent = Math.max(0, right - left);
-      const centerX = (left + right) / 2;
-      const centerY = (top + bottom) / 2;
-      const intersects =
-        right >= expandedLeft &&
-        left <= expandedRight &&
-        bottom >= expandedTop &&
-        top <= expandedBottom;
-      const centerInside =
-        centerX >= expandedLeft &&
-        centerX <= expandedRight &&
-        centerY >= expandedTop &&
-        centerY <= expandedBottom;
 
-      if (widthPercent > field.width * 2.2 && text.length > 28) {
-        continue;
-      }
-
-      if (intersects || centerInside) {
-        candidates.push({ left, text, top });
-      }
+      candidates.push({ bottom, left, right, text, top, widthPercent });
     }
 
+    page.cleanup();
     void pdf.destroy();
 
-    if (candidates.length === 0) {
-      return "";
-    }
-
-    const lineTolerance = Math.max(1.2, field.height * 0.55);
-    const lines = candidates
-      .sort((first, second) =>
-        Math.abs(first.top - second.top) > lineTolerance
-          ? first.top - second.top
-          : first.left - second.left,
-      )
-      .reduce<ListeningTextCandidate[][]>((groups, candidate) => {
-        const currentGroup = groups[groups.length - 1];
-
-        if (
-          currentGroup &&
-          Math.abs(currentGroup[0].top - candidate.top) <= lineTolerance
-        ) {
-          currentGroup.push(candidate);
-          return groups;
-        }
-
-        return [...groups, [candidate]];
-      }, []);
-
-    return joinListeningTextSegments(
-      lines.map((line) =>
-        joinListeningTextSegments(
-          line
-            .sort((first, second) => first.left - second.left)
-            .map((candidate) => candidate.text),
-        ),
-      ),
-    );
+    return candidates;
   } catch {
     await loadingTask.destroy().catch(() => undefined);
+    return [];
+  }
+}
+
+function getListeningFieldPdfText({
+  candidates,
+  field,
+}: {
+  candidates: ListeningTextCandidate[];
+  field: EditableHomeworkField;
+}) {
+  if (candidates.length === 0) {
     return "";
   }
+
+  const expandedLeft = clampNumber(
+    field.x - Math.max(1.2, field.width * 0.1),
+    0,
+    100,
+  );
+  const expandedRight = clampNumber(
+    field.x + field.width + Math.max(1.2, field.width * 0.1),
+    0,
+    100,
+  );
+  const expandedTop = clampNumber(
+    field.y - Math.max(1.8, field.height * 1.25),
+    0,
+    100,
+  );
+  const expandedBottom = clampNumber(
+    field.y + field.height + Math.max(1.8, field.height * 1.25),
+    0,
+    100,
+  );
+  const fieldCandidates = candidates.filter((candidate) => {
+    const centerX = (candidate.left + candidate.right) / 2;
+    const centerY = (candidate.top + candidate.bottom) / 2;
+    const intersects =
+      candidate.right >= expandedLeft &&
+      candidate.left <= expandedRight &&
+      candidate.bottom >= expandedTop &&
+      candidate.top <= expandedBottom;
+    const centerInside =
+      centerX >= expandedLeft &&
+      centerX <= expandedRight &&
+      centerY >= expandedTop &&
+      centerY <= expandedBottom;
+
+    if (
+      candidate.widthPercent > field.width * 2.35 &&
+      candidate.text.length > 28
+    ) {
+      return false;
+    }
+
+    return intersects || centerInside;
+  });
+
+  if (fieldCandidates.length === 0) {
+    return "";
+  }
+
+  const lineTolerance = Math.max(1.2, field.height * 0.55);
+  const lines = fieldCandidates
+    .sort((first, second) =>
+      Math.abs(first.top - second.top) > lineTolerance
+        ? first.top - second.top
+        : first.left - second.left,
+    )
+    .reduce<ListeningTextCandidate[][]>((groups, candidate) => {
+      const currentGroup = groups[groups.length - 1];
+
+      if (
+        currentGroup &&
+        Math.abs(currentGroup[0].top - candidate.top) <= lineTolerance
+      ) {
+        currentGroup.push(candidate);
+        return groups;
+      }
+
+      return [...groups, [candidate]];
+    }, []);
+
+  return joinListeningTextSegments(
+    lines.map((line) =>
+      joinListeningTextSegments(
+        line
+          .sort((first, second) => first.left - second.left)
+          .map((candidate) => candidate.text),
+      ),
+    ),
+  );
 }
 
 function getPageRect(element: Element): PageRect | null {
@@ -1395,6 +1456,9 @@ function InteractiveHomeworkEditorItem({
   const autosaveTimerRef = useRef<number | null>(null);
   const saveInFlightRef = useRef(false);
   const listeningDetectionAbortRef = useRef<AbortController | null>(null);
+  const listeningPdfTextCacheRef = useRef<
+    Map<string, Promise<ListeningTextCandidate[]>>
+  >(new Map());
   const listeningDetectionRequestsRef = useRef<Set<string>>(new Set());
   const listeningDetectionSequenceRef = useRef(0);
   const currentFieldsSignature = useMemo(
@@ -1460,6 +1524,28 @@ function InteractiveHomeworkEditorItem({
     setSaveStatus("idle");
   }
 
+  const getListeningPdfTextCandidatesForPage = useCallback(
+    (pageNumber: number) => {
+      const cacheKey = `${homework.id}:${pageNumber}`;
+      const cached = listeningPdfTextCacheRef.current.get(cacheKey);
+
+      if (cached) {
+        return cached;
+      }
+
+      const request = getListeningPdfTextCandidates({
+        assetMimeType: homework.assetMimeType,
+        assetUrl,
+        pageNumber,
+      });
+
+      listeningPdfTextCacheRef.current.set(cacheKey, request);
+
+      return request;
+    },
+    [assetUrl, homework.assetMimeType, homework.id],
+  );
+
   const detectListeningSentenceForField = useCallback(
     async (field: EditableHomeworkField, mode: "auto" | "manual" = "auto") => {
       if (field.type !== "LISTENING") {
@@ -1468,6 +1554,7 @@ function InteractiveHomeworkEditorItem({
 
       const requestId = listeningDetectionSequenceRef.current + 1;
       const controller = new AbortController();
+      const fieldGeometrySignature = getFieldGeometrySignature(field);
 
       listeningDetectionSequenceRef.current = requestId;
       listeningDetectionAbortRef.current?.abort();
@@ -1479,9 +1566,11 @@ function InteractiveHomeworkEditorItem({
           : "Relendo o texto do box...",
       );
 
-      const localText = await getListeningFieldPdfText({
-        assetMimeType: homework.assetMimeType,
-        assetUrl,
+      const localTextCandidates = await getListeningPdfTextCandidatesForPage(
+        field.page,
+      );
+      const localText = getListeningFieldPdfText({
+        candidates: localTextCandidates,
         field,
       });
 
@@ -1495,6 +1584,12 @@ function InteractiveHomeworkEditorItem({
             if (
               currentField.id !== field.id ||
               currentField.type !== "LISTENING"
+            ) {
+              return currentField;
+            }
+
+            if (
+              getFieldGeometrySignature(currentField) !== fieldGeometrySignature
             ) {
               return currentField;
             }
@@ -1524,7 +1619,7 @@ function InteractiveHomeworkEditorItem({
         return;
       }
 
-      const imageDataUrl = getListeningFieldCropDataUrl(field);
+      const imageDataUrl = await getListeningFieldCropDataUrlWithRetry(field);
 
       setListeningDetectionMessage(
         mode === "auto"
@@ -1589,6 +1684,12 @@ function InteractiveHomeworkEditorItem({
             }
 
             if (
+              getFieldGeometrySignature(currentField) !== fieldGeometrySignature
+            ) {
+              return currentField;
+            }
+
+            if (
               mode === "auto" &&
               normalizeListeningSentence(currentField.placeholder ?? "")
             ) {
@@ -1625,7 +1726,7 @@ function InteractiveHomeworkEditorItem({
         }
       }
     },
-    [assetUrl, homework.assetMimeType, homework.id],
+    [getListeningPdfTextCandidatesForPage, homework.id],
   );
 
   const retrySelectedListeningDetection = useCallback(() => {
@@ -2089,9 +2190,9 @@ function InteractiveHomeworkEditorItem({
             </div>
           </div>
 
-          <div className="grid min-h-[136px] rounded-lg border border-primary/15 bg-white/75 p-2.5 shadow-[0_8px_22px_rgba(65,42,76,0.06)]">
+          <div className="grid min-h-[148px] rounded-lg border border-primary/15 bg-white/82 p-3 shadow-[0_8px_22px_rgba(65,42,76,0.06)]">
             {selectedField?.type === "LISTENING" ? (
-              <div className="grid gap-2 md:grid-cols-[minmax(260px,1fr)_auto] md:items-end">
+              <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_auto] lg:items-start">
                 <label className="grid min-w-0 gap-1 text-sm font-semibold text-primary">
                   <span className="flex min-w-0 flex-wrap items-center gap-2">
                     <span className="shrink-0">Texto do listening</span>
@@ -2116,17 +2217,17 @@ function InteractiveHomeworkEditorItem({
                     </span>
                   </span>
                   <Textarea
-                    className="min-h-24 max-h-48 resize-y overflow-auto bg-white/95 px-3 py-2 font-medium leading-6 shadow-inner shadow-primary/[0.03]"
+                    className="min-h-28 max-h-64 resize-y overflow-auto bg-white/95 px-3 py-2 font-medium leading-6 shadow-inner shadow-primary/[0.03]"
                     maxLength={LISTENING_SENTENCE_MAX_LENGTH}
                     onChange={(event) =>
                       updateSelectedListeningSentence(event.target.value)
                     }
                     placeholder="Digite ou confira aqui uma ou mais frases em ingles"
-                    rows={3}
+                    rows={4}
                     value={selectedField.placeholder ?? ""}
                   />
                 </label>
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end lg:pt-7">
                   <Button
                     className="shrink-0"
                     disabled={isDetectingSelectedListening}
@@ -2146,14 +2247,38 @@ function InteractiveHomeworkEditorItem({
                     )}
                     {isDetectingSelectedListening ? "Lendo..." : "Ler box"}
                   </Button>
-                  <span className="hidden rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70 xl:inline-flex">
-                    voz feminina
+                  <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70">
+                    {selectedListeningSentence.length}/
+                    {LISTENING_SENTENCE_MAX_LENGTH}
                   </span>
                 </div>
-                <p className="min-w-0 text-xs font-medium leading-5 text-muted-foreground md:col-span-2">
-                  {listeningDetectionMessage ??
-                    "O texto do audio fica neste campo. Para textos maiores, escreva ou cole varias frases e salve o box."}
-                </p>
+                <div
+                  className={cn(
+                    "flex min-w-0 items-start gap-2 rounded-md border px-3 py-2 text-xs font-medium leading-5 lg:col-span-2",
+                    isDetectingSelectedListening
+                      ? "border-amber-200 bg-amber-50 text-amber-800"
+                      : selectedListeningSentence
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : "border-primary/10 bg-primary/[0.035] text-muted-foreground",
+                  )}
+                  role="status"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "mt-1 size-2 shrink-0 rounded-full",
+                      isDetectingSelectedListening
+                        ? "bg-amber-500"
+                        : selectedListeningSentence
+                          ? "bg-emerald-500"
+                          : "bg-primary/35",
+                    )}
+                  />
+                  <span className="min-w-0">
+                    {listeningDetectionMessage ??
+                      "Campo pronto para texto manual ou leitura automatica."}
+                  </span>
+                </div>
               </div>
             ) : (
               <div className="flex min-h-[112px] flex-wrap items-center justify-between gap-3 text-sm">
