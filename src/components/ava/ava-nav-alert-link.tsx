@@ -95,7 +95,7 @@ export function AvaNavAlertLink({
       {hasAlert ? (
         <span
           aria-label="Novidade neste modulo"
-          className="absolute right-2 top-2 size-2.5 rounded-full bg-accent shadow-[0_0_0_3px_rgb(229_124_216_/_0.22)]"
+          className="absolute right-3 top-1/2 size-3 -translate-y-1/2 rounded-full border-2 border-white bg-accent shadow-[0_0_0_4px_rgb(229_124_216_/_0.18),0_0_18px_rgb(229_124_216_/_0.38)] after:absolute after:inset-[-0.35rem] after:rounded-full after:border after:border-accent/35 after:content-['']"
         />
       ) : null}
     </Link>
