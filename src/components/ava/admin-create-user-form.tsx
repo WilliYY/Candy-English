@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AtSign,
   BrainCircuit,
+  ClipboardCheck,
   CalendarDays,
   GraduationCap,
   KeyRound,
@@ -12,6 +13,7 @@ import {
   Plus,
   ShieldCheck,
   UserRound,
+  UsersRound,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -46,6 +48,9 @@ const roleCreateTone: Record<
   Role,
   {
     field: string;
+    highlightCard: string;
+    highlightIcon: string;
+    highlightLabel: string;
     icon: string;
     profile: string;
     shell: string;
@@ -56,6 +61,9 @@ const roleCreateTone: Record<
   ADMIN: {
     field:
       "border-amber-200/75 bg-white/90 shadow-[0_10px_24px_rgba(180,83,9,0.08)]",
+    highlightCard: "border-amber-200/80 bg-white/82",
+    highlightIcon: "bg-amber-100 text-amber-900",
+    highlightLabel: "text-amber-900/70",
     icon: "bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.22)]",
     profile:
       "border-amber-200/85 bg-gradient-to-r from-amber-50 via-white to-[#fce5d8]/80",
@@ -68,6 +76,9 @@ const roleCreateTone: Record<
   STUDENT: {
     field:
       "border-primary/10 bg-white/90 shadow-[0_10px_24px_rgba(65,42,76,0.05)]",
+    highlightCard: "border-sky-200/80 bg-white/82",
+    highlightIcon: "bg-sky-100 text-sky-900",
+    highlightLabel: "text-sky-900/70",
     icon: "bg-primary text-primary-foreground shadow-sm",
     profile:
       "border-sky-200/75 bg-gradient-to-r from-sky-50 via-white to-secondary/55",
@@ -78,13 +89,17 @@ const roleCreateTone: Record<
   },
   TEACHER: {
     field:
-      "border-pink-200/65 bg-white/90 shadow-[0_10px_24px_rgba(190,24,93,0.07)]",
-    icon: "bg-primary text-primary-foreground shadow-sm",
+      "border-pink-200/75 bg-gradient-to-br from-white via-pink-50/35 to-white shadow-[0_10px_24px_rgba(190,24,93,0.08)]",
+    highlightCard: "border-pink-200/80 bg-white/86",
+    highlightIcon: "bg-pink-100 text-pink-900",
+    highlightLabel: "text-pink-900/70",
+    icon: "bg-pink-600 text-white shadow-[0_10px_24px_rgba(190,24,93,0.18)]",
     profile:
-      "border-pink-200/75 bg-gradient-to-r from-pink-50 via-white to-secondary/55",
+      "border-pink-200/85 bg-gradient-to-r from-pink-50 via-white to-sky-50/70",
     shell:
-      "border-primary/15 bg-white/80 shadow-[0_16px_44px_rgba(65,42,76,0.08)]",
-    submit: "border-primary/15 bg-white/80",
+      "border-pink-200/85 bg-gradient-to-br from-white via-pink-50/65 to-sky-50/55 shadow-[0_18px_48px_rgba(190,24,93,0.12)]",
+    submit:
+      "border-pink-200/80 bg-gradient-to-r from-white via-pink-50/60 to-sky-50/55",
     tag: "border-pink-200 bg-pink-50 text-pink-950",
   },
 };
@@ -149,6 +164,50 @@ function getRoleIcon(role: Role) {
   return UserRound;
 }
 
+function getRoleAccessHighlights(role: Role) {
+  if (role === "ADMIN") {
+    return [
+      {
+        Icon: ShieldCheck,
+        label: "Permissao",
+        value: "Admin total",
+      },
+      {
+        Icon: AtSign,
+        label: "Entrada",
+        value: "Email do AVA",
+      },
+      {
+        Icon: KeyRound,
+        label: "Senha",
+        value: "Provisoria",
+      },
+    ];
+  }
+
+  if (role === "TEACHER") {
+    return [
+      {
+        Icon: GraduationCap,
+        label: "Aulas",
+        value: "Cria e acompanha",
+      },
+      {
+        Icon: UsersRound,
+        label: "Alunos",
+        value: "Somente vinculados",
+      },
+      {
+        Icon: ClipboardCheck,
+        label: "Feedback",
+        value: "Correcoes e tarefas",
+      },
+    ];
+  }
+
+  return null;
+}
+
 export function AdminCreateUserForm({
   fixedRole,
   submitLabel,
@@ -176,6 +235,8 @@ export function AdminCreateUserForm({
   const finalSubmitLabel = submitLabel ?? "Cadastrar usuario";
   const roleTone = roleCreateTone[role];
   const isAdminProfile = role === "ADMIN";
+  const isTeacherProfile = role === "TEACHER";
+  const accessHighlights = getRoleAccessHighlights(role);
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
@@ -245,34 +306,31 @@ export function AdminCreateUserForm({
             </span>
           </div>
 
-          {isAdminProfile ? (
+          {accessHighlights ? (
             <div className="mb-4 grid gap-3 md:grid-cols-3">
-              {[
-                {
-                  Icon: ShieldCheck,
-                  label: "Permissao",
-                  value: "Admin total",
-                },
-                {
-                  Icon: AtSign,
-                  label: "Entrada",
-                  value: "Email do AVA",
-                },
-                {
-                  Icon: KeyRound,
-                  label: "Senha",
-                  value: "Provisoria",
-                },
-              ].map(({ Icon, label, value }) => (
+              {accessHighlights.map(({ Icon, label, value }) => (
                 <span
                   key={label}
-                  className="flex min-w-0 items-center gap-3 rounded-lg border border-amber-200/80 bg-white/82 p-3 text-sm shadow-sm"
+                  className={cn(
+                    "flex min-w-0 items-center gap-3 rounded-lg border p-3 text-sm shadow-sm",
+                    roleTone.highlightCard,
+                  )}
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-amber-100 text-amber-900">
+                  <span
+                    className={cn(
+                      "flex size-9 shrink-0 items-center justify-center rounded-md",
+                      roleTone.highlightIcon,
+                    )}
+                  >
                     <Icon aria-hidden="true" className="size-4" />
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-amber-900/70">
+                    <span
+                      className={cn(
+                        "block text-[0.68rem] font-bold uppercase tracking-[0.08em]",
+                        roleTone.highlightLabel,
+                      )}
+                    >
                       {label}
                     </span>
                     <strong className="mt-0.5 block truncate text-primary">
@@ -377,6 +435,16 @@ export function AdminCreateUserForm({
                 </span>
                 <span className="leading-5 text-amber-900/80">
                   Use para equipe que gerencia dados sensiveis.
+                </span>
+              </span>
+            ) : null}
+            {isTeacherProfile ? (
+              <span className="grid gap-2 rounded-lg border border-pink-200/80 bg-white/80 p-3 text-xs text-pink-950 shadow-sm sm:min-w-52">
+                <span className="font-bold uppercase tracking-[0.08em]">
+                  Foco pedagogico
+                </span>
+                <span className="leading-5 text-pink-900/80">
+                  Use para equipe que cria aulas, corrige e acompanha alunos.
                 </span>
               </span>
             ) : null}
@@ -578,29 +646,82 @@ export function AdminCreateUserForm({
         ) : null}
 
         {role === "TEACHER" ? (
-          <section className="rounded-lg border border-primary/15 bg-white/80 p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <GraduationCap aria-hidden="true" className="size-5" />
-              </span>
-              <span className="min-w-0">
-                <strong className="block text-base text-primary">
-                  Perfil da teacher
-                </strong>
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  Bio interna e dados pedagogicos.
+          <section className="rounded-lg border border-pink-200/85 bg-gradient-to-br from-white via-pink-50/45 to-sky-50/50 p-4 shadow-[0_16px_44px_rgba(190,24,93,0.1)]">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-pink-600 text-white shadow-[0_10px_24px_rgba(190,24,93,0.18)]">
+                  <GraduationCap aria-hidden="true" className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-base text-primary">
+                    Perfil da teacher
+                  </strong>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    Bio interna para organizar o atendimento pedagogico.
+                  </span>
                 </span>
               </span>
+              <span className="w-fit rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold uppercase text-pink-950">
+                Pedagogico
+              </span>
             </div>
-            <Field data-invalid={Boolean(form.formState.errors.bio)}>
-              <FieldLabel htmlFor="admin-user-bio">Bio da teacher</FieldLabel>
+
+            <div className="mb-4 grid gap-3 md:grid-cols-3">
+              {[
+                {
+                  Icon: GraduationCap,
+                  label: "Perfil",
+                  value: "Resumo da teacher",
+                },
+                {
+                  Icon: UsersRound,
+                  label: "Vinculos",
+                  value: "Alunos aparecem depois",
+                },
+                {
+                  Icon: ClipboardCheck,
+                  label: "Rotina",
+                  value: "Aulas, tarefas e feedback",
+                },
+              ].map(({ Icon, label, value }) => (
+                <span
+                  key={label}
+                  className="flex min-w-0 items-start gap-3 rounded-lg border border-pink-200/70 bg-white/82 p-3 text-sm shadow-sm"
+                >
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-pink-100 text-pink-900">
+                    <Icon aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-pink-900/70">
+                      {label}
+                    </span>
+                    <strong className="mt-0.5 block leading-5 text-primary">
+                      {value}
+                    </strong>
+                  </span>
+                </span>
+              ))}
+            </div>
+
+            <Field
+              className="rounded-lg border border-pink-200/75 bg-white/90 p-3 shadow-sm"
+              data-invalid={Boolean(form.formState.errors.bio)}
+            >
+              <span className="mb-2 flex items-center gap-2 text-primary">
+                <GraduationCap aria-hidden="true" className="size-5" />
+                <FieldLabel htmlFor="admin-user-bio">Bio da teacher</FieldLabel>
+              </span>
               <Textarea
                 id="admin-user-bio"
                 aria-invalid={Boolean(form.formState.errors.bio)}
                 disabled={isPending}
-                placeholder="Resumo breve para uso interno."
+                placeholder="Ex: trabalha bem com kids, foco em conversacao e feedback curto."
+                className="min-h-28 bg-white"
                 {...form.register("bio")}
               />
+              <FieldDescription>
+                Use uma nota curta para a equipe encontrar o perfil certo.
+              </FieldDescription>
               <FieldError errors={[form.formState.errors.bio]} />
             </Field>
           </section>
