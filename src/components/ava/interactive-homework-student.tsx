@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  CalendarDays,
   CheckCircle2,
   ClipboardCheck,
   Eraser,
+  FileText,
   LoaderCircle,
   RotateCcw,
   Save,
@@ -80,6 +82,26 @@ export type StudentInteractiveHomework = {
   submission?: StudentInteractiveSubmission;
   title: string;
 };
+
+const studentHomeworkDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+function formatStudentHomeworkDate(value?: Date | string | null) {
+  if (!value) {
+    return "Sem prazo";
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Sem prazo";
+  }
+
+  return `Prazo ${studentHomeworkDateFormatter.format(date)}`;
+}
 
 function answersToMap(answers: unknown) {
   const values: Record<string, string> = {};
@@ -228,18 +250,82 @@ function statusLabel(status?: string) {
 
 function statusClass(status?: string) {
   if (status === "REVIEWED") {
-    return "border-emerald-700 bg-emerald-600 text-white";
+    return "border-emerald-500/40 bg-emerald-50 text-emerald-900";
   }
 
   if (status === "SUBMITTED") {
-    return "border-primary bg-primary text-primary-foreground";
+    return "border-primary/30 bg-primary/10 text-primary";
   }
 
   if (status === "RETURNED") {
     return "border-amber-600 bg-amber-100 text-amber-900";
   }
 
-  return "border-red-700 bg-red-600 text-white";
+  if (status === "DRAFT") {
+    return "border-sky-500/30 bg-sky-50 text-sky-900";
+  }
+
+  return "border-rose-500/40 bg-rose-50 text-rose-900";
+}
+
+function statusAccentClass(status?: string) {
+  if (status === "REVIEWED") {
+    return "bg-emerald-500";
+  }
+
+  if (status === "SUBMITTED") {
+    return "bg-primary";
+  }
+
+  if (status === "RETURNED") {
+    return "bg-amber-500";
+  }
+
+  if (status === "DRAFT") {
+    return "bg-sky-500";
+  }
+
+  return "bg-rose-500";
+}
+
+function statusIconClass(status?: string) {
+  if (status === "REVIEWED") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (status === "SUBMITTED") {
+    return "bg-primary/10 text-primary";
+  }
+
+  if (status === "RETURNED") {
+    return "bg-amber-100 text-amber-700";
+  }
+
+  if (status === "DRAFT") {
+    return "bg-sky-100 text-sky-700";
+  }
+
+  return "bg-rose-100 text-rose-700";
+}
+
+function statusHelper(status?: string) {
+  if (status === "REVIEWED") {
+    return "Feedback liberado";
+  }
+
+  if (status === "SUBMITTED") {
+    return "Aguardando correcao";
+  }
+
+  if (status === "RETURNED") {
+    return "Teacher pediu ajuste";
+  }
+
+  if (status === "DRAFT") {
+    return "Rascunho salvo";
+  }
+
+  return "Ainda nao entregue";
 }
 
 function isCompleteStatus(status?: string) {
@@ -447,6 +533,9 @@ export function InteractiveHomeworkStudent({
   const isLessonContext = context === "lesson";
   const isComplete = isCompleteStatus(status);
   const assetUrl = `/ava/homework-assets/${homework.id}`;
+  const statusAccent = statusAccentClass(status);
+  const statusTone = statusClass(status);
+  const statusIconTone = statusIconClass(status);
   const fallbackAssetLabel =
     context === "lesson" ? "Aula interativa" : "Homework interativa";
   const fallbackInstructions =
@@ -624,39 +713,64 @@ export function InteractiveHomeworkStudent({
       className={
         isLessonContext
           ? "group overflow-hidden rounded-xl border border-primary/15 bg-white shadow-md shadow-primary/10"
-          : "group rounded-lg border-2 border-primary/20 bg-white shadow-sm"
+          : "group relative overflow-hidden rounded-2xl border border-primary/15 bg-white/95 shadow-sm transition hover:border-primary/25 hover:shadow-md"
       }
     >
+      {!isLessonContext ? (
+        <span
+          aria-hidden="true"
+          className={`absolute inset-x-0 top-0 h-1 ${statusAccent}`}
+        />
+      ) : null}
       <summary
         className={
           isLessonContext
             ? "flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 hover:bg-primary/5 md:px-6 [&::-webkit-details-marker]:hidden"
-            : "flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden"
+            : "flex cursor-pointer list-none flex-col gap-3 px-5 py-4 hover:bg-primary/5 sm:flex-row sm:items-center sm:justify-between [&::-webkit-details-marker]:hidden"
         }
       >
-        <span className="flex min-w-0 items-center gap-3">
+        <span className="flex min-w-0 items-start gap-3 sm:items-center">
           <span
             className={
               isLessonContext
                 ? "flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                : "flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
+                : `flex size-12 shrink-0 items-center justify-center rounded-xl shadow-sm ${statusIconTone}`
             }
           >
-            <ClipboardCheck aria-hidden="true" />
+            <ClipboardCheck
+              aria-hidden="true"
+              className={isLessonContext ? undefined : "size-6"}
+            />
           </span>
           <span className="min-w-0">
             <span
               className={
                 isLessonContext
                   ? "block truncate text-base font-semibold"
-                  : "block truncate font-semibold"
+                  : "block truncate text-lg font-semibold text-primary"
               }
             >
               {homework.title}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {homework.assetFileName ?? fallbackAssetLabel}
-            </span>
+            {isLessonContext ? (
+              <span className="block truncate text-xs text-muted-foreground">
+                {homework.assetFileName ?? fallbackAssetLabel}
+              </span>
+            ) : (
+              <span className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1">
+                  <FileText aria-hidden="true" className="size-3.5" />
+                  {homework.assetFileName ?? fallbackAssetLabel}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 py-1">
+                  <CalendarDays aria-hidden="true" className="size-3.5" />
+                  {formatStudentHomeworkDate(homework.dueDate)}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 py-1">
+                  {homework.fields.length} area(s)
+                </span>
+              </span>
+            )}
           </span>
         </span>
         {isLessonContext ? (
@@ -670,12 +784,19 @@ export function InteractiveHomeworkStudent({
             {isComplete ? "Concluido" : "Nao concluido"}
           </span>
         ) : (
-          <span
-            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${statusClass(
-              status,
-            )}`}
-          >
-            {statusLabel(status)}
+          <span className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
+            <span
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`size-2.5 rounded-full ${statusAccent}`}
+              />
+              {statusLabel(status)}
+            </span>
+            <span className="hidden rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm sm:inline-flex">
+              Abrir atividade
+            </span>
           </span>
         )}
       </summary>
@@ -684,20 +805,29 @@ export function InteractiveHomeworkStudent({
         className={
           isLessonContext
             ? "border-t border-primary/15 p-5 md:p-6"
-            : "border-t border-primary/15 p-4"
+            : "border-t border-primary/15 bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5"
         }
       >
         <div className="mb-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-start">
           <p className="leading-6">
             {homework.instructions ?? fallbackInstructions}
           </p>
-          <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 px-3 py-1 text-xs font-semibold">
-            <Save aria-hidden="true" />
-            {saveState === "saving"
-              ? "Salvando"
-              : saveState === "saved"
-                ? "Salvo"
-                : "Autosave"}
+          <span className="flex flex-wrap items-center gap-2">
+            {!isLessonContext ? (
+              <span
+                className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
+              >
+                {statusHelper(status)}
+              </span>
+            ) : null}
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-semibold">
+              <Save aria-hidden="true" />
+              {saveState === "saving"
+                ? "Salvando"
+                : saveState === "saved"
+                  ? "Salvo"
+                  : "Autosave"}
+            </span>
           </span>
         </div>
 

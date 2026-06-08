@@ -9,6 +9,7 @@ import {
   Gift,
   MessageSquareText,
   Radio,
+  Send,
   Sparkles,
   Target,
   UserRound,
@@ -563,6 +564,56 @@ function isStudentHomeworkComplete(homework: StudentHomework) {
   return status === "SUBMITTED" || status === "REVIEWED";
 }
 
+function getStudentSubmissionStatusMeta(status?: string) {
+  if (status === "REVIEWED") {
+    return {
+      accentClassName: "bg-emerald-500",
+      badgeClassName: "border-emerald-500/40 bg-emerald-50 text-emerald-900",
+      helper: "Feedback liberado",
+      iconClassName: "bg-emerald-100 text-emerald-700",
+      label: "Corrigida",
+    };
+  }
+
+  if (status === "SUBMITTED") {
+    return {
+      accentClassName: "bg-primary",
+      badgeClassName: "border-primary/30 bg-primary/10 text-primary",
+      helper: "Aguardando correcao",
+      iconClassName: "bg-primary/10 text-primary",
+      label: "Entregue",
+    };
+  }
+
+  if (status === "RETURNED") {
+    return {
+      accentClassName: "bg-amber-500",
+      badgeClassName: "border-amber-500/40 bg-amber-50 text-amber-900",
+      helper: "Teacher pediu ajuste",
+      iconClassName: "bg-amber-100 text-amber-700",
+      label: "Refazer",
+    };
+  }
+
+  if (status === "DRAFT") {
+    return {
+      accentClassName: "bg-sky-500",
+      badgeClassName: "border-sky-500/30 bg-sky-50 text-sky-900",
+      helper: "Rascunho salvo",
+      iconClassName: "bg-sky-100 text-sky-700",
+      label: "Rascunho",
+    };
+  }
+
+  return {
+    accentClassName: "bg-rose-500",
+    badgeClassName: "border-rose-500/40 bg-rose-50 text-rose-900",
+    helper: "Ainda nao entregue",
+    iconClassName: "bg-rose-100 text-rose-700",
+    label: "Pendente",
+  };
+}
+
 function isInternalHomeworkLesson(lesson: StudentLesson) {
   return (
     lesson.title.startsWith("Homework - ") &&
@@ -610,6 +661,30 @@ export function StudentWorkspace({
     0,
   );
   const homeworkCount = homeworkItems.length;
+  const homeworkStatusTotals = homeworkItems.reduce(
+    (totals, { homework }) => {
+      const status = homework.submissions[0]?.status;
+
+      if (status === "REVIEWED") {
+        totals.reviewed += 1;
+      } else if (status === "SUBMITTED") {
+        totals.submitted += 1;
+      } else if (status === "RETURNED") {
+        totals.returned += 1;
+      } else if (status === "DRAFT") {
+        totals.draft += 1;
+      } else {
+        totals.pending += 1;
+      }
+
+      return totals;
+    },
+    { draft: 0, pending: 0, returned: 0, reviewed: 0, submitted: 0 },
+  );
+  const homeworkActionCount =
+    homeworkStatusTotals.pending +
+    homeworkStatusTotals.draft +
+    homeworkStatusTotals.returned;
   const reviewedCount = lessons.reduce(
     (total, lesson) =>
       total +
@@ -673,6 +748,40 @@ export function StudentWorkspace({
       iconClassName: "bg-fuchsia-100 text-fuchsia-700",
       label: "Vocabulario",
       value: lessonVocabularyCount,
+    },
+  ];
+  const homeworkSummaryStats = [
+    {
+      accentClassName: "border-primary/15 bg-primary/5 text-primary",
+      helper: "no seu AVA",
+      icon: ClipboardCheck,
+      iconClassName: "bg-primary/10 text-primary",
+      label: "Atividades",
+      value: homeworkCount,
+    },
+    {
+      accentClassName: "border-rose-200 bg-rose-50 text-rose-950",
+      helper: "para responder",
+      icon: Target,
+      iconClassName: "bg-rose-100 text-rose-700",
+      label: "Para fazer",
+      value: homeworkActionCount,
+    },
+    {
+      accentClassName: "border-violet-200 bg-violet-50 text-violet-950",
+      helper: "aguardando teacher",
+      icon: Send,
+      iconClassName: "bg-violet-100 text-violet-700",
+      label: "Entregues",
+      value: homeworkStatusTotals.submitted,
+    },
+    {
+      accentClassName: "border-emerald-200 bg-emerald-50 text-emerald-950",
+      helper: "com feedback",
+      icon: CheckCircle2,
+      iconClassName: "bg-emerald-100 text-emerald-700",
+      label: "Corrigidas",
+      value: homeworkStatusTotals.reviewed,
     },
   ];
 
@@ -1210,9 +1319,64 @@ export function StudentWorkspace({
             homeworkCount === 0 ? (
               <EmptyState>Nenhuma homework disponivel no momento.</EmptyState>
             ) : (
-              <div className="grid gap-3">
+              <div className="mx-auto grid w-full max-w-6xl gap-5">
+                <div className="overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-br from-white via-rose-50/70 to-primary/5 shadow-sm">
+                  <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.95fr)]">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                        <ClipboardCheck aria-hidden="true" className="size-6" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/70">
+                          Responder homework
+                        </span>
+                        <strong className="mt-1 block text-xl font-semibold text-primary">
+                          Atividades para entregar e acompanhar feedback
+                        </strong>
+                        <span className="mt-2 block max-w-2xl text-sm leading-6 text-muted-foreground">
+                          Abra a atividade, responda no PDF ou no campo simples
+                          e acompanhe se ela esta pendente, entregue ou
+                          corrigida.
+                        </span>
+                      </span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {homeworkSummaryStats.map((stat) => {
+                        const StatIcon = stat.icon;
+
+                        return (
+                          <div
+                            key={stat.label}
+                            className={`flex items-center justify-between gap-3 rounded-xl border p-3 shadow-sm ${stat.accentClassName}`}
+                          >
+                            <span className="min-w-0">
+                              <span className="block text-xs font-semibold uppercase tracking-[0.12em] opacity-75">
+                                {stat.label}
+                              </span>
+                              <strong className="mt-1 block text-2xl font-semibold">
+                                {stat.value}
+                              </strong>
+                              <span className="block text-xs opacity-75">
+                                {stat.helper}
+                              </span>
+                            </span>
+                            <span
+                              className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${stat.iconClassName}`}
+                            >
+                              <StatIcon aria-hidden="true" className="size-5" />
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
                 {homeworkItems.map(({ homework }) => {
                   const submission = homework.submissions[0];
+                  const statusMeta = getStudentSubmissionStatusMeta(
+                    submission?.status,
+                  );
 
                   if (homework.kind === "INTERACTIVE") {
                     return (
@@ -1236,42 +1400,91 @@ export function StudentWorkspace({
                   return (
                     <details
                       key={homework.id}
-                      className="group rounded-lg border-2 border-primary/20 bg-white shadow-sm"
+                      className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-white/95 shadow-sm transition hover:border-primary/25 hover:shadow-md"
                     >
-                      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 hover:bg-primary/5 [&::-webkit-details-marker]:hidden">
-                        <span className="flex min-w-0 items-center gap-3">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-                            <ClipboardCheck aria-hidden="true" />
+                      <span
+                        aria-hidden="true"
+                        className={`absolute inset-x-0 top-0 h-1 ${statusMeta.accentClassName}`}
+                      />
+                      <summary className="flex cursor-pointer list-none flex-col gap-3 px-5 py-4 hover:bg-primary/5 sm:flex-row sm:items-center sm:justify-between [&::-webkit-details-marker]:hidden">
+                        <span className="flex min-w-0 items-start gap-3 sm:items-center">
+                          <span
+                            className={`flex size-12 shrink-0 items-center justify-center rounded-xl shadow-sm ${statusMeta.iconClassName}`}
+                          >
+                            <ClipboardCheck
+                              aria-hidden="true"
+                              className="size-6"
+                            />
                           </span>
                           <span className="min-w-0">
-                            <span className="block truncate font-semibold">
+                            <span className="block truncate text-lg font-semibold text-primary">
                               {homework.title}
                             </span>
-                            <span className="block truncate text-xs text-muted-foreground">
-                              Homework simples
+                            <span className="mt-1 block text-sm text-muted-foreground">
+                              {homework.instructions ??
+                                "Atividade simples para responder online."}
+                            </span>
+                            <span className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1">
+                                <FileText
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
+                                Homework simples
+                              </span>
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-2.5 py-1">
+                                <CalendarDays
+                                  aria-hidden="true"
+                                  className="size-3.5"
+                                />
+                                {homework.dueDate
+                                  ? `Prazo ${dateFormatter.format(homework.dueDate)}`
+                                  : "Sem prazo"}
+                              </span>
                             </span>
                           </span>
                         </span>
-                        <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-primary/20 bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground">
-                          <CheckCircle2 aria-hidden="true" />
-                          {submission?.status === "REVIEWED"
-                            ? "Corrigida"
-                            : submission
-                              ? "Enviada"
-                              : "Pendente"}
+                        <span className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                          <span
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badgeClassName}`}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`size-2.5 rounded-full ${statusMeta.accentClassName}`}
+                            />
+                            {statusMeta.label}
+                          </span>
+                          <span className="hidden rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm sm:inline-flex">
+                            Abrir atividade
+                          </span>
+                          <ChevronDown
+                            aria-hidden="true"
+                            className="size-4 text-muted-foreground transition group-open:rotate-180"
+                          />
                         </span>
                       </summary>
-                      <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
-                        <div>
-                          <h3 className="font-semibold">{homework.title}</h3>
-                          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                            {homework.instructions ??
-                              "Sem instrucoes adicionais."}
-                          </p>
+                      <div className="flex flex-col gap-4 border-t border-primary/15 bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5">
+                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+                          <div>
+                            <h3 className="font-semibold text-primary">
+                              {homework.title}
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                              {homework.instructions ??
+                                "Sem instrucoes adicionais."}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusMeta.badgeClassName}`}
+                          >
+                            {statusMeta.helper}
+                          </span>
                         </div>
-                        <div className="rounded-lg bg-muted/50 p-3 text-sm leading-6">
-                          <strong>Pergunta:</strong>{" "}
-                          {homework.questions[0]?.prompt ?? "Resposta livre"}
+                        <div className="rounded-xl border border-primary/10 bg-white p-4 text-sm leading-6 shadow-sm">
+                          <strong className="text-primary">Pergunta:</strong>{" "}
+                          <span className="text-muted-foreground">
+                            {homework.questions[0]?.prompt ?? "Resposta livre"}
+                          </span>
                         </div>
                         <StudentHomeworkForm
                           homeworkId={homework.id}
@@ -1279,7 +1492,7 @@ export function StudentWorkspace({
                           isReviewed={submission?.status === "REVIEWED"}
                         />
                         {submission?.feedback ? (
-                          <div className="rounded-lg bg-secondary p-3 text-sm leading-6">
+                          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-950">
                             <strong>Feedback:</strong> {submission.feedback}
                           </div>
                         ) : null}
