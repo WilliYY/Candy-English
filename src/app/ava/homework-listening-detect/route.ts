@@ -160,16 +160,18 @@ function buildListeningDetectionPrompt({
   y: number;
 }) {
   const areaInstruction = hasCrop
-    ? "A imagem enviada ja e o recorte exato da area desenhada. Leia apenas o texto visivel dentro desse recorte."
+    ? "A imagem enviada e um recorte pequeno da area desenhada. A selecao original fica no centro do recorte. Leia apenas o texto central desse box; ignore qualquer texto que apareca nas bordas por sobra do recorte."
     : `A area fica na pagina ${page}, com coordenadas percentuais x=${x}, y=${y}, width=${width}, height=${height}. Leia apenas o texto majoritariamente dentro dessa area.`;
 
   return (
     "Voce esta fazendo OCR para um campo Listening da Candy English. " +
     `${areaInstruction} ` +
     "Extraia somente texto em ingles que deve virar audio. " +
+    "Nao complete o exercicio com frases proximas e nao use texto fora da area selecionada. " +
     "Preserve espacos entre palavras, pontuacao, maiusculas/minusculas e a ordem natural de leitura. " +
     "Se houver varias frases dentro do box, mantenha todas em uma frase ou paragrafo curto. " +
     "Nunca junte palavras: retorne 'Do you like pizza?' e nunca 'doyoulikepizza'. " +
+    "Se o box marcar apenas um titulo ou instrucao, retorne apenas esse titulo ou instrucao. " +
     "Ignore titulos, numeros de exercicio, alternativas, respostas ou texto vizinho parcialmente cortado quando nao forem o alvo central do box. " +
     "Se o box pegar linhas de resposta abaixo da frase, ignore essas linhas. " +
     "Se houver letras claras ou mesmo um texto levemente apagado no centro do box, transcreva esse texto em vez de retornar vazio. " +
@@ -428,30 +430,11 @@ export async function POST(request: Request) {
     y,
   });
 
-  let fallbackMessage =
+  const fallbackMessage =
     "message" in primaryResult ? primaryResult.message : null;
-  let fallbackStatus = "status" in primaryResult ? primaryResult.status : 422;
-  let detection = "detection" in primaryResult ? primaryResult.detection : null;
-
-  if (!detection?.sentence && imageDataUrl) {
-    const fullAssetResult = await detectWithGeminiMedia({
-      assetMimeType: homework.assetMimeType,
-      assetSizeBytes: homework.assetSizeBytes,
-      assetStoragePath: homework.assetStoragePath,
-      height,
-      page,
-      width,
-      x,
-      y,
-    });
-
-    if ("detection" in fullAssetResult) {
-      detection = fullAssetResult.detection;
-    } else if (!fallbackMessage) {
-      fallbackMessage = fullAssetResult.message;
-      fallbackStatus = fullAssetResult.status;
-    }
-  }
+  const fallbackStatus = "status" in primaryResult ? primaryResult.status : 422;
+  const detection =
+    "detection" in primaryResult ? primaryResult.detection : null;
 
   if (!detection) {
     return NextResponse.json(

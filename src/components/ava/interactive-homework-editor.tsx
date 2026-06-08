@@ -186,6 +186,7 @@ type PdfTextItemLike = {
 
 type ListeningTextCandidate = {
   bottom: number;
+  heightPercent: number;
   left: number;
   right: number;
   text: string;
@@ -504,8 +505,8 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     const rawY = (field.y / 100) * sourceHeight;
     const rawWidth = (field.width / 100) * sourceWidth;
     const rawHeight = (field.height / 100) * sourceHeight;
-    const paddingX = clampNumber(rawWidth * 0.12, 10, 44);
-    const paddingY = clampNumber(rawHeight * 0.65, 8, 34);
+    const paddingX = clampNumber(rawWidth * 0.05, 4, 18);
+    const paddingY = clampNumber(rawHeight * 0.2, 3, 12);
     const sx = clampNumber(rawX - paddingX, 0, sourceWidth - 1);
     const sy = clampNumber(rawY - paddingY, 0, sourceHeight - 1);
     const sw = clampNumber(rawWidth + paddingX * 2, 1, sourceWidth - sx);
@@ -638,8 +639,17 @@ async function getListeningPdfTextCandidates({
       const top = (Math.min(y1, y2) / viewport.height) * 100;
       const bottom = (Math.max(y1, y2) / viewport.height) * 100;
       const widthPercent = Math.max(0, right - left);
+      const heightPercent = Math.max(0, bottom - top);
 
-      candidates.push({ bottom, left, right, text, top, widthPercent });
+      candidates.push({
+        bottom,
+        heightPercent,
+        left,
+        right,
+        text,
+        top,
+        widthPercent,
+      });
     }
 
     page.cleanup();
@@ -663,39 +673,42 @@ function getListeningFieldPdfText({
     return "";
   }
 
-  const expandedLeft = clampNumber(
-    field.x - Math.max(1.2, field.width * 0.1),
-    0,
-    100,
-  );
-  const expandedRight = clampNumber(
-    field.x + field.width + Math.max(1.2, field.width * 0.1),
-    0,
-    100,
-  );
-  const expandedTop = clampNumber(
-    field.y - Math.max(1.8, field.height * 1.25),
-    0,
-    100,
-  );
-  const expandedBottom = clampNumber(
-    field.y + field.height + Math.max(1.8, field.height * 1.25),
-    0,
-    100,
-  );
+  const fieldLeft = field.x;
+  const fieldRight = field.x + field.width;
+  const fieldTop = field.y;
+  const fieldBottom = field.y + field.height;
+  const horizontalTolerance = clampNumber(field.width * 0.04, 0.25, 1.2);
+  const verticalTolerance = clampNumber(field.height * 0.16, 0.15, 0.75);
+  const softLeft = clampNumber(fieldLeft - horizontalTolerance, 0, 100);
+  const softRight = clampNumber(fieldRight + horizontalTolerance, 0, 100);
+  const softTop = clampNumber(fieldTop - verticalTolerance, 0, 100);
+  const softBottom = clampNumber(fieldBottom + verticalTolerance, 0, 100);
   const fieldCandidates = candidates.filter((candidate) => {
     const centerX = (candidate.left + candidate.right) / 2;
     const centerY = (candidate.top + candidate.bottom) / 2;
-    const intersects =
-      candidate.right >= expandedLeft &&
-      candidate.left <= expandedRight &&
-      candidate.bottom >= expandedTop &&
-      candidate.top <= expandedBottom;
+    const overlapX = Math.max(
+      0,
+      Math.min(candidate.right, fieldRight) -
+        Math.max(candidate.left, fieldLeft),
+    );
+    const overlapY = Math.max(
+      0,
+      Math.min(candidate.bottom, fieldBottom) -
+        Math.max(candidate.top, fieldTop),
+    );
+    const candidateWidth = Math.max(candidate.widthPercent, 0.1);
+    const candidateHeight = Math.max(candidate.heightPercent, 0.1);
+    const horizontalOverlapRatio =
+      overlapX / Math.min(candidateWidth, Math.max(field.width, 0.1));
+    const verticalOverlapRatio =
+      overlapY / Math.min(candidateHeight, Math.max(field.height, 0.1));
+    const meaningfulOverlap =
+      horizontalOverlapRatio >= 0.34 && verticalOverlapRatio >= 0.42;
     const centerInside =
-      centerX >= expandedLeft &&
-      centerX <= expandedRight &&
-      centerY >= expandedTop &&
-      centerY <= expandedBottom;
+      centerX >= softLeft &&
+      centerX <= softRight &&
+      centerY >= softTop &&
+      centerY <= softBottom;
 
     if (
       candidate.widthPercent > field.width * 2.35 &&
@@ -704,7 +717,7 @@ function getListeningFieldPdfText({
       return false;
     }
 
-    return intersects || centerInside;
+    return meaningfulOverlap || centerInside;
   });
 
   if (fieldCandidates.length === 0) {
