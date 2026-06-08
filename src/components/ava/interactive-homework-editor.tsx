@@ -162,7 +162,8 @@ type EditorAction =
 
 const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
-const AUTOSAVE_FIELDS_DELAY_MS = 2500;
+const AUTOSAVE_FIELDS_DELAY_MS = 1400;
+const AUTOSAVE_QUEUED_SAVE_DELAY_MS = 450;
 const LISTENING_AUTO_DETECTION_DELAY_MS = 300;
 const LISTENING_CROP_MAX_DIMENSION = 1600;
 const LISTENING_CROP_MAX_DATA_URL_LENGTH = 1_900_000;
@@ -1499,6 +1500,7 @@ function InteractiveHomeworkEditorItem({
     string | null
   >(null);
   const autosaveTimerRef = useRef<number | null>(null);
+  const queuedSaveModeRef = useRef<"auto" | "manual" | null>(null);
   const saveInFlightRef = useRef(false);
   const listeningDetectionAbortRef = useRef<AbortController | null>(null);
   const listeningPdfTextCacheRef = useRef<
@@ -1514,7 +1516,9 @@ function InteractiveHomeworkEditorItem({
     () => fields.find((field) => field.id === selectedFieldId) ?? null,
     [fields, selectedFieldId],
   );
+  const fieldsRef = useRef(fields);
   const currentFieldsSignatureRef = useRef(currentFieldsSignature);
+  const savedFieldsSignatureRef = useRef(savedFieldsSignature);
   const hasUnsavedChanges = currentFieldsSignature !== savedFieldsSignature;
   const isInteractiveLesson = homework.source === "LESSON";
   const entityLabel = isInteractiveLesson ? "aula interativa" : "homework";
@@ -1784,10 +1788,28 @@ function InteractiveHomeworkEditorItem({
   }, [detectListeningSentenceForField, selectedField]);
 
   useEffect(() => {
+    fieldsRef.current = fields;
     currentFieldsSignatureRef.current = currentFieldsSignature;
-  }, [currentFieldsSignature]);
+  }, [currentFieldsSignature, fields]);
 
   useEffect(() => {
+    savedFieldsSignatureRef.current = savedFieldsSignature;
+  }, [savedFieldsSignature]);
+
+  useEffect(() => {
+    const localSignature = currentFieldsSignatureRef.current;
+    const localHasPendingChanges =
+      localSignature !== savedFieldsSignatureRef.current;
+
+    if (localHasPendingChanges && initialFieldsSignature !== localSignature) {
+      setMessage(
+        (current) =>
+          current ??
+          "Mantive as areas pendentes na tela. O autosave vai confirmar as alteracoes antes de sincronizar com o servidor.",
+      );
+      return;
+    }
+
     setFields(homework.fields);
     setSavedFieldsSignature(initialFieldsSignature);
     setSelectedFieldId((current) =>
@@ -1873,6 +1895,7 @@ function InteractiveHomeworkEditorItem({
     setFields([]);
     setSelectedFieldId(null);
     setMessage("Areas removidas. Desenhe novas areas no PDF e salve.");
+    setSaveStatus("idle");
   }
 
   useEffect(() => {
@@ -1914,7 +1937,18 @@ function InteractiveHomeworkEditorItem({
 
   const persistFields = useCallback(
     (mode: "auto" | "manual") => {
-      if (saveInFlightRef.current || isSaving || isDeleting) {
+      if (saveInFlightRef.current || isDeleting) {
+        queuedSaveModeRef.current =
+          mode === "manual" || queuedSaveModeRef.current === "manual"
+            ? "manual"
+            : "auto";
+
+        if (mode === "manual") {
+          setMessage(
+            "Ja estou salvando. Vou confirmar novamente assim que essa gravacao terminar.",
+          );
+        }
+
         return;
       }
 
@@ -1924,7 +1958,16 @@ function InteractiveHomeworkEditorItem({
 
       setMessage(null);
 
-      const fieldsToSave = fields.map((field, index) => {
+      const fieldsSnapshot = fieldsRef.current;
+      const attemptSignature = getFieldsSignature(fieldsSnapshot);
+
+      if (attemptSignature === savedFieldsSignatureRef.current) {
+        setSaveStatus(mode === "auto" ? "auto-saved" : "manual-saved");
+        setMessage(mode === "manual" ? "Areas ja estavam salvas." : null);
+        return;
+      }
+
+      const fieldsToSave = fieldsSnapshot.map((field, index) => {
         const normalizedField = normalizeTextFieldType(field);
 
         return {
@@ -1936,10 +1979,10 @@ function InteractiveHomeworkEditorItem({
       });
       const expectedCount = fieldsToSave.length;
       const selectedIndex = selectedFieldId
-        ? fields.findIndex((field) => field.id === selectedFieldId)
+        ? fieldsSnapshot.findIndex((field) => field.id === selectedFieldId)
         : -1;
-      const attemptSignature = currentFieldsSignature;
 
+      queuedSaveModeRef.current = null;
       saveInFlightRef.current = true;
       setSaveStatus("saving");
 
@@ -1973,6 +2016,8 @@ function InteractiveHomeworkEditorItem({
           }
 
           const persistedSignature = getFieldsSignature(result.fields);
+          const saveStillMatchesScreen =
+            currentFieldsSignatureRef.current === attemptSignature;
           const idByDraftId = new Map(
             fieldsToSave
               .map((field, index) => [field.id, result.fields?.[index]?.id])
@@ -1982,7 +2027,7 @@ function InteractiveHomeworkEditorItem({
               ),
           );
 
-          if (currentFieldsSignatureRef.current === attemptSignature) {
+          if (saveStillMatchesScreen) {
             setFields(result.fields);
             setSelectedFieldId(
               result.fields[selectedIndex]?.id ??
@@ -1990,6 +2035,11 @@ function InteractiveHomeworkEditorItem({
                 null,
             );
             setSaveStatus(mode === "auto" ? "auto-saved" : "manual-saved");
+            setSavedFieldsSignature(persistedSignature);
+            setMessage(mode === "auto" ? null : result.message);
+            if (mode === "manual") {
+              router.refresh();
+            }
           } else {
             setFields((current) =>
               current.map((field) => {
@@ -2003,12 +2053,16 @@ function InteractiveHomeworkEditorItem({
             setSelectedFieldId((current) =>
               current ? (idByDraftId.get(current) ?? current) : current,
             );
+            setSavedFieldsSignature(persistedSignature);
             setSaveStatus("idle");
+            setMessage(
+              "Salvei uma versao anterior e vou confirmar automaticamente as areas que voce continuou criando.",
+            );
+            queuedSaveModeRef.current =
+              queuedSaveModeRef.current === "manual" || mode === "manual"
+                ? "manual"
+                : "auto";
           }
-
-          setSavedFieldsSignature(persistedSignature);
-          setMessage(mode === "auto" ? null : result.message);
-          router.refresh();
         } catch {
           setSaveStatus("error");
           setMessage(
@@ -2018,19 +2072,23 @@ function InteractiveHomeworkEditorItem({
           );
         } finally {
           saveInFlightRef.current = false;
+          const queuedSaveMode = queuedSaveModeRef.current;
+
+          if (queuedSaveMode) {
+            queuedSaveModeRef.current = null;
+            window.setTimeout(() => {
+              if (
+                currentFieldsSignatureRef.current !==
+                savedFieldsSignatureRef.current
+              ) {
+                persistFields(queuedSaveMode);
+              }
+            }, AUTOSAVE_QUEUED_SAVE_DELAY_MS);
+          }
         }
       });
     },
-    [
-      clearAutosaveTimer,
-      currentFieldsSignature,
-      fields,
-      homework.id,
-      isDeleting,
-      isSaving,
-      router,
-      selectedFieldId,
-    ],
+    [clearAutosaveTimer, homework.id, isDeleting, router, selectedFieldId],
   );
 
   useEffect(() => {
@@ -2056,7 +2114,7 @@ function InteractiveHomeworkEditorItem({
   ]);
 
   function saveFields() {
-    if (saveInFlightRef.current || isSaving || isDeleting) {
+    if (isDeleting) {
       return;
     }
 
