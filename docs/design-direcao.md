@@ -85,7 +85,7 @@ Cuidados:
 - A tela `Corrigir homework` deve priorizar a leitura por aluno: resumo de pendentes/corrigidos/devolvidos, abas com cor clara, cards recolhidos com aluno em destaque, status, arquivo, aula, teacher e datas bem visiveis antes de abrir o PDF.
 - O financeiro admin deve ser intuitivo e escaneavel: separar visao mensal, seletor de mes, formulario de novo aluno, tabela/lista de alunos e log; usar cores semanticas para pago, pendente e vencido, mantendo o conceito de controle interno sem parecer gateway de pagamento.
 - A agenda admin deve parecer painel operacional, nao planilha confusa: fila de hoje e proximos 7 dias no topo, resumo mensal com cores semanticas, seletor de meses separado, formulario de agenda recorrente guiado e grade mensal por dia com horario, aluno, status e acoes sempre proximos.
-- O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
+- O cofre admin de `APIs e senhas` deve parecer operacional e seguro: topo explicativo com metricas, separacao visual entre registros `.env` e manuais, formulario guiado, lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
 - Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
 - Footer pode usar efeito gooey/lava lamp no topo, com bolhas no mesmo roxo do footer para parecer uma superficie unica, preservando textos e links.
