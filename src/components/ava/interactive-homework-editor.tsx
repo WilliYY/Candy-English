@@ -1,17 +1,20 @@
 "use client";
 
 import {
+  BookOpen,
   CaseUpper,
   CheckSquare,
   ChevronDown,
   CircleAlert,
   FileText,
+  HardDrive,
   Layers2,
   LoaderCircle,
   Pencil,
   Save,
   Trash2,
   Type,
+  UserRound,
   Volume2,
   Wand2,
   type LucideIcon,
@@ -353,7 +356,36 @@ function formatSize(sizeBytes?: number | null) {
     return "Arquivo";
   }
 
+  if (sizeBytes >= 1024 * 1024) {
+    return `${(sizeBytes / (1024 * 1024)).toLocaleString("pt-BR", {
+      maximumFractionDigits: 1,
+    })} MB`;
+  }
+
   return `${Math.ceil(sizeBytes / 1024)} KB`;
+}
+
+function getStudentInitials(name?: string | null) {
+  if (!name) {
+    return "A";
+  }
+
+  const words = name.trim().split(/\s+/).filter(Boolean).slice(0, 2);
+  const initials = words.map((word) => word.charAt(0).toUpperCase()).join("");
+
+  return initials || "A";
+}
+
+function getFieldCountClassName(count: number) {
+  if (count === 0) {
+    return "border-amber-200 bg-amber-50 text-amber-800";
+  }
+
+  if (count >= 10) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  }
+
+  return "border-sky-200 bg-sky-50 text-sky-800";
 }
 
 function isEditableKeyboardTarget(target: EventTarget | null) {
@@ -2045,66 +2077,113 @@ function InteractiveHomeworkEditorItem({
     });
   }
 
+  const fieldCountClassName = getFieldCountClassName(fields.length);
+  const saveStatusClassName = isPersisting
+    ? "border-amber-200 bg-amber-50 text-amber-700"
+    : saveStatus === "error"
+      ? "border-red-200 bg-red-50 text-red-700"
+      : hasUnsavedChanges
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-emerald-200 bg-emerald-50 text-emerald-700";
+  const entityBadgeLabel = isInteractiveLesson ? "Aula" : "Homework";
+  const fileName =
+    homework.assetFileName ??
+    (isInteractiveLesson ? "Arquivo da aula" : "Arquivo da homework");
+
   return (
-    <details className="group overflow-hidden rounded-lg border border-primary/15 bg-white/95 shadow-[0_12px_30px_rgba(65,42,76,0.06)]">
-      <summary className="grid cursor-pointer list-none gap-3 px-4 py-3 text-sm transition-colors hover:bg-primary/[0.035] md:grid-cols-[minmax(0,1fr)_auto] md:items-center [&::-webkit-details-marker]:hidden">
-        <span className="flex min-w-0 items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/10">
-            <FileText aria-hidden="true" className="size-5" />
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate font-semibold">
-              {homework.title}
+    <details className="group relative overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_14px_34px_rgba(65,42,76,0.07)] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-primary/70 before:content-['']">
+      <summary className="cursor-pointer list-none px-4 py-4 text-sm transition-colors hover:bg-white/70 sm:px-5 [&::-webkit-details-marker]:hidden">
+        <div className="grid gap-4 xl:grid-cols-[minmax(260px,1fr)_minmax(260px,0.95fr)_auto] xl:items-center">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-white text-sm font-bold text-primary shadow-sm">
+              {getStudentInitials(homework.studentName)}
             </span>
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-              {homework.studentName ?? "Aluno geral"} - {homework.lessonTitle}
+            <span className="min-w-0">
+              <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[0.055] px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary">
+                <FileText aria-hidden="true" className="size-3.5" />
+                {entityBadgeLabel}
+              </span>
+              <span className="mt-2 block truncate text-base font-semibold text-primary sm:text-lg">
+                {homework.title}
+              </span>
+              <span className="mt-1 flex min-w-0 items-center gap-2 text-xs text-muted-foreground sm:text-sm">
+                <UserRound aria-hidden="true" className="size-4 shrink-0" />
+                <span className="truncate">
+                  {homework.studentName ?? "Aluno geral"}
+                </span>
+              </span>
             </span>
-          </span>
-        </span>
-        <span className="flex shrink-0 flex-wrap items-center gap-2 text-xs text-muted-foreground md:justify-end">
-          <span className="rounded-full border border-primary/15 bg-primary/[0.04] px-2.5 py-1 font-semibold text-primary/75">
-            {fields.length} area(s)
-          </span>
-          <span
-            className={cn(
-              "rounded-full border px-2.5 py-1 font-semibold",
-              isPersisting
-                ? "border-amber-200 bg-amber-50 text-amber-700"
-                : saveStatus === "error"
-                  ? "border-red-200 bg-red-50 text-red-700"
-                  : hasUnsavedChanges
-                    ? "border-amber-200 bg-amber-50 text-amber-700"
-                    : "border-emerald-200 bg-emerald-50 text-emerald-700",
-            )}
-          >
-            {saveStatusLabel}
-          </span>
-          <span className="hidden items-center gap-1 rounded-full border border-primary/10 bg-background px-2.5 py-1 font-semibold text-primary/60 sm:inline-flex">
-            <ChevronDown
-              aria-hidden="true"
-              className="size-3.5 transition-transform duration-200 group-open:rotate-180"
-            />
-            Editor
-          </span>
-          <Button
-            disabled={isDeleting || isPersisting}
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              deleteHomework();
-            }}
-            size="sm"
-            type="button"
-            variant="destructive"
-          >
-            {isDeleting ? (
-              <LoaderCircle data-icon="inline-start" className="animate-spin" />
-            ) : (
-              <Trash2 data-icon="inline-start" />
-            )}
-            Excluir
-          </Button>
-        </span>
+          </div>
+
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+            <span className="min-w-0 rounded-lg border border-primary/10 bg-white/78 p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/60">
+                <BookOpen aria-hidden="true" className="size-3.5" />
+                Aula
+              </span>
+              <span className="mt-1 block truncate font-semibold text-primary">
+                {homework.lessonTitle}
+              </span>
+            </span>
+            <span className="min-w-0 rounded-lg border border-primary/10 bg-white/78 p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/60">
+                <HardDrive aria-hidden="true" className="size-3.5" />
+                Arquivo
+              </span>
+              <span className="mt-1 block truncate font-semibold text-primary">
+                {fileName}
+              </span>
+            </span>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2 text-xs text-muted-foreground xl:justify-end">
+            <span
+              className={cn(
+                "rounded-full border px-3 py-1 font-semibold",
+                fieldCountClassName,
+              )}
+            >
+              {fields.length} area(s)
+            </span>
+            <span
+              className={cn(
+                "rounded-full border px-3 py-1 font-semibold",
+                saveStatusClassName,
+              )}
+            >
+              {saveStatusLabel}
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-primary/10 bg-background px-3 py-1 font-semibold text-primary/70">
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 transition-transform duration-200 group-open:rotate-180"
+              />
+              <span className="group-open:hidden">Abrir editor</span>
+              <span className="hidden group-open:inline">Fechar editor</span>
+            </span>
+            <Button
+              disabled={isDeleting || isPersisting}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                deleteHomework();
+              }}
+              size="sm"
+              type="button"
+              variant="destructive"
+            >
+              {isDeleting ? (
+                <LoaderCircle
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
+              ) : (
+                <Trash2 data-icon="inline-start" />
+              )}
+              Excluir
+            </Button>
+          </div>
+        </div>
       </summary>
 
       <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
@@ -2115,12 +2194,7 @@ function InteractiveHomeworkEditorItem({
                 aria-hidden="true"
                 className="size-4 shrink-0 text-primary"
               />
-              <span className="min-w-0 truncate font-semibold">
-                {homework.assetFileName ??
-                  (isInteractiveLesson
-                    ? "Arquivo da aula"
-                    : "Arquivo da homework")}
-              </span>
+              <span className="min-w-0 truncate font-semibold">{fileName}</span>
               <span className="shrink-0 text-xs text-muted-foreground">
                 {formatSize(homework.assetSizeBytes)}
               </span>
@@ -2372,27 +2446,65 @@ export function InteractiveHomeworkEditor({
     return null;
   }
 
+  const totalFields = homeworks.reduce(
+    (total, homework) => total + homework.fields.length,
+    0,
+  );
+  const readyItems = homeworks.filter(
+    (homework) => homework.fields.length > 0,
+  ).length;
+
   return (
-    <div className="rounded-lg border border-primary/15 bg-white/80 p-3 shadow-[0_16px_36px_rgba(65,42,76,0.06)]">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/10">
-            <Layers2 aria-hidden="true" className="size-4" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold text-primary">
-              {heading}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Editor manual de areas
-            </p>
+    <div className="overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-br from-white via-primary/[0.025] to-secondary/35 shadow-[0_18px_44px_rgba(65,42,76,0.08)]">
+      <div className="border-b border-primary/10 bg-white/70 p-4 sm:p-5">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]">
+              <Layers2 aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/60">
+                Editor manual de areas
+              </p>
+              <h2 className="mt-1 truncate text-lg font-semibold text-primary">
+                {heading}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Abra um card para posicionar textos, marcas, desenho e listening
+                no PDF.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[24rem]">
+            <div className="rounded-lg border border-primary/15 bg-primary/[0.055] p-3 text-primary shadow-sm">
+              <span className="block text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                Itens
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {homeworks.length}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sky-900 shadow-sm">
+              <span className="block text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                Areas
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {totalFields}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
+              <span className="block text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                Prontos
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {readyItems}
+              </strong>
+            </div>
           </div>
         </div>
-        <span className="rounded-full border border-primary/15 bg-primary/[0.04] px-3 py-1 text-xs font-semibold text-primary/70">
-          {homeworks.length} item(ns)
-        </span>
       </div>
-      <div className="grid gap-3">
+      <div className="grid gap-3 p-3 sm:p-4">
         {homeworks.map((homework) => (
           <InteractiveHomeworkEditorItem
             key={homework.id}

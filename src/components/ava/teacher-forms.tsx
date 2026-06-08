@@ -376,10 +376,10 @@ function InteractiveAssetUploadForm({
       onSubmit={(event) => {
         void onSubmit(event);
       }}
-      className="overflow-hidden rounded-lg border border-primary/15 bg-white/95 shadow-[0_18px_45px_rgba(65,42,76,0.08)]"
+      className="overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_18px_45px_rgba(65,42,76,0.09)]"
       noValidate
     >
-      <div className="flex flex-col gap-3 border-b border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.08),rgba(229,124,216,0.08),rgba(252,229,216,0.24))] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="grid gap-4 border-b border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.1),rgba(229,124,216,0.09),rgba(252,229,216,0.28))] px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]">
             <FileUp aria-hidden="true" className="size-5" />
@@ -389,18 +389,28 @@ function InteractiveAssetUploadForm({
               {copy.formTitle}
             </div>
             <p className="text-sm text-muted-foreground">
-              Arquivo, aluno e prazo em um fluxo rapido.
+              Escolha aluno, envie PDF/imagem e abra o editor para marcar as
+              areas.
             </p>
           </div>
         </div>
-        <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-primary/75 shadow-sm">
-          <Files aria-hidden="true" className="size-3.5" />
-          PDF ou imagem
-        </span>
+        <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[24rem]">
+          {["Aluno", "Arquivo", "Editor"].map((step, index) => (
+            <span
+              key={step}
+              className="rounded-lg border border-primary/10 bg-white/78 px-3 py-2 text-xs font-semibold text-primary shadow-sm"
+            >
+              <span className="mr-2 inline-flex size-5 items-center justify-center rounded-md bg-primary text-[0.68rem] text-primary-foreground">
+                {index + 1}
+              </span>
+              {step}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div className="p-4">
-        <div className="grid gap-3 rounded-lg border border-primary/10 bg-primary/[0.025] p-3 lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
+        <div className="grid gap-3 rounded-lg border border-primary/10 bg-white/72 p-3 shadow-sm lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
           <Field data-invalid={Boolean(errors.teacherProfileId)}>
             <FieldLabel htmlFor={`interactive-${mode}-teacher`}>
               Teacher
@@ -492,7 +502,7 @@ function InteractiveAssetUploadForm({
 
         <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(320px,1fr)_minmax(300px,0.9fr)] xl:items-stretch">
           <Field
-            className="rounded-lg border border-primary/10 bg-white p-3 shadow-sm"
+            className="rounded-lg border border-primary/10 bg-white/86 p-3 shadow-sm"
             data-invalid={Boolean(errors.instructions)}
           >
             <FieldLabel htmlFor={`interactive-${mode}-instructions`}>
@@ -509,11 +519,17 @@ function InteractiveAssetUploadForm({
             <FieldError errors={[{ message: errors.instructions }]} />
           </Field>
 
-          <div className="grid gap-3 rounded-lg border border-primary/10 bg-white p-3 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="grid gap-3 rounded-lg border border-dashed border-primary/20 bg-white/88 p-3 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end">
             <Field data-invalid={Boolean(errors.asset)}>
-              <FieldLabel htmlFor={`interactive-${mode}-asset`}>
-                Arquivos PDF ou imagens
-              </FieldLabel>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <FieldLabel htmlFor={`interactive-${mode}-asset`}>
+                  Arquivos PDF ou imagens
+                </FieldLabel>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/[0.045] px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-primary">
+                  <Files aria-hidden="true" className="size-3.5" />
+                  lote
+                </span>
+              </div>
               <Input
                 id={`interactive-${mode}-asset`}
                 name="asset"
@@ -525,13 +541,14 @@ function InteractiveAssetUploadForm({
                 multiple
               />
               <p className="text-xs text-muted-foreground">
-                Cada arquivo vira uma atividade separada.
+                Cada arquivo vira uma atividade separada e aparece na lista
+                abaixo.
               </p>
               <FieldError errors={[{ message: errors.asset }]} />
             </Field>
 
             <Button
-              className="h-10 w-full sm:w-auto"
+              className="h-11 w-full px-5 sm:w-auto"
               type="submit"
               disabled={
                 isPending || students.length === 0 || teachers.length === 0
@@ -551,9 +568,9 @@ function InteractiveAssetUploadForm({
         </div>
 
         {uploadQueue.length > 0 ? (
-          <div className="mt-4 grid gap-2 rounded-lg border border-primary/15 bg-primary/[0.025] p-3">
+          <div className="mt-4 grid gap-2 rounded-lg border border-primary/15 bg-white/82 p-3 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-              <strong>Fila de criacao</strong>
+              <strong className="text-primary">Fila de criacao</strong>
               <span className="text-xs text-muted-foreground">
                 {uploadQueue.length} arquivo(s)
               </span>
@@ -597,7 +614,7 @@ function InteractiveAssetUploadForm({
         ) : null}
 
         {message ? (
-          <p className="mt-3 rounded-lg border border-primary/10 bg-background px-4 py-3 text-sm text-muted-foreground">
+          <p className="mt-3 rounded-lg border border-primary/10 bg-white/86 px-4 py-3 text-sm font-medium text-muted-foreground shadow-sm">
             {message}
           </p>
         ) : null}
