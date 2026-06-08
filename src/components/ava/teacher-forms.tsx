@@ -3,12 +3,15 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertCircle,
+  BookOpen,
   CheckCircle2,
   Clock3,
   Files,
   FileUp,
+  Layers2,
   LoaderCircle,
   Plus,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -30,6 +33,7 @@ import {
   type CreateInteractiveLessonInput,
   type ReviewSubmissionInput,
 } from "@/lib/validations/learning";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -200,6 +204,13 @@ function InteractiveAssetUploadForm({
 }) {
   const router = useRouter();
   const copy = interactiveAssetCopy[mode];
+  const isLessonMode = mode === "lesson";
+  const flowSteps = isLessonMode
+    ? ["Teacher", "Aluno", "Aula"]
+    : ["Aluno", "Arquivo", "Editor"];
+  const formDescription = isLessonMode
+    ? "Escolha teacher e aluno, envie o material e abra o editor da aula."
+    : "Escolha aluno, envie PDF/imagem e abra o editor para marcar as areas.";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [errors, setErrors] = useState<InteractiveAssetFormErrors>({});
   const [isUploading, setIsUploading] = useState(false);
@@ -376,31 +387,53 @@ function InteractiveAssetUploadForm({
       onSubmit={(event) => {
         void onSubmit(event);
       }}
-      className="overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_18px_45px_rgba(65,42,76,0.09)]"
+      className={cn(
+        "overflow-hidden rounded-lg border bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_18px_45px_rgba(65,42,76,0.09)]",
+        isLessonMode ? "border-sky-200/75" : "border-primary/15",
+      )}
       noValidate
     >
-      <div className="grid gap-4 border-b border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.1),rgba(229,124,216,0.09),rgba(252,229,216,0.28))] px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+      <div
+        className={cn(
+          "grid gap-4 border-b px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center",
+          isLessonMode
+            ? "border-sky-200/70 bg-[linear-gradient(135deg,rgba(14,165,233,0.11),rgba(65,42,76,0.07),rgba(252,229,216,0.24))]"
+            : "border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.1),rgba(229,124,216,0.09),rgba(252,229,216,0.28))]",
+        )}
+      >
         <div className="flex min-w-0 items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]">
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-lg text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]",
+              isLessonMode ? "bg-sky-600" : "bg-primary",
+            )}
+          >
             <FileUp aria-hidden="true" className="size-5" />
           </span>
           <div className="min-w-0">
             <div className="truncate text-base font-semibold text-primary">
               {copy.formTitle}
             </div>
-            <p className="text-sm text-muted-foreground">
-              Escolha aluno, envie PDF/imagem e abra o editor para marcar as
-              areas.
-            </p>
+            <p className="text-sm text-muted-foreground">{formDescription}</p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[24rem]">
-          {["Aluno", "Arquivo", "Editor"].map((step, index) => (
+          {flowSteps.map((step, index) => (
             <span
               key={step}
-              className="rounded-lg border border-primary/10 bg-white/78 px-3 py-2 text-xs font-semibold text-primary shadow-sm"
+              className={cn(
+                "rounded-lg border bg-white/78 px-3 py-2 text-xs font-semibold shadow-sm",
+                isLessonMode
+                  ? "border-sky-200/70 text-sky-900"
+                  : "border-primary/10 text-primary",
+              )}
             >
-              <span className="mr-2 inline-flex size-5 items-center justify-center rounded-md bg-primary text-[0.68rem] text-primary-foreground">
+              <span
+                className={cn(
+                  "mr-2 inline-flex size-5 items-center justify-center rounded-md text-[0.68rem] text-white",
+                  isLessonMode ? "bg-sky-600" : "bg-primary",
+                )}
+              >
                 {index + 1}
               </span>
               {step}
@@ -632,8 +665,77 @@ export function CreateLessonForm({
   students: Option[];
   teachers: Option[];
 }) {
+  const totalFields = interactiveLessons.reduce(
+    (total, lesson) => total + lesson.fields.length,
+    0,
+  );
+  const readyLessons = interactiveLessons.filter(
+    (lesson) => lesson.fields.length > 0,
+  ).length;
+  const studentsWithLessons = new Set(
+    interactiveLessons
+      .map((lesson) => lesson.studentName)
+      .filter((studentName): studentName is string => Boolean(studentName)),
+  ).size;
+
   return (
     <div className="flex flex-col gap-6">
+      <section className="overflow-hidden rounded-lg border border-sky-200/70 bg-gradient-to-br from-white via-sky-50/70 to-secondary/35 p-4 shadow-[0_18px_42px_rgba(14,165,233,0.08)]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-[0_12px_24px_rgba(14,165,233,0.22)]">
+              <BookOpen aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-sky-700">
+                Aulas do Canva
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-primary">
+                Crie aula, envie o PDF/imagem e marque as areas interativas.
+              </h2>
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                Cada arquivo vira uma aula para o aluno em Aulas e Materiais,
+                com editor manual para texto, letra, marcar, desenho e
+                listening.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[25rem]">
+            <div className="rounded-lg border border-sky-200 bg-white/82 p-3 text-sky-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <BookOpen aria-hidden="true" className="size-3.5" />
+                Aulas
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {interactiveLessons.length}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <Layers2 aria-hidden="true" className="size-3.5" />
+                Areas
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {totalFields}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <UserRound aria-hidden="true" className="size-3.5" />
+                Alunos
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {studentsWithLessons}
+              </strong>
+              <span className="mt-1 block text-xs font-semibold">
+                {readyLessons} com area(s)
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <InteractiveAssetUploadForm
         mode="lesson"
         students={students}

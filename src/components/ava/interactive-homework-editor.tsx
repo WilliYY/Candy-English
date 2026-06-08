@@ -2085,21 +2085,61 @@ function InteractiveHomeworkEditorItem({
       : hasUnsavedChanges
         ? "border-amber-200 bg-amber-50 text-amber-700"
         : "border-emerald-200 bg-emerald-50 text-emerald-700";
-  const entityBadgeLabel = isInteractiveLesson ? "Aula" : "Homework";
+  const itemTone = isInteractiveLesson
+    ? {
+        avatar:
+          "border-sky-200 bg-sky-50 text-sky-900 shadow-[0_8px_18px_rgba(14,165,233,0.12)]",
+        badge: "border-sky-200 bg-sky-50 text-sky-800",
+        info: "border-sky-200/70 bg-white/82",
+        label: "text-sky-700/80",
+        shell:
+          "border-sky-200/80 bg-gradient-to-br from-white via-sky-50/55 to-secondary/25 shadow-[0_14px_34px_rgba(14,165,233,0.08)] before:bg-sky-500",
+        summary: "hover:bg-sky-50/70",
+      }
+    : {
+        avatar: "border-primary/15 bg-white text-primary shadow-sm",
+        badge: "border-primary/15 bg-primary/[0.055] text-primary",
+        info: "border-primary/10 bg-white/78",
+        label: "text-primary/60",
+        shell:
+          "border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_14px_34px_rgba(65,42,76,0.07)] before:bg-primary/70",
+        summary: "hover:bg-white/70",
+      };
+  const entityBadgeLabel = isInteractiveLesson ? "Aula interativa" : "Homework";
   const fileName =
     homework.assetFileName ??
     (isInteractiveLesson ? "Arquivo da aula" : "Arquivo da homework");
 
   return (
-    <details className="group relative overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_14px_34px_rgba(65,42,76,0.07)] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-primary/70 before:content-['']">
-      <summary className="cursor-pointer list-none px-4 py-4 text-sm transition-colors hover:bg-white/70 sm:px-5 [&::-webkit-details-marker]:hidden">
+    <details
+      className={cn(
+        "group relative overflow-hidden rounded-lg border before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
+        itemTone.shell,
+      )}
+    >
+      <summary
+        className={cn(
+          "cursor-pointer list-none px-4 py-4 text-sm transition-colors sm:px-5 [&::-webkit-details-marker]:hidden",
+          itemTone.summary,
+        )}
+      >
         <div className="grid gap-4 xl:grid-cols-[minmax(260px,1fr)_minmax(260px,0.95fr)_auto] xl:items-center">
           <div className="flex min-w-0 gap-3">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-white text-sm font-bold text-primary shadow-sm">
+            <span
+              className={cn(
+                "flex size-12 shrink-0 items-center justify-center rounded-lg border text-sm font-bold",
+                itemTone.avatar,
+              )}
+            >
               {getStudentInitials(homework.studentName)}
             </span>
             <span className="min-w-0">
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/[0.055] px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.1em]",
+                  itemTone.badge,
+                )}
+              >
                 <FileText aria-hidden="true" className="size-3.5" />
                 {entityBadgeLabel}
               </span>
@@ -2116,8 +2156,18 @@ function InteractiveHomeworkEditorItem({
           </div>
 
           <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-            <span className="min-w-0 rounded-lg border border-primary/10 bg-white/78 p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/60">
+            <span
+              className={cn(
+                "min-w-0 rounded-lg border p-3 shadow-sm",
+                itemTone.info,
+              )}
+            >
+              <span
+                className={cn(
+                  "flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]",
+                  itemTone.label,
+                )}
+              >
                 <BookOpen aria-hidden="true" className="size-3.5" />
                 Aula
               </span>
@@ -2125,8 +2175,18 @@ function InteractiveHomeworkEditorItem({
                 {homework.lessonTitle}
               </span>
             </span>
-            <span className="min-w-0 rounded-lg border border-primary/10 bg-white/78 p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/60">
+            <span
+              className={cn(
+                "min-w-0 rounded-lg border p-3 shadow-sm",
+                itemTone.info,
+              )}
+            >
+              <span
+                className={cn(
+                  "flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]",
+                  itemTone.label,
+                )}
+              >
                 <HardDrive aria-hidden="true" className="size-3.5" />
                 Arquivo
               </span>
@@ -2453,33 +2513,68 @@ export function InteractiveHomeworkEditor({
   const readyItems = homeworks.filter(
     (homework) => homework.fields.length > 0,
   ).length;
+  const isLessonEditor = homeworks.every(
+    (homework) => homework.source === "LESSON",
+  );
+  const editorTone = isLessonEditor
+    ? {
+        accent: "bg-sky-600 shadow-[0_10px_24px_rgba(14,165,233,0.22)]",
+        eyebrow: "Editor manual de aulas",
+        firstMetric: "border-sky-200 bg-sky-50 text-sky-900",
+        firstMetricLabel: "Aulas",
+        readyMetricLabel: "Com areas",
+        shell:
+          "border-sky-200/80 bg-gradient-to-br from-white via-sky-50/55 to-secondary/35 shadow-[0_18px_44px_rgba(14,165,233,0.08)]",
+        subtitle:
+          "Abra um card para preparar o material da aula e marcar areas interativas.",
+      }
+    : {
+        accent: "bg-primary shadow-[0_10px_24px_rgba(65,42,76,0.18)]",
+        eyebrow: "Editor manual de areas",
+        firstMetric: "border-primary/15 bg-primary/[0.055] text-primary",
+        firstMetricLabel: "Itens",
+        readyMetricLabel: "Prontos",
+        shell:
+          "border-primary/15 bg-gradient-to-br from-white via-primary/[0.025] to-secondary/35 shadow-[0_18px_44px_rgba(65,42,76,0.08)]",
+        subtitle:
+          "Abra um card para posicionar textos, marcas, desenho e listening no PDF.",
+      };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-br from-white via-primary/[0.025] to-secondary/35 shadow-[0_18px_44px_rgba(65,42,76,0.08)]">
+    <div className={cn("overflow-hidden rounded-lg border", editorTone.shell)}>
       <div className="border-b border-primary/10 bg-white/70 p-4 sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]">
+            <span
+              className={cn(
+                "flex size-11 shrink-0 items-center justify-center rounded-lg text-primary-foreground",
+                editorTone.accent,
+              )}
+            >
               <Layers2 aria-hidden="true" className="size-5" />
             </span>
             <div className="min-w-0">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/60">
-                Editor manual de areas
+                {editorTone.eyebrow}
               </p>
               <h2 className="mt-1 truncate text-lg font-semibold text-primary">
                 {heading}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Abra um card para posicionar textos, marcas, desenho e listening
-                no PDF.
+                {editorTone.subtitle}
               </p>
             </div>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[24rem]">
-            <div className="rounded-lg border border-primary/15 bg-primary/[0.055] p-3 text-primary shadow-sm">
+            <div
+              className={cn(
+                "rounded-lg border p-3 shadow-sm",
+                editorTone.firstMetric,
+              )}
+            >
               <span className="block text-[0.68rem] font-bold uppercase tracking-[0.1em]">
-                Itens
+                {editorTone.firstMetricLabel}
               </span>
               <strong className="mt-1 block text-2xl leading-none">
                 {homeworks.length}
@@ -2495,7 +2590,7 @@ export function InteractiveHomeworkEditor({
             </div>
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
               <span className="block text-[0.68rem] font-bold uppercase tracking-[0.1em]">
-                Prontos
+                {editorTone.readyMetricLabel}
               </span>
               <strong className="mt-1 block text-2xl leading-none">
                 {readyItems}

@@ -79,6 +79,7 @@ Cuidados:
 - A tarefa admin `Vincular aluno` deve mostrar o relacionamento como mapa teacher -> aluno: formulario com previa do vinculo selecionado, contadores separados do titulo, resumo compacto de teachers/alunos/vinculos e cards agrupados por teacher com linhas de alunos, email e data para deixar claro quem aparece para quem.
 - Formularios administrativos de criacao de aluno devem ser agrupados por acesso, perfil e dados do aluno, com superficies claras, icones discretos e acao final evidente para reduzir erro operacional.
 - A tela teacher `Criar/Ver Homework` deve parecer um painel operacional: formulario de criacao em blocos claros com passos aluno/arquivo/editor, upload visivel, fila de criacao com status e lista de atividades em cards escaneaveis com aluno, aula, arquivo, salvamento e quantidade de areas.
+- A tela teacher `Criar/Ver Aulas` usa o mesmo motor interativo, mas deve parecer fluxo de aula: resumo superior com aulas/areas/alunos, passos teacher/aluno/aula, formulario de upload com acento azul e cards de aula interativa diferenciados dos cards de homework.
 - A tela `Corrigir homework` deve priorizar a leitura por aluno: resumo de pendentes/corrigidos/devolvidos, abas com cor clara, cards recolhidos com aluno em destaque, status, arquivo, aula, teacher e datas bem visiveis antes de abrir o PDF.
 - O cofre admin de `APIs e senhas` deve parecer operacional e seguro: lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
