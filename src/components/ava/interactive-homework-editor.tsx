@@ -161,8 +161,8 @@ const TEXT_FIELD_LONG_THRESHOLD = 4.2;
 const POINTER_CLICK_THRESHOLD_PIXELS = 10;
 const AUTOSAVE_FIELDS_DELAY_MS = 2500;
 const LISTENING_AUTO_DETECTION_DELAY_MS = 300;
-const LISTENING_CROP_MAX_DIMENSION = 1150;
-const LISTENING_CROP_MAX_DATA_URL_LENGTH = 1_350_000;
+const LISTENING_CROP_MAX_DIMENSION = 1600;
+const LISTENING_CROP_MAX_DATA_URL_LENGTH = 1_900_000;
 const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
   [
     [14, 62],
@@ -173,6 +173,19 @@ const DRAWING_PREVIEW_STROKES: DrawingStroke[] = [
     [86, 28],
   ],
 ];
+
+type PdfTextItemLike = {
+  height?: number;
+  str?: string;
+  transform?: number[];
+  width?: number;
+};
+
+type ListeningTextCandidate = {
+  left: number;
+  text: string;
+  top: number;
+};
 
 const FIELD_TOOL_OPTIONS: EditorFieldTool[] = [
   "TEXT",
@@ -343,6 +356,68 @@ function isEditableKeyboardTarget(target: EventTarget | null) {
   );
 }
 
+function joinListeningTextSegments(segments: string[]) {
+  return normalizeListeningSentence(
+    segments
+      .join(" ")
+      .replace(/\s+([,.;:!?])/g, "$1")
+      .replace(/([([{])\s+/g, "$1")
+      .replace(/\s+([)\]}])/g, "$1"),
+  );
+}
+
+function hasVisibleCropContent(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+) {
+  const sampleWidth = Math.min(width, 260);
+  const sampleHeight = Math.min(height, 180);
+  const sampleCanvas = document.createElement("canvas");
+  const sampleContext = sampleCanvas.getContext("2d", {
+    willReadFrequently: true,
+  });
+
+  if (!sampleContext) {
+    return true;
+  }
+
+  sampleCanvas.width = sampleWidth;
+  sampleCanvas.height = sampleHeight;
+  sampleContext.drawImage(
+    context.canvas,
+    0,
+    0,
+    width,
+    height,
+    0,
+    0,
+    sampleWidth,
+    sampleHeight,
+  );
+
+  const pixels = sampleContext.getImageData(
+    0,
+    0,
+    sampleWidth,
+    sampleHeight,
+  ).data;
+  let visiblePixels = 0;
+
+  for (let index = 0; index < pixels.length; index += 4) {
+    const alpha = pixels[index + 3] ?? 0;
+    const red = pixels[index] ?? 255;
+    const green = pixels[index + 1] ?? 255;
+    const blue = pixels[index + 2] ?? 255;
+
+    if (alpha > 12 && (red < 244 || green < 244 || blue < 244)) {
+      visiblePixels += 1;
+    }
+  }
+
+  return visiblePixels / (sampleWidth * sampleHeight) > 0.0018;
+}
+
 function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
   if (typeof document === "undefined") {
     return undefined;
@@ -378,8 +453,8 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     const rawY = (field.y / 100) * sourceHeight;
     const rawWidth = (field.width / 100) * sourceWidth;
     const rawHeight = (field.height / 100) * sourceHeight;
-    const paddingX = clampNumber(rawWidth * 0.025, 3, 14);
-    const paddingY = clampNumber(rawHeight * 0.08, 2, 8);
+    const paddingX = clampNumber(rawWidth * 0.08, 8, 34);
+    const paddingY = clampNumber(rawHeight * 0.48, 6, 26);
     const sx = clampNumber(rawX - paddingX, 0, sourceWidth - 1);
     const sy = clampNumber(rawY - paddingY, 0, sourceHeight - 1);
     const sw = clampNumber(rawWidth + paddingX * 2, 1, sourceWidth - sx);
@@ -388,7 +463,7 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     const scale =
       maxSide > LISTENING_CROP_MAX_DIMENSION
         ? LISTENING_CROP_MAX_DIMENSION / maxSide
-        : Math.min(2, LISTENING_CROP_MAX_DIMENSION / maxSide);
+        : Math.min(3, LISTENING_CROP_MAX_DIMENSION / maxSide);
     const targetWidth = Math.max(1, Math.round(sw * scale));
     const targetHeight = Math.max(1, Math.round(sh * scale));
     const cropCanvas = document.createElement("canvas");
@@ -404,7 +479,7 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     context.imageSmoothingQuality = "high";
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, targetWidth, targetHeight);
-    context.filter = "contrast(1.12) saturate(0.92)";
+    context.filter = "contrast(1.22) saturate(0.88) brightness(1.03)";
     context.drawImage(
       mediaElement,
       sx,
@@ -418,7 +493,11 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
     );
     context.filter = "none";
 
-    const jpegDataUrl = cropCanvas.toDataURL("image/jpeg", 0.9);
+    if (!hasVisibleCropContent(context, targetWidth, targetHeight)) {
+      return undefined;
+    }
+
+    const jpegDataUrl = cropCanvas.toDataURL("image/jpeg", 0.94);
 
     if (jpegDataUrl.length <= LISTENING_CROP_MAX_DATA_URL_LENGTH) {
       return jpegDataUrl;
@@ -431,6 +510,143 @@ function getListeningFieldCropDataUrl(field: EditableHomeworkField) {
       : undefined;
   } catch {
     return undefined;
+  }
+}
+
+async function getListeningFieldPdfText({
+  assetMimeType,
+  assetUrl,
+  field,
+}: {
+  assetMimeType: string | null;
+  assetUrl: string;
+  field: EditableHomeworkField;
+}) {
+  if (assetMimeType !== "application/pdf") {
+    return "";
+  }
+
+  const pdfjs = await import("pdfjs-dist");
+
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
+
+  const loadingTask = pdfjs.getDocument({
+    url: assetUrl,
+    withCredentials: true,
+  });
+
+  try {
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(field.page);
+    const viewport = page.getViewport({ scale: 1 });
+    const textContent = await page.getTextContent();
+    const candidates: ListeningTextCandidate[] = [];
+    const expandedLeft = clampNumber(
+      field.x - Math.max(1.2, field.width * 0.08),
+      0,
+      100,
+    );
+    const expandedRight = clampNumber(
+      field.x + field.width + Math.max(1.2, field.width * 0.08),
+      0,
+      100,
+    );
+    const expandedTop = clampNumber(
+      field.y - Math.max(1.8, field.height * 1.2),
+      0,
+      100,
+    );
+    const expandedBottom = clampNumber(
+      field.y + field.height + Math.max(1.8, field.height * 1.2),
+      0,
+      100,
+    );
+
+    for (const item of textContent.items as PdfTextItemLike[]) {
+      const text = normalizeListeningSentence(item.str ?? "");
+
+      if (!text || !Array.isArray(item.transform)) {
+        continue;
+      }
+
+      const [, , , rawTextHeight = 0, x = 0, y = 0] = item.transform;
+      const width = Math.max(item.width ?? 0, text.length * 3);
+      const height = Math.max(item.height ?? 0, Math.abs(rawTextHeight), 8);
+      const [x1, y1, x2, y2] = viewport.convertToViewportRectangle([
+        x,
+        y,
+        x + width,
+        y + height,
+      ]);
+      const left = (Math.min(x1, x2) / viewport.width) * 100;
+      const right = (Math.max(x1, x2) / viewport.width) * 100;
+      const top = (Math.min(y1, y2) / viewport.height) * 100;
+      const bottom = (Math.max(y1, y2) / viewport.height) * 100;
+      const widthPercent = Math.max(0, right - left);
+      const centerX = (left + right) / 2;
+      const centerY = (top + bottom) / 2;
+      const intersects =
+        right >= expandedLeft &&
+        left <= expandedRight &&
+        bottom >= expandedTop &&
+        top <= expandedBottom;
+      const centerInside =
+        centerX >= expandedLeft &&
+        centerX <= expandedRight &&
+        centerY >= expandedTop &&
+        centerY <= expandedBottom;
+
+      if (widthPercent > field.width * 2.2 && text.length > 28) {
+        continue;
+      }
+
+      if (intersects || centerInside) {
+        candidates.push({ left, text, top });
+      }
+    }
+
+    void pdf.destroy();
+
+    if (candidates.length === 0) {
+      return "";
+    }
+
+    const lineTolerance = Math.max(1.2, field.height * 0.55);
+    const lines = candidates
+      .sort((first, second) =>
+        Math.abs(first.top - second.top) > lineTolerance
+          ? first.top - second.top
+          : first.left - second.left,
+      )
+      .reduce<ListeningTextCandidate[][]>((groups, candidate) => {
+        const currentGroup = groups[groups.length - 1];
+
+        if (
+          currentGroup &&
+          Math.abs(currentGroup[0].top - candidate.top) <= lineTolerance
+        ) {
+          currentGroup.push(candidate);
+          return groups;
+        }
+
+        return [...groups, [candidate]];
+      }, []);
+
+    return joinListeningTextSegments(
+      lines.map((line) =>
+        joinListeningTextSegments(
+          line
+            .sort((first, second) => first.left - second.left)
+            .map((candidate) => candidate.text),
+        ),
+      ),
+    );
+  } catch {
+    await loadingTask.destroy().catch(() => undefined);
+    return "";
   }
 }
 
@@ -1194,6 +1410,7 @@ function InteractiveHomeworkEditorItem({
   const isInteractiveLesson = homework.source === "LESSON";
   const entityLabel = isInteractiveLesson ? "aula interativa" : "homework";
   const isPersisting = isSaving || saveStatus === "saving";
+  const assetUrl = `/ava/homework-assets/${homework.id}`;
   const saveStatusLabel = isPersisting
     ? "Salvando..."
     : saveStatus === "error"
@@ -1251,12 +1468,64 @@ function InteractiveHomeworkEditorItem({
 
       const requestId = listeningDetectionSequenceRef.current + 1;
       const controller = new AbortController();
-      const imageDataUrl = getListeningFieldCropDataUrl(field);
 
       listeningDetectionSequenceRef.current = requestId;
       listeningDetectionAbortRef.current?.abort();
       listeningDetectionAbortRef.current = controller;
       setListeningDetectionFieldId(field.id);
+      setListeningDetectionMessage(
+        mode === "auto"
+          ? "Procurando o texto no PDF..."
+          : "Relendo o texto do box...",
+      );
+
+      const localText = await getListeningFieldPdfText({
+        assetMimeType: homework.assetMimeType,
+        assetUrl,
+        field,
+      });
+
+      if (listeningDetectionSequenceRef.current !== requestId) {
+        return;
+      }
+
+      if (localText) {
+        setFields((current) =>
+          current.map((currentField) => {
+            if (
+              currentField.id !== field.id ||
+              currentField.type !== "LISTENING"
+            ) {
+              return currentField;
+            }
+
+            if (
+              mode === "auto" &&
+              normalizeListeningSentence(currentField.placeholder ?? "")
+            ) {
+              return currentField;
+            }
+
+            return {
+              ...currentField,
+              placeholder: localText,
+              required: false,
+            };
+          }),
+        );
+        setSaveStatus("idle");
+        setListeningDetectionMessage(
+          "Texto encontrado no PDF. Confira antes de salvar.",
+        );
+        listeningDetectionAbortRef.current = null;
+        setListeningDetectionFieldId((current) =>
+          current === field.id ? null : current,
+        );
+        return;
+      }
+
+      const imageDataUrl = getListeningFieldCropDataUrl(field);
+
       setListeningDetectionMessage(
         mode === "auto"
           ? imageDataUrl
@@ -1356,7 +1625,7 @@ function InteractiveHomeworkEditorItem({
         }
       }
     },
-    [homework.id],
+    [assetUrl, homework.assetMimeType, homework.id],
   );
 
   const retrySelectedListeningDetection = useCallback(() => {

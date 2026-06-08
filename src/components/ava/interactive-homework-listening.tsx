@@ -77,9 +77,7 @@ export function InteractiveHomeworkListeningPreview({
         />
       </span>
       {selected && !text ? (
-        <span className="absolute -top-7 right-0 rounded-[3px] border border-primary/15 bg-white/95 px-2 py-1 text-[10px] font-semibold leading-none text-primary shadow-sm">
-          texto pendente
-        </span>
+        <span className="absolute -right-1 -top-1 size-2.5 rounded-full border border-white bg-amber-400 shadow-sm" />
       ) : null}
     </span>
   );

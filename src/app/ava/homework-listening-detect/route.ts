@@ -172,6 +172,7 @@ function buildListeningDetectionPrompt({
     "Nunca junte palavras: retorne 'Do you like pizza?' e nunca 'doyoulikepizza'. " +
     "Ignore titulos, numeros de exercicio, alternativas, respostas ou texto vizinho parcialmente cortado quando nao forem o alvo central do box. " +
     "Se o box pegar linhas de resposta abaixo da frase, ignore essas linhas. " +
+    "Se houver letras claras ou mesmo um texto levemente apagado no centro do box, transcreva esse texto em vez de retornar vazio. " +
     "Se nao houver texto claro, use texto vazio. " +
     `Limite o texto a ${LISTENING_SENTENCE_MAX_LENGTH} caracteres. ` +
     'Responda somente JSON valido no formato {"text":"...","confidence":"high|medium|low"}.'
@@ -233,32 +234,39 @@ async function requestGeminiListeningDetection({
     "gemini-3.5-flash";
 
   try {
-    const response = await fetch(buildGeminiUrl(model), {
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              mediaPart,
-              {
-                text: prompt,
-              },
-            ],
-            role: "user",
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 320,
-          responseMimeType: "application/json",
-          temperature: 0,
+    const buildBody = (strictJson: boolean) => ({
+      contents: [
+        {
+          parts: [
+            {
+              text: prompt,
+            },
+            mediaPart,
+          ],
+          role: "user",
         },
-      }),
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+      ],
+      generationConfig: {
+        maxOutputTokens: 320,
+        ...(strictJson ? { responseMimeType: "application/json" } : {}),
+        temperature: 0,
       },
-      method: "POST",
-      signal: AbortSignal.timeout(hasCrop ? 12_000 : 18_000),
     });
+    const requestOptions = (strictJson: boolean) =>
+      ({
+        body: JSON.stringify(buildBody(strictJson)),
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        method: "POST",
+        signal: AbortSignal.timeout(hasCrop ? 12_000 : 18_000),
+      }) satisfies RequestInit;
+    let response = await fetch(buildGeminiUrl(model), requestOptions(true));
+
+    if (!response.ok && response.status === 400) {
+      response = await fetch(buildGeminiUrl(model), requestOptions(false));
+    }
 
     if (!response.ok) {
       console.warn(`Listening Gemini OCR failed: status ${response.status}`);
@@ -280,6 +288,66 @@ async function requestGeminiListeningDetection({
       status: 502,
     };
   }
+}
+
+async function detectWithGeminiMedia({
+  assetMimeType,
+  assetSizeBytes,
+  assetStoragePath,
+  height,
+  imageDataUrl,
+  page,
+  width,
+  x,
+  y,
+}: {
+  assetMimeType: string;
+  assetSizeBytes?: number | null;
+  assetStoragePath: string;
+  height: number;
+  imageDataUrl?: string;
+  page: number;
+  width: number;
+  x: number;
+  y: number;
+}) {
+  const hasCrop = Boolean(imageDataUrl);
+  const mediaPart = await getGeminiMediaPart({
+    assetMimeType,
+    assetSizeBytes,
+    assetStoragePath,
+    imageDataUrl,
+  });
+
+  if (!mediaPart) {
+    return {
+      message:
+        "Nao consegui preparar o recorte. Aguarde a pagina carregar ou digite o texto manualmente.",
+      status: 422,
+    };
+  }
+
+  const result = await requestGeminiListeningDetection({
+    hasCrop,
+    mediaPart,
+    prompt: buildListeningDetectionPrompt({
+      hasCrop,
+      height,
+      page,
+      width,
+      x,
+      y,
+    }),
+  });
+
+  if ("error" in result) {
+    return {
+      message: result.error,
+      status: result.status,
+    };
+  }
+
+  return result;
 }
 
 export async function POST(request: Request) {
@@ -348,45 +416,53 @@ export async function POST(request: Request) {
   }
 
   const { height, imageDataUrl, page, width, x, y } = parsed.data;
-  const hasCrop = Boolean(imageDataUrl);
-  const mediaPart = await getGeminiMediaPart({
+  const primaryResult = await detectWithGeminiMedia({
     assetMimeType: homework.assetMimeType,
     assetSizeBytes: homework.assetSizeBytes,
     assetStoragePath: homework.assetStoragePath,
+    height,
     imageDataUrl,
+    page,
+    width,
+    x,
+    y,
   });
 
-  if (!mediaPart) {
-    return NextResponse.json(
-      {
-        message:
-          "Nao consegui preparar o recorte. Aguarde a pagina carregar ou digite o texto manualmente.",
-      },
-      { status: 422 },
-    );
-  }
+  let fallbackMessage =
+    "message" in primaryResult ? primaryResult.message : null;
+  let fallbackStatus = "status" in primaryResult ? primaryResult.status : 422;
+  let detection = "detection" in primaryResult ? primaryResult.detection : null;
 
-  const result = await requestGeminiListeningDetection({
-    hasCrop,
-    mediaPart,
-    prompt: buildListeningDetectionPrompt({
-      hasCrop,
+  if (!detection?.sentence && imageDataUrl) {
+    const fullAssetResult = await detectWithGeminiMedia({
+      assetMimeType: homework.assetMimeType,
+      assetSizeBytes: homework.assetSizeBytes,
+      assetStoragePath: homework.assetStoragePath,
       height,
       page,
       width,
       x,
       y,
-    }),
-  });
+    });
 
-  if ("error" in result) {
-    return NextResponse.json(
-      { message: result.error },
-      { status: result.status },
-    );
+    if ("detection" in fullAssetResult) {
+      detection = fullAssetResult.detection;
+    } else if (!fallbackMessage) {
+      fallbackMessage = fullAssetResult.message;
+      fallbackStatus = fullAssetResult.status;
+    }
   }
 
-  const detection = result.detection;
+  if (!detection) {
+    return NextResponse.json(
+      {
+        message:
+          fallbackMessage ??
+          "Nao consegui ler automaticamente. Digite o texto do listening.",
+      },
+      { status: fallbackStatus },
+    );
+  }
 
   if (!detection.sentence) {
     return NextResponse.json(
