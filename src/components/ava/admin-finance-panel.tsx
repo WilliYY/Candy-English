@@ -156,7 +156,9 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
   PIX: "Pix",
 };
 
-const createDefaultValues = (month: number): AdminFinanceStudentCreateInput => ({
+const createDefaultValues = (
+  month: number,
+): AdminFinanceStudentCreateInput => ({
   address: "",
   amount: "",
   cpf: "",
@@ -193,6 +195,16 @@ function formatDate(value: string | null) {
 
 function formatDateTime(value: string) {
   return dateTimeFormatter.format(new Date(value));
+}
+
+function getFinanceInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
 }
 
 function normalizePaymentMethod(value: string): PaymentMethod {
@@ -532,10 +544,19 @@ function FinancePaidDateForm({
       noValidate
     >
       <input type="hidden" {...form.register("studentId")} />
-      <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
-      <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
+      <input
+        type="hidden"
+        {...form.register("year", { valueAsNumber: true })}
+      />
+      <input
+        type="hidden"
+        {...form.register("month", { valueAsNumber: true })}
+      />
       <input type="hidden" {...form.register("note")} />
-      <Field className="gap-1.5" data-invalid={Boolean(form.formState.errors.paidAt)}>
+      <Field
+        className="gap-1.5"
+        data-invalid={Boolean(form.formState.errors.paidAt)}
+      >
         <FieldLabel
           htmlFor={`finance-paid-at-${row.id}`}
           className="xl:sr-only"
@@ -629,10 +650,20 @@ function FinanceMonthlyNoteForm({
   });
 
   return (
-    <form className="flex min-w-0 flex-col gap-3" onSubmit={onSubmit} noValidate>
+    <form
+      className="flex min-w-0 flex-col gap-3"
+      onSubmit={onSubmit}
+      noValidate
+    >
       <input type="hidden" {...form.register("studentId")} />
-      <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
-      <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
+      <input
+        type="hidden"
+        {...form.register("year", { valueAsNumber: true })}
+      />
+      <input
+        type="hidden"
+        {...form.register("month", { valueAsNumber: true })}
+      />
       <input type="hidden" {...form.register("paidAt")} />
       <Field data-invalid={Boolean(form.formState.errors.note)}>
         <FieldLabel htmlFor={`finance-note-${row.id}`}>
@@ -725,8 +756,14 @@ function FinanceStudentEditForm({
   return (
     <form className="flex flex-col gap-4" onSubmit={onSubmit} noValidate>
       <input type="hidden" {...form.register("studentId")} />
-      <input type="hidden" {...form.register("year", { valueAsNumber: true })} />
-      <input type="hidden" {...form.register("month", { valueAsNumber: true })} />
+      <input
+        type="hidden"
+        {...form.register("year", { valueAsNumber: true })}
+      />
+      <input
+        type="hidden"
+        {...form.register("month", { valueAsNumber: true })}
+      />
       <div className="grid gap-3 lg:grid-cols-3">
         <Field data-invalid={Boolean(form.formState.errors.name)}>
           <FieldLabel htmlFor={`finance-edit-name-${row.id}`}>Nome</FieldLabel>
@@ -959,11 +996,11 @@ function FinanceExportButtons({
   }
 
   return (
-    <div className="flex w-full flex-col gap-2 sm:w-28">
+    <div className="grid w-full gap-2 sm:w-auto sm:min-w-32">
       <Button
         type="button"
         variant="outline"
-        className="w-full justify-start"
+        className="h-10 w-full justify-start border-primary/20 bg-white/85 shadow-sm"
         disabled={isPending || rows.length === 0}
         onClick={() => handleExport("PDF")}
       >
@@ -973,7 +1010,7 @@ function FinanceExportButtons({
       <Button
         type="button"
         variant="outline"
-        className="w-full justify-start"
+        className="h-10 w-full justify-start border-primary/20 bg-white/85 shadow-sm"
         disabled={isPending || rows.length === 0}
         onClick={() => handleExport("EXCEL")}
       >
@@ -1115,92 +1152,183 @@ export function AdminFinancePanel({
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:pr-20">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
-          <span className="text-sm font-medium text-muted-foreground">Ano</span>
-          <strong className="mt-1 block text-2xl font-semibold">2026</strong>
-        </div>
-        <div className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm">
-          <span className="text-sm font-medium text-muted-foreground">Mes</span>
-          <strong className="mt-1 block text-2xl font-semibold">
-            {activeMonthLabel}
-          </strong>
-        </div>
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 shadow-sm">
-          <span className="text-sm font-medium text-emerald-900">Pago</span>
-          <strong className="mt-1 block text-2xl font-semibold text-emerald-700">
-            {formatCurrency(monthSummary.paid)}
-          </strong>
-        </div>
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 shadow-sm">
-          <span className="text-sm font-medium text-red-900">Pendente</span>
-          <strong className="mt-1 block text-2xl font-semibold text-red-700">
-            {formatCurrency(monthSummary.pending)}
-          </strong>
-        </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
-          <span className="flex items-center gap-2 text-sm font-medium text-amber-950">
-            <AlertTriangle aria-hidden="true" className="size-4" />
-            Devedores
+      <section className="overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff7fb] to-[#f4edff] shadow-[0_20px_56px_rgba(65,42,76,0.1)]">
+        <div className="flex flex-col gap-4 border-b border-primary/10 bg-white/70 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_12px_28px_rgba(65,42,76,0.2)]">
+              <WalletCards aria-hidden="true" className="size-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/60">
+                Visao do mes
+              </span>
+              <strong className="mt-1 block text-xl text-primary">
+                {activeMonthLabel} de 2026
+              </strong>
+              <span className="mt-1 block text-sm text-muted-foreground">
+                Controle interno por aluno, status e data paga.
+              </span>
+            </span>
           </span>
-          <strong className="mt-1 block text-2xl font-semibold text-amber-800">
-            ({monthSummary.overdue})
-          </strong>
+          <div className="grid gap-2 rounded-lg border border-primary/15 bg-white/80 p-3 text-xs text-muted-foreground shadow-sm sm:min-w-56">
+            <span className="font-bold uppercase tracking-[0.08em] text-primary">
+              Controle interno
+            </span>
+            <span>
+              Mes selecionado, cobrancas ativas, recebidos e pendencias.
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_7rem] lg:items-start">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-12">
-          {months.map((month) => {
-            const overdueCount = overdueCounts[month.value] ?? 0;
-            const studentCount = monthCounts[month.value] ?? 0;
+        <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-5">
+          <div className="rounded-lg border border-primary/15 bg-white/90 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-sm font-semibold text-primary/70">
+              <CalendarDays aria-hidden="true" className="size-4" />
+              Periodo
+            </span>
+            <strong className="mt-2 block text-2xl font-semibold text-primary">
+              2026
+            </strong>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Mes selecionado: {activeMonthLabel}
+            </span>
+          </div>
+          <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-sm font-semibold text-sky-950">
+              <FileSpreadsheet aria-hidden="true" className="size-4" />
+              Alunos no mes
+            </span>
+            <strong className="mt-2 block text-2xl font-semibold text-sky-800">
+              {monthRows.length}
+            </strong>
+            <span className="mt-1 block text-xs text-sky-900/75">
+              Linhas ativas para cobrar
+            </span>
+          </div>
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
+              <CheckCircle2 aria-hidden="true" className="size-4" />
+              Pago
+            </span>
+            <strong className="mt-2 block text-2xl font-semibold text-emerald-700">
+              {formatCurrency(monthSummary.paid)}
+            </strong>
+            <span className="mt-1 block text-xs text-emerald-900/75">
+              Recebido neste mes
+            </span>
+          </div>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
+              <XCircle aria-hidden="true" className="size-4" />
+              Pendente
+            </span>
+            <strong className="mt-2 block text-2xl font-semibold text-red-700">
+              {formatCurrency(monthSummary.pending)}
+            </strong>
+            <span className="mt-1 block text-xs text-red-900/75">
+              Ainda nao recebido
+            </span>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
+            <span className="flex items-center gap-2 text-sm font-semibold text-amber-950">
+              <AlertTriangle aria-hidden="true" className="size-4" />
+              Devedores
+            </span>
+            <strong className="mt-2 block text-2xl font-semibold text-amber-800">
+              {monthSummary.overdue}
+            </strong>
+            <span className="mt-1 block text-xs text-amber-900/75">
+              Pendentes com dia vencido
+            </span>
+          </div>
+        </div>
 
-            return (
-              <button
-                key={month.value}
-                type="button"
-                onClick={() => handleMonthChange(month.value)}
-                className={cn(
-                  "min-w-0 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
-                  activeMonth === month.value
-                    ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
-                    : "border-primary/20 bg-white text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
-                )}
-              >
-                <span className="block">{month.shortLabel}</span>
-                <span className="mt-1 block text-xs opacity-85">
-                  {studentCount} aluno(s)
-                </span>
-                {overdueCount > 0 ? (
-                  <span
+        <div className="grid gap-4 border-t border-primary/10 bg-white/45 p-4 xl:grid-cols-[minmax(0,1fr)_9rem] xl:items-start">
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="text-sm font-bold text-primary">
+                Escolha o mes
+              </span>
+              <span className="rounded-full border border-primary/15 bg-white/80 px-3 py-1 text-xs font-semibold text-muted-foreground">
+                {monthRows.length} aluno(s) em {activeMonthLabel}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-12">
+              {months.map((month) => {
+                const overdueCount = overdueCounts[month.value] ?? 0;
+                const studentCount = monthCounts[month.value] ?? 0;
+
+                return (
+                  <button
+                    key={month.value}
+                    type="button"
+                    onClick={() => handleMonthChange(month.value)}
                     className={cn(
-                      "mt-2 inline-flex rounded-full px-2 py-0.5 text-[0.68rem]",
+                      "min-w-0 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
                       activeMonth === month.value
-                        ? "bg-white text-red-700"
-                        : "bg-red-600 text-white",
+                        ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
+                        : "border-primary/15 bg-white/90 text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
                     )}
                   >
-                    ({overdueCount})
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
+                    <span className="block">{month.shortLabel}</span>
+                    <span className="mt-1 block text-xs opacity-85">
+                      {studentCount} aluno(s)
+                    </span>
+                    {overdueCount > 0 ? (
+                      <span
+                        className={cn(
+                          "mt-2 inline-flex rounded-full px-2 py-0.5 text-[0.68rem]",
+                          activeMonth === month.value
+                            ? "bg-white text-red-700"
+                            : "bg-red-600 text-white",
+                        )}
+                      >
+                        {overdueCount} venc.
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="rounded-lg border border-primary/15 bg-white/80 p-3 shadow-sm">
+            <span className="mb-2 block text-xs font-bold uppercase tracking-[0.08em] text-primary/65">
+              Relatorios
+            </span>
+            <FinanceExportButtons
+              activeMonth={activeMonth}
+              activeMonthLabel={activeMonthLabel}
+              rows={monthRows}
+            />
+          </div>
         </div>
-        <FinanceExportButtons
-          activeMonth={activeMonth}
-          activeMonthLabel={activeMonthLabel}
-          rows={monthRows}
-        />
-      </div>
+      </section>
 
       <form
         onSubmit={onSubmit}
-        className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
+        className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_16px_44px_rgba(65,42,76,0.08)]"
         noValidate
       >
-        <FieldGroup className="gap-3">
-          <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(170px,1.3fr)_minmax(110px,0.65fr)_minmax(80px,0.45fr)_minmax(150px,0.85fr)_minmax(150px,0.85fr)_auto] xl:items-start">
+        <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#fce5d8]/65 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+              <Plus aria-hidden="true" className="size-5" />
+            </span>
+            <span className="min-w-0">
+              <strong className="block text-base text-primary">
+                Adicionar aluno financeiro
+              </strong>
+              <span className="mt-1 block text-sm text-muted-foreground">
+                Cria a cobranca de {activeMonthLabel} ate dezembro de 2026.
+              </span>
+            </span>
+          </span>
+          <span className="w-fit rounded-full border border-primary/15 bg-white/85 px-3 py-1 text-xs font-bold uppercase text-primary">
+            Novo lancamento
+          </span>
+        </div>
+        <FieldGroup className="gap-3 p-4">
+          <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(120px,0.65fr)_minmax(90px,0.45fr)_minmax(170px,0.85fr)_minmax(170px,0.85fr)_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>
               <Input
@@ -1269,7 +1397,7 @@ export function AdminFinancePanel({
 
             <Button
               type="submit"
-              className="lg:mt-6 lg:w-full xl:w-auto"
+              className="h-10 shadow-sm lg:mt-6 lg:w-full xl:w-auto"
               disabled={isPending}
             >
               {isPending ? (
@@ -1284,10 +1412,15 @@ export function AdminFinancePanel({
             </Button>
           </div>
 
-          <details className="group rounded-lg border border-primary/15 bg-primary/5 p-2.5">
+          <details className="group rounded-lg border border-primary/15 bg-gradient-to-r from-primary/[0.04] via-white to-[#fce5d8]/45 p-3">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
-              Dados extras e observacao
-              <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+              <span className="flex min-w-0 flex-col">
+                <span>Dados extras e observacao</span>
+                <span className="mt-1 text-xs font-normal text-muted-foreground">
+                  Telefone, CPF, email, endereco e nota ficam opcionais.
+                </span>
+              </span>
+              <ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" />
             </summary>
             <div className="mt-3 grid gap-3 lg:grid-cols-4">
               <Field data-invalid={Boolean(form.formState.errors.phone)}>
@@ -1361,19 +1494,50 @@ export function AdminFinancePanel({
       </form>
 
       <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.12)]">
-        <div className="flex flex-col gap-3 bg-gradient-to-r from-primary via-[#7c3fa1] to-[#e57cd8] px-4 py-3 text-white sm:flex-row sm:items-center sm:justify-between">
-          <span className="flex min-w-0 items-center gap-2 text-lg font-semibold">
-            <FileSpreadsheet aria-hidden="true" className="size-5 shrink-0" />
-            <span className="truncate">
-              Controle de Pagamentos - {activeMonthLabel} 2026
+        <div className="flex flex-col gap-4 bg-gradient-to-r from-primary via-[#7c3fa1] to-[#e57cd8] px-4 py-4 text-white sm:flex-row sm:items-center sm:justify-between">
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white ring-1 ring-white/25">
+              <FileSpreadsheet aria-hidden="true" className="size-5" />
+            </span>
+            <span className="min-w-0">
+              <strong className="block truncate text-lg">
+                Alunos do mes - {activeMonthLabel} 2026
+              </strong>
+              <span className="mt-1 block text-sm text-white/80">
+                Marque status, salve data paga e abra extras quando precisar.
+              </span>
             </span>
           </span>
-          <span className="w-fit rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-bold uppercase">
-            {monthRows.length} aluno(s)
+          <div className="flex flex-wrap gap-2">
+            <span className="w-fit rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-bold uppercase">
+              {monthRows.length} aluno(s)
+            </span>
+            <span className="w-fit rounded-full border border-white/25 bg-emerald-500/25 px-3 py-1 text-xs font-bold uppercase">
+              {formatCurrency(monthSummary.paid)} pago
+            </span>
+            <span className="w-fit rounded-full border border-white/25 bg-red-500/25 px-3 py-1 text-xs font-bold uppercase">
+              {formatCurrency(monthSummary.pending)} pendente
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-b border-primary/10 bg-white/80 px-4 py-3 text-xs font-semibold text-muted-foreground">
+          <span className="mr-1 text-primary">Legenda:</span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-800">
+            <CheckCircle2 aria-hidden="true" className="size-3.5" />
+            Pago
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-red-800">
+            <XCircle aria-hidden="true" className="size-3.5" />
+            Pendente
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-900">
+            <AlertTriangle aria-hidden="true" className="size-3.5" />
+            Vencido
           </span>
         </div>
 
-        <div className="hidden border-b border-primary/15 bg-primary/85 px-3 py-2.5 text-xs font-bold uppercase text-white xl:grid xl:grid-cols-[minmax(160px,1.2fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3">
+        <div className="hidden border-b border-primary/15 bg-[#efe7f7] px-3 py-2.5 text-xs font-bold uppercase text-primary xl:grid xl:grid-cols-[minmax(190px,1.25fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3">
           <span>Nome</span>
           <span>Valor (R$)</span>
           <span>Dia</span>
@@ -1395,22 +1559,27 @@ export function AdminFinancePanel({
             <article
               key={`${row.id}-${activeMonth}-${row.payment?.updatedAt ?? "novo"}`}
               className={cn(
-                "m-3 rounded-lg border p-3 shadow-sm transition-colors xl:m-0 xl:rounded-none xl:border-x-0 xl:border-t-0 xl:p-0 xl:shadow-none",
+                "m-3 overflow-hidden rounded-lg border p-3 shadow-sm transition-colors xl:m-0 xl:rounded-none xl:border-x-0 xl:border-t-0 xl:p-0 xl:shadow-none",
                 row.isPaid
-                  ? "border-emerald-200 bg-emerald-50/90 text-emerald-950"
+                  ? "border-emerald-200 bg-emerald-50/90 text-emerald-950 xl:border-l-4 xl:border-l-emerald-500"
                   : row.isOverdue
-                    ? "border-amber-300 bg-amber-50/95 text-amber-950"
-                    : "border-primary/15 bg-white text-primary",
+                    ? "border-amber-300 bg-amber-50/95 text-amber-950 xl:border-l-4 xl:border-l-amber-500"
+                    : "border-primary/15 bg-white text-primary xl:border-l-4 xl:border-l-red-400",
               )}
             >
-              <div className="grid gap-2.5 xl:min-h-[4.25rem] xl:grid-cols-[minmax(160px,1.2fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3 xl:px-3 xl:py-2">
+              <div className="grid gap-2.5 xl:min-h-[4.25rem] xl:grid-cols-[minmax(190px,1.25fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3 xl:px-3 xl:py-2">
                 <div className="min-w-0 break-words xl:flex xl:items-center xl:gap-2">
                   <span className="text-xs font-semibold uppercase text-muted-foreground xl:hidden">
                     Nome
                   </span>
-                  <strong className="mt-1 block text-base xl:mt-0">
-                    {row.name}
-                  </strong>
+                  <span className="mt-1 flex min-w-0 items-center gap-2 xl:mt-0">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-white/80 text-xs font-bold uppercase text-primary shadow-sm">
+                      {getFinanceInitials(row.name)}
+                    </span>
+                    <strong className="block min-w-0 truncate text-base">
+                      {row.name}
+                    </strong>
+                  </span>
                   {row.isOverdue ? (
                     <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900 xl:mt-0">
                       <AlertTriangle aria-hidden="true" className="size-3.5" />
@@ -1452,7 +1621,10 @@ export function AdminFinancePanel({
                     Forma
                   </span>
                   <span className="mt-1 inline-flex max-w-full items-center gap-2 rounded-full border border-primary/20 bg-white/70 px-3 py-1 text-sm font-semibold leading-tight text-primary shadow-sm xl:mt-0">
-                    <WalletCards aria-hidden="true" className="size-4 shrink-0" />
+                    <WalletCards
+                      aria-hidden="true"
+                      className="size-4 shrink-0"
+                    />
                     <span className="min-w-0 break-words">
                       {formatPaymentMethod(row.paymentMethod)}
                     </span>
@@ -1485,15 +1657,28 @@ export function AdminFinancePanel({
               </div>
 
               {openRows.has(row.id) ? (
-                <div className="mx-3 mb-3 mt-2 grid gap-5 rounded-lg border border-primary/15 bg-white/80 p-3 xl:mx-0 xl:mb-0 xl:mt-0 xl:rounded-none xl:border-x-0 xl:border-b-0 xl:bg-white/70">
-                  <div className="flex items-center justify-between gap-3 text-sm font-semibold text-primary">
-                    <span>Dados extras e observacao</span>
-                    <ChevronDown aria-hidden="true" className="size-4 rotate-180" />
+                <div className="mx-3 mb-3 mt-2 grid gap-5 rounded-lg border border-primary/15 bg-gradient-to-br from-white via-[#fbf7ff] to-[#fff7fb] p-3 xl:mx-0 xl:mb-0 xl:mt-0 xl:rounded-none xl:border-x-0 xl:border-b-0">
+                  <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                    <span className="min-w-0">
+                      <strong className="block text-primary">
+                        Editando {row.name}
+                      </strong>
+                      <span className="mt-1 block">
+                        Dados do aluno valem deste mes em diante; observacao
+                        fica so em {activeMonthLabel}.
+                      </span>
+                    </span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-4 shrink-0 rotate-180 text-primary"
+                    />
                   </div>
                   <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                     <span className="flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm text-muted-foreground">
                       <Phone aria-hidden="true" className="size-4 shrink-0" />
-                      <span className="truncate">{row.phone || "Sem telefone"}</span>
+                      <span className="truncate">
+                        {row.phone || "Sem telefone"}
+                      </span>
                     </span>
                     <span className="flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm text-muted-foreground">
                       <IdCard aria-hidden="true" className="size-4 shrink-0" />
@@ -1501,7 +1686,9 @@ export function AdminFinancePanel({
                     </span>
                     <span className="flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm text-muted-foreground">
                       <Mail aria-hidden="true" className="size-4 shrink-0" />
-                      <span className="truncate">{row.email || "Sem email"}</span>
+                      <span className="truncate">
+                        {row.email || "Sem email"}
+                      </span>
                     </span>
                     <span className="flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm text-muted-foreground">
                       <MapPin aria-hidden="true" className="size-4 shrink-0" />
@@ -1525,10 +1712,8 @@ export function AdminFinancePanel({
         )}
 
         {monthRows.length > 0 ? (
-          <div className="border-t border-primary/15 bg-[#ead0fb] px-4 py-3 text-sm font-bold text-primary xl:grid xl:grid-cols-[minmax(160px,1.2fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3">
-            <span className="block text-right xl:text-left">
-              Total mensal {"->"}
-            </span>
+          <div className="border-t border-primary/15 bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/70 px-4 py-3 text-sm font-bold text-primary xl:grid xl:grid-cols-[minmax(190px,1.25fr)_125px_64px_128px_112px_minmax(205px,0.95fr)_132px] xl:items-center xl:gap-3">
+            <span className="block text-right xl:text-left">Total mensal</span>
             <span>{formatCurrency(monthSummary.total)}</span>
             <span className="hidden xl:block" />
             <span className="mt-2 block text-emerald-800 xl:mt-0">
@@ -1547,17 +1732,26 @@ export function AdminFinancePanel({
 
       <details
         id="financeiro-log"
-        className="group rounded-lg border border-primary/20 bg-white p-3 shadow-sm"
+        className="group rounded-lg border border-primary/20 bg-white/95 p-3 shadow-[0_12px_34px_rgba(65,42,76,0.07)]"
       >
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
           <span className="flex min-w-0 items-center gap-2">
-            <span className="text-base font-semibold">Log financeiro</span>
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Download aria-hidden="true" className="size-4" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-base font-semibold text-primary">
+                Log financeiro
+              </span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">
+                Historico simples de criacao, edicao, status e exportacao.
+              </span>
+            </span>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {logs.length}
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-2 text-primary">
-            <Download aria-hidden="true" className="size-4" />
             <ChevronDown
               aria-hidden="true"
               className="size-4 transition-transform group-open:rotate-180"
@@ -1574,7 +1768,7 @@ export function AdminFinancePanel({
               {logs.map((log) => (
                 <li
                   key={log.id}
-                  className="grid gap-1 rounded-lg border border-primary/10 bg-primary/5 px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:items-start"
+                  className="grid gap-1 rounded-lg border border-primary/10 bg-gradient-to-r from-primary/[0.04] to-white px-3 py-2 text-sm md:grid-cols-[180px_minmax(0,1fr)] md:items-start"
                 >
                   <span className="font-semibold text-primary">
                     {formatDateTime(log.createdAt)}
