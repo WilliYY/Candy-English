@@ -65,6 +65,7 @@ Rota:
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
 - Os cards de hoje, proximas aulas e aulas mensais foram compactados para funcionar como painel operacional de cobranca/agenda, com status visiveis e acoes sempre proximas do aluno.
 - Bordas dos cards da agenda usam contraste maior que o restante do AVA para facilitar leitura rapida em rotina de atendimento.
+- A tela da Agenda usa hierarquia operacional: fila de hoje, proximos 7 dias, cards de resumo, mapa mensal, formulario de agenda recorrente e grade do mes separados. As cores seguem significado fixo: azul para previsto, verde para confirmado, vermelho para falta e ambar para reposicao.
 
 ## Riscos ao alterar esta parte
 
