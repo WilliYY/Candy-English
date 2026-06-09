@@ -4,6 +4,7 @@ import { SignOutButton } from "@/components/ava/sign-out-button";
 import { UserAvatar } from "@/components/ava/user-avatar";
 import type { CandyXpSnapshot } from "@/lib/candy-xp";
 import type { CandyXpCurrentUserRanking } from "@/lib/candy-xp-ranking";
+import { cn } from "@/lib/utils";
 
 type UserSummaryPanelProps = {
   avatarPath?: string | null;
@@ -105,66 +106,84 @@ export function UserSummaryPanel({
               />
             </div>
 
-            <div className="relative z-10 mt-3 grid grid-cols-2 gap-2 text-[0.72rem] font-semibold text-muted-foreground">
-              <span className="rounded-lg border border-amber-500/15 bg-white/62 px-2.5 py-2">
-                <span className="block text-[0.62rem] uppercase tracking-[0.16em] text-primary/50">
-                  Total
+            <div
+              className={cn(
+                "relative z-10 mt-3 grid gap-3",
+                ranking &&
+                  "lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:items-stretch",
+              )}
+            >
+              <div
+                className={cn(
+                  "grid grid-cols-2 gap-2 text-[0.72rem] font-semibold text-muted-foreground",
+                  ranking && "lg:grid-cols-1",
+                )}
+              >
+                <span className="rounded-lg border border-amber-500/15 bg-white/62 px-2.5 py-2">
+                  <span className="block text-[0.62rem] uppercase tracking-[0.16em] text-primary/50">
+                    Total
+                  </span>
+                  {xpFormatter.format(xp.totalXp)} XP
                 </span>
-                {xpFormatter.format(xp.totalXp)} XP
-              </span>
-              <span className="rounded-lg border border-amber-500/15 bg-white/62 px-2.5 py-2 text-right">
-                <span className="block text-[0.62rem] uppercase tracking-[0.16em] text-primary/50">
-                  Proximo
+                <span
+                  className={cn(
+                    "rounded-lg border border-amber-500/15 bg-white/62 px-2.5 py-2 text-right",
+                    ranking && "lg:text-left",
+                  )}
+                >
+                  <span className="block text-[0.62rem] uppercase tracking-[0.16em] text-primary/50">
+                    Proximo
+                  </span>
+                  {xpFormatter.format(xpToNextLevel)} XP
                 </span>
-                {xpFormatter.format(xpToNextLevel)} XP
-              </span>
-            </div>
-
-            {ranking ? (
-              <div className="relative z-10 mt-3 rounded-xl border border-primary/12 bg-white/78 p-3 shadow-sm">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                      <Medal aria-hidden="true" className="size-4" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-[0.62rem] font-bold uppercase tracking-[0.16em] text-primary/55">
-                        {ranking.categoryTitle}
-                      </span>
-                      <strong className="block truncate text-sm leading-tight text-primary">
-                        {ranking.hasXp && ranking.position
-                          ? `#${ranking.position} no Ranking Candy`
-                          : "Entre no ranking"}
-                      </strong>
-                    </span>
-                  </span>
-                  {ranking.hasXp && ranking.position ? (
-                    <span className="w-fit rounded-full border border-primary/12 bg-primary/8 px-2.5 py-1 text-[0.68rem] font-bold text-primary">
-                      {ranking.totalInCategory} {ranking.categoryLabel}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                  {ranking.hasXp && ranking.position
-                    ? `Voce esta em #${ranking.position} entre os ${ranking.categoryLabel}.`
-                    : "Comece uma missao para entrar no ranking."}
-                </p>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-[0.68rem] font-semibold text-muted-foreground">
-                  <span className="rounded-lg border border-primary/10 bg-primary/[0.035] px-2.5 py-2">
-                    <span className="block text-[0.58rem] uppercase tracking-[0.12em] text-primary/45">
-                      XP total
-                    </span>
-                    {xpFormatter.format(ranking.totalXp)} XP
-                  </span>
-                  <span className="rounded-lg border border-primary/10 bg-primary/[0.035] px-2.5 py-2 text-right">
-                    <span className="block text-[0.58rem] uppercase tracking-[0.12em] text-primary/45">
-                      Falta
-                    </span>
-                    {xpFormatter.format(ranking.xpToNextLevel)} XP
-                  </span>
-                </div>
               </div>
-            ) : null}
+
+              {ranking ? (
+                <div className="rounded-xl border border-primary/12 bg-white/78 p-3 shadow-sm lg:h-full">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                        <Medal aria-hidden="true" className="size-4" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-[0.62rem] font-bold uppercase tracking-[0.16em] text-primary/55">
+                          {ranking.categoryTitle}
+                        </span>
+                        <strong className="block truncate text-sm leading-tight text-primary">
+                          {ranking.hasXp && ranking.position
+                            ? `#${ranking.position} no Ranking Candy`
+                            : "Entre no ranking"}
+                        </strong>
+                      </span>
+                    </span>
+                    {ranking.hasXp && ranking.position ? (
+                      <span className="w-fit rounded-full border border-primary/12 bg-primary/8 px-2.5 py-1 text-[0.68rem] font-bold text-primary">
+                        {ranking.totalInCategory} {ranking.categoryLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                    {ranking.hasXp && ranking.position
+                      ? `Voce esta em #${ranking.position} entre os ${ranking.categoryLabel}.`
+                      : "Comece uma missao para entrar no ranking."}
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-2 text-[0.68rem] font-semibold text-muted-foreground">
+                    <span className="rounded-lg border border-primary/10 bg-primary/[0.035] px-2.5 py-2">
+                      <span className="block text-[0.58rem] uppercase tracking-[0.12em] text-primary/45">
+                        XP total
+                      </span>
+                      {xpFormatter.format(ranking.totalXp)} XP
+                    </span>
+                    <span className="rounded-lg border border-primary/10 bg-primary/[0.035] px-2.5 py-2 text-right">
+                      <span className="block text-[0.58rem] uppercase tracking-[0.12em] text-primary/45">
+                        Falta
+                      </span>
+                      {xpFormatter.format(ranking.xpToNextLevel)} XP
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
