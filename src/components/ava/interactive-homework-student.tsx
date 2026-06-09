@@ -969,7 +969,7 @@ export function InteractiveHomeworkStudent({
                   <input
                     aria-label={field.label ?? `Campo ${index + 1}`}
                     autoCapitalize="characters"
-                    className="block size-full min-h-0 min-w-0 appearance-none rounded-[4px] border border-primary/35 bg-white/45 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.10),inset_0_0_0_1px_rgba(255,255,255,0.55)] outline-none transition placeholder:text-transparent focus:border-primary focus:bg-white/90 focus:ring-2 focus:ring-primary/25 disabled:bg-white/25 disabled:text-primary disabled:opacity-100"
+                    className="block size-full min-h-0 min-w-0 appearance-none rounded-[5px] border border-primary/28 bg-white/55 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.08),inset_0_0_0_1px_rgba(255,255,255,0.62)] outline-none transition placeholder:text-transparent focus:border-primary focus:bg-white/92 focus:ring-2 focus:ring-primary/25 disabled:bg-white/28 disabled:text-primary disabled:opacity-100"
                     disabled={isLocked}
                     inputMode="text"
                     maxLength={TINY_TEXT_MAX_LENGTH}

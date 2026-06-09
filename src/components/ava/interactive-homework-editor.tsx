@@ -218,13 +218,13 @@ const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
   },
   TINY_TEXT: {
     Icon: CaseUpper,
-    defaultHeight: 2,
-    defaultPixelSize: 24,
-    defaultWidth: 2,
+    defaultHeight: 2.4,
+    defaultPixelSize: 30,
+    defaultWidth: 2.4,
     label: "Letra/Num",
-    minHeight: 1,
-    minPixelSize: 16,
-    minWidth: 1,
+    minHeight: 1.2,
+    minPixelSize: 22,
+    minWidth: 1.2,
     placeholder: null,
     resizeMode: "square",
   },
@@ -1014,7 +1014,15 @@ function FieldAnswerPreview({
   if (field.type === "TINY_TEXT") {
     return (
       <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <InteractiveHomeworkTinyTextPreview selected={selected} value="A" />
+        <InteractiveHomeworkTinyTextPreview
+          className={
+            selected
+              ? "border-primary/55 bg-white/92 shadow-[0_4px_10px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.86)]"
+              : "border-primary/32 bg-white/68 shadow-[0_2px_6px_rgba(65,42,76,0.10)]"
+          }
+          selected={selected}
+          value="A"
+        />
       </span>
     );
   }
@@ -1092,7 +1100,7 @@ function getFieldPreviewLabel(field: EditableHomeworkField) {
 
 function getFieldSelectionBadge(field: EditableHomeworkField) {
   if (field.type === "TINY_TEXT") {
-    return "AB";
+    return "A1";
   }
 
   return getFieldPreviewLabel(field);
@@ -1109,14 +1117,14 @@ function getSelectionPanelHint({
 
   if (selectedField) {
     if (type === "TINY_TEXT") {
-      return "Caixinha para V/F, A/B/C ou numero curto. Mova e ajuste pela bolinha.";
+      return "Caixinha para V/F, A/B/C ou numero curto. Clique para posicionar, arraste para ampliar e ajuste pela bolinha.";
     }
 
     return "Mova no PDF, ajuste pela bolinha roxa ou use Delete para excluir.";
   }
 
   if (type === "TINY_TEXT") {
-    return "Clique no parenteses ou na lacuna para criar uma caixinha pequena.";
+    return "Clique no centro do parenteses ou da lacuna para criar uma caixinha alinhada.";
   }
 
   return "Desenhe a area no arquivo para criar o campo.";
@@ -1390,7 +1398,7 @@ function InteractiveHomeworkCanvasEditor({
                 selectedTool === "CHECKBOX"
                   ? "flex items-center justify-center bg-white/50"
                   : selectedTool === "TINY_TEXT"
-                    ? "flex items-center justify-center bg-white/70 shadow-[0_6px_16px_rgba(65,42,76,0.16)]"
+                    ? "flex items-center justify-center rounded-[6px] bg-white/55 shadow-[0_8px_18px_rgba(65,42,76,0.14),inset_0_0_0_1px_rgba(255,255,255,0.8)]"
                     : selectedTool === "DRAWING"
                       ? "bg-white/35"
                       : selectedTool === "LISTENING"
@@ -1409,7 +1417,11 @@ function InteractiveHomeworkCanvasEditor({
                 <InteractiveHomeworkMark className="text-primary/85" />
               ) : null}
               {selectedTool === "TINY_TEXT" ? (
-                <InteractiveHomeworkTinyTextPreview selected value="A" />
+                <InteractiveHomeworkTinyTextPreview
+                  className="border-primary/55 bg-white/92 shadow-[0_4px_10px_rgba(65,42,76,0.12)]"
+                  selected
+                  value="A"
+                />
               ) : null}
               {selectedTool === "TEXT" ? (
                 <FieldTextGuide
@@ -1456,7 +1468,7 @@ function InteractiveHomeworkCanvasEditor({
               isMarkField
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
                 : isTinyTextField
-                  ? "bg-white/55 shadow-[0_3px_9px_rgba(65,42,76,0.16)]"
+                  ? "rounded-[6px] bg-white/28 shadow-[0_4px_10px_rgba(65,42,76,0.12)]"
                   : isDrawingField
                     ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
                     : isListeningField
@@ -1464,7 +1476,7 @@ function InteractiveHomeworkCanvasEditor({
                       : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
                 ? isTinyTextField
-                  ? "border-primary bg-white/70 shadow-[0_8px_18px_rgba(65,42,76,0.22),inset_0_0_0_1px_rgba(255,255,255,0.82)] ring-2 ring-primary/20"
+                  ? "border-primary bg-white/48 shadow-[0_8px_18px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.72)] ring-2 ring-primary/16"
                   : "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
                 : "border-dashed border-primary/55 hover:border-primary",
             )}
@@ -1473,14 +1485,14 @@ function InteractiveHomeworkCanvasEditor({
               ...style,
               containerType: "size",
             }}
-            title={field.label || `Area ${index + 1}`}
+            aria-label={field.label || `Area ${index + 1}`}
           >
             {selected ? (
               <span
                 className={cn(
                   "pointer-events-none absolute z-20 rounded-[3px] border border-white/70 bg-primary font-bold uppercase leading-none text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)]",
                   isTinyTextField
-                    ? "-top-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] tracking-[0.08em]"
+                    ? "-top-4 left-1/2 -translate-x-1/2 rounded-full border-primary/20 bg-white/95 px-1.5 py-0.5 text-[8px] text-primary shadow-sm"
                     : "-top-7 left-0 px-2 py-1 text-[10px] tracking-[0.12em]",
                 )}
               >
@@ -1494,7 +1506,7 @@ function InteractiveHomeworkCanvasEditor({
                 className={cn(
                   "absolute cursor-nwse-resize rounded-full border-2 border-white bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)] ring-2 ring-primary/20 transition-transform duration-200 hover:scale-110",
                   isTinyTextField
-                    ? "-bottom-2 -right-2 size-4"
+                    ? "-bottom-2.5 -right-2.5 size-5"
                     : isSmallBoxField
                       ? "-bottom-1.5 -right-1.5 size-4"
                       : "-bottom-2.5 -right-2.5 size-5",
