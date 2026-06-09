@@ -952,38 +952,133 @@ export function StudentWorkspace({
           ) : null}
 
           {activeTask === "perfil" ? (
-            <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
-              <div className="flex flex-col gap-4">
-                <div className="rounded-2xl border border-primary/10 bg-secondary/50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Nivel definido pela teacher
-                  </p>
-                  <p className="mt-2 text-lg font-semibold">
-                    {studentProfile.level ?? "Ainda nao definido"}
-                  </p>
+            <div className="mx-auto grid w-full max-w-6xl gap-5">
+              <section className="overflow-hidden rounded-2xl border border-primary/10 bg-[linear-gradient(135deg,#fff_0%,#f9efff_54%,#fff4e7_100%)] shadow-xl shadow-primary/10">
+                <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)] lg:items-center">
+                  <div className="flex min-w-0 items-start gap-4">
+                    <span className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                      <UserRound aria-hidden="true" className="size-7" />
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+                        Meu perfil Candy
+                      </span>
+                      <h3 className="mt-1 text-2xl font-semibold leading-tight text-primary">
+                        {currentUser.name ?? "Aluno Candy"}
+                      </h3>
+                      <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                        Confira seus contatos, dados do aluno e foto. Esses
+                        dados ajudam a equipe Candy a acompanhar seu estudo com
+                        mais cuidado.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div className="rounded-xl border border-primary/10 bg-white/80 p-3 shadow-sm">
+                      <span className="block text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                        Campos
+                      </span>
+                      <strong className="mt-1 block text-2xl text-primary">
+                        {profileCompletion.completedCount}/
+                        {profileCompletion.totalCount}
+                      </strong>
+                    </div>
+                    <div className="rounded-xl border border-amber-200 bg-amber-50/90 p-3 shadow-sm">
+                      <span className="block text-xs font-bold uppercase tracking-[0.12em] text-amber-900">
+                        Perfil
+                      </span>
+                      <strong className="mt-1 block text-2xl text-amber-950">
+                        {profileCompletion.percent}%
+                      </strong>
+                    </div>
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50/90 p-3 shadow-sm">
+                      <span className="block text-xs font-bold uppercase tracking-[0.12em] text-emerald-900">
+                        XP ativo
+                      </span>
+                      <strong className="mt-1 block text-2xl text-emerald-950">
+                        +{xpFormatter.format(profileCompletion.xp)}
+                      </strong>
+                    </div>
+                  </div>
                 </div>
-                <ProfileCompletionCard completion={profileCompletion} />
-                <ProfileForm
-                  defaultValues={{
-                    address: currentUser.address ?? "",
-                    birthDate: formatDateInput(studentProfile.birthDate),
-                    gender: studentProfile.gender ?? "",
-                    guardianDocument: studentProfile.guardianDocument ?? "",
-                    motherName: studentProfile.motherName ?? "",
-                    motherPhone: studentProfile.motherPhone ?? "",
-                    name: currentUser.name ?? "",
-                    notes: studentProfile.notes ?? "",
-                    phone: currentUser.phone ?? "",
-                    studentPhone: studentProfile.studentPhone ?? "",
-                    studentPhoneAlt: studentProfile.studentPhoneAlt ?? "",
-                  }}
-                  showStudentFields
-                />
+              </section>
+
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+                <div className="flex flex-col gap-5">
+                  <ProfileCompletionCard completion={profileCompletion} />
+                  <ProfileForm
+                    defaultValues={{
+                      address: currentUser.address ?? "",
+                      birthDate: formatDateInput(studentProfile.birthDate),
+                      gender: studentProfile.gender ?? "",
+                      guardianDocument: studentProfile.guardianDocument ?? "",
+                      motherName: studentProfile.motherName ?? "",
+                      motherPhone: studentProfile.motherPhone ?? "",
+                      name: currentUser.name ?? "",
+                      notes: studentProfile.notes ?? "",
+                      phone: currentUser.phone ?? "",
+                      studentPhone: studentProfile.studentPhone ?? "",
+                      studentPhoneAlt: studentProfile.studentPhoneAlt ?? "",
+                    }}
+                    showStudentFields
+                  />
+                </div>
+
+                <aside className="grid content-start gap-4 xl:sticky xl:top-6">
+                  <AvatarUploadForm
+                    avatarPath={currentUser.avatarPath}
+                    userId={currentUser.id}
+                  />
+
+                  <div className="ava-profile-card rounded-2xl border p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                        <Target aria-hidden="true" className="size-5" />
+                      </span>
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+                          Nivel definido pela teacher
+                        </p>
+                        <h3 className="mt-1 text-lg font-semibold text-primary">
+                          {studentProfile.level ?? "Ainda nao definido"}
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                          O aluno pode atualizar dados pessoais; nivel e
+                          acompanhamento pedagogico ficam com a equipe Candy.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-2">
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/80 px-3 py-2 text-sm">
+                        <span className="inline-flex items-center gap-2 font-semibold text-primary">
+                          <CheckCircle2
+                            aria-hidden="true"
+                            className="size-4 text-emerald-600"
+                          />
+                          Backend
+                        </span>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          seu perfil
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/80 px-3 py-2 text-sm">
+                        <span className="inline-flex items-center gap-2 font-semibold text-primary">
+                          <Gift
+                            aria-hidden="true"
+                            className="size-4 text-amber-600"
+                          />
+                          Bonus maximo
+                        </span>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          300 XP
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </aside>
               </div>
-              <AvatarUploadForm
-                avatarPath={currentUser.avatarPath}
-                userId={currentUser.id}
-              />
             </div>
           ) : null}
 

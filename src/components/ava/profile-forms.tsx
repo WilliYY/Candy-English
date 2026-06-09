@@ -3,11 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Camera,
+  CheckCircle2,
   ContactRound,
   HeartHandshake,
   ImagePlus,
   LoaderCircle,
   Save,
+  ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -72,20 +75,26 @@ export function ProfileForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
-      <FieldGroup>
+      <FieldGroup className="gap-5">
         <div className="ava-profile-card rounded-2xl border p-5">
-          <div className="mb-5 flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <ContactRound aria-hidden="true" className="size-5" />
-            </span>
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
-                Perfil
-              </p>
-              <h3 className="mt-1 text-base font-semibold">
-                Dados principais
-              </h3>
+          <div className="mb-5 flex flex-col gap-3 border-b border-primary/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <ContactRound aria-hidden="true" className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+                  Perfil
+                </p>
+                <h3 className="mt-1 text-base font-semibold">
+                  Dados principais
+                </h3>
+              </div>
             </div>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+              <ContactRound aria-hidden="true" className="size-5" />
+              Login e contato
+            </span>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
@@ -134,18 +143,24 @@ export function ProfileForm({
 
         {showStudentFields ? (
           <div className="ava-profile-card rounded-2xl border p-5">
-            <div className="mb-5 flex items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-                <HeartHandshake aria-hidden="true" className="size-5" />
-              </span>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
-                  Student
-                </p>
-                <h3 className="mt-1 text-base font-semibold">
-                  Dados do aluno e responsavel
-                </h3>
+            <div className="mb-5 flex flex-col gap-3 border-b border-primary/10 pb-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                  <HeartHandshake aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+                    Student
+                  </p>
+                  <h3 className="mt-1 text-base font-semibold">
+                    Dados do aluno e responsavel
+                  </h3>
+                </div>
               </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
+                <ShieldCheck aria-hidden="true" className="size-4" />
+                Visivel para a equipe
+              </span>
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               <Field data-invalid={Boolean(form.formState.errors.studentPhone)}>
@@ -228,13 +243,13 @@ export function ProfileForm({
                   placeholder="CPF/RG do aluno ou responsavel"
                   {...form.register("guardianDocument")}
                 />
-                <FieldError
-                  errors={[form.formState.errors.guardianDocument]}
-                />
+                <FieldError errors={[form.formState.errors.guardianDocument]} />
               </Field>
 
               <Field data-invalid={Boolean(form.formState.errors.motherName)}>
-                <FieldLabel htmlFor="profile-mother-name">Nome da mae</FieldLabel>
+                <FieldLabel htmlFor="profile-mother-name">
+                  Nome da mae
+                </FieldLabel>
                 <Input
                   id="profile-mother-name"
                   autoComplete="name"
@@ -281,12 +296,16 @@ export function ProfileForm({
       </FieldGroup>
 
       {message ? (
-        <p className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground">
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
           {message}
         </p>
       ) : null}
 
-      <Button type="submit" disabled={isPending}>
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="h-11 justify-center shadow-lg shadow-primary/15"
+      >
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
         ) : (
@@ -303,7 +322,10 @@ type AvatarUploadFormProps = {
   userId?: string | null;
 };
 
-export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) {
+export function AvatarUploadForm({
+  avatarPath,
+  userId,
+}: AvatarUploadFormProps) {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -324,7 +346,7 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
 
   return (
     <form
-      className="ava-profile-card flex flex-col gap-5 rounded-2xl border p-5"
+      className="ava-profile-card flex flex-col gap-5 overflow-hidden rounded-2xl border p-5"
       onSubmit={async (event) => {
         event.preventDefault();
         setMessage(null);
@@ -361,35 +383,39 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
         }
       }}
     >
-      <div className="flex items-center gap-4">
-        <span className="relative shrink-0 rounded-full bg-gradient-to-br from-secondary via-white to-primary/10 p-1 shadow-sm ring-1 ring-primary/10">
-          {previewUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={previewUrl}
-              alt="Previa da nova foto"
-              className="size-24 rounded-full border border-white/80 bg-muted object-cover shadow-inner ring-1 ring-primary/15"
-            />
-          ) : (
-            <UserAvatar
-              avatarPath={avatarPath}
-              className="size-24 rounded-full bg-muted text-primary"
-              iconClassName="size-10"
-              userId={userId}
-            />
-          )}
-          <span className="absolute bottom-1 right-1 flex size-8 items-center justify-center rounded-full border border-white/80 bg-primary text-primary-foreground shadow-sm">
-            <ImagePlus aria-hidden="true" className="size-4" />
+      <div className="rounded-2xl border border-primary/10 bg-gradient-to-br from-white via-secondary/40 to-amber-50/70 p-4">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <span className="relative shrink-0 rounded-full bg-gradient-to-br from-secondary via-white to-primary/10 p-1 shadow-lg shadow-primary/15 ring-1 ring-primary/10">
+            {previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={previewUrl}
+                alt="Previa da nova foto"
+                className="size-28 rounded-full border border-white/80 bg-muted object-cover shadow-inner ring-1 ring-primary/15"
+              />
+            ) : (
+              <UserAvatar
+                avatarPath={avatarPath}
+                className="size-28 rounded-full bg-muted text-primary"
+                iconClassName="size-11"
+                userId={userId}
+              />
+            )}
+            <span className="absolute bottom-1 right-1 flex size-9 items-center justify-center rounded-full border border-white/80 bg-primary text-primary-foreground shadow-sm">
+              <ImagePlus aria-hidden="true" className="size-4" />
+            </span>
           </span>
-        </span>
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
-            Foto
-          </p>
-          <h3 className="mt-1 font-semibold">Foto do perfil</h3>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Use uma foto quadrada ou centralizada para aparecer bem no AVA.
-          </p>
+          <div className="min-w-0">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
+              Foto
+            </p>
+            <h3 className="mt-1 text-lg font-semibold text-primary">
+              Foto do perfil
+            </h3>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Use uma foto quadrada ou centralizada para aparecer bem no AVA.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -407,16 +433,37 @@ export function AvatarUploadForm({ avatarPath, userId }: AvatarUploadFormProps) 
             setFile(event.target.files?.[0] ?? null);
           }}
         />
-        <FieldDescription>PNG, JPG ou WebP ate 2 MB.</FieldDescription>
+        <FieldDescription>
+          PNG, JPG ou WebP ate 2 MB. A imagem fica protegida no AVA.
+        </FieldDescription>
       </Field>
 
+      <div className="grid gap-2 text-xs font-semibold text-muted-foreground">
+        <span className="inline-flex items-center gap-2 rounded-xl border border-primary/10 bg-white/75 px-3 py-2">
+          <CheckCircle2
+            aria-hidden="true"
+            className="size-4 text-emerald-600"
+          />
+          Foto atualiza cards, sidebar e conversas do AVA.
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-xl border border-primary/10 bg-white/75 px-3 py-2">
+          <Sparkles aria-hidden="true" className="size-4 text-amber-600" />
+          Foto preenchida tambem ajuda no bonus de perfil.
+        </span>
+      </div>
+
       {message ? (
-        <p className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground">
+        <p className="rounded-xl border bg-muted px-4 py-3 text-sm text-muted-foreground">
           {message}
         </p>
       ) : null}
 
-      <Button type="submit" variant="secondary" disabled={isPending || !file}>
+      <Button
+        type="submit"
+        variant="secondary"
+        disabled={isPending || !file}
+        className="h-11 justify-center"
+      >
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
         ) : (
