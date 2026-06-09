@@ -209,6 +209,25 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
                 status: true,
               },
             },
+            studentAssignments: {
+              orderBy: {
+                createdAt: "asc",
+              },
+              select: {
+                createdAt: true,
+                studentProfile: {
+                  select: {
+                    user: {
+                      select: {
+                        email: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                studentProfileId: true,
+              },
+            },
             title: true,
           },
         },
@@ -226,8 +245,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         scheduledAt: true,
         studentProfile: {
           select: {
+            id: true,
             user: {
               select: {
+                email: true,
                 name: true,
               },
             },

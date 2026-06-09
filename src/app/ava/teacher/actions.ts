@@ -17,6 +17,7 @@ import {
   deleteInteractiveHomeworkSchema,
   homeworkSubmissionIdSchema,
   saveInteractiveHomeworkFieldsSchema,
+  shareInteractiveHomeworkSchema,
   reviewSubmissionSchema,
   type CreateInteractiveHomeworkInput,
   type CreateInteractiveLessonInput,
@@ -26,6 +27,7 @@ import {
   type ReviewSubmissionInput,
   type SaveInteractiveHomeworkFieldsInput,
   type SaveInteractiveHomeworkFieldsOutput,
+  type ShareInteractiveHomeworkInput,
 } from "@/lib/validations/learning";
 
 type ActionResult<TInput extends Record<string, unknown>> = {
@@ -967,6 +969,174 @@ export async function deleteInteractiveHomework(
     message: isInteractiveLesson
       ? "Aula interativa excluida com sucesso."
       : "Homework excluida com sucesso.",
+  };
+}
+
+export async function shareInteractiveHomeworkWithStudent(
+  input: ShareInteractiveHomeworkInput,
+): Promise<ActionResult<ShareInteractiveHomeworkInput>> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para compartilhar homeworks.",
+    };
+  }
+
+  const parsed = shareInteractiveHomeworkSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<ShareInteractiveHomeworkInput>(parsed.error.issues),
+      ok: false,
+      message: "Selecione uma homework e um aluno.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const homework = await prisma.homework.findUnique({
+    where: { id: parsed.data.homeworkId },
+    select: {
+      fieldDetectionSource: true,
+      id: true,
+      kind: true,
+      lesson: {
+        select: {
+          studentProfileId: true,
+        },
+      },
+      status: true,
+      studentAssignments: {
+        where: {
+          studentProfileId: parsed.data.studentProfileId,
+        },
+        select: {
+          id: true,
+        },
+        take: 1,
+      },
+      teacherProfileId: true,
+      title: true,
+    },
+  });
+
+  if (!homework || homework.kind !== "INTERACTIVE") {
+    return {
+      ok: false,
+      message: "Homework interativa nao encontrada.",
+    };
+  }
+
+  if (homework.fieldDetectionSource === "lesson-manual") {
+    return {
+      ok: false,
+      message:
+        "Compartilhamento extra fica disponivel apenas em homeworks, nao em aulas interativas.",
+    };
+  }
+
+  if (!actor.isAdmin && homework.teacherProfileId !== actor.teacherProfileId) {
+    return {
+      ok: false,
+      message: "Voce so pode compartilhar homeworks das suas aulas.",
+    };
+  }
+
+  if (homework.lesson.studentProfileId === parsed.data.studentProfileId) {
+    return {
+      ok: false,
+      message: "Esse aluno ja e o aluno principal deste homework.",
+    };
+  }
+
+  if (homework.studentAssignments.length > 0) {
+    return {
+      ok: true,
+      message: "Esse aluno ja tem acesso a este homework.",
+    };
+  }
+
+  const student = await prisma.studentProfile.findUnique({
+    where: { id: parsed.data.studentProfileId },
+    select: {
+      id: true,
+      user: {
+        select: {
+          isActive: true,
+          name: true,
+          role: true,
+        },
+      },
+    },
+  });
+
+  if (!student || student.user.role !== "STUDENT" || !student.user.isActive) {
+    return {
+      errors: { studentProfileId: "Aluno nao encontrado ou inativo." },
+      ok: false,
+      message: "Aluno nao encontrado ou inativo.",
+    };
+  }
+
+  if (!actor.isAdmin) {
+    const teacherProfileId = actor.teacherProfileId;
+
+    if (!teacherProfileId) {
+      return {
+        ok: false,
+        message: "Perfil de teacher nao encontrado.",
+      };
+    }
+
+    const assignment = await prisma.studentTeacherAssignment.findUnique({
+      where: {
+        teacherProfileId_studentProfileId: {
+          studentProfileId: student.id,
+          teacherProfileId,
+        },
+      },
+      select: { id: true },
+    });
+
+    if (!assignment) {
+      return {
+        errors: {
+          studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
+        },
+        ok: false,
+        message: "Aluno nao esta vinculado a sua area teacher.",
+      };
+    }
+  }
+
+  const assignedByTeacherProfileId = actor.isAdmin
+    ? homework.teacherProfileId
+    : actor.teacherProfileId;
+
+  await prisma.homeworkStudentAssignment.upsert({
+    where: {
+      homeworkId_studentProfileId: {
+        homeworkId: homework.id,
+        studentProfileId: student.id,
+      },
+    },
+    create: {
+      assignedByTeacherProfileId,
+      homeworkId: homework.id,
+      studentProfileId: student.id,
+    },
+    update: {
+      assignedByTeacherProfileId,
+    },
+  });
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message: `${student.user.name} agora tambem ve este homework.`,
   };
 }
 

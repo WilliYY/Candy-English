@@ -765,7 +765,10 @@ export function CreateHomeworkForm({
         students={students}
         teachers={teachers}
       />
-      <InteractiveHomeworkEditor homeworks={interactiveHomeworks} />
+      <InteractiveHomeworkEditor
+        homeworks={interactiveHomeworks}
+        studentOptions={students}
+      />
     </div>
   );
 }

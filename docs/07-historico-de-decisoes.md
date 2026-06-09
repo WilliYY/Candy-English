@@ -506,6 +506,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/live-class.ts`, `src/app/ava/actions.ts`, `src/components/ava/live-class-maintenance-panel.tsx`, workspaces Teacher/Student, README e docs oficiais.
 - Riscos/cuidados: as actions ainda precisam validar sessao e role antes de retornar manutencao; reativar exige novo build/deploy e validacao da rota de video, headers e dominio Jitsi.
 
+### 2026-06-09 - Homework compartilhavel por aluno extra
+
+- Decisao: adicionar `HomeworkStudentAssignment` para permitir que uma mesma homework interativa real seja liberada para alunos extras sem duplicar PDF, campos nem aula interna.
+- Motivo: materiais iguais podem ser usados por mais de um aluno, reduzindo retrabalho da teacher e peso de storage, mas mantendo rascunho, entrega e correcao separados por `HomeworkSubmission`.
+- Impacto: `prisma/schema.prisma`, migration `20260609113000_homework_student_assignments`, actions teacher/student, rotas protegidas de asset/audio, editor de homework e docs oficiais.
+- Riscos/cuidados: Teacher so compartilha com aluno vinculado, Admin com aluno ativo; `lesson-manual` segue fora do compartilhamento para nao misturar aula interativa com homework.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

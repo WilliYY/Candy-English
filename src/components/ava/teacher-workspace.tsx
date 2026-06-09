@@ -114,6 +114,16 @@ type TeacherLesson = {
       id: string;
       status: string;
     }[];
+    studentAssignments: {
+      createdAt: Date;
+      studentProfile: {
+        user: {
+          email: string;
+          name: string;
+        };
+      };
+      studentProfileId: string;
+    }[];
     title: string;
   }[];
   id: string;
@@ -124,7 +134,9 @@ type TeacherLesson = {
   }[];
   scheduledAt: Date | null;
   studentProfile: {
+    id: string;
     user: {
+      email: string;
       name: string;
     };
   } | null;
@@ -362,6 +374,14 @@ export function TeacherWorkspace({
         fields: homework.interactiveFields,
         id: homework.id,
         lessonTitle: lesson.title,
+        primaryStudentEmail: lesson.studentProfile?.user.email ?? null,
+        primaryStudentId: lesson.studentProfile?.id ?? null,
+        sharedStudents: homework.studentAssignments.map((assignment) => ({
+          assignedAt: assignment.createdAt.toISOString(),
+          email: assignment.studentProfile.user.email,
+          id: assignment.studentProfileId,
+          name: assignment.studentProfile.user.name,
+        })),
         source:
           homework.fieldDetectionSource === "lesson-manual"
             ? ("LESSON" as const)

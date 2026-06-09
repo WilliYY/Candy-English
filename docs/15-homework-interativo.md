@@ -49,6 +49,7 @@ Rotas:
 Tabelas e enums:
 
 - `Homework`
+- `HomeworkStudentAssignment`
 - `HomeworkInteractiveField`
 - `HomeworkSubmission`
 - `HomeworkKind`
@@ -62,6 +63,8 @@ Tabelas e enums:
 - Para o aluno, `fieldDetectionSource=lesson-manual` aparece dentro de `Aulas e Materiais`; a aba `Responder homework` mostra apenas homeworks reais.
 - Em `Aulas e Materiais`, cada aula deve aparecer recolhida por padrao, em estilo de lista operacional com resumo superior, contadores, chips de teacher/data/material/vocabulario e selo de XP ganho/possivel pela atividade de aula; ao abrir, materiais, vocabulario e atividade interativa aparecem em blocos separados, e a atividade interativa fica como um card maior e centralizado, com estado `Concluido`/`Nao concluido` marcado por bolinha verde/vermelha.
 - A criacao de homework seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para manter o vinculo de permissao do homework.
+- Uma homework interativa criada em `Criar/Ver Homework` pode ser compartilhada com alunos extras pelo card do editor usando `Adicionar aluno`, sem duplicar PDF, campos ou aula interna. O aluno principal e os alunos extras veem o mesmo material, mas cada aluno tem sua propria `HomeworkSubmission`, rascunho, entrega e correcao.
+- Teacher so pode adicionar alunos vinculados a ela; Admin pode adicionar alunos ativos. O compartilhamento extra nao se aplica a atividades de `Criar/Ver Aulas` (`fieldDetectionSource=lesson-manual`).
 - Na criacao de aula interativa, o sistema cria uma aula real com titulo/resumo/data e vincula uma atividade `Homework.kind=INTERACTIVE` a ela.
 - Homework interativo precisa continuar ligado a uma aula com aluno definido, mesmo quando essa aula for criada automaticamente.
 - O arquivo fica em `storage/homework-assets` ou no volume Docker equivalente, nunca no Git.
@@ -111,6 +114,7 @@ Tabelas e enums:
 - Metadados do arquivo ficam no proprio `Homework` para evitar tabela extra nesta fase.
 - Campos interativos ficam em `HomeworkInteractiveField`, com cascade quando a homework for apagada futuramente.
 - A exclusao de homework interativa usa server action com validacao de role/dono e tenta remover o arquivo fisico de `storage/homework-assets` apos apagar os registros.
+- `HomeworkStudentAssignment` guarda alunos extras que podem visualizar e responder a mesma homework interativa, mantendo o arquivo e os campos em um unico `Homework`.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
 - A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
 - A revisao do arquivo entregue reutiliza a mesma renderizacao fiel e mostra os valores da submissao sobre os campos percentuais salvos.

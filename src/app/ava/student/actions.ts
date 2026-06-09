@@ -95,6 +95,15 @@ async function getInteractiveHomeworkForStudent(
         },
       },
       status: true,
+      studentAssignments: {
+        where: {
+          studentProfileId,
+        },
+        select: {
+          studentProfileId: true,
+        },
+        take: 1,
+      },
       submissions: {
         where: {
           studentProfileId,
@@ -115,6 +124,27 @@ function interactiveEntityLabel(homework: {
   return homework.fieldDetectionSource === "lesson-manual"
     ? "aula"
     : "homework";
+}
+
+function canStudentAccessHomework(
+  homework: {
+    lesson: {
+      studentProfileId: string | null;
+    };
+    studentAssignments?: {
+      studentProfileId: string;
+    }[];
+  },
+  studentProfileId: string,
+) {
+  return (
+    homework.lesson.studentProfileId === studentProfileId ||
+    Boolean(
+      homework.studentAssignments?.some(
+        (assignment) => assignment.studentProfileId === studentProfileId,
+      ),
+    )
+  );
 }
 
 function isInteractiveLessonEntity(homework: {
@@ -241,6 +271,15 @@ export async function submitHomework(
         take: 1,
       },
       status: true,
+      studentAssignments: {
+        where: {
+          studentProfileId: studentProfile.id,
+        },
+        select: {
+          studentProfileId: true,
+        },
+        take: 1,
+      },
       submissions: {
         where: {
           studentProfileId: studentProfile.id,
@@ -260,7 +299,7 @@ export async function submitHomework(
     };
   }
 
-  if (homework.lesson.studentProfileId !== studentProfile.id) {
+  if (!canStudentAccessHomework(homework, studentProfile.id)) {
     return {
       ok: false,
       message: "Esta homework nao esta vinculada ao seu perfil.",
@@ -363,7 +402,7 @@ export async function saveInteractiveHomeworkDraft(
   const entityLabel = interactiveEntityLabel(homework);
   const isLessonEntity = isInteractiveLessonEntity(homework);
 
-  if (homework.lesson.studentProfileId !== studentProfile.id) {
+  if (!canStudentAccessHomework(homework, studentProfile.id)) {
     return {
       ok: false,
       message: `Esta ${entityLabel} nao esta vinculada ao seu perfil.`,
@@ -459,7 +498,7 @@ export async function submitInteractiveHomework(
   const entityLabel = interactiveEntityLabel(homework);
   const isLessonEntity = isInteractiveLessonEntity(homework);
 
-  if (homework.lesson.studentProfileId !== studentProfile.id) {
+  if (!canStudentAccessHomework(homework, studentProfile.id)) {
     return {
       ok: false,
       message: `Esta ${entityLabel} nao esta vinculada ao seu perfil.`,
@@ -592,7 +631,7 @@ export async function reopenInteractiveHomeworkDraft(input: {
     !homework ||
     homework.status !== "PUBLISHED" ||
     homework.kind !== "INTERACTIVE" ||
-    homework.lesson.studentProfileId !== studentProfile.id ||
+    !canStudentAccessHomework(homework, studentProfile.id) ||
     existingSubmission?.status !== "SUBMITTED"
   ) {
     return {

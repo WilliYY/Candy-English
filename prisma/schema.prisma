@@ -272,6 +272,7 @@ model StudentProfile {
   chatThreads        ChatThread[]
   teacherAssignments StudentTeacherAssignment[]  @relation("StudentAssignments")
   lessons            Lesson[]
+  homeworkAssignments HomeworkStudentAssignment[]
   submissions        HomeworkSubmission[]
   candyXpAssignments CandyXpActivityAssignment[]
   candyXpSubmissions CandyXpActivitySubmission[]
@@ -318,6 +319,7 @@ model TeacherProfile {
   chatThreads         ChatThread[]
   lessons             Lesson[]
   homeworks           Homework[]
+  sharedHomeworks      HomeworkStudentAssignment[]
   reviewedSubmissions HomeworkSubmission[]
   liveSessions        LiveSession[]
 }
@@ -401,6 +403,7 @@ model Homework {
   assetPageCount       Int                        @default(1)
   fieldDetectionSource String?
   interactiveFields    HomeworkInteractiveField[]
+  studentAssignments   HomeworkStudentAssignment[]
   status               HomeworkStatus             @default(PUBLISHED)
   questions            HomeworkQuestion[]
   submissions          HomeworkSubmission[]
@@ -411,6 +414,21 @@ model Homework {
   @@index([teacherProfileId])
   @@index([kind])
   @@index([status])
+}
+
+model HomeworkStudentAssignment {
+  id                         String         @id @default(cuid())
+  homeworkId                 String
+  homework                   Homework       @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  studentProfileId           String
+  studentProfile             StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  assignedByTeacherProfileId String?
+  assignedByTeacherProfile   TeacherProfile? @relation(fields: [assignedByTeacherProfileId], references: [id], onDelete: SetNull)
+  createdAt                  DateTime       @default(now())
+
+  @@unique([homeworkId, studentProfileId])
+  @@index([studentProfileId])
+  @@index([assignedByTeacherProfileId])
 }
 
 model HomeworkInteractiveField {

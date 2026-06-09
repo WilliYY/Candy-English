@@ -14,7 +14,9 @@ import {
   Save,
   Trash2,
   Type,
+  UserPlus,
   UserRound,
+  UsersRound,
   Volume2,
   Wand2,
   type LucideIcon,
@@ -28,12 +30,14 @@ import {
   useState,
   useTransition,
   type Dispatch,
+  type FormEvent,
   type PointerEvent as ReactPointerEvent,
   type SetStateAction,
 } from "react";
 import {
   deleteInteractiveHomework,
   saveInteractiveHomeworkFields,
+  shareInteractiveHomeworkWithStudent,
 } from "@/app/ava/teacher/actions";
 import { saveCandyXpActivityInteractiveFields } from "@/app/ava/candy-xp/actions";
 import {
@@ -48,6 +52,7 @@ import {
   InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   LISTENING_SENTENCE_MAX_LENGTH,
@@ -81,9 +86,22 @@ export type InteractiveHomeworkEditorRow = {
   fields: EditableHomeworkField[];
   id: string;
   lessonTitle: string;
+  primaryStudentEmail?: string | null;
+  primaryStudentId?: string | null;
+  sharedStudents?: {
+    assignedAt: string;
+    email: string;
+    id: string;
+    name: string;
+  }[];
   source?: "CANDY_XP" | "HOMEWORK" | "LESSON";
   studentName: string | null;
   title: string;
+};
+
+type HomeworkShareStudentOption = {
+  id: string;
+  label: string;
 };
 
 type FieldTool = EditableHomeworkField["type"];
@@ -1535,8 +1553,10 @@ function InteractiveHomeworkCanvasEditor({
 
 function InteractiveHomeworkEditorItem({
   homework,
+  studentOptions = [],
 }: {
   homework: InteractiveHomeworkEditorRow;
+  studentOptions?: HomeworkShareStudentOption[];
 }) {
   const router = useRouter();
   const initialFieldsSignature = useMemo(
@@ -1544,8 +1564,11 @@ function InteractiveHomeworkEditorItem({
     [homework.fields],
   );
   const [message, setMessage] = useState<string | null>(null);
+  const [shareMessage, setShareMessage] = useState<string | null>(null);
+  const [shareStudentId, setShareStudentId] = useState("");
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
+  const [isSharing, startShareTransition] = useTransition();
   const [fields, setFields] = useState<EditableHomeworkField[]>(
     homework.fields,
   );
@@ -1587,11 +1610,26 @@ function InteractiveHomeworkEditorItem({
   const hasUnsavedChanges = currentFieldsSignature !== savedFieldsSignature;
   const isCandyXpActivity = homework.source === "CANDY_XP";
   const isInteractiveLesson = homework.source === "LESSON";
+  const isShareableHomework = homework.source === "HOMEWORK";
+  const sharedStudents = useMemo(
+    () => homework.sharedStudents ?? [],
+    [homework.sharedStudents],
+  );
   const entityLabel = isCandyXpActivity
     ? "atividade Candy XP"
     : isInteractiveLesson
       ? "aula interativa"
       : "homework";
+  const shareableStudentOptions = useMemo(() => {
+    const blockedStudentIds = new Set([
+      ...(homework.primaryStudentId ? [homework.primaryStudentId] : []),
+      ...sharedStudents.map((student) => student.id),
+    ]);
+
+    return studentOptions.filter(
+      (student) => !blockedStudentIds.has(student.id),
+    );
+  }, [homework.primaryStudentId, sharedStudents, studentOptions]);
   const isPersisting = isSaving || saveStatus === "saving";
   const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
   const availableFieldToolOptions = isCandyXpActivity
@@ -2227,6 +2265,30 @@ function InteractiveHomeworkEditorItem({
     persistFields("manual");
   }
 
+  function shareHomework(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setShareMessage(null);
+
+    if (!shareStudentId) {
+      setShareMessage("Selecione um aluno para adicionar.");
+      return;
+    }
+
+    startShareTransition(async () => {
+      const result = await shareInteractiveHomeworkWithStudent({
+        homeworkId: homework.id,
+        studentProfileId: shareStudentId,
+      });
+
+      setShareMessage(result.message);
+
+      if (result.ok) {
+        setShareStudentId("");
+        router.refresh();
+      }
+    });
+  }
+
   function deleteHomework() {
     setMessage(null);
 
@@ -2349,6 +2411,16 @@ function InteractiveHomeworkEditorItem({
                   {homework.studentName ?? "Aluno geral"}
                 </span>
               </span>
+              {isShareableHomework ? (
+                <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[0.72rem] font-semibold text-emerald-800">
+                  <UsersRound aria-hidden="true" className="size-3.5" />
+                  <span className="truncate">
+                    {sharedStudents.length > 0
+                      ? `${sharedStudents.length + 1} alunos com acesso`
+                      : "1 aluno com acesso"}
+                  </span>
+                </span>
+              ) : null}
             </span>
           </div>
 
@@ -2446,6 +2518,105 @@ function InteractiveHomeworkEditorItem({
       </summary>
 
       <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
+        {isShareableHomework ? (
+          <section className="grid gap-3 rounded-lg border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-sky-50/60 p-3 shadow-sm lg:grid-cols-[minmax(180px,0.85fr)_minmax(220px,1fr)_minmax(260px,0.95fr)] lg:items-stretch">
+            <div className="rounded-lg border border-emerald-200 bg-white/86 p-3 shadow-sm">
+              <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-emerald-700">
+                <UserRound aria-hidden="true" className="size-3.5" />
+                Aluno principal
+              </span>
+              <strong className="mt-2 block truncate text-sm text-primary">
+                {homework.studentName ?? "Aluno nao definido"}
+              </strong>
+              {homework.primaryStudentEmail ? (
+                <span className="mt-1 block truncate text-xs text-muted-foreground">
+                  {homework.primaryStudentEmail}
+                </span>
+              ) : null}
+            </div>
+
+            <div className="rounded-lg border border-sky-200 bg-white/86 p-3 shadow-sm">
+              <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-sky-700">
+                <UsersRound aria-hidden="true" className="size-3.5" />
+                Tambem veem
+              </span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sharedStudents.length > 0 ? (
+                  sharedStudents.map((student) => (
+                    <span
+                      className="inline-flex max-w-full items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-900"
+                      key={student.id}
+                      title={student.email}
+                    >
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-white text-[0.65rem] font-bold text-sky-700 shadow-sm">
+                        {getStudentInitials(student.name)}
+                      </span>
+                      <span className="min-w-0 truncate">{student.name}</span>
+                    </span>
+                  ))
+                ) : (
+                  <span className="rounded-md border border-dashed border-sky-200 bg-sky-50/55 px-3 py-2 text-xs font-medium text-sky-800">
+                    Nenhum aluno extra ainda.
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <form
+              className="grid gap-2 rounded-lg border border-primary/10 bg-white/88 p-3 shadow-sm"
+              onSubmit={shareHomework}
+            >
+              <label
+                className="grid gap-1 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/70"
+                htmlFor={`share-homework-${homework.id}`}
+              >
+                Adicionar aluno
+                <NativeSelect
+                  disabled={isSharing || shareableStudentOptions.length === 0}
+                  id={`share-homework-${homework.id}`}
+                  onChange={(event) => setShareStudentId(event.target.value)}
+                  value={shareStudentId}
+                >
+                  <option value="">
+                    {shareableStudentOptions.length > 0
+                      ? "Escolha quem tambem recebe"
+                      : "Todos disponiveis ja tem acesso"}
+                  </option>
+                  {shareableStudentOptions.map((student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </label>
+              <Button
+                disabled={
+                  isSharing ||
+                  shareableStudentOptions.length === 0 ||
+                  !shareStudentId
+                }
+                size="sm"
+                type="submit"
+              >
+                {isSharing ? (
+                  <LoaderCircle
+                    className="animate-spin"
+                    data-icon="inline-start"
+                  />
+                ) : (
+                  <UserPlus data-icon="inline-start" />
+                )}
+                {isSharing ? "Adicionando..." : "Adicionar aluno"}
+              </Button>
+              {shareMessage ? (
+                <p className="rounded-md border border-primary/10 bg-primary/[0.035] px-3 py-2 text-xs font-medium text-primary/75">
+                  {shareMessage}
+                </p>
+              ) : null}
+            </form>
+          </section>
+        ) : null}
+
         <div className="flex flex-col gap-3 rounded-lg border border-primary/15 bg-muted/10 p-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2 text-sm">
@@ -2720,9 +2891,11 @@ function InteractiveHomeworkEditorItem({
 export function InteractiveHomeworkEditor({
   heading = "Homeworks interativas",
   homeworks,
+  studentOptions = [],
 }: {
   heading?: string;
   homeworks: InteractiveHomeworkEditorRow[];
+  studentOptions?: HomeworkShareStudentOption[];
 }) {
   if (homeworks.length === 0) {
     return null;
@@ -2841,6 +3014,7 @@ export function InteractiveHomeworkEditor({
           <InteractiveHomeworkEditorItem
             key={homework.id}
             homework={homework}
+            studentOptions={studentOptions}
           />
         ))}
       </div>

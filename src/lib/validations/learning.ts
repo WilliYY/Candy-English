@@ -137,6 +137,11 @@ export const deleteInteractiveHomeworkSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
 });
 
+export const shareInteractiveHomeworkSchema = z.object({
+  homeworkId: z.string().min(1, "Homework invalida."),
+  studentProfileId: z.string().min(1, "Selecione um aluno."),
+});
+
 export const detectListeningTextSchema = z.object({
   height: z.coerce.number().min(1, "Altura minima 1%.").max(100),
   homeworkId: z.string().min(1, "Homework invalida."),
@@ -209,6 +214,9 @@ export type SaveInteractiveHomeworkFieldsOutput = z.output<
 >;
 export type DeleteInteractiveHomeworkInput = z.input<
   typeof deleteInteractiveHomeworkSchema
+>;
+export type ShareInteractiveHomeworkInput = z.input<
+  typeof shareInteractiveHomeworkSchema
 >;
 export type DetectListeningTextInput = z.input<
   typeof detectListeningTextSchema
