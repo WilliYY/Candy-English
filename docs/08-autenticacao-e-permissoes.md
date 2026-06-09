@@ -94,7 +94,7 @@ Rotas protegidas:
 - Arquivos de homework interativo exigem `ADMIN`, `TEACHER` dona da aula ou `STUDENT` dono da homework.
 - Contratos PDF podem ser embutidos apenas em paginas do proprio AVA (`SAMEORIGIN`); a rota continua exigindo sessao e permissao por aluno.
 - Candy XP e gravado apenas no servidor a partir de dados ja autorizados para a role atual; student nao pode gravar XP para outro usuario e teacher nao pode pontuar aluno fora do vinculo.
-- Apenas `ADMIN` cria, edita, publica, arquiva e corrige atividades Candy XP.
+- Apenas `ADMIN` cria, edita, publica, arquiva, exclui e corrige atividades Candy XP.
 - `STUDENT` salva/envia apenas a propria submissao Candy XP e apenas em atividade publicada/liberada para seu perfil.
 - Arquivos Candy XP exigem sessao; `ADMIN` acessa qualquer atividade e `STUDENT` apenas atividade publicada/liberada para ele.
 - `TEACHER` nao acessa arquivos nem respostas Candy XP nesta fase.
@@ -135,7 +135,7 @@ Rotas protegidas:
 - O botao `Sair` do AVA usa logout client-side do Auth.js com clique unico e redirecionamento final para `/ava/login`, evitando que a tela protegida tente renderizar depois que a sessao foi encerrada.
 - Actions do cofre admin chamam `auth()`, validam role `ADMIN`, validam payload com Zod e bloqueiam alteracao/exclusao direta de valores vindos do `.env`.
 - O ledger Candy XP usa `CandyXpEvent.userId + sourceKey` como defesa anti-replay/anti-duplicacao, alem das validacoes de role nas actions e paginas que sincronizam XP.
-- As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage.
+- As actions de Candy XP validam payload com Zod, checam role/dono da submissao e usam rota protegida para asset em vez de expor caminho do storage. A exclusao de atividade tambem exige `ADMIN`, remove dependentes por cascade e preserva eventos historicos de XP.
 - O `RootLayout` pode chamar `auth()` para passar somente `session.user.name` ao widget da Catty, mantendo a deteccao de login no servidor e sem depender de descoberta client-side.
 - A rota da Catty chama `auth()` no servidor antes de processar a mensagem; o callback JWT/session ja invalida usuario inativo, mudanca de role e `sessionVersion` antiga.
 - A rota da Catty usa `CattyConversation`/`CattyMessage` somente depois de validar a sessao; o banco pode reter ate 50.000 mensagens por usuario/contexto, a UI carrega ate 120 recentes e somente 8 mensagens entram no contexto da IA.

@@ -62,7 +62,7 @@ Rotas das atividades:
 - Streak usa dias de atividade com XP e e calculado por data em `America/Sao_Paulo`.
 - Badges sao concedidos automaticamente por criterios simples: nivel, streak ou contagem de eventos.
 - Missoes futuras devem usar `CandyMission` + `CandyMissionAttempt` e gravar XP via server action/rota protegida.
-- Atividades Candy XP sao criadas e corrigidas apenas por `ADMIN`.
+- Atividades Candy XP sao criadas, editadas, excluidas e corrigidas apenas por `ADMIN`.
 - Student acessa apenas atividades publicadas e liberadas para o proprio perfil; atividade publicada sem assignment fica liberada para todos os students, e o formulario Admin cria novas atividades nesse modo por padrao.
 - Atividades novas podem ser criadas apenas com PDF/imagem, sem perguntas manuais separadas, e concluem pelo envio do aluno.
 - Respostas objetivas de atividades antigas podem ser corrigidas automaticamente; respostas escritas sempre ficam pendentes para revisao manual.
@@ -115,6 +115,7 @@ Admin:
 - O evento `Perfil preparado` do student e tratado como bonus de estado atual: ele pode atualizar XP/metadados conforme a porcentagem dos dados importantes muda.
 - Atividades Candy XP usam models proprios para historia/PDF/envio e ainda preservam perguntas antigas quando existirem, mas a premiacao continua centralizada no ledger `CandyXpEvent`.
 - A criacao nova nao exige perguntas separadas; a primeira versao permite editar dados principais da atividade e preserva perguntas antigas apenas por compatibilidade.
+- A exclusao de atividade Candy XP remove arquivo, perguntas, liberacoes, progresso e respostas operacionais, mas nao remove `CandyXpEvent`; XP ja conquistado continua como historico do aluno.
 
 ## Riscos ao alterar esta parte
 

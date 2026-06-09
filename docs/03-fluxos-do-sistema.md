@@ -156,12 +156,13 @@ Helpers:
 2. Admin cadastra titulo, descricao, nivel, categoria, XP, status, liberacao para todos ou um aluno especifico e envia PDF/imagem exportado do Canva.
 3. Quando o arquivo e PDF, o servidor tenta otimizar com Ghostscript antes de salvar; se a otimizacao falhar ou nao reduzir tamanho, o original e salvo para nao quebrar o fluxo.
 4. A atividade principal fica no proprio PDF/imagem; a criacao nova nao exige perguntas manuais separadas.
-5. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
-6. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
-7. Aluno conclui a missao pelo material e envia.
-8. Atividades novas sem perguntas viram `REVIEWED` e concedem XP automaticamente pelo envio.
-9. Atividades antigas com perguntas seguem compativeis: objetivas podem virar `REVIEWED`/`RETURNED` automaticamente, e respostas escritas ficam `SUBMITTED` para correcao manual.
-10. Ao aprovar manualmente uma atividade antiga, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
+5. Admin pode excluir uma atividade criada por engano; arquivo, liberacoes, perguntas e respostas saem, mas eventos historicos de XP ja conquistado permanecem no ledger.
+6. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
+7. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
+8. Aluno conclui a missao pelo material e envia.
+9. Atividades novas sem perguntas viram `REVIEWED` e concedem XP automaticamente pelo envio.
+10. Atividades antigas com perguntas seguem compativeis: objetivas podem virar `REVIEWED`/`RETURNED` automaticamente, e respostas escritas ficam `SUBMITTED` para correcao manual.
+11. Ao aprovar manualmente uma atividade antiga, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
 
 ### Contratos
 
@@ -290,7 +291,7 @@ Helpers:
 - Student tem botoes sempre visiveis.
 - Candy XP deve continuar sem ranking publico; XP, streaks, badges e missoes sao persistidos por usuario e nao podem vazar dados de outras roles.
 - Toda nova tarefa que conceder XP deve gravar por server action/rota protegida e usar `sourceKey` estavel para evitar abuso ou pontuacao duplicada.
-- Atividades Candy XP so podem ser criadas/corrigidas por `ADMIN`; `STUDENT` acessa apenas atividades publicadas e liberadas para o proprio perfil.
+- Atividades Candy XP so podem ser criadas/editadas/excluidas/corrigidas por `ADMIN`; `STUDENT` acessa apenas atividades publicadas e liberadas para o proprio perfil.
 - Arquivos Candy XP devem ser servidos apenas por `/ava/candy-xp-assets/[activityId]`, nunca por caminho direto do storage.
 - Otimizacao de PDF dos uploads pedagogicos protegidos deve acontecer apenas no servidor e nunca pode expor arquivo fora das rotas protegidas.
 - Respostas escritas de Candy XP nao devem liberar XP automatico; precisam de revisao manual.

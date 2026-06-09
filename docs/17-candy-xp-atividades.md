@@ -53,7 +53,8 @@ Banco:
 5. Admin pode manter `Todos os alunos` para a atividade aparecer na aba Candy XP de todos os students, ou escolher um aluno especifico para liberar individualmente.
 6. Admin nao precisa cadastrar perguntas separadas; a atividade principal fica no proprio PDF/imagem.
 7. Admin pode editar a ficha da atividade e alternar entre rascunho, publicado e arquivado.
-8. Admin acompanha envios. Atividades novas em PDF sem perguntas concluem pelo envio do aluno e liberam XP automaticamente; atividades antigas com resposta escrita ainda podem aparecer para correcao manual.
+8. Admin pode excluir uma atividade criada por engano; a exclusao remove arquivo, liberacoes, perguntas e respostas operacionais da atividade, mas nao remove eventos historicos de XP ja conquistado.
+9. Admin acompanha envios. Atividades novas em PDF sem perguntas concluem pelo envio do aluno e liberam XP automaticamente; atividades antigas com resposta escrita ainda podem aparecer para correcao manual.
 
 ## Fluxo aluno
 
@@ -70,7 +71,7 @@ Banco:
 
 ## Regras de negocio que precisam ser preservadas
 
-- Apenas `ADMIN` cria, edita, publica, arquiva e corrige atividades Candy XP.
+- Apenas `ADMIN` cria, edita, publica, arquiva, exclui e corrige atividades Candy XP.
 - `STUDENT` so acessa atividades publicadas e liberadas para ele.
 - `TEACHER` nao acessa arquivos Candy XP nesta fase.
 - Arquivos sao servidos apenas pela rota protegida `/ava/candy-xp-assets/[activityId]`.
@@ -90,6 +91,7 @@ Banco:
 - A premiacao usa o ledger existente `CandyXpEvent` e atualiza `CandyXpProfile` por `recordCandyXpEventsForUser`.
 - A tela student mostra cards gamificados com nivel, categoria, XP, progresso e status.
 - A tela admin prioriza criacao rapida e acompanhamento, com cards mais destacados para cabecalho, arquivo, liberacao e respostas. O bloco de perguntas saiu da criacao nova porque o PDF/imagem e a atividade principal; perguntas seguem como compatibilidade para atividades antigas.
+- A exclusao administrativa usa server action com role `ADMIN`, apaga `CandyXpActivity` e seus dependentes por cascade, tenta remover o arquivo fisico em `storage/candy-xp-assets` e preserva `CandyXpEvent` como historico de conquista.
 
 ## Riscos ao alterar esta parte
 
@@ -97,6 +99,7 @@ Banco:
 - Usar preset agressivo de PDF pode deixar texto pequeno do Canva ilegivel; o padrao `ebook` e o caminho equilibrado.
 - Alterar respostas corretas de atividades antigas depois de envios pode tornar historico inconsistente.
 - Remover `sourceKey` estavel pode duplicar XP.
+- Excluir uma atividade remove respostas e progresso operacional; a UI deve manter confirmacao antes da server action.
 - Transformar `TEACHER` em corretora deste modulo exige nova regra de permissao por vinculo.
 - Recalcular XP apagando eventos antigos quebraria o historico de conquistas.
 

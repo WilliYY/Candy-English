@@ -179,6 +179,10 @@ export const candyXpActivityUpdateSchema = z.object({
     .max(500, "Use ate 500 XP por atividade."),
 });
 
+export const candyXpActivityDeleteSchema = z.object({
+  activityId: z.string().min(1, "Atividade invalida."),
+});
+
 export const candyXpActivityAnswerSchema = z.object({
   activityId: z.string().min(1, "Atividade invalida."),
   answers: z
@@ -212,6 +216,9 @@ export type CandyXpActivityCreateInput = z.input<
 >;
 export type CandyXpActivityUpdateInput = z.input<
   typeof candyXpActivityUpdateSchema
+>;
+export type CandyXpActivityDeleteInput = z.input<
+  typeof candyXpActivityDeleteSchema
 >;
 export type CandyXpActivityAnswerInput = z.input<
   typeof candyXpActivityAnswerSchema

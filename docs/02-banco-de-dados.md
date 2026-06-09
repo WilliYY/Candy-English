@@ -171,6 +171,7 @@ Enums:
 - `CandyXpActivitySubmission` guarda progresso individual por aluno, respostas em JSON, status, nota automatica/manual, feedback, revisor e XP concedido.
 - `CandyXpActivitySubmission` possui chave unica por atividade/aluno; `DRAFT` e progresso salvo, `SUBMITTED` aguarda correcao manual, `RETURNED` libera refazer e `REVIEWED` conclui a atividade.
 - Atividades Candy XP concedem XP pelo ledger `CandyXpEvent` com origem `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` por submissao, evitando pontos duplicados.
+- Excluir `CandyXpActivity` remove `CandyXpActivityQuestion`, `CandyXpActivityAssignment` e `CandyXpActivitySubmission` por cascade; a action administrativa tenta remover o arquivo fisico e nao apaga `CandyXpEvent`, preservando XP historico.
 
 ## Decisoes tecnicas tomadas
 

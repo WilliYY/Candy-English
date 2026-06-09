@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Sparkles,
   Target,
+  Trash2,
   Trophy,
   Users,
 } from "lucide-react";
@@ -25,6 +26,7 @@ import {
 } from "react";
 import {
   createCandyXpActivity,
+  deleteCandyXpActivity,
   reviewCandyXpActivitySubmission,
   updateCandyXpActivity,
 } from "@/app/ava/candy-xp/actions";
@@ -34,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type {
+  CandyXpActivityDeleteInput,
   CandyXpActivityReviewInput,
   CandyXpActivityUpdateInput,
 } from "@/lib/validations/candy-xp-activities";
@@ -418,6 +421,31 @@ function ActivityEditForm({ activity }: { activity: AdminCandyXpActivityRow }) {
     });
   }
 
+  function onDelete() {
+    const confirmed = window.confirm(
+      `Excluir a atividade "${activity.title}"? O arquivo, as liberacoes e as respostas serao removidos. XP ja conquistado permanece no historico do aluno.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const payload: CandyXpActivityDeleteInput = {
+      activityId: activity.id,
+    };
+
+    setMessage(null);
+    startTransition(async () => {
+      const result = await deleteCandyXpActivity(payload);
+
+      setMessage(result.message);
+
+      if (result.ok) {
+        router.refresh();
+      }
+    });
+  }
+
   return (
     <form onSubmit={onSubmit} className="grid gap-3 rounded-lg bg-muted/30 p-3">
       <div className="grid gap-3 lg:grid-cols-[1fr_0.6fr_0.6fr_0.35fr_0.55fr]">
@@ -467,6 +495,20 @@ function ActivityEditForm({ activity }: { activity: AdminCandyXpActivityRow }) {
             <PencilLine data-icon="inline-start" />
           )}
           Salvar ficha
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="destructive"
+          disabled={isPending}
+          onClick={onDelete}
+        >
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Trash2 data-icon="inline-start" />
+          )}
+          Excluir atividade
         </Button>
         {message ? (
           <span className="text-sm text-muted-foreground">{message}</span>

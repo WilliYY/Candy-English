@@ -1,5 +1,6 @@
 "use server";
 
+import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { evaluateCandyXpActivityAnswers } from "@/lib/candy-xp-activities";
@@ -9,14 +10,16 @@ import {
 } from "@/lib/candy-xp-persistence";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { saveCandyXpAsset } from "@/lib/storage";
+import { getStoragePath, saveCandyXpAsset } from "@/lib/storage";
 import {
   candyXpActivityAnswerSchema,
   candyXpActivityCreateSchema,
+  candyXpActivityDeleteSchema,
   candyXpActivityReviewSchema,
   candyXpActivityUpdateSchema,
   type CandyXpActivityAnswerInput,
   type CandyXpActivityCreateInput,
+  type CandyXpActivityDeleteInput,
   type CandyXpActivityReviewInput,
   type CandyXpActivityUpdateInput,
 } from "@/lib/validations/candy-xp-activities";
@@ -451,6 +454,75 @@ export async function updateCandyXpActivity(
   return {
     ok: true,
     message: "Atividade Candy XP atualizada.",
+  };
+}
+
+export async function deleteCandyXpActivity(
+  input: CandyXpActivityDeleteInput,
+): Promise<CandyXpActivityActionResult<CandyXpActivityDeleteInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir Candy XP.",
+    };
+  }
+
+  const parsed = candyXpActivityDeleteSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<CandyXpActivityDeleteInput>(parsed.error.issues),
+      ok: false,
+      message: "Atividade invalida.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const activity = await prisma.candyXpActivity.findUnique({
+    where: {
+      id: parsed.data.activityId,
+    },
+    select: {
+      _count: {
+        select: {
+          submissions: true,
+        },
+      },
+      assetStoragePath: true,
+      id: true,
+    },
+  });
+
+  if (!activity) {
+    return {
+      ok: false,
+      message: "Atividade Candy XP nao encontrada.",
+    };
+  }
+
+  await prisma.candyXpActivity.delete({
+    where: {
+      id: activity.id,
+    },
+  });
+
+  if (activity.assetStoragePath) {
+    await unlink(getStoragePath(activity.assetStoragePath)).catch(
+      () => undefined,
+    );
+  }
+
+  revalidatePath("/ava/admin");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message:
+      activity._count.submissions > 0
+        ? "Atividade Candy XP excluida. Respostas operacionais foram removidas; XP ja conquistado permanece no historico."
+        : "Atividade Candy XP excluida.",
   };
 }
 
