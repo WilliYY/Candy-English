@@ -380,6 +380,13 @@ Cada decisao deve conter:
 - Impacto: `src/lib/file-optimization.ts`, `src/lib/storage.ts`, `src/app/ava/candy-xp/actions.ts`, `Dockerfile`, `.env.example` e docs oficiais.
 - Riscos/cuidados: presets agressivos podem reduzir legibilidade; a otimizacao deve continuar server-side, configuravel por ambiente e sem quebrar as rotas protegidas.
 
+### 2026-06-09 - Candy XP com areas interativas no PDF
+
+- Decisao: adicionar `CandyXpActivityInteractiveField` e reaproveitar o motor visual do homework para o admin desenhar areas no PDF/imagem Candy XP, com action propria de `ADMIN` e respostas salvas na submissao Candy XP do aluno.
+- Motivo: Candy XP precisa funcionar como uma atividade no proprio arquivo do Canva para todos os alunos liberados, sem depender de perguntas manuais separadas.
+- Impacto: `prisma/schema.prisma`, migration `20260609110000_candy_xp_interactive_fields`, `src/app/ava/candy-xp/actions.ts`, `src/components/ava/interactive-homework-editor.tsx`, `src/components/ava/interactive-homework-student.tsx`, `src/components/ava/admin-candy-xp-panel.tsx`, `src/components/ava/student-candy-xp-activities-panel.tsx`, paginas admin/student e docs oficiais.
+- Riscos/cuidados: `LISTENING` continua fora do Candy XP ate existir rota propria de audio/OCR; campos obrigatorios devem ser validados no servidor e os assets precisam continuar servidos apenas por `/ava/candy-xp-assets/[activityId]`.
+
 ### 2026-06-04 - Otimizacao de PDF reaproveitada em homework e aula interativa
 
 - Decisao: reaproveitar a mesma camada `src/lib/file-optimization.ts` em `saveHomeworkAsset`, cobrindo uploads de `/ava/teacher?task=criar-homework` e `/ava/teacher?task=criar-aula`.

@@ -17,9 +17,9 @@ Ja existe:
 - login real com Auth.js/NextAuth v5, JWT, Credentials Provider, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
-- admin com cadastro de usuarios, aceite/recusa de pre-cadastros, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva;
+- admin com cadastro de usuarios, aceite/recusa de pre-cadastros, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva e areas interativas sobre o arquivo;
 - teacher com aceite de pre-cadastros como alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
-- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, progresso e envio;
+- student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, resposta no PDF/imagem, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
 - pre-cadastro publico no login do AVA para interessados solicitarem contato, salvo como pendente sem criar usuario, senha ou sessao ate Admin/Teacher aceitar no modulo protegido `Aceitar alunos`;
 - contratos e avatar servidos por rotas protegidas;
@@ -28,11 +28,11 @@ Ja existe:
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave e selecao direta de aluno;
 - campos Listening no homework/aula interativa, com leitura Gemini do texto dentro da area desenhada pela teacher, botao de volume posicionado no fim da area, audio OpenAI text-to-speech em ingles e botao unico que alterna ouvir/pausar, retomando a proxima reproducao em velocidade normal/devagar;
 - Catty como gatinha mascote-professora publica com baloes aleatorios no site e assistente interna do AVA para usuarios logados, com personalidade Candy oficial, primeiro nome seguro em respostas quando fizer sentido, emojis controlados, artefatos meme por interesse do aluno tambem nos baloes locais do AVA logado, painel unificado `Catty dos alunos` apenas para Admin/Teacher escolherem aluno, gosto, emojis, sons e bordoes com memoria leve sincronizada, enriquecimento controlado de temas por cache/provedor de busca apenas em fluxo de preparacao com aprovacao humana, feedback discreto nas respostas, Learning Center com fila de treino, ate 3 memorias globais aprovadas por Admin no contexto, memoria pessoal ativa e ranqueada por usuario para gostos/preferencias/dificuldades leves, campo minimizado `Contexto Catty` na criacao/aceite de alunos para gravar memoria inicial segura, gestao tecnica de memorias sem exposicao para Student e tela informativa `Catty aprendendo` para Student, auto-sugestoes pendentes quando houver lacuna de resposta, Gemini padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado, historico persistente por usuario/contexto com prompt curto e limpeza manual quando ficar pesado, atalhos de estudo, baloes personalizados, incentivo e pratica simples em ingles;
-- Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges, catalogo inicial de missoes e atividades de historias com XP automatico/manual;
+- Candy XP com eventos persistidos, `sourceKey` anti-duplicacao, nivel infinito, streak, badges, catalogo inicial de missoes e atividades de historias com editor de areas no PDF/imagem e XP automatico/manual;
 - otimizacao server-side de PDFs pedagogicos protegidos, incluindo Candy XP, homework interativo e aulas interativas, com Ghostscript quando disponivel e fallback para salvar o original se a compressao falhar;
 - Docker Compose com PostgreSQL interno, healthcheck, migrations, seed e smoke tests.
 
-Nao existe ainda: pagamento online, minijogos executaveis de vocabulario/listening/speaking, tela completa de badges/temporadas, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e RAG/base de conhecimento automatica ampla para a Catty.
+Nao existe ainda: pagamento online, minijogos executaveis de vocabulario/listening/speaking, listening proprio em Candy XP, tela completa de badges/temporadas, upload livre de materiais fora dos fluxos interativos, editor Word embutido, relatorios avancados, dashboard complexo e RAG/base de conhecimento automatica ampla para a Catty.
 
 ## Stack
 

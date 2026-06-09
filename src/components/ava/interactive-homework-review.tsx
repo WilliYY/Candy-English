@@ -34,6 +34,7 @@ type InteractiveHomeworkReviewProps = {
   answers: unknown;
   assetMimeType: string | null;
   assetPageCount: number | null;
+  assetUrl?: string;
   className?: string;
   fields: ReviewInteractiveField[];
   homeworkId: string;
@@ -52,12 +53,16 @@ function answersToMap(answers: unknown) {
     if (
       typeof answer === "object" &&
       answer !== null &&
-      "fieldId" in answer &&
       "value" in answer &&
-      typeof answer.fieldId === "string" &&
       typeof answer.value === "string"
     ) {
-      values[answer.fieldId] = answer.value;
+      if ("fieldId" in answer && typeof answer.fieldId === "string") {
+        values[answer.fieldId] = answer.value;
+      }
+
+      if ("questionId" in answer && typeof answer.questionId === "string") {
+        values[answer.questionId] = answer.value;
+      }
     }
   }
 
@@ -68,13 +73,14 @@ export function InteractiveHomeworkReview({
   answers,
   assetMimeType,
   assetPageCount,
+  assetUrl,
   className,
   fields,
   homeworkId,
   pageClassName = "max-w-[760px]",
   title,
 }: InteractiveHomeworkReviewProps) {
-  const assetUrl = `/ava/homework-assets/${homeworkId}`;
+  const resolvedAssetUrl = assetUrl ?? `/ava/homework-assets/${homeworkId}`;
   const values = useMemo(() => answersToMap(answers), [answers]);
 
   return (
@@ -90,7 +96,7 @@ export function InteractiveHomeworkReview({
       <div className="bg-muted/20 p-3">
         <InteractiveHomeworkDocument
           assetMimeType={assetMimeType}
-          assetUrl={assetUrl}
+          assetUrl={resolvedAssetUrl}
           expectedPageCount={assetPageCount}
           fields={fields}
           pageClassName={pageClassName}

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { LISTENING_SENTENCE_MAX_LENGTH } from "@/lib/interactive-homework-fields";
 
 export const CANDY_XP_ACTIVITY_STATUSES = [
   "DRAFT",
@@ -15,6 +16,13 @@ export const CANDY_XP_QUESTION_TYPES = [
 ] as const;
 
 export const CANDY_XP_SUBMISSION_OUTCOMES = ["APPROVE", "RETURN"] as const;
+export const CANDY_XP_INTERACTIVE_FIELD_TYPES = [
+  "TINY_TEXT",
+  "SHORT_TEXT",
+  "LONG_TEXT",
+  "CHECKBOX",
+  "DRAWING",
+] as const;
 
 const optionalText = (max: number, message: string) =>
   z
@@ -183,6 +191,38 @@ export const candyXpActivityDeleteSchema = z.object({
   activityId: z.string().min(1, "Atividade invalida."),
 });
 
+export const candyXpActivityInteractiveFieldSchema = z.object({
+  height: z.coerce.number().min(1, "Altura minima 1%.").max(100),
+  id: z.string().optional(),
+  label: z
+    .string()
+    .trim()
+    .max(80, "O rotulo pode ter no maximo 80 caracteres.")
+    .optional(),
+  page: z.coerce.number().int().min(1).max(20),
+  placeholder: z
+    .string()
+    .trim()
+    .max(
+      LISTENING_SENTENCE_MAX_LENGTH,
+      `O texto do campo pode ter no maximo ${LISTENING_SENTENCE_MAX_LENGTH} caracteres.`,
+    )
+    .optional(),
+  required: z.boolean().default(false),
+  sortOrder: z.coerce.number().int().min(0).max(200).default(0),
+  type: z.enum(CANDY_XP_INTERACTIVE_FIELD_TYPES),
+  width: z.coerce.number().min(1, "Largura minima 1%.").max(100),
+  x: z.coerce.number().min(0).max(100),
+  y: z.coerce.number().min(0).max(100),
+});
+
+export const saveCandyXpActivityInteractiveFieldsSchema = z.object({
+  activityId: z.string().min(1, "Atividade invalida."),
+  fields: z
+    .array(candyXpActivityInteractiveFieldSchema)
+    .max(120, "Use no maximo 120 areas por atividade Candy XP."),
+});
+
 export const candyXpActivityAnswerSchema = z.object({
   activityId: z.string().min(1, "Atividade invalida."),
   answers: z
@@ -194,7 +234,7 @@ export const candyXpActivityAnswerSchema = z.object({
           .max(20000, "Cada resposta pode ter no maximo 20000 caracteres."),
       }),
     )
-    .max(60, "Use no maximo 60 respostas."),
+    .max(140, "Use no maximo 140 respostas."),
 });
 
 export const candyXpActivityReviewSchema = z.object({
@@ -219,6 +259,12 @@ export type CandyXpActivityUpdateInput = z.input<
 >;
 export type CandyXpActivityDeleteInput = z.input<
   typeof candyXpActivityDeleteSchema
+>;
+export type SaveCandyXpActivityInteractiveFieldsInput = z.input<
+  typeof saveCandyXpActivityInteractiveFieldsSchema
+>;
+export type SaveCandyXpActivityInteractiveFieldsOutput = z.output<
+  typeof saveCandyXpActivityInteractiveFieldsSchema
 >;
 export type CandyXpActivityAnswerInput = z.input<
   typeof candyXpActivityAnswerSchema

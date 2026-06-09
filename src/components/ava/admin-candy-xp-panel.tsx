@@ -30,6 +30,8 @@ import {
   reviewCandyXpActivitySubmission,
   updateCandyXpActivity,
 } from "@/app/ava/candy-xp/actions";
+import { InteractiveHomeworkEditor } from "@/components/ava/interactive-homework-editor";
+import { InteractiveHomeworkReview } from "@/components/ava/interactive-homework-review";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,7 @@ import type {
   CandyXpActivityReviewInput,
   CandyXpActivityUpdateInput,
 } from "@/lib/validations/candy-xp-activities";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 
 export type CandyXpStudentOption = {
   email: string;
@@ -76,16 +79,34 @@ export type AdminCandyXpSubmissionRow = {
   submittedAt: string | null;
 };
 
+export type AdminCandyXpInteractiveFieldRow = {
+  height: number;
+  id: string;
+  label: string | null;
+  page: number;
+  placeholder: string | null;
+  required: boolean;
+  sortOrder: number;
+  type: InteractiveHomeworkFieldType;
+  width: number;
+  x: number;
+  y: number;
+};
+
 export type AdminCandyXpActivityRow = {
   assignments: {
     studentEmail: string;
     studentName: string;
   }[];
   assetFileName: string | null;
+  assetMimeType: string | null;
+  assetPageCount: number | null;
+  assetSizeBytes: number | null;
   category: string;
   createdAt: string;
   description: string | null;
   id: string;
+  interactiveFields: AdminCandyXpInteractiveFieldRow[];
   level: string;
   publishedAt: string | null;
   questions: AdminCandyXpQuestionRow[];
@@ -584,6 +605,7 @@ function SubmissionReviewForm({
 }
 
 function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
+  const questionIds = new Set(activity.questions.map((question) => question.id));
   const answerLabelByQuestion = new Map(
     activity.questions.map((question) => [question.id, question.prompt]),
   );
@@ -591,6 +613,11 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
   const completedCount = activity.submissions.filter(
     (submission) => submission.status === "REVIEWED",
   ).length;
+  const releaseLabel =
+    activity.assignments.length === 0
+      ? "Todos os alunos"
+      : activity.assignments.map((assignment) => assignment.studentName).join(", ");
+  const hasInteractiveFields = activity.interactiveFields.length > 0;
 
   return (
     <details className="group overflow-hidden rounded-lg border border-primary/15 bg-white/95 shadow-[0_14px_34px_rgba(65,42,76,0.07)]">
@@ -616,7 +643,11 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
               <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-amber-800">
                 {completedCount}/{submissionCount} concluidas
               </span>
-              {activity.questions.length > 0 ? (
+              {hasInteractiveFields ? (
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-800">
+                  {activity.interactiveFields.length} area(s) no PDF
+                </span>
+              ) : activity.questions.length > 0 ? (
                 <span className="rounded-full border border-primary/10 bg-white px-3 py-1 text-primary/70">
                   {activity.questions.length} pergunta(s)
                 </span>
@@ -635,6 +666,29 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
 
       <div className="grid gap-5 border-t border-primary/10 p-4">
         <ActivityEditForm activity={activity} />
+
+        {activity.assetFileName ? (
+          <InteractiveHomeworkEditor
+            heading="Editor do PDF Candy XP"
+            homeworks={[
+              {
+                assetFileName: activity.assetFileName,
+                assetMimeType: activity.assetMimeType,
+                assetPageCount: activity.assetPageCount,
+                assetSizeBytes: activity.assetSizeBytes,
+                assetUrl: `/ava/candy-xp-assets/${activity.id}`,
+                canDelete: false,
+                fieldDetectionSource: "candy-xp-manual",
+                fields: activity.interactiveFields,
+                id: activity.id,
+                lessonTitle: releaseLabel,
+                source: "CANDY_XP",
+                studentName: releaseLabel,
+                title: activity.title,
+              },
+            ]}
+          />
+        ) : null}
 
         <div className="grid gap-4 xl:grid-cols-[0.75fr_1.25fr]">
           <div className="grid gap-3">
@@ -709,6 +763,9 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
             ) : (
               activity.submissions.map((submission) => {
                 const answerRows = getAnswerRows(submission.answers);
+                const legacyAnswerRows = answerRows.filter((answer) =>
+                  questionIds.has(answer.questionId),
+                );
 
                 return (
                   <details
@@ -735,9 +792,21 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
                       ) : null}
                     </summary>
                     <div className="grid gap-3 border-t border-primary/10 p-3">
+                      {hasInteractiveFields ? (
+                        <InteractiveHomeworkReview
+                          answers={submission.answers}
+                          assetMimeType={activity.assetMimeType}
+                          assetPageCount={activity.assetPageCount}
+                          assetUrl={`/ava/candy-xp-assets/${activity.id}`}
+                          fields={activity.interactiveFields}
+                          homeworkId={activity.id}
+                          pageClassName="max-w-[820px]"
+                          title={activity.title}
+                        />
+                      ) : null}
                       <div className="grid gap-2">
-                        {answerRows.length > 0 ? (
-                          answerRows.map((answer) => (
+                        {legacyAnswerRows.length > 0 ? (
+                          legacyAnswerRows.map((answer) => (
                             <div
                               key={answer.questionId}
                               className="rounded-md bg-white p-3 text-sm"
@@ -751,7 +820,7 @@ function ActivityCard({ activity }: { activity: AdminCandyXpActivityRow }) {
                               </span>
                             </div>
                           ))
-                        ) : (
+                        ) : hasInteractiveFields ? null : (
                           <p className="rounded-md bg-white p-3 text-sm text-muted-foreground">
                             Missao em PDF enviada sem respostas manuais.
                           </p>

@@ -208,58 +208,58 @@ enum CattyArtifactEnrichmentStatus {
 }
 
 model User {
-  id                   String                @id @default(cuid())
-  name                 String
-  email                String                @unique
-  passwordHash         String
-  sessionVersion       Int                   @default(0)
-  role                 Role                  @default(STUDENT)
-  isActive             Boolean               @default(true)
-  phone                String?
-  address              String?
-  avatarPath           String?
-  avatarMimeType       String?
-  studentProfile       StudentProfile?
-  teacherProfile       TeacherProfile?
-  financialLogs        FinancialLog[]
-  agendaLogs           AgendaLog[]
-  createdCredentials   AdminCredential[]     @relation("AdminCredentialCreatedBy")
-  updatedCredentials   AdminCredential[]     @relation("AdminCredentialUpdatedBy")
-  createdCandyXpActivities CandyXpActivity[] @relation("CandyXpActivityCreatedBy")
-  reviewedCandyXpSubmissions CandyXpActivitySubmission[] @relation("CandyXpSubmissionReviewedBy")
-  reviewedStudentPreRegistrations StudentPreRegistration[] @relation("StudentPreRegistrationReviewedBy")
-  convertedStudentPreRegistration StudentPreRegistration? @relation("StudentPreRegistrationConvertedUser")
-  candyXpProfile       CandyXpProfile?
-  candyXpEvents        CandyXpEvent[]
-  candyBadges          CandyUserBadge[]
-  candyMissionAttempts CandyMissionAttempt[]
-  cattyConversations   CattyConversation[]
-  createdCattyLearningItems CattyLearningItem[] @relation("CattyLearningItemCreatedBy")
-  approvedCattyLearningItems CattyLearningItem[] @relation("CattyLearningItemApprovedBy")
-  createdCattyLearningFeedbacks CattyLearningFeedback[] @relation("CattyLearningFeedbackCreatedBy")
-  reviewedCattyLearningFeedbacks CattyLearningFeedback[] @relation("CattyLearningFeedbackReviewedBy")
-  cattyUserMemories    CattyUserMemory[]    @relation("CattyUserMemoryUser")
-  createdCattyUserMemories CattyUserMemory[] @relation("CattyUserMemoryCreatedBy")
-  cattyMemoryEvents    CattyMemoryEvent[]   @relation("CattyMemoryEventUser")
-  createdCattyMemoryEvents CattyMemoryEvent[] @relation("CattyMemoryEventCreatedBy")
-  cattyUserArtifacts   CattyUserArtifact[]  @relation("CattyUserArtifactUser")
-  createdCattyUserArtifacts CattyUserArtifact[] @relation("CattyUserArtifactCreatedBy")
-  updatedCattyUserArtifacts CattyUserArtifact[] @relation("CattyUserArtifactUpdatedBy")
-  cattyArtifactEnrichmentTargets CattyArtifactEnrichment[] @relation("CattyArtifactEnrichmentTargetUser")
-  createdCattyArtifactEnrichments CattyArtifactEnrichment[] @relation("CattyArtifactEnrichmentCreatedBy")
-  reviewedCattyArtifactEnrichments CattyArtifactEnrichment[] @relation("CattyArtifactEnrichmentReviewedBy")
-  sentChatMessages     ChatMessage[]
-  uploadedContracts    ContractDocument[]    @relation("UploadedContracts")
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
+  id                               String                      @id @default(cuid())
+  name                             String
+  email                            String                      @unique
+  passwordHash                     String
+  sessionVersion                   Int                         @default(0)
+  role                             Role                        @default(STUDENT)
+  isActive                         Boolean                     @default(true)
+  phone                            String?
+  address                          String?
+  avatarPath                       String?
+  avatarMimeType                   String?
+  studentProfile                   StudentProfile?
+  teacherProfile                   TeacherProfile?
+  financialLogs                    FinancialLog[]
+  agendaLogs                       AgendaLog[]
+  createdCredentials               AdminCredential[]           @relation("AdminCredentialCreatedBy")
+  updatedCredentials               AdminCredential[]           @relation("AdminCredentialUpdatedBy")
+  createdCandyXpActivities         CandyXpActivity[]           @relation("CandyXpActivityCreatedBy")
+  reviewedCandyXpSubmissions       CandyXpActivitySubmission[] @relation("CandyXpSubmissionReviewedBy")
+  reviewedStudentPreRegistrations  StudentPreRegistration[]    @relation("StudentPreRegistrationReviewedBy")
+  convertedStudentPreRegistration  StudentPreRegistration?     @relation("StudentPreRegistrationConvertedUser")
+  candyXpProfile                   CandyXpProfile?
+  candyXpEvents                    CandyXpEvent[]
+  candyBadges                      CandyUserBadge[]
+  candyMissionAttempts             CandyMissionAttempt[]
+  cattyConversations               CattyConversation[]
+  createdCattyLearningItems        CattyLearningItem[]         @relation("CattyLearningItemCreatedBy")
+  approvedCattyLearningItems       CattyLearningItem[]         @relation("CattyLearningItemApprovedBy")
+  createdCattyLearningFeedbacks    CattyLearningFeedback[]     @relation("CattyLearningFeedbackCreatedBy")
+  reviewedCattyLearningFeedbacks   CattyLearningFeedback[]     @relation("CattyLearningFeedbackReviewedBy")
+  cattyUserMemories                CattyUserMemory[]           @relation("CattyUserMemoryUser")
+  createdCattyUserMemories         CattyUserMemory[]           @relation("CattyUserMemoryCreatedBy")
+  cattyMemoryEvents                CattyMemoryEvent[]          @relation("CattyMemoryEventUser")
+  createdCattyMemoryEvents         CattyMemoryEvent[]          @relation("CattyMemoryEventCreatedBy")
+  cattyUserArtifacts               CattyUserArtifact[]         @relation("CattyUserArtifactUser")
+  createdCattyUserArtifacts        CattyUserArtifact[]         @relation("CattyUserArtifactCreatedBy")
+  updatedCattyUserArtifacts        CattyUserArtifact[]         @relation("CattyUserArtifactUpdatedBy")
+  cattyArtifactEnrichmentTargets   CattyArtifactEnrichment[]   @relation("CattyArtifactEnrichmentTargetUser")
+  createdCattyArtifactEnrichments  CattyArtifactEnrichment[]   @relation("CattyArtifactEnrichmentCreatedBy")
+  reviewedCattyArtifactEnrichments CattyArtifactEnrichment[]   @relation("CattyArtifactEnrichmentReviewedBy")
+  sentChatMessages                 ChatMessage[]
+  uploadedContracts                ContractDocument[]          @relation("UploadedContracts")
+  createdAt                        DateTime                    @default(now())
+  updatedAt                        DateTime                    @updatedAt
 
   @@index([isActive])
 }
 
 model StudentProfile {
-  id                 String                     @id @default(cuid())
-  userId             String                     @unique
-  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String                      @id @default(cuid())
+  userId             String                      @unique
+  user               User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
   level              String?
   birthDate          DateTime?
   guardianDocument   String?
@@ -270,7 +270,7 @@ model StudentProfile {
   motherPhone        String?
   notes              String?
   chatThreads        ChatThread[]
-  teacherAssignments StudentTeacherAssignment[] @relation("StudentAssignments")
+  teacherAssignments StudentTeacherAssignment[]  @relation("StudentAssignments")
   lessons            Lesson[]
   submissions        HomeworkSubmission[]
   candyXpAssignments CandyXpActivityAssignment[]
@@ -775,78 +775,99 @@ model CandyMissionAttempt {
 }
 
 model CandyXpActivity {
-  id               String                     @id @default(cuid())
-  title            String
-  description      String?
-  level            String
-  category         String
-  xpReward         Int
-  status           CandyXpActivityStatus      @default(DRAFT)
-  assetFileName    String?
-  assetStoragePath String?
-  assetMimeType    String?
-  assetSizeBytes   Int?
-  assetPageCount   Int                        @default(1)
-  publishedAt      DateTime?
-  createdByUserId  String?
-  createdByUser    User?                      @relation("CandyXpActivityCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  questions        CandyXpActivityQuestion[]
-  assignments      CandyXpActivityAssignment[]
-  submissions      CandyXpActivitySubmission[]
-  createdAt        DateTime                   @default(now())
-  updatedAt        DateTime                   @updatedAt
+  id                String                            @id @default(cuid())
+  title             String
+  description       String?
+  level             String
+  category          String
+  xpReward          Int
+  status            CandyXpActivityStatus             @default(DRAFT)
+  assetFileName     String?
+  assetStoragePath  String?
+  assetMimeType     String?
+  assetSizeBytes    Int?
+  assetPageCount    Int                               @default(1)
+  publishedAt       DateTime?
+  createdByUserId   String?
+  createdByUser     User?                             @relation("CandyXpActivityCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  questions         CandyXpActivityQuestion[]
+  interactiveFields CandyXpActivityInteractiveField[]
+  assignments       CandyXpActivityAssignment[]
+  submissions       CandyXpActivitySubmission[]
+  createdAt         DateTime                          @default(now())
+  updatedAt         DateTime                          @updatedAt
 
   @@index([status, category])
   @@index([level])
   @@index([createdByUserId])
 }
 
+model CandyXpActivityInteractiveField {
+  id          String            @id @default(cuid())
+  activityId  String
+  activity    CandyXpActivity   @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  type        HomeworkFieldType @default(LONG_TEXT)
+  label       String?
+  placeholder String?
+  page        Int               @default(1)
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  required    Boolean           @default(false)
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([activityId, sortOrder])
+}
+
 model CandyXpActivityQuestion {
-  id            String               @id @default(cuid())
+  id            String              @id @default(cuid())
   activityId    String
-  activity      CandyXpActivity      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activity      CandyXpActivity     @relation(fields: [activityId], references: [id], onDelete: Cascade)
   type          CandyXpQuestionType
   prompt        String
   options       Json?
   correctAnswer Json?
-  required      Boolean              @default(true)
-  sortOrder     Int                  @default(0)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+  required      Boolean             @default(true)
+  sortOrder     Int                 @default(0)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
   @@index([activityId, sortOrder])
 }
 
 model CandyXpActivityAssignment {
-  id               String           @id @default(cuid())
+  id               String          @id @default(cuid())
   activityId       String
-  activity         CandyXpActivity  @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activity         CandyXpActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
   studentProfileId String
-  studentProfile   StudentProfile   @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  assignedAt       DateTime         @default(now())
+  studentProfile   StudentProfile  @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  assignedAt       DateTime        @default(now())
 
   @@unique([activityId, studentProfileId])
   @@index([studentProfileId])
 }
 
 model CandyXpActivitySubmission {
-  id                 String                  @id @default(cuid())
-  activityId         String
-  activity           CandyXpActivity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  studentProfileId   String
-  studentProfile     StudentProfile          @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
-  answers            Json
-  status             CandyXpSubmissionStatus @default(DRAFT)
-  autoScorePercent   Int?
-  feedback           String?
-  awardedXp          Int?
-  xpEventId          String?
-  submittedAt        DateTime?
-  reviewedAt         DateTime?
-  reviewedByUserId   String?
-  reviewedByUser     User?                   @relation("CandyXpSubmissionReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
+  id               String                  @id @default(cuid())
+  activityId       String
+  activity         CandyXpActivity         @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  studentProfileId String
+  studentProfile   StudentProfile          @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  answers          Json
+  status           CandyXpSubmissionStatus @default(DRAFT)
+  autoScorePercent Int?
+  feedback         String?
+  awardedXp        Int?
+  xpEventId        String?
+  submittedAt      DateTime?
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  reviewedByUser   User?                   @relation("CandyXpSubmissionReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 
   @@unique([activityId, studentProfileId])
   @@index([studentProfileId, status])
@@ -870,20 +891,20 @@ model CattyConversation {
 }
 
 model CattyMessage {
-  id             String             @id @default(cuid())
-  conversationId String
-  conversation   CattyConversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  role           CattyMessageRole
-  text           String
-  source         CattyReplySource?
+  id                String                  @id @default(cuid())
+  conversationId    String
+  conversation      CattyConversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role              CattyMessageRole
+  text              String
+  source            CattyReplySource?
   learningFeedbacks CattyLearningFeedback[]
-  createdAt      DateTime           @default(now())
+  createdAt         DateTime                @default(now())
 
   @@index([conversationId, createdAt])
 }
 
 model CattyLearningItem {
-  id               String                @id @default(cuid())
+  id               String                  @id @default(cuid())
   title            String
   category         CattyLearningCategory
   intent           String?
@@ -891,16 +912,16 @@ model CattyLearningItem {
   badReply         String?
   idealReply       String?
   notes            String?
-  tags             String[]              @default([])
-  status           CattyLearningStatus   @default(PENDING)
+  tags             String[]                @default([])
+  status           CattyLearningStatus     @default(PENDING)
   createdByUserId  String?
-  createdByUser    User?                 @relation("CattyLearningItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUser    User?                   @relation("CattyLearningItemCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   approvedByUserId String?
-  approvedByUser   User?                 @relation("CattyLearningItemApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  approvedByUser   User?                   @relation("CattyLearningItemApprovedBy", fields: [approvedByUserId], references: [id], onDelete: SetNull)
   approvedAt       DateTime?
   feedbacks        CattyLearningFeedback[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 
   @@index([status, category])
   @@index([intent])
@@ -910,12 +931,12 @@ model CattyLearningItem {
 }
 
 model CattyLearningFeedback {
-  id                String                 @id @default(cuid())
+  id                String                    @id @default(cuid())
   itemId            String?
-  item              CattyLearningItem?     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item              CattyLearningItem?        @relation(fields: [itemId], references: [id], onDelete: Cascade)
   kind              CattyLearningFeedbackKind @default(PATTERN_SUGGESTION)
   cattyMessageId    String?
-  cattyMessage      CattyMessage?          @relation(fields: [cattyMessageId], references: [id], onDelete: SetNull)
+  cattyMessage      CattyMessage?             @relation(fields: [cattyMessageId], references: [id], onDelete: SetNull)
   note              String
   suggestedTitle    String?
   suggestedCategory CattyLearningCategory?
@@ -926,14 +947,14 @@ model CattyLearningFeedback {
   contextArea       String?
   contextTask       String?
   contextKey        String?
-  status            CattyLearningStatus    @default(PENDING)
+  status            CattyLearningStatus       @default(PENDING)
   createdByUserId   String?
-  createdByUser     User?                  @relation("CattyLearningFeedbackCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUser     User?                     @relation("CattyLearningFeedbackCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   reviewedByUserId  String?
-  reviewedByUser    User?                  @relation("CattyLearningFeedbackReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser    User?                     @relation("CattyLearningFeedbackReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
   reviewedAt        DateTime?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
 
   @@index([status, createdAt])
   @@index([kind, status])
@@ -945,23 +966,23 @@ model CattyLearningFeedback {
 }
 
 model CattyUserMemory {
-  id              String                    @id @default(cuid())
+  id              String                  @id @default(cuid())
   userId          String
-  user            User                      @relation("CattyUserMemoryUser", fields: [userId], references: [id], onDelete: Cascade)
+  user            User                    @relation("CattyUserMemoryUser", fields: [userId], references: [id], onDelete: Cascade)
   category        CattyUserMemoryCategory
   key             String
   value           String
-  confidence      Int                       @default(70)
-  source          CattyUserMemorySource     @default(CATTY_DETECTED)
-  status          CattyUserMemoryStatus     @default(PENDING)
+  confidence      Int                     @default(70)
+  source          CattyUserMemorySource   @default(CATTY_DETECTED)
+  status          CattyUserMemoryStatus   @default(PENDING)
   flaggedReason   String?
   createdByUserId String?
-  createdByUser   User?                     @relation("CattyUserMemoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUser   User?                   @relation("CattyUserMemoryCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   lastUsedAt      DateTime?
-  usageCount      Int                       @default(0)
+  usageCount      Int                     @default(0)
   events          CattyMemoryEvent[]
-  createdAt       DateTime                  @default(now())
-  updatedAt       DateTime                  @updatedAt
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   @@unique([userId, category, key])
   @@index([userId, status, category])
@@ -970,11 +991,11 @@ model CattyUserMemory {
 }
 
 model CattyMemoryEvent {
-  id              String                    @id @default(cuid())
+  id              String                   @id @default(cuid())
   memoryId        String?
-  memory          CattyUserMemory?          @relation(fields: [memoryId], references: [id], onDelete: SetNull)
+  memory          CattyUserMemory?         @relation(fields: [memoryId], references: [id], onDelete: SetNull)
   userId          String
-  user            User                      @relation("CattyMemoryEventUser", fields: [userId], references: [id], onDelete: Cascade)
+  user            User                     @relation("CattyMemoryEventUser", fields: [userId], references: [id], onDelete: Cascade)
   category        CattyUserMemoryCategory?
   key             String?
   previousValue   String?
@@ -984,8 +1005,8 @@ model CattyMemoryEvent {
   status          CattyUserMemoryStatus?
   note            String?
   createdByUserId String?
-  createdByUser   User?                     @relation("CattyMemoryEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  createdAt       DateTime                  @default(now())
+  createdByUser   User?                    @relation("CattyMemoryEventCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime                 @default(now())
 
   @@index([userId, createdAt])
   @@index([memoryId])
@@ -1010,7 +1031,7 @@ model CattyUserArtifact {
   createdByUser   User?                     @relation("CattyUserArtifactCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   updatedByUserId String?
   updatedByUser   User?                     @relation("CattyUserArtifactUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
-  enrichments      CattyArtifactEnrichment[]
+  enrichments     CattyArtifactEnrichment[]
   lastUsedAt      DateTime?
   usageCount      Int                       @default(0)
   createdAt       DateTime                  @default(now())
@@ -1051,35 +1072,35 @@ model CattyArtifactEnrichmentCache {
 }
 
 model CattyArtifactEnrichment {
-  id                    String                         @id @default(cuid())
-  status                CattyArtifactEnrichmentStatus  @default(PENDING)
+  id                    String                        @id @default(cuid())
+  status                CattyArtifactEnrichmentStatus @default(PENDING)
   targetUserId          String?
-  targetUser            User?                          @relation("CattyArtifactEnrichmentTargetUser", fields: [targetUserId], references: [id], onDelete: Cascade)
+  targetUser            User?                         @relation("CattyArtifactEnrichmentTargetUser", fields: [targetUserId], references: [id], onDelete: Cascade)
   artifactId            String?
-  artifact              CattyUserArtifact?             @relation(fields: [artifactId], references: [id], onDelete: SetNull)
+  artifact              CattyUserArtifact?            @relation(fields: [artifactId], references: [id], onDelete: SetNull)
   cacheId               String?
-  cache                 CattyArtifactEnrichmentCache?  @relation(fields: [cacheId], references: [id], onDelete: SetNull)
+  cache                 CattyArtifactEnrichmentCache? @relation(fields: [cacheId], references: [id], onDelete: SetNull)
   themeId               String
   label                 String
-  provider              String                         @default("offline")
+  provider              String                        @default("offline")
   query                 String?
   safeSummary           String?
-  suggestedEmojis       String[]                       @default([])
-  suggestedSounds       String[]                       @default([])
-  suggestedCatchphrases String[]                       @default([])
-  suggestedExamples     String[]                       @default([])
+  suggestedEmojis       String[]                      @default([])
+  suggestedSounds       String[]                      @default([])
+  suggestedCatchphrases String[]                      @default([])
+  suggestedExamples     String[]                      @default([])
   suggestedVocabulary   Json?
-  suggestedBalloons     String[]                       @default([])
-  cautions              String[]                       @default([])
+  suggestedBalloons     String[]                      @default([])
+  cautions              String[]                      @default([])
   sources               Json?
   failureReason         String?
   createdByUserId       String?
-  createdByUser         User?                          @relation("CattyArtifactEnrichmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdByUser         User?                         @relation("CattyArtifactEnrichmentCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
   reviewedByUserId      String?
-  reviewedByUser        User?                          @relation("CattyArtifactEnrichmentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedByUser        User?                         @relation("CattyArtifactEnrichmentReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
   reviewedAt            DateTime?
-  createdAt             DateTime                       @default(now())
-  updatedAt             DateTime                       @updatedAt
+  createdAt             DateTime                      @default(now())
+  updatedAt             DateTime                      @updatedAt
 
   @@index([targetUserId, status])
   @@index([themeId, status])

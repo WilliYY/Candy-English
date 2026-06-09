@@ -71,6 +71,7 @@ Gamificacao Candy XP:
 - `CandyMission`
 - `CandyMissionAttempt`
 - `CandyXpActivity`
+- `CandyXpActivityInteractiveField`
 - `CandyXpActivityQuestion`
 - `CandyXpActivityAssignment`
 - `CandyXpActivitySubmission`
@@ -166,12 +167,14 @@ Enums:
 - `CandyBadgeDefinition` guarda criterios simples de badge por role, nivel, streak ou contagem de evento; `CandyUserBadge` possui chave unica por usuario/badge.
 - `CandyMission` e o catalogo base para tarefas estilo Duolingo; `CandyMissionAttempt.attemptKey` evita repetir a mesma tentativa/evento de jogo no futuro.
 - `CandyXpActivity` guarda historias/atividades com titulo, descricao, nivel, categoria, XP, status e metadados do PDF/imagem do Canva.
+- `CandyXpActivityInteractiveField` guarda areas editaveis sobre o PDF/imagem Candy XP, com tipo, pagina, coordenadas percentuais, obrigatoriedade e ordenacao; ele reutiliza `HomeworkFieldType`, mas a UI/action de Candy XP aceita apenas `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX` e `DRAWING` nesta fase.
 - `CandyXpActivityQuestion` guarda perguntas ordenadas e configuracao em JSON para alternativas, respostas corretas e pares de matching.
 - `CandyXpActivityAssignment` libera uma atividade para alunos especificos; quando uma atividade publicada nao possui assignments, ela fica liberada para todos os alunos ativos.
 - `CandyXpActivitySubmission` guarda progresso individual por aluno, respostas em JSON, status, nota automatica/manual, feedback, revisor e XP concedido.
 - `CandyXpActivitySubmission` possui chave unica por atividade/aluno; `DRAFT` e progresso salvo, `SUBMITTED` aguarda correcao manual, `RETURNED` libera refazer e `REVIEWED` conclui a atividade.
+- Respostas de campos interativos Candy XP ficam em `CandyXpActivitySubmission.answers`, usando o ID do campo como `questionId`; isso preserva o fluxo unico de rascunho/envio da atividade.
 - Atividades Candy XP concedem XP pelo ledger `CandyXpEvent` com origem `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` por submissao, evitando pontos duplicados.
-- Excluir `CandyXpActivity` remove `CandyXpActivityQuestion`, `CandyXpActivityAssignment` e `CandyXpActivitySubmission` por cascade; a action administrativa tenta remover o arquivo fisico e nao apaga `CandyXpEvent`, preservando XP historico.
+- Excluir `CandyXpActivity` remove `CandyXpActivityInteractiveField`, `CandyXpActivityQuestion`, `CandyXpActivityAssignment` e `CandyXpActivitySubmission` por cascade; a action administrativa tenta remover o arquivo fisico e nao apaga `CandyXpEvent`, preservando XP historico.
 
 ## Decisoes tecnicas tomadas
 
@@ -190,6 +193,7 @@ Enums:
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
 - Migration `20260601193000_candy_xp_activities` adiciona atividades Candy XP com PDF/imagem, perguntas, liberacao por aluno, progresso/submissao e evento de XP por atividade concluida.
+- Migration `20260609110000_candy_xp_interactive_fields` adiciona `CandyXpActivityInteractiveField` para editar areas diretamente sobre o PDF/imagem da missao.
 - Migration `20260604153000_student_pre_registration` adiciona `StudentPreRegistration` para interessados solicitarem cadastro pelo login sem criar `User`, senha ou sessao.
 - Migration `20260604170000_student_pre_registration_review` adiciona metadados de revisao e conversao do pre-cadastro para o modulo `Aceitar alunos`.
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
@@ -225,6 +229,7 @@ Enums:
 - Usar busca web de enriquecimento sem cache/aprovacao humana pode trazer tema inadequado, texto copiado ou contexto errado para alunos; manter busca apenas em fluxo Admin/Teacher, resumo curto, bloqueio de tema sensivel e aprovacao antes de ativar.
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
+- Habilitar `LISTENING` em `CandyXpActivityInteractiveField` sem rotas proprias de audio/OCR pode quebrar envio ou revisao, pois o suporte atual de listening e especifico de homework/aula interativa.
 - Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.
 
 ## Pendencias
@@ -235,8 +240,8 @@ Enums:
 - Falta trilha de auditoria detalhada para revelar/copiar credenciais do cofre admin.
 - Falta exportacao do PDF final preenchido com respostas e desenhos do aluno.
 - Falta tela completa para aluno/teacher/admin explorarem badges, missoes, streaks e temporadas fora do card XP.
-- Falta editor completo de perguntas Candy XP depois que a atividade ja foi criada.
 - Falta exportacao/relatorio detalhado das respostas Candy XP.
+- Falta listening interativo proprio para Candy XP.
 
 ## Como pode evoluir
 

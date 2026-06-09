@@ -359,9 +359,29 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
       ],
       select: {
         assetFileName: true,
+        assetMimeType: true,
+        assetPageCount: true,
         category: true,
         description: true,
         id: true,
+        interactiveFields: {
+          orderBy: {
+            sortOrder: "asc",
+          },
+          select: {
+            height: true,
+            id: true,
+            label: true,
+            page: true,
+            placeholder: true,
+            required: true,
+            sortOrder: true,
+            type: true,
+            width: true,
+            x: true,
+            y: true,
+          },
+        },
         level: true,
         questions: {
           orderBy: {
@@ -468,16 +488,31 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   });
 
   return (
-    <StudentWorkspace
-      activeTask={activeTask}
-      candyXpActivities={candyXpActivities.map((activity) => ({
-        assetFileName: activity.assetFileName,
-        category: activity.category,
-        description: activity.description,
-        id: activity.id,
-        level: activity.level,
-        questions: activity.questions.map((question) => ({
-          id: question.id,
+      <StudentWorkspace
+        activeTask={activeTask}
+        candyXpActivities={candyXpActivities.map((activity) => ({
+          assetFileName: activity.assetFileName,
+          assetMimeType: activity.assetMimeType,
+          assetPageCount: activity.assetPageCount,
+          category: activity.category,
+          description: activity.description,
+          id: activity.id,
+          interactiveFields: activity.interactiveFields.map((field) => ({
+            height: field.height,
+            id: field.id,
+            label: field.label,
+            page: field.page,
+            placeholder: field.placeholder,
+            required: field.required,
+            sortOrder: field.sortOrder,
+            type: field.type,
+            width: field.width,
+            x: field.x,
+            y: field.y,
+          })),
+          level: activity.level,
+          questions: activity.questions.map((question) => ({
+            id: question.id,
           options: question.options,
           prompt: question.prompt,
           required: question.required,

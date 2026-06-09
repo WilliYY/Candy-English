@@ -28,10 +28,11 @@ As pendencias podem afetar:
 - Notificacoes por email ou WhatsApp.
 - Relatorios avancados e dashboard complexo.
 - RAG/base automatica ampla para Catty responder sobre conteudos internos da Candy; hoje existe apenas Catty Learning Center com aprendizado sugerido e aprovado manualmente.
-- Minijogos executaveis de vocabulario/listening/speaking; hoje existem cards/roadmaps Candy XP persistentes e atividades de historia com PDF/perguntas em `/ava/student?task=candy-xp`, mas nao jogos em tempo real.
+- Minijogos executaveis de vocabulario/listening/speaking; hoje existem cards/roadmaps Candy XP persistentes e atividades de historia com PDF/imagem e areas interativas em `/ava/student?task=candy-xp`, mas nao jogos em tempo real.
 - Tela completa de missoes, badges, streaks, temporadas e historico de XP fora do card compacto.
 - Edicao completa das perguntas Candy XP apos a atividade criada.
 - Relatorio/exportacao detalhada das respostas Candy XP.
+- Listening interativo proprio para Candy XP.
 - Pagamento online ou integracao externa de cobranca.
 - Exportacao/importacao em massa da agenda.
 - Jitsi dedicado ou JaaS para aula ao vivo sem conta externa e sem limite de embed do `meet.jit.si` publico.

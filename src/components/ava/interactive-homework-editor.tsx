@@ -35,6 +35,7 @@ import {
   deleteInteractiveHomework,
   saveInteractiveHomeworkFields,
 } from "@/app/ava/teacher/actions";
+import { saveCandyXpActivityInteractiveFields } from "@/app/ava/candy-xp/actions";
 import {
   type DrawingStroke,
   InteractiveHomeworkDrawingStrokes,
@@ -74,16 +75,19 @@ export type InteractiveHomeworkEditorRow = {
   assetMimeType: string | null;
   assetPageCount: number | null;
   assetSizeBytes: number | null;
+  assetUrl?: string;
+  canDelete?: boolean;
   fieldDetectionSource: string | null;
   fields: EditableHomeworkField[];
   id: string;
   lessonTitle: string;
-  source?: "HOMEWORK" | "LESSON";
+  source?: "CANDY_XP" | "HOMEWORK" | "LESSON";
   studentName: string | null;
   title: string;
 };
 
 type FieldTool = EditableHomeworkField["type"];
+type CandyXpSupportedFieldType = Exclude<InteractiveHomeworkFieldType, "LISTENING">;
 type EditorFieldTool =
   | "CHECKBOX"
   | "DRAWING"
@@ -136,6 +140,12 @@ type ListeningDetectionResponse = {
   message?: string;
   text?: string;
 };
+
+function isCandyXpSupportedField<TField extends { type: InteractiveHomeworkFieldType }>(
+  field: TField,
+): field is TField & { type: CandyXpSupportedFieldType } {
+  return field.type !== "LISTENING";
+}
 
 type EditorAction =
   | {
@@ -1178,7 +1188,7 @@ function InteractiveHomeworkCanvasEditor({
   setIsEditingGesture: Dispatch<SetStateAction<boolean>>;
   setSelectedFieldId: Dispatch<SetStateAction<string | null>>;
 }) {
-  const assetUrl = `/ava/homework-assets/${homework.id}`;
+  const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
   const [activeAction, setActiveAction] = useState<EditorAction | null>(null);
   const hasActiveAction = Boolean(activeAction);
 
@@ -1575,10 +1585,18 @@ function InteractiveHomeworkEditorItem({
   const currentFieldsSignatureRef = useRef(currentFieldsSignature);
   const savedFieldsSignatureRef = useRef(savedFieldsSignature);
   const hasUnsavedChanges = currentFieldsSignature !== savedFieldsSignature;
+  const isCandyXpActivity = homework.source === "CANDY_XP";
   const isInteractiveLesson = homework.source === "LESSON";
-  const entityLabel = isInteractiveLesson ? "aula interativa" : "homework";
+  const entityLabel = isCandyXpActivity
+    ? "atividade Candy XP"
+    : isInteractiveLesson
+      ? "aula interativa"
+      : "homework";
   const isPersisting = isSaving || saveStatus === "saving";
-  const assetUrl = `/ava/homework-assets/${homework.id}`;
+  const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
+  const availableFieldToolOptions = isCandyXpActivity
+    ? FIELD_TOOL_OPTIONS.filter((tool) => tool !== "LISTENING")
+    : FIELD_TOOL_OPTIONS;
   const saveStatusLabel = isPersisting
     ? "Salvando..."
     : saveStatus === "error"
@@ -1608,6 +1626,12 @@ function InteractiveHomeworkEditorItem({
     selectedField,
     selectedTool,
   });
+
+  useEffect(() => {
+    if (isCandyXpActivity && selectedTool === "LISTENING") {
+      setSelectedTool("TEXT");
+    }
+  }, [isCandyXpActivity, selectedTool]);
 
   useEffect(() => {
     return () => {
@@ -2043,7 +2067,10 @@ function InteractiveHomeworkEditorItem({
           sortOrder: index,
         };
       });
-      const expectedCount = fieldsToSave.length;
+      const candyXpFieldsToSave = fieldsToSave.filter(isCandyXpSupportedField);
+      const fieldsForAction =
+        homework.source === "CANDY_XP" ? candyXpFieldsToSave : fieldsToSave;
+      const expectedCount = fieldsForAction.length;
       const selectedIndex = selectedFieldId
         ? fieldsSnapshot.findIndex((field) => field.id === selectedFieldId)
         : -1;
@@ -2058,10 +2085,16 @@ function InteractiveHomeworkEditorItem({
 
       startSaveTransition(async () => {
         try {
-          const result = await saveInteractiveHomeworkFields({
-            fields: fieldsToSave,
-            homeworkId: homework.id,
-          });
+          const result =
+            homework.source === "CANDY_XP"
+              ? await saveCandyXpActivityInteractiveFields({
+                  activityId: homework.id,
+                  fields: candyXpFieldsToSave,
+                })
+              : await saveInteractiveHomeworkFields({
+                  fields: fieldsForAction,
+                  homeworkId: homework.id,
+                });
 
           if (!result.ok || !result.fields) {
             setSaveStatus("error");
@@ -2085,7 +2118,7 @@ function InteractiveHomeworkEditorItem({
           const saveStillMatchesScreen =
             currentFieldsSignatureRef.current === attemptSignature;
           const idByDraftId = new Map(
-            fieldsToSave
+            fieldsForAction
               .map((field, index) => [field.id, result.fields?.[index]?.id])
               .filter(
                 (entry): entry is [string, string] =>
@@ -2154,7 +2187,14 @@ function InteractiveHomeworkEditorItem({
         }
       });
     },
-    [clearAutosaveTimer, homework.id, isDeleting, router, selectedFieldId],
+    [
+      clearAutosaveTimer,
+      homework.id,
+      homework.source,
+      isDeleting,
+      router,
+      selectedFieldId,
+    ],
   );
 
   useEffect(() => {
@@ -2233,6 +2273,17 @@ function InteractiveHomeworkEditorItem({
           "border-sky-200/80 bg-gradient-to-br from-white via-sky-50/55 to-secondary/25 shadow-[0_14px_34px_rgba(14,165,233,0.08)] before:bg-sky-500",
         summary: "hover:bg-sky-50/70",
       }
+    : isCandyXpActivity
+      ? {
+          avatar:
+            "border-amber-200 bg-amber-50 text-amber-900 shadow-[0_8px_18px_rgba(245,158,11,0.12)]",
+          badge: "border-amber-200 bg-amber-50 text-amber-900",
+          info: "border-amber-200/70 bg-white/84",
+          label: "text-amber-800/80",
+          shell:
+            "border-amber-200/80 bg-gradient-to-br from-white via-amber-50/60 to-secondary/30 shadow-[0_14px_34px_rgba(245,158,11,0.08)] before:bg-amber-400",
+          summary: "hover:bg-amber-50/65",
+        }
     : {
         avatar: "border-primary/15 bg-white text-primary shadow-sm",
         badge: "border-primary/15 bg-primary/[0.055] text-primary",
@@ -2242,10 +2293,19 @@ function InteractiveHomeworkEditorItem({
           "border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_14px_34px_rgba(65,42,76,0.07)] before:bg-primary/70",
         summary: "hover:bg-white/70",
       };
-  const entityBadgeLabel = isInteractiveLesson ? "Aula interativa" : "Homework";
+  const entityBadgeLabel = isCandyXpActivity
+    ? "Candy XP"
+    : isInteractiveLesson
+      ? "Aula interativa"
+      : "Homework";
+  const scopeLabel = isCandyXpActivity ? "Liberacao" : "Aula";
   const fileName =
     homework.assetFileName ??
-    (isInteractiveLesson ? "Arquivo da aula" : "Arquivo da homework");
+    (isCandyXpActivity
+      ? "Arquivo Candy XP"
+      : isInteractiveLesson
+        ? "Arquivo da aula"
+        : "Arquivo da homework");
 
   return (
     <details
@@ -2306,7 +2366,7 @@ function InteractiveHomeworkEditorItem({
                 )}
               >
                 <BookOpen aria-hidden="true" className="size-3.5" />
-                Aula
+                {scopeLabel}
               </span>
               <span className="mt-1 block truncate font-semibold text-primary">
                 {homework.lessonTitle}
@@ -2358,27 +2418,29 @@ function InteractiveHomeworkEditorItem({
               <span className="group-open:hidden">Abrir editor</span>
               <span className="hidden group-open:inline">Fechar editor</span>
             </span>
-            <Button
-              disabled={isDeleting || isPersisting}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                deleteHomework();
-              }}
-              size="sm"
-              type="button"
-              variant="destructive"
-            >
-              {isDeleting ? (
-                <LoaderCircle
-                  data-icon="inline-start"
-                  className="animate-spin"
-                />
-              ) : (
-                <Trash2 data-icon="inline-start" />
-              )}
-              Excluir
-            </Button>
+            {homework.canDelete !== false ? (
+              <Button
+                disabled={isDeleting || isPersisting}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  deleteHomework();
+                }}
+                size="sm"
+                type="button"
+                variant="destructive"
+              >
+                {isDeleting ? (
+                  <LoaderCircle
+                    data-icon="inline-start"
+                    className="animate-spin"
+                  />
+                ) : (
+                  <Trash2 data-icon="inline-start" />
+                )}
+                Excluir
+              </Button>
+            ) : null}
           </div>
         </div>
       </summary>
@@ -2398,7 +2460,7 @@ function InteractiveHomeworkEditorItem({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              {FIELD_TOOL_OPTIONS.map((tool) => {
+              {availableFieldToolOptions.map((tool) => {
                 const meta = FIELD_TOOL_META[tool];
                 const Icon = meta.Icon;
 
@@ -2676,6 +2738,9 @@ export function InteractiveHomeworkEditor({
   const isLessonEditor = homeworks.every(
     (homework) => homework.source === "LESSON",
   );
+  const isCandyXpEditor = homeworks.every(
+    (homework) => homework.source === "CANDY_XP",
+  );
   const editorTone = isLessonEditor
     ? {
         accent: "bg-sky-600 shadow-[0_10px_24px_rgba(14,165,233,0.22)]",
@@ -2688,6 +2753,18 @@ export function InteractiveHomeworkEditor({
         subtitle:
           "Abra um card para preparar o material da aula e marcar areas interativas.",
       }
+    : isCandyXpEditor
+      ? {
+          accent: "bg-amber-400 text-primary shadow-[0_10px_24px_rgba(245,158,11,0.22)]",
+          eyebrow: "Editor Candy XP",
+          firstMetric: "border-amber-200 bg-amber-50 text-amber-900",
+          firstMetricLabel: "Missoes",
+          readyMetricLabel: "Com areas",
+          shell:
+            "border-amber-200/80 bg-gradient-to-br from-white via-amber-50/55 to-secondary/35 shadow-[0_18px_44px_rgba(245,158,11,0.08)]",
+          subtitle:
+            "Abra o card para posicionar texto, letra, marca e desenho sobre o PDF/imagem.",
+        }
     : {
         accent: "bg-primary shadow-[0_10px_24px_rgba(65,42,76,0.18)]",
         eyebrow: "Editor manual de areas",

@@ -28,6 +28,10 @@ import {
   submitInteractiveHomework,
 } from "@/app/ava/student/actions";
 import {
+  saveCandyXpActivityDraft,
+  submitCandyXpActivity,
+} from "@/app/ava/candy-xp/actions";
+import {
   type DrawingPoint,
   type DrawingStroke,
   InteractiveHomeworkDrawingStrokes,
@@ -67,22 +71,25 @@ export type StudentInteractiveField = {
 
 export type StudentInteractiveSubmission = {
   answers: unknown;
+  awardedXp?: number | null;
   feedback: string | null;
   id: string;
   status: string;
-  submittedAt: Date;
+  submittedAt: Date | string | null;
 };
 
 export type StudentInteractiveHomework = {
   assetFileName: string | null;
   assetMimeType: string | null;
   assetPageCount: number | null;
+  assetUrl?: string;
   dueDate: Date | null;
   fields: StudentInteractiveField[];
   id: string;
   instructions: string | null;
   submission?: StudentInteractiveSubmission;
   title: string;
+  xpReward?: number;
 };
 
 const studentHomeworkDateFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -116,12 +123,16 @@ function answersToMap(answers: unknown) {
     if (
       typeof answer === "object" &&
       answer !== null &&
-      "fieldId" in answer &&
       "value" in answer &&
-      typeof answer.fieldId === "string" &&
       typeof answer.value === "string"
     ) {
-      values[answer.fieldId] = answer.value;
+      if ("fieldId" in answer && typeof answer.fieldId === "string") {
+        values[answer.fieldId] = answer.value;
+      }
+
+      if ("questionId" in answer && typeof answer.questionId === "string") {
+        values[answer.questionId] = answer.value;
+      }
     }
   }
 
@@ -138,6 +149,16 @@ function buildAnswersPayload(
   }));
 }
 
+function buildCandyXpAnswersPayload(
+  fields: StudentInteractiveField[],
+  values: Record<string, string>,
+) {
+  return fields.map((field) => ({
+    questionId: field.id,
+    value: values[field.id] ?? "",
+  }));
+}
+
 function valuesSignature(values: Record<string, string>) {
   return JSON.stringify(
     Object.keys(values)
@@ -146,17 +167,23 @@ function valuesSignature(values: Record<string, string>) {
   );
 }
 
-function draftStorageKey(homeworkId: string) {
-  return `candy:interactive-homework-draft:${homeworkId}`;
+function draftStorageKey(homeworkId: string, context = "homework") {
+  if (context === "homework") {
+    return `candy:interactive-homework-draft:${homeworkId}`;
+  }
+
+  return `candy:interactive-${context}-draft:${homeworkId}`;
 }
 
-function readStoredDraft(homeworkId: string) {
+function readStoredDraft(homeworkId: string, context = "homework") {
   if (typeof window === "undefined") {
     return null;
   }
 
   try {
-    const rawDraft = window.localStorage.getItem(draftStorageKey(homeworkId));
+    const rawDraft = window.localStorage.getItem(
+      draftStorageKey(homeworkId, context),
+    );
 
     if (!rawDraft) {
       return null;
@@ -193,7 +220,11 @@ function readStoredDraft(homeworkId: string) {
   }
 }
 
-function writeStoredDraft(homeworkId: string, values: Record<string, string>) {
+function writeStoredDraft(
+  homeworkId: string,
+  values: Record<string, string>,
+  context = "homework",
+) {
   if (typeof window === "undefined") {
     return;
   }
@@ -202,12 +233,12 @@ function writeStoredDraft(homeworkId: string, values: Record<string, string>) {
     const hasContent = Object.values(values).some((value) => value.length > 0);
 
     if (!hasContent) {
-      window.localStorage.removeItem(draftStorageKey(homeworkId));
+      window.localStorage.removeItem(draftStorageKey(homeworkId, context));
       return;
     }
 
     window.localStorage.setItem(
-      draftStorageKey(homeworkId),
+      draftStorageKey(homeworkId, context),
       JSON.stringify({
         savedAt: new Date().toISOString(),
         values,
@@ -218,13 +249,13 @@ function writeStoredDraft(homeworkId: string, values: Record<string, string>) {
   }
 }
 
-function clearStoredDraft(homeworkId: string) {
+function clearStoredDraft(homeworkId: string, context = "homework") {
   if (typeof window === "undefined") {
     return;
   }
 
   try {
-    window.localStorage.removeItem(draftStorageKey(homeworkId));
+    window.localStorage.removeItem(draftStorageKey(homeworkId, context));
   } catch {
     // Ignore storage cleanup failures.
   }
@@ -560,7 +591,7 @@ export function InteractiveHomeworkStudent({
   context = "homework",
   homework,
 }: {
-  context?: "homework" | "lesson";
+  context?: "candy-xp" | "homework" | "lesson";
   homework: StudentInteractiveHomework;
 }) {
   const router = useRouter();
@@ -584,19 +615,58 @@ export function InteractiveHomeworkStudent({
   const valuesRef = useRef(values);
   const status = homework.submission?.status;
   const isLocked = status === "SUBMITTED" || status === "REVIEWED";
-  const canReopen = status === "SUBMITTED";
+  const isCandyXpContext = context === "candy-xp";
+  const canReopen = !isCandyXpContext && status === "SUBMITTED";
   const isLessonContext = context === "lesson";
-  const isComplete = isCompleteStatus(status);
-  const assetUrl = `/ava/homework-assets/${homework.id}`;
+  const isComplete = isCandyXpContext
+    ? status === "REVIEWED"
+    : isCompleteStatus(status);
+  const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
   const statusAccent = statusAccentClass(status);
   const statusTone = statusClass(status);
   const statusIconTone = statusIconClass(status);
   const fallbackAssetLabel =
-    context === "lesson" ? "Aula interativa" : "Homework interativa";
+    context === "lesson"
+      ? "Aula interativa"
+      : isCandyXpContext
+        ? "Missao Candy XP"
+        : "Homework interativa";
   const fallbackInstructions =
     context === "lesson"
       ? "Complete a aula e marque como concluido."
-      : "Complete a atividade e entregue.";
+      : isCandyXpContext
+        ? "Complete as areas marcadas no arquivo e envie a missao."
+        : "Complete a atividade e entregue.";
+  const candyXpAmount = homework.xpReward ?? homework.submission?.awardedXp ?? 0;
+  const xpBadgeLabel = isCandyXpContext
+    ? status === "REVIEWED"
+      ? `Ganhou +${candyXpAmount} XP`
+      : `Vale +${candyXpAmount} XP`
+    : homeworkXpLabel(status);
+  const xpBadgeHelper = isCandyXpContext
+    ? status === "REVIEWED"
+      ? "missao concluida"
+      : status === "SUBMITTED"
+        ? "envio registrado"
+        : status === "RETURNED"
+          ? "refazer liberado"
+          : "ao enviar"
+    : homeworkXpHelper(status);
+  const xpBadgeClass = isCandyXpContext
+    ? status === "REVIEWED"
+      ? "border-emerald-300 bg-emerald-50 text-emerald-900"
+      : "border-amber-300 bg-amber-50 text-amber-950"
+    : homeworkXpClass(status);
+  const displayedStatusLabel =
+    isCandyXpContext && status === "REVIEWED" ? "Concluida" : statusLabel(status);
+  const displayedStatusHelper =
+    isCandyXpContext && status === "REVIEWED"
+      ? "XP registrado"
+      : isCandyXpContext && status === "SUBMITTED"
+        ? "Aguardando correcao"
+        : isCandyXpContext && status === "RETURNED"
+          ? "Refazer missao"
+          : statusHelper(status);
   const lessonStatusClass = isComplete
     ? "border-emerald-500/40 bg-emerald-50 text-emerald-900"
     : "border-red-500/40 bg-red-50 text-red-900";
@@ -628,12 +698,12 @@ export function InteractiveHomeworkStudent({
     setDraftHydrated(false);
 
     if (isLocked) {
-      clearStoredDraft(homework.id);
+      clearStoredDraft(homework.id, context);
       setDraftHydrated(true);
       return;
     }
 
-    const storedValues = readStoredDraft(homework.id);
+    const storedValues = readStoredDraft(homework.id, context);
 
     if (storedValues && Object.keys(storedValues).length > 0) {
       dirtyValues.current = true;
@@ -644,15 +714,15 @@ export function InteractiveHomeworkStudent({
     }
 
     setDraftHydrated(true);
-  }, [homework.id, isLocked]);
+  }, [context, homework.id, isLocked]);
 
   useEffect(() => {
     if (!draftHydrated || isLocked) {
       return;
     }
 
-    writeStoredDraft(homework.id, values);
-  }, [draftHydrated, homework.id, isLocked, values]);
+    writeStoredDraft(homework.id, values, context);
+  }, [context, draftHydrated, homework.id, isLocked, values]);
 
   useEffect(() => {
     if (isLocked || !draftHydrated) {
@@ -672,10 +742,15 @@ export function InteractiveHomeworkStudent({
     saveRequest.current = requestId;
 
     const timeout = window.setTimeout(async () => {
-      const result = await saveInteractiveHomeworkDraft({
-        answers: buildAnswersPayload(homework.fields, valuesSnapshot),
-        homeworkId: homework.id,
-      });
+      const result = isCandyXpContext
+        ? await saveCandyXpActivityDraft({
+            activityId: homework.id,
+            answers: buildCandyXpAnswersPayload(homework.fields, valuesSnapshot),
+          })
+        : await saveInteractiveHomeworkDraft({
+            answers: buildAnswersPayload(homework.fields, valuesSnapshot),
+            homeworkId: homework.id,
+          });
 
       if (requestId !== saveRequest.current) {
         return;
@@ -704,7 +779,14 @@ export function InteractiveHomeworkStudent({
         autosaveTimeout.current = null;
       }
     };
-  }, [draftHydrated, homework.fields, homework.id, isLocked, values]);
+  }, [
+    draftHydrated,
+    homework.fields,
+    homework.id,
+    isCandyXpContext,
+    isLocked,
+    values,
+  ]);
 
   function updateValue(fieldId: string, value: string) {
     dirtyValues.current = true;
@@ -730,15 +812,20 @@ export function InteractiveHomeworkStudent({
     const currentValues = valuesRef.current;
 
     startTransition(async () => {
-      const result = await submitInteractiveHomework({
-        answers: buildAnswersPayload(homework.fields, currentValues),
-        homeworkId: homework.id,
-      });
+      const result = isCandyXpContext
+        ? await submitCandyXpActivity({
+            activityId: homework.id,
+            answers: buildCandyXpAnswersPayload(homework.fields, currentValues),
+          })
+        : await submitInteractiveHomework({
+            answers: buildAnswersPayload(homework.fields, currentValues),
+            homeworkId: homework.id,
+          });
 
       setMessage(result.message);
 
       if (result.ok) {
-        clearStoredDraft(homework.id);
+        clearStoredDraft(homework.id, context);
         dirtyValues.current = false;
         setSaveState("saved");
         router.refresh();
@@ -841,13 +928,13 @@ export function InteractiveHomeworkStudent({
         ) : (
           <span className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
             <span
-              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm ${homeworkXpClass(status)}`}
+              className={`inline-flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold shadow-sm ${xpBadgeClass}`}
             >
               <Zap aria-hidden="true" className="size-3.5 shrink-0" />
               <span className="leading-tight">
-                <span className="block">{homeworkXpLabel(status)}</span>
+                <span className="block">{xpBadgeLabel}</span>
                 <span className="block text-[10px] font-semibold opacity-70">
-                  {homeworkXpHelper(status)}
+                  {xpBadgeHelper}
                 </span>
               </span>
             </span>
@@ -858,10 +945,10 @@ export function InteractiveHomeworkStudent({
                 aria-hidden="true"
                 className={`size-2.5 rounded-full ${statusAccent}`}
               />
-              {statusLabel(status)}
+              {displayedStatusLabel}
             </span>
             <span className="hidden rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm sm:inline-flex">
-              Abrir atividade
+              {isCandyXpContext ? "Abrir missao" : "Abrir atividade"}
             </span>
           </span>
         )}
@@ -881,17 +968,17 @@ export function InteractiveHomeworkStudent({
           <span className="flex flex-wrap items-center gap-2">
             {!isLessonContext ? (
               <span
-                className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${homeworkXpClass(status)}`}
+                className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${xpBadgeClass}`}
               >
                 <Zap aria-hidden="true" className="size-3.5" />
-                {homeworkXpLabel(status)}
+                {xpBadgeLabel}
               </span>
             ) : null}
             {!isLessonContext ? (
               <span
                 className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
               >
-                {statusHelper(status)}
+                {displayedStatusHelper}
               </span>
             ) : null}
             <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-semibold">
@@ -1085,7 +1172,11 @@ export function InteractiveHomeworkStudent({
             ) : (
               <Send data-icon="inline-start" />
             )}
-            {isLessonContext ? "Concluido" : "Entregar"}
+            {isLessonContext
+              ? "Concluido"
+              : isCandyXpContext
+                ? "Enviar missao"
+                : "Entregar"}
           </Button>
           {canReopen ? (
             <Button
@@ -1101,7 +1192,7 @@ export function InteractiveHomeworkStudent({
           {status === "REVIEWED" ? (
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
               <CheckCircle2 aria-hidden="true" />
-              Corrigida
+              {isCandyXpContext ? "Concluida" : "Corrigida"}
             </span>
           ) : null}
         </div>

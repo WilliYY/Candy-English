@@ -8,6 +8,10 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import {
+  normalizeTinyTextAnswer,
+  type InteractiveHomeworkFieldType,
+} from "@/lib/interactive-homework-fields";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveCandyXpAsset } from "@/lib/storage";
@@ -17,11 +21,14 @@ import {
   candyXpActivityDeleteSchema,
   candyXpActivityReviewSchema,
   candyXpActivityUpdateSchema,
+  saveCandyXpActivityInteractiveFieldsSchema,
   type CandyXpActivityAnswerInput,
   type CandyXpActivityCreateInput,
   type CandyXpActivityDeleteInput,
   type CandyXpActivityReviewInput,
   type CandyXpActivityUpdateInput,
+  type SaveCandyXpActivityInteractiveFieldsInput,
+  type SaveCandyXpActivityInteractiveFieldsOutput,
 } from "@/lib/validations/candy-xp-activities";
 
 export type CandyXpActivityCreateResult = {
@@ -39,6 +46,27 @@ export type CandyXpActivityActionResult<
   message: string;
   ok: boolean;
 };
+
+type SavedCandyXpActivityInteractiveField = {
+  height: number;
+  id: string;
+  label: string | null;
+  page: number;
+  placeholder: string | null;
+  required: boolean;
+  sortOrder: number;
+  type: InteractiveHomeworkFieldType;
+  width: number;
+  x: number;
+  y: number;
+};
+
+type SaveCandyXpActivityInteractiveFieldsResult =
+  CandyXpActivityActionResult<SaveCandyXpActivityInteractiveFieldsInput> & {
+    expectedCount?: number;
+    fields?: SavedCandyXpActivityInteractiveField[];
+    savedCount?: number;
+  };
 
 function fieldErrors<TInput extends Record<string, unknown>>(
   issues: { message: string; path: PropertyKey[] }[],
@@ -212,6 +240,16 @@ async function getVisibleActivityForStudent(
         },
       },
       id: true,
+      interactiveFields: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+        select: {
+          id: true,
+          required: true,
+          type: true,
+        },
+      },
       questions: {
         orderBy: {
           sortOrder: "asc",
@@ -457,6 +495,108 @@ export async function updateCandyXpActivity(
   };
 }
 
+function getInteractiveFieldMinimums(
+  type: SaveCandyXpActivityInteractiveFieldsOutput["fields"][number]["type"],
+) {
+  if (type === "CHECKBOX") {
+    return { height: 1, width: 1 };
+  }
+
+  if (type === "TINY_TEXT") {
+    return { height: 1, width: 1 };
+  }
+
+  if (type === "SHORT_TEXT") {
+    return { height: 1.2, width: 3 };
+  }
+
+  if (type === "DRAWING") {
+    return { height: 6, width: 8 };
+  }
+
+  return { height: 4, width: 8 };
+}
+
+function isPersistedInteractiveFieldId(
+  id: string | undefined,
+  existingIds: Set<string>,
+) {
+  return Boolean(id && existingIds.has(id));
+}
+
+function normalizeInteractiveFieldForSave(
+  field: SaveCandyXpActivityInteractiveFieldsOutput["fields"][number],
+  index: number,
+) {
+  const minimums = getInteractiveFieldMinimums(field.type);
+  const x = Math.min(field.x, 100 - minimums.width);
+  const y = Math.min(field.y, 100 - minimums.height);
+  const width = Math.max(minimums.width, Math.min(field.width, 100 - x));
+  const height = Math.max(minimums.height, Math.min(field.height, 100 - y));
+
+  return {
+    height,
+    label: field.label,
+    page: field.page,
+    placeholder: field.placeholder,
+    required: field.required,
+    sortOrder: index,
+    type: field.type,
+    width,
+    x,
+    y,
+  };
+}
+
+function hasDrawingAnswerValue(value: string) {
+  if (!value) {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as { strokes?: unknown };
+
+    return (
+      Array.isArray(parsed.strokes) &&
+      parsed.strokes.some(
+        (stroke) =>
+          Array.isArray(stroke) &&
+          stroke.some(
+            (point) =>
+              Array.isArray(point) &&
+              typeof point[0] === "number" &&
+              typeof point[1] === "number",
+          ),
+      )
+    );
+  } catch {
+    return false;
+  }
+}
+
+function hasInteractiveFieldAnswer(
+  field: {
+    id: string;
+    required: boolean;
+    type: InteractiveHomeworkFieldType;
+  },
+  value: string,
+) {
+  if (!field.required) {
+    return true;
+  }
+
+  if (field.type === "CHECKBOX") {
+    return value === "true";
+  }
+
+  if (field.type === "DRAWING") {
+    return hasDrawingAnswerValue(value);
+  }
+
+  return value.trim().length > 0;
+}
+
 export async function deleteCandyXpActivity(
   input: CandyXpActivityDeleteInput,
 ): Promise<CandyXpActivityActionResult<CandyXpActivityDeleteInput>> {
@@ -526,15 +666,188 @@ export async function deleteCandyXpActivity(
   };
 }
 
+export async function saveCandyXpActivityInteractiveFields(
+  input: SaveCandyXpActivityInteractiveFieldsInput,
+): Promise<SaveCandyXpActivityInteractiveFieldsResult> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para editar Candy XP.",
+    };
+  }
+
+  const parsed = saveCandyXpActivityInteractiveFieldsSchema.safeParse(input);
+
+  if (!parsed.success) {
+    const errors = fieldErrors<SaveCandyXpActivityInteractiveFieldsInput>(
+      parsed.error.issues,
+    );
+
+    return {
+      errors,
+      ok: false,
+      message: errors.fields ?? "Revise as areas da atividade Candy XP.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const activity = await prisma.candyXpActivity.findUnique({
+    where: {
+      id: parsed.data.activityId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!activity) {
+    return {
+      ok: false,
+      message: "Atividade Candy XP nao encontrada.",
+    };
+  }
+
+  const expectedCount = parsed.data.fields.length;
+  let savedFields: SavedCandyXpActivityInteractiveField[];
+
+  try {
+    savedFields = await prisma.$transaction(async (tx) => {
+      const existingFields = await tx.candyXpActivityInteractiveField.findMany({
+        where: {
+          activityId: activity.id,
+        },
+        select: {
+          id: true,
+        },
+      });
+      const existingIds = new Set(existingFields.map((field) => field.id));
+      const retainedIds = parsed.data.fields
+        .map((field) => field.id)
+        .filter((id): id is string =>
+          isPersistedInteractiveFieldId(id, existingIds),
+        );
+
+      await tx.candyXpActivityInteractiveField.deleteMany({
+        where:
+          retainedIds.length > 0
+            ? {
+                activityId: activity.id,
+                id: {
+                  notIn: retainedIds,
+                },
+              }
+            : {
+                activityId: activity.id,
+              },
+      });
+
+      for (const [index, field] of parsed.data.fields.entries()) {
+        const data = normalizeInteractiveFieldForSave(field, index);
+
+        if (isPersistedInteractiveFieldId(field.id, existingIds)) {
+          await tx.candyXpActivityInteractiveField.update({
+            where: {
+              id: field.id,
+            },
+            data,
+          });
+          continue;
+        }
+
+        await tx.candyXpActivityInteractiveField.create({
+          data: {
+            ...data,
+            activityId: activity.id,
+          },
+        });
+      }
+
+      const confirmedCount = await tx.candyXpActivityInteractiveField.count({
+        where: {
+          activityId: activity.id,
+        },
+      });
+
+      if (confirmedCount !== expectedCount) {
+        throw new Error(
+          `Candy XP field count mismatch: expected ${expectedCount}, saved ${confirmedCount}.`,
+        );
+      }
+
+      return tx.candyXpActivityInteractiveField.findMany({
+        where: {
+          activityId: activity.id,
+        },
+        orderBy: {
+          sortOrder: "asc",
+        },
+        select: {
+          height: true,
+          id: true,
+          label: true,
+          page: true,
+          placeholder: true,
+          required: true,
+          sortOrder: true,
+          type: true,
+          width: true,
+          x: true,
+          y: true,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("Failed to save Candy XP interactive fields", {
+      activityId: activity.id,
+      error,
+      expectedCount,
+    });
+
+    return {
+      expectedCount,
+      ok: false,
+      message:
+        "Erro ao salvar areas. As alteracoes nao foram confirmadas; tente salvar novamente antes de sair.",
+      savedCount: 0,
+    };
+  }
+
+  if (savedFields.length !== expectedCount) {
+    return {
+      expectedCount,
+      fields: savedFields,
+      ok: false,
+      message: `${savedFields.length} de ${expectedCount} area(s) foram salvas. Revise antes de sair e tente salvar novamente.`,
+      savedCount: savedFields.length,
+    };
+  }
+
+  revalidatePath("/ava/admin");
+  revalidatePath("/ava/student");
+
+  return {
+    expectedCount,
+    fields: savedFields,
+    ok: true,
+    message: `${savedFields.length} area(s) Candy XP salvas com sucesso.`,
+    savedCount: savedFields.length,
+  };
+}
+
 function normalizeActivityAnswers(
   answers: CandyXpActivityAnswerInput["answers"],
-  allowedQuestionIds: Set<string>,
+  allowedAnswerIds: Set<string>,
+  tinyTextFieldIds: Set<string>,
 ) {
   return answers
-    .filter((answer) => allowedQuestionIds.has(answer.questionId))
+    .filter((answer) => allowedAnswerIds.has(answer.questionId))
     .map((answer) => ({
       questionId: answer.questionId,
-      value: answer.value,
+      value: tinyTextFieldIds.has(answer.questionId)
+        ? normalizeTinyTextAnswer(answer.value)
+        : answer.value,
     }));
 }
 
@@ -585,12 +898,21 @@ export async function saveCandyXpActivityDraft(
   }
 
   const prisma = getPrisma();
-  const allowedQuestionIds = new Set(
-    activity.questions.map((question) => question.id),
+  const allowedAnswerIds = new Set(
+    [
+      ...activity.questions.map((question) => question.id),
+      ...activity.interactiveFields.map((field) => field.id),
+    ],
+  );
+  const tinyTextFieldIds = new Set(
+    activity.interactiveFields
+      .filter((field) => field.type === "TINY_TEXT")
+      .map((field) => field.id),
   );
   const answers = normalizeActivityAnswers(
     parsed.data.answers,
-    allowedQuestionIds,
+    allowedAnswerIds,
+    tinyTextFieldIds,
   );
 
   await prisma.candyXpActivitySubmission.upsert({
@@ -672,25 +994,44 @@ export async function submitCandyXpActivity(
   }
 
   const prisma = getPrisma();
-  const allowedQuestionIds = new Set(
-    activity.questions.map((question) => question.id),
+  const allowedAnswerIds = new Set(
+    [
+      ...activity.questions.map((question) => question.id),
+      ...activity.interactiveFields.map((field) => field.id),
+    ],
+  );
+  const tinyTextFieldIds = new Set(
+    activity.interactiveFields
+      .filter((field) => field.type === "TINY_TEXT")
+      .map((field) => field.id),
   );
   const answers = normalizeActivityAnswers(
     parsed.data.answers,
-    allowedQuestionIds,
+    allowedAnswerIds,
+    tinyTextFieldIds,
   );
   const evaluation = evaluateCandyXpActivityAnswers({
     answers,
     questions: activity.questions,
   });
+  const answerMap = new Map(
+    answers.map((answer) => [answer.questionId, answer.value]),
+  );
+  const hasMissingInteractiveField = activity.interactiveFields.some(
+    (field) => !hasInteractiveFieldAnswer(field, answerMap.get(field.id) ?? ""),
+  );
 
-  if (evaluation.hasMissingRequired) {
+  if (evaluation.hasMissingRequired || hasMissingInteractiveField) {
     return {
       errors: {
-        answers: "Preencha as perguntas obrigatorias antes de enviar.",
+        answers: hasMissingInteractiveField
+          ? "Preencha as areas obrigatorias no PDF antes de enviar."
+          : "Preencha as perguntas obrigatorias antes de enviar.",
       },
       ok: false,
-      message: "Preencha as perguntas obrigatorias antes de enviar.",
+      message: hasMissingInteractiveField
+        ? "Preencha as areas obrigatorias no PDF antes de enviar."
+        : "Preencha as perguntas obrigatorias antes de enviar.",
     };
   }
 

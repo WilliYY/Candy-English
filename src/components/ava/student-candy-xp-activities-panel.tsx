@@ -15,10 +15,12 @@ import {
   saveCandyXpActivityDraft,
   submitCandyXpActivity,
 } from "@/app/ava/candy-xp/actions";
+import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 
 type StudentCandyXpQuestion = {
   id: string;
@@ -46,9 +48,24 @@ type StudentCandyXpSubmission = {
 
 export type StudentCandyXpActivity = {
   assetFileName: string | null;
+  assetMimeType: string | null;
+  assetPageCount: number | null;
   category: string;
   description: string | null;
   id: string;
+  interactiveFields: {
+    height: number;
+    id: string;
+    label: string | null;
+    page: number;
+    placeholder: string | null;
+    required: boolean;
+    sortOrder: number;
+    type: InteractiveHomeworkFieldType;
+    width: number;
+    x: number;
+    y: number;
+  }[];
   level: string;
   questions: StudentCandyXpQuestion[];
   submission: StudentCandyXpSubmission | null;
@@ -606,9 +623,31 @@ export function StudentCandyXpActivitiesPanel({
         </div>
       </div>
 
-      {activities.map((activity) => (
-        <ActivityCard key={activity.id} activity={activity} />
-      ))}
+      {activities.map((activity) =>
+        activity.interactiveFields.length > 0 ? (
+          <InteractiveHomeworkStudent
+            key={activity.id}
+            context="candy-xp"
+            homework={{
+              assetFileName: activity.assetFileName,
+              assetMimeType: activity.assetMimeType,
+              assetPageCount: activity.assetPageCount,
+              assetUrl: `/ava/candy-xp-assets/${activity.id}`,
+              dueDate: null,
+              fields: activity.interactiveFields,
+              id: activity.id,
+              instructions:
+                activity.description ??
+                "Complete as areas marcadas no arquivo e envie a missao.",
+              submission: activity.submission ?? undefined,
+              title: activity.title,
+              xpReward: activity.xpReward,
+            }}
+          />
+        ) : (
+          <ActivityCard key={activity.id} activity={activity} />
+        ),
+      )}
     </div>
   );
 }

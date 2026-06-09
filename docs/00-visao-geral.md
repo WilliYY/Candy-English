@@ -46,7 +46,7 @@ Rotas principais:
 - Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
 - Homework e aula interativa devem manter arquivo e campos protegidos por permissao de aluno/teacher/admin.
 - Candy XP e persistido por eventos server-side e continua respeitando role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos.
-- Atividades Candy XP devem liberar PDF/imagem apenas por rota protegida e conceder XP no servidor, com correcao automatica para perguntas objetivas e manual para respostas escritas.
+- Atividades Candy XP devem liberar PDF/imagem apenas por rota protegida, permitir areas interativas salvas por `ADMIN` e conceder XP no servidor, com conclusao automatica quando os campos obrigatorios estiverem preenchidos e correcao manual para respostas escritas antigas.
 - PDFs pedagogicos protegidos, como atividades Candy XP, homework interativo e aulas interativas, podem ser otimizados no servidor antes de salvar, mas a falha da otimizacao nao deve quebrar o upload nem abrir acesso publico.
 
 ## Decisoes tecnicas tomadas
@@ -61,7 +61,7 @@ Rotas principais:
 - PDFs de Candy XP, homework interativo e aulas interativas passam por tentativa de otimizacao server-side com Ghostscript quando configurado.
 - Homework e aula interativa usam editor manual por arrastar: o arquivo original fica como fundo protegido e a teacher desenha areas editaveis em porcentagem sobre cada pagina.
 - Candy XP usa `src/lib/candy-xp.ts` para calcular nivel infinito/progresso e `src/lib/candy-xp-persistence.ts` para gravar eventos, streaks, badges e missoes com `sourceKey` anti-duplicacao.
-- Candy XP Atividades usa modelos proprios para historia, perguntas, liberacao por aluno e progresso, mas reaproveita o ledger de XP existente.
+- Candy XP Atividades usa modelos proprios para historia, areas interativas, perguntas antigas, liberacao por aluno e progresso, mas reaproveita o ledger de XP existente.
 - Catty responde apenas para usuarios autenticados do AVA; usa Gemini pelo servidor como provedor padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado quando as chaves/chamadas falham, historico persistente por usuario/contexto com prompt curto, feedback discreto de respostas, memoria global aprovada do Catty Learning Center, memoria pessoal ativa por usuario para preferencias leves, contexto inicial opcional no cadastro/aceite de aluno e gestao humana dessas memorias em Admin/Teacher. Student ve apenas a tela informativa `Catty aprendendo`.
 - O cofre admin importa apenas integracoes externas do `.env` quando existem; segredos internos de banco, Auth e seed nao entram na tela.
 
@@ -80,7 +80,7 @@ Rotas principais:
 - `14-agenda.md`: modulo agenda.
 - `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave para homework/aula interativa.
 - `16-candy-xp.md`: fundacao de gamificacao persistente no estilo Duolingo.
-- `17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
+- `17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, areas interativas, perguntas antigas, progresso, correcao e XP.
 - `99-contexto-rapido-codex.md`: prompt minimo e contexto curto para retomar o projeto em outro chat.
 
 ## Riscos ao alterar esta parte
