@@ -20,6 +20,7 @@ Arquivos principais:
 - `src/app/ava/candy-xp-assets/[activityId]/route.ts`: rota protegida para PDF/imagem das atividades.
 - `src/components/ava/student-xp-card.tsx`: card reutilizavel para student, teacher e admin.
 - `src/components/ava/candy-xp-ranking-card.tsx`: card visual do ranking interno com top, avatar, role, nivel e XP.
+- `src/components/ava/user-summary-panel.tsx`: mini card de perfil/XP que mostra a posicao pessoal do aluno ou teacher no ranking da propria categoria.
 - `src/components/ava/admin-candy-xp-panel.tsx`: painel admin para montar atividades e corrigir envios.
 - `src/components/ava/student-candy-xp-activities-panel.tsx`: experiencia do aluno com missoes, PDF/imagem, envio e progresso.
 - `src/app/ava/student/page.tsx`: sincroniza eventos XP do aluno.
@@ -69,8 +70,9 @@ Rotas das atividades:
 - Admin recebe XP por indicadores operacionais globais permitidos no painel admin.
 - Nao existe ranking publico.
 - Existe ranking interno do AVA apenas para usuarios logados, exibindo alunos e teachers/profs com nome, foto/avatar, role, nivel, XP total e XP restante, sem email, telefone, documento, pagamento, contrato ou outro dado sensivel.
-- O ranking usa `CandyXpProfile` como cache/resumo e `CandyXpEvent` continua sendo a fonte da verdade do XP; a posicao deve refletir o perfil recalculado apos cada sincronizacao de XP no servidor.
+- O ranking usa `CandyXpProfile` como cache/resumo e `CandyXpEvent` continua sendo a fonte da verdade do XP; a posicao geral e a posicao pessoal por categoria devem refletir o perfil recalculado apos cada sincronizacao de XP no servidor.
 - A ordenacao do ranking e: maior XP total, maior nivel, XP mais recente por `lastXpEventAt` e nome em ordem alfabetica.
+- O mini card de perfil/XP mostra a posicao do proprio usuario somente para `STUDENT` e `TEACHER`: student entra na categoria `alunos`, teacher entra em `teachers`, e quem ainda tem 0 XP recebe incentivo para comecar uma missao em vez de uma colocacao.
 - Streak usa dias de atividade com XP e e calculado por data em `America/Sao_Paulo`.
 - Badges sao concedidos automaticamente por criterios simples: nivel, streak ou contagem de eventos.
 - Missoes futuras devem usar `CandyMission` + `CandyMissionAttempt` e gravar XP via server action/rota protegida.
@@ -83,7 +85,8 @@ Rotas das atividades:
 - PDF/imagem da atividade deve ser servido apenas pela rota protegida de asset.
 - No admin, o painel Candy XP deve manter cards visiveis e escaneaveis para criacao, arquivo, liberacao, status, XP e respostas, sem alterar as regras de permissao ou premiacao.
 - O card reutilizavel de Candy XP deve manter as fontes de XP em cards responsivos por largura minima, evitando quatro colunas apertadas quando o painel estiver estreito.
-- O card `Ranking Candy XP` deve destacar o top 3, mostrar o usuario logado sem dados sensiveis, exibir `Prof` para teachers e destacar a posicao do usuario logado quando ele nao estiver no top mostrado.
+- O card `Ranking Candy XP` deve destacar o top 3, mostrar o usuario logado sem dados sensiveis, exibir `Prof` para teachers e destacar a posicao geral do usuario logado quando ele nao estiver no top mostrado.
+- O mini card de perfil/XP deve mostrar um badge compacto com `#posicao no Ranking Candy`, categoria, XP total e XP restante para o proximo nivel, sem criar competicao para admin.
 - Em `Aulas e Materiais`, o card de cada aula deve mostrar o XP ja ganho ou o XP possivel ao concluir, usando o valor real de `Aulas finalizadas`.
 - Em `Responder homework`, o card de cada homework deve mostrar o XP ja ganho ou o XP possivel: entrega gera `Homeworks enviadas` e homework corrigida soma tambem `Feedbacks recebidos`, sempre usando os valores reais de `CANDY_XP_REWARDS`.
 - Em mobile, o card reutilizavel deve empilhar fontes e metricas em uma coluna e manter a trilha de niveis com rolagem horizontal discreta, evitando tiles comprimidos.
@@ -130,7 +133,7 @@ Admin:
 - Atividades Candy XP usam models proprios para historia/PDF/envio e ainda preservam perguntas antigas quando existirem, mas a premiacao continua centralizada no ledger `CandyXpEvent`.
 - A criacao nova nao exige perguntas separadas; o admin pode editar dados principais da atividade e desenhar areas diretamente no PDF/imagem, preservando perguntas antigas apenas por compatibilidade.
 - A exclusao de atividade Candy XP remove arquivo, perguntas, liberacoes, progresso e respostas operacionais, mas nao remove `CandyXpEvent`; XP ja conquistado continua como historico do aluno.
-- O ranking interno nao agrega `CandyXpEvent` a cada renderizacao. Ele le o top de `CandyXpProfile`, seleciona apenas campos minimos de `User`, conta participantes com query simples e so calcula a posicao exata do usuario logado fora do top quando necessario, usando `lastXpEventAt` ja recalculado pelo sync de XP para desempate recente.
+- O ranking interno nao agrega `CandyXpEvent` a cada renderizacao. Ele le o top de `CandyXpProfile`, seleciona apenas campos minimos de `User`, conta participantes com query simples, calcula a posicao geral do usuario logado fora do top quando necessario e calcula a posicao pessoal por categoria (`alunos` ou `teachers`) a partir do mesmo criterio de ordenacao, usando `lastXpEventAt` ja recalculado pelo sync de XP para desempate recente.
 
 ## Riscos ao alterar esta parte
 

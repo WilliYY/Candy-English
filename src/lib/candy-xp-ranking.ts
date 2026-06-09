@@ -17,7 +17,18 @@ export type CandyXpRankingEntry = {
   xpToNextLevel: number;
 };
 
+export type CandyXpCurrentUserRanking = {
+  categoryLabel: string;
+  categoryTitle: string;
+  hasXp: boolean;
+  position: number | null;
+  totalInCategory: number;
+  totalXp: number;
+  xpToNextLevel: number;
+};
+
 export type CandyXpRankingSnapshot = {
+  currentUserRanking: CandyXpCurrentUserRanking | null;
   currentUserEntry: CandyXpRankingEntry | null;
   generatedAt: string;
   topEntries: CandyXpRankingEntry[];
@@ -49,25 +60,54 @@ function getRoleLabel(role: CandyXpRankingRole) {
   return role === "TEACHER" ? "Prof" : "Aluno";
 }
 
+function getCategoryLabel(role: CandyXpRankingRole) {
+  return role === "TEACHER" ? "teachers" : "alunos";
+}
+
+function getCategoryTitle(role: CandyXpRankingRole) {
+  return role === "TEACHER" ? "Ranking Teacher" : "Ranking Candy";
+}
+
 function getSafeName(name?: string | null) {
   const normalized = name?.trim();
 
   return normalized && normalized.length > 0 ? normalized : "Candy learner";
 }
 
-function getRankableUserFilter() {
+function getRankableUserFilter(role?: CandyXpRankingRole) {
+  const roleFilter = role
+    ? {
+        role,
+      }
+    : {
+        role: {
+          in: RANKABLE_ROLE_VALUES,
+        },
+      };
+
   return {
     isActive: true,
-    role: {
-      in: RANKABLE_ROLE_VALUES,
-    },
+    ...roleFilter,
   };
 }
 
-function getRankableProfileWhere() {
+function getRankableProfileWhere({
+  role,
+  withXpOnly = false,
+}: {
+  role?: CandyXpRankingRole;
+  withXpOnly?: boolean;
+} = {}) {
   return {
+    ...(withXpOnly
+      ? {
+          totalXp: {
+            gt: 0,
+          },
+        }
+      : {}),
     user: {
-      is: getRankableUserFilter(),
+      is: getRankableUserFilter(role),
     },
   };
 }
@@ -133,10 +173,11 @@ export async function getCandyXpRankingSnapshot({
     MAX_RANKING_LIMIT,
     Math.max(MIN_RANKING_LIMIT, Math.floor(limit)),
   );
+  const rankingProfileWhere = getRankableProfileWhere({ withXpOnly: true });
   const rankableProfileWhere = getRankableProfileWhere();
   const [topProfiles, totalRanked, currentUserProfile] = await Promise.all([
     prisma.candyXpProfile.findMany({
-      where: rankableProfileWhere,
+      where: rankingProfileWhere,
       take: normalizedLimit,
       orderBy: [
         {
@@ -160,7 +201,7 @@ export async function getCandyXpRankingSnapshot({
       select: rankingProfileSelect,
     }),
     prisma.candyXpProfile.count({
-      where: rankableProfileWhere,
+      where: rankingProfileWhere,
     }),
     prisma.candyXpProfile.findFirst({
       where: {
@@ -182,11 +223,84 @@ export async function getCandyXpRankingSnapshot({
     (entry) => entry.userId === currentUserId,
   );
   let currentUserEntry: CandyXpRankingEntry | null = null;
+  let currentUserRanking: CandyXpCurrentUserRanking | null = null;
 
-  if (currentUserProfile && !currentUserIsInTop) {
+  if (currentUserProfile) {
+    const currentUserRole = currentUserProfile.user.role as CandyXpRankingRole;
+    const categoryProfileWhere = getRankableProfileWhere({
+      role: currentUserRole,
+      withXpOnly: true,
+    });
+    const shouldRankCurrentUser = currentUserProfile.totalXp > 0;
+    const [totalInCategory, entriesAhead] = await Promise.all([
+      prisma.candyXpProfile.count({
+        where: categoryProfileWhere,
+      }),
+      shouldRankCurrentUser
+        ? prisma.candyXpProfile.count({
+            where: {
+              ...categoryProfileWhere,
+              OR: [
+                {
+                  totalXp: {
+                    gt: currentUserProfile.totalXp,
+                  },
+                },
+                {
+                  level: {
+                    gt: currentUserProfile.level,
+                  },
+                  totalXp: currentUserProfile.totalXp,
+                },
+                {
+                  ...getMoreRecentLastXpFilter(currentUserProfile.lastXpEventAt),
+                  level: currentUserProfile.level,
+                  totalXp: currentUserProfile.totalXp,
+                },
+                {
+                  ...getSameLastXpFilter(currentUserProfile.lastXpEventAt),
+                  level: currentUserProfile.level,
+                  totalXp: currentUserProfile.totalXp,
+                  user: {
+                    is: {
+                      ...getRankableUserFilter(currentUserRole),
+                      name: {
+                        lt: currentUserProfile.user.name,
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    currentUserRanking = {
+      categoryLabel: getCategoryLabel(currentUserRole),
+      categoryTitle: getCategoryTitle(currentUserRole),
+      hasXp: shouldRankCurrentUser,
+      position: entriesAhead === null ? null : entriesAhead + 1,
+      totalInCategory,
+      totalXp: currentUserProfile.totalXp,
+      xpToNextLevel: Math.max(
+        0,
+        currentUserProfile.requiredXp - currentUserProfile.progressXp,
+      ),
+    };
+  }
+
+  if (
+    currentUserProfile &&
+    currentUserProfile.totalXp > 0 &&
+    !currentUserIsInTop
+  ) {
     const entriesAhead = await prisma.candyXpProfile.count({
       where: {
         ...rankableProfileWhere,
+        totalXp: {
+          gt: 0,
+        },
         OR: [
           {
             totalXp: {
@@ -229,6 +343,7 @@ export async function getCandyXpRankingSnapshot({
   }
 
   return {
+    currentUserRanking,
     currentUserEntry,
     generatedAt: new Date().toISOString(),
     topEntries,

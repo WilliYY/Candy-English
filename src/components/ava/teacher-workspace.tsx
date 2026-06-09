@@ -469,6 +469,7 @@ export function TeacherWorkspace({
           avatarPath={currentUser.avatarPath}
           email={currentUser.email}
           name={currentUser.name}
+          ranking={candyXpRanking.currentUserRanking}
           role={currentUser.role}
           userId={currentUser.id}
           xp={xpSnapshot}

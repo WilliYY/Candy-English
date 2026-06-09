@@ -31,6 +31,7 @@ Componentes:
 - `src/components/ava/homework-correction-tabs.tsx`
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
+- `src/components/ava/user-summary-panel.tsx`
 - `src/components/ava/student-xp-card.tsx`
 - `src/components/ava/candy-xp-ranking-card.tsx`
 - `src/components/ava/admin-candy-xp-panel.tsx`
@@ -149,10 +150,11 @@ Helpers:
 4. `CandyXpProfile` guarda total, nivel, progresso e streak como cache recalculado pela soma dos eventos.
 5. O ranking interno do AVA aparece nos resumos de Student, Teacher e Admin, usando `CandyXpProfile` como resumo cacheado e mostrando apenas nome, foto/avatar, role, nivel, XP total e XP restante de alunos e profs.
 6. A ordenacao do ranking e feita no servidor por XP total, nivel, XP mais recente e nome; se o usuario logado for aluno/prof e estiver fora do top exibido, a propria posicao aparece separada.
-7. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
-8. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
-9. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
-10. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
+7. O mini card de perfil/XP de Student e Teacher tambem mostra a colocacao pessoal na categoria da propria role: student entre alunos e teacher entre teachers. Usuarios com 0 XP veem incentivo para comecar uma missao em vez de colocacao.
+8. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
+9. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
+10. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
+11. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
 
 ### Atividades Candy XP
 
