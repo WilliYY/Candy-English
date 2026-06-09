@@ -128,6 +128,10 @@ function createJitsiMeetUrl(title: string) {
   return `${getLiveClassJitsiOrigin()}/CandyEnglish-${slug || "aula"}-${suffix}`;
 }
 
+function toNullable<TValue>(value: TValue | undefined) {
+  return value ?? null;
+}
+
 export async function updateMyProfile(
   input: UpdateProfileInput,
 ): Promise<ActionResult<UpdateProfileInput>> {
@@ -169,9 +173,9 @@ export async function updateMyProfile(
     await tx.user.update({
       where: { id: actor.userId },
       data: {
-        address,
+        address: toNullable(address),
         name,
-        phone,
+        phone: toNullable(phone),
       },
     });
 
@@ -179,25 +183,25 @@ export async function updateMyProfile(
       await tx.studentProfile.upsert({
         where: { userId: actor.userId },
         create: {
-          birthDate,
-          gender,
-          guardianDocument,
-          motherName,
-          motherPhone,
-          notes,
-          studentPhone,
-          studentPhoneAlt,
+          birthDate: toNullable(birthDate),
+          gender: toNullable(gender),
+          guardianDocument: toNullable(guardianDocument),
+          motherName: toNullable(motherName),
+          motherPhone: toNullable(motherPhone),
+          notes: toNullable(notes),
+          studentPhone: toNullable(studentPhone),
+          studentPhoneAlt: toNullable(studentPhoneAlt),
           userId: actor.userId,
         },
         update: {
-          birthDate,
-          gender,
-          guardianDocument,
-          motherName,
-          motherPhone,
-          notes,
-          studentPhone,
-          studentPhoneAlt,
+          birthDate: toNullable(birthDate),
+          gender: toNullable(gender),
+          guardianDocument: toNullable(guardianDocument),
+          motherName: toNullable(motherName),
+          motherPhone: toNullable(motherPhone),
+          notes: toNullable(notes),
+          studentPhone: toNullable(studentPhone),
+          studentPhoneAlt: toNullable(studentPhoneAlt),
         },
       });
     }

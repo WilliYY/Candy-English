@@ -11,9 +11,10 @@ import {
   Save,
   ShieldCheck,
   Sparkles,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { updateMyProfile } from "@/app/ava/actions";
 import {
@@ -32,6 +33,15 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/ava/user-avatar";
+
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+const allowedAvatarTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+function formatFileSize(bytes: number) {
+  return `${(bytes / 1024 / 1024).toLocaleString("pt-BR", {
+    maximumFractionDigits: 1,
+  })} MB`;
+}
 
 type ProfileFormProps = {
   defaultValues: UpdateProfileInput;
@@ -327,10 +337,19 @@ export function AvatarUploadForm({
   userId,
 }: AvatarUploadFormProps) {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+
+  const clearFile = () => {
+    setFile(null);
+
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (!file) {
@@ -373,7 +392,7 @@ export function AvatarUploadForm({
           setMessage(result.message ?? "Nao foi possivel enviar a foto.");
 
           if (response.ok && result.ok) {
-            setFile(null);
+            clearFile();
             router.refresh();
           }
         } catch {
@@ -423,6 +442,7 @@ export function AvatarUploadForm({
         <FieldLabel htmlFor="avatar">Escolher imagem</FieldLabel>
         <Input
           id="avatar"
+          ref={inputRef}
           name="avatar"
           type="file"
           accept="image/png,image/jpeg,image/webp"
@@ -430,7 +450,29 @@ export function AvatarUploadForm({
           disabled={isPending}
           onChange={(event) => {
             setMessage(null);
-            setFile(event.target.files?.[0] ?? null);
+            const selectedFile = event.target.files?.[0] ?? null;
+
+            if (!selectedFile) {
+              setFile(null);
+              return;
+            }
+
+            if (!allowedAvatarTypes.has(selectedFile.type)) {
+              clearFile();
+              setMessage("Envie uma imagem PNG, JPG ou WebP.");
+              return;
+            }
+
+            if (
+              selectedFile.size <= 0 ||
+              selectedFile.size > AVATAR_MAX_BYTES
+            ) {
+              clearFile();
+              setMessage("A foto precisa ter ate 2 MB.");
+              return;
+            }
+
+            setFile(selectedFile);
           }}
         />
         <FieldDescription>
@@ -451,6 +493,32 @@ export function AvatarUploadForm({
           Foto preenchida tambem ajuda no bonus de perfil.
         </span>
       </div>
+
+      {file ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-500/20 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          <span className="flex min-w-0 items-center gap-2">
+            <CheckCircle2 aria-hidden="true" className="size-4 shrink-0" />
+            <span className="truncate">{file.name}</span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2">
+            {formatFileSize(file.size)}
+            <Button
+              aria-label="Remover imagem selecionada"
+              className="size-8 rounded-full"
+              disabled={isPending}
+              onClick={() => {
+                setMessage(null);
+                clearFile();
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </Button>
+          </span>
+        </div>
+      ) : null}
 
       {message ? (
         <p className="rounded-xl border bg-muted px-4 py-3 text-sm text-muted-foreground">

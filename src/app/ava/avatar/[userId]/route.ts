@@ -25,8 +25,47 @@ export async function GET(
       avatarMimeType: true,
       avatarPath: true,
       id: true,
+      role: true,
+      studentProfile: {
+        select: {
+          id: true,
+        },
+      },
     },
   });
+
+  if (!user) {
+    return new NextResponse("Foto nao encontrada.", { status: 404 });
+  }
+
+  if (session.user.role !== "ADMIN" && session.user.id !== user.id) {
+    let canReadAssignedStudentAvatar = false;
+
+    if (session.user.role === "TEACHER" && user.role === "STUDENT") {
+      const teacherProfile = await prisma.teacherProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { id: true },
+      });
+
+      if (teacherProfile && user.studentProfile) {
+        const assignment = await prisma.studentTeacherAssignment.findUnique({
+          where: {
+            teacherProfileId_studentProfileId: {
+              studentProfileId: user.studentProfile.id,
+              teacherProfileId: teacherProfile.id,
+            },
+          },
+          select: { id: true },
+        });
+
+        canReadAssignedStudentAvatar = Boolean(assignment);
+      }
+    }
+
+    if (!canReadAssignedStudentAvatar) {
+      return new NextResponse("Nao autorizado.", { status: 403 });
+    }
+  }
 
   if (!user?.avatarPath || !user.avatarMimeType) {
     return new NextResponse("Foto nao encontrada.", { status: 404 });

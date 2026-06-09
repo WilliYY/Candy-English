@@ -77,6 +77,7 @@ Rotas protegidas:
 - `ADMIN` acessa admin e pode supervisionar teacher/student.
 - `TEACHER` acessa teacher e student, mas dados editaveis dependem de vinculo.
 - `STUDENT` acessa student e apenas os proprios dados.
+- `/ava/avatar/[userId]` exige sessao; student le apenas o proprio avatar, admin le todos e teacher le avatar de aluno vinculado.
 - Usuario inativo nao entra.
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
 - Modo manutencao bloqueia student, mas nao admin/teacher.

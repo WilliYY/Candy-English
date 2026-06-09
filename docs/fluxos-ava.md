@@ -297,6 +297,8 @@ Regras:
 - Foto do perfil aceita PNG, JPG ou WebP ate 2 MB.
 - A foto atualizada usa rota dedicada `POST /ava/avatar` e deve refletir no card lateral, no resumo superior e no bloco de upload do perfil.
 - O aluno edita sexo/contatos/dados pessoais, mas nao edita nivel.
+- Campos opcionais limpos pelo aluno sao gravados como `null`, para nao manter dados antigos por acidente.
+- Avatar de aluno fica protegido: o proprio aluno, admin ou teacher vinculada podem ler a foto pela rota `/ava/avatar/[userId]`.
 - Teacher/admin atualizam o nivel do aluno na area teacher, com permissao validada por vinculo.
 - Contrato aceita PDF ate 8 MB.
 - Admin ve uso aproximado de arquivos em MB no painel de usuarios.
