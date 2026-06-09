@@ -244,6 +244,22 @@ export const adminResetUserPasswordSchema = z.object({
   userId: z.string().min(1, "Usuario invalido."),
 });
 
+export const adminUpdateStudentContactSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .email("Informe um email valido.")
+    .max(180, "O email pode ter no maximo 180 caracteres.")
+    .transform((email) => email.toLowerCase()),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Informe o nome com pelo menos 2 caracteres.")
+    .max(120, "O nome pode ter no maximo 120 caracteres."),
+  phone: optionalText(40, "O telefone pode ter no maximo 40 caracteres."),
+  userId: z.string().min(1, "Aluno invalido."),
+});
+
 export const adminAssignTeacherSchema = z.object({
   studentProfileId: z.string().min(1, "Selecione um aluno."),
   teacherProfileId: z.string().min(1, "Selecione uma teacher."),
@@ -363,6 +379,9 @@ export type AdminToggleUserStatusInput = z.input<
 >;
 export type AdminResetUserPasswordInput = z.input<
   typeof adminResetUserPasswordSchema
+>;
+export type AdminUpdateStudentContactInput = z.input<
+  typeof adminUpdateStudentContactSchema
 >;
 export type AdminAssignTeacherInput = z.input<typeof adminAssignTeacherSchema>;
 export type AdminSiteContentInput = z.input<typeof adminSiteContentSchema>;

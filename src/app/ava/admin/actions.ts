@@ -38,6 +38,7 @@ import {
   adminResetUserPasswordSchema,
   adminSiteContentSchema,
   adminToggleUserStatusSchema,
+  adminUpdateStudentContactSchema,
   type AdminAgendaAttendanceInput,
   type AdminAgendaMakeupInput,
   type AdminAgendaRemoveStudentInput,
@@ -54,6 +55,7 @@ import {
   type AdminResetUserPasswordInput,
   type AdminSiteContentInput,
   type AdminToggleUserStatusInput,
+  type AdminUpdateStudentContactInput,
 } from "@/lib/validations/admin-users";
 
 export type AdminCreateUserResult = {
@@ -665,6 +667,129 @@ export async function resetAvaUserPassword(
   return {
     ok: true,
     message: `Senha redefinida para ${user.name}.`,
+  };
+}
+
+export async function updateStudentContactByAdmin(
+  input: AdminUpdateStudentContactInput,
+): Promise<AdminActionResult<AdminUpdateStudentContactInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para editar dados de alunos.",
+    };
+  }
+
+  const parsed = adminUpdateStudentContactSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminUpdateStudentContactInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados do aluno.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: {
+      email: true,
+      id: true,
+      role: true,
+      studentProfile: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  if (!user || user.role !== "STUDENT" || !user.studentProfile) {
+    return {
+      errors: {
+        userId: "Aluno nao encontrado.",
+      },
+      ok: false,
+      message: "Aluno nao encontrado.",
+    };
+  }
+
+  const emailChanged = parsed.data.email !== user.email;
+  const studentProfileId = user.studentProfile.id;
+
+  if (emailChanged) {
+    const emailOwner = await prisma.user.findUnique({
+      where: { email: parsed.data.email },
+      select: {
+        id: true,
+      },
+    });
+
+    if (emailOwner && emailOwner.id !== user.id) {
+      return {
+        errors: {
+          email: "Ja existe um usuario com este email.",
+        },
+        ok: false,
+        message: "Este email ja esta cadastrado.",
+      };
+    }
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          email: parsed.data.email,
+          name: parsed.data.name,
+          phone: parsed.data.phone ?? null,
+          ...(emailChanged
+            ? {
+                sessionVersion: {
+                  increment: 1,
+                },
+              }
+            : {}),
+        },
+      });
+
+      await tx.studentProfile.update({
+        where: { id: studentProfileId },
+        data: {
+          studentPhone: parsed.data.phone ?? null,
+        },
+      });
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        errors: {
+          email: "Ja existe um usuario com este email.",
+        },
+        ok: false,
+        message: "Este email ja esta cadastrado.",
+      };
+    }
+
+    return {
+      ok: false,
+      message: "Nao foi possivel atualizar o aluno agora.",
+    };
+  }
+
+  revalidatePath("/ava/admin");
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+
+  return {
+    ok: true,
+    message: emailChanged
+      ? "Dados atualizados. O aluno deve entrar com o novo email."
+      : "Dados do aluno atualizados.",
   };
 }
 

@@ -90,6 +90,7 @@ Rotas protegidas:
 - O fluxo de aceite nunca cria `ADMIN` ou `TEACHER` e nunca retorna/loga a senha inicial em texto puro.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
 - Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
+- Apenas `ADMIN` pode editar nome, email e telefone principal de usuarios `STUDENT` pela tela `Usuarios`; a server action valida role `ADMIN`, confirma que o alvo e aluno e incrementa `sessionVersion` quando o email muda.
 - Apenas `ADMIN` pode criar, editar, excluir ou revelar APIs/senhas em `AdminCredential`.
 - Valores de `AdminCredential` devem ser criptografados no servidor e revelados somente por server action protegida; nunca retornar valores para teacher/student.
 - Arquivos de homework interativo exigem `ADMIN`, `TEACHER` dona da aula ou `STUDENT` dono da homework.

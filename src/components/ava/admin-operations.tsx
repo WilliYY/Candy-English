@@ -8,8 +8,10 @@ import {
   Link2,
   LoaderCircle,
   Mail,
+  PenLine,
   Power,
   PowerOff,
+  Save,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -20,12 +22,15 @@ import {
   assignStudentToTeacher,
   resetAvaUserPassword,
   toggleAvaUserStatus,
+  updateStudentContactByAdmin,
 } from "@/app/ava/admin/actions";
 import {
   adminAssignTeacherSchema,
   adminResetUserPasswordSchema,
+  adminUpdateStudentContactSchema,
   type AdminAssignTeacherInput,
   type AdminResetUserPasswordInput,
+  type AdminUpdateStudentContactInput,
 } from "@/lib/validations/admin-users";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +49,13 @@ type AdminUserStatusButtonProps = {
 };
 
 type AdminUserPasswordResetFormProps = {
+  userId: string;
+  userName: string;
+};
+
+type AdminStudentContactEditFormProps = {
+  email: string;
+  phone?: string | null;
   userId: string;
   userName: string;
 };
@@ -110,6 +122,160 @@ export function AdminUserStatusButton({
         </span>
       ) : null}
     </div>
+  );
+}
+
+export function AdminStudentContactEditForm({
+  email,
+  phone,
+  userId,
+  userName,
+}: AdminStudentContactEditFormProps) {
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const form = useForm<AdminUpdateStudentContactInput>({
+    resolver: zodResolver(adminUpdateStudentContactSchema, undefined, {
+      raw: true,
+    }),
+    defaultValues: {
+      email,
+      name: userName,
+      phone: phone ?? "",
+      userId,
+    },
+  });
+
+  const onSubmit = form.handleSubmit((values) => {
+    setMessage(null);
+
+    startTransition(async () => {
+      const result = await updateStudentContactByAdmin({
+        ...values,
+        userId,
+      });
+
+      if (!result.ok) {
+        if (result.errors) {
+          Object.entries(result.errors).forEach(([field, fieldMessage]) => {
+            if (fieldMessage) {
+              form.setError(field as keyof AdminUpdateStudentContactInput, {
+                message: fieldMessage,
+              });
+            }
+          });
+        }
+
+        setMessage(result.message);
+        return;
+      }
+
+      form.reset({
+        email: values.email,
+        name: values.name,
+        phone: values.phone ?? "",
+        userId,
+      });
+      setMessage(result.message);
+      router.refresh();
+    });
+  });
+
+  return (
+    <details className="group/student-edit rounded-lg border border-sky-200/80 bg-sky-50/60 p-3 shadow-sm">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-sky-950 [&::-webkit-details-marker]:hidden">
+        <span className="inline-flex min-w-0 items-center gap-2">
+          <PenLine aria-hidden="true" className="size-4 shrink-0" />
+          <span className="truncate">Editar dados do aluno</span>
+        </span>
+        <span className="rounded-full border border-sky-200 bg-white/86 px-2 py-1 text-[0.68rem] uppercase tracking-[0.12em] text-sky-800">
+          <span className="group-open/student-edit:hidden">abrir</span>
+          <span className="hidden group-open/student-edit:inline">
+            minimizar
+          </span>
+        </span>
+      </summary>
+
+      <form onSubmit={onSubmit} className="mt-3 grid gap-3" noValidate>
+        <input
+          type="hidden"
+          defaultValue={userId}
+          {...form.register("userId")}
+        />
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field data-invalid={Boolean(form.formState.errors.name)}>
+            <FieldLabel htmlFor={`student-name-${userId}`}>Nome</FieldLabel>
+            <Input
+              id={`student-name-${userId}`}
+              autoComplete="off"
+              aria-invalid={Boolean(form.formState.errors.name)}
+              disabled={isPending}
+              placeholder="Nome do aluno"
+              {...form.register("name")}
+            />
+            <FieldError errors={[form.formState.errors.name]} />
+          </Field>
+
+          <Field data-invalid={Boolean(form.formState.errors.email)}>
+            <FieldLabel htmlFor={`student-email-${userId}`}>Email</FieldLabel>
+            <Input
+              id={`student-email-${userId}`}
+              type="email"
+              autoComplete="off"
+              aria-invalid={Boolean(form.formState.errors.email)}
+              disabled={isPending}
+              placeholder="aluno@email.com"
+              {...form.register("email")}
+            />
+            <FieldDescription>
+              Se mudar, o login do aluno passa a usar este email.
+            </FieldDescription>
+            <FieldError errors={[form.formState.errors.email]} />
+          </Field>
+        </div>
+
+        <Field data-invalid={Boolean(form.formState.errors.phone)}>
+          <FieldLabel htmlFor={`student-phone-${userId}`}>
+            Telefone principal
+          </FieldLabel>
+          <Input
+            id={`student-phone-${userId}`}
+            autoComplete="off"
+            aria-invalid={Boolean(form.formState.errors.phone)}
+            disabled={isPending}
+            placeholder="(00) 00000-0000"
+            {...form.register("phone")}
+          />
+          <FieldDescription>
+            Atualiza o contato principal do cadastro do aluno.
+          </FieldDescription>
+          <FieldError errors={[form.formState.errors.phone]} />
+        </Field>
+
+        {message ? (
+          <p
+            className="rounded-md border border-sky-200 bg-white/84 px-3 py-2 text-xs leading-5 text-sky-950"
+            role="status"
+          >
+            {message}
+          </p>
+        ) : null}
+
+        <Button
+          type="submit"
+          size="sm"
+          className="w-full justify-start bg-sky-600 text-white hover:bg-sky-700"
+          disabled={isPending}
+        >
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Save data-icon="inline-start" />
+          )}
+          Salvar dados
+        </Button>
+      </form>
+    </details>
   );
 }
 

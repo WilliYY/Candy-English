@@ -106,6 +106,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         id: true,
         isActive: true,
         name: true,
+        phone: true,
         role: true,
         studentProfile: {
           select: {
@@ -120,6 +121,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               },
             },
             level: true,
+            studentPhone: true,
           },
         },
         teacherProfile: {

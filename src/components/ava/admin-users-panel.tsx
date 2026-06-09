@@ -10,6 +10,7 @@ import {
   KeyRound,
   Link2,
   Mail,
+  Phone,
   Power,
   ShieldCheck,
   Sparkles,
@@ -51,6 +52,7 @@ import {
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
 import {
   AdminAssignTeacherForm,
+  AdminStudentContactEditForm,
   AdminUserPasswordResetForm,
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
@@ -104,6 +106,7 @@ type AdminUserRow = {
   id: string;
   isActive: boolean;
   name: string;
+  phone: string | null;
   role: Role;
   studentProfile: {
     _count: {
@@ -115,6 +118,7 @@ type AdminUserRow = {
       teacherAssignments: number;
     };
     level: string | null;
+    studentPhone: string | null;
   } | null;
   teacherProfile: {
     _count: {
@@ -411,6 +415,12 @@ function getProfileSummary(user: AdminUserRow) {
   }
 
   return "Administracao";
+}
+
+function getUserPrimaryPhone(user: AdminUserRow) {
+  return user.role === "STUDENT"
+    ? user.studentProfile?.studentPhone ?? user.phone
+    : user.phone;
 }
 
 function getUserHistory(user: AdminUserRow) {
@@ -896,12 +906,14 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                     );
                     const actionHint = getUserActionHint(user, attentionLabel);
                     const insightMetrics = getUserInsightMetrics(user);
+                    const phone = getUserPrimaryPhone(user);
+                    const profileSummary = getProfileSummary(user);
 
                     return (
                       <article
                         key={user.id}
                         className={cn(
-                          "relative flex min-w-0 flex-col gap-4 overflow-hidden rounded-lg border p-4 before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-['']",
+                          "relative flex min-w-0 flex-col gap-3 overflow-hidden rounded-lg border p-3 before:absolute before:inset-x-0 before:top-0 before:h-1 before:content-[''] sm:p-4",
                           visual.userCardClassName,
                         )}
                       >
@@ -930,6 +942,18 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                                   />
                                   <span className="truncate">{user.email}</span>
                                 </p>
+                                {phone ? (
+                                  <p
+                                    className="mt-1 flex min-w-0 items-center gap-2 text-xs text-muted-foreground"
+                                    title={phone}
+                                  >
+                                    <Phone
+                                      aria-hidden="true"
+                                      className="size-3.5 shrink-0"
+                                    />
+                                    <span className="truncate">{phone}</span>
+                                  </p>
+                                ) : null}
                               </div>
                               <span
                                 className={cn(
@@ -946,128 +970,195 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                                 {user.isActive ? "Ativo" : "Inativo"}
                               </span>
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2">
-                          {insightMetrics.map((metric) => {
-                            const MetricIcon = metric.icon;
-
-                            return (
-                              <div
-                                key={`${user.id}-${metric.label}`}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <span
                                 className={cn(
-                                  "min-w-0 rounded-lg border p-2.5 shadow-sm",
-                                  metric.className,
+                                  "inline-flex min-w-0 items-center rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold",
+                                  visual.metaCardClassName,
                                 )}
                               >
-                                <div className="flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] opacity-75">
-                                  <MetricIcon
-                                    aria-hidden="true"
-                                    className="size-3.5 shrink-0"
-                                  />
-                                  <span className="truncate">
-                                    {metric.label}
-                                  </span>
-                                </div>
-                                <strong className="mt-1 block truncate text-base font-semibold">
-                                  {metric.value}
-                                </strong>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                          <div
-                            className={cn(
-                              "rounded-lg border p-3 shadow-sm",
-                              visual.metaCardClassName,
-                            )}
-                          >
-                            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
-                              Perfil
-                            </p>
-                            <p className="mt-1 text-sm text-foreground/85">
-                              {getProfileSummary(user)}
-                            </p>
-                          </div>
-                          <div
-                            className={cn(
-                              "rounded-lg border p-3 shadow-sm",
-                              attentionClassName,
-                            )}
-                          >
-                            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
-                              Sinal
-                            </p>
-                            <p className="mt-1 inline-flex items-center gap-2 text-sm text-foreground/85">
-                              <CircleAlert
-                                aria-hidden="true"
-                                className="size-4 opacity-70"
-                              />
-                              {attentionLabel}
-                            </p>
+                                <span className="truncate">
+                                  {profileSummary}
+                                </span>
+                              </span>
+                              <span
+                                className={cn(
+                                  "inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold",
+                                  attentionClassName,
+                                )}
+                              >
+                                <CircleAlert
+                                  aria-hidden="true"
+                                  className="size-3.5 shrink-0 opacity-70"
+                                />
+                                <span className="truncate">
+                                  {attentionLabel}
+                                </span>
+                              </span>
+                              <span className="inline-flex min-w-0 items-center rounded-full border border-primary/10 bg-white/78 px-2.5 py-1 text-[0.72rem] font-semibold text-primary shadow-sm">
+                                <span className="truncate">{actionHint}</span>
+                              </span>
+                            </div>
                           </div>
                         </div>
 
                         <details
                           className={cn(
-                            "group/history rounded-lg border p-3",
-                            visual.historyClassName,
+                            "group/user-details rounded-lg border border-primary/10 bg-white/76 p-3 shadow-sm",
                           )}
                         >
                           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
                             <span className="inline-flex items-center gap-2">
-                              <CalendarDays
+                              <Wrench
                                 aria-hidden="true"
                                 className="size-4"
                               />
-                              Historico
+                              Detalhes e acoes
                             </span>
                             <span className="rounded-full bg-white px-2 py-1 text-[0.68rem] tracking-normal">
-                              <span className="group-open/history:hidden">
+                              <span className="group-open/user-details:hidden">
                                 abrir
                               </span>
-                              <span className="hidden group-open/history:inline">
+                              <span className="hidden group-open/user-details:inline">
                                 minimizar
                               </span>
                             </span>
                           </summary>
-                          <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
-                            {history.map((item) => (
-                              <li key={item} className="flex items-start gap-2">
-                                <span
-                                  className={cn(
-                                    "mt-2 size-1.5 shrink-0 rounded-full",
-                                    visual.bulletClassName,
-                                  )}
-                                />
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </details>
 
-                        <div
-                          className="grid gap-3 border-t border-primary/10 pt-3"
-                          aria-label={`Acoes de acesso de ${user.name}`}
-                        >
-                          <div className="flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
-                            <span>Acoes de acesso</span>
-                            <span className="rounded-full border border-primary/10 bg-white/78 px-2.5 py-1 text-primary shadow-sm">
-                              {actionHint}
-                            </span>
+                          <div className="mt-3 grid gap-3">
+                            <div className="grid grid-cols-3 gap-2">
+                              {insightMetrics.map((metric) => {
+                                const MetricIcon = metric.icon;
+
+                                return (
+                                  <div
+                                    key={`${user.id}-${metric.label}`}
+                                    className={cn(
+                                      "min-w-0 rounded-lg border p-2.5 shadow-sm",
+                                      metric.className,
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-1.5 text-[0.68rem] font-bold uppercase tracking-[0.1em] opacity-75">
+                                      <MetricIcon
+                                        aria-hidden="true"
+                                        className="size-3.5 shrink-0"
+                                      />
+                                      <span className="truncate">
+                                        {metric.label}
+                                      </span>
+                                    </div>
+                                    <strong className="mt-1 block truncate text-base font-semibold">
+                                      {metric.value}
+                                    </strong>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                              <div
+                                className={cn(
+                                  "rounded-lg border p-3 shadow-sm",
+                                  visual.metaCardClassName,
+                                )}
+                              >
+                                <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                                  Perfil
+                                </p>
+                                <p className="mt-1 text-sm text-foreground/85">
+                                  {profileSummary}
+                                </p>
+                              </div>
+                              <div
+                                className={cn(
+                                  "rounded-lg border p-3 shadow-sm",
+                                  attentionClassName,
+                                )}
+                              >
+                                <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                                  Sinal
+                                </p>
+                                <p className="mt-1 inline-flex items-center gap-2 text-sm text-foreground/85">
+                                  <CircleAlert
+                                    aria-hidden="true"
+                                    className="size-4 opacity-70"
+                                  />
+                                  {attentionLabel}
+                                </p>
+                              </div>
+                            </div>
+
+                            <details
+                              className={cn(
+                                "group/history rounded-lg border p-3",
+                                visual.historyClassName,
+                              )}
+                            >
+                              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground [&::-webkit-details-marker]:hidden">
+                                <span className="inline-flex items-center gap-2">
+                                  <CalendarDays
+                                    aria-hidden="true"
+                                    className="size-4"
+                                  />
+                                  Historico
+                                </span>
+                                <span className="rounded-full bg-white px-2 py-1 text-[0.68rem] tracking-normal">
+                                  <span className="group-open/history:hidden">
+                                    abrir
+                                  </span>
+                                  <span className="hidden group-open/history:inline">
+                                    minimizar
+                                  </span>
+                                </span>
+                              </summary>
+                              <ul className="mt-3 grid gap-1.5 text-sm text-muted-foreground">
+                                {history.map((item) => (
+                                  <li
+                                    key={item}
+                                    className="flex items-start gap-2"
+                                  >
+                                    <span
+                                      className={cn(
+                                        "mt-2 size-1.5 shrink-0 rounded-full",
+                                        visual.bulletClassName,
+                                      )}
+                                    />
+                                    <span>{item}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </details>
+
+                            {user.role === "STUDENT" ? (
+                              <AdminStudentContactEditForm
+                                email={user.email}
+                                phone={phone}
+                                userId={user.id}
+                                userName={user.name}
+                              />
+                            ) : null}
+
+                            <div
+                              className="grid gap-3 border-t border-primary/10 pt-3"
+                              aria-label={`Acoes de acesso de ${user.name}`}
+                            >
+                              <div className="flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
+                                <span>Acoes de acesso</span>
+                                <span className="rounded-full border border-primary/10 bg-white/78 px-2.5 py-1 text-primary shadow-sm">
+                                  {actionHint}
+                                </span>
+                              </div>
+                              <AdminUserStatusButton
+                                isActive={user.isActive}
+                                userId={user.id}
+                              />
+                              <AdminUserPasswordResetForm
+                                userId={user.id}
+                                userName={user.name}
+                              />
+                            </div>
                           </div>
-                          <AdminUserStatusButton
-                            isActive={user.isActive}
-                            userId={user.id}
-                          />
-                          <AdminUserPasswordResetForm
-                            userId={user.id}
-                            userName={user.name}
-                          />
-                        </div>
+                        </details>
                       </article>
                     );
                   })}
