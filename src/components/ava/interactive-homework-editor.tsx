@@ -219,13 +219,13 @@ const FIELD_TOOL_META: Record<EditorFieldTool, FieldToolMeta> = {
   TINY_TEXT: {
     Icon: CaseUpper,
     defaultHeight: 2,
-    defaultPixelSize: 28,
+    defaultPixelSize: 24,
     defaultWidth: 2,
     label: "Letra/Num",
     minHeight: 1,
-    minPixelSize: 18,
+    minPixelSize: 16,
     minWidth: 1,
-    placeholder: "A",
+    placeholder: null,
     resizeMode: "square",
   },
   DRAWING: {
@@ -1090,6 +1090,38 @@ function getFieldPreviewLabel(field: EditableHomeworkField) {
   return "Texto";
 }
 
+function getFieldSelectionBadge(field: EditableHomeworkField) {
+  if (field.type === "TINY_TEXT") {
+    return "AB";
+  }
+
+  return getFieldPreviewLabel(field);
+}
+
+function getSelectionPanelHint({
+  selectedField,
+  selectedTool,
+}: {
+  selectedField: EditableHomeworkField | null;
+  selectedTool: EditorFieldTool;
+}) {
+  const type = selectedField?.type ?? selectedTool;
+
+  if (selectedField) {
+    if (type === "TINY_TEXT") {
+      return "Caixinha para V/F, A/B/C ou numero curto. Mova e ajuste pela bolinha.";
+    }
+
+    return "Mova no PDF, ajuste pela bolinha roxa ou use Delete para excluir.";
+  }
+
+  if (type === "TINY_TEXT") {
+    return "Clique no parenteses ou na lacuna para criar uma caixinha pequena.";
+  }
+
+  return "Desenhe a area no arquivo para criar o campo.";
+}
+
 function createEditableField({
   geometry,
   id,
@@ -1354,11 +1386,11 @@ function InteractiveHomeworkCanvasEditor({
           draftGeometry ? (
             <div
               className={cn(
-                "absolute rounded-[3px] border-2 border-primary shadow-[0_0_0_1px_rgba(65,42,76,0.16)]",
+                "absolute rounded-[4px] border-2 border-primary shadow-[0_0_0_1px_rgba(65,42,76,0.16)]",
                 selectedTool === "CHECKBOX"
                   ? "flex items-center justify-center bg-white/50"
                   : selectedTool === "TINY_TEXT"
-                    ? "flex items-center justify-center bg-white/50"
+                    ? "flex items-center justify-center bg-white/70 shadow-[0_6px_16px_rgba(65,42,76,0.16)]"
                     : selectedTool === "DRAWING"
                       ? "bg-white/35"
                       : selectedTool === "LISTENING"
@@ -1420,18 +1452,20 @@ function InteractiveHomeworkCanvasEditor({
           <div
             key={field.id}
             className={cn(
-              "absolute z-10 cursor-move touch-none rounded-[3px] border-2 transition-[border-color,background-color,box-shadow] duration-200 ease-out",
+              "absolute z-10 cursor-move touch-none rounded-[4px] border-2 transition-[border-color,background-color,box-shadow] duration-200 ease-out",
               isMarkField
                 ? "bg-white/35 shadow-[0_1px_4px_rgba(65,42,76,0.14)]"
                 : isTinyTextField
-                  ? "bg-white/40 shadow-[0_1px_5px_rgba(65,42,76,0.14)]"
+                  ? "bg-white/55 shadow-[0_3px_9px_rgba(65,42,76,0.16)]"
                   : isDrawingField
                     ? "bg-white/30 shadow-[inset_0_0_0_1px_rgba(65,42,76,0.06)]"
                     : isListeningField
                       ? "bg-white/20 shadow-[0_6px_18px_rgba(65,42,76,0.12)]"
                       : "bg-primary/[0.045] shadow-[inset_0_0_0_1px_rgba(65,42,76,0.08)]",
               selected
-                ? "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
+                ? isTinyTextField
+                  ? "border-primary bg-white/70 shadow-[0_8px_18px_rgba(65,42,76,0.22),inset_0_0_0_1px_rgba(255,255,255,0.82)] ring-2 ring-primary/20"
+                  : "border-primary bg-white/40 shadow-[0_16px_34px_rgba(65,42,76,0.18),inset_0_0_0_1px_rgba(255,255,255,0.75)] ring-4 ring-primary/15"
                 : "border-dashed border-primary/55 hover:border-primary",
             )}
             onPointerDown={(event) => beginMove(event, field)}
@@ -1442,8 +1476,15 @@ function InteractiveHomeworkCanvasEditor({
             title={field.label || `Area ${index + 1}`}
           >
             {selected ? (
-              <span className="pointer-events-none absolute -top-7 left-0 z-20 rounded-[3px] border border-white/70 bg-primary px-2 py-1 text-[10px] font-bold uppercase leading-none tracking-[0.12em] text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)]">
-                {getFieldPreviewLabel(field)}
+              <span
+                className={cn(
+                  "pointer-events-none absolute z-20 rounded-[3px] border border-white/70 bg-primary font-bold uppercase leading-none text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)]",
+                  isTinyTextField
+                    ? "-top-5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 text-[9px] tracking-[0.08em]"
+                    : "-top-7 left-0 px-2 py-1 text-[10px] tracking-[0.12em]",
+                )}
+              >
+                {getFieldSelectionBadge(field)}
               </span>
             ) : null}
             <FieldAnswerPreview field={field} selected={selected} />
@@ -1452,9 +1493,11 @@ function InteractiveHomeworkCanvasEditor({
                 aria-label="Redimensionar area"
                 className={cn(
                   "absolute cursor-nwse-resize rounded-full border-2 border-white bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(65,42,76,0.22)] ring-2 ring-primary/20 transition-transform duration-200 hover:scale-110",
-                  isSmallBoxField
-                    ? "-bottom-1.5 -right-1.5 size-4"
-                    : "-bottom-2.5 -right-2.5 size-5",
+                  isTinyTextField
+                    ? "-bottom-2 -right-2 size-4"
+                    : isSmallBoxField
+                      ? "-bottom-1.5 -right-1.5 size-4"
+                      : "-bottom-2.5 -right-2.5 size-5",
                 )}
                 onPointerDown={(event) => beginResize(event, field)}
                 type="button"
@@ -1549,9 +1592,10 @@ function InteractiveHomeworkEditorItem({
   const selectionPanelTitle = selectedField
     ? `Selecionado: ${getFieldPreviewLabel(selectedField)}`
     : `Ferramenta ativa: ${selectionPanelMeta.label}`;
-  const selectionPanelHint = selectedField
-    ? "Mova no PDF, ajuste pela bolinha roxa ou use Delete para excluir."
-    : "Desenhe a area no arquivo para criar o campo.";
+  const selectionPanelHint = getSelectionPanelHint({
+    selectedField,
+    selectedTool,
+  });
 
   useEffect(() => {
     return () => {

@@ -53,7 +53,7 @@ const adaptiveTextStyles = {
 } satisfies Record<InteractiveTextKind, CSSProperties>;
 
 const tinyTextStyle = {
-  fontSize: "clamp(12px, min(78cqh, 34cqw), 26px)",
+  fontSize: "clamp(11px, min(72cqh, 42cqw), 24px)",
   lineHeight: "1",
   textTransform: "uppercase",
 } satisfies CSSProperties;
@@ -215,12 +215,12 @@ export function InteractiveHomeworkTinyTextPreview({
     <span
       aria-hidden="true"
       className={cn(
-        "pointer-events-none flex size-full items-center justify-center rounded-[3px] border text-center font-extrabold uppercase leading-none shadow-sm",
+        "pointer-events-none flex size-full items-center justify-center rounded-[4px] border text-center font-extrabold uppercase leading-none shadow-sm",
         selected
-          ? "border-primary bg-white/70 text-primary shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]"
+          ? "border-primary bg-white/82 text-primary shadow-[0_3px_9px_rgba(65,42,76,0.12),inset_0_0_0_1px_rgba(255,255,255,0.82)]"
           : variant === "review"
-            ? "border-primary/18 bg-white/35 text-primary"
-            : "border-primary/35 bg-white/50 text-primary/80",
+            ? "border-primary/20 bg-white/20 text-primary"
+            : "border-primary/45 bg-white/62 text-primary/85",
         className,
       )}
       style={getInteractiveHomeworkTinyTextStyle()}
