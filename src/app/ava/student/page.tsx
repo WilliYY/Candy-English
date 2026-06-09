@@ -12,6 +12,7 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import { getCandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import { getPrisma } from "@/lib/prisma";
 import { getStudentProfileCompletion } from "@/lib/student-profile-completion";
 
@@ -514,6 +515,10 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     role: "STUDENT",
     userId: session.user.id,
   });
+  const candyXpRanking = await getCandyXpRankingSnapshot({
+    currentUserId: session.user.id,
+    limit: 10,
+  });
 
   return (
       <StudentWorkspace
@@ -563,6 +568,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         xpReward: activity.xpReward,
       }))}
       candyXpPersistence={candyXpPersistence}
+      candyXpRanking={candyXpRanking}
       chatThreads={chatThreads.map((thread) => ({
         id: thread.id,
         messages: thread.messages.map((message) => ({

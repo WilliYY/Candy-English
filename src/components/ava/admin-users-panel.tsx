@@ -58,6 +58,7 @@ import {
 } from "@/components/ava/admin-operations";
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
 import { ContractUploadForm } from "@/components/ava/contract-upload-form";
+import { CandyXpRankingCard } from "@/components/ava/candy-xp-ranking-card";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import {
   StudentPreRegistrationReviewPanel,
@@ -71,6 +72,7 @@ import {
   buildCandyAdminXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
@@ -185,6 +187,7 @@ type AdminUsersPanelProps = {
   cattyLearningItems: CattyLearningItemRow[];
   cattyMemoryData: CattyMemoryManagementData;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  candyXpRanking: CandyXpRankingSnapshot;
   agendaLessons: AdminAgendaLessonRow[];
   agendaLogs: AdminAgendaLogRow[];
   agendaStudents: AdminAgendaStudentRow[];
@@ -1391,6 +1394,7 @@ export function AdminUsersPanel({
   cattyLearningItems,
   cattyMemoryData,
   candyXpPersistence,
+  candyXpRanking,
   agendaLessons,
   agendaLogs,
   agendaStudents,
@@ -1574,6 +1578,7 @@ export function AdminUsersPanel({
                 title={`Nivel ${xpSnapshot.level} admin`}
                 xp={xpSnapshot}
               />
+              <CandyXpRankingCard ranking={candyXpRanking} />
               <UsersOverview
                 inactiveCount={inactiveUsersCount}
                 totals={totals}

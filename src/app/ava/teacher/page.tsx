@@ -12,6 +12,7 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import { getCandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
@@ -687,11 +688,16 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       userId: session.user.id,
     });
   }
+  const candyXpRanking = await getCandyXpRankingSnapshot({
+    currentUserId: session.user.id,
+    limit: 10,
+  });
 
   return (
     <TeacherWorkspace
       activeTask={activeTask}
       candyXpPersistence={candyXpPersistence}
+      candyXpRanking={candyXpRanking}
       cattyArtifactData={cattyArtifactData}
       cattyLearningFeedbacks={cattyLearningFeedbacks.map((feedback) => ({
         cattyReply: feedback.cattyReply,

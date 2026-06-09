@@ -31,6 +31,7 @@ import {
   StudentCandyXpActivitiesPanel,
   type StudentCandyXpActivity,
 } from "@/components/ava/student-candy-xp-activities-panel";
+import { CandyXpRankingCard } from "@/components/ava/candy-xp-ranking-card";
 import { StudentXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ import {
   CANDY_XP_REWARDS,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
@@ -123,6 +125,7 @@ type StudentHomework = StudentLesson["homeworks"][number];
 type StudentWorkspaceProps = {
   activeTask: StudentTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  candyXpRanking: CandyXpRankingSnapshot;
   candyXpActivities: StudentCandyXpActivity[];
   chatThreads: ChatThreadRow[];
   contracts: {
@@ -674,6 +677,7 @@ function isInternalHomeworkLesson(lesson: StudentLesson) {
 export function StudentWorkspace({
   activeTask,
   candyXpPersistence,
+  candyXpRanking,
   candyXpActivities,
   chatThreads,
   contracts,
@@ -876,6 +880,7 @@ export function StudentWorkspace({
           {activeTask === "resumo" ? (
             <div className="grid gap-5">
               <StudentXpCard xp={xpSnapshot} />
+              <CandyXpRankingCard ranking={candyXpRanking} />
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => (
                   <div

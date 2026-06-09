@@ -46,6 +46,7 @@ import {
 } from "@/components/ava/catty-learning-center-panel";
 import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
 import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
+import { CandyXpRankingCard } from "@/components/ava/candy-xp-ranking-card";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -54,6 +55,7 @@ import {
   buildCandyTeacherXpSnapshot,
   type CandyXpPersistenceSnapshot,
 } from "@/lib/candy-xp";
+import type { CandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import type { InteractiveHomeworkFieldType } from "@/lib/interactive-homework-fields";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
@@ -222,6 +224,7 @@ type ContractRow = {
 type TeacherWorkspaceProps = {
   activeTask: TeacherTask;
   candyXpPersistence?: CandyXpPersistenceSnapshot | null;
+  candyXpRanking: CandyXpRankingSnapshot;
   cattyArtifactData: CattyArtifactManagementData;
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
   cattyLearningItems: CattyLearningItemRow[];
@@ -346,6 +349,7 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 export function TeacherWorkspace({
   activeTask,
   candyXpPersistence,
+  candyXpRanking,
   cattyArtifactData,
   cattyLearningFeedbacks,
   cattyLearningItems,
@@ -491,6 +495,7 @@ export function TeacherWorkspace({
                 title={`Nivel ${xpSnapshot.level} teacher`}
                 xp={xpSnapshot}
               />
+              <CandyXpRankingCard ranking={candyXpRanking} />
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {stats.map((stat) => (
                   <div

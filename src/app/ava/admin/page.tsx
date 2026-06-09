@@ -11,6 +11,7 @@ import {
   recordCandyXpEventsForUser,
   type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
+import { getCandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
@@ -699,6 +700,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     role: "ADMIN",
     userId: session.user.id,
   });
+  const candyXpRanking = await getCandyXpRankingSnapshot({
+    currentUserId: session.user.id,
+    limit: 10,
+  });
 
   return (
     <AdminUsersPanel
@@ -811,6 +816,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       }))}
       cattyMemoryData={cattyMemoryData}
       candyXpPersistence={candyXpPersistence}
+      candyXpRanking={candyXpRanking}
       agendaLessons={agendaLessons.map((lesson) => ({
         date: lesson.date.toISOString(),
         id: lesson.id,

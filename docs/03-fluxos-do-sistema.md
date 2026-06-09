@@ -32,6 +32,7 @@ Componentes:
 - `src/components/ava/teacher-workspace.tsx`
 - `src/components/ava/student-workspace.tsx`
 - `src/components/ava/student-xp-card.tsx`
+- `src/components/ava/candy-xp-ranking-card.tsx`
 - `src/components/ava/admin-candy-xp-panel.tsx`
 - `src/components/ava/catty-learning-center-panel.tsx`
 - `src/components/ava/catty-memory-panel.tsx`
@@ -70,6 +71,7 @@ Helpers:
 - `src/lib/catty-examples.ts`
 - `src/lib/catty-history.ts`
 - `src/lib/candy-xp.ts`
+- `src/lib/candy-xp-ranking.ts`
 - `src/lib/candy-xp-activities.ts`
 
 ## Fluxos principais
@@ -145,10 +147,12 @@ Helpers:
 2. A pontuacao e sincronizada no servidor a partir dos dados que cada role ja pode ver: student usa atividades do proprio aluno, teacher usa alunos/aulas/homeworks/correcoes da sua area, e admin usa indicadores operacionais permitidos.
 3. Cada origem de XP vira um `CandyXpEvent` com `sourceKey` unica por usuario; se a mesma homework, feedback, aula, rotina ou missao aparecer de novo, o XP nao duplica.
 4. `CandyXpProfile` guarda total, nivel, progresso e streak como cache recalculado pela soma dos eventos.
-5. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
-6. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
-7. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
-8. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
+5. O ranking interno do AVA aparece nos resumos de Student, Teacher e Admin, usando `CandyXpProfile` como resumo cacheado e mostrando apenas nome, foto/avatar, role, nivel, XP total e XP restante de alunos e profs.
+6. A ordenacao do ranking e feita no servidor por XP total, nivel, XP mais recente e nome; se o usuario logado for aluno/prof e estiver fora do top exibido, a propria posicao aparece separada.
+7. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
+8. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
+9. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
+10. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
 
 ### Atividades Candy XP
 
@@ -290,7 +294,7 @@ Helpers:
 - O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem.
 - Student tem botoes sempre visiveis.
-- Candy XP deve continuar sem ranking publico; XP, streaks, badges e missoes sao persistidos por usuario e nao podem vazar dados de outras roles.
+- Candy XP deve continuar sem ranking publico; o ranking interno do AVA so aparece para usuario logado, nao mostra email, telefone, documento, pagamento ou contrato, e usa apenas alunos/profs com XP persistido.
 - Toda nova tarefa que conceder XP deve gravar por server action/rota protegida e usar `sourceKey` estavel para evitar abuso ou pontuacao duplicada.
 - Atividades Candy XP so podem ser criadas/editadas/excluidas/corrigidas por `ADMIN`; `STUDENT` acessa apenas atividades publicadas e liberadas para o proprio perfil.
 - Arquivos Candy XP devem ser servidos apenas por `/ava/candy-xp-assets/[activityId]`, nunca por caminho direto do storage.
