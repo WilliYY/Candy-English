@@ -31,11 +31,6 @@ export async function GET(
         },
       },
       status: true,
-      studentAssignments: {
-        select: {
-          studentProfileId: true,
-        },
-      },
       teacherProfileId: true,
     },
   });
@@ -53,10 +48,7 @@ export async function GET(
     if (
       homework.status !== "PUBLISHED" ||
       !studentProfile ||
-      (homework.lesson.studentProfileId !== studentProfile.id &&
-        !homework.studentAssignments.some(
-          (assignment) => assignment.studentProfileId === studentProfile.id,
-        ))
+      homework.lesson.studentProfileId !== studentProfile.id
     ) {
       return new NextResponse("Nao autorizado.", { status: 403 });
     }

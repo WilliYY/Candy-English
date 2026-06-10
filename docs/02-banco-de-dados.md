@@ -129,7 +129,8 @@ Enums:
 - `HomeworkSubmission` possui chave unica por homework/aluno.
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
 - `Homework.fieldDetectionSource=manual` identifica homework interativo criado pela aba de homework; `lesson-manual` identifica aula interativa criada pela aba de aula usando o mesmo motor.
-- `HomeworkStudentAssignment` permite que uma homework interativa real (`fieldDetectionSource=manual`) seja compartilhada com alunos extras sem duplicar arquivo, campos ou aula interna; cada aluno continua tendo sua propria `HomeworkSubmission`.
+- `Homework.replicatedFromHomeworkId` identifica copias criadas pelo fluxo `Replicar para outro aluno`. Cada replica cria `Lesson` e `Homework` proprios para o aluno alvo, copia perguntas e `HomeworkInteractiveField`, reutiliza o arquivo pedagogico otimizado quando possivel e mantem `HomeworkSubmission` isolada por aluno.
+- `HomeworkStudentAssignment` permanece no schema por compatibilidade com a migration anterior, mas o fluxo atual de `Criar/Ver Homework` nao cria novo acesso compartilhado; a permissao do aluno deve vir de `Lesson.studentProfileId` da copia real.
 - `HomeworkInteractiveField` guarda tipo, pagina e posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
 - `HomeworkFieldType` aceita `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX`, `DRAWING` e `LISTENING`; `TINY_TEXT` guarda respostas curtas normalizadas para letras/numeros, `DRAWING` salva tracos normalizados no JSON de `HomeworkSubmission.answers`, e `LISTENING` guarda o texto a ouvir no `placeholder` do campo sem exigir nem salvar resposta do aluno.
 - Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.
@@ -191,7 +192,8 @@ Enums:
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
 - Migration `20260606120000_interactive_homework_tiny_text_field` adiciona o tipo `TINY_TEXT` ao enum `HomeworkFieldType`.
 - Migration `20260607173000_homework_listening_field` adiciona o tipo `LISTENING` ao enum `HomeworkFieldType`.
-- Migration `20260609113000_homework_student_assignments` adiciona `HomeworkStudentAssignment` para compartilhar o mesmo homework interativo com alunos extras sem duplicar arquivo/campos.
+- Migration `20260609113000_homework_student_assignments` adicionou `HomeworkStudentAssignment` para o fluxo anterior de acesso compartilhado.
+- Migration `20260610120000_homework_replication_source` adiciona `Homework.replicatedFromHomeworkId` para rastrear replicas reais de homework por aluno, substituindo o fluxo operacional de compartilhar o mesmo homework.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.

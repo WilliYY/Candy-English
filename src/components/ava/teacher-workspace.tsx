@@ -116,15 +116,18 @@ type TeacherLesson = {
       id: string;
       status: string;
     }[];
-    studentAssignments: {
+    homeworkReplicas: {
       createdAt: Date;
-      studentProfile: {
-        user: {
-          email: string;
-          name: string;
-        };
+      id: string;
+      lesson: {
+        studentProfile: {
+          id: string;
+          user: {
+            email: string;
+            name: string;
+          };
+        } | null;
       };
-      studentProfileId: string;
     }[];
     title: string;
   }[];
@@ -380,12 +383,20 @@ export function TeacherWorkspace({
         lessonTitle: lesson.title,
         primaryStudentEmail: lesson.studentProfile?.user.email ?? null,
         primaryStudentId: lesson.studentProfile?.id ?? null,
-        sharedStudents: homework.studentAssignments.map((assignment) => ({
-          assignedAt: assignment.createdAt.toISOString(),
-          email: assignment.studentProfile.user.email,
-          id: assignment.studentProfileId,
-          name: assignment.studentProfile.user.name,
-        })),
+        replicatedStudents: homework.homeworkReplicas
+          .map((replica) =>
+            replica.lesson.studentProfile
+              ? {
+                  assignedAt: replica.createdAt.toISOString(),
+                  email: replica.lesson.studentProfile.user.email,
+                  id: replica.lesson.studentProfile.id,
+                  name: replica.lesson.studentProfile.user.name,
+                }
+              : null,
+          )
+          .filter((student): student is NonNullable<typeof student> =>
+            Boolean(student),
+          ),
         source:
           homework.fieldDetectionSource === "lesson-manual"
             ? ("LESSON" as const)

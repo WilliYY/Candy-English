@@ -16,18 +16,18 @@ import {
   createLessonSchema,
   deleteInteractiveHomeworkSchema,
   homeworkSubmissionIdSchema,
+  replicateInteractiveHomeworkSchema,
   saveInteractiveHomeworkFieldsSchema,
-  shareInteractiveHomeworkSchema,
   reviewSubmissionSchema,
   type CreateInteractiveHomeworkInput,
   type CreateInteractiveLessonInput,
   type CreateLessonInput,
   type DeleteInteractiveHomeworkInput,
   type HomeworkSubmissionIdInput,
+  type ReplicateInteractiveHomeworkInput,
   type ReviewSubmissionInput,
   type SaveInteractiveHomeworkFieldsInput,
   type SaveInteractiveHomeworkFieldsOutput,
-  type ShareInteractiveHomeworkInput,
 } from "@/lib/validations/learning";
 
 type ActionResult<TInput extends Record<string, unknown>> = {
@@ -958,7 +958,15 @@ export async function deleteInteractiveHomework(
   });
 
   if (homework.assetStoragePath) {
-    await unlink(getStoragePath(homework.assetStoragePath)).catch(() => undefined);
+    const remainingAssetReferences = await prisma.homework.count({
+      where: { assetStoragePath: homework.assetStoragePath },
+    });
+
+    if (remainingAssetReferences === 0) {
+      await unlink(getStoragePath(homework.assetStoragePath)).catch(
+        () => undefined,
+      );
+    }
   }
 
   revalidatePath("/ava/teacher");
@@ -972,23 +980,25 @@ export async function deleteInteractiveHomework(
   };
 }
 
-export async function shareInteractiveHomeworkWithStudent(
-  input: ShareInteractiveHomeworkInput,
-): Promise<ActionResult<ShareInteractiveHomeworkInput>> {
+export async function replicateInteractiveHomeworkForStudent(
+  input: ReplicateInteractiveHomeworkInput,
+): Promise<ActionResult<ReplicateInteractiveHomeworkInput>> {
   const actor = await getTeacherActor();
 
   if (!actor) {
     return {
       ok: false,
-      message: "Voce nao tem permissao para compartilhar homeworks.",
+      message: "Voce nao tem permissao para replicar homeworks.",
     };
   }
 
-  const parsed = shareInteractiveHomeworkSchema.safeParse(input);
+  const parsed = replicateInteractiveHomeworkSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
-      errors: fieldErrors<ShareInteractiveHomeworkInput>(parsed.error.issues),
+      errors: fieldErrors<ReplicateInteractiveHomeworkInput>(
+        parsed.error.issues,
+      ),
       ok: false,
       message: "Selecione uma homework e um aluno.",
     };
@@ -998,24 +1008,64 @@ export async function shareInteractiveHomeworkWithStudent(
   const homework = await prisma.homework.findUnique({
     where: { id: parsed.data.homeworkId },
     select: {
+      assetFileName: true,
+      assetMimeType: true,
+      assetPageCount: true,
+      assetSizeBytes: true,
+      assetStoragePath: true,
+      dueDate: true,
       fieldDetectionSource: true,
       id: true,
+      instructions: true,
+      interactiveFields: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+        select: {
+          height: true,
+          label: true,
+          page: true,
+          placeholder: true,
+          required: true,
+          sortOrder: true,
+          type: true,
+          width: true,
+          x: true,
+          y: true,
+        },
+      },
       kind: true,
       lesson: {
         select: {
+          description: true,
+          scheduledAt: true,
           studentProfileId: true,
+          status: true,
+          title: true,
         },
       },
-      status: true,
-      studentAssignments: {
+      questions: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+        select: {
+          expectedAnswer: true,
+          prompt: true,
+          sortOrder: true,
+        },
+      },
+      homeworkReplicas: {
         where: {
-          studentProfileId: parsed.data.studentProfileId,
+          lesson: {
+            studentProfileId: parsed.data.studentProfileId,
+          },
         },
         select: {
           id: true,
         },
         take: 1,
       },
+      status: true,
       teacherProfileId: true,
       title: true,
     },
@@ -1032,14 +1082,14 @@ export async function shareInteractiveHomeworkWithStudent(
     return {
       ok: false,
       message:
-        "Compartilhamento extra fica disponivel apenas em homeworks, nao em aulas interativas.",
+        "Replicacao fica disponivel apenas em homeworks, nao em aulas interativas.",
     };
   }
 
   if (!actor.isAdmin && homework.teacherProfileId !== actor.teacherProfileId) {
     return {
       ok: false,
-      message: "Voce so pode compartilhar homeworks das suas aulas.",
+      message: "Voce so pode replicar homeworks das suas aulas.",
     };
   }
 
@@ -1047,13 +1097,6 @@ export async function shareInteractiveHomeworkWithStudent(
     return {
       ok: false,
       message: "Esse aluno ja e o aluno principal deste homework.",
-    };
-  }
-
-  if (homework.studentAssignments.length > 0) {
-    return {
-      ok: true,
-      message: "Esse aluno ja tem acesso a este homework.",
     };
   }
 
@@ -1110,25 +1153,111 @@ export async function shareInteractiveHomeworkWithStudent(
     }
   }
 
-  const assignedByTeacherProfileId = actor.isAdmin
-    ? homework.teacherProfileId
-    : actor.teacherProfileId;
-
-  await prisma.homeworkStudentAssignment.upsert({
-    where: {
-      homeworkId_studentProfileId: {
+  if (homework.homeworkReplicas.length > 0) {
+    await prisma.homeworkStudentAssignment.deleteMany({
+      where: {
         homeworkId: homework.id,
         studentProfileId: student.id,
       },
-    },
-    create: {
-      assignedByTeacherProfileId,
-      homeworkId: homework.id,
-      studentProfileId: student.id,
-    },
-    update: {
-      assignedByTeacherProfileId,
-    },
+    });
+
+    return {
+      ok: true,
+      message: `Replica para ${student.user.name} ja existe.`,
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    if (actor.isAdmin) {
+      await tx.studentTeacherAssignment.upsert({
+        where: {
+          teacherProfileId_studentProfileId: {
+            studentProfileId: student.id,
+            teacherProfileId: homework.teacherProfileId,
+          },
+        },
+        create: {
+          studentProfileId: student.id,
+          teacherProfileId: homework.teacherProfileId,
+        },
+        update: {},
+      });
+    }
+
+    const lesson = await tx.lesson.create({
+      data: {
+        description:
+          homework.lesson.description ??
+          homework.instructions ??
+          "Aula criada automaticamente por replica de homework.",
+        scheduledAt: homework.lesson.scheduledAt,
+        status: homework.lesson.status,
+        studentProfileId: student.id,
+        teacherProfileId: homework.teacherProfileId,
+        title: homework.lesson.title,
+      },
+      select: { id: true },
+    });
+
+    await tx.homework.create({
+      data: {
+        assetFileName: homework.assetFileName,
+        assetMimeType: homework.assetMimeType,
+        assetPageCount: homework.assetPageCount,
+        assetSizeBytes: homework.assetSizeBytes,
+        assetStoragePath: homework.assetStoragePath,
+        dueDate: homework.dueDate,
+        fieldDetectionSource: homework.fieldDetectionSource,
+        instructions: homework.instructions,
+        kind: homework.kind,
+        lessonId: lesson.id,
+        replicatedFromHomeworkId: homework.id,
+        status: homework.status,
+        teacherProfileId: homework.teacherProfileId,
+        title: homework.title,
+        ...(homework.questions.length > 0
+          ? {
+              questions: {
+                createMany: {
+                  data: homework.questions.map((question) => ({
+                    expectedAnswer: question.expectedAnswer,
+                    prompt: question.prompt,
+                    sortOrder: question.sortOrder,
+                  })),
+                },
+              },
+            }
+          : {}),
+        ...(homework.interactiveFields.length > 0
+          ? {
+              interactiveFields: {
+                createMany: {
+                  data: homework.interactiveFields.map((field) => ({
+                    height: field.height,
+                    label: field.label,
+                    page: field.page,
+                    placeholder: field.placeholder,
+                    required: field.required,
+                    sortOrder: field.sortOrder,
+                    type: field.type,
+                    width: field.width,
+                    x: field.x,
+                    y: field.y,
+                  })),
+                },
+              },
+            }
+          : {}),
+      },
+    });
+
+    await tx.homeworkStudentAssignment.deleteMany({
+      where: {
+        homeworkId: homework.id,
+        studentProfileId: student.id,
+      },
+    });
+
   });
 
   revalidatePath("/ava/teacher");
@@ -1136,7 +1265,7 @@ export async function shareInteractiveHomeworkWithStudent(
 
   return {
     ok: true,
-    message: `${student.user.name} agora tambem ve este homework.`,
+    message: `Replica criada para ${student.user.name}.`,
   };
 }
 

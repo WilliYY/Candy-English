@@ -95,15 +95,6 @@ async function getInteractiveHomeworkForStudent(
         },
       },
       status: true,
-      studentAssignments: {
-        where: {
-          studentProfileId,
-        },
-        select: {
-          studentProfileId: true,
-        },
-        take: 1,
-      },
       submissions: {
         where: {
           studentProfileId,
@@ -131,20 +122,10 @@ function canStudentAccessHomework(
     lesson: {
       studentProfileId: string | null;
     };
-    studentAssignments?: {
-      studentProfileId: string;
-    }[];
   },
   studentProfileId: string,
 ) {
-  return (
-    homework.lesson.studentProfileId === studentProfileId ||
-    Boolean(
-      homework.studentAssignments?.some(
-        (assignment) => assignment.studentProfileId === studentProfileId,
-      ),
-    )
-  );
+  return homework.lesson.studentProfileId === studentProfileId;
 }
 
 function isInteractiveLessonEntity(homework: {
@@ -271,15 +252,6 @@ export async function submitHomework(
         take: 1,
       },
       status: true,
-      studentAssignments: {
-        where: {
-          studentProfileId: studentProfile.id,
-        },
-        select: {
-          studentProfileId: true,
-        },
-        take: 1,
-      },
       submissions: {
         where: {
           studentProfileId: studentProfile.id,

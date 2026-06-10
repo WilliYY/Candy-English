@@ -36,8 +36,8 @@ import {
 } from "react";
 import {
   deleteInteractiveHomework,
+  replicateInteractiveHomeworkForStudent,
   saveInteractiveHomeworkFields,
-  shareInteractiveHomeworkWithStudent,
 } from "@/app/ava/teacher/actions";
 import { saveCandyXpActivityInteractiveFields } from "@/app/ava/candy-xp/actions";
 import {
@@ -88,7 +88,7 @@ export type InteractiveHomeworkEditorRow = {
   lessonTitle: string;
   primaryStudentEmail?: string | null;
   primaryStudentId?: string | null;
-  sharedStudents?: {
+  replicatedStudents?: {
     assignedAt: string;
     email: string;
     id: string;
@@ -1611,9 +1611,9 @@ function InteractiveHomeworkEditorItem({
   const isCandyXpActivity = homework.source === "CANDY_XP";
   const isInteractiveLesson = homework.source === "LESSON";
   const isShareableHomework = homework.source === "HOMEWORK";
-  const sharedStudents = useMemo(
-    () => homework.sharedStudents ?? [],
-    [homework.sharedStudents],
+  const replicatedStudents = useMemo(
+    () => homework.replicatedStudents ?? [],
+    [homework.replicatedStudents],
   );
   const entityLabel = isCandyXpActivity
     ? "atividade Candy XP"
@@ -1623,13 +1623,13 @@ function InteractiveHomeworkEditorItem({
   const shareableStudentOptions = useMemo(() => {
     const blockedStudentIds = new Set([
       ...(homework.primaryStudentId ? [homework.primaryStudentId] : []),
-      ...sharedStudents.map((student) => student.id),
+      ...replicatedStudents.map((student) => student.id),
     ]);
 
     return studentOptions.filter(
       (student) => !blockedStudentIds.has(student.id),
     );
-  }, [homework.primaryStudentId, sharedStudents, studentOptions]);
+  }, [homework.primaryStudentId, replicatedStudents, studentOptions]);
   const isPersisting = isSaving || saveStatus === "saving";
   const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
   const availableFieldToolOptions = isCandyXpActivity
@@ -2270,12 +2270,19 @@ function InteractiveHomeworkEditorItem({
     setShareMessage(null);
 
     if (!shareStudentId) {
-      setShareMessage("Selecione um aluno para adicionar.");
+      setShareMessage("Selecione um aluno para replicar.");
+      return;
+    }
+
+    if (hasUnsavedChanges || isPersisting) {
+      setShareMessage(
+        "Salve as areas antes de replicar para copiar a versao mais recente.",
+      );
       return;
     }
 
     startShareTransition(async () => {
-      const result = await shareInteractiveHomeworkWithStudent({
+      const result = await replicateInteractiveHomeworkForStudent({
         homeworkId: homework.id,
         studentProfileId: shareStudentId,
       });
@@ -2415,9 +2422,9 @@ function InteractiveHomeworkEditorItem({
                 <span className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[0.72rem] font-semibold text-emerald-800">
                   <UsersRound aria-hidden="true" className="size-3.5" />
                   <span className="truncate">
-                    {sharedStudents.length > 0
-                      ? `${sharedStudents.length + 1} alunos com acesso`
-                      : "1 aluno com acesso"}
+                    {replicatedStudents.length > 0
+                      ? `${replicatedStudents.length} replica(s) criada(s)`
+                      : "Sem replicas"}
                   </span>
                 </span>
               ) : null}
@@ -2538,11 +2545,11 @@ function InteractiveHomeworkEditorItem({
             <div className="rounded-lg border border-sky-200 bg-white/86 p-3 shadow-sm">
               <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-sky-700">
                 <UsersRound aria-hidden="true" className="size-3.5" />
-                Tambem veem
+                Replicas criadas
               </span>
               <div className="mt-2 flex flex-wrap gap-2">
-                {sharedStudents.length > 0 ? (
-                  sharedStudents.map((student) => (
+                {replicatedStudents.length > 0 ? (
+                  replicatedStudents.map((student) => (
                     <span
                       className="inline-flex max-w-full items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-900"
                       key={student.id}
@@ -2556,7 +2563,7 @@ function InteractiveHomeworkEditorItem({
                   ))
                 ) : (
                   <span className="rounded-md border border-dashed border-sky-200 bg-sky-50/55 px-3 py-2 text-xs font-medium text-sky-800">
-                    Nenhum aluno extra ainda.
+                    Nenhuma replica criada ainda.
                   </span>
                 )}
               </div>
@@ -2570,7 +2577,7 @@ function InteractiveHomeworkEditorItem({
                 className="grid gap-1 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/70"
                 htmlFor={`share-homework-${homework.id}`}
               >
-                Adicionar aluno
+                Replicar para outro aluno
                 <NativeSelect
                   disabled={isSharing || shareableStudentOptions.length === 0}
                   id={`share-homework-${homework.id}`}
@@ -2579,8 +2586,8 @@ function InteractiveHomeworkEditorItem({
                 >
                   <option value="">
                     {shareableStudentOptions.length > 0
-                      ? "Escolha quem tambem recebe"
-                      : "Todos disponiveis ja tem acesso"}
+                      ? "Escolha o aluno da copia"
+                      : "Todos disponiveis ja tem replica"}
                   </option>
                   {shareableStudentOptions.map((student) => (
                     <option key={student.id} value={student.id}>
@@ -2593,7 +2600,9 @@ function InteractiveHomeworkEditorItem({
                 disabled={
                   isSharing ||
                   shareableStudentOptions.length === 0 ||
-                  !shareStudentId
+                  !shareStudentId ||
+                  hasUnsavedChanges ||
+                  isPersisting
                 }
                 size="sm"
                 type="submit"
@@ -2606,8 +2615,13 @@ function InteractiveHomeworkEditorItem({
                 ) : (
                   <UserPlus data-icon="inline-start" />
                 )}
-                {isSharing ? "Adicionando..." : "Adicionar aluno"}
+                {isSharing ? "Replicando..." : "Replicar homework"}
               </Button>
+              {hasUnsavedChanges ? (
+                <p className="text-xs font-medium text-amber-700">
+                  Salve as areas antes de replicar.
+                </p>
+              ) : null}
               {shareMessage ? (
                 <p className="rounded-md border border-primary/10 bg-primary/[0.035] px-3 py-2 text-xs font-medium text-primary/75">
                   {shareMessage}

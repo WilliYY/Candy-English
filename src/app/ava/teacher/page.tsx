@@ -210,23 +210,28 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
                 status: true,
               },
             },
-            studentAssignments: {
+            homeworkReplicas: {
               orderBy: {
                 createdAt: "asc",
               },
               select: {
                 createdAt: true,
-                studentProfile: {
+                id: true,
+                lesson: {
                   select: {
-                    user: {
+                    studentProfile: {
                       select: {
-                        email: true,
-                        name: true,
+                        id: true,
+                        user: {
+                          select: {
+                            email: true,
+                            name: true,
+                          },
+                        },
                       },
                     },
                   },
                 },
-                studentProfileId: true,
               },
             },
             title: true,

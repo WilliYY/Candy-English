@@ -60,14 +60,7 @@ export async function getAvaNavAlertSignatures(
         }),
         prisma.homework.findFirst({
           where: {
-            OR: [
-              { lesson: { studentProfileId: profile.id } },
-              {
-                studentAssignments: {
-                  some: { studentProfileId: profile.id },
-                },
-              },
-            ],
+            lesson: { studentProfileId: profile.id },
             status: "PUBLISHED",
           },
           orderBy: { updatedAt: "desc" },

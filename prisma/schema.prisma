@@ -257,27 +257,27 @@ model User {
 }
 
 model StudentProfile {
-  id                 String                      @id @default(cuid())
-  userId             String                      @unique
-  user               User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level              String?
-  birthDate          DateTime?
-  guardianDocument   String?
-  gender             String?
-  studentPhone       String?
-  studentPhoneAlt    String?
-  motherName         String?
-  motherPhone        String?
-  notes              String?
-  chatThreads        ChatThread[]
-  teacherAssignments StudentTeacherAssignment[]  @relation("StudentAssignments")
-  lessons            Lesson[]
+  id                  String                      @id @default(cuid())
+  userId              String                      @unique
+  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level               String?
+  birthDate           DateTime?
+  guardianDocument    String?
+  gender              String?
+  studentPhone        String?
+  studentPhoneAlt     String?
+  motherName          String?
+  motherPhone         String?
+  notes               String?
+  chatThreads         ChatThread[]
+  teacherAssignments  StudentTeacherAssignment[]  @relation("StudentAssignments")
+  lessons             Lesson[]
   homeworkAssignments HomeworkStudentAssignment[]
-  submissions        HomeworkSubmission[]
-  candyXpAssignments CandyXpActivityAssignment[]
-  candyXpSubmissions CandyXpActivitySubmission[]
-  contracts          ContractDocument[]
-  liveSessions       LiveSession[]
+  submissions         HomeworkSubmission[]
+  candyXpAssignments  CandyXpActivityAssignment[]
+  candyXpSubmissions  CandyXpActivitySubmission[]
+  contracts           ContractDocument[]
+  liveSessions        LiveSession[]
 }
 
 model StudentPreRegistration {
@@ -311,15 +311,15 @@ model StudentPreRegistration {
 }
 
 model TeacherProfile {
-  id                  String                     @id @default(cuid())
-  userId              String                     @unique
-  user                User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                  String                      @id @default(cuid())
+  userId              String                      @unique
+  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
   bio                 String?
-  studentAssignments  StudentTeacherAssignment[] @relation("TeacherAssignments")
+  studentAssignments  StudentTeacherAssignment[]  @relation("TeacherAssignments")
   chatThreads         ChatThread[]
   lessons             Lesson[]
   homeworks           Homework[]
-  sharedHomeworks      HomeworkStudentAssignment[]
+  sharedHomeworks     HomeworkStudentAssignment[]
   reviewedSubmissions HomeworkSubmission[]
   liveSessions        LiveSession[]
 }
@@ -387,44 +387,48 @@ model VocabularyItem {
 }
 
 model Homework {
-  id                   String                     @id @default(cuid())
-  lessonId             String
-  lesson               Lesson                     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  teacherProfileId     String
-  teacherProfile       TeacherProfile             @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
-  title                String
-  instructions         String?
-  dueDate              DateTime?
-  kind                 HomeworkKind               @default(TEXT)
-  assetFileName        String?
-  assetStoragePath     String?
-  assetMimeType        String?
-  assetSizeBytes       Int?
-  assetPageCount       Int                        @default(1)
-  fieldDetectionSource String?
-  interactiveFields    HomeworkInteractiveField[]
-  studentAssignments   HomeworkStudentAssignment[]
-  status               HomeworkStatus             @default(PUBLISHED)
-  questions            HomeworkQuestion[]
-  submissions          HomeworkSubmission[]
-  createdAt            DateTime                   @default(now())
-  updatedAt            DateTime                   @updatedAt
+  id                       String                      @id @default(cuid())
+  lessonId                 String
+  lesson                   Lesson                      @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  teacherProfileId         String
+  teacherProfile           TeacherProfile              @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  title                    String
+  instructions             String?
+  dueDate                  DateTime?
+  kind                     HomeworkKind                @default(TEXT)
+  assetFileName            String?
+  assetStoragePath         String?
+  assetMimeType            String?
+  assetSizeBytes           Int?
+  assetPageCount           Int                         @default(1)
+  fieldDetectionSource     String?
+  replicatedFromHomeworkId String?
+  replicatedFromHomework   Homework?                   @relation("HomeworkReplicas", fields: [replicatedFromHomeworkId], references: [id], onDelete: SetNull)
+  homeworkReplicas         Homework[]                  @relation("HomeworkReplicas")
+  interactiveFields        HomeworkInteractiveField[]
+  studentAssignments       HomeworkStudentAssignment[]
+  status                   HomeworkStatus              @default(PUBLISHED)
+  questions                HomeworkQuestion[]
+  submissions              HomeworkSubmission[]
+  createdAt                DateTime                    @default(now())
+  updatedAt                DateTime                    @updatedAt
 
   @@index([lessonId])
   @@index([teacherProfileId])
   @@index([kind])
   @@index([status])
+  @@index([replicatedFromHomeworkId])
 }
 
 model HomeworkStudentAssignment {
-  id                         String         @id @default(cuid())
+  id                         String          @id @default(cuid())
   homeworkId                 String
-  homework                   Homework       @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  homework                   Homework        @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
   studentProfileId           String
-  studentProfile             StudentProfile @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
+  studentProfile             StudentProfile  @relation(fields: [studentProfileId], references: [id], onDelete: Cascade)
   assignedByTeacherProfileId String?
   assignedByTeacherProfile   TeacherProfile? @relation(fields: [assignedByTeacherProfileId], references: [id], onDelete: SetNull)
-  createdAt                  DateTime       @default(now())
+  createdAt                  DateTime        @default(now())
 
   @@unique([homeworkId, studentProfileId])
   @@index([studentProfileId])

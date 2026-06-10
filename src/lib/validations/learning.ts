@@ -137,7 +137,7 @@ export const deleteInteractiveHomeworkSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
 });
 
-export const shareInteractiveHomeworkSchema = z.object({
+export const replicateInteractiveHomeworkSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
   studentProfileId: z.string().min(1, "Selecione um aluno."),
 });
@@ -215,8 +215,8 @@ export type SaveInteractiveHomeworkFieldsOutput = z.output<
 export type DeleteInteractiveHomeworkInput = z.input<
   typeof deleteInteractiveHomeworkSchema
 >;
-export type ShareInteractiveHomeworkInput = z.input<
-  typeof shareInteractiveHomeworkSchema
+export type ReplicateInteractiveHomeworkInput = z.input<
+  typeof replicateInteractiveHomeworkSchema
 >;
 export type DetectListeningTextInput = z.input<
   typeof detectListeningTextSchema

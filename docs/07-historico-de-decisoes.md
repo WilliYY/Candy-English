@@ -512,6 +512,14 @@ Cada decisao deve conter:
 - Motivo: materiais iguais podem ser usados por mais de um aluno, reduzindo retrabalho da teacher e peso de storage, mas mantendo rascunho, entrega e correcao separados por `HomeworkSubmission`.
 - Impacto: `prisma/schema.prisma`, migration `20260609113000_homework_student_assignments`, actions teacher/student, rotas protegidas de asset/audio, editor de homework e docs oficiais.
 - Riscos/cuidados: Teacher so compartilha com aluno vinculado, Admin com aluno ativo; `lesson-manual` segue fora do compartilhamento para nao misturar aula interativa com homework.
+- Status: substituida em 2026-06-10 por replicacao real de homework por aluno, para evitar confusao visual e permissao compartilhada no mesmo item.
+
+### 2026-06-10 - Homework replicavel por aluno
+
+- Decisao: substituir o fluxo operacional de "aluno extra ve o mesmo homework" por `Replicar para outro aluno`, criando nova `Lesson` e novo `Homework` com `replicatedFromHomeworkId`, perguntas e campos interativos copiados.
+- Motivo: a teacher pode reutilizar um material ja editado sem subir o PDF novamente e sem o aluno acessar o mesmo registro de outro aluno.
+- Impacto: `prisma/schema.prisma`, migration `20260610120000_homework_replication_source`, actions teacher/student, rotas protegidas de asset/audio, editor de homework e docs oficiais.
+- Riscos/cuidados: o arquivo otimizado pode ser reaproveitado por caminho de storage, entao a exclusao so remove o arquivo fisico quando nao existe outra homework usando o mesmo caminho; `HomeworkStudentAssignment` fica legado e nao deve definir acesso novo do aluno.
 
 ## Regras de negocio que precisam ser preservadas
 

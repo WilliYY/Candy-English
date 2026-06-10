@@ -109,21 +109,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   ] = await Promise.all([
     prisma.lesson.findMany({
       where: {
-        OR: [
-          { studentProfileId: studentProfile.id },
-          {
-            homeworks: {
-              some: {
-                status: "PUBLISHED",
-                studentAssignments: {
-                  some: {
-                    studentProfileId: studentProfile.id,
-                  },
-                },
-              },
-            },
-          },
-        ],
+        studentProfileId: studentProfile.id,
         status: "PUBLISHED",
       },
       orderBy: {
@@ -133,20 +119,9 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         description: true,
         homeworks: {
           where: {
-            OR: [
-              {
-                lesson: {
-                  studentProfileId: studentProfile.id,
-                },
-              },
-              {
-                studentAssignments: {
-                  some: {
-                    studentProfileId: studentProfile.id,
-                  },
-                },
-              },
-            ],
+            lesson: {
+              studentProfileId: studentProfile.id,
+            },
             status: "PUBLISHED",
           },
           orderBy: {

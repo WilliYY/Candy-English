@@ -63,8 +63,9 @@ Tabelas e enums:
 - Para o aluno, `fieldDetectionSource=lesson-manual` aparece dentro de `Aulas e Materiais`; a aba `Responder homework` mostra apenas homeworks reais.
 - Em `Aulas e Materiais`, cada aula deve aparecer recolhida por padrao, em estilo de lista operacional com resumo superior, contadores, chips de teacher/data/material/vocabulario e selo de XP ganho/possivel pela atividade de aula; ao abrir, materiais, vocabulario e atividade interativa aparecem em blocos separados, e a atividade interativa fica como um card maior e centralizado, com estado `Concluido`/`Nao concluido` marcado por bolinha verde/vermelha.
 - A criacao de homework seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para manter o vinculo de permissao do homework.
-- Uma homework interativa criada em `Criar/Ver Homework` pode ser compartilhada com alunos extras pelo card do editor usando `Adicionar aluno`, sem duplicar PDF, campos ou aula interna. O aluno principal e os alunos extras veem o mesmo material, mas cada aluno tem sua propria `HomeworkSubmission`, rascunho, entrega e correcao.
-- Teacher so pode adicionar alunos vinculados a ela; Admin pode adicionar alunos ativos. O compartilhamento extra nao se aplica a atividades de `Criar/Ver Aulas` (`fieldDetectionSource=lesson-manual`).
+- Uma homework interativa criada em `Criar/Ver Homework` pode ser replicada para outro aluno pelo card do editor usando `Replicar para outro aluno`. A action cria uma nova aula interna e uma nova homework para o aluno escolhido, copia perguntas e areas (`Texto`, `Letra/Num`, `Marcar`, `Desenho`, `Listening`) e aponta a copia para `Homework.replicatedFromHomeworkId`.
+- Teacher so pode replicar para alunos vinculados a ela; Admin pode replicar para alunos ativos. O fluxo nao se aplica a atividades de `Criar/Ver Aulas` (`fieldDetectionSource=lesson-manual`).
+- O PDF/imagem otimizado pode ser reaproveitado por caminho de storage para nao exigir novo upload nem duplicar arquivo pesado, mas o aluno acessa um item proprio, com rascunho, entrega e correcao separados.
 - Na criacao de aula interativa, o sistema cria uma aula real com titulo/resumo/data e vincula uma atividade `Homework.kind=INTERACTIVE` a ela.
 - Homework interativo precisa continuar ligado a uma aula com aluno definido, mesmo quando essa aula for criada automaticamente.
 - O arquivo fica em `storage/homework-assets` ou no volume Docker equivalente, nunca no Git.
@@ -113,8 +114,8 @@ Tabelas e enums:
 - A interface de criacao nova removeu o formulario `TEXT`; esse modo permanece no banco apenas para compatibilidade com registros antigos.
 - Metadados do arquivo ficam no proprio `Homework` para evitar tabela extra nesta fase.
 - Campos interativos ficam em `HomeworkInteractiveField`, com cascade quando a homework for apagada futuramente.
-- A exclusao de homework interativa usa server action com validacao de role/dono e tenta remover o arquivo fisico de `storage/homework-assets` apos apagar os registros.
-- `HomeworkStudentAssignment` guarda alunos extras que podem visualizar e responder a mesma homework interativa, mantendo o arquivo e os campos em um unico `Homework`.
+- A exclusao de homework interativa usa server action com validacao de role/dono e tenta remover o arquivo fisico de `storage/homework-assets` somente quando nenhuma outra homework usa o mesmo caminho de storage.
+- `Homework.replicatedFromHomeworkId` guarda a origem de uma copia criada por `Replicar para outro aluno`. A replicacao cria uma nova `Lesson` e um novo `Homework`, copia perguntas e `HomeworkInteractiveField`, nao copia `HomeworkSubmission` e nao cria novo `HomeworkStudentAssignment`.
 - A rota `/ava/homework-assets/[homeworkId]` reutiliza o padrao de contratos protegidos.
 - A visualizacao usa `pdfjs-dist` no client para renderizar PDFs pagina a pagina em canvas, mantendo proporcao real do arquivo antes de aplicar overlays HTML/SVG.
 - A revisao do arquivo entregue reutiliza a mesma renderizacao fiel e mostra os valores da submissao sobre os campos percentuais salvos.
