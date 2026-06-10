@@ -695,7 +695,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   }
   const candyXpRanking = await getCandyXpRankingSnapshot({
     currentUserId: session.user.id,
-    limit: 10,
+    limit: 100,
   });
 
   return (

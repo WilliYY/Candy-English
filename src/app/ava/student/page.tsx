@@ -492,7 +492,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   });
   const candyXpRanking = await getCandyXpRankingSnapshot({
     currentUserId: session.user.id,
-    limit: 10,
+    limit: 100,
   });
 
   return (

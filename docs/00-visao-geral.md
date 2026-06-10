@@ -45,7 +45,7 @@ Rotas principais:
 - Financeiro e modulo interno do admin, sem pagamento online.
 - Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
 - Homework e aula interativa devem manter arquivo e campos protegidos por permissao de aluno/teacher/admin.
-- Candy XP e persistido por eventos server-side e continua respeitando role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos.
+- Candy XP e persistido por eventos server-side e continua respeitando role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos. Usuarios logados veem ranking interno de alunos/profs com nome, avatar/foto, role e metricas de XP, paginado de 10 em 10, sem email nem dados sensiveis.
 - Atividades Candy XP devem liberar PDF/imagem apenas por rota protegida, permitir areas interativas salvas por `ADMIN` e conceder XP no servidor, com conclusao automatica quando os campos obrigatorios estiverem preenchidos e correcao manual para respostas escritas antigas.
 - PDFs pedagogicos protegidos, como atividades Candy XP, homework interativo e aulas interativas, podem ser otimizados no servidor antes de salvar, mas a falha da otimizacao nao deve quebrar o upload nem abrir acesso publico.
 

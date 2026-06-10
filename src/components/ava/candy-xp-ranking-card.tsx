@@ -1,4 +1,9 @@
+"use client";
+
 import {
+  ChevronLeft,
+  ChevronRight,
+  Crown,
   Medal,
   Sparkles,
   Trophy,
@@ -6,6 +11,7 @@ import {
   UsersRound,
   Zap,
 } from "lucide-react";
+import { useState } from "react";
 import { UserAvatar } from "@/components/ava/user-avatar";
 import type {
   CandyXpRankingEntry,
@@ -18,6 +24,7 @@ type CandyXpRankingCardProps = {
   ranking: CandyXpRankingSnapshot;
 };
 
+const PAGE_SIZE = 10;
 const xpFormatter = new Intl.NumberFormat("pt-BR");
 
 const podiumStyles = [
@@ -122,11 +129,12 @@ function PodiumEntry({
   index: number;
 }) {
   const style = podiumStyles[index] ?? podiumStyles[2];
+  const RankIcon = index === 0 ? Crown : Trophy;
 
   return (
     <article
       className={cn(
-        "relative overflow-hidden rounded-lg border p-4 shadow-lg transition duration-200",
+        "relative overflow-hidden rounded-lg border p-4 shadow-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-xl",
         style.card,
         entry.isCurrentUser && "outline outline-2 outline-primary/35",
       )}
@@ -142,7 +150,7 @@ function PodiumEntry({
             style.badge,
           )}
         >
-          <Trophy aria-hidden="true" className="size-3.5" />
+          <RankIcon aria-hidden="true" className="size-3.5" />
           #{entry.position}
         </span>
         {entry.isCurrentUser ? (
@@ -181,6 +189,20 @@ function PodiumEntry({
           value={`${xpFormatter.format(entry.xpToNextLevel)} XP`}
         />
       </div>
+
+      <div className="mt-4">
+        <div className="flex items-center justify-between gap-3 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-primary/55">
+          <span>Progresso</span>
+          <span>{entry.progressPercent}%</span>
+        </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-primary/10">
+          <span
+            aria-hidden="true"
+            className="block h-full rounded-full bg-[linear-gradient(90deg,#412a4c,#e57cd8,#f6c65b)]"
+            style={{ width: `${entry.progressPercent}%` }}
+          />
+        </div>
+      </div>
     </article>
   );
 }
@@ -218,6 +240,19 @@ function CompactEntry({ entry }: { entry: CandyXpRankingEntry }) {
             Nivel {entry.level}
           </span>
         </div>
+        <div className="mt-2 max-w-sm">
+          <div className="flex items-center justify-between gap-3 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-primary/50">
+            <span>Progresso</span>
+            <span>{entry.progressPercent}%</span>
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-primary/10">
+            <span
+              aria-hidden="true"
+              className="block h-full rounded-full bg-[linear-gradient(90deg,#412a4c,#e57cd8,#f6c65b)]"
+              style={{ width: `${entry.progressPercent}%` }}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2 sm:min-w-48">
@@ -238,9 +273,19 @@ export function CandyXpRankingCard({
   className,
   ranking,
 }: CandyXpRankingCardProps) {
-  const podium = ranking.topEntries.slice(0, 3);
-  const remainingEntries = ranking.topEntries.slice(3);
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(ranking.topEntries.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const pageEntries = ranking.topEntries.slice(pageStart, pageStart + PAGE_SIZE);
+  const podium = safePage === 1 ? pageEntries.slice(0, 3) : [];
+  const remainingEntries = safePage === 1 ? pageEntries.slice(3) : pageEntries;
   const titleId = "ranking-candy-title";
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, ranking.topEntries.length);
+
+  function goToPage(page: number) {
+    setCurrentPage(Math.min(totalPages, Math.max(1, page)));
+  }
 
   return (
     <section
@@ -271,7 +316,7 @@ export function CandyXpRankingCard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
           <span className="rounded-lg border border-primary/10 bg-white/82 px-3 py-2 text-sm shadow-sm">
             <span className="block text-[0.62rem] font-bold uppercase tracking-[0.12em] text-primary/50">
               Participantes
@@ -280,9 +325,17 @@ export function CandyXpRankingCard({
           </span>
           <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 shadow-sm">
             <span className="block text-[0.62rem] font-bold uppercase tracking-[0.12em]">
-              Top
+              Exibidos
             </span>
             <strong>{ranking.topEntries.length}</strong>
+          </span>
+          <span className="rounded-lg border border-fuchsia-200 bg-fuchsia-50 px-3 py-2 text-sm text-fuchsia-950 shadow-sm">
+            <span className="block text-[0.62rem] font-bold uppercase tracking-[0.12em]">
+              Pagina
+            </span>
+            <strong>
+              {safePage}/{totalPages}
+            </strong>
           </span>
         </div>
       </div>
@@ -297,24 +350,39 @@ export function CandyXpRankingCard({
           </div>
         ) : (
           <>
-            <div className="grid gap-3 lg:grid-cols-3">
-              {podium.map((entry, index) => (
-                <PodiumEntry
-                  key={entry.userId}
-                  entry={entry}
-                  index={index}
-                />
-              ))}
-            </div>
+            {podium.length > 0 ? (
+              <div className="grid gap-3 lg:grid-cols-3">
+                {podium.map((entry, index) => (
+                  <PodiumEntry
+                    key={entry.userId}
+                    entry={entry}
+                    index={index}
+                  />
+                ))}
+              </div>
+            ) : null}
 
             {remainingEntries.length > 0 ? (
-              <ol className="grid gap-2">
-                {remainingEntries.map((entry) => (
-                  <li key={entry.userId}>
-                    <CompactEntry entry={entry} />
-                  </li>
-                ))}
-              </ol>
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-bold text-primary">
+                    Posicoes {pageStart + 1}-{pageEnd}
+                  </p>
+                  {safePage > 1 ? (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/82 px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                      <Sparkles aria-hidden="true" className="size-3.5" />
+                      Continuacao do ranking
+                    </span>
+                  ) : null}
+                </div>
+                <ol className="grid gap-2">
+                  {remainingEntries.map((entry) => (
+                    <li key={entry.userId}>
+                      <CompactEntry entry={entry} />
+                    </li>
+                  ))}
+                </ol>
+              </div>
             ) : null}
 
             {ranking.currentUserEntry ? (
@@ -324,6 +392,57 @@ export function CandyXpRankingCard({
                 </p>
                 <CompactEntry entry={ranking.currentUserEntry} />
               </div>
+            ) : null}
+
+            {totalPages > 1 ? (
+              <nav
+                aria-label="Paginas do Ranking Candy XP"
+                className="flex flex-wrap items-center justify-between gap-3 border-t border-primary/10 pt-4"
+              >
+                <button
+                  type="button"
+                  onClick={() => goToPage(safePage - 1)}
+                  disabled={safePage === 1}
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary/12 bg-white px-3 py-2 text-sm font-bold text-primary shadow-sm transition hover:border-primary/30 hover:bg-primary/6 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  <ChevronLeft aria-hidden="true" className="size-4" />
+                  Anterior
+                </button>
+
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {Array.from({ length: totalPages }, (_, index) => {
+                    const page = index + 1;
+                    const isActive = page === safePage;
+
+                    return (
+                      <button
+                        key={page}
+                        type="button"
+                        onClick={() => goToPage(page)}
+                        aria-current={isActive ? "page" : undefined}
+                        className={cn(
+                          "flex size-9 items-center justify-center rounded-lg border text-sm font-bold shadow-sm transition",
+                          isActive
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-primary/12 bg-white text-primary hover:border-primary/30 hover:bg-primary/6",
+                        )}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => goToPage(safePage + 1)}
+                  disabled={safePage === totalPages}
+                  className="inline-flex items-center gap-2 rounded-lg border border-primary/12 bg-white px-3 py-2 text-sm font-bold text-primary shadow-sm transition hover:border-primary/30 hover:bg-primary/6 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  Proxima
+                  <ChevronRight aria-hidden="true" className="size-4" />
+                </button>
+              </nav>
             ) : null}
           </>
         )}

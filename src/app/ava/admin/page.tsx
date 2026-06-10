@@ -702,7 +702,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   });
   const candyXpRanking = await getCandyXpRankingSnapshot({
     currentUserId: session.user.id,
-    limit: 10,
+    limit: 100,
   });
 
   return (

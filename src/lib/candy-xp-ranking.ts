@@ -10,6 +10,9 @@ export type CandyXpRankingEntry = {
   level: number;
   name: string;
   position: number;
+  progressPercent: number;
+  progressXp: number;
+  requiredXp: number;
   role: CandyXpRankingRole;
   roleLabel: string;
   totalXp: number;
@@ -37,7 +40,7 @@ export type CandyXpRankingSnapshot = {
 
 const RANKABLE_ROLE_VALUES: CandyXpRankingRole[] = ["STUDENT", "TEACHER"];
 const MIN_RANKING_LIMIT = 3;
-const MAX_RANKING_LIMIT = 20;
+const MAX_RANKING_LIMIT = 100;
 
 const rankingProfileSelect = {
   lastXpEventAt: true,
@@ -143,6 +146,12 @@ function buildEntry({
     level: profile.level,
     name: getSafeName(profile.user.name),
     position,
+    progressPercent: Math.min(
+      100,
+      Math.round((profile.progressXp / Math.max(1, profile.requiredXp)) * 100),
+    ),
+    progressXp: profile.progressXp,
+    requiredXp: profile.requiredXp,
     role,
     roleLabel: getRoleLabel(role),
     totalXp: profile.totalXp,

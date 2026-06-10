@@ -19,7 +19,7 @@ Arquivos principais:
 - `src/app/ava/candy-xp/actions.ts`: criacao, edicao simples, progresso, envio e correcao.
 - `src/app/ava/candy-xp-assets/[activityId]/route.ts`: rota protegida para PDF/imagem das atividades.
 - `src/components/ava/student-xp-card.tsx`: card reutilizavel para student, teacher e admin.
-- `src/components/ava/candy-xp-ranking-card.tsx`: card visual do ranking interno com top, avatar, role, nivel e XP.
+- `src/components/ava/candy-xp-ranking-card.tsx`: card visual do ranking interno com top, avatar, role, nivel, XP, progresso e paginacao de 10 por pagina.
 - `src/components/ava/user-summary-panel.tsx`: mini card de perfil/XP que mostra a posicao pessoal do aluno ou teacher no ranking da propria categoria.
 - `src/components/ava/admin-candy-xp-panel.tsx`: painel admin para montar atividades e corrigir envios.
 - `src/components/ava/student-candy-xp-activities-panel.tsx`: experiencia do aluno com missoes, PDF/imagem, envio e progresso.
@@ -72,6 +72,7 @@ Rotas das atividades:
 - Existe ranking interno do AVA apenas para usuarios logados, exibindo alunos e teachers/profs com nome, foto/avatar, role, nivel, XP total e XP restante, sem email, telefone, documento, pagamento, contrato ou outro dado sensivel.
 - O ranking usa `CandyXpProfile` como cache/resumo e `CandyXpEvent` continua sendo a fonte da verdade do XP; a posicao geral e a posicao pessoal por categoria devem refletir o perfil recalculado apos cada sincronizacao de XP no servidor.
 - A ordenacao do ranking e: maior XP total, maior nivel, XP mais recente por `lastXpEventAt` e nome em ordem alfabetica.
+- O ranking e paginado de 10 em 10 quando houver mais participantes; a primeira pagina destaca os tres primeiros em podium e as seguintes continuam a lista por posicao.
 - O mini card de perfil/XP mostra a posicao do proprio usuario somente para `STUDENT` e `TEACHER`: student entra na categoria `alunos`, teacher entra em `teachers`, e quem ainda tem 0 XP recebe incentivo para comecar uma missao em vez de uma colocacao.
 - Streak usa dias de atividade com XP e e calculado por data em `America/Sao_Paulo`.
 - Badges sao concedidos automaticamente por criterios simples: nivel, streak ou contagem de eventos.
