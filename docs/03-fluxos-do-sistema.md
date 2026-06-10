@@ -165,12 +165,13 @@ Helpers:
 4. A atividade principal fica no proprio PDF/imagem; a criacao nova nao exige perguntas manuais separadas.
 5. Admin abre o editor dentro do card da atividade e desenha areas de texto, letra/numero, marcar ou desenho sobre o arquivo para todos os alunos liberados.
 6. Admin pode excluir uma atividade criada por engano; arquivo, liberacoes, areas, perguntas e respostas saem, mas eventos historicos de XP ja conquistado permanecem no ledger.
-7. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele.
-8. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
-9. Quando houver areas interativas, o aluno responde direto sobre o arquivo com autosave.
-10. Atividades novas sem perguntas manuais viram `REVIEWED` e concedem XP automaticamente pelo envio preenchido.
-11. Atividades antigas com perguntas seguem compativeis: objetivas podem virar `REVIEWED`/`RETURNED` automaticamente, e respostas escritas ficam `SUBMITTED` para correcao manual.
-12. Ao aprovar manualmente uma atividade antiga, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
+7. Aluno abre `/ava/student?task=candy-xp` e ve apenas atividades publicadas e liberadas para ele, organizadas em quadrados de missao com previa curta, status, progresso e XP.
+8. Ao escolher um quadrado, a missao selecionada abre abaixo como area de resposta; quando houver areas interativas, o painel reaproveita o mesmo motor de resposta do homework, mas ja aberto para responder.
+9. O PDF/imagem abre dentro da missao por `/ava/candy-xp-assets/[activityId]`, sempre com validacao server-side.
+10. Quando houver areas interativas, o aluno responde direto sobre o arquivo com autosave.
+11. Atividades novas sem perguntas manuais viram `REVIEWED` e concedem XP automaticamente pelo envio preenchido.
+12. Atividades antigas com perguntas seguem compativeis: objetivas podem virar `REVIEWED`/`RETURNED` automaticamente, e respostas escritas ficam `SUBMITTED` para correcao manual.
+13. Ao aprovar manualmente uma atividade antiga, o admin libera o XP uma unica vez pela `sourceKey` da submissao.
 
 ### Contratos
 

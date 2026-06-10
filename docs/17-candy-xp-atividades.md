@@ -66,16 +66,18 @@ Banco:
 
 1. Student abre `/ava/student?task=candy-xp`.
 2. O aluno ve apenas atividades `PUBLISHED` liberadas para todos ou atribuidas ao seu perfil. Atividade publicada sem `CandyXpActivityAssignment` aparece para todos os alunos.
-3. O aluno abre o PDF/imagem pela rota protegida.
-4. Se houver areas interativas, o aluno responde diretamente sobre o arquivo com autosave de rascunho.
-5. Se a atividade antiga tiver perguntas separadas, ele ainda pode responder e salvar progresso como `DRAFT`.
-6. Ao enviar:
+3. O aluno ve as missoes como quadrados lado a lado; cada quadrado mostra titulo, previa curta, nivel/tipo, status, progresso e XP possivel.
+4. Ao escolher um quadrado, a missao selecionada abre abaixo para responder, evitando uma lista de blocos grandes para todas as atividades.
+5. O aluno abre o PDF/imagem pela rota protegida dentro da missao selecionada.
+6. Se houver areas interativas, o aluno responde diretamente sobre o arquivo com autosave de rascunho.
+7. Se a atividade antiga tiver perguntas separadas, ele ainda pode responder e salvar progresso como `DRAFT`.
+8. Ao enviar:
    - se a atividade tiver areas interativas obrigatorias vazias, o envio e bloqueado ate preencher;
    - se a atividade nao tiver perguntas manuais, vira `REVIEWED` e grava XP na hora;
    - se a atividade antiga tiver apenas questoes objetivas e todas estiverem certas, vira `REVIEWED` e grava XP na hora;
    - se tiver questao objetiva errada, vira `RETURNED` para refazer;
    - se tiver questao escrita, vira `SUBMITTED` e aguarda correcao manual.
-7. Quando aprovado ou concluido automaticamente, o sistema grava `CandyXpEvent` com `sourceKey` unica por submissao.
+9. Quando aprovado ou concluido automaticamente, o sistema grava `CandyXpEvent` com `sourceKey` unica por submissao.
 
 ## Regras de negocio que precisam ser preservadas
 
@@ -100,8 +102,8 @@ Banco:
 - A otimizacao de PDF usa `src/lib/file-optimization.ts`, compartilhado com homework/aulas interativas, e so substitui o arquivo quando a versao otimizada fica menor e nao parece perder paginas.
 - Se Ghostscript nao estiver disponivel, falhar ou gerar arquivo maior, o upload continua salvando o original e retorna mensagem amigavel ao admin.
 - A premiacao usa o ledger existente `CandyXpEvent` e atualiza `CandyXpProfile` por `recordCandyXpEventsForUser`.
-- A tela student mostra cards gamificados com nivel, categoria, XP, progresso e status.
-- A tela student reaproveita o componente de homework interativo para responder areas sobre o PDF/imagem quando a atividade tem campos Candy XP.
+- A tela student mostra uma estante de quadrados gamificados com nivel, tipo, XP, progresso e status; o quadrado ativo abre a missao selecionada abaixo.
+- A tela student reaproveita o componente de homework interativo em modo painel aberto para responder areas sobre o PDF/imagem quando a atividade tem campos Candy XP.
 - A tela admin prioriza criacao rapida e acompanhamento, com cards mais destacados para cabecalho, editor do PDF, arquivo, liberacao e respostas. O bloco de perguntas saiu da criacao nova porque o PDF/imagem e a atividade principal; perguntas seguem como compatibilidade para atividades antigas.
 - O editor de areas reaproveita `interactive-homework-editor`, mas usa `source=CANDY_XP`, rota `/ava/candy-xp-assets/{activityId}` e action propria de `ADMIN` para salvar campos.
 - A exclusao administrativa usa server action com role `ADMIN`, apaga `CandyXpActivity` e seus dependentes por cascade, tenta remover o arquivo fisico em `storage/candy-xp-assets` e preserva `CandyXpEvent` como historico de conquista.

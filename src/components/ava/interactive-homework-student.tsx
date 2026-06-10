@@ -589,9 +589,13 @@ function DrawingField({
 
 export function InteractiveHomeworkStudent({
   context = "homework",
+  defaultOpen = false,
+  displayMode = "accordion",
   homework,
 }: {
   context?: "candy-xp" | "homework" | "lesson";
+  defaultOpen?: boolean;
+  displayMode?: "accordion" | "panel";
   homework: StudentInteractiveHomework;
 }) {
   const router = useRouter();
@@ -599,7 +603,7 @@ export function InteractiveHomeworkStudent({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [isPending, startTransition] = useTransition();
   const initialValues = useMemo(
@@ -675,6 +679,10 @@ export function InteractiveHomeworkStudent({
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
+
+  useEffect(() => {
+    setIsOpen(defaultOpen);
+  }, [defaultOpen, homework.id]);
 
   useEffect(() => {
     if (homeworkId.current !== homework.id) {
@@ -848,6 +856,256 @@ export function InteractiveHomeworkStudent({
     });
   }
 
+  const detailsContent = (
+    <div
+      className={
+        isLessonContext
+          ? "border-t border-primary/15 p-5 md:p-6"
+          : displayMode === "panel"
+            ? "bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5"
+            : "border-t border-primary/15 bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5"
+      }
+    >
+      <div className="mb-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-start">
+        <p className="leading-6">
+          {homework.instructions ?? fallbackInstructions}
+        </p>
+        <span className="flex flex-wrap items-center gap-2">
+          {!isLessonContext ? (
+            <span
+              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${xpBadgeClass}`}
+            >
+              <Zap aria-hidden="true" className="size-3.5" />
+              {xpBadgeLabel}
+            </span>
+          ) : null}
+          {!isLessonContext ? (
+            <span
+              className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
+            >
+              {displayedStatusHelper}
+            </span>
+          ) : null}
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-semibold">
+            <Save aria-hidden="true" />
+            {saveState === "saving"
+              ? "Salvando"
+              : saveState === "saved"
+                ? "Salvo"
+                : "Autosave"}
+          </span>
+        </span>
+      </div>
+
+      <InteractiveHomeworkDocument
+        assetMimeType={homework.assetMimeType}
+        assetUrl={assetUrl}
+        expectedPageCount={homework.assetPageCount}
+        fields={homework.fields}
+        pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
+        renderField={(field, index, style) => {
+          const commonClass =
+            "block size-full max-h-none max-w-none min-h-0 min-w-0 appearance-none border-0 bg-transparent text-left font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
+
+          if (field.type === "CHECKBOX") {
+            return (
+              <label
+                key={field.id}
+                className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-primary"
+                style={{ ...style, containerType: "size" }}
+              >
+                <span
+                  aria-hidden="true"
+                  className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                />
+                <input
+                  aria-label={field.label ?? `Campo ${index + 1}`}
+                  checked={values[field.id] === "true"}
+                  className="sr-only"
+                  disabled={isLocked}
+                  onChange={(event) =>
+                    updateValue(
+                      field.id,
+                      event.target.checked ? "true" : "false",
+                    )
+                  }
+                  type="checkbox"
+                />
+                {values[field.id] === "true" ? (
+                  <InteractiveHomeworkMark />
+                ) : null}
+              </label>
+            );
+          }
+
+          if (field.type === "DRAWING") {
+            return (
+              <DrawingField
+                key={field.id}
+                ariaLabel={field.label ?? `Campo ${index + 1}`}
+                disabled={isLocked}
+                onChange={(value) => updateValue(field.id, value)}
+                style={style}
+                value={values[field.id] ?? ""}
+              />
+            );
+          }
+
+          if (field.type === "TINY_TEXT") {
+            return (
+              <InteractiveHomeworkTextFrame
+                key={field.id}
+                className="pointer-events-auto"
+                style={style}
+              >
+                <input
+                  aria-label={field.label ?? `Campo ${index + 1}`}
+                  autoCapitalize="characters"
+                  className="block size-full min-h-0 min-w-0 appearance-none rounded-[5px] border border-primary/28 bg-white/55 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.08),inset_0_0_0_1px_rgba(255,255,255,0.62)] outline-none transition placeholder:text-transparent focus:border-primary focus:bg-white/92 focus:ring-2 focus:ring-primary/25 disabled:bg-white/28 disabled:text-primary disabled:opacity-100"
+                  disabled={isLocked}
+                  inputMode="text"
+                  maxLength={TINY_TEXT_MAX_LENGTH}
+                  onChange={(event) =>
+                    updateValue(
+                      field.id,
+                      normalizeTinyTextAnswer(event.target.value),
+                    )
+                  }
+                  placeholder=""
+                  style={getInteractiveHomeworkTinyTextStyle()}
+                  value={values[field.id] ?? ""}
+                />
+              </InteractiveHomeworkTextFrame>
+            );
+          }
+
+          if (field.type === "LISTENING") {
+            return (
+              <InteractiveHomeworkListeningPlayer
+                key={field.id}
+                fieldId={field.id}
+                label={field.label ?? `Listening ${index + 1}`}
+                sentence={field.placeholder}
+                style={style}
+              />
+            );
+          }
+
+          if (field.type === "SHORT_TEXT") {
+            return (
+              <InteractiveHomeworkTextFrame
+                key={field.id}
+                className="pointer-events-auto"
+                style={style}
+              >
+                <InteractiveHomeworkTextLineGuide
+                  kind="SHORT_TEXT"
+                  variant="student"
+                />
+                <input
+                  aria-label={field.label ?? `Campo ${index + 1}`}
+                  className={`${commonClass} relative z-10 overflow-hidden whitespace-nowrap px-[0.25em]`}
+                  disabled={isLocked}
+                  onChange={(event) =>
+                    updateValue(field.id, event.target.value)
+                  }
+                  placeholder={field.placeholder ?? "Resposta"}
+                  style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
+                  value={values[field.id] ?? ""}
+                />
+              </InteractiveHomeworkTextFrame>
+            );
+          }
+
+          return (
+            <InteractiveHomeworkTextFrame
+              key={field.id}
+              className="pointer-events-auto"
+              style={style}
+            >
+              <InteractiveHomeworkTextLineGuide
+                kind="LONG_TEXT"
+                variant="student"
+              />
+              <textarea
+                aria-label={field.label ?? `Campo ${index + 1}`}
+                className={`${commonClass} relative z-10 resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
+                disabled={isLocked}
+                onChange={(event) => updateValue(field.id, event.target.value)}
+                placeholder={field.placeholder ?? "Resposta"}
+                style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
+                value={values[field.id] ?? ""}
+                wrap="soft"
+              />
+            </InteractiveHomeworkTextFrame>
+          );
+        }}
+        title={homework.title}
+      />
+
+      {homework.submission?.feedback ? (
+        <div className="mt-4 rounded-lg border border-primary/20 bg-secondary p-3 text-sm leading-6">
+          <strong>Feedback:</strong> {homework.submission.feedback}
+        </div>
+      ) : null}
+
+      {message ? (
+        <p className="mt-3 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">
+          {message}
+        </p>
+      ) : null}
+
+      <div
+        className={
+          isLessonContext
+            ? "mt-5 flex flex-wrap items-center justify-center gap-2 sm:justify-start"
+            : "mt-4 flex flex-wrap items-center gap-2"
+        }
+      >
+        <Button
+          type="button"
+          onClick={submit}
+          disabled={isPending || isLocked}
+          className={isLessonContext ? "h-10 px-5" : undefined}
+        >
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : isLessonContext ? (
+            <CheckCircle2 data-icon="inline-start" />
+          ) : (
+            <Send data-icon="inline-start" />
+          )}
+          {isLessonContext
+            ? "Concluido"
+            : isCandyXpContext
+              ? "Enviar missao"
+              : "Entregar"}
+        </Button>
+        {canReopen ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={reopen}
+            disabled={isPending}
+          >
+            <RotateCcw data-icon="inline-start" />
+            Refazer
+          </Button>
+        ) : null}
+        {status === "REVIEWED" ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
+            <CheckCircle2 aria-hidden="true" />
+            {isCandyXpContext ? "Concluida" : "Corrigida"}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+
+  if (displayMode === "panel") {
+    return detailsContent;
+  }
+
   return (
     <details
       open={isOpen}
@@ -953,250 +1211,7 @@ export function InteractiveHomeworkStudent({
           </span>
         )}
       </summary>
-
-      <div
-        className={
-          isLessonContext
-            ? "border-t border-primary/15 p-5 md:p-6"
-            : "border-t border-primary/15 bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5"
-        }
-      >
-        <div className="mb-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-start">
-          <p className="leading-6">
-            {homework.instructions ?? fallbackInstructions}
-          </p>
-          <span className="flex flex-wrap items-center gap-2">
-            {!isLessonContext ? (
-              <span
-                className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${xpBadgeClass}`}
-              >
-                <Zap aria-hidden="true" className="size-3.5" />
-                {xpBadgeLabel}
-              </span>
-            ) : null}
-            {!isLessonContext ? (
-              <span
-                className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${statusTone}`}
-              >
-                {displayedStatusHelper}
-              </span>
-            ) : null}
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-semibold">
-              <Save aria-hidden="true" />
-              {saveState === "saving"
-                ? "Salvando"
-                : saveState === "saved"
-                  ? "Salvo"
-                  : "Autosave"}
-            </span>
-          </span>
-        </div>
-
-        <InteractiveHomeworkDocument
-          assetMimeType={homework.assetMimeType}
-          assetUrl={assetUrl}
-          expectedPageCount={homework.assetPageCount}
-          fields={homework.fields}
-          pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
-          renderField={(field, index, style) => {
-            const commonClass =
-              "block size-full max-h-none max-w-none min-h-0 min-w-0 appearance-none border-0 bg-transparent text-left font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
-
-            if (field.type === "CHECKBOX") {
-              return (
-                <label
-                  key={field.id}
-                  className="pointer-events-auto absolute flex cursor-pointer items-center justify-center bg-transparent text-primary"
-                  style={{ ...style, containerType: "size" }}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-1/2 top-1/2 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
-                  />
-                  <input
-                    aria-label={field.label ?? `Campo ${index + 1}`}
-                    checked={values[field.id] === "true"}
-                    className="sr-only"
-                    disabled={isLocked}
-                    onChange={(event) =>
-                      updateValue(
-                        field.id,
-                        event.target.checked ? "true" : "false",
-                      )
-                    }
-                    type="checkbox"
-                  />
-                  {values[field.id] === "true" ? (
-                    <InteractiveHomeworkMark />
-                  ) : null}
-                </label>
-              );
-            }
-
-            if (field.type === "DRAWING") {
-              return (
-                <DrawingField
-                  key={field.id}
-                  ariaLabel={field.label ?? `Campo ${index + 1}`}
-                  disabled={isLocked}
-                  onChange={(value) => updateValue(field.id, value)}
-                  style={style}
-                  value={values[field.id] ?? ""}
-                />
-              );
-            }
-
-            if (field.type === "TINY_TEXT") {
-              return (
-                <InteractiveHomeworkTextFrame
-                  key={field.id}
-                  className="pointer-events-auto"
-                  style={style}
-                >
-                  <input
-                    aria-label={field.label ?? `Campo ${index + 1}`}
-                    autoCapitalize="characters"
-                    className="block size-full min-h-0 min-w-0 appearance-none rounded-[5px] border border-primary/28 bg-white/55 p-0 text-center font-extrabold uppercase text-primary shadow-[0_1px_4px_rgba(65,42,76,0.08),inset_0_0_0_1px_rgba(255,255,255,0.62)] outline-none transition placeholder:text-transparent focus:border-primary focus:bg-white/92 focus:ring-2 focus:ring-primary/25 disabled:bg-white/28 disabled:text-primary disabled:opacity-100"
-                    disabled={isLocked}
-                    inputMode="text"
-                    maxLength={TINY_TEXT_MAX_LENGTH}
-                    onChange={(event) =>
-                      updateValue(
-                        field.id,
-                        normalizeTinyTextAnswer(event.target.value),
-                      )
-                    }
-                    placeholder=""
-                    style={getInteractiveHomeworkTinyTextStyle()}
-                    value={values[field.id] ?? ""}
-                  />
-                </InteractiveHomeworkTextFrame>
-              );
-            }
-
-            if (field.type === "LISTENING") {
-              return (
-                <InteractiveHomeworkListeningPlayer
-                  key={field.id}
-                  fieldId={field.id}
-                  label={field.label ?? `Listening ${index + 1}`}
-                  sentence={field.placeholder}
-                  style={style}
-                />
-              );
-            }
-
-            if (field.type === "SHORT_TEXT") {
-              return (
-                <InteractiveHomeworkTextFrame
-                  key={field.id}
-                  className="pointer-events-auto"
-                  style={style}
-                >
-                  <InteractiveHomeworkTextLineGuide
-                    kind="SHORT_TEXT"
-                    variant="student"
-                  />
-                  <input
-                    aria-label={field.label ?? `Campo ${index + 1}`}
-                    className={`${commonClass} relative z-10 overflow-hidden whitespace-nowrap px-[0.25em]`}
-                    disabled={isLocked}
-                    onChange={(event) =>
-                      updateValue(field.id, event.target.value)
-                    }
-                    placeholder={field.placeholder ?? "Resposta"}
-                    style={getInteractiveHomeworkTextStyle("SHORT_TEXT")}
-                    value={values[field.id] ?? ""}
-                  />
-                </InteractiveHomeworkTextFrame>
-              );
-            }
-
-            return (
-              <InteractiveHomeworkTextFrame
-                key={field.id}
-                className="pointer-events-auto"
-                style={style}
-              >
-                <InteractiveHomeworkTextLineGuide
-                  kind="LONG_TEXT"
-                  variant="student"
-                />
-                <textarea
-                  aria-label={field.label ?? `Campo ${index + 1}`}
-                  className={`${commonClass} relative z-10 resize-none overflow-hidden whitespace-pre-wrap break-words px-[0.3em] py-[0.2em]`}
-                  disabled={isLocked}
-                  onChange={(event) =>
-                    updateValue(field.id, event.target.value)
-                  }
-                  placeholder={field.placeholder ?? "Resposta"}
-                  style={getInteractiveHomeworkTextStyle("LONG_TEXT")}
-                  value={values[field.id] ?? ""}
-                  wrap="soft"
-                />
-              </InteractiveHomeworkTextFrame>
-            );
-          }}
-          title={homework.title}
-        />
-
-        {homework.submission?.feedback ? (
-          <div className="mt-4 rounded-lg border border-primary/20 bg-secondary p-3 text-sm leading-6">
-            <strong>Feedback:</strong> {homework.submission.feedback}
-          </div>
-        ) : null}
-
-        {message ? (
-          <p className="mt-3 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">
-            {message}
-          </p>
-        ) : null}
-
-        <div
-          className={
-            isLessonContext
-              ? "mt-5 flex flex-wrap items-center justify-center gap-2 sm:justify-start"
-              : "mt-4 flex flex-wrap items-center gap-2"
-          }
-        >
-          <Button
-            type="button"
-            onClick={submit}
-            disabled={isPending || isLocked}
-            className={isLessonContext ? "h-10 px-5" : undefined}
-          >
-            {isPending ? (
-              <LoaderCircle data-icon="inline-start" className="animate-spin" />
-            ) : isLessonContext ? (
-              <CheckCircle2 data-icon="inline-start" />
-            ) : (
-              <Send data-icon="inline-start" />
-            )}
-            {isLessonContext
-              ? "Concluido"
-              : isCandyXpContext
-                ? "Enviar missao"
-                : "Entregar"}
-          </Button>
-          {canReopen ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={reopen}
-              disabled={isPending}
-            >
-              <RotateCcw data-icon="inline-start" />
-              Refazer
-            </Button>
-          ) : null}
-          {status === "REVIEWED" ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-700 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
-              <CheckCircle2 aria-hidden="true" />
-              {isCandyXpContext ? "Concluida" : "Corrigida"}
-            </span>
-          ) : null}
-        </div>
-      </div>
+      {detailsContent}
     </details>
   );
 }

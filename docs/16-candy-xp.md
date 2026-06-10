@@ -22,7 +22,7 @@ Arquivos principais:
 - `src/components/ava/candy-xp-ranking-card.tsx`: card visual do ranking interno com top, avatar, role, nivel, XP, progresso e paginacao de 10 por pagina.
 - `src/components/ava/user-summary-panel.tsx`: mini card de perfil/XP que mostra a posicao pessoal do aluno ou teacher no ranking da propria categoria.
 - `src/components/ava/admin-candy-xp-panel.tsx`: painel admin para montar atividades e corrigir envios.
-- `src/components/ava/student-candy-xp-activities-panel.tsx`: experiencia do aluno com missoes, PDF/imagem, envio e progresso.
+- `src/components/ava/student-candy-xp-activities-panel.tsx`: experiencia do aluno com estante de missoes em quadrados, previa, XP, status, PDF/imagem, envio e progresso.
 - `src/app/ava/student/page.tsx`: sincroniza eventos XP do aluno.
 - `src/app/ava/teacher/page.tsx`: sincroniza eventos XP da teacher logada.
 - `src/app/ava/admin/page.tsx`: sincroniza eventos XP do admin logado.
@@ -81,6 +81,7 @@ Rotas das atividades:
 - Student acessa apenas atividades publicadas e liberadas para o proprio perfil; atividade publicada sem assignment fica liberada para todos os students, e o formulario Admin cria novas atividades nesse modo por padrao.
 - Atividades novas podem ser criadas com PDF/imagem e areas interativas, sem perguntas manuais separadas, e concluem pelo envio preenchido do aluno.
 - Areas interativas Candy XP usam `CandyXpActivityInteractiveField`; nesta fase aceitam texto, letra/numero, marcar e desenho. `LISTENING` continua restrito ao homework/aula interativa ate existir rota propria.
+- Na tela do aluno, atividades Candy XP devem aparecer primeiro como quadrados lado a lado, cada um com breve previa, tipo, status, progresso e XP; selecionar um quadrado abre a missao abaixo para responder, sem renderizar todas as missoes grandes de uma vez.
 - Respostas objetivas de atividades antigas podem ser corrigidas automaticamente; respostas escritas sempre ficam pendentes para revisao manual.
 - XP de atividade concluida usa `CANDY_XP_ACTIVITY_COMPLETED` e `sourceKey` da submissao para impedir pontuacao duplicada.
 - PDF/imagem da atividade deve ser servido apenas pela rota protegida de asset.
