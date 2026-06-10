@@ -18,6 +18,7 @@ import {
   Radio,
   Settings,
   Sparkles,
+  Trophy,
   UserCheck,
   UserPlus,
   UserRound,
@@ -245,6 +246,11 @@ const navGroups = [
         href: "/ava/student?task=homeworks",
         icon: ClipboardCheck,
         label: "Responder homework",
+      },
+      {
+        href: "/ava/student?task=candy-ranking",
+        icon: Trophy,
+        label: "Candy Ranking",
       },
       {
         href: "/ava/student?task=candy-xp",

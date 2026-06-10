@@ -12,6 +12,7 @@ import {
   Send,
   Sparkles,
   Target,
+  Trophy,
   UserRound,
   Zap,
 } from "lucide-react";
@@ -52,6 +53,7 @@ export const studentTaskIds = [
   "aula-ao-vivo",
   "aulas",
   "homeworks",
+  "candy-ranking",
   "candy-xp",
   "catty-memory",
   "mensagens",
@@ -198,6 +200,11 @@ const taskMeta = {
     description: "Historias e missoes para ganhar XP.",
     icon: Sparkles,
     title: "Candy XP",
+  },
+  "candy-ranking": {
+    description: "Veja sua posicao e quem mais juntou XP no AVA.",
+    icon: Trophy,
+    title: "Candy Ranking",
   },
   "catty-memory": {
     description: "Entenda como a Catty aprende com voce de forma segura.",
@@ -881,7 +888,6 @@ export function StudentWorkspace({
           {activeTask === "resumo" ? (
             <div className="grid gap-5">
               <StudentXpCard xp={xpSnapshot} />
-              <CandyXpRankingCard ranking={candyXpRanking} />
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {stats.map((stat) => (
                   <div
@@ -903,6 +909,10 @@ export function StudentWorkspace({
                 ))}
               </div>
             </div>
+          ) : null}
+
+          {activeTask === "candy-ranking" ? (
+            <CandyXpRankingCard ranking={candyXpRanking} />
           ) : null}
 
           {activeTask === "aula-ao-vivo" ? (

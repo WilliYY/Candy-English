@@ -49,7 +49,7 @@ Rotas com card:
 
 Rotas com ranking interno:
 
-- `/ava/student?task=resumo`
+- `/ava/student?task=candy-ranking`
 - `/ava/teacher?task=resumo`
 - `/ava/admin?task=usuarios`
 
