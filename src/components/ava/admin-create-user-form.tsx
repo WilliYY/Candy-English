@@ -582,14 +582,14 @@ export function AdminCreateUserForm({
 
               <Field data-invalid={Boolean(form.formState.errors.motherName)}>
                 <FieldLabel htmlFor="admin-user-mother-name">
-                  Nome da mae
+                  Responsavel
                 </FieldLabel>
                 <Input
                   id="admin-user-mother-name"
                   autoComplete="name"
                   aria-invalid={Boolean(form.formState.errors.motherName)}
                   disabled={isPending}
-                  placeholder="Nome completo da mae"
+                  placeholder="Nome completo do responsavel"
                   {...form.register("motherName")}
                 />
                 <FieldError errors={[form.formState.errors.motherName]} />
@@ -597,7 +597,7 @@ export function AdminCreateUserForm({
 
               <Field data-invalid={Boolean(form.formState.errors.motherPhone)}>
                 <FieldLabel htmlFor="admin-user-mother-phone">
-                  Telefone da mae
+                  Telefone do responsavel
                 </FieldLabel>
                 <Input
                   id="admin-user-mother-phone"

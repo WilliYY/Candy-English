@@ -68,11 +68,11 @@ export const updateProfileSchema = z.object({
   gender: optionalText(40, "A identificacao pode ter no maximo 40 caracteres."),
   motherName: optionalText(
     120,
-    "O nome da mae pode ter no maximo 120 caracteres.",
+    "O responsavel pode ter no maximo 120 caracteres.",
   ),
   motherPhone: optionalText(
     40,
-    "O telefone da mae pode ter no maximo 40 caracteres.",
+    "O telefone do responsavel pode ter no maximo 40 caracteres.",
   ),
   name: z
     .string()

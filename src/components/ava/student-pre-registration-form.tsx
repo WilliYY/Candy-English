@@ -237,7 +237,7 @@ export function StudentPreRegistrationForm() {
           <FieldGroup className="gap-4">
             <Field data-invalid={Boolean(form.formState.errors.guardianName)}>
               <FieldLabel htmlFor="pre-registration-guardian-name">
-                Nome da mae/responsavel
+                Responsavel
               </FieldLabel>
               <Input
                 id="pre-registration-guardian-name"
@@ -250,7 +250,7 @@ export function StudentPreRegistrationForm() {
 
             <Field data-invalid={Boolean(form.formState.errors.guardianPhone)}>
               <FieldLabel htmlFor="pre-registration-guardian-phone">
-                Telefone da mae/responsavel
+                Telefone do responsavel
               </FieldLabel>
               <Input
                 id="pre-registration-guardian-phone"

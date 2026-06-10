@@ -258,14 +258,14 @@ export function ProfileForm({
 
               <Field data-invalid={Boolean(form.formState.errors.motherName)}>
                 <FieldLabel htmlFor="profile-mother-name">
-                  Nome da mae
+                  Responsavel
                 </FieldLabel>
                 <Input
                   id="profile-mother-name"
                   autoComplete="name"
                   aria-invalid={Boolean(form.formState.errors.motherName)}
                   disabled={isPending}
-                  placeholder="Nome completo da mae"
+                  placeholder="Nome completo do responsavel"
                   {...form.register("motherName")}
                 />
                 <FieldError errors={[form.formState.errors.motherName]} />
@@ -273,7 +273,7 @@ export function ProfileForm({
 
               <Field data-invalid={Boolean(form.formState.errors.motherPhone)}>
                 <FieldLabel htmlFor="profile-mother-phone">
-                  Telefone da mae
+                  Telefone do responsavel
                 </FieldLabel>
                 <Input
                   id="profile-mother-phone"

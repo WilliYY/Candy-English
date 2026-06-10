@@ -367,7 +367,7 @@ A vigesima fase melhora a experiencia operacional sem alterar o schema:
 - o historico operacional de cada usuario fica recolhido por padrao para reduzir altura dos cards;
 - `/ava/admin?task=contratos` reutiliza `ContractUploadForm`, permitindo que admin selecione aluno e envie PDF protegido;
 - o admin calcula uso aproximado de `storage/` por leitura server-side do volume, sem expor caminhos internos;
-- o perfil student usa os campos ja existentes em `StudentProfile`: nivel, nascimento, documento/responsavel, telefones do aluno, nome/telefone da mae e observacoes;
+- o perfil student usa os campos ja existentes em `StudentProfile`: nivel, nascimento, documento/responsavel, telefones do aluno, responsavel/telefone do responsavel e observacoes;
 - `updateMyProfile` atualiza `User` e faz `upsert` do `StudentProfile` quando o ator e `STUDENT`;
 - student visualiza contratos por iframe em `/ava/contracts/[contractId]`, mantendo a rota protegida;
 - contratos gerais, sem aluno definido, podem ser vistos por students logados; contratos com aluno definido exigem o proprio aluno, teacher vinculada ou admin;

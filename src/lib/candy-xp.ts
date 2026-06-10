@@ -117,6 +117,7 @@ export type BuildCandyStudentXpSnapshotInput = {
   homeworks: CandyXpActivityInput[];
   lessonActivities: CandyXpActivityInput[];
   profileCompletionPercent: number;
+  profileCompletionXp: number;
 };
 
 export type BuildCandyTeacherXpSnapshotInput = {
@@ -408,7 +409,9 @@ function getStudentNextGoals(input: BuildCandyStudentXpSnapshotInput) {
   }
 
   if (input.profileCompletionPercent < 100) {
-    goals.push("Completar dados importantes do perfil para liberar ate 300 XP.");
+    goals.push(
+      "Completar dados principais e responsavel para liberar ate 350 XP.",
+    );
   }
 
   if (goals.length === 0) {
@@ -490,8 +493,9 @@ export function buildCandyStudentXpSnapshot(
     100,
     Math.max(0, Math.round(input.profileCompletionPercent)),
   );
-  const profileXp = Math.round(
-    (profileCompletionPercent / 100) * CANDY_XP_REWARDS.student.profileReady,
+  const profileXp = Math.min(
+    CANDY_XP_REWARDS.student.profileReady,
+    Math.max(0, Math.round(input.profileCompletionXp)),
   );
   const sources: CandyXpSource[] = [
     {
@@ -523,7 +527,7 @@ export function buildCandyStudentXpSnapshot(
       xp: reviewedFeedbacks * CANDY_XP_REWARDS.student.feedbackReviewed,
     },
     {
-      description: "Progresso dos dados importantes do perfil.",
+      description: "150 XP em dados principais + 200 XP em responsavel.",
       label: "Perfil preparado",
       preserveValue: true,
       value: profileCompletionPercent,

@@ -67,11 +67,11 @@ export const studentPreRegistrationSchema = z.object({
   ),
   guardianName: optionalText(
     120,
-    "O nome da mae ou responsavel pode ter no maximo 120 caracteres.",
+    "O responsavel pode ter no maximo 120 caracteres.",
   ),
   guardianPhone: optionalText(
     40,
-    "O telefone da mae ou responsavel pode ter no maximo 40 caracteres.",
+    "O telefone do responsavel pode ter no maximo 40 caracteres.",
   ),
   notes: optionalText(
     1000,

@@ -147,11 +147,11 @@ export const adminCreateUserSchema = z
     ),
     motherName: optionalText(
       120,
-      "O nome da mae pode ter no maximo 120 caracteres.",
+      "O responsavel pode ter no maximo 120 caracteres.",
     ),
     motherPhone: optionalText(
       40,
-      "O telefone da mae pode ter no maximo 40 caracteres.",
+      "O telefone do responsavel pode ter no maximo 40 caracteres.",
     ),
     birthDate: z
       .string()

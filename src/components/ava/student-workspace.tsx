@@ -291,11 +291,11 @@ function ProfileCompletionCard({
               Perfil + XP
             </span>
             <h3 className="mt-3 text-xl font-semibold text-primary">
-              Complete seu perfil e ganhe ate 300 XP
+              Complete seu perfil e ganhe 350 XP
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              A Candy conta os dados importantes para deixar seu AVA pronto e
-              sua teacher com as informacoes certas.
+              Dados principais garantem 150 XP. Dados do aluno e responsavel
+              completam mais 200 XP para deixar tudo pronto.
             </p>
           </div>
 
@@ -305,11 +305,14 @@ function ProfileCompletionCard({
             </span>
             <span>
               <span className="block text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                Garantido
+                Ativo agora
               </span>
               <strong className="block text-xl leading-none">
                 +{xpFormatter.format(completion.xp)} XP
               </strong>
+              <span className="mt-1 block text-xs font-semibold text-muted-foreground">
+                meta +350 XP
+              </span>
             </span>
           </div>
         </div>
@@ -339,6 +342,71 @@ function ProfileCompletionCard({
           </div>
         </div>
 
+        <div className="grid gap-3 md:grid-cols-2">
+          {completion.groups.map((group) => {
+            const groupRemainingXp = Math.max(0, group.maxXp - group.xp);
+
+            return (
+              <div
+                key={group.key}
+                className={`rounded-xl border p-4 shadow-sm ${
+                  group.isComplete
+                    ? "border-emerald-300 bg-emerald-50/95 text-emerald-950"
+                    : group.xp > 0
+                      ? "border-amber-300 bg-amber-50/95 text-amber-950"
+                      : "border-primary/10 bg-white/72 text-primary"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2">
+                    {group.isComplete ? (
+                      <CheckCircle2
+                        aria-hidden="true"
+                        className="size-5 shrink-0 text-emerald-600"
+                      />
+                    ) : (
+                      <Target
+                        aria-hidden="true"
+                        className="size-5 shrink-0 text-amber-700"
+                      />
+                    )}
+                    <span className="min-w-0">
+                      <strong className="block text-sm">{group.label}</strong>
+                      <span className="mt-1 block text-xs leading-5 opacity-80">
+                        {group.description}
+                      </span>
+                    </span>
+                  </span>
+                  <span className="shrink-0 rounded-lg bg-white/80 px-2.5 py-1 text-xs font-bold shadow-sm">
+                    +{xpFormatter.format(group.maxXp)} XP
+                  </span>
+                </div>
+                <div className="mt-3 flex items-center justify-between gap-3 text-xs font-semibold">
+                  <span>
+                    {group.completedCount}/{group.totalCount} campos
+                  </span>
+                  <span>
+                    {group.isComplete
+                      ? "completo"
+                      : `faltam ${xpFormatter.format(groupRemainingXp)} XP`}
+                  </span>
+                </div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-full border border-white/80 bg-white/70">
+                  <div
+                    aria-hidden="true"
+                    className={`h-full rounded-full ${
+                      group.isComplete
+                        ? "bg-emerald-500"
+                        : "candy-xp-progress-fill"
+                    }`}
+                    style={{ width: `${group.percent}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
         <div className="grid gap-2 sm:grid-cols-3">
           {completion.items.map((item) => (
             <div
@@ -361,9 +429,9 @@ function ProfileCompletionCard({
 
         <p className="rounded-xl border border-white/70 bg-white/72 px-4 py-3 text-sm leading-6 text-muted-foreground">
           {completion.isComplete
-            ? "Perfil completo. Seu bonus maximo de perfil ja esta ativo no Candy XP."
+            ? "Perfil completo. Seu bonus maximo de 350 XP ja esta ativo no Candy XP."
             : missingItems.length > 0
-              ? `Proximos pontos: ${missingItems.map((item) => item.label).join(", ")}.`
+              ? `Proximos campos: ${missingItems.map((item) => item.label).join(", ")}.`
               : "Preencha os campos importantes e salve para atualizar seu Candy XP."}
         </p>
       </div>
@@ -769,6 +837,7 @@ export function StudentWorkspace({
         status: homework.submissions[0]?.status,
       })),
       profileCompletionPercent: profileCompletion.percent,
+      profileCompletionXp: profileCompletion.xp,
     }),
     candyXpPersistence,
   );
@@ -1046,53 +1115,6 @@ export function StudentWorkspace({
                     avatarPath={currentUser.avatarPath}
                     userId={currentUser.id}
                   />
-
-                  <div className="ava-profile-card rounded-2xl border p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-                        <Target aria-hidden="true" className="size-5" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
-                          Nivel definido pela teacher
-                        </p>
-                        <h3 className="mt-1 text-lg font-semibold text-primary">
-                          {studentProfile.level ?? "Ainda nao definido"}
-                        </h3>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                          O aluno pode atualizar dados pessoais; nivel e
-                          acompanhamento pedagogico ficam com a equipe Candy.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-2">
-                      <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/80 px-3 py-2 text-sm">
-                        <span className="inline-flex items-center gap-2 font-semibold text-primary">
-                          <CheckCircle2
-                            aria-hidden="true"
-                            className="size-4 text-emerald-600"
-                          />
-                          Backend
-                        </span>
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          seu perfil
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/80 px-3 py-2 text-sm">
-                        <span className="inline-flex items-center gap-2 font-semibold text-primary">
-                          <Gift
-                            aria-hidden="true"
-                            className="size-4 text-amber-600"
-                          />
-                          Bonus maximo
-                        </span>
-                        <span className="text-xs font-semibold text-muted-foreground">
-                          300 XP
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </aside>
               </div>
             </div>

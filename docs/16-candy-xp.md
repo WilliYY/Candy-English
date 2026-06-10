@@ -96,7 +96,7 @@ Rotas das atividades:
 
 Student:
 
-- `Perfil preparado`: percentual dos dados importantes do perfil, rendendo ate 300 XP.
+- `Perfil preparado`: progresso dos dados importantes do perfil, com 150 XP no bloco de dados principais e 200 XP no bloco de aluno/responsavel, rendendo ate 350 XP.
 - `Aulas finalizadas`: atividade interativa criada pelo fluxo de aula e entregue, valendo 80 XP por aula finalizada.
 - `Homeworks enviadas`: homework entregue, valendo 150 XP por envio.
 - `Feedbacks recebidos`: submissao revisada pela teacher, valendo 25 XP por correcao liberada.
@@ -126,7 +126,7 @@ Admin:
 
 - A curva de nivel continua infinita por `requiredForCandyLevel`.
 - O card aplica dados persistidos com `applyCandyXpPersistence`, mantendo fallback visual se a persistencia ainda nao existir.
-- O perfil student usa XP proporcional: cada dado importante preenchido aumenta a porcentagem e o bonus chega a 300 XP quando o perfil fica 100% completo.
+- O perfil student usa XP proporcional por bloco: dados principais valem ate 150 XP e dados do aluno/responsavel valem ate 200 XP, com bonus total de 350 XP quando o perfil fica 100% completo.
 - O catalogo inicial de badges e missoes e criado por upsert server-side em `ensureCandyXpCatalog`.
 - `completeCandyMission` fica como ponto de entrada futuro para jogos/tarefas executaveis.
 - Eventos historicos nao sao removidos quando uma entidade deixa de existir; XP representa historico conquistado.

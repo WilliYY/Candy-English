@@ -1,4 +1,7 @@
-export const STUDENT_PROFILE_COMPLETION_MAX_XP = 300;
+export const STUDENT_PROFILE_MAIN_XP = 150;
+export const STUDENT_PROFILE_RESPONSIBLE_XP = 200;
+export const STUDENT_PROFILE_COMPLETION_MAX_XP =
+  STUDENT_PROFILE_MAIN_XP + STUDENT_PROFILE_RESPONSIBLE_XP;
 
 export type StudentProfileCompletionInput = {
   address?: string | null;
@@ -13,20 +16,65 @@ export type StudentProfileCompletionInput = {
 };
 
 type StudentProfileCompletionField = {
+  groupKey: StudentProfileCompletionGroupKey;
   key: keyof StudentProfileCompletionInput;
   label: string;
 };
 
+type StudentProfileCompletionGroupKey = "main" | "studentResponsible";
+
+type StudentProfileCompletionGroupDefinition = {
+  description: string;
+  key: StudentProfileCompletionGroupKey;
+  label: string;
+  maxXp: number;
+};
+
+const STUDENT_PROFILE_COMPLETION_GROUPS = [
+  {
+    description: "Foto, nome, telefone e endereco deixam seu AVA pronto.",
+    key: "main",
+    label: "Dados principais",
+    maxXp: STUDENT_PROFILE_MAIN_XP,
+  },
+  {
+    description: "Dados do aluno e responsavel ajudam a equipe Candy.",
+    key: "studentResponsible",
+    label: "Aluno e responsavel",
+    maxXp: STUDENT_PROFILE_RESPONSIBLE_XP,
+  },
+] satisfies StudentProfileCompletionGroupDefinition[];
+
 const STUDENT_PROFILE_COMPLETION_FIELDS = [
-  { key: "avatarPath", label: "Foto do perfil" },
-  { key: "name", label: "Nome completo" },
-  { key: "phone", label: "Telefone geral" },
-  { key: "address", label: "Endereco" },
-  { key: "studentPhone", label: "Telefone do aluno" },
-  { key: "birthDate", label: "Data de nascimento" },
-  { key: "guardianDocument", label: "Documento/responsavel" },
-  { key: "motherName", label: "Nome da mae/responsavel" },
-  { key: "motherPhone", label: "Telefone da mae/responsavel" },
+  { groupKey: "main", key: "avatarPath", label: "Foto do perfil" },
+  { groupKey: "main", key: "name", label: "Nome completo" },
+  { groupKey: "main", key: "phone", label: "Telefone geral" },
+  { groupKey: "main", key: "address", label: "Endereco" },
+  {
+    groupKey: "studentResponsible",
+    key: "studentPhone",
+    label: "Telefone do aluno",
+  },
+  {
+    groupKey: "studentResponsible",
+    key: "birthDate",
+    label: "Data de nascimento",
+  },
+  {
+    groupKey: "studentResponsible",
+    key: "guardianDocument",
+    label: "Documento ou responsavel",
+  },
+  {
+    groupKey: "studentResponsible",
+    key: "motherName",
+    label: "Responsavel",
+  },
+  {
+    groupKey: "studentResponsible",
+    key: "motherPhone",
+    label: "Telefone do responsavel",
+  },
 ] satisfies StudentProfileCompletionField[];
 
 function hasCompletionValue(value: Date | string | null | undefined) {
@@ -37,23 +85,57 @@ function hasCompletionValue(value: Date | string | null | undefined) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function calculateGroupXp(completedCount: number, totalCount: number, maxXp: number) {
+  if (totalCount <= 0) {
+    return 0;
+  }
+
+  return Math.round((completedCount / totalCount) * maxXp);
+}
+
 export function getStudentProfileCompletion(
   input: StudentProfileCompletionInput,
 ) {
   const items = STUDENT_PROFILE_COMPLETION_FIELDS.map((field) => ({
     completed: hasCompletionValue(input[field.key]),
+    groupKey: field.groupKey,
     key: field.key,
     label: field.label,
   }));
+  const groups = STUDENT_PROFILE_COMPLETION_GROUPS.map((group) => {
+    const groupItems = items.filter((item) => item.groupKey === group.key);
+    const completedGroupItems = groupItems.filter((item) => item.completed);
+    const totalGroupItems = groupItems.length;
+    const groupXp = calculateGroupXp(
+      completedGroupItems.length,
+      totalGroupItems,
+      group.maxXp,
+    );
+
+    return {
+      completedCount: completedGroupItems.length,
+      description: group.description,
+      isComplete: completedGroupItems.length === totalGroupItems,
+      items: groupItems,
+      key: group.key,
+      label: group.label,
+      maxXp: group.maxXp,
+      percent:
+        totalGroupItems > 0
+          ? Math.round((completedGroupItems.length / totalGroupItems) * 100)
+          : 0,
+      totalCount: totalGroupItems,
+      xp: groupXp,
+    };
+  });
   const completedCount = items.filter((item) => item.completed).length;
   const totalCount = items.length;
-  const percent = Math.round((completedCount / totalCount) * 100);
-  const xp = Math.round(
-    (percent / 100) * STUDENT_PROFILE_COMPLETION_MAX_XP,
-  );
+  const xp = groups.reduce((total, group) => total + group.xp, 0);
+  const percent = Math.round((xp / STUDENT_PROFILE_COMPLETION_MAX_XP) * 100);
 
   return {
     completedCount,
+    groups,
     isComplete: percent >= 100,
     items,
     missingItems: items.filter((item) => !item.completed),
