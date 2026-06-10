@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Sparkles } from "lucide-react";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
 import { getDefaultAvaPath, ROLE_LABELS, type Role } from "@/lib/roles";
@@ -112,13 +113,19 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
             asChild
             size="lg"
             className={cn(
-              "shrink-0 text-base font-bold transition-transform hover:scale-[1.03]",
+              "candy-ava-button group relative shrink-0 overflow-hidden px-8 text-base font-bold transition-all duration-300 hover:scale-105",
               isHome
-                ? "candy-ava-button bg-primary px-8 text-primary-foreground shadow-lg shadow-primary/15 hover:bg-primary/90"
-                : "candy-ava-button px-8",
+                ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/30 hover:shadow-primary/50"
+                : "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md shadow-primary/20 hover:shadow-primary/40",
             )}
           >
-            <Link href={avaHref}>AVA</Link>
+            <Link href={avaHref}>
+              <span className="relative z-10 flex items-center gap-2">
+                AVA
+                <Sparkles className="size-4 animate-pulse text-yellow-300/90" />
+              </span>
+              <div className="absolute inset-0 z-0 bg-gradient-to-r from-purple-600 to-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            </Link>
           </Button>
         </div>
       </div>
