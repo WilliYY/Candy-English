@@ -47,8 +47,9 @@ export default async function LoginPage() {
       <div className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
         <div className="rounded-full bg-white/95 px-5 py-2.5 shadow-xl shadow-black/10 ring-1 ring-white/70">
           <BrandLogo
-            className="h-14 w-[220px] overflow-visible sm:h-16 sm:w-[270px]"
-            imageClassName="w-[290px] scale-100 group-hover:scale-[1.03] sm:w-[350px]"
+            animated={false}
+            className="h-14 w-[220px] overflow-hidden rounded-full sm:h-16 sm:w-[270px]"
+            imageClassName="w-[210px] scale-100 group-hover:scale-[1.015] sm:w-[245px]"
           />
         </div>
         <Button

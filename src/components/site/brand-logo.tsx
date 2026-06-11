@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
+  animated?: boolean;
   className?: string;
   imageClassName?: string;
   markClassName?: string;
@@ -10,6 +11,7 @@ type BrandLogoProps = {
 };
 
 export function BrandLogo({
+  animated = true,
   className,
   imageClassName,
   markClassName,
@@ -35,20 +37,22 @@ export function BrandLogo({
       data-candy-logo="true"
     >
       <span className={cn("relative block h-full w-full", markClassName)}>
-        <video
-          aria-hidden="true"
-          autoPlay
-          className={cn("candy-brand-logo-video", mediaClassName)}
-          data-candy-logo-video="true"
-          disablePictureInPicture
-          loop
-          muted
-          playsInline
-          poster="/brand/candy-logo-animated-poster.png"
-          preload="metadata"
-        >
-          <source src="/brand/candy-logo-animated.webm" type="video/webm" />
-        </video>
+        {animated ? (
+          <video
+            aria-hidden="true"
+            autoPlay
+            className={cn("candy-brand-logo-video", mediaClassName)}
+            data-candy-logo-video="true"
+            disablePictureInPicture
+            loop
+            muted
+            playsInline
+            poster="/brand/candy-logo-animated-poster.png"
+            preload="metadata"
+          >
+            <source src="/brand/candy-logo-animated.webm" type="video/webm" />
+          </video>
+        ) : null}
         <Image
           aria-hidden="true"
           src="/brand/candy-logo-animated-poster.png"
@@ -56,7 +60,12 @@ export function BrandLogo({
           width={720}
           height={315}
           unoptimized
-          className={cn("candy-brand-logo-poster hidden", mediaClassName)}
+          data-candy-logo-static={animated ? undefined : "true"}
+          className={cn(
+            "candy-brand-logo-poster",
+            animated ? "hidden" : null,
+            mediaClassName,
+          )}
         />
       </span>
     </Link>
