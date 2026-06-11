@@ -78,10 +78,6 @@ export default async function LoginPage() {
             <h1 className="text-5xl font-semibold leading-[1.02] tracking-normal">
               Entre e continue seus estudos.
             </h1>
-            <p className="text-lg leading-8 text-white/78">
-              Acesso protegido para alunos, teachers e administracao em uma
-              area organizada.
-            </p>
           </div>
         </div>
 
