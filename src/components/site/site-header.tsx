@@ -56,7 +56,7 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
           )}
           imageClassName={cn(
             isHome
-              ? "w-[220px] scale-100 group-hover:scale-[1.015] sm:w-[268px]"
+              ? "top-[55%] w-[204px] scale-[0.96] group-hover:scale-[0.99] sm:w-[246px]"
               : "w-[300px] sm:w-[380px]",
           )}
         />
