@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { BrandLogo } from "@/components/site/brand-logo";
 
 const footerBubbles = Array.from({ length: 72 }, (_, index) => {
   const size = 2.4 + ((index * 17) % 48) / 10;
@@ -43,15 +44,11 @@ export function SiteFooter() {
       <div className="candy-footer-content relative z-10">
         <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 pb-32 pt-14 md:grid-cols-[1fr_1fr] md:items-end md:pb-12 md:pt-12 lg:px-8">
           <div className="flex flex-col gap-4">
-            <Link
-              href="/"
-              className="w-fit text-2xl font-semibold tracking-normal text-white"
-            >
-              Candy English
-            </Link>
-            <p className="max-w-md text-sm font-semibold uppercase tracking-[0.18em] text-[#e57cd8]">
-              Aprender ingles nunca foi tao doce
-            </p>
+            <BrandLogo
+              className="-ml-3 h-[5.25rem] w-[320px] overflow-visible"
+              imageClassName="w-[400px]"
+              variant="light"
+            />
           </div>
           <nav
             aria-label="Rodape"

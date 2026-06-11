@@ -10,8 +10,8 @@ export function StudentMaintenanceScreen() {
       <div className="grid w-full max-w-5xl gap-8 rounded-lg border bg-white/82 p-6 shadow-2xl backdrop-blur md:grid-cols-[1fr_0.9fr] md:p-10">
         <div className="flex flex-col justify-between gap-10">
           <BrandLogo
-            className="h-16 w-[230px]"
-            imageClassName="w-[290px]"
+            className="h-[4.6rem] w-[280px] overflow-visible"
+            imageClassName="w-[360px]"
           />
           <div className="flex flex-col gap-5">
             <span className="inline-flex w-fit items-center gap-2 rounded-lg border bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">

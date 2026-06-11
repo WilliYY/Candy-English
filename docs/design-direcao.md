@@ -31,9 +31,8 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 ## Assets
 
 - Favicon: `public/favicon.svg`, usando a bala original da Candy centralizada sobre fundo branco circular para evitar caixa branca quadrada na aba do navegador.
-- Logo principal no header: `public/brand/logo-2.svg`, horizontal, maior e sem caixa de fundo.
-- Logo alternativa: `public/brand/logo-1.svg`
-- Logo hero: `public/brand/logo-3.svg`
+- Logo animada principal: `public/brand/candy-logo-animated.webm`, em loop mudo, com fundo transparente, recorte otimizado e poster `public/brand/candy-logo-animated-poster.png`.
+- Logos estaticas legadas/fallback: `public/brand/logo-2.svg`, `public/brand/logo-1.svg` e `public/brand/logo-3.svg`.
 - Catty: `public/brand/catty.png`
 - Video do login do AVA: `public/brand/ava-login.mp4`
 - Video principal do contato final da home: `public/brand/home.mp4`
@@ -43,7 +42,7 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 - Video de paginas informativas: `public/brand/informacoes.mp4`
 - Video do AVA student: `public/brand/ava-student.mp4`
 
-Os SVGs sao usados como arquivos estaticos. Nao colocar logos dentro de codigo como string.
+Os assets de marca ficam em arquivos estaticos. Nao colocar logos dentro de codigo como string.
 
 ## Movimento
 
@@ -54,6 +53,7 @@ Movimentos permitidos nesta fase:
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura;
 - video fullscreen em loop no login do AVA, mantendo overlay roxo para foco no formulario;
+- logo Candy em loop no header institucional, no topo do AVA, no login, em manutencao e no footer por `BrandLogo`, usando WebM transparente, poster PNG para `prefers-reduced-motion` e dimensoes estaveis com `object-contain`;
 - entrada curta de headline, texto e botoes no hero;
 - grid cinetico muito leve no hero;
 - cards flutuantes com movimento lento;
@@ -87,7 +87,7 @@ Cuidados:
 - A agenda admin deve parecer painel operacional, nao planilha confusa: fila de hoje e proximos 7 dias no topo, resumo mensal com cores semanticas, seletor de meses separado, formulario de agenda recorrente guiado e grade mensal por dia com horario, aluno, status e acoes sempre proximos.
 - O cofre admin de `APIs e senhas` deve parecer operacional e seguro: topo explicativo com metricas, separacao visual entre registros `.env` e manuais, formulario guiado, lista escaneavel, acoes por icones claros, valor sensivel oculto por padrao e revelacao manual.
 - Home nao deve usar marca decorativa solta sobre os cards do hero.
-- Footer nao deve colocar a logo em card branco; usar marca textual simples quando o fundo for roxo.
+- Footer nao deve colocar a logo em card branco; usar a marca animada transparente com brilho leve quando o fundo for roxo.
 - Footer pode usar efeito gooey/lava lamp no topo, com bolhas no mesmo roxo do footer para parecer uma superficie unica, preservando textos e links.
 - Nas paginas informativas (`/sobre`, `/metodologia`, `/contato`), o footer deve invadir menos e o grid de cards deve reservar respiro inferior suficiente para nao esconder conteudo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.

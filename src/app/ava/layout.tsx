@@ -326,8 +326,8 @@ export default async function AvaLayout({
           <div className="flex h-full flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-5 lg:px-6 lg:py-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <BrandLogo
-                className="h-14 w-[172px] overflow-visible sm:h-16 sm:w-[230px]"
-                imageClassName="w-[210px] sm:w-[270px]"
+                className="h-16 w-[210px] overflow-visible sm:h-[4.6rem] sm:w-[270px]"
+                imageClassName="w-[280px] sm:w-[340px]"
               />
               <Button asChild variant="outline" className="px-3">
                 <Link href="/">

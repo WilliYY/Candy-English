@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -46,10 +45,10 @@ export default async function LoginPage() {
       <div className="candy-kinetic-grid absolute inset-0 z-[2] opacity-55" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-        <div className="rounded-full bg-white/95 px-4 py-2 shadow-xl shadow-black/10 ring-1 ring-white/70">
+        <div className="rounded-full bg-white/95 px-5 py-2.5 shadow-xl shadow-black/10 ring-1 ring-white/70">
           <BrandLogo
-            className="h-12 w-[190px] overflow-visible sm:h-14 sm:w-[230px]"
-            imageClassName="w-[225px] scale-100 group-hover:scale-[1.03] sm:w-[280px]"
+            className="h-14 w-[220px] overflow-visible sm:h-16 sm:w-[270px]"
+            imageClassName="w-[290px] scale-100 group-hover:scale-[1.03] sm:w-[350px]"
           />
         </div>
         <Button
@@ -66,14 +65,10 @@ export default async function LoginPage() {
 
       <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 py-8 lg:grid-cols-[0.85fr_1fr]">
         <div className="hidden max-w-lg flex-col gap-8 lg:flex">
-          <Image
-            src="/brand/logo-3.svg"
-            alt="Candy English"
-            width={260}
-            height={260}
-            priority
-            unoptimized
-            className="candy-logo-soft h-auto w-48"
+          <BrandLogo
+            className="candy-logo-soft h-24 w-[360px] overflow-visible"
+            imageClassName="w-[430px] brightness-[1.32] saturate-[1.18] drop-shadow-[0_18px_34px_rgb(255_255_255_/_0.16)]"
+            variant="light"
           />
           <div className="flex flex-col gap-4">
             <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/65">

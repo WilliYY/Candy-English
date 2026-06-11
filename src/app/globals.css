@@ -645,6 +645,15 @@ a {
   transform-origin: center;
 }
 
+.candy-brand-logo-video,
+.candy-brand-logo-poster {
+  aspect-ratio: 720 / 315;
+  backface-visibility: hidden;
+  max-width: none;
+  pointer-events: none;
+  transform-origin: center;
+}
+
 .candy-footer {
   --footer-background: #412a4c;
   background: transparent;
@@ -766,6 +775,20 @@ main:has(.site-institutional-page) + .candy-footer {
   .catty-speech__text {
     font-size: 0.82rem;
     line-height: 1.42;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .candy-brand-logo-video {
+    display: none;
+  }
+
+  .candy-brand-logo-poster {
+    display: block;
+  }
+
+  .candy-logo-soft {
+    animation: none;
   }
 }
 

@@ -15,31 +15,48 @@ export function BrandLogo({
   markClassName,
   variant = "dark",
 }: BrandLogoProps) {
+  const mediaClassName = cn(
+    "absolute left-1/2 top-1/2 h-auto w-[280px] -translate-x-1/2 -translate-y-1/2 object-contain transition-transform duration-300 group-hover:scale-[1.04]",
+    variant === "light"
+      ? "brightness-[1.35] saturate-[1.18] drop-shadow-[0_14px_28px_rgb(255_255_255_/_0.16)]"
+      : "drop-shadow-[0_10px_22px_rgb(44_19_56_/_0.1)]",
+    imageClassName,
+  );
+
   return (
     <Link
       href="/"
       className={cn(
-        "group relative inline-flex h-16 w-[230px] items-center overflow-hidden rounded-lg",
+        "group relative inline-flex h-16 w-[230px] items-center overflow-visible rounded-lg",
         variant === "light" ? "text-white" : "text-foreground",
         className,
       )}
       aria-label="Candy English"
+      data-candy-logo="true"
     >
-      {variant === "light" ? (
-        <span className="absolute inset-1 rounded-lg bg-white/95" />
-      ) : null}
       <span className={cn("relative block h-full w-full", markClassName)}>
+        <video
+          aria-hidden="true"
+          autoPlay
+          className={cn("candy-brand-logo-video", mediaClassName)}
+          data-candy-logo-video="true"
+          disablePictureInPicture
+          loop
+          muted
+          playsInline
+          poster="/brand/candy-logo-animated-poster.png"
+          preload="metadata"
+        >
+          <source src="/brand/candy-logo-animated.webm" type="video/webm" />
+        </video>
         <Image
-          src="/brand/logo-2.svg"
-          alt="Candy English"
-          width={320}
-          height={400}
-          priority
+          aria-hidden="true"
+          src="/brand/candy-logo-animated-poster.png"
+          alt=""
+          width={720}
+          height={315}
           unoptimized
-          className={cn(
-            "absolute left-1/2 top-1/2 h-auto w-[280px] -translate-x-1/2 -translate-y-1/2 scale-[1.18] object-contain transition-transform duration-300 group-hover:scale-[1.24]",
-            imageClassName,
-          )}
+          className={cn("candy-brand-logo-poster hidden", mediaClassName)}
         />
       </span>
     </Link>

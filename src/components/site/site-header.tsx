@@ -51,13 +51,13 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
           className={cn(
             "shrink-0",
             isHome
-              ? "h-16 w-[230px] overflow-visible sm:h-[4.25rem] sm:w-[285px]"
-              : "h-16 w-[215px] sm:h-20 sm:w-[280px]",
+              ? "h-[4.6rem] w-[250px] overflow-visible sm:h-20 sm:w-[315px]"
+              : "h-[4.4rem] w-[230px] sm:h-[5.2rem] sm:w-[300px]",
           )}
           imageClassName={cn(
             isHome
-              ? "w-[245px] scale-100 group-hover:scale-[1.04] sm:w-[310px]"
-              : "w-[255px] sm:w-[350px]",
+              ? "w-[300px] scale-100 group-hover:scale-[1.035] sm:w-[380px]"
+              : "w-[300px] sm:w-[380px]",
           )}
         />
         <nav
