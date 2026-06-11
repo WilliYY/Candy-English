@@ -51,12 +51,12 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
           className={cn(
             "shrink-0",
             isHome
-              ? "h-[4.6rem] w-[250px] overflow-visible sm:h-20 sm:w-[315px]"
+              ? "h-[4.35rem] w-[230px] overflow-hidden rounded-full sm:h-[4.8rem] sm:w-[280px]"
               : "h-[4.4rem] w-[230px] sm:h-[5.2rem] sm:w-[300px]",
           )}
           imageClassName={cn(
             isHome
-              ? "w-[300px] scale-100 group-hover:scale-[1.035] sm:w-[380px]"
+              ? "w-[220px] scale-100 group-hover:scale-[1.015] sm:w-[268px]"
               : "w-[300px] sm:w-[380px]",
           )}
         />

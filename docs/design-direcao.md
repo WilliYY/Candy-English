@@ -53,7 +53,7 @@ Movimentos permitidos nesta fase:
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura;
 - video fullscreen em loop no login do AVA, mantendo overlay roxo para foco no formulario;
-- logo Candy em loop no header institucional, no topo do AVA, no login, em manutencao e no footer por `BrandLogo`, usando WebM transparente, poster PNG para `prefers-reduced-motion` e dimensoes estaveis com `object-contain`;
+- logo Candy em loop no header institucional, no topo do AVA, no login, em manutencao e no footer por `BrandLogo`, usando WebM transparente, poster PNG para `prefers-reduced-motion` e dimensoes estaveis com `object-contain`; no header da home a logo usa uma janela arredondada com `overflow-hidden` para a animacao nao escapar da barra branca;
 - entrada curta de headline, texto e botoes no hero;
 - grid cinetico muito leve no hero;
 - cards flutuantes com movimento lento;
