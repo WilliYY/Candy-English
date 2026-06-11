@@ -105,6 +105,7 @@ function assertPromptContext(input: string, id: string) {
     "Regra de personalidade da Catty",
     "Regra de uso do nome",
     "Regra de roteamento interno",
+    "Regra bilingue de pratica",
     "Regra de homework",
     "Regra de escopo",
     "Memoria aprovada da Catty",
@@ -673,7 +674,7 @@ function main() {
   assertConversationalReply(sequenceTwoSecond.reply, "sequencia 2 turno 2");
   assertCondition(
     sequenceTwoFirst.plan.intent === "correct_sentence" &&
-      sequenceTwoFirst.normalizedReply.includes("melhor: i like cars") &&
+      sequenceTwoFirst.normalizedReply.includes("better: i like cars") &&
       sequenceTwoFirst.normalizedReply.includes("like sem -s"),
     "sequencia 2 turno 1 nao corrigiu I likes cars.",
   );
@@ -740,17 +741,17 @@ function main() {
   assertConversationalReply(sequenceFive.reply, "sequencia 5");
   assertConversationalReply(sequenceSix.reply, "sequencia 6");
   assertCondition(
-    sequenceFour.normalizedReply.includes("melhor: she likes chocolate") &&
+    sequenceFour.normalizedReply.includes("better: she likes chocolate") &&
       sequenceFour.normalizedReply.includes("does she like chocolate"),
     "sequencia 4 nao corrigiu she like chocolate com continuacao relacionada.",
   );
   assertCondition(
-    sequenceFive.normalizedReply.includes("melhor: i am 12 years old") &&
+    sequenceFive.normalizedReply.includes("better: i am 12 years old") &&
       sequenceFive.normalizedReply.includes("say it again"),
     "sequencia 5 nao corrigiu idade com I am e pedido para repetir.",
   );
   assertCondition(
-    sequenceSix.normalizedReply.includes("melhor: i went to school yesterday") &&
+    sequenceSix.normalizedReply.includes("better: i went to school yesterday") &&
       sequenceSix.normalizedReply.includes("yesterday") &&
       sequenceSix.normalizedReply.includes("passado"),
     "sequencia 6 nao corrigiu yesterday + presente para passado.",
@@ -1243,6 +1244,145 @@ function main() {
     }
   }
 
+  const requiredBilingualCases = [
+    {
+      id: "required-bilingual-like",
+      message: "I like chocolate.",
+      mustInclude: ["What else do you like", "= O que mais voce gosta"],
+      type: "conversation",
+    },
+    {
+      id: "required-bilingual-i-likes",
+      message: "I likes chocolate.",
+      mustInclude: [
+        "Better: I like chocolate",
+        "English tip: with I",
+        "Em portugues",
+        "What else do you like",
+        "= O que mais voce gosta",
+      ],
+      type: "correction",
+    },
+    {
+      id: "required-bilingual-she-like",
+      message: "She like pizza.",
+      mustInclude: [
+        "Better: She likes pizza",
+        "English tip: with she",
+        "Em portugues",
+        "Does she like chocolate too",
+        "= Ela gosta de chocolate tambem",
+      ],
+      type: "correction",
+    },
+    {
+      id: "required-bilingual-age",
+      message: "I have 12 years old.",
+      mustInclude: [
+        "Better: I am 12 years old",
+        "English tip: for age",
+        "Em portugues",
+        "Can you say it again",
+        "= Voce consegue dizer de novo",
+      ],
+      type: "correction",
+    },
+    {
+      id: "required-bilingual-yesterday",
+      message: "I go to school yesterday.",
+      mustInclude: [
+        "Better: I went to school yesterday",
+        "English tip: with yesterday",
+        "Em portugues",
+        "What did you do at school",
+        "= O que voce fez na escola",
+      ],
+      type: "correction",
+    },
+    {
+      id: "required-bilingual-do-she",
+      message: "Do she like cats?",
+      mustInclude: [
+        "Better: Does she like cats",
+        "= Ela gosta de gatos",
+        "English tip: with she",
+        "Em portugues",
+      ],
+      type: "correction",
+    },
+    {
+      id: "required-bilingual-what-you-like",
+      message: "What you like?",
+      mustInclude: [
+        "Better: What do you like",
+        "= Do que voce gosta",
+        "English tip: use do",
+        "Em portugues",
+      ],
+      type: "correction",
+    },
+    {
+      id: "required-bilingual-red-cars",
+      message: "red cars",
+      mustInclude: [
+        "I like red cars",
+        "Do you like blue cars too",
+        "= Voce tambem gosta de carros azuis",
+      ],
+      type: "conversation",
+    },
+    {
+      id: "required-bilingual-ask-question-en",
+      message: "ask me a question",
+      mustInclude: [
+        "What do you like to do on weekends",
+        "= O que voce gosta de fazer nos fins de semana",
+      ],
+      type: "conversation",
+    },
+    {
+      id: "required-bilingual-ask-question-pt",
+      message: "faz uma pergunta em inglês",
+      mustInclude: ["What food do you like", "= De qual comida voce gosta"],
+      type: "conversation",
+    },
+  ];
+
+  assertCondition(
+    requiredBilingualCases.length === 10,
+    "os 10 casos obrigatorios de Catty bilingue devem estar cobertos.",
+  );
+
+  for (const example of requiredBilingualCases) {
+    const result = buildRouteLikeFallbackTurn({
+      history: [],
+      message: example.message,
+    });
+    const normalizedReply = normalizeText(result.reply);
+
+    assertConversationalReply(result.reply, example.id);
+    assertCondition(
+      normalizedReply.includes("="),
+      `${example.id}: resposta nao trouxe traducao com '='. Resposta: ${result.reply}`,
+    );
+
+    if (example.type === "correction") {
+      for (const required of ["better:", "english tip:", "em portugues:"]) {
+        assertCondition(
+          normalizedReply.includes(required),
+          `${example.id}: correcao nao contem ${required}. Resposta: ${result.reply}`,
+        );
+      }
+    }
+
+    for (const expected of example.mustInclude) {
+      assertCondition(
+        normalizedReply.includes(normalizeText(expected)),
+        `${example.id}: fallback nao contem "${expected}". Resposta: ${result.reply}`,
+      );
+    }
+  }
+
   const grammarCorrectionCases = [
     {
       expected: ["Melhor", "I like chocolate", "erro esta em likes", "What else"],
@@ -1569,8 +1709,11 @@ function main() {
     );
 
     for (const expected of example.expected) {
+      const normalizedExpected =
+        expected === "Melhor" ? normalizeText("Better") : normalizeText(expected);
+
       assertCondition(
-        normalizedFallback.includes(normalizeText(expected)),
+        normalizedFallback.includes(normalizedExpected),
         `${example.userMessage}: fallback nao contem "${expected}". Resposta: ${plan.fallbackReply}`,
       );
     }

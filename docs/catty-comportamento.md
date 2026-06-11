@@ -41,7 +41,8 @@ Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gem
 - Quando o aluno continuar um gosto em outro turno, sugerir juntar as ideias com `and`.
 - Quando o aluno mandar um fragmento curto seguro, como `chocolate`, `red cars` ou outro fragmento que combine com o tema recente, ajudar a formar uma frase completa sem pedir o trecho de novo.
 - Quando a frase curta em ingles ja tiver erro comum detectavel, corrigir direto em vez de pedir a frase de novo.
-- A correcao conversacional deve seguir: reacao curta da Catty, `Melhor: ...`, onde esta o erro em uma frase simples e pergunta relacionada ao mesmo assunto.
+- Quando a Catty fizer uma pergunta em ingles para aluno em pratica, mostrar a traducao logo depois no formato `Question? = traducao curta`.
+- A correcao conversacional deve seguir: reacao curta da Catty, `Better: ...`, `English tip: ...`, `Em portugues: ...` e pergunta relacionada ao mesmo assunto com traducao.
 - Em homework, a Catty nao deve entregar gabarito final; quando corrigir, deve tratar como estrutura parecida e pedir para o aluno aplicar o padrao.
 - Usar no maximo 3 memorias aprovadas do Learning Center apenas como guia curto de estilo, exemplo ou vocabulario.
 - Usar memoria pessoal ativa apenas para personalizar exemplos, incentivo ou estilo do proprio usuario.
@@ -57,14 +58,14 @@ Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gem
 
 ## Continuidade conversacional
 
-A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don't like...`, `My favorite...`, `I have...`, `I can...`, `I want...`, `I am...`, `She/He likes...`, `Today I...`, `Yesterday I...`, `I went...`, `I played...`). Quando isso acontece, o plano de resposta guarda o padrao, o assunto principal, uma microcorrecao quando houver e uma pergunta curta sugerida. Esse mini-contexto entra no prompt da IA e no fallback local, junto com historico recente, memorias pessoais e artefatos aprovados do aluno.
+A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don't like...`, `My favorite...`, `I have...`, `I can...`, `I want...`, `I am...`, `She/He likes...`, `Today I...`, `Yesterday I...`, `I went...`, `I played...`). Quando isso acontece, o plano de resposta guarda o padrao, o assunto principal, uma microcorrecao quando houver e uma pergunta curta sugerida ja com traducao para portugues. Esse mini-contexto entra no prompt da IA e no fallback local, junto com historico recente, memorias pessoais e artefatos aprovados do aluno.
 
 Em sequencias curtas, o plano tambem usa o historico recente para manter o fio da conversa: se o aluno disser `I like chocolate.` e depois `I like pizza.`, a Catty pede para juntar com `and`; se corrigiu `I likes cars.` e o aluno responde `red cars`, o fallback forma `I like red cars.` e continua no tema de carros. Fragmentos seguros como `chocolate`, `red cars`, `blue cars` e `cars` tambem podem virar frases completas mesmo sem historico; mensagens vagas continuam pedindo uma acao concreta, como pergunta, correcao ou dica.
 
 | # | Antes generico | Depois esperado |
 |---|---|---|
-| 1 | `I like chocolate.` -> `Write one small English sentence.` | `Awnn, nice sentence. What else do you like? Try: I like chocolate and ____.` |
-| 2 | `I like cars.` -> `Let's practice English.` | `Uwau, vruum vruum. You like cars! What color cars do you like?` |
+| 1 | `I like chocolate.` -> `Write one small English sentence.` | `Awnn, nice sentence. What else do you like? = O que mais voce gosta?` |
+| 2 | `I like cars.` -> `Let's practice English.` | `Uwau, vruum vruum. You like cars! What color cars do you like? = De que cor de carros voce gosta?` |
 | 3 | `My favorite animal is capybara.` -> `Nice.` | `Miauw, capybara mode. Cute choice! Can you say: My favorite animal is a capybara?` |
 | 4 | `I don't like broccoli.` -> `Ok.` | `Awnn, good sentence. What do you like instead? Try: I like ____.` |
 | 5 | `I have a dog.` -> `Send a sentence.` | `Uwau, good sentence. Can you add a color, number or detail?` |
@@ -79,7 +80,7 @@ Em sequencias curtas, o plano tambem usa o historico recente para manter o fio d
 | 14 | `I like` -> `I don't understand.` | `Awnn, almost there. Complete it with one small word or idea.` |
 | 15 | Historico `I like chocolate.` e depois `I like` -> resposta sem memoria | `Awnn, almost there. Complete it...` mantendo `chocolate` como assunto recente no prompt. |
 | 16 | Historico `I like chocolate.` e depois `I like pizza.` -> pergunta generica | `Awnn, nice sentence. Can you join them with and? Try: I like chocolate and pizza.` |
-| 17 | Historico `I likes cars.` corrigido e depois `red cars` -> `Me manda o trecho exato.` | `Uwau, da para virar frase: I like red cars. Vruum vruum. Quer tentar com blue cars?` |
+| 17 | Historico `I likes cars.` corrigido e depois `red cars` -> `Me manda o trecho exato.` | `Uwau, da para virar frase: I like red cars. Vruum vruum. Do you like blue cars too? = Voce tambem gosta de carros azuis?` |
 
 ## Pedido de pergunta
 
@@ -87,14 +88,14 @@ A Catty tambem detecta quando o aluno pede uma pergunta de pratica. Esse plano e
 
 | Entrada | Resposta esperada |
 |---|---|
-| `faz uma pergunta` | `Miauw. What food do you like?` |
-| `ask me a question` | `Uwau, let's practice! What do you like to do on weekends?` |
-| `faz pergunta sobre simple past` | `Pss pss, simple past time. What did you do yesterday?` |
-| `faz pergunta sobre carros` | `Uwau, vruum vruum. What color cars do you like?` |
+| `faz uma pergunta` | `Miauw. What food do you like? = De qual comida voce gosta?` |
+| `ask me a question` | `Uwau, let's practice! What do you like to do on weekends? = O que voce gosta de fazer nos fins de semana?` |
+| `faz pergunta sobre simple past` | `Pss pss, simple past time. What did you do yesterday? = O que voce fez ontem?` |
+| `faz pergunta sobre carros` | `Uwau, vruum vruum. What color cars do you like? = De que cor de carros voce gosta?` |
 
 ## Correcao conversacional
 
-A Catty agora possui um detector local de erros comuns em `src/lib/catty.ts`. Esse detector roda antes do fallback e tambem entra no prompt enviado a Gemini/OpenAI como `Correcao local detectada`. Quando houver uma correcao local, a IA recebe a frase corrigida, a explicacao que aponta onde esta o erro e a pergunta de continuidade; se a IA falhar, o fallback local usa os mesmos dados sem depender de provedor externo.
+A Catty possui um detector local de erros comuns em `src/lib/catty.ts`. Esse detector roda antes do fallback e tambem entra no prompt enviado a Gemini/OpenAI como `Correcao local detectada`. Quando houver uma correcao local, a IA recebe a frase corrigida, a dica curta em ingles, a explicacao em portugues e a pergunta de continuidade traduzida; se a IA falhar, o fallback local usa os mesmos dados sem depender de provedor externo.
 
 Regras criadas:
 
@@ -116,32 +117,47 @@ Regras criadas:
 
 Frases de teste e resposta esperada do fallback local:
 
-Observacao: nas correcoes atuais, a explicacao deve sempre apontar o trecho errado com `O erro esta em ...` quando houver erro detectavel. Exemplos principais: `I likes chocolate.` vira `Melhor: I like chocolate. O erro esta em likes...`; `She like pizza.` vira `Melhor: She likes pizza. O erro esta em like...`; `I have 10 years old.` vira `Melhor: I am 10 years old. O erro esta em have...`; `I go to school yesterday.` vira `Melhor: I went to school yesterday. O erro esta em go...`.
+Observacao: nas correcoes atuais, a explicacao em portugues deve apontar o trecho errado quando houver erro detectavel. Exemplos principais: `I likes chocolate.` vira `Better: I like chocolate. English tip: with I, use like without -s. Em portugues: o erro esta em likes...`; `She like pizza.` vira `Better: She likes pizza...`; `I have 10 years old.` vira `Better: I am 10 years old...`; `I go to school yesterday.` vira `Better: I went to school yesterday...`.
 
 A tabela abaixo e uma amostra curta; a lista completa fica no smoke `scripts/catty-behavior-smoke.ts`, com pelo menos 40 frases erradas e resposta esperada por substring.
 
 | # | Frase do aluno | Resposta esperada |
 |---|---|---|
-| 1 | `I likes chocolate.` | `Awnn, quase la 😺 Melhor: I like chocolate. Com I, usamos like sem -s. What else do you like?` |
-| 2 | `She like pizza.` | `Uwau, small fix ✨ Melhor: She likes pizza. Com she, o verbo ganha -s. Does she like chocolate too?` |
-| 3 | `He like games.` | `Uwau, small fix ✨ Melhor: He likes games. Com he, o verbo ganha -s. Does he like chocolate too?` |
-| 4 | `I has a dog.` | `Awnn, quase la 😺 Melhor: I have a dog. Com I, usamos have. What else do you have?` |
-| 5 | `She have a cat.` | `Uwau, small fix ✨ Melhor: She has a cat. Com she, usamos has. What else does she have?` |
-| 6 | `I am like pizza.` | `Awnn, quase la 😺 Melhor: I like pizza. Para falar do que voce gosta, usamos I like, sem am. What else do you like?` |
-| 7 | `I have 10 years old.` | `Miauw, em ingles fica 😺 Melhor: I am 10 years old. Para idade, usamos I am. Can you say your age again?` |
-| 8 | `I went in school yesterday.` | `Pss pss, ajuste pequeno 🐾 Melhor: I went to school yesterday. Usamos go/went to para destino. What did you do there?` |
-| 9 | `I go to school yesterday.` | `Pss pss, ajuste pequeno 🐾 Melhor: I went to school yesterday. Com yesterday, usamos o verbo no passado. What else did you do yesterday?` |
-| 10 | `Yesterday I watch a movie.` | `Pss pss, ajuste pequeno 🐾 Melhor: Yesterday I watched a movie. Com yesterday, usamos o verbo no passado. Can you say one more thing in the past?` |
-| 11 | `I like car.` | `Awnn, quase la 😺 Melhor: I like cars. Para falar da categoria em geral, usamos plural. What kind of cars do you like?` |
-| 12 | `My favorite animal is capybara.` | `Awnn, quase perfeito ✨ Melhor: My favorite animal is a capybara. Antes de capybara, usamos a. Can you make one more animal sentence?` |
-| 13 | `I have apple.` | `Awnn, quase la 😺 Melhor: I have an apple. Antes de apple, usamos an. Can you make one more sentence with a or an?` |
-| 14 | `What you like?` | `Awnn, quase la 😺 Melhor: What do you like? Em pergunta com I/you/we/they, usamos do. Can you ask one more question with do?` |
-| 15 | `What she likes?` | `Uwau, small fix ✨ Melhor: What does she like? Em pergunta com she/he, usamos does e o verbo fica like. Can you ask one more question with does she?` |
-| 16 | `Does she likes pizza?` | `Uwau, small fix ✨ Melhor: Does she like pizza? Depois de does, o verbo fica sem -s. What else does she like?` |
-| 17 | `Do he like pizza?` | `Uwau, small fix ✨ Melhor: Does he like pizza? Com he, a pergunta usa does. Can you make another does question?` |
-| 18 | `I were happy.` | `Uwau, small fix ✨ Melhor: I was happy. Com I, usamos was. Can you make one more past sentence?` |
-| 19 | `They was tired.` | `Awnn, quase la 😺 Melhor: They were tired. Com they, usamos were. Can you make one more sentence with were?` |
-| 20 | `They is happy.` | `Awnn, quase la 😺 Melhor: They are happy. Com they, usamos are. Can you make one more sentence with are?` |
+| 1 | `I likes chocolate.` | `Awnn, quase la 😺 Better: I like chocolate. English tip: with I, use like without -s. Em portugues: o erro esta em likes; com I, usamos like sem -s. What else do you like? = O que mais voce gosta?` |
+| 2 | `She like pizza.` | `Uwau, small fix ✨ Better: She likes pizza. English tip: with she, add -s to the verb. Em portugues: o erro esta em like; com she, o verbo ganha -s. Does she like chocolate too? = Ela gosta de chocolate tambem?` |
+| 3 | `He like games.` | `Uwau, small fix ✨ Better: He likes games. English tip: with he, add -s to the verb. Em portugues: o erro esta em like; com he, o verbo ganha -s. Does he like chocolate too? = Ele gosta de chocolate tambem?` |
+| 4 | `I has a dog.` | `Awnn, quase la 😺 Better: I have a dog. English tip: with I, use have. Em portugues: o erro esta em has; com I, usamos have. What else do you have? = O que mais voce tem?` |
+| 5 | `She have a cat.` | `Uwau, small fix ✨ Better: She has a cat. English tip: with she, use has. Em portugues: o erro esta em have; com she, usamos has. What else does she have? = O que mais ela tem?` |
+| 6 | `I am like pizza.` | `Awnn, quase la 😺 Better: I like pizza. English tip: use I like for preferences. Em portugues: o erro esta em am like; para gosto, usamos I like. What else do you like? = O que mais voce gosta?` |
+| 7 | `I have 10 years old.` | `Miauw, em ingles fica 😺 Better: I am 10 years old. English tip: for age, use I am. Em portugues: o erro esta em have; para idade, usamos I am, nao I have. Can you say it again? = Voce consegue dizer de novo?` |
+| 8 | `I went in school yesterday.` | `Pss pss, ajuste pequeno 🐾 Better: I went to school yesterday. English tip: use to for destination. Em portugues: o erro esta em in; para destino, usamos to. What did you do there? = O que voce fez la?` |
+| 9 | `I go to school yesterday.` | `Pss pss, ajuste pequeno 🐾 Better: I went to school yesterday. English tip: with yesterday, use the past form. Em portugues: o erro esta em go; com yesterday, usamos passado. What did you do at school? = O que voce fez na escola?` |
+| 10 | `Yesterday I watch a movie.` | `Pss pss, ajuste pequeno 🐾 Better: Yesterday I watched a movie. English tip: with yesterday, use the past form. Em portugues: o erro esta em watch; com yesterday, usamos passado. Can you say one more thing in the past? = Voce consegue dizer mais uma coisa no passado?` |
+| 11 | `I like car.` | `Awnn, quase la 😺 Better: I like cars. English tip: use plural for a general category. Em portugues: o erro esta em car; para categoria geral, usamos plural. What kind of cars do you like? = Que tipo de carros voce gosta?` |
+| 12 | `My favorite animal is capybara.` | `Awnn, quase perfeito ✨ Better: My favorite animal is a capybara. English tip: use a before one capybara. Em portugues: antes de capybara, usamos a. Can you make one more animal sentence? = Voce consegue fazer mais uma frase sobre animal?` |
+| 13 | `I have apple.` | `Awnn, quase la 😺 Better: I have an apple. English tip: use an before apple. Em portugues: antes de apple, usamos an. Can you make one more sentence with a or an? = Voce consegue fazer mais uma frase com a ou an?` |
+| 14 | `What you like?` | `Awnn, quase la 😺 Better: What do you like? = Do que voce gosta? English tip: use do after what in this question. Em portugues: nessa pergunta, usamos do depois de what.` |
+| 15 | `What she likes?` | `Uwau, small fix ✨ Better: What does she like? = Do que ela gosta? English tip: with she, use does and like. Em portugues: com she, usamos does e o verbo fica like.` |
+| 16 | `Does she likes pizza?` | `Uwau, small fix ✨ Better: Does she like pizza? = Ela gosta de pizza? English tip: after does, use like without -s. Em portugues: depois de does, o verbo fica sem -s.` |
+| 17 | `Do he like pizza?` | `Uwau, small fix ✨ Better: Does he like pizza? = Ele gosta de pizza? English tip: with he, use does. Em portugues: com he, a pergunta usa does.` |
+| 18 | `I were happy.` | `Uwau, small fix ✨ Better: I was happy. English tip: with I in the past of be, use was. Em portugues: com I, usamos was. Can you make one more past sentence? = Voce consegue fazer mais uma frase no passado?` |
+| 19 | `They was tired.` | `Awnn, quase la 😺 Better: They were tired. English tip: with they, use were. Em portugues: com they, usamos were. Can you make one more sentence with were? = Voce consegue fazer mais uma frase com were?` |
+| 20 | `They is happy.` | `Awnn, quase la 😺 Better: They are happy. English tip: with they, use are. Em portugues: com they, usamos are. Can you make one more sentence with are? = Voce consegue fazer mais uma frase com are?` |
+
+Casos obrigatorios de pratica bilingue:
+
+| Entrada | Resposta esperada |
+|---|---|
+| `I like chocolate.` | `Awnn, nice sentence 😺 What else do you like? = O que mais voce gosta?` |
+| `I likes chocolate.` | `Better: I like chocolate. English tip: with I, use like without -s. Em portugues: ... What else do you like? = O que mais voce gosta?` |
+| `She like pizza.` | `Better: She likes pizza. English tip: with she, add -s to the verb. Em portugues: ... Does she like chocolate too? = Ela gosta de chocolate tambem?` |
+| `I have 12 years old.` | `Better: I am 12 years old. English tip: for age, use I am. Em portugues: ... Can you say it again? = Voce consegue dizer de novo?` |
+| `I go to school yesterday.` | `Better: I went to school yesterday. English tip: with yesterday, use the past form. Em portugues: ... What did you do at school? = O que voce fez na escola?` |
+| `Do she like cats?` | `Better: Does she like cats? = Ela gosta de gatos? English tip: with she, use does in questions. Em portugues: ...` |
+| `What you like?` | `Better: What do you like? = Do que voce gosta? English tip: use do after what in this question. Em portugues: ...` |
+| `red cars` | `I like red cars. Do you like blue cars too? = Voce tambem gosta de carros azuis?` |
+| `ask me a question` | `What do you like to do on weekends? = O que voce gosta de fazer nos fins de semana?` |
+| `faz uma pergunta em ingles` | `What food do you like? = De qual comida voce gosta?` |
 
 ## Exemplos internos
 
@@ -180,7 +196,7 @@ A tabela abaixo e uma amostra curta; a lista completa fica no smoke `scripts/cat
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 
@@ -191,5 +207,5 @@ npm run verify:catty-behavior
 ## Proximos ajustes recomendados
 
 - Adicionar exemplos novos sempre que uma resposta real da Catty parecer generica demais.
-- Criar uma amostra separada para respostas em ingles quando o aluno escrever totalmente em ingles.
+- Ampliar traducoes curtas de perguntas novas conforme surgirem temas de aula reais.
 - Evoluir o smoke para comparar respostas reais de IA em ambiente controlado, sem rodar isso no build comum para nao gastar token.

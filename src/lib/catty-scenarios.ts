@@ -61,7 +61,8 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     category: "preference",
     context: { area: "student", task: "resumo" },
     id: "preference-correct-chocolate",
-    idealReply: "Awnn, nice sentence 😺 What else do you like?",
+    idealReply:
+      "Awnn, nice sentence 😺 What else do you like? = O que mais voce gosta?",
     intent: "practice_english",
     name: "Preferencia correta",
     rule: "Elogiar frase correta de preferencia e continuar com uma pergunta curta.",
@@ -74,7 +75,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "preference-error-i-likes",
     idealReply:
-      "Awnn, quase la 😺 Melhor: I like chocolate. Com I, usamos like sem -s. What else do you like?",
+      "Awnn, quase la 😺 Better: I like chocolate. English tip: with I, use like without -s. Em portugues: o erro esta em likes; com I, usamos like sem -s. What else do you like? = O que mais voce gosta?",
     intent: "correct_sentence",
     name: "Preferencia com erro",
     rule: "Corrigir I likes para I like e manter o assunto de gostos.",
@@ -86,7 +87,8 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     category: "memory_artifact",
     context: { area: "student", task: "resumo" },
     id: "preference-cars-memory",
-    idealReply: "Uwau, vruum vruum 🚗 Nice! What color cars do you like?",
+    idealReply:
+      "Uwau, vruum vruum 🚗 Nice! What color cars do you like? = De que cor de carros voce gosta?",
     intent: "practice_english",
     name: "Gosto pessoal com memoria",
     rule: "Usar tema de carros somente quando a mensagem ou memoria combinar.",
@@ -100,7 +102,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "fragment-red-cars",
     idealReply:
-      "Miauw, vamos transformar isso em frase: I like red cars. Agora tenta com blue.",
+      "Miauw, vamos transformar isso em frase: I like red cars. Do you like blue cars too? = Voce tambem gosta de carros azuis?",
     intent: "practice_english",
     name: "Frase incompleta",
     rule: "Quando o fragmento combina com o tema recente, formar uma frase curta.",
@@ -114,7 +116,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "age-have-years-old",
     idealReply:
-      "Awnn, em ingles fica: I am 10 years old. Para idade, usamos I am. Can you say your age again?",
+      "Miauw, em ingles fica 😺 Better: I am 10 years old. English tip: for age, use I am. Em portugues: o erro esta em have; para idade, usamos I am, nao I have. Can you say it again? = Voce consegue dizer de novo?",
     intent: "correct_sentence",
     name: "Idade errada",
     rule: "Para idade, usar I am, nao I have.",
@@ -127,7 +129,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "simple-past-school-yesterday",
     idealReply:
-      "Pss pss, ajuste pequeno 🐾 Melhor: I went to school yesterday. Yesterday pede passado.",
+      "Pss pss, ajuste pequeno 🐾 Better: I went to school yesterday. English tip: with yesterday, use the past form; go becomes went. Em portugues: o erro esta em go; com yesterday, usamos passado: go vira went. What did you do at school? = O que voce fez na escola?",
     intent: "correct_sentence",
     name: "Simple past errado",
     rule: "Com yesterday, usar verbo no passado.",
@@ -140,7 +142,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "she-like-pizza",
     idealReply:
-      "Uwau, small fix ✨ Melhor: She likes pizza. Com she, o verbo ganha -s.",
+      "Uwau, small fix ✨ Better: She likes pizza. English tip: with she, add -s to the verb. Em portugues: o erro esta em like; com she, o verbo ganha -s. Does she like chocolate too? = Ela gosta de chocolate tambem?",
     intent: "correct_sentence",
     name: "He/She sem S",
     rule: "Com he/she no presente simples afirmativo, o verbo ganha -s.",
@@ -153,7 +155,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "do-she-like-cats",
     idealReply:
-      "Miauw, quase! Melhor: Does she like cats? Com she, usamos does.",
+      "Uwau, small fix ✨ Better: Does she like cats? = Ela gosta de gatos? English tip: with she, use does in questions. Em portugues: o erro esta em do; com she, a pergunta usa does. Can you make another does question? = Voce consegue fazer outra pergunta com does?",
     intent: "correct_sentence",
     name: "Do/Does",
     rule: "Perguntas com she/he usam does e verbo base.",
@@ -166,7 +168,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "i-were-happy",
     idealReply:
-      "Awnn, melhor: I was happy. Com I no passado do verbo be, usamos was.",
+      "Awnn, quase la 😺 Better: I was happy. English tip: with I in the past of be, use was. Em portugues: o erro esta em were; com I, usamos was. Can you make one more past sentence? = Voce consegue fazer mais uma frase no passado?",
     intent: "correct_sentence",
     name: "Was/Were",
     rule: "Com I no passado do verbo be, usar was.",
@@ -269,7 +271,8 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     category: "food",
     context: { area: "student", task: "resumo" },
     id: "food-like-pizza",
-    idealReply: "Miauw, pizza sentence approved 😺 What drink do you like?",
+    idealReply:
+      "Miauw, pizza sentence approved 😺 What drink do you like? = Qual bebida voce gosta?",
     intent: "practice_english",
     name: "Comida - gosto correto",
     rule: "Continuar comida com pergunta curta relacionada.",
@@ -282,7 +285,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "food-apple-article",
     idealReply:
-      "Awnn, tiny fix 😺 Melhor: I have an apple. Antes de apple, usamos an.",
+      "Awnn, tiny fix 😺 Better: I have an apple. English tip: use an before apple. Em portugues: antes de apple, usamos an. Can you make one more sentence with a or an? = Voce consegue fazer mais uma frase com a ou an?",
     intent: "correct_sentence",
     name: "Comida - artigo",
     rule: "Substantivo contavel singular precisa de a/an.",
@@ -295,7 +298,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "animal-capybara-article",
     idealReply:
-      "Awnn, quase perfeito ✨ Melhor: My favorite animal is a capybara. Antes de capybara, usamos a.",
+      "Awnn, quase perfeito ✨ Better: My favorite animal is a capybara. English tip: use a before one capybara. Em portugues: antes de capybara, usamos a. Can you make one more animal sentence? = Voce consegue fazer mais uma frase sobre animal?",
     intent: "correct_sentence",
     name: "Animal favorito com artigo",
     rule: "Animal favorito singular pede artigo quando for substantivo contavel.",
@@ -309,7 +312,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "animal-cats-question",
     idealReply:
-      "Uwau, cats! Try the question: Do you like cats? Then answer: Yes, I do.",
+      "Uwau, cats! Do you like cats? = Voce gosta de gatos? Answer: Yes, I do.",
     intent: "practice_english",
     name: "Animais - pergunta simples",
     rule: "Transformar tema animal em pergunta curta com do.",
@@ -336,7 +339,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "candy-xp" },
     id: "games-like",
     idealReply:
-      "Uwau, checkpoint unlocked 🎮 Nice sentence: I like games. What game do you play?",
+      "Uwau, checkpoint unlocked 🎮 Nice sentence: I like games. What game do you play? = Qual jogo voce joga?",
     intent: "practice_english",
     name: "Games - gosto",
     rule: "Usar tema de games sem exagerar e continuar com pergunta simples.",
@@ -364,7 +367,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "routine-today-study",
     idealReply:
-      "Miauw, good routine sentence ✨ What will you study next today?",
+      "Miauw, good routine sentence ✨ What will you study next today? = O que voce vai estudar depois hoje?",
     intent: "practice_english",
     name: "Rotina - hoje",
     rule: "Frase de rotina correta pede continuidade relacionada.",
@@ -390,7 +393,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "simple-past-play-soccer",
     idealReply:
-      "Pss pss, small past fix 🐾 Melhor: I played soccer yesterday. Yesterday pede passado.",
+      "Pss pss, small past fix 🐾 Better: I played soccer yesterday. English tip: with yesterday, use the past form. Em portugues: com yesterday, usamos passado. Can you say one more thing in the past? = Voce consegue dizer mais uma coisa no passado?",
     intent: "correct_sentence",
     name: "Simple past - play",
     rule: "Verbo regular no passado recebe -ed.",
@@ -403,7 +406,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "did-question-went",
     idealReply:
-      "Uwau, small fix ✨ Melhor: Did you go to school? Depois de did, usamos go.",
+      "Uwau, small fix ✨ Better: Did you go to school? = Voce foi para a escola? English tip: after did, use go. Em portugues: depois de did, usamos go.",
     intent: "correct_sentence",
     name: "Pergunta com did",
     rule: "Depois de did, usar verbo base.",
@@ -416,7 +419,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "future-will-tomorrow",
     idealReply:
-      "Miauw, future time spotted ✨ Melhor: Tomorrow I will study English.",
+      "Miauw, future time spotted ✨ Better: Tomorrow I will study English. English tip: with tomorrow, will can show a future plan. Em portugues: com tomorrow, will pode mostrar plano futuro.",
     intent: "practice_english",
     name: "Futuro com will",
     rule: "Com tomorrow, sugerir futuro simples com will quando fizer sentido.",
@@ -429,7 +432,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "future-will-plan",
     idealReply:
-      "Awnn, future plan 😺 Nice: I will study. What will you study?",
+      "Awnn, future plan 😺 Nice: I will study. What will you study? = O que voce vai estudar?",
     intent: "practice_english",
     name: "Plano futuro correto",
     rule: "Elogiar will correto e continuar com pergunta curta.",
@@ -442,7 +445,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "question-what-you-like",
     idealReply:
-      "Awnn, quase la 😺 Melhor: What do you like? Em pergunta, usamos do.",
+      "Awnn, quase la 😺 Better: What do you like? = Do que voce gosta? English tip: use do after what in this question. Em portugues: nessa pergunta, usamos do depois de what.",
     intent: "correct_sentence",
     name: "Pergunta com do",
     rule: "Pergunta simples com you usa do.",
@@ -455,7 +458,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "question-did-correct",
     idealReply:
-      "Uwau, nice question 🎯 What did you do yesterday? Now answer with I did...",
+      "Uwau, nice question 🎯 What did you do yesterday? = O que voce fez ontem? Now answer with I did...",
     intent: "practice_english",
     name: "Pergunta com did correta",
     rule: "Pergunta correta com did pode virar pratica de resposta.",
@@ -468,7 +471,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "they-was-tired",
     idealReply:
-      "Awnn, melhor: They were tired. Com they, usamos were.",
+      "Awnn, quase la 😺 Better: They were tired. English tip: with they, use were. Em portugues: o erro esta em was; com they, usamos were. Can you make one more sentence with were? = Voce consegue fazer mais uma frase com were?",
     intent: "correct_sentence",
     name: "Was/Were plural",
     rule: "Com they, usar were.",
@@ -481,7 +484,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "there-is-two-cats",
     idealReply:
-      "Miauw, small fix 😺 Melhor: There are two cats. Para plural, usamos are.",
+      "Miauw, small fix 😺 Better: There are two cats. English tip: use there are for plural. Em portugues: para plural, usamos there are. Can you make one more there are sentence? = Voce consegue fazer mais uma frase com there are?",
     intent: "correct_sentence",
     name: "There is/There are plural",
     rule: "There are para plural.",
@@ -494,7 +497,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "there-are-one-dog",
     idealReply:
-      "Awnn, quase! Melhor: There is one dog. Para one, usamos is.",
+      "Awnn, quase! Better: There is one dog. English tip: use there is for one thing. Em portugues: para one, usamos there is. What else is there? = O que mais tem ali?",
     intent: "correct_sentence",
     name: "There is/There are singular",
     rule: "There is para singular.",
@@ -507,7 +510,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "would-like-juice",
     idealReply:
-      "Pss pss, polite English ✨ I would like a juice. What would you like?",
+      "Pss pss, polite English ✨ I would like a juice. What would you like? = O que voce gostaria?",
     intent: "practice_english",
     name: "Would like",
     rule: "Would like vira pedido educado e pergunta curta.",
@@ -520,7 +523,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "shopping-buyed-shoes",
     idealReply:
-      "Uwau, shopping fix 🛍 Melhor: I bought shoes. Buy no passado vira bought.",
+      "Uwau, shopping fix 🛍 Better: I bought shoes. English tip: buy becomes bought in the past. Em portugues: buy no passado vira bought. Can you say one more thing in the past? = Voce consegue dizer mais uma coisa no passado?",
     intent: "correct_sentence",
     name: "Shopping - passado",
     rule: "Buy e verbo irregular: bought.",
@@ -533,7 +536,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "restaurant-order-pizza",
     idealReply:
-      "Miauw, restaurant phrase 😺 Melhor: I want to order pizza.",
+      "Miauw, restaurant phrase 😺 Better: I want to order pizza. English tip: after want, use to + verb. Em portugues: depois de want, usamos to + verbo.",
     intent: "correct_sentence",
     name: "Restaurante - pedido",
     rule: "Depois de want, usar to + verbo.",
@@ -676,7 +679,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "aulas" },
     id: "there-is-classroom",
     idealReply:
-      "Miauw, classroom phrase ✨ There is a pencil on the table. Can you try with book?",
+      "Miauw, classroom phrase ✨ There is a pencil on the table. Can you try with book? = Voce consegue tentar com book?",
     intent: "practice_english",
     name: "There is - sala de aula",
     rule: "Usar there is em exemplo curto e pedir troca de objeto.",
@@ -702,7 +705,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     context: { area: "student", task: "resumo" },
     id: "restaurant-menu-question",
     idealReply:
-      "Uwau, restaurant mode 🍬 Try: Can I see the menu, please?",
+      "Uwau, restaurant mode 🍬 Can I see the menu, please? = Posso ver o cardapio, por favor?",
     intent: "practice_english",
     name: "Restaurante - menu",
     rule: "Restaurante recebe frase util curta e educada.",
@@ -993,6 +996,10 @@ export function pickCattyScenarioFallbackReply(input: {
 
   const normalizedBestReply = normalizeScenarioText(best.scenario.idealReply);
   const normalizedMessage = normalizeScenarioText(input.message);
+
+  if (input.plan.correction && best.scenario.category !== "homework") {
+    return null;
+  }
 
   if (
     input.plan.correction &&

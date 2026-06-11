@@ -521,6 +521,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260610120000_homework_replication_source`, actions teacher/student, rotas protegidas de asset/audio, editor de homework e docs oficiais.
 - Riscos/cuidados: o arquivo otimizado pode ser reaproveitado por caminho de storage, entao a exclusao so remove o arquivo fisico quando nao existe outra homework usando o mesmo caminho; `HomeworkStudentAssignment` fica legado e nao deve definir acesso novo do aluno.
 
+### 2026-06-11 - Catty bilingue em pratica e correcao
+
+- Decisao: padronizar a Catty para responder de forma bilingue quando o aluno estiver praticando ingles, com perguntas em ingles acompanhadas de traducao curta e correcoes no formato `Better`, `English tip` e `Em portugues`.
+- Motivo: alunos iniciantes precisam conseguir praticar sem ficar perdidos, especialmente em conversa, perguntas e microcorrecoes.
+- Impacto: prompt server-side da Catty, personalidade oficial, fallback local, cenarios curados, smoke `audit:catty-behavior`, README e docs oficiais.
+- Riscos/cuidados: manter respostas curtas, nao transformar em aula longa, nao entregar resposta pronta de homework e preservar a diferenca de contexto para teacher/admin.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

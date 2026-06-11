@@ -92,8 +92,10 @@ export type CattyConversationContinuityPlan = {
 
 export type CattyGrammarCorrectionPlan = {
   correctedSentence: string;
+  englishTip: string;
   explanation: string;
   homeworkExplanation: string;
+  portugueseTip: string;
   prompt: string;
   question: string;
   rule: string;
@@ -906,7 +908,7 @@ function buildQuestionPracticeFallbackReply(plan: CattyQuestionPracticePlan) {
           ? " 😺"
           : "";
 
-  return `${plan.opening}${suffix} ${plan.question}`;
+  return `${plan.opening}${suffix} ${formatBilingualQuestion(plan.question)}`;
 }
 
 function formatCattyQuestionPracticePromptContext(
@@ -920,6 +922,7 @@ function formatCattyQuestionPracticePromptContext(
     `Tema: ${questionPractice.topic}.`,
     `Abertura sugerida: ${questionPractice.opening}.`,
     `Pergunta sugerida: ${questionPractice.question}`,
+    `Pergunta com traducao sugerida: ${formatBilingualQuestion(questionPractice.question)}`,
     questionPractice.prompt,
     "Nao peca tema de novo quando ja houver pedido claro; faca a pergunta diretamente.",
   ].join("\n");
@@ -1178,22 +1181,460 @@ function addArticleIfNeeded(value: string) {
   return clean;
 }
 
+const shortQuestionTranslations: Record<string, string> = {
+  "are you at home now?": "Voce esta em casa agora?",
+  "can i see the menu, please?": "Posso ver o cardapio, por favor?",
+  "can you add a color, number or detail?":
+    "Voce consegue adicionar uma cor, numero ou detalhe?",
+  "can you add why?": "Voce consegue adicionar o motivo?",
+  "can you answer with yes or no?": "Voce consegue responder com sim ou nao?",
+  "can you answer: i live in ____?":
+    "Voce consegue responder: I live in ____?",
+  "can you ask one more past question?":
+    "Voce consegue fazer mais uma pergunta no passado?",
+  "can you ask one more question with do?":
+    "Voce consegue fazer mais uma pergunta com do?",
+  "can you ask one more question with does he?":
+    "Voce consegue fazer mais uma pergunta com does he?",
+  "can you ask one more question with does she?":
+    "Voce consegue fazer mais uma pergunta com does she?",
+  "can you complete it with a name?":
+    "Voce consegue completar com um nome?",
+  "can you help me?": "Voce pode me ajudar?",
+  "can you make another does question?":
+    "Voce consegue fazer outra pergunta com does?",
+  "can you make one more car sentence?":
+    "Voce consegue fazer mais uma frase sobre carros?",
+  "can you make one more animal sentence?":
+    "Voce consegue fazer mais uma frase sobre animal?",
+  "can you make one more do question?":
+    "Voce consegue fazer mais uma pergunta com do?",
+  "can you make one more fruit sentence?":
+    "Voce consegue fazer mais uma frase sobre fruta?",
+  "can you make one more past sentence?":
+    "Voce consegue fazer mais uma frase no passado?",
+  "can you make one more plural sentence?":
+    "Voce consegue fazer mais uma frase no plural?",
+  "can you make one more present sentence?":
+    "Voce consegue fazer mais uma frase no presente?",
+  "can you make one more sentence with a or an?":
+    "Voce consegue fazer mais uma frase com a ou an?",
+  "can you make one more sentence with are?":
+    "Voce consegue fazer mais uma frase com are?",
+  "can you make one more sentence with i am?":
+    "Voce consegue fazer mais uma frase com I am?",
+  "can you make one more sentence with i can?":
+    "Voce consegue fazer mais uma frase com I can?",
+  "can you make one more sentence with is?":
+    "Voce consegue fazer mais uma frase com is?",
+  "can you make one more sentence with were?":
+    "Voce consegue fazer mais uma frase com were?",
+  "can you make one more there are sentence?":
+    "Voce consegue fazer mais uma frase com there are?",
+  "can you say it again?": "Voce consegue dizer de novo?",
+  "can you say her age again?": "Voce consegue dizer a idade dela de novo?",
+  "can you say his age again?": "Voce consegue dizer a idade dele de novo?",
+  "can you say one more name sentence?":
+    "Voce consegue dizer mais uma frase com nome?",
+  "can you say one more thing in the past?":
+    "Voce consegue dizer mais uma coisa no passado?",
+  "can you show one more thing you have?":
+    "Voce consegue mostrar mais uma coisa que voce tem?",
+  "did you go?": "Voce foi?",
+  "do you like blue cars too?": "Voce tambem gosta de carros azuis?",
+  "do you like cats?": "Voce gosta de gatos?",
+  "do you like chocolate?": "Voce gosta de chocolate?",
+  "do you like chocolate too?": "Voce tambem gosta de chocolate?",
+  "do you like pizza too?": "Voce tambem gosta de pizza?",
+  "do you like red cars?": "Voce gosta de carros vermelhos?",
+  "do you like red cars too?": "Voce tambem gosta de carros vermelhos?",
+  "does he like chocolate too?": "Ele gosta de chocolate tambem?",
+  "does she like cats?": "Ela gosta de gatos?",
+  "does she like chocolate too?": "Ela gosta de chocolate tambem?",
+  "how many do you have?": "Quantos voce tem?",
+  "what did you do at school?": "O que voce fez na escola?",
+  "what did you do there?": "O que voce fez la?",
+  "what did you do yesterday?": "O que voce fez ontem?",
+  "what do you like?": "Do que voce gosta?",
+  "what do you like instead?": "Do que voce gosta no lugar disso?",
+  "what do you like to do on weekends?":
+    "O que voce gosta de fazer nos fins de semana?",
+  "what do you want to do next?": "O que voce quer fazer agora?",
+  "what doesn't she like?": "Do que ela nao gosta?",
+  "what doesn't he like?": "Do que ele nao gosta?",
+  "what else can you do?": "O que mais voce consegue fazer?",
+  "what else did you do yesterday?": "O que mais voce fez ontem?",
+  "what else does he have?": "O que mais ele tem?",
+  "what else does he like?": "Do que mais ele gosta?",
+  "what else does she have?": "O que mais ela tem?",
+  "what else does she like?": "Do que mais ela gosta?",
+  "what else do you have?": "O que mais voce tem?",
+  "what else do you like?": "O que mais voce gosta?",
+  "what else is on the table?": "O que mais esta na mesa?",
+  "what else is there?": "O que mais tem ali?",
+  "what food do you like?": "De qual comida voce gosta?",
+  "what would you like to do?": "O que voce gostaria de fazer?",
+  "what will you do instead?": "O que voce vai fazer no lugar disso?",
+  "what will you do next today?": "O que voce vai fazer depois hoje?",
+  "what will you do tomorrow?": "O que voce vai fazer amanha?",
+  "when do you go home?": "Quando voce vai para casa?",
+  "where do you live?": "Onde voce mora?",
+  "who likes it too?": "Quem tambem gosta disso?",
+  "who went with you?": "Quem foi com voce?",
+  "why is she sad?": "Por que ela esta triste?",
+};
+
+const shortPhraseTranslations: Record<string, string> = {
+  "a dog": "um cachorro",
+  "blue cars": "carros azuis",
+  "book": "livro",
+  "cars": "carros",
+  "cats": "gatos",
+  "chocolate": "chocolate",
+  "coffee": "cafe",
+  "dogs": "cachorros",
+  "games": "jogos",
+  "he": "ele",
+  "happy": "feliz",
+  "milk": "leite",
+  "pizza": "pizza",
+  "red cars": "carros vermelhos",
+  "school": "escola",
+  "she": "ela",
+  "tired": "cansado",
+};
+
+function translateShortPhrase(value: string) {
+  const normalized = normalizeText(value)
+    .replace(/[?.!]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return shortPhraseTranslations[normalized] ?? value.trim();
+}
+
+function normalizeQuestionForTranslation(value: string) {
+  return normalizeText(value)
+    .replace(/\s+/g, " ")
+    .replace(/\s+([?.!])/g, "$1")
+    .trim();
+}
+
+function isLikelyEnglishQuestion(value: string) {
+  return /^(?:are|can|did|do|does|how|is|what|when|where|who|why|will)\b/i.test(
+    value.trim(),
+  );
+}
+
+function translatePracticeQuestion(question: string): string {
+  const clean = question.replace(/\s+/g, " ").trim();
+  const tryMatch = clean.match(/^(.*?\?)\s+Try:\s*(.+)$/i);
+
+  if (tryMatch) {
+    const baseQuestion = tryMatch[1] ?? "";
+    const practice = tryMatch[2] ?? "";
+
+    return `${translatePracticeQuestion(baseQuestion)} Tente: ${practice}`;
+  }
+
+  const sayMatch = clean.match(/^Can you say:\s*(.+)$/i);
+
+  if (sayMatch) {
+    return `Voce consegue dizer: ${sayMatch[1]?.trim() ?? ""}`;
+  }
+
+  const joinMatch = clean.match(/^Can you join them with and\?\s*(.*)$/i);
+
+  if (joinMatch) {
+    const rest = joinMatch[1]?.trim();
+
+    return `Voce consegue juntar com and?${rest ? ` ${rest.replace(/^Try:/i, "Tente:")}` : ""}`;
+  }
+
+  const direct = shortQuestionTranslations[normalizeQuestionForTranslation(clean)];
+
+  if (direct) {
+    return direct;
+  }
+
+  const aboutMatch = clean.match(
+    /^Can you (?:add|make|say) one more (?:sentence )?(?:about )?(.+)\?$/i,
+  );
+
+  if (aboutMatch) {
+    return `Voce consegue fazer mais uma frase sobre ${translateShortPhrase(
+      aboutMatch[1] ?? "",
+    )}?`;
+  }
+
+  const askAboutMatch = clean.match(
+    /^Can you ask another question about (.+)\?$/i,
+  );
+
+  if (askAboutMatch) {
+    return `Voce consegue fazer outra pergunta sobre ${translateShortPhrase(
+      askAboutMatch[1] ?? "",
+    )}?`;
+  }
+
+  const answerWhyMatch = clean.match(/^Can you answer why (.+) is (.+)\?$/i);
+
+  if (answerWhyMatch) {
+    return `Voce consegue responder por que ${translateShortPhrase(
+      answerWhyMatch[1] ?? "",
+    )} esta ${translateShortPhrase(answerWhyMatch[2] ?? "")}?`;
+  }
+
+  const doesLikeMatch = clean.match(/^Does (she|he) like (.+)\?$/i);
+
+  if (doesLikeMatch) {
+    const pronoun = normalizeText(doesLikeMatch[1] ?? "she") === "he"
+      ? "Ele"
+      : "Ela";
+
+    return `${pronoun} gosta de ${translateShortPhrase(
+      doesLikeMatch[2] ?? "",
+    )}?`;
+  }
+
+  const doLikeMatch = clean.match(/^Do (you|they|we) like (.+)\?$/i);
+
+  if (doLikeMatch) {
+    const subject = normalizeText(doLikeMatch[1] ?? "you");
+    const prefix =
+      subject === "they"
+        ? "Eles gostam"
+        : subject === "we"
+          ? "Nos gostamos"
+          : "Voce gosta";
+
+    return `${prefix} de ${translateShortPhrase(doLikeMatch[2] ?? "")}?`;
+  }
+
+  const whatKindMatch = clean.match(/^What kind of (.+) do you like\?$/i);
+
+  if (whatKindMatch) {
+    return `Que tipo de ${translateShortPhrase(
+      whatKindMatch[1] ?? "",
+    )} voce gosta?`;
+  }
+
+  return "O que isso quer dizer em portugues?";
+}
+
+function formatBilingualQuestion(question: string) {
+  const clean = question.replace(/\s+/g, " ").trim();
+
+  if (!clean || clean.includes(" = ") || !isLikelyEnglishQuestion(clean)) {
+    return clean;
+  }
+
+  const tryMatch = clean.match(/^(.*?\?)\s+Try:\s*(.+)$/i);
+
+  if (tryMatch) {
+    const baseQuestion = tryMatch[1]?.trim() ?? "";
+    const practice = tryMatch[2]?.trim() ?? "";
+
+    return `${baseQuestion} = ${translatePracticeQuestion(
+      baseQuestion,
+    )}${practice ? ` Try: ${practice}` : ""}`;
+  }
+
+  return `${clean} = ${translatePracticeQuestion(clean)}`;
+}
+
+function formatBilingualCorrectedSentence(sentence: string) {
+  const clean = sentence.replace(/\s+/g, " ").trim();
+
+  if (!clean || !clean.endsWith("?") || clean.includes(" = ")) {
+    return clean;
+  }
+
+  return formatBilingualQuestion(clean);
+}
+
+function extractCorrectionErrorWord(explanation: string) {
+  return (
+    explanation.match(/O erro esta em ([^:]+):/i)?.[1]?.trim() ??
+    "essa parte"
+  );
+}
+
+function getCorrectionSubject(correction: Pick<CattyGrammarCorrectionPlan, "correctedSentence">) {
+  const direct = correction.correctedSentence.match(
+    /^(I|You|We|They|She|He|It)\b/i,
+  )?.[1];
+
+  if (direct) {
+    return direct.toLowerCase();
+  }
+
+  return (
+    correction.correctedSentence.match(
+      /^(?:Do|Does|Did|Can|Will|What|Where|Why)\s+(I|you|we|they|she|he|it)\b/i,
+    )?.[1]?.toLowerCase() ?? "you"
+  );
+}
+
+function buildCorrectionEnglishTip(
+  correction: Pick<
+    CattyGrammarCorrectionPlan,
+    "correctedSentence" | "explanation" | "rule"
+  >,
+) {
+  const normalizedRule = normalizeText(correction.rule);
+  const subject = getCorrectionSubject(correction);
+  const errorWord = extractCorrectionErrorWord(correction.explanation);
+
+  if (normalizedRule.includes("i likes")) {
+    return "with I, use like without -s.";
+  }
+
+  if (normalizedRule.includes("she/he like")) {
+    return `with ${subject}, add -s to the verb.`;
+  }
+
+  if (normalizedRule.includes("she/he has years old")) {
+    return `for age with ${subject}, use is.`;
+  }
+
+  if (normalizedRule.includes("family member have years old")) {
+    return "for age, use is with this family member.";
+  }
+
+  if (normalizedRule.includes("years old")) {
+    return "for age, use I am.";
+  }
+
+  if (normalizedRule.includes("yesterday")) {
+    const pastVerb =
+      correction.explanation.match(/usamos ([a-z]+)/i)?.[1]?.trim() ?? "";
+
+    return pastVerb
+      ? `with yesterday, use the past form; ${errorWord} becomes ${pastVerb}.`
+      : "with yesterday, use the past form.";
+  }
+
+  if (normalizedRule.includes("do she") || normalizedRule.includes("do he")) {
+    return `with ${subject}, use does in questions.`;
+  }
+
+  if (normalizedRule.includes("question order with do")) {
+    return "use do after what in this question.";
+  }
+
+  if (normalizedRule.includes("does + verb")) {
+    return "after does, use the base verb.";
+  }
+
+  if (normalizedRule.includes("did + base")) {
+    return "after did, use the base verb.";
+  }
+
+  if (normalizedRule.includes("will")) {
+    return "after will, use the base verb.";
+  }
+
+  if (normalizedRule.includes("can")) {
+    return "after can, use the base verb without to.";
+  }
+
+  if (normalizedRule.includes("plural")) {
+    return "use the plural form for this idea.";
+  }
+
+  if (normalizedRule.includes("a/an") || normalizedRule.includes("article")) {
+    return "use a or an before one countable thing.";
+  }
+
+  if (normalizedRule.includes("there is")) {
+    return "use there is for one thing and there are for plural.";
+  }
+
+  return "use the corrected sentence as your model.";
+}
+
+function buildCorrectionPortugueseTip(
+  correction: Pick<
+    CattyGrammarCorrectionPlan,
+    "correctedSentence" | "explanation" | "rule"
+  >,
+) {
+  const normalizedRule = normalizeText(correction.rule);
+  const subject = getCorrectionSubject(correction);
+  const errorWord = extractCorrectionErrorWord(correction.explanation);
+
+  if (normalizedRule.includes("i likes")) {
+    return "o erro esta em likes; com I, usamos like sem -s.";
+  }
+
+  if (normalizedRule.includes("she/he like")) {
+    return `o erro esta em like; com ${subject}, o verbo ganha -s.`;
+  }
+
+  if (normalizedRule.includes("i have years old")) {
+    return "o erro esta em have; para idade, usamos I am, nao I have.";
+  }
+
+  if (normalizedRule.includes("she/he has years old")) {
+    return `o erro esta em has; para idade com ${subject}, usamos is.`;
+  }
+
+  if (normalizedRule.includes("family member have years old")) {
+    return "o erro esta em have; para idade de familiar, usamos is.";
+  }
+
+  if (normalizedRule.includes("years old")) {
+    return "para idade, usamos o verbo be, nao have.";
+  }
+
+  if (normalizedRule.includes("yesterday")) {
+    const pastVerb =
+      correction.explanation.match(/usamos ([a-z]+)/i)?.[1]?.trim() ?? "";
+
+    return pastVerb
+      ? `o erro esta em ${errorWord}; com yesterday, usamos passado: ${errorWord} vira ${pastVerb}.`
+      : `o erro esta em ${errorWord}; com yesterday, usamos passado.`;
+  }
+
+  if (normalizedRule.includes("do she") || normalizedRule.includes("do he")) {
+    return `o erro esta em do; com ${subject}, a pergunta usa does.`;
+  }
+
+  if (normalizedRule.includes("question order with do")) {
+    return "nessa pergunta, usamos do depois de what.";
+  }
+
+  return correction.explanation.replace(/\.$/, ".");
+}
+
 function buildCorrectionPlan(input: {
   correctedSentence: string;
   explanation: string;
   question: string;
   rule: string;
 }): CattyGrammarCorrectionPlan {
-  return {
+  const draftCorrection = {
     correctedSentence: input.correctedSentence,
     explanation: input.explanation,
-    homeworkExplanation: `Use essa estrutura parecida: ${input.correctedSentence} ${input.explanation}`,
+    rule: input.rule,
+  };
+  const englishTip = buildCorrectionEnglishTip(draftCorrection);
+  const portugueseTip = buildCorrectionPortugueseTip(draftCorrection);
+
+  return {
+    correctedSentence: input.correctedSentence,
+    englishTip,
+    explanation: input.explanation,
+    homeworkExplanation: `Use essa estrutura parecida: ${input.correctedSentence} ${portugueseTip}`,
+    portugueseTip,
     prompt: [
       `Erro comum detectado: ${input.rule}.`,
       `Frase corrigida: ${input.correctedSentence}`,
-      `Explicacao simples: ${input.explanation}`,
-      `Continuacao relacionada: ${input.question}`,
-      "Responda no formato: reacao curta da Catty, Melhor: frase corrigida, onde esta o erro em uma frase simples e uma pergunta relacionada.",
+      `English tip: ${englishTip}`,
+      `Explicacao em portugues: ${portugueseTip}`,
+      `Continuacao relacionada: ${formatBilingualQuestion(input.question)}`,
+      "Responda no formato bilingue curto: abertura da Catty, Better: frase corrigida, English tip: explicacao curta em ingles, Em portugues: explicacao curta, pergunta em ingles = traducao em portugues.",
     ].join(" "),
     question: input.question,
     rule: input.rule,
@@ -1500,6 +1941,7 @@ function buildCommonEnglishCorrectionPlan(
   match = sentence.match(/^(she|he)\s+has\s+(\d{1,3})\s+years?\s+old$/i);
   if (match) {
     const subject = capitalizeFirstWord(match[1] ?? "she");
+    const possessive = normalizeText(subject) === "he" ? "his" : "her";
     const age = match[2] ?? "";
 
     return buildCorrectionPlan({
@@ -1507,7 +1949,7 @@ function buildCommonEnglishCorrectionPlan(
         `${subject} is ${age} years old`,
       ),
       explanation: `O erro esta em has: para idade com ${subject.toLowerCase()}, usamos is.`,
-      question: `Can you say ${subject.toLowerCase()}'s age again?`,
+      question: `Can you say ${possessive} age again?`,
       rule: "she/he has years old -> is years old",
     });
   }
@@ -2516,13 +2958,13 @@ function buildFragmentContinuationQuestion(
     /\b(?:car|cars)\b/.test(normalizedHistoryTopic)
   ) {
     if (/\bblue\s+cars?\b/.test(normalizedFragment)) {
-      return "Quer tentar com red cars?";
+      return "Do you like red cars too?";
     }
 
     if (
       /\b(?:red|black|white|green|yellow)\s+cars?\b/.test(normalizedFragment)
     ) {
-      return "Quer tentar com blue cars?";
+      return "Do you like blue cars too?";
     }
 
     return "Can you make one more car sentence?";
@@ -2538,7 +2980,7 @@ function getStandaloneFragmentPractice(
 
   if (normalized === "chocolate") {
     return {
-      question: "Agora tenta com pizza.",
+      question: "Do you like pizza too?",
       suggestedSentence: "I like chocolate.",
       topic: "chocolate",
     };
@@ -2546,7 +2988,7 @@ function getStandaloneFragmentPractice(
 
   if (normalized === "pizza") {
     return {
-      question: "Agora tenta com chocolate.",
+      question: "Do you like chocolate too?",
       suggestedSentence: "I like pizza.",
       topic: "pizza",
     };
@@ -2558,8 +3000,8 @@ function getStandaloneFragmentPractice(
     return {
       question:
         color === "blue"
-          ? "Quer tentar com red cars?"
-          : "Quer tentar com blue cars?",
+          ? "Do you like red cars too?"
+          : "Do you like blue cars too?",
       suggestedSentence: formatCorrectionSentence(`I like ${fragment}`),
       topic: "cars",
     };
@@ -2802,6 +3244,7 @@ function formatCattyContinuityPromptContext(
       : "",
     continuity.correction ? `Microcorrecao: ${continuity.correction}` : "",
     `Pergunta sugerida: ${continuity.question}`,
+    `Pergunta bilingue sugerida: ${formatBilingualQuestion(continuity.question)}`,
     continuity.prompt,
   ]
     .filter(Boolean)
@@ -3068,7 +3511,7 @@ function buildEnglishReply(text: string, context?: CattyPageContext) {
     hasAny(normalized, ["phrase"])
   ) {
     if (hasAny(normalized, ["i has"])) {
-      return "Awnn, almost there. Better: I have a book. Use have with I.";
+      return "Awnn, almost there. Better: I have a book. English tip: with I, use have. Em portugues: com I, usamos have.";
     }
 
     return "Awnn, almost there. Send one sentence and I will make it smoother with one tiny reason.";
@@ -3408,17 +3851,18 @@ function buildSimpleEnglishContinuityReply(
   continuity: CattyConversationContinuityPlan,
 ) {
   const normalizedTopic = normalizeText(continuity.topic);
+  const bilingualQuestion = formatBilingualQuestion(continuity.question);
 
   if (continuity.isIncomplete) {
-    return `Awnn, almost there 😺 ${continuity.question}`;
+    return `Awnn, almost there 😺 ${bilingualQuestion}`;
   }
 
   if (continuity.isFragment && continuity.suggestedSentence) {
     if (/\b(?:car|cars)\b/.test(normalizedTopic)) {
-      return `Uwau, da para virar frase: ${continuity.suggestedSentence} Vruum vruum 🚗 ${continuity.question}`;
+      return `Uwau, da para virar frase: ${continuity.suggestedSentence} Vruum vruum 🚗 ${bilingualQuestion}`;
     }
 
-    return `Miauw, vamos colocar em frase: ${continuity.suggestedSentence} ${continuity.question}`;
+    return `Miauw, vamos colocar em frase: ${continuity.suggestedSentence} ${bilingualQuestion}`;
   }
 
   if (
@@ -3426,41 +3870,45 @@ function buildSimpleEnglishContinuityReply(
     continuity.correction &&
     hasAny(normalizedTopic, ["capivara", "capybara"])
   ) {
-    return "Miauw, capybara mode 🦫✨ Cute choice! Can you say: My favorite animal is a capybara?";
+    return `Miauw, capybara mode 🦫✨ Cute choice! ${formatBilingualQuestion(
+      "Can you say: My favorite animal is a capybara?",
+    )}`;
   }
 
   if (
     continuity.pattern === "like" &&
     /\b(?:car|cars)\b/.test(normalizedTopic)
   ) {
-    return "Uwau, vruum vruum 🚗 You like cars! What color cars do you like?";
+    return `Uwau, vruum vruum 🚗 You like cars! ${formatBilingualQuestion(
+      "What color cars do you like?",
+    )}`;
   }
 
   if (continuity.correction) {
-    return `Awnn, tiny fix 😺 ${continuity.correction} ${continuity.question}`;
+    return `Awnn, tiny fix 😺 ${continuity.correction} ${bilingualQuestion}`;
   }
 
   if (continuity.pattern === "like") {
-    return `Awnn, nice sentence 😺 ${continuity.question}`;
+    return `Awnn, nice sentence 😺 ${bilingualQuestion}`;
   }
 
   if (continuity.pattern === "dislike") {
-    return `Awnn, good sentence 😺 ${continuity.question}`;
+    return `Awnn, good sentence 😺 ${bilingualQuestion}`;
   }
 
   if (continuity.pattern === "favorite") {
-    return `Miauw, cute choice ✨ ${continuity.question}`;
+    return `Miauw, cute choice ✨ ${bilingualQuestion}`;
   }
 
   if (continuity.pattern === "played" || continuity.pattern === "went") {
-    return `Uwau, past sentence spotted 🎯 ${continuity.question}`;
+    return `Uwau, past sentence spotted 🎯 ${bilingualQuestion}`;
   }
 
   if (continuity.pattern === "today" || continuity.pattern === "yesterday") {
-    return `Miauw, good time sentence ✨ ${continuity.question}`;
+    return `Miauw, good time sentence ✨ ${bilingualQuestion}`;
   }
 
-  return `Uwau, good sentence 😺 ${continuity.question}`;
+  return `Uwau, good sentence 😺 ${bilingualQuestion}`;
 }
 
 function buildGrammarCorrectionFallbackReply(
@@ -3470,7 +3918,9 @@ function buildGrammarCorrectionFallbackReply(
   const normalizedRule = normalizeText(correction.rule);
 
   if (isHomeworkContext(context)) {
-    return `Pss pss, se isso for homework, eu nao dou gabarito final 🐾 Mas a estrutura parecida e: ${correction.correctedSentence} ${correction.explanation} Agora tente aplicar esse padrao no seu exercicio.`;
+    return `Pss pss, se isso for homework, eu nao dou gabarito final 🐾 Mas a estrutura parecida e: Better: ${formatBilingualCorrectedSentence(
+      correction.correctedSentence,
+    )} English tip: ${correction.englishTip} Em portugues: ${correction.portugueseTip} Agora tente aplicar esse padrao no seu exercicio.`;
   }
 
   const reaction = normalizedRule.includes("years old")
@@ -3485,7 +3935,11 @@ function buildGrammarCorrectionFallbackReply(
           ? "Awnn, quase perfeito ✨"
           : "Awnn, quase la 😺";
 
-  return `${reaction} Melhor: ${correction.correctedSentence} ${correction.explanation} ${correction.question}`;
+  return `${reaction} Better: ${formatBilingualCorrectedSentence(
+    correction.correctedSentence,
+  )} English tip: ${correction.englishTip} Em portugues: ${
+    correction.portugueseTip
+  } ${formatBilingualQuestion(correction.question)}`;
 }
 
 function buildPlannedEnglishReply(
@@ -3656,15 +4110,15 @@ function buildPlannedEnglishReply(
     }
 
     if (hasAny(normalized, ["i has"])) {
-      return "Awnn, almost there. Better: I have a book. Use have with I.";
+      return "Awnn, almost there. Better: I have a book. English tip: with I, use have. Em portugues: com I, usamos have.";
     }
 
     if (hasAny(normalized, ["she go"])) {
       if (hasAny(normalized, ["yesterday"])) {
-        return "Uwau, tiny fix: She went to school yesterday. With yesterday, use went.";
+        return "Uwau, tiny fix. Better: She went to school yesterday. English tip: with yesterday, use the past form; go becomes went. Em portugues: com yesterday, usamos passado; go vira went.";
       }
 
-      return "Uwau, tiny fix: She goes to school. With he, she or it, add -s to the verb.";
+      return "Uwau, tiny fix. Better: She goes to school. English tip: with she, add -s to the verb. Em portugues: com she, o verbo ganha -s.";
     }
 
     return getQuotedFragment(text)
@@ -4333,10 +4787,11 @@ export function buildCattyInput(
     "Regra de personalidade da Catty: gatinha mascote-professora da Candy English, resposta curta, fofa, didatica e com no maximo um bordao e ate dois emojis.",
     "Regra de uso do nome: se houver primeiro nome seguro, use de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao em toda resposta nem em assunto sensivel.",
     "Regra de roteamento interno: Gemini e o padrao; OpenAI so quando a mensagem chama Catty; se provedores falharem, usar fallback local; baloes automaticos nao chamam IA.",
-    "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena ou proximo passo.",
-    "Regra de pergunta pedida: se o aluno pedir uma pergunta, faca a pergunta diretamente; use o tema pedido ou uma pergunta curta de pratica se nao houver tema.",
-    "Regra de continuidade: quando a mensagem atual for uma frase curta em ingles, mantenha o mesmo assunto, elogie ou corrija de leve e faca uma pergunta curta relacionada. Nao responda generico nem troque de tema.",
-    "Regra de correcao conversacional: quando houver correcao local detectada, nao peca a frase de novo. Use: reacao curta, `Melhor: ...`, indique onde esta o erro em uma frase simples e faca uma pergunta relacionada.",
+    "Regra bilingue de pratica: quando o aluno escrever/praticar ingles ou quando voce fizer uma pergunta em ingles, mostre a traducao em portugues logo depois usando `English question = traducao curta`.",
+    "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena com traducao quando estiver em ingles.",
+    "Regra de pergunta pedida: se o aluno pedir uma pergunta, faca a pergunta diretamente; use o tema pedido ou uma pergunta curta de pratica se nao houver tema; toda pergunta em ingles deve vir com `= portugues`.",
+    "Regra de continuidade: quando a mensagem atual for uma frase curta em ingles, mantenha o mesmo assunto, elogie ou corrija de leve e faca uma pergunta curta relacionada com traducao em portugues.",
+    "Regra de correcao conversacional: quando houver correcao local detectada, nao peca a frase de novo. Use: abertura curta, `Better: ...`, `English tip: ...`, `Em portugues: ...` e pergunta final em ingles com `= portugues`.",
     "Regra de correcao em homework: nao entregue gabarito final; use a correcao como estrutura parecida e convide o aluno a aplicar o padrao.",
     "Regra de homework: nunca entregue resposta final; de pista, exemplo parecido ou um passo de raciocinio.",
     "Regra de escopo: se o assunto fugir de ingles, Candy English ou AVA, transforme em vocabulario, frase curta ou pratica de conversacao.",
