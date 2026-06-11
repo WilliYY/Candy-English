@@ -1043,6 +1043,7 @@ const countableArticleWords = new Set([
   "animal",
   "apple",
   "book",
+  "capybara",
   "car",
   "cat",
   "dog",
@@ -1254,6 +1255,8 @@ const shortQuestionTranslations: Record<string, string> = {
     "Voce consegue dizer mais um motivo?",
   "can you try with blue cars?":
     "Voce consegue tentar com carros azuis?",
+  "can you try with blue?": "Voce consegue tentar com azul?",
+  "can you try with red?": "Voce consegue tentar com vermelho?",
   "can you try with red cars?":
     "Voce consegue tentar com carros vermelhos?",
   "did you go?": "Voce foi?",
@@ -1302,13 +1305,18 @@ const shortQuestionTranslations: Record<string, string> = {
   "who went with you?": "Quem foi com voce?",
   "why are you happy?": "Por que voce esta feliz?",
   "why do you like it?": "Por que voce gosta disso?",
+  "why do you like pizza?": "Por que voce gosta de pizza?",
   "why is she sad?": "Por que ela esta triste?",
+  "what color do you like?": "De qual cor voce gosta?",
 };
 
 const shortAnswerTranslations: Record<string, string> = {
   "a little.": "Um pouco.",
   "because it is good.": "Porque e bom.",
   "i do too.": "Eu tambem gosto.",
+  "i don't.": "Eu nao gosto.",
+  "i don't like chocolate.": "Eu nao gosto de chocolate.",
+  "i like chocolate too.": "Eu tambem gosto de chocolate.",
   "no, he doesn't.": "Nao, ele nao gosta.",
   "no, i can't.": "Nao, eu nao consigo.",
   "no, i didn't.": "Nao, eu nao fui.",
@@ -1316,6 +1324,7 @@ const shortAnswerTranslations: Record<string, string> = {
   "no, i won't.": "Nao, eu nao vou.",
   "no, i'm not.": "Nao, eu nao estou.",
   "no, she doesn't.": "Nao, ela nao gosta.",
+  "no, she isn't.": "Nao, ela nao esta.",
   "sometimes.": "As vezes.",
   "very much.": "Muito.",
   "yes, he does.": "Sim, ele gosta.",
@@ -1325,10 +1334,12 @@ const shortAnswerTranslations: Record<string, string> = {
   "yes, i do.": "Sim, eu gosto.",
   "yes, i will.": "Sim, eu vou.",
   "yes, she does.": "Sim, ela gosta.",
+  "yes, she is.": "Sim, ela esta.",
 };
 
 const shortPhraseTranslations: Record<string, string> = {
   "a dog": "um cachorro",
+  "blue": "azul",
   "blue cars": "carros azuis",
   "book": "livro",
   "cars": "carros",
@@ -1341,6 +1352,7 @@ const shortPhraseTranslations: Record<string, string> = {
   "happy": "feliz",
   "milk": "leite",
   "pizza": "pizza",
+  "red": "vermelho",
   "red cars": "carros vermelhos",
   "school": "escola",
   "she": "ela",
@@ -1509,14 +1521,23 @@ type CattyShortFollowUpAnswer =
       userAnswer: string;
     }
   | {
+      correction?: string;
       kind: "agreement" | "degree" | "fragment" | "reason";
+      sentence?: string;
       userAnswer: string;
     };
 
 type CattyFollowUpQuestionContext = {
   auxiliary?: CattyFollowUpAuxiliary;
   favoriteKind?: string;
-  kind: "color_cars" | "favorite" | "open_like" | "why" | "yes_no";
+  kind:
+    | "color"
+    | "color_cars"
+    | "favorite"
+    | "like_statement"
+    | "open_like"
+    | "why"
+    | "yes_no";
   nextQuestion: string;
   pattern: CattySimpleEnglishPattern;
   promptLabel: string;
@@ -1705,6 +1726,18 @@ function detectShortFollowUpAnswer(
     };
   }
 
+  if (/^me\s+no$/.test(normalized)) {
+    return {
+      auxiliary: "do",
+      isBare: false,
+      kind: "yes_no",
+      polarity: "negative",
+      sentence: "I don't.",
+      subject: "i",
+      userAnswer: clean,
+    };
+  }
+
   const answerMatch = normalized.match(
     /^(?:(yes|no)\s+)?(i|you|she|he|it|we|they)\s+(do|does|am|are|is|can|did|will)(?:\s+not)?$/,
   );
@@ -1741,8 +1774,42 @@ function detectShortFollowUpAnswer(
     return { kind: "degree", userAnswer: clean };
   }
 
+  if (/^because\s+(?:it\s+)?good$/.test(normalized)) {
+    return {
+      correction: "Better: Because it is good. = Porque e bom.",
+      kind: "reason",
+      sentence: "Because it is good.",
+      userAnswer: clean,
+    };
+  }
+
   if (/^because\s+it\s+is\s+good$/.test(normalized)) {
-    return { kind: "reason", userAnswer: clean };
+    return {
+      kind: "reason",
+      sentence: "Because it is good.",
+      userAnswer: clean,
+    };
+  }
+
+  const portugueseLikeMatch = normalized.match(
+    /^(?:eu\s+)?gosto\s+de\s+([a-zA-Z][a-zA-Z\s-]{1,40})$/,
+  );
+
+  if (portugueseLikeMatch) {
+    return {
+      kind: "fragment",
+      userAnswer: cleanSimpleEnglishTopic(portugueseLikeMatch[1] ?? ""),
+    };
+  }
+
+  const shortLikeMatch = clean.match(/^I\s+like\s+([a-zA-Z][a-zA-Z\s-]{1,40})\.?$/i);
+
+  if (shortLikeMatch) {
+    return {
+      kind: "fragment",
+      sentence: formatCorrectionSentence(clean),
+      userAnswer: cleanSimpleEnglishTopic(shortLikeMatch[1] ?? ""),
+    };
   }
 
   const fragment = getSimpleEnglishFragment(clean);
@@ -1784,6 +1851,36 @@ function extractLastCattyQuestion(history: CattyMessage[]) {
   return "";
 }
 
+function extractLastCattyFollowUpCue(history: CattyMessage[]) {
+  const question = extractLastCattyQuestion(history);
+
+  if (question) {
+    return question;
+  }
+
+  let inspected = 0;
+
+  for (const message of [...history].reverse()) {
+    if (message.from !== "catty") {
+      continue;
+    }
+
+    inspected += 1;
+
+    if (inspected > 8) {
+      break;
+    }
+
+    const likeStatement = message.text.match(/\bI like [a-zA-Z\s-]{2,80}\./i)?.[0];
+
+    if (likeStatement) {
+      return likeStatement.replace(/\s+/g, " ").trim();
+    }
+  }
+
+  return "";
+}
+
 function getFollowUpLikeNextQuestion(topic: string) {
   const normalizedTopic = normalizeText(topic);
 
@@ -1804,6 +1901,22 @@ function classifyCattyFollowUpQuestion(
   const clean = question.replace(/\s+/g, " ").trim();
   const normalized = normalizeText(clean);
 
+  const likeStatementMatch = clean.match(/^I like (.+?)\.$/i);
+
+  if (likeStatementMatch) {
+    const topic = cleanSimpleEnglishTopic(likeStatementMatch[1] ?? "");
+
+    return {
+      auxiliary: "do",
+      kind: "like_statement",
+      nextQuestion: getFollowUpLikeNextQuestion(topic),
+      pattern: "like",
+      promptLabel: "I like...",
+      subject: "you",
+      topic,
+    };
+  }
+
   if (/^what color cars do you like\?$/.test(normalized)) {
     return {
       kind: "color_cars",
@@ -1812,6 +1925,17 @@ function classifyCattyFollowUpQuestion(
       promptLabel: "What color cars do you like?",
       subject: "you",
       topic: "cars",
+    };
+  }
+
+  if (/^what color do you like\?$/.test(normalized)) {
+    return {
+      kind: "color",
+      nextQuestion: "Can you try with red?",
+      pattern: "like",
+      promptLabel: "What color do you like?",
+      subject: "you",
+      topic: "color",
     };
   }
 
@@ -1826,6 +1950,10 @@ function classifyCattyFollowUpQuestion(
       subject: "you",
       topic,
     };
+  }
+
+  if (normalized === "what else do you like?") {
+    return undefined;
   }
 
   const openLikeMatch = clean.match(/^What (.+?) do you like\?$/i);
@@ -2012,10 +2140,18 @@ function getColorCarsRetryQuestion(fragment: string) {
     : "Can you try with blue cars?";
 }
 
+function getColorRetryQuestion(fragment: string) {
+  return /^blue\b/i.test(fragment) ? "Can you try with red?" : "Can you try with blue?";
+}
+
+function normalizeColorCarFragment(fragment: string) {
+  return fragment.replace(/\bcar\b/i, "cars");
+}
+
 function buildShortFollowUpSentence(input: {
   answer: CattyShortFollowUpAnswer;
   questionContext: CattyFollowUpQuestionContext;
-}): { question: string; sentence: string; topic: string } | undefined {
+}): { correction?: string; question: string; sentence: string; topic: string } | undefined {
   const { answer, questionContext } = input;
 
   if (answer.kind === "fragment") {
@@ -2026,10 +2162,24 @@ function buildShortFollowUpSentence(input: {
       /\b(?:car|cars)\b/.test(normalizeText(questionContext.topic)) ||
       /\b(?:car|cars)\b/.test(normalizeText(fragment))
     ) {
+      const carFragment = normalizeColorCarFragment(fragment);
+
       return {
-        question: getColorCarsRetryQuestion(fragment),
-        sentence: formatCorrectionSentence(`I like ${fragment}`),
+        correction:
+          normalizeText(carFragment) !== normalizeText(fragment)
+            ? `Better: ${formatFollowUpSentenceWithTranslation(`I like ${carFragment}.`)}`
+            : undefined,
+        question: getColorCarsRetryQuestion(carFragment),
+        sentence: answer.sentence ?? formatCorrectionSentence(`I like ${carFragment}`),
         topic: "cars",
+      };
+    }
+
+    if (questionContext.kind === "color") {
+      return {
+        question: getColorRetryQuestion(fragment),
+        sentence: answer.sentence ?? formatCorrectionSentence(`I like ${fragment}`),
+        topic: fragment,
       };
     }
 
@@ -2043,7 +2193,7 @@ function buildShortFollowUpSentence(input: {
           /(?:chocolate|pizza|food)/.test(normalizeText(fragment))
             ? "What drink do you like?"
             : questionContext.nextQuestion,
-        sentence: formatCorrectionSentence(`I like ${fragment}`),
+        sentence: answer.sentence ?? formatCorrectionSentence(`I like ${fragment}`),
         topic: fragment,
       };
     }
@@ -2069,6 +2219,32 @@ function buildShortFollowUpSentence(input: {
     };
   }
 
+  if (answer.kind === "agreement" && questionContext.kind === "like_statement") {
+    return {
+      question: questionContext.nextQuestion,
+      sentence: formatCorrectionSentence(`I like ${questionContext.topic} too`),
+      topic: questionContext.topic,
+    };
+  }
+
+  if (answer.kind === "yes_no" && questionContext.kind === "like_statement") {
+    const sentence =
+      answer.polarity === "negative"
+        ? formatCorrectionSentence(`I don't like ${questionContext.topic}`)
+        : formatCorrectionSentence(`I like ${questionContext.topic} too`);
+    const correction =
+      normalizeShortFollowUpText(answer.userAnswer) === "me no"
+        ? "Better: I don't. = Eu nao gosto."
+        : undefined;
+
+    return {
+      correction,
+      question: questionContext.nextQuestion,
+      sentence,
+      topic: questionContext.topic,
+    };
+  }
+
   if (answer.kind === "degree") {
     const normalized = normalizeShortFollowUpText(answer.userAnswer);
 
@@ -2081,8 +2257,9 @@ function buildShortFollowUpSentence(input: {
 
   if (answer.kind === "reason") {
     return {
+      correction: answer.correction,
       question: questionContext.nextQuestion,
-      sentence: "Because it is good.",
+      sentence: answer.sentence ?? "Because it is good.",
       topic: questionContext.topic,
     };
   }
@@ -2100,7 +2277,7 @@ function buildCattyConversationFollowUpPlan(
     return undefined;
   }
 
-  const previousQuestion = extractLastCattyQuestion(history);
+  const previousQuestion = extractLastCattyFollowUpCue(history);
   const questionContext = previousQuestion
     ? classifyCattyFollowUpQuestion(previousQuestion)
     : undefined;
@@ -2167,14 +2344,20 @@ function buildCattyConversationFollowUpPlan(
     isIncomplete: false,
     pattern: questionContext.pattern,
     previousQuestion,
+    correction: shortSentence.correction,
     prompt: [
       "Resposta curta de follow-up detectada.",
       `Pergunta anterior da Catty: ${previousQuestion}`,
       `Resposta curta do aluno: ${answer.userAnswer}.`,
       `Frase sugerida: ${shortSentence.sentence}`,
+      shortSentence.correction
+        ? `Correcao curta sugerida: ${shortSentence.correction}`
+        : "",
       `Pergunta relacionada sugerida: ${shortSentence.question}`,
       "Transforme a resposta curta em frase simples e continue no mesmo contexto.",
-    ].join(" "),
+    ]
+      .filter(Boolean)
+      .join(" "),
     question: shortSentence.question,
     shortAnswerKind: answer.kind,
     suggestedSentence: shortSentence.sentence,
@@ -4614,7 +4797,7 @@ function buildSimpleEnglishContinuityReply(
 
     if (continuity.shortAnswerKind === "fragment") {
       if (/\b(?:car|cars)\b/.test(normalizedTopic)) {
-        return `Vruum vruum, nice! ${sentence} ${bilingualQuestion}`;
+        return `Uwau, vruum vruum. ${sentence} ${bilingualQuestion}`;
       }
 
       return `Uwau, da para virar frase: ${sentence} ${bilingualQuestion}`;

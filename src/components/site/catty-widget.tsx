@@ -69,6 +69,9 @@ type CattyWidgetFeedbackKind =
   | "SHOULD_ANSWER";
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
+const CATTY_MOBILE_BREAKPOINT_PX = 768;
+const MOBILE_BALLOON_MAX_COUNT = 3;
+const MOBILE_BALLOON_HIDE_DELAY_MS = 4_000;
 
 const initialCattyMessages: CattyMessage[] = [
   {
@@ -476,6 +479,14 @@ function getRandomPublicBalloon(current?: string) {
   return templates[Math.floor(Math.random() * templates.length)];
 }
 
+function isMobileCattyViewport() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.innerWidth < CATTY_MOBILE_BREAKPOINT_PX;
+}
+
 function isLoggedInAvaArea(context: CattyPageContext) {
   return (
     context.area === "admin" ||
@@ -501,6 +512,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const [isThinking, setIsThinking] = useState(false);
   const [loggedInBalloon, setLoggedInBalloon] = useState("");
   const [publicBalloon, setPublicBalloon] = useState("");
+  const [isMobileBalloonViewport, setIsMobileBalloonViewport] =
+    useState(false);
   const [publicNoticeVisible, setPublicNoticeVisible] = useState(false);
   const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>(
     {},
@@ -512,6 +525,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     Record<string, "error" | "saved" | "sending">
   >({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const loggedInBalloonCount = useRef(0);
+  const publicBalloonCount = useRef(0);
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
   const displayName = useMemo(
@@ -522,10 +537,11 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     () => sessionUser?.artifacts ?? [],
     [sessionUser?.artifacts],
   );
-  const canUseCattyChat = Boolean(sessionUser && isLoggedInAvaArea(context));
+  const hasSessionUser = Boolean(sessionUser);
+  const canUseCattyChat = Boolean(hasSessionUser && isLoggedInAvaArea(context));
   const showLoggedInBalloons = canUseCattyChat;
   const showPublicBalloons = Boolean(
-    !sessionUser && isPublicCattyArea(context) && !open,
+    !hasSessionUser && isPublicCattyArea(context) && !open,
   );
   const visiblePublicBalloon = publicNoticeVisible
     ? CATTY_PUBLIC_LOCKED_REPLY
@@ -626,26 +642,127 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       window.removeEventListener("popstate", refreshContext);
       window.removeEventListener("focus", refreshContext);
     };
+  }, [pathname]);
+
+  useEffect(() => {
+    function refreshMobileViewport() {
+      setIsMobileBalloonViewport(isMobileCattyViewport());
+    }
+
+    refreshMobileViewport();
+    window.addEventListener("resize", refreshMobileViewport);
+    window.addEventListener("orientationchange", refreshMobileViewport);
+
+    return () => {
+      window.removeEventListener("resize", refreshMobileViewport);
+      window.removeEventListener("orientationchange", refreshMobileViewport);
+    };
   }, []);
 
   useEffect(() => {
+    loggedInBalloonCount.current = 0;
+    publicBalloonCount.current = 0;
+    setLoggedInBalloon("");
+    setPublicBalloon("");
+  }, [
+    context.area,
+    context.task,
+    hasSessionUser,
+    isMobileBalloonViewport,
+    pathname,
+  ]);
+
+  useEffect(() => {
     if (!showLoggedInBalloons) {
+      loggedInBalloonCount.current = 0;
       setLoggedInBalloon("");
       return;
     }
 
-    setLoggedInBalloon((current) =>
-      getRandomLoggedInBalloon(displayName, sessionArtifacts, current),
-    );
+    if (open) {
+      return;
+    }
 
-    const intervalId = window.setInterval(() => {
+    let hideTimeoutId: number | undefined;
+    let intervalId: number | undefined;
+
+    function scheduleMobileBalloonHide() {
+      if (!isMobileBalloonViewport) {
+        return;
+      }
+
+      if (hideTimeoutId !== undefined) {
+        window.clearTimeout(hideTimeoutId);
+      }
+
+      hideTimeoutId = window.setTimeout(() => {
+        setLoggedInBalloon("");
+      }, MOBILE_BALLOON_HIDE_DELAY_MS);
+    }
+
+    function showNextLoggedInBalloon() {
+      if (
+        isMobileBalloonViewport &&
+        loggedInBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+      ) {
+        scheduleMobileBalloonHide();
+        return false;
+      }
+
+      if (hideTimeoutId !== undefined) {
+        window.clearTimeout(hideTimeoutId);
+        hideTimeoutId = undefined;
+      }
+
+      if (isMobileBalloonViewport) {
+        loggedInBalloonCount.current += 1;
+      }
+
       setLoggedInBalloon((current) =>
         getRandomLoggedInBalloon(displayName, sessionArtifacts, current),
       );
-    }, LOGGED_IN_BALLOON_INTERVAL_MS);
 
-    return () => window.clearInterval(intervalId);
-  }, [displayName, sessionArtifacts, showLoggedInBalloons]);
+      if (
+        isMobileBalloonViewport &&
+        loggedInBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+      ) {
+        scheduleMobileBalloonHide();
+        return false;
+      }
+
+      return true;
+    }
+
+    const shouldContinue = showNextLoggedInBalloon();
+
+    if (shouldContinue) {
+      intervalId = window.setInterval(() => {
+        if (!showNextLoggedInBalloon() && intervalId !== undefined) {
+          window.clearInterval(intervalId);
+          intervalId = undefined;
+        }
+      }, LOGGED_IN_BALLOON_INTERVAL_MS);
+    }
+
+    return () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+      }
+
+      if (hideTimeoutId !== undefined) {
+        window.clearTimeout(hideTimeoutId);
+      }
+    };
+  }, [
+    context.area,
+    context.task,
+    displayName,
+    isMobileBalloonViewport,
+    open,
+    pathname,
+    sessionArtifacts,
+    showLoggedInBalloons,
+  ]);
 
   useEffect(() => {
     if (!showPublicBalloons) {
@@ -657,14 +774,82 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       return;
     }
 
-    setPublicBalloon((current) => getRandomPublicBalloon(current));
+    let hideTimeoutId: number | undefined;
+    let intervalId: number | undefined;
 
-    const intervalId = window.setInterval(() => {
+    function scheduleMobileBalloonHide() {
+      if (!isMobileBalloonViewport) {
+        return;
+      }
+
+      if (hideTimeoutId !== undefined) {
+        window.clearTimeout(hideTimeoutId);
+      }
+
+      hideTimeoutId = window.setTimeout(() => {
+        setPublicBalloon("");
+      }, MOBILE_BALLOON_HIDE_DELAY_MS);
+    }
+
+    function showNextPublicBalloon() {
+      if (
+        isMobileBalloonViewport &&
+        publicBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+      ) {
+        scheduleMobileBalloonHide();
+        return false;
+      }
+
+      if (hideTimeoutId !== undefined) {
+        window.clearTimeout(hideTimeoutId);
+        hideTimeoutId = undefined;
+      }
+
+      if (isMobileBalloonViewport) {
+        publicBalloonCount.current += 1;
+      }
+
       setPublicBalloon((current) => getRandomPublicBalloon(current));
-    }, LOGGED_IN_BALLOON_INTERVAL_MS);
 
-    return () => window.clearInterval(intervalId);
-  }, [publicNoticeVisible, showPublicBalloons]);
+      if (
+        isMobileBalloonViewport &&
+        publicBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+      ) {
+        scheduleMobileBalloonHide();
+        return false;
+      }
+
+      return true;
+    }
+
+    const shouldContinue = showNextPublicBalloon();
+
+    if (shouldContinue) {
+      intervalId = window.setInterval(() => {
+        if (!showNextPublicBalloon() && intervalId !== undefined) {
+          window.clearInterval(intervalId);
+          intervalId = undefined;
+        }
+      }, LOGGED_IN_BALLOON_INTERVAL_MS);
+    }
+
+    return () => {
+      if (intervalId !== undefined) {
+        window.clearInterval(intervalId);
+      }
+
+      if (hideTimeoutId !== undefined) {
+        window.clearTimeout(hideTimeoutId);
+      }
+    };
+  }, [
+    context.area,
+    context.task,
+    isMobileBalloonViewport,
+    pathname,
+    publicNoticeVisible,
+    showPublicBalloons,
+  ]);
 
   useEffect(() => {
     if (!publicNoticeVisible) {

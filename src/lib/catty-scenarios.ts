@@ -45,6 +45,7 @@ export type CattyScenario = {
   badReply: string;
   category: CattyScenarioCategory;
   context?: CattyPageContext;
+  history?: CattyMessage[];
   id: string;
   idealReply: string;
   intent: CattyIntent;
@@ -54,6 +55,599 @@ export type CattyScenario = {
   tags: string[];
   userInput: string;
 };
+
+type CattyShortFollowUpScenarioInput = {
+  badReply?: string;
+  category: CattyScenarioCategory;
+  history: string;
+  id: string;
+  idealReply: string;
+  intent?: CattyIntent;
+  name: string;
+  rule: string;
+  studentMemory?: string[];
+  tags: string[];
+  userInput: string;
+};
+
+function buildShortFollowUpScenario(
+  input: CattyShortFollowUpScenarioInput,
+): CattyScenario {
+  return {
+    badReply: input.badReply ?? "Resposta generica ou confusa.",
+    category: input.category,
+    context: { area: "student", task: "resumo" },
+    history: [{ from: "catty", text: input.history }],
+    id: input.id,
+    idealReply: input.idealReply,
+    intent: input.intent ?? "practice_english",
+    name: input.name,
+    rule: input.rule,
+    studentMemory: input.studentMemory,
+    tags: ["short-follow-up-training", ...input.tags],
+    userInput: input.userInput,
+  };
+}
+
+const CATTY_SHORT_FOLLOW_UP_SCENARIOS: CattyScenario[] = [
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Do you like chocolate? = Voce gosta de chocolate?",
+    id: "short-follow-up-do-like-yes",
+    idealReply:
+      "Awnn, almost. You can say: Yes, I do. = Sim, eu gosto. What other food do you like? = De qual outra comida voce gosta?",
+    name: "Do like chocolate com yes curto",
+    rule: "Resposta curta yes depois de Do you like pede forma completa Yes, I do.",
+    tags: ["do", "yes-no", "food", "chocolate"],
+    userInput: "yes",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Do you like chocolate? = Voce gosta de chocolate?",
+    id: "short-follow-up-do-like-yes-i-do",
+    idealReply:
+      "Awnn, nice answer. Yes, I do. = Sim, eu gosto. What other food do you like? = De qual outra comida voce gosta?",
+    name: "Do like chocolate com yes I do",
+    rule: "Validar Yes, I do como resposta correta para Do you like.",
+    tags: ["do", "yes-no", "food", "chocolate"],
+    userInput: "yes I do",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Do you like chocolate? = Voce gosta de chocolate?",
+    id: "short-follow-up-do-like-no",
+    idealReply:
+      "Pss pss, you can say: No, I don't. = Nao, eu nao gosto. What other food do you like? = De qual outra comida voce gosta?",
+    name: "Do like chocolate com no curto",
+    rule: "Resposta curta no depois de Do you like pede forma completa No, I don't.",
+    tags: ["do", "yes-no", "food", "chocolate"],
+    userInput: "no",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Do you like chocolate? = Voce gosta de chocolate?",
+    id: "short-follow-up-do-like-no-i-dont",
+    idealReply:
+      "Awnn, good answer. No, I don't. = Nao, eu nao gosto. What other food do you like? = De qual outra comida voce gosta?",
+    name: "Do like chocolate com no I don't",
+    rule: "Validar No, I don't como resposta correta para Do you like.",
+    tags: ["do", "yes-no", "food", "chocolate"],
+    userInput: "no I don't",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Do you like chocolate? = Voce gosta de chocolate?",
+    id: "short-follow-up-do-like-wrong-am",
+    idealReply:
+      "Pss pss, small fix. Para Do you... usamos: Yes, I do. = Sim, eu gosto. What other food do you like? = De qual outra comida voce gosta?",
+    name: "Do like chocolate corrige yes I am",
+    rule: "Corrigir auxiliar be para do quando a pergunta anterior usa Do you.",
+    tags: ["do", "yes-no", "food", "correction"],
+    userInput: "yes I am",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Does she like pizza? = Ela gosta de pizza?",
+    id: "short-follow-up-does-she-yes",
+    idealReply:
+      "Awnn, nice answer. Yes, she does. = Sim, ela gosta. What else does she like? = Do que mais ela gosta?",
+    name: "Does she com yes she does",
+    rule: "Com Does she, a resposta curta correta usa she does.",
+    tags: ["does", "yes-no", "third-person"],
+    userInput: "yes she does",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Does she like pizza? = Ela gosta de pizza?",
+    id: "short-follow-up-does-she-no",
+    idealReply:
+      "Awnn, good answer. No, she doesn't. = Nao, ela nao gosta. What else does she like? = Do que mais ela gosta?",
+    name: "Does she com no she doesn't",
+    rule: "Com Does she, a negativa curta correta usa she doesn't.",
+    tags: ["does", "yes-no", "third-person"],
+    userInput: "no she doesn't",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Does she like pizza? = Ela gosta de pizza?",
+    id: "short-follow-up-does-she-wrong-i-do",
+    idealReply:
+      "Pss pss, small fix. Para Does she... usamos: Yes, she does. = Sim, ela gosta. What else does she like? = Do que mais ela gosta?",
+    name: "Does she corrige yes I do",
+    rule: "Corrigir sujeito e auxiliar quando a pergunta anterior e Does she.",
+    tags: ["does", "yes-no", "third-person", "correction"],
+    userInput: "yes I do",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Are you happy? = Voce esta feliz?",
+    id: "short-follow-up-are-you-yes",
+    idealReply:
+      "Awnn, almost. You can say: Yes, I am. = Sim, eu estou. Why are you happy? = Por que voce esta feliz?",
+    name: "Are you happy com yes curto",
+    rule: "Resposta curta yes depois de Are you pede forma completa Yes, I am.",
+    tags: ["be", "are", "yes-no", "happy"],
+    userInput: "yes",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Are you happy? = Voce esta feliz?",
+    id: "short-follow-up-are-you-yes-i-am",
+    idealReply:
+      "Awnn, nice answer. Yes, I am. = Sim, eu estou. Why are you happy? = Por que voce esta feliz?",
+    name: "Are you happy com yes I am",
+    rule: "Validar Yes, I am como resposta correta para Are you.",
+    tags: ["be", "are", "yes-no", "happy"],
+    userInput: "yes I am",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Are you happy? = Voce esta feliz?",
+    id: "short-follow-up-are-you-no-im-not",
+    idealReply:
+      "Awnn, good answer. No, I'm not. = Nao, eu nao estou. Why are you happy? = Por que voce esta feliz?",
+    name: "Are you happy com no I'm not",
+    rule: "Validar No, I'm not como negativa curta para Are you.",
+    tags: ["be", "are", "yes-no", "happy"],
+    userInput: "no I'm not",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Are you happy? = Voce esta feliz?",
+    id: "short-follow-up-are-you-wrong-do",
+    idealReply:
+      "Pss pss, small fix. Para Are you... usamos: Yes, I am. = Sim, eu estou. Why are you happy? = Por que voce esta feliz?",
+    name: "Are you happy corrige yes I do",
+    rule: "Corrigir do para am quando a pergunta anterior usa Are you.",
+    tags: ["be", "are", "yes-no", "correction"],
+    userInput: "yes I do",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Is she happy? = Ela esta feliz?",
+    id: "short-follow-up-is-she-yes",
+    idealReply:
+      "Awnn, nice answer. Yes, she is. = Sim, ela esta. Why do you like it? = Por que voce gosta disso?",
+    name: "Is she happy com yes she is",
+    rule: "Com Is she, a resposta curta correta usa she is.",
+    tags: ["be", "is", "yes-no", "third-person"],
+    userInput: "yes she is",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Is she happy? = Ela esta feliz?",
+    id: "short-follow-up-is-she-no",
+    idealReply:
+      "Awnn, good answer. No, she isn't. = Nao, ela nao esta. Why do you like it? = Por que voce gosta disso?",
+    name: "Is she happy com no she isn't",
+    rule: "Com Is she, a negativa curta correta usa she isn't.",
+    tags: ["be", "is", "yes-no", "third-person"],
+    userInput: "no she isn't",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Is she happy? = Ela esta feliz?",
+    id: "short-follow-up-is-she-wrong-does",
+    idealReply:
+      "Pss pss, small fix. Para Is she... usamos: Yes, she is. = Sim, ela esta. Why do you like it? = Por que voce gosta disso?",
+    name: "Is she happy corrige yes she does",
+    rule: "Corrigir does para is quando a pergunta anterior usa Is she.",
+    tags: ["be", "is", "yes-no", "correction"],
+    userInput: "yes she does",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Can you swim? = Voce consegue nadar?",
+    id: "short-follow-up-can-you-yes",
+    idealReply:
+      "Awnn, almost. You can say: Yes, I can. = Sim, eu consigo. What else can you do? = O que mais voce consegue fazer?",
+    name: "Can you swim com yes curto",
+    rule: "Resposta curta yes depois de Can you pede forma completa Yes, I can.",
+    tags: ["can", "yes-no", "swim"],
+    userInput: "yes",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Can you swim? = Voce consegue nadar?",
+    id: "short-follow-up-can-you-yes-i-can",
+    idealReply:
+      "Awnn, nice answer. Yes, I can. = Sim, eu consigo. What else can you do? = O que mais voce consegue fazer?",
+    name: "Can you swim com yes I can",
+    rule: "Validar Yes, I can como resposta correta para Can you.",
+    tags: ["can", "yes-no", "swim"],
+    userInput: "yes I can",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Can you swim? = Voce consegue nadar?",
+    id: "short-follow-up-can-you-no-i-cant",
+    idealReply:
+      "Awnn, good answer. No, I can't. = Nao, eu nao consigo. What else can you do? = O que mais voce consegue fazer?",
+    name: "Can you swim com no I can't",
+    rule: "Validar No, I can't como negativa curta para Can you.",
+    tags: ["can", "yes-no", "swim"],
+    userInput: "no I can't",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Can you swim? = Voce consegue nadar?",
+    id: "short-follow-up-can-you-wrong-do",
+    idealReply:
+      "Pss pss, small fix. Para Can you... usamos: Yes, I can. = Sim, eu consigo. What else can you do? = O que mais voce consegue fazer?",
+    name: "Can you swim corrige yes I do",
+    rule: "Corrigir do para can quando a pergunta anterior usa Can you.",
+    tags: ["can", "yes-no", "correction"],
+    userInput: "yes I do",
+  }),
+  buildShortFollowUpScenario({
+    category: "questions",
+    history: "Can you swim? = Voce consegue nadar?",
+    id: "short-follow-up-can-you-i-can",
+    idealReply:
+      "Awnn, nice answer. Yes, I can. = Sim, eu consigo. What else can you do? = O que mais voce consegue fazer?",
+    name: "Can you swim com I can",
+    rule: "Entender I can como resposta afirmativa curta para Can you.",
+    tags: ["can", "yes-no", "swim"],
+    userInput: "I can",
+  }),
+  buildShortFollowUpScenario({
+    category: "simple_past",
+    history: "Did you play yesterday? = Voce jogou ontem?",
+    id: "short-follow-up-did-you-yes",
+    idealReply:
+      "Awnn, almost. You can say: Yes, I did. = Sim, eu fiz. What else did you do yesterday? = O que mais voce fez ontem?",
+    name: "Did you play com yes curto",
+    rule: "Resposta curta yes depois de Did you pede forma completa Yes, I did.",
+    tags: ["did", "simple-past", "yes-no"],
+    userInput: "yes",
+  }),
+  buildShortFollowUpScenario({
+    category: "simple_past",
+    history: "Did you play yesterday? = Voce jogou ontem?",
+    id: "short-follow-up-did-you-yes-i-did",
+    idealReply:
+      "Awnn, nice answer. Yes, I did. = Sim, eu fiz. What else did you do yesterday? = O que mais voce fez ontem?",
+    name: "Did you play com yes I did",
+    rule: "Validar Yes, I did como resposta correta para Did you.",
+    tags: ["did", "simple-past", "yes-no"],
+    userInput: "yes I did",
+  }),
+  buildShortFollowUpScenario({
+    category: "simple_past",
+    history: "Did you play yesterday? = Voce jogou ontem?",
+    id: "short-follow-up-did-you-no-i-didnt",
+    idealReply:
+      "Awnn, good answer. No, I didn't. = Nao, eu nao fiz. What else did you do yesterday? = O que mais voce fez ontem?",
+    name: "Did you play com no I didn't",
+    rule: "Validar No, I didn't como negativa curta para Did you.",
+    tags: ["did", "simple-past", "yes-no"],
+    userInput: "no I didn't",
+  }),
+  buildShortFollowUpScenario({
+    category: "simple_past",
+    history: "Did you play yesterday? = Voce jogou ontem?",
+    id: "short-follow-up-did-you-wrong-do",
+    idealReply:
+      "Pss pss, small fix. Para Did you... usamos: Yes, I did. = Sim, eu fiz. What else did you do yesterday? = O que mais voce fez ontem?",
+    name: "Did you play corrige yes I do",
+    rule: "Corrigir do para did quando a pergunta anterior usa Did you.",
+    tags: ["did", "simple-past", "yes-no", "correction"],
+    userInput: "yes I do",
+  }),
+  buildShortFollowUpScenario({
+    category: "simple_past",
+    history: "Did you play yesterday? = Voce jogou ontem?",
+    id: "short-follow-up-did-you-i-did",
+    idealReply:
+      "Awnn, nice answer. Yes, I did. = Sim, eu fiz. What else did you do yesterday? = O que mais voce fez ontem?",
+    name: "Did you play com I did",
+    rule: "Entender I did como resposta afirmativa curta para Did you.",
+    tags: ["did", "simple-past", "yes-no"],
+    userInput: "I did",
+  }),
+  buildShortFollowUpScenario({
+    category: "future_will",
+    history: "Will you study tomorrow? = Voce vai estudar amanha?",
+    id: "short-follow-up-will-you-yes",
+    idealReply:
+      "Awnn, almost. You can say: Yes, I will. = Sim, eu vou. What will you do tomorrow? = O que voce vai fazer amanha?",
+    name: "Will you study com yes curto",
+    rule: "Resposta curta yes depois de Will you pede forma completa Yes, I will.",
+    tags: ["will", "future", "yes-no"],
+    userInput: "yes",
+  }),
+  buildShortFollowUpScenario({
+    category: "future_will",
+    history: "Will you study tomorrow? = Voce vai estudar amanha?",
+    id: "short-follow-up-will-you-yes-i-will",
+    idealReply:
+      "Awnn, nice answer. Yes, I will. = Sim, eu vou. What will you do tomorrow? = O que voce vai fazer amanha?",
+    name: "Will you study com yes I will",
+    rule: "Validar Yes, I will como resposta correta para Will you.",
+    tags: ["will", "future", "yes-no"],
+    userInput: "yes I will",
+  }),
+  buildShortFollowUpScenario({
+    category: "future_will",
+    history: "Will you study tomorrow? = Voce vai estudar amanha?",
+    id: "short-follow-up-will-you-no-i-wont",
+    idealReply:
+      "Awnn, good answer. No, I won't. = Nao, eu nao vou. What will you do tomorrow? = O que voce vai fazer amanha?",
+    name: "Will you study com no I won't",
+    rule: "Validar No, I won't como negativa curta para Will you.",
+    tags: ["will", "future", "yes-no"],
+    userInput: "no I won't",
+  }),
+  buildShortFollowUpScenario({
+    category: "future_will",
+    history: "Will you study tomorrow? = Voce vai estudar amanha?",
+    id: "short-follow-up-will-you-wrong-do",
+    idealReply:
+      "Pss pss, small fix. Para Will you... usamos: Yes, I will. = Sim, eu vou. What will you do tomorrow? = O que voce vai fazer amanha?",
+    name: "Will you study corrige yes I do",
+    rule: "Corrigir do para will quando a pergunta anterior usa Will you.",
+    tags: ["will", "future", "yes-no", "correction"],
+    userInput: "yes I do",
+  }),
+  buildShortFollowUpScenario({
+    category: "future_will",
+    history: "Will you study tomorrow? = Voce vai estudar amanha?",
+    id: "short-follow-up-will-you-i-will",
+    idealReply:
+      "Awnn, nice answer. Yes, I will. = Sim, eu vou. What will you do tomorrow? = O que voce vai fazer amanha?",
+    name: "Will you study com I will",
+    rule: "Entender I will como resposta afirmativa curta para Will you.",
+    tags: ["will", "future", "yes-no"],
+    userInput: "I will",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "What food do you like? = De qual comida voce gosta?",
+    id: "short-follow-up-what-food-pizza",
+    idealReply:
+      "Uwau, da para virar frase: I like pizza. = Eu gosto de pizza. What drink do you like? = De qual bebida voce gosta?",
+    name: "What food com pizza",
+    rule: "Resposta de uma palavra para What food vira frase com I like.",
+    tags: ["what", "food", "fragment", "pizza"],
+    userInput: "pizza",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "What food do you like? = De qual comida voce gosta?",
+    id: "short-follow-up-what-food-chocolate",
+    idealReply:
+      "Uwau, da para virar frase: I like chocolate. = Eu gosto de chocolate. What drink do you like? = De qual bebida voce gosta?",
+    name: "What food com chocolate",
+    rule: "Resposta de uma palavra para What food vira frase com I like.",
+    tags: ["what", "food", "fragment", "chocolate"],
+    userInput: "chocolate",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "What food do you like? = De qual comida voce gosta?",
+    id: "short-follow-up-what-food-i-like-pizza",
+    idealReply:
+      "Awnn, nice sentence. I like pizza. = Eu gosto de pizza. What drink do you like? = De qual bebida voce gosta?",
+    name: "What food com I like pizza",
+    rule: "Quando a resposta ja vem em frase correta, elogiar e continuar no tema comida.",
+    tags: ["what", "food", "like", "pizza"],
+    userInput: "I like pizza",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "What food do you like? = De qual comida voce gosta?",
+    id: "short-follow-up-what-food-gosto-de-pizza",
+    idealReply:
+      "Miauw, em English fica: I like pizza. = Eu gosto de pizza. What drink do you like? = De qual bebida voce gosta?",
+    name: "What food puxa gosto de pizza para ingles",
+    rule: "Resposta curta em portugues deve virar frase simples em ingles.",
+    tags: ["what", "food", "portuguese", "pizza"],
+    userInput: "gosto de pizza",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "What food do you like? = De qual comida voce gosta?",
+    id: "short-follow-up-what-food-i-like-chocolate",
+    idealReply:
+      "Awnn, nice sentence. I like chocolate. = Eu gosto de chocolate. What drink do you like? = De qual bebida voce gosta?",
+    name: "What food com I like chocolate",
+    rule: "Manter tema de comida quando a frase ja esta correta.",
+    tags: ["what", "food", "like", "chocolate"],
+    userInput: "I like chocolate",
+  }),
+  buildShortFollowUpScenario({
+    category: "cars",
+    history: "What color do you like? = De qual cor voce gosta?",
+    id: "short-follow-up-color-blue",
+    idealReply:
+      "Miauw, da para virar frase: I like blue. = Eu gosto de azul. Can you try with red? = Voce consegue tentar com vermelho?",
+    name: "What color com blue",
+    rule: "Resposta de cor em uma palavra vira frase com I like.",
+    tags: ["color", "fragment", "blue"],
+    userInput: "blue",
+  }),
+  buildShortFollowUpScenario({
+    category: "cars",
+    history: "What color do you like? = De qual cor voce gosta?",
+    id: "short-follow-up-color-red-cars",
+    idealReply:
+      "Uwau, vruum vruum. I like red cars. = Eu gosto de carros vermelhos. Can you try with blue cars? = Voce consegue tentar com carros azuis?",
+    name: "What color com red cars",
+    rule: "Fragmento com cor e carros vira I like red cars.",
+    studentMemory: ["tema favorito: cars"],
+    tags: ["color", "cars", "fragment", "artifact"],
+    userInput: "red cars",
+  }),
+  buildShortFollowUpScenario({
+    category: "cars",
+    history: "What color do you like? = De qual cor voce gosta?",
+    id: "short-follow-up-color-i-like-blue",
+    idealReply:
+      "Awnn, nice sentence. I like blue. = Eu gosto de azul. Can you try with red? = Voce consegue tentar com vermelho?",
+    name: "What color com I like blue",
+    rule: "Frase correta sobre cor deve manter o tema e pedir outra cor.",
+    tags: ["color", "like", "blue"],
+    userInput: "I like blue",
+  }),
+  buildShortFollowUpScenario({
+    category: "cars",
+    history: "What color do you like? = De qual cor voce gosta?",
+    id: "short-follow-up-color-blue-car",
+    idealReply:
+      "Pss pss, small fix. Better: I like blue cars. = Eu gosto de carros azuis. Can you try with red cars? = Voce consegue tentar com carros vermelhos?",
+    name: "What color com blue car",
+    rule: "Ajudar blue car a virar frase natural com plural blue cars.",
+    studentMemory: ["tema favorito: cars"],
+    tags: ["color", "cars", "fragment", "correction"],
+    userInput: "blue car",
+  }),
+  buildShortFollowUpScenario({
+    category: "cars",
+    history: "What color do you like? = De qual cor voce gosta?",
+    id: "short-follow-up-color-blue-cars",
+    idealReply:
+      "Uwau, vruum vruum. I like blue cars. = Eu gosto de carros azuis. Can you try with red cars? = Voce consegue tentar com carros vermelhos?",
+    name: "What color com blue cars",
+    rule: "Fragmento com cor e carros vira frase completa.",
+    studentMemory: ["tema favorito: cars"],
+    tags: ["color", "cars", "fragment", "artifact"],
+    userInput: "blue cars",
+  }),
+  buildShortFollowUpScenario({
+    category: "animals",
+    history: "What is your favorite animal? = Qual e seu animal favorito?",
+    id: "short-follow-up-favorite-capybara",
+    idealReply:
+      "Miauw, cute choice. My favorite animal is a capybara. = Meu animal favorito e uma capivara. Why do you like it? = Por que voce gosta disso?",
+    name: "Favorite animal com capybara",
+    rule: "Resposta de animal favorito em uma palavra vira frase com artigo.",
+    studentMemory: ["gosta de capivara", "tema favorito: capybara"],
+    tags: ["favorite", "animal", "capybara", "artifact"],
+    userInput: "capybara",
+  }),
+  buildShortFollowUpScenario({
+    category: "animals",
+    history: "What is your favorite animal? = Qual e seu animal favorito?",
+    id: "short-follow-up-favorite-capybara-missing-a",
+    idealReply:
+      "Awnn, quase perfeito. Better: My favorite animal is a capybara. English tip: use a before one capybara. Em portugues: antes de capybara, usamos a. Why do you like it? = Por que voce gosta disso?",
+    intent: "correct_sentence",
+    name: "Favorite animal corrige capybara sem a",
+    rule: "Corrigir falta de artigo em My favorite animal is capybara.",
+    studentMemory: ["gosta de capivara", "tema favorito: capybara"],
+    tags: ["favorite", "animal", "capybara", "correction"],
+    userInput: "my favorite animal is capybara",
+  }),
+  buildShortFollowUpScenario({
+    category: "animals",
+    history: "What is your favorite animal? = Qual e seu animal favorito?",
+    id: "short-follow-up-favorite-a-capybara",
+    idealReply:
+      "Miauw, cute choice. My favorite animal is a capybara. = Meu animal favorito e uma capivara. Why do you like it? = Por que voce gosta disso?",
+    name: "Favorite animal com a capybara",
+    rule: "Aceitar fragmento com artigo e formar frase completa.",
+    studentMemory: ["gosta de capivara", "tema favorito: capybara"],
+    tags: ["favorite", "animal", "capybara"],
+    userInput: "a capybara",
+  }),
+  buildShortFollowUpScenario({
+    category: "animals",
+    history: "What is your favorite animal? = Qual e seu animal favorito?",
+    id: "short-follow-up-favorite-dog",
+    idealReply:
+      "Awnn, cute choice. My favorite animal is a dog. = Meu animal favorito e um cachorro. Why do you like it? = Por que voce gosta disso?",
+    name: "Favorite animal com dog",
+    rule: "Resposta de animal favorito em uma palavra vira frase com artigo.",
+    tags: ["favorite", "animal", "dog"],
+    userInput: "dog",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Why do you like pizza? = Por que voce gosta de pizza?",
+    id: "short-follow-up-why-because-good",
+    idealReply:
+      "Pss pss, small fix. Better: Because it is good. = Porque e bom. Can you say one more reason? = Voce consegue dizer mais um motivo?",
+    name: "Why pizza corrige because good",
+    rule: "Corrigir because good para Because it is good.",
+    tags: ["why", "because", "food", "correction"],
+    userInput: "because good",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Why do you like pizza? = Por que voce gosta de pizza?",
+    id: "short-follow-up-why-because-it-is-good",
+    idealReply:
+      "Awnn, nice reason. Because it is good. = Porque e bom. Can you say one more reason? = Voce consegue dizer mais um motivo?",
+    name: "Why pizza com because it is good",
+    rule: "Validar Because it is good como resposta curta de motivo.",
+    tags: ["why", "because", "food"],
+    userInput: "because it is good",
+  }),
+  buildShortFollowUpScenario({
+    category: "food",
+    history: "Why do you like pizza? = Por que voce gosta de pizza?",
+    id: "short-follow-up-why-because-it-good",
+    idealReply:
+      "Pss pss, small fix. Better: Because it is good. = Porque e bom. Can you say one more reason? = Voce consegue dizer mais um motivo?",
+    name: "Why pizza corrige because it good",
+    rule: "Corrigir falta de is em because it good.",
+    tags: ["why", "because", "food", "correction"],
+    userInput: "because it good",
+  }),
+  buildShortFollowUpScenario({
+    category: "preference",
+    history: "I like chocolate.",
+    id: "short-follow-up-statement-me-too",
+    idealReply:
+      "Awnn, nice. I like chocolate too. = Eu tambem gosto de chocolate. What other food do you like? = De qual outra comida voce gosta?",
+    name: "I like chocolate com me too",
+    rule: "Me too responde a afirmacao anterior e vira frase completa.",
+    tags: ["statement", "me-too", "food", "chocolate"],
+    userInput: "me too",
+  }),
+  buildShortFollowUpScenario({
+    category: "preference",
+    history: "I like chocolate.",
+    id: "short-follow-up-statement-i-dont",
+    idealReply:
+      "Awnn, okay. I don't like chocolate. = Eu nao gosto de chocolate. What other food do you like? = De qual outra comida voce gosta?",
+    name: "I like chocolate com I don't",
+    rule: "I don't responde a afirmacao anterior e vira I don't like chocolate.",
+    tags: ["statement", "negative", "food", "chocolate"],
+    userInput: "I don't",
+  }),
+  buildShortFollowUpScenario({
+    category: "preference",
+    history: "I like chocolate.",
+    id: "short-follow-up-statement-me-no",
+    idealReply:
+      "Pss pss, small fix. Better: I don't. = Eu nao gosto. What other food do you like? = De qual outra comida voce gosta?",
+    name: "I like chocolate corrige me no",
+    rule: "Corrigir me no para I don't quando responde a uma preferencia.",
+    tags: ["statement", "negative", "correction", "chocolate"],
+    userInput: "me no",
+  }),
+];
 
 export const CATTY_SCENARIOS: CattyScenario[] = [
   {
@@ -738,6 +1332,7 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     tags: ["ready-answer", "homework"],
     userInput: "faz por mim",
   },
+  ...CATTY_SHORT_FOLLOW_UP_SCENARIOS,
 ];
 
 export const CATTY_SCENARIOS_BY_INTENT = CATTY_SCENARIOS.reduce(
@@ -835,6 +1430,7 @@ function getHistoryScore(history: CattyMessage[] = [], scenario: CattyScenario) 
 
   const historySignals = [
     scenario.userInput,
+    scenario.history?.map((message) => message.text).join(" ") ?? "",
     scenario.tags.join(" "),
     scenario.studentMemory?.join(" ") ?? "",
   ].join(" ");
@@ -892,6 +1488,7 @@ function scoreCattyScenario(input: {
     [
       input.scenario.name,
       input.scenario.userInput,
+      input.scenario.history?.map((message) => message.text).join(" ") ?? "",
       input.scenario.rule,
       input.scenario.tags.join(" "),
       input.scenario.studentMemory?.join(" ") ?? "",
@@ -1032,6 +1629,10 @@ export function pickCattyScenarioFallbackReply(input: {
     return null;
   }
 
+  if (input.plan.continuity?.isFollowUp && !best.exact) {
+    return null;
+  }
+
   if (
     input.plan.continuity?.historyTopic &&
     best.scenario.category !== "fragment" &&
@@ -1066,14 +1667,26 @@ export function formatCattyScenarioPromptContext(scenarios: CattyScenario[]) {
         scenario.studentMemory && scenario.studentMemory.length > 0
           ? `memoria opcional: ${scenario.studentMemory.join(", ")}; `
           : "";
+      const history =
+        scenario.history && scenario.history.length > 0
+          ? `historico anterior: ${compactScenarioText(
+              scenario.history
+                .map((message) => `${message.from}: ${message.text}`)
+                .join(" | "),
+              180,
+            )}; `
+          : "";
 
       return [
         `${index + 1}. ${scenario.name} (${scenario.intent}, ${scenario.category}, ${context})`,
+        history,
         `entrada: ${compactScenarioText(scenario.userInput, 120)}`,
         `${memory}evitar: ${compactScenarioText(scenario.badReply, 160)}`,
         `ideal: ${compactScenarioText(scenario.idealReply, 220)}`,
         `regra: ${compactScenarioText(scenario.rule, 180)}`,
-      ].join("; ");
+      ]
+        .filter(Boolean)
+        .join("; ");
     })
     .join("\n")
     .slice(0, 1800);

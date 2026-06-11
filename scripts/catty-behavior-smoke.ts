@@ -377,12 +377,71 @@ type ScenarioFallbackChecklistCase = {
   usesMemoryOrArtifact: boolean;
 };
 
+function assertShortFollowUpScenarioTraining() {
+  const trainingScenarios = CATTY_SCENARIOS.filter((scenario) =>
+    scenario.tags.includes("short-follow-up-training"),
+  );
+
+  assertCondition(
+    trainingScenarios.length === 50,
+    `treino de respostas curtas deveria ter 50 cenarios, recebeu ${trainingScenarios.length}.`,
+  );
+
+  for (const scenario of trainingScenarios) {
+    const context = scenario.context ?? { area: "student", task: "resumo" };
+    const history = [...(scenario.history ?? [])];
+
+    assertCondition(
+      history.length > 0,
+      `${scenario.id}: cenario de follow-up curto precisa ter historico anterior.`,
+    );
+    assertCondition(
+      scenario.idealReply.includes("="),
+      `${scenario.id}: resposta ideal precisa ser bilingue.`,
+    );
+
+    const plan = buildCattyResponsePlan(scenario.userInput, context, history);
+    const localReply = buildFallbackCattyReply(scenario.userInput, context, history);
+    const selectedScenarios = selectCattyScenariosForPrompt({
+      context,
+      history,
+      intent: plan.intent,
+      message: scenario.userInput,
+    });
+    const scenarioPrompt = formatCattyScenarioPromptContext(selectedScenarios);
+
+    assertCondition(
+      plan.intent === scenario.intent,
+      `${scenario.id}: intencao ${plan.intent} diferente de ${scenario.intent}.`,
+    );
+    assertConversationalReply(localReply, `${scenario.id}: fallback local`);
+    assertCondition(
+      localReply.includes("="),
+      `${scenario.id}: fallback local nao respondeu bilingue. Resposta: ${localReply}`,
+    );
+    assertCondition(
+      !normalizeText(localReply).includes("do you want a question") &&
+        !normalizeText(localReply).includes("pergunta, uma correcao ou uma dica"),
+      `${scenario.id}: fallback local caiu em resposta confusa. Resposta: ${localReply}`,
+    );
+    assertCondition(
+      selectedScenarios.some((selected) => selected.id === scenario.id),
+      `${scenario.id}: seletor de cenarios nao trouxe o cenario de follow-up curto.`,
+    );
+    assertCondition(
+      scenarioPrompt.includes("historico anterior"),
+      `${scenario.id}: prompt de cenarios nao incluiu historico anterior.`,
+    );
+  }
+}
+
 function main() {
   assertCondition(
     CATTY_BEHAVIOR_EXAMPLES.length === expectedExampleCount,
     `Esperava ${expectedExampleCount} exemplos, recebeu ${CATTY_BEHAVIOR_EXAMPLES.length}.`,
   );
   assertCattyScenarioBase();
+  assertShortFollowUpScenarioTraining();
 
   const scenarioPromptPlan = buildCattyResponsePlan(
     "I like cars.",
@@ -1287,7 +1346,7 @@ function main() {
       ],
       id: "follow-up-are-you-wrong-aux",
       message: "yes I do",
-      scenarioFallback: false,
+      scenarioFallback: true,
       usesMemoryOrArtifact: false,
     },
     {
@@ -1392,7 +1451,7 @@ function main() {
       ],
       id: "follow-up-no-im-not",
       message: "no I'm not",
-      scenarioFallback: false,
+      scenarioFallback: true,
       usesMemoryOrArtifact: false,
     },
     {
@@ -1473,7 +1532,7 @@ function main() {
     {
       expectedAiSource: "gemini",
       expectedIntent: "practice_english",
-      fallbackMustInclude: ["I do too", "What other food do you like"],
+      fallbackMustInclude: ["I like chocolate too", "What other food do you like"],
       history: [
         {
           from: "catty" as const,
@@ -1482,7 +1541,7 @@ function main() {
       ],
       id: "follow-up-me-too",
       message: "me too",
-      scenarioFallback: false,
+      scenarioFallback: true,
       usesMemoryOrArtifact: false,
     },
     {
@@ -1542,7 +1601,7 @@ function main() {
       ],
       id: "follow-up-because-it-is-good",
       message: "because it is good",
-      scenarioFallback: false,
+      scenarioFallback: true,
       usesMemoryOrArtifact: false,
     },
   ];
@@ -2635,7 +2694,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 interacoes, 20 follow-ups curtos, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 50 cenarios de follow-up curto, 20 fallbacks por cenario, 20 interacoes, 20 follow-ups curtos, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
   );
 }
 

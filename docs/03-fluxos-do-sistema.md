@@ -185,8 +185,8 @@ Helpers:
 1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA.
 2. Widget identifica apenas contexto leve da tela atual (`area` e `task`) para adaptar titulo, texto de apoio e atalhos de estudo.
 3. O `RootLayout` chama `auth()` e passa para a Catty apenas o nome do usuario logado e os `CattyUserArtifact.ACTIVE` do proprio usuario, quando existem; o widget usa o primeiro nome em baloes visuais locais no AVA.
-4. Para usuarios logados no AVA, a Catty fechada alterna baloes fofos a cada 10 segundos, com saudacao por horario e, quando houver artefato ativo, nome + gosto do aluno misturados com frases genericas Candy, sem chamar IA.
-5. Para visitante sem login no site ou login, a Catty funciona apenas como mascote visual: alterna baloes publicos a cada 10 segundos e, no clique, mostra um aviso pequeno para entrar no AVA ou virar aluno Candy.
+4. Para usuarios logados no AVA, a Catty fechada alterna baloes fofos a cada 10 segundos, com saudacao por horario e, quando houver artefato ativo, nome + gosto do aluno misturados com frases genericas Candy, sem chamar IA. Em mobile menor que tablet (`<768px`), ela mostra no maximo 3 baloes automaticos por rota, mantem o ultimo por poucos segundos e depois esconde o balao.
+5. Para visitante sem login no site ou login, a Catty funciona apenas como mascote visual: alterna baloes publicos a cada 10 segundos e, no clique, mostra um aviso pequeno para entrar no AVA ou virar aluno Candy. Em mobile menor que tablet, o mesmo limite de 3 baloes automaticos evita ocupar a tela pequena.
 6. Fora do AVA logado, o widget nao abre conversa real, nao envia mensagem para a API e nao chama IA.
 7. Quando o usuario logado abre o chat real, o widget chama `GET /api/catty/chat` para carregar historico recente daquele usuario e contexto de tela.
 8. Widget envia para `/api/catty/chat` apenas quando o usuario logado no AVA manda uma mensagem real: mensagem atual, historico local recente e contexto leve.
