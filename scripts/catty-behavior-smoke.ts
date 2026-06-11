@@ -1244,6 +1244,356 @@ function main() {
     }
   }
 
+  const followUpShortAnswerCases: ScenarioFallbackChecklistCase[] = [
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Yes, I do", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like chocolate? = Voce gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-yes-i-do-chocolate",
+      message: "yes I do",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["You can say: Yes, I do", "What color cars do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like cars? = Voce gosta de carros?",
+        },
+      ],
+      id: "follow-up-bare-yes-cars",
+      message: "yes",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Para Are you... usamos: Yes, I am", "Why are you happy"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Are you happy? = Voce esta feliz?",
+        },
+      ],
+      id: "follow-up-are-you-wrong-aux",
+      message: "yes I do",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Para Can you... usamos: Yes, I can", "What else can you do"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Can you swim? = Voce consegue nadar?",
+        },
+      ],
+      id: "follow-up-can-you-wrong-aux",
+      message: "yes I do",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Para Did you... usamos: Yes, I did", "What did you do there"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Did you go to school yesterday? = Voce foi para a escola ontem?",
+        },
+      ],
+      id: "follow-up-did-you-wrong-aux",
+      message: "yes I do",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like pizza", "What drink do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "What food do you like? = De qual comida voce gosta?",
+        },
+      ],
+      id: "follow-up-food-fragment",
+      message: "pizza",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I like red cars", "Can you try with blue cars"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "What color cars do you like? = De qual cor de carros voce gosta?",
+        },
+      ],
+      id: "follow-up-color-cars-fragment",
+      message: "red cars",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["No, I don't", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like chocolate? = Voce gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-no-i-dont",
+      message: "no I don't",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["You can say: No, I don't", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like chocolate? = Voce gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-bare-no",
+      message: "no",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["No, I'm not", "Why are you happy"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Are you happy? = Voce esta feliz?",
+        },
+      ],
+      id: "follow-up-no-im-not",
+      message: "no I'm not",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Yes, she does", "What else does she like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Does she like chocolate? = Ela gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-yes-she-does",
+      message: "yes she does",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["No, she doesn't", "What else does she like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Does she like chocolate? = Ela gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-no-she-doesnt",
+      message: "no she doesn't",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Para Can you... usamos: Yes, I can", "What else can you do"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Can you swim? = Voce consegue nadar?",
+        },
+      ],
+      id: "follow-up-i-do-wrong-can",
+      message: "I do",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Para Did you... usamos: No, I didn't", "What did you do there"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Did you go to school yesterday? = Voce foi para a escola ontem?",
+        },
+      ],
+      id: "follow-up-i-dont-wrong-did",
+      message: "I don't",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Para Will you... usamos: Yes, I will", "What will you do tomorrow"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Will you study tomorrow? = Voce vai estudar amanha?",
+        },
+      ],
+      id: "follow-up-will-wrong-aux",
+      message: "yes I do",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["I do too", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like chocolate? = Voce gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-me-too",
+      message: "me too",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Sometimes", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like pizza? = Voce gosta de pizza?",
+        },
+      ],
+      id: "follow-up-sometimes",
+      message: "sometimes",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["A little", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like chocolate? = Voce gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-a-little",
+      message: "a little",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Very much", "What other food do you like"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Do you like chocolate? = Voce gosta de chocolate?",
+        },
+      ],
+      id: "follow-up-very-much",
+      message: "very much",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+    {
+      expectedAiSource: "gemini",
+      expectedIntent: "practice_english",
+      fallbackMustInclude: ["Because it is good", "Can you say one more reason"],
+      history: [
+        {
+          from: "catty" as const,
+          text: "Why are you happy? = Por que voce esta feliz?",
+        },
+      ],
+      id: "follow-up-because-it-is-good",
+      message: "because it is good",
+      scenarioFallback: false,
+      usesMemoryOrArtifact: false,
+    },
+  ];
+
+  assertCondition(
+    followUpShortAnswerCases.length === 20,
+    "checklist de follow-up curto da Catty deve ter 20 entradas.",
+  );
+
+  for (const example of followUpShortAnswerCases) {
+    const result = buildRouteLikeFallbackTurn({
+      context: example.context,
+      history: [...(example.history ?? [])],
+      message: example.message,
+      sessionContext: example.sessionContext,
+      userMemoryContext: example.userMemoryContext,
+    });
+    const usesOpenAi = shouldUseOpenAiForCatty(example.message);
+
+    assertConversationalReply(result.reply, example.id);
+    assertCondition(
+      result.plan.intent === example.expectedIntent,
+      `${example.id}: intencao ${result.plan.intent} diferente de ${example.expectedIntent}.`,
+    );
+    assertCondition(
+      usesOpenAi === (example.expectedAiSource === "openai"),
+      `${example.id}: roteamento IA esperado ${example.expectedAiSource}, recebeu ${usesOpenAi ? "openai" : "gemini"}.`,
+    );
+    assertCondition(
+      Boolean(result.scenarioFallbackReply) === example.scenarioFallback,
+      `${example.id}: fallback por cenario esperado ${example.scenarioFallback}.`,
+    );
+    assertCondition(
+      result.prompt.includes("Ultima pergunta da Catty") &&
+        result.prompt.includes("Tipo de resposta curta"),
+      `${example.id}: prompt nao incluiu contexto de follow-up curto.`,
+    );
+    assertCondition(
+      !result.normalizedReply.includes("do you want a question") &&
+        !result.normalizedReply.includes("pergunta, uma correcao ou uma dica"),
+      `${example.id}: follow-up curto caiu em resposta confusa. Resposta: ${result.reply}`,
+    );
+
+    for (const expected of example.fallbackMustInclude) {
+      assertCondition(
+        result.normalizedReply.includes(normalizeText(expected)),
+        `${example.id}: fallback nao contem "${expected}". Resposta: ${result.reply}`,
+      );
+    }
+  }
+
   const requiredBilingualCases = [
     {
       id: "required-bilingual-like",
@@ -2285,7 +2635,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 interacoes, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 20 fallbacks por cenario, 20 interacoes, 20 follow-ups curtos, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
   );
 }
 

@@ -72,6 +72,7 @@ type CattySimpleEnglishPattern =
   | "have"
   | "like"
   | "played"
+  | "short_answer"
   | "third_person_likes"
   | "today"
   | "want"
@@ -82,12 +83,21 @@ export type CattyConversationContinuityPlan = {
   correction?: string;
   historyTopic?: string;
   isFragment?: boolean;
+  isFollowUp?: boolean;
   isIncomplete: boolean;
   pattern: CattySimpleEnglishPattern;
+  previousQuestion?: string;
   prompt: string;
   question: string;
+  shortAnswerKind?:
+    | "agreement"
+    | "degree"
+    | "fragment"
+    | "reason"
+    | "yes_no";
   suggestedSentence?: string;
   topic: string;
+  userAnswer?: string;
 };
 
 export type CattyGrammarCorrectionPlan = {
@@ -1240,6 +1250,12 @@ const shortQuestionTranslations: Record<string, string> = {
     "Voce consegue dizer mais uma coisa no passado?",
   "can you show one more thing you have?":
     "Voce consegue mostrar mais uma coisa que voce tem?",
+  "can you say one more reason?":
+    "Voce consegue dizer mais um motivo?",
+  "can you try with blue cars?":
+    "Voce consegue tentar com carros azuis?",
+  "can you try with red cars?":
+    "Voce consegue tentar com carros vermelhos?",
   "did you go?": "Voce foi?",
   "do you like blue cars too?": "Voce tambem gosta de carros azuis?",
   "do you like cats?": "Voce gosta de gatos?",
@@ -1268,11 +1284,14 @@ const shortQuestionTranslations: Record<string, string> = {
   "what else does he like?": "Do que mais ele gosta?",
   "what else does she have?": "O que mais ela tem?",
   "what else does she like?": "Do que mais ela gosta?",
+  "what else do you do?": "O que mais voce faz?",
   "what else do you have?": "O que mais voce tem?",
   "what else do you like?": "O que mais voce gosta?",
   "what else is on the table?": "O que mais esta na mesa?",
   "what else is there?": "O que mais tem ali?",
+  "what drink do you like?": "De qual bebida voce gosta?",
   "what food do you like?": "De qual comida voce gosta?",
+  "what other food do you like?": "De qual outra comida voce gosta?",
   "what would you like to do?": "O que voce gostaria de fazer?",
   "what will you do instead?": "O que voce vai fazer no lugar disso?",
   "what will you do next today?": "O que voce vai fazer depois hoje?",
@@ -1281,7 +1300,31 @@ const shortQuestionTranslations: Record<string, string> = {
   "where do you live?": "Onde voce mora?",
   "who likes it too?": "Quem tambem gosta disso?",
   "who went with you?": "Quem foi com voce?",
+  "why are you happy?": "Por que voce esta feliz?",
+  "why do you like it?": "Por que voce gosta disso?",
   "why is she sad?": "Por que ela esta triste?",
+};
+
+const shortAnswerTranslations: Record<string, string> = {
+  "a little.": "Um pouco.",
+  "because it is good.": "Porque e bom.",
+  "i do too.": "Eu tambem gosto.",
+  "no, he doesn't.": "Nao, ele nao gosta.",
+  "no, i can't.": "Nao, eu nao consigo.",
+  "no, i didn't.": "Nao, eu nao fui.",
+  "no, i don't.": "Nao, eu nao gosto.",
+  "no, i won't.": "Nao, eu nao vou.",
+  "no, i'm not.": "Nao, eu nao estou.",
+  "no, she doesn't.": "Nao, ela nao gosta.",
+  "sometimes.": "As vezes.",
+  "very much.": "Muito.",
+  "yes, he does.": "Sim, ele gosta.",
+  "yes, i am.": "Sim, eu estou.",
+  "yes, i can.": "Sim, eu consigo.",
+  "yes, i did.": "Sim, eu fui.",
+  "yes, i do.": "Sim, eu gosto.",
+  "yes, i will.": "Sim, eu vou.",
+  "yes, she does.": "Sim, ela gosta.",
 };
 
 const shortPhraseTranslations: Record<string, string> = {
@@ -1451,6 +1494,693 @@ function formatBilingualCorrectedSentence(sentence: string) {
   }
 
   return formatBilingualQuestion(clean);
+}
+
+type CattyFollowUpAuxiliary = "be" | "can" | "did" | "do" | "does" | "will";
+
+type CattyShortFollowUpAnswer =
+  | {
+      auxiliary?: CattyFollowUpAuxiliary;
+      isBare: boolean;
+      kind: "yes_no";
+      polarity: "affirmative" | "negative";
+      sentence?: string;
+      subject?: string;
+      userAnswer: string;
+    }
+  | {
+      kind: "agreement" | "degree" | "fragment" | "reason";
+      userAnswer: string;
+    };
+
+type CattyFollowUpQuestionContext = {
+  auxiliary?: CattyFollowUpAuxiliary;
+  favoriteKind?: string;
+  kind: "color_cars" | "favorite" | "open_like" | "why" | "yes_no";
+  nextQuestion: string;
+  pattern: CattySimpleEnglishPattern;
+  promptLabel: string;
+  subject?: string;
+  topic: string;
+};
+
+function normalizeShortFollowUpText(value: string) {
+  return normalizeText(stripCattyAddress(value))
+    .replace(/[â€™']/g, "")
+    .replace(/[.,!?;:]+/g, " ")
+    .replace(/\bim\b/g, "i am")
+    .replace(/\bwont\b/g, "will not")
+    .replace(/\bcant\b/g, "can not")
+    .replace(/\bdont\b/g, "do not")
+    .replace(/\bdoesnt\b/g, "does not")
+    .replace(/\bdidnt\b/g, "did not")
+    .replace(/\bisnt\b/g, "is not")
+    .replace(/\barent\b/g, "are not")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function normalizeShortAnswerForComparison(value: string) {
+  return normalizeShortFollowUpText(value)
+    .replace(/\bi am not\b/g, "im not")
+    .replace(/\bdo not\b/g, "dont")
+    .replace(/\bdoes not\b/g, "doesnt")
+    .replace(/\bdid not\b/g, "didnt")
+    .replace(/\bcan not\b/g, "cant")
+    .replace(/\bwill not\b/g, "wont")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function formatFollowUpSentenceWithTranslation(sentence: string) {
+  const clean = formatCorrectionSentence(sentence);
+  const normalized = normalizeText(clean)
+    .replace(/[â€™]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+  const direct = shortAnswerTranslations[normalized];
+
+  if (direct) {
+    return `${clean} = ${direct}`;
+  }
+
+  const likeMatch = clean.match(/^I like (.+)\.$/i);
+
+  if (likeMatch) {
+    return `${clean} = Eu gosto de ${translateShortPhrase(
+      likeMatch[1] ?? "",
+    )}.`;
+  }
+
+  const favoriteMatch = clean.match(/^My favorite (.+?) is (.+)\.$/i);
+
+  if (favoriteMatch) {
+    return `${clean} = Meu/minha ${favoriteMatch[1]?.trim() ?? "favorito"} favorito(a) e ${translateShortPhrase(
+      favoriteMatch[2] ?? "",
+    )}.`;
+  }
+
+  return clean;
+}
+
+function getShortFollowUpAuxiliary(value: string): CattyFollowUpAuxiliary {
+  if (value === "am" || value === "are" || value === "is") {
+    return "be";
+  }
+
+  return value as CattyFollowUpAuxiliary;
+}
+
+function getFollowUpAnswerSubject(subject?: string) {
+  const normalized = normalizeText(subject ?? "you").trim();
+
+  return normalized === "you" ? "i" : normalized || "i";
+}
+
+function formatFollowUpSubject(subject: string, position: "start" | "middle") {
+  return formatEnglishSubject(subject, position);
+}
+
+function formatDetectedYesNoFollowUpSentence(input: {
+  auxiliary: CattyFollowUpAuxiliary;
+  polarity: "affirmative" | "negative";
+  subject: string;
+}) {
+  const subject = normalizeText(input.subject).trim() || "i";
+  const formattedSubject = formatFollowUpSubject(subject, "middle");
+
+  if (input.polarity === "affirmative") {
+    if (input.auxiliary === "be") {
+      const verb =
+        subject === "i"
+          ? "am"
+          : subject === "you" || subject === "we" || subject === "they"
+            ? "are"
+            : "is";
+
+      return `Yes, ${formattedSubject} ${verb}.`;
+    }
+
+    return `Yes, ${formattedSubject} ${input.auxiliary}.`;
+  }
+
+  if (input.auxiliary === "be") {
+    if (subject === "i") {
+      return "No, I'm not.";
+    }
+
+    const verb =
+      subject === "you" || subject === "we" || subject === "they"
+        ? "aren't"
+        : "isn't";
+
+    return `No, ${formattedSubject} ${verb}.`;
+  }
+
+  if (input.auxiliary === "do") {
+    return `No, ${formattedSubject} don't.`;
+  }
+
+  if (input.auxiliary === "does") {
+    return `No, ${formattedSubject} doesn't.`;
+  }
+
+  if (input.auxiliary === "can") {
+    return `No, ${formattedSubject} can't.`;
+  }
+
+  if (input.auxiliary === "did") {
+    return `No, ${formattedSubject} didn't.`;
+  }
+
+  return `No, ${formattedSubject} won't.`;
+}
+
+function getExpectedYesNoFollowUpAnswer(
+  questionContext: CattyFollowUpQuestionContext,
+  polarity: "affirmative" | "negative",
+) {
+  if (!questionContext.auxiliary) {
+    return "";
+  }
+
+  return formatDetectedYesNoFollowUpSentence({
+    auxiliary: questionContext.auxiliary,
+    polarity,
+    subject: getFollowUpAnswerSubject(questionContext.subject),
+  });
+}
+
+function detectShortFollowUpAnswer(
+  text: string,
+): CattyShortFollowUpAnswer | undefined {
+  const clean = cleanSimpleEnglishTopic(stripCattyAddress(text));
+  const normalized = normalizeShortFollowUpText(clean);
+  const tokens = getWordTokens(clean);
+
+  if (
+    !clean ||
+    tokens.length > 7 ||
+    /[?]/.test(clean) ||
+    !/^[a-zA-Z][a-zA-Z\s'.,!-]*$/.test(clean)
+  ) {
+    return undefined;
+  }
+
+  if (/^(?:yes|yeah|yep)$/.test(normalized)) {
+    return {
+      isBare: true,
+      kind: "yes_no",
+      polarity: "affirmative",
+      userAnswer: clean,
+    };
+  }
+
+  if (/^(?:no|nope)$/.test(normalized)) {
+    return {
+      isBare: true,
+      kind: "yes_no",
+      polarity: "negative",
+      userAnswer: clean,
+    };
+  }
+
+  const answerMatch = normalized.match(
+    /^(?:(yes|no)\s+)?(i|you|she|he|it|we|they)\s+(do|does|am|are|is|can|did|will)(?:\s+not)?$/,
+  );
+
+  if (answerMatch) {
+    const prefix = answerMatch[1] ?? "";
+    const subject = answerMatch[2] ?? "i";
+    const auxiliary = getShortFollowUpAuxiliary(answerMatch[3] ?? "do");
+    const polarity =
+      prefix === "no" || /\snot$/.test(normalized)
+        ? "negative"
+        : "affirmative";
+
+    return {
+      auxiliary,
+      isBare: false,
+      kind: "yes_no",
+      polarity,
+      sentence: formatDetectedYesNoFollowUpSentence({
+        auxiliary,
+        polarity,
+        subject,
+      }),
+      subject,
+      userAnswer: clean,
+    };
+  }
+
+  if (normalized === "me too") {
+    return { kind: "agreement", userAnswer: clean };
+  }
+
+  if (normalized === "sometimes" || normalized === "a little" || normalized === "very much") {
+    return { kind: "degree", userAnswer: clean };
+  }
+
+  if (/^because\s+it\s+is\s+good$/.test(normalized)) {
+    return { kind: "reason", userAnswer: clean };
+  }
+
+  const fragment = getSimpleEnglishFragment(clean);
+
+  if (fragment) {
+    return { kind: "fragment", userAnswer: fragment };
+  }
+
+  return undefined;
+}
+
+function extractLastCattyQuestion(history: CattyMessage[]) {
+  let inspected = 0;
+
+  for (const message of [...history].reverse()) {
+    if (message.from !== "catty") {
+      continue;
+    }
+
+    inspected += 1;
+
+    if (inspected > 8) {
+      break;
+    }
+
+    const matches = [
+      ...message.text.matchAll(
+        /\b(?:are|can|did|do|does|how|is|what|when|where|who|why|will)\b[^?]*\?/gi,
+      ),
+    ].map((match) => match[0].replace(/\s+/g, " ").trim());
+
+    const question = matches.at(-1);
+
+    if (question) {
+      return question;
+    }
+  }
+
+  return "";
+}
+
+function getFollowUpLikeNextQuestion(topic: string) {
+  const normalizedTopic = normalizeText(topic);
+
+  if (/\b(?:car|cars)\b/.test(normalizedTopic)) {
+    return "What color cars do you like?";
+  }
+
+  if (/\b(?:chocolate|food|pizza)\b/.test(normalizedTopic)) {
+    return "What other food do you like?";
+  }
+
+  return "What else do you like?";
+}
+
+function classifyCattyFollowUpQuestion(
+  question: string,
+): CattyFollowUpQuestionContext | undefined {
+  const clean = question.replace(/\s+/g, " ").trim();
+  const normalized = normalizeText(clean);
+
+  if (/^what color cars do you like\?$/.test(normalized)) {
+    return {
+      kind: "color_cars",
+      nextQuestion: "Can you try with blue cars?",
+      pattern: "like",
+      promptLabel: "What color cars do you like?",
+      subject: "you",
+      topic: "cars",
+    };
+  }
+
+  if (/^what (?:food|drink) do you like\?$/.test(normalized)) {
+    const topic = normalized.includes("drink") ? "drink" : "food";
+
+    return {
+      kind: "open_like",
+      nextQuestion: topic === "drink" ? "What food do you like?" : "What drink do you like?",
+      pattern: "like",
+      promptLabel: clean,
+      subject: "you",
+      topic,
+    };
+  }
+
+  const openLikeMatch = clean.match(/^What (.+?) do you like\?$/i);
+
+  if (openLikeMatch) {
+    return {
+      kind: "open_like",
+      nextQuestion: "What else do you like?",
+      pattern: "like",
+      promptLabel: clean,
+      subject: "you",
+      topic: cleanSimpleEnglishTopic(openLikeMatch[1] ?? "things"),
+    };
+  }
+
+  const favoriteMatch = clean.match(/^What(?: is|'s)? your favorite (.+?)\?$/i);
+
+  if (favoriteMatch) {
+    return {
+      favoriteKind: cleanSimpleEnglishTopic(favoriteMatch[1] ?? "thing"),
+      kind: "favorite",
+      nextQuestion: "Why do you like it?",
+      pattern: "favorite",
+      promptLabel: "What is your favorite...?",
+      subject: "you",
+      topic: "favorite",
+    };
+  }
+
+  if (/^why\b/i.test(clean)) {
+    return {
+      kind: "why",
+      nextQuestion: "Can you say one more reason?",
+      pattern: "short_answer",
+      promptLabel: "Why...?",
+      subject: "you",
+      topic: "reason",
+    };
+  }
+
+  let match = clean.match(/^Do (you|we|they) like (.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? "you");
+    const topic = cleanSimpleEnglishTopic(match[2] ?? "");
+
+    return {
+      auxiliary: "do",
+      kind: "yes_no",
+      nextQuestion: getFollowUpLikeNextQuestion(topic),
+      pattern: "like",
+      promptLabel: `Do ${subject}...`,
+      subject,
+      topic,
+    };
+  }
+
+  match = clean.match(/^Do (you|we|they)\b(.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? "you");
+
+    return {
+      auxiliary: "do",
+      kind: "yes_no",
+      nextQuestion: "What else do you do?",
+      pattern: "short_answer",
+      promptLabel: `Do ${subject}...`,
+      subject,
+      topic: cleanSimpleEnglishTopic(match[2] ?? "do"),
+    };
+  }
+
+  match = clean.match(/^Does (she|he|it)\b(.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? "she");
+
+    return {
+      auxiliary: "does",
+      kind: "yes_no",
+      nextQuestion:
+        subject === "he" ? "What else does he like?" : "What else does she like?",
+      pattern: "third_person_likes",
+      promptLabel: `Does ${subject}...`,
+      subject,
+      topic: cleanSimpleEnglishTopic(match[2] ?? "like"),
+    };
+  }
+
+  match = clean.match(/^Are you\s+(.+?)\?$/i);
+
+  if (match) {
+    const topic = cleanSimpleEnglishTopic(match[1] ?? "");
+
+    return {
+      auxiliary: "be",
+      kind: "yes_no",
+      nextQuestion:
+        normalizeText(topic) === "happy" ? "Why are you happy?" : "Why do you like it?",
+      pattern: "am",
+      promptLabel: "Are you...",
+      subject: "you",
+      topic,
+    };
+  }
+
+  match = clean.match(/^(?:Are (we|they)|Is (she|he|it))\b(.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? match[2] ?? "she");
+    const rest = cleanSimpleEnglishTopic(match[3] ?? "");
+
+    return {
+      auxiliary: "be",
+      kind: "yes_no",
+      nextQuestion: "Why do you like it?",
+      pattern: "short_answer",
+      promptLabel: `${clean.split(" ")[0]} ${subject}...`,
+      subject,
+      topic: rest,
+    };
+  }
+
+  match = clean.match(/^Can (you|we|they|she|he|it)\b(.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? "you");
+
+    return {
+      auxiliary: "can",
+      kind: "yes_no",
+      nextQuestion: "What else can you do?",
+      pattern: "can",
+      promptLabel: `Can ${subject}...`,
+      subject,
+      topic: cleanSimpleEnglishTopic(match[2] ?? "can"),
+    };
+  }
+
+  match = clean.match(/^Did (you|we|they|she|he|it)\b(.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? "you");
+    const rest = cleanSimpleEnglishTopic(match[2] ?? "");
+    const normalizedRest = normalizeText(rest);
+
+    return {
+      auxiliary: "did",
+      kind: "yes_no",
+      nextQuestion:
+        normalizedRest.includes("school") || normalized.includes("there")
+          ? "What did you do there?"
+          : "What else did you do yesterday?",
+      pattern: "yesterday",
+      promptLabel: `Did ${subject}...`,
+      subject,
+      topic: rest,
+    };
+  }
+
+  match = clean.match(/^Will (you|we|they|she|he|it)\b(.+?)\?$/i);
+
+  if (match) {
+    const subject = normalizeText(match[1] ?? "you");
+
+    return {
+      auxiliary: "will",
+      kind: "yes_no",
+      nextQuestion: "What will you do tomorrow?",
+      pattern: "short_answer",
+      promptLabel: `Will ${subject}...`,
+      subject,
+      topic: cleanSimpleEnglishTopic(match[2] ?? "will"),
+    };
+  }
+
+  return undefined;
+}
+
+function getColorCarsRetryQuestion(fragment: string) {
+  return /\bblue\s+cars?\b/i.test(fragment)
+    ? "Can you try with red cars?"
+    : "Can you try with blue cars?";
+}
+
+function buildShortFollowUpSentence(input: {
+  answer: CattyShortFollowUpAnswer;
+  questionContext: CattyFollowUpQuestionContext;
+}): { question: string; sentence: string; topic: string } | undefined {
+  const { answer, questionContext } = input;
+
+  if (answer.kind === "fragment") {
+    const fragment = cleanSimpleEnglishTopic(answer.userAnswer);
+
+    if (
+      questionContext.kind === "color_cars" ||
+      /\b(?:car|cars)\b/.test(normalizeText(questionContext.topic)) ||
+      /\b(?:car|cars)\b/.test(normalizeText(fragment))
+    ) {
+      return {
+        question: getColorCarsRetryQuestion(fragment),
+        sentence: formatCorrectionSentence(`I like ${fragment}`),
+        topic: "cars",
+      };
+    }
+
+    if (
+      questionContext.kind === "open_like" ||
+      questionContext.kind === "yes_no"
+    ) {
+      return {
+        question:
+          questionContext.topic === "food" ||
+          /(?:chocolate|pizza|food)/.test(normalizeText(fragment))
+            ? "What drink do you like?"
+            : questionContext.nextQuestion,
+        sentence: formatCorrectionSentence(`I like ${fragment}`),
+        topic: fragment,
+      };
+    }
+
+    if (questionContext.kind === "favorite") {
+      const favoriteKind = questionContext.favoriteKind ?? "thing";
+
+      return {
+        question: "Why do you like it?",
+        sentence: formatCorrectionSentence(
+          `My favorite ${favoriteKind} is ${addArticleIfNeeded(fragment)}`,
+        ),
+        topic: fragment,
+      };
+    }
+  }
+
+  if (answer.kind === "agreement" && questionContext.kind === "yes_no") {
+    return {
+      question: questionContext.nextQuestion,
+      sentence: "I do too.",
+      topic: questionContext.topic,
+    };
+  }
+
+  if (answer.kind === "degree") {
+    const normalized = normalizeShortFollowUpText(answer.userAnswer);
+
+    return {
+      question: questionContext.nextQuestion,
+      sentence: formatCorrectionSentence(normalized),
+      topic: questionContext.topic,
+    };
+  }
+
+  if (answer.kind === "reason") {
+    return {
+      question: questionContext.nextQuestion,
+      sentence: "Because it is good.",
+      topic: questionContext.topic,
+    };
+  }
+
+  return undefined;
+}
+
+function buildCattyConversationFollowUpPlan(
+  text: string,
+  history: CattyMessage[] = [],
+): CattyConversationContinuityPlan | undefined {
+  const answer = detectShortFollowUpAnswer(text);
+
+  if (!answer) {
+    return undefined;
+  }
+
+  const previousQuestion = extractLastCattyQuestion(history);
+  const questionContext = previousQuestion
+    ? classifyCattyFollowUpQuestion(previousQuestion)
+    : undefined;
+
+  if (!previousQuestion || !questionContext) {
+    return undefined;
+  }
+
+  if (answer.kind === "yes_no" && questionContext.kind === "yes_no") {
+    const expectedAnswer = getExpectedYesNoFollowUpAnswer(
+      questionContext,
+      answer.polarity,
+    );
+    const isCorrect =
+      Boolean(answer.sentence) &&
+      normalizeShortAnswerForComparison(answer.sentence ?? "") ===
+        normalizeShortAnswerForComparison(expectedAnswer);
+    const needsHelp = answer.isBare || !isCorrect;
+    const correction = needsHelp
+      ? `${answer.isBare ? "You can say" : `Para ${questionContext.promptLabel} usamos`}: ${formatFollowUpSentenceWithTranslation(
+          expectedAnswer,
+        )}`
+      : undefined;
+
+    return {
+      correction,
+      historyTopic: questionContext.topic,
+      isFollowUp: true,
+      isIncomplete: false,
+      pattern: questionContext.pattern,
+      previousQuestion,
+      prompt: [
+        "Resposta curta de follow-up detectada.",
+        `Pergunta anterior da Catty: ${previousQuestion}`,
+        `Resposta curta do aluno: ${answer.userAnswer}.`,
+        `Resposta modelo: ${expectedAnswer}`,
+        correction ? `Correcao curta sugerida: ${correction}` : "",
+        `Pergunta relacionada sugerida: ${questionContext.nextQuestion}`,
+        "Use a pergunta anterior para nao tratar a resposta como confusa.",
+      ]
+        .filter(Boolean)
+        .join(" "),
+      question: questionContext.nextQuestion,
+      shortAnswerKind: "yes_no",
+      suggestedSentence: expectedAnswer,
+      topic: questionContext.topic,
+      userAnswer: answer.userAnswer,
+    };
+  }
+
+  const shortSentence = buildShortFollowUpSentence({
+    answer,
+    questionContext,
+  });
+
+  if (!shortSentence) {
+    return undefined;
+  }
+
+  return {
+    historyTopic: questionContext.topic,
+    isFragment: answer.kind === "fragment",
+    isFollowUp: true,
+    isIncomplete: false,
+    pattern: questionContext.pattern,
+    previousQuestion,
+    prompt: [
+      "Resposta curta de follow-up detectada.",
+      `Pergunta anterior da Catty: ${previousQuestion}`,
+      `Resposta curta do aluno: ${answer.userAnswer}.`,
+      `Frase sugerida: ${shortSentence.sentence}`,
+      `Pergunta relacionada sugerida: ${shortSentence.question}`,
+      "Transforme a resposta curta em frase simples e continue no mesmo contexto.",
+    ].join(" "),
+    question: shortSentence.question,
+    shortAnswerKind: answer.kind,
+    suggestedSentence: shortSentence.sentence,
+    topic: shortSentence.topic,
+    userAnswer: answer.userAnswer,
+  };
 }
 
 function extractCorrectionErrorWord(explanation: string) {
@@ -3176,6 +3906,12 @@ function buildCattyConversationContinuityPlan(
   text: string,
   history: CattyMessage[] = [],
 ): CattyConversationContinuityPlan | undefined {
+  const followUp = buildCattyConversationFollowUpPlan(text, history);
+
+  if (followUp) {
+    return followUp;
+  }
+
   if (!isSimpleEnglishPracticeCandidate(text)) {
     return buildCattyFragmentContinuityPlan(text, history);
   }
@@ -3232,7 +3968,17 @@ function formatCattyContinuityPromptContext(
 
   return [
     `Padrao: ${continuity.pattern}.`,
+    continuity.isFollowUp ? "Mensagem atual e resposta curta da pergunta anterior." : "",
     continuity.isFragment ? "Mensagem atual e fragmento de continuidade." : "",
+    continuity.previousQuestion
+      ? `Ultima pergunta da Catty: ${continuity.previousQuestion}`
+      : "",
+    continuity.userAnswer
+      ? `Resposta curta do aluno: ${continuity.userAnswer}`
+      : "",
+    continuity.shortAnswerKind
+      ? `Tipo de resposta curta: ${continuity.shortAnswerKind}.`
+      : "",
     continuity.topic
       ? `Assunto principal: ${continuity.topic}.`
       : "Assunto principal incompleto.",
@@ -3853,6 +4599,34 @@ function buildSimpleEnglishContinuityReply(
   const normalizedTopic = normalizeText(continuity.topic);
   const bilingualQuestion = formatBilingualQuestion(continuity.question);
 
+  if (continuity.isFollowUp && continuity.suggestedSentence) {
+    const sentence = formatFollowUpSentenceWithTranslation(
+      continuity.suggestedSentence,
+    );
+
+    if (continuity.correction) {
+      const reaction =
+        continuity.shortAnswerKind === "yes_no" ? "Pss pss, small fix" : "Awnn";
+      const correction = continuity.correction.trim().replace(/[.]+$/g, ".");
+
+      return `${reaction} ${correction} ${bilingualQuestion}`;
+    }
+
+    if (continuity.shortAnswerKind === "fragment") {
+      if (/\b(?:car|cars)\b/.test(normalizedTopic)) {
+        return `Vruum vruum, nice! ${sentence} ${bilingualQuestion}`;
+      }
+
+      return `Uwau, da para virar frase: ${sentence} ${bilingualQuestion}`;
+    }
+
+    if (continuity.shortAnswerKind === "reason") {
+      return `Awnn, nice reason. ${sentence} ${bilingualQuestion}`;
+    }
+
+    return `Awnn, nice answer. ${sentence} ${bilingualQuestion}`;
+  }
+
   if (continuity.isIncomplete) {
     return `Awnn, almost there 😺 ${bilingualQuestion}`;
   }
@@ -3949,6 +4723,7 @@ function buildPlannedEnglishReply(
   history: CattyMessage[],
   sessionContext?: CattySessionContext,
   correction?: CattyGrammarCorrectionPlan,
+  continuity?: CattyConversationContinuityPlan,
   questionPractice?: CattyQuestionPracticePlan,
 ) {
   const normalized = normalizeText(text);
@@ -3956,7 +4731,8 @@ function buildPlannedEnglishReply(
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
-  const continuity = buildCattyConversationContinuityPlan(text, history);
+  const continuityPlan =
+    continuity ?? buildCattyConversationContinuityPlan(text, history);
 
   if (intent === "code_api_request") {
     return buildCodeApiEnglishReply();
@@ -4023,9 +4799,9 @@ function buildPlannedEnglishReply(
     );
   }
 
-  if (intent === "practice_english" && continuity) {
+  if (intent === "practice_english" && continuityPlan) {
     return personalizeCattyReply(
-      buildSimpleEnglishContinuityReply(continuity),
+      buildSimpleEnglishContinuityReply(continuityPlan),
       {
         context,
         history,
@@ -4509,6 +5285,7 @@ function buildPlannedFallbackReply(
         history,
         sessionContext,
         correction,
+        continuity,
         questionPractice,
       )
     : buildPlannedPortugueseReply(
@@ -4540,7 +5317,10 @@ export function buildCattyResponsePlan(
   const continuity = buildCattyConversationContinuityPlan(text, history);
   const questionPractice = buildCattyQuestionPracticePlan(text, history);
 
-  if (continuity?.isFragment && intent === "confusing_question") {
+  if (
+    (continuity?.isFragment || continuity?.isFollowUp) &&
+    intent === "confusing_question"
+  ) {
     confidence = "high";
     intent = "practice_english";
   }

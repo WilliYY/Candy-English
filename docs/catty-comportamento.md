@@ -62,6 +62,8 @@ A Catty tambem detecta frases simples de pratica em ingles (`I like...`, `I don'
 
 Em sequencias curtas, o plano tambem usa o historico recente para manter o fio da conversa: se o aluno disser `I like chocolate.` e depois `I like pizza.`, a Catty pede para juntar com `and`; se corrigiu `I likes cars.` e o aluno responde `red cars`, o fallback forma `I like red cars.` e continua no tema de carros. Fragmentos seguros como `chocolate`, `red cars`, `blue cars` e `cars` tambem podem virar frases completas mesmo sem historico; mensagens vagas continuam pedindo uma acao concreta, como pergunta, correcao ou dica.
 
+Antes de cair em `confusing_question`, a Catty tambem tenta uma camada de follow-up curto. Quando a mensagem atual tem ate poucas palavras (`yes`, `no`, `yes I do`, `no I don't`, `I do`, `I don't`, `me too`, `sometimes`, `a little`, `very much`, `pizza`, `red cars`, `because it is good`), ela procura a ultima pergunta da propria Catty no historico recente, classifica se era pergunta com `do/does`, `be`, `can`, `did`, `will`, comida, cor, favorito ou motivo, e gera uma resposta curta com correcao quando o auxiliar nao combina. Assim `Are you happy?` + `yes I do` vira `Yes, I am`, `Can you swim?` + `yes I do` vira `Yes, I can`, e `What food do you like?` + `pizza` vira `I like pizza.`, sempre com pergunta relacionada e traducao curta.
+
 | # | Antes generico | Depois esperado |
 |---|---|---|
 | 1 | `I like chocolate.` -> `Write one small English sentence.` | `Awnn, nice sentence. What else do you like? = O que mais voce gosta?` |
@@ -81,6 +83,10 @@ Em sequencias curtas, o plano tambem usa o historico recente para manter o fio d
 | 15 | Historico `I like chocolate.` e depois `I like` -> resposta sem memoria | `Awnn, almost there. Complete it...` mantendo `chocolate` como assunto recente no prompt. |
 | 16 | Historico `I like chocolate.` e depois `I like pizza.` -> pergunta generica | `Awnn, nice sentence. Can you join them with and? Try: I like chocolate and pizza.` |
 | 17 | Historico `I likes cars.` corrigido e depois `red cars` -> `Me manda o trecho exato.` | `Uwau, da para virar frase: I like red cars. Vruum vruum. Do you like blue cars too? = Voce tambem gosta de carros azuis?` |
+| 18 | Catty pergunta `Do you like chocolate?` e aluno responde `yes I do` -> confusao | `Awnn, nice answer. Yes, I do. = Sim, eu gosto. What other food do you like? = De qual outra comida voce gosta?` |
+| 19 | Catty pergunta `Are you happy?` e aluno responde `yes I do` -> aceita auxiliar errado | `Pss pss, small fix. Para Are you... usamos: Yes, I am. = Sim, eu estou. Why are you happy? = Por que voce esta feliz?` |
+| 20 | Catty pergunta `Can you swim?` e aluno responde `I do` -> resposta confusa | `Pss pss, small fix. Para Can you... usamos: Yes, I can. = Sim, eu consigo. What else can you do? = O que mais voce consegue fazer?` |
+| 21 | Catty pergunta `What food do you like?` e aluno responde `pizza` -> pergunta generica | `Uwau, da para virar frase: I like pizza. = Eu gosto de pizza. What drink do you like? = De qual bebida voce gosta?` |
 
 ## Pedido de pergunta
 
@@ -196,7 +202,7 @@ Casos obrigatorios de pratica bilingue:
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 52 cenarios de repertorio, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, 20 follow-ups curtos com ultima pergunta da Catty, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 
