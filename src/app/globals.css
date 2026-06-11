@@ -608,36 +608,76 @@ a {
 }
 
 .candy-ava-button {
+  --candy-ava-fill: linear-gradient(135deg, #412a4c 0%, #6b2bd3 58%, #9b32ff 100%);
   min-width: 5.2rem;
-  border-radius: 9999px;
+  background: var(--candy-ava-fill) !important;
+  border: 1px solid rgb(255 255 255 / 0.28);
+  border-radius: 9999px !important;
+  color: #ffffff !important;
   isolation: isolate;
-  overflow: visible;
+  overflow: visible !important;
   position: relative;
   box-shadow:
-    0 14px 24px rgb(44 19 56 / 0.18),
+    0 14px 24px rgb(44 19 56 / 0.2),
     inset 0 1px 0 rgb(255 255 255 / 0.16);
+  transition:
+    background 220ms ease,
+    box-shadow 220ms ease,
+    filter 220ms ease,
+    transform 220ms ease;
+}
+
+.candy-ava-button:hover,
+.candy-ava-button:focus-visible {
+  --candy-ava-fill: linear-gradient(135deg, #34133f 0%, #7532df 52%, #b04dff 100%);
+  box-shadow:
+    0 16px 30px rgb(83 31 132 / 0.3),
+    0 0 0 5px rgb(255 255 255 / 0.44),
+    inset 0 1px 0 rgb(255 255 255 / 0.18);
+  filter: saturate(1.08);
+  transform: translateY(-1px) scale(1.035);
+}
+
+.candy-ava-button > * {
+  position: relative;
+  z-index: 1;
 }
 
 .candy-ava-button::before,
 .candy-ava-button::after {
-  background: inherit;
-  border-radius: 0.55rem 1rem 0.55rem 1rem;
+  background: var(--candy-ava-fill);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 9999px;
+  box-shadow: 0 10px 18px rgb(44 19 56 / 0.16);
   content: "";
-  height: 1.45rem;
+  height: 1.55rem;
+  pointer-events: none;
   position: absolute;
   top: 50%;
-  width: 1.45rem;
+  transition:
+    background 220ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+  width: 1.55rem;
   z-index: -1;
 }
 
 .candy-ava-button::before {
-  left: -0.56rem;
-  transform: translateY(-50%) rotate(42deg);
+  left: -0.64rem;
+  transform: translateY(-50%) scale(0.96);
 }
 
 .candy-ava-button::after {
-  right: -0.56rem;
-  transform: translateY(-50%) rotate(-42deg);
+  right: -0.64rem;
+  transform: translateY(-50%) scale(0.96);
+}
+
+.candy-ava-button:hover::before,
+.candy-ava-button:hover::after,
+.candy-ava-button:focus-visible::before,
+.candy-ava-button:focus-visible::after {
+  box-shadow: 0 12px 22px rgb(83 31 132 / 0.24);
+  transform: translateY(-50%) scale(1.02);
 }
 
 .candy-logo-soft {

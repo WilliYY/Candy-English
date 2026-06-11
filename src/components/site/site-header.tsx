@@ -113,18 +113,18 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
             asChild
             size="lg"
             className={cn(
-              "candy-ava-button group relative shrink-0 overflow-hidden px-8 text-base font-bold transition-all duration-300 hover:scale-105",
+              "candy-ava-button group relative shrink-0 px-8 text-base font-bold",
               isHome
-                ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/30 hover:shadow-primary/50"
-                : "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md shadow-primary/20 hover:shadow-primary/40",
+                ? "shadow-lg shadow-primary/30"
+                : "shadow-md shadow-primary/20",
             )}
+            data-candy-ava-button="true"
           >
             <Link href={avaHref}>
               <span className="relative z-10 flex items-center gap-2">
                 AVA
                 <Sparkles className="size-4 animate-pulse text-yellow-300/90" />
               </span>
-              <div className="absolute inset-0 z-0 bg-gradient-to-r from-purple-600 to-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             </Link>
           </Button>
         </div>
