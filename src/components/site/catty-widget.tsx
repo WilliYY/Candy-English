@@ -43,16 +43,8 @@ type QuickReply = {
   text: string;
 };
 
-type CattyHeaderChip = {
-  icon: QuickReply["icon"];
-  label: string;
-};
-
 type CattyContextCopy = {
-  chips: CattyHeaderChip[];
   eyebrow: string;
-  line: string;
-  title: string;
 };
 
 type CattyWidgetProps = {
@@ -225,72 +217,36 @@ function getCurrentPageContext(): CattyPageContext {
 function getContextCopy(context: CattyPageContext): CattyContextCopy {
   if (context.area === "student" && context.task === "homeworks") {
     return {
-      chips: [
-        { icon: "lightbulb", label: "Dica guiada" },
-        { icon: "practice", label: "Treino parecido" },
-      ],
       eyebrow: "Homework",
-      line: "Pistas curtas para entender o enunciado sem resolver por voce.",
-      title: "Apoio no homework",
     };
   }
 
   if (context.area === "student" && context.task === "aulas") {
     return {
-      chips: [
-        { icon: "book", label: "Vocabulario" },
-        { icon: "pencil", label: "Frase curta" },
-      ],
       eyebrow: "Aula",
-      line: "Mande uma palavra ou frase da aula para revisar comigo.",
-      title: "Pratica leve",
     };
   }
 
   if (context.task === "mensagens") {
     return {
-      chips: [
-        { icon: "pencil", label: "Texto claro" },
-        { icon: "heart", label: "Tom gentil" },
-      ],
       eyebrow: "Mensagens",
-      line: "Ajudo a deixar mensagens curtas, claras e educadas.",
-      title: "Escrita com carinho",
     };
   }
 
   if (context.area === "teacher") {
     return {
-      chips: [
-        { icon: "pencil", label: "Feedback" },
-        { icon: "book", label: "Exemplo curto" },
-      ],
       eyebrow: "Teacher",
-      line: "Ideias rapidas para instrucoes, feedbacks e exemplos de aula.",
-      title: "Apoio de aula",
     };
   }
 
   if (context.area === "admin") {
     return {
-      chips: [
-        { icon: "practice", label: "Praticar ingles" },
-        { icon: "lightbulb", label: "Dica curta" },
-      ],
       eyebrow: "Study mode",
-      line: "Pratique ingles, corrija frases e tire duvidas curtas durante o AVA.",
-      title: "Apoio rapido",
     };
   }
 
   return {
-    chips: [
-      { icon: "practice", label: "Praticar ingles" },
-      { icon: "book", label: "Explicar palavra" },
-    ],
     eyebrow: "English",
-    line: "Bora estudar um pouquinho comigo agora.",
-    title: "Pratica com Catty",
   };
 }
 
@@ -555,13 +511,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const hasWhatsAppWidget =
     !pathname.startsWith("/ava") || pathname.startsWith("/ava/login");
   const lockedContextCopy: CattyContextCopy = {
-    chips: [
-      { icon: "practice", label: "Entrar no AVA" },
-      { icon: "heart", label: "Study mode" },
-    ],
     eyebrow: "Acesso Candy",
-    line: "Entra na sua conta do AVA para conversar comigo.",
-    title: "Catty no AVA",
   };
   const visibleContextCopy: CattyContextCopy = canUseCattyChat
     ? contextCopy
@@ -1001,16 +951,16 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     >
       {open && canUseCattyChat ? (
         <section className="grid h-[min(620px,calc(100vh-6rem))] w-[min(420px,calc(100vw-2rem))] grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-2xl shadow-primary/20">
-          <header className="relative overflow-hidden bg-primary px-4 py-4 text-primary-foreground">
+          <header className="relative overflow-hidden bg-primary px-4 py-3 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="catty-breathe relative flex size-16 shrink-0 overflow-hidden rounded-2xl border border-white/35 bg-white shadow-lg shadow-black/10">
+                <span className="catty-breathe relative flex size-12 shrink-0 overflow-hidden rounded-xl border border-white/35 bg-white shadow-lg shadow-black/10">
                   <Image
                     src="/brand/catty.png"
                     alt=""
                     width={112}
                     height={112}
-                    sizes="64px"
+                    sizes="48px"
                     className="size-full object-cover"
                     priority={false}
                   />
@@ -1023,12 +973,6 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                       {visibleContextCopy.eyebrow}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm font-semibold leading-5 text-primary-foreground">
-                    {visibleContextCopy.title}
-                  </p>
-                  <p className="mt-1 max-w-64 text-xs leading-5 text-primary-foreground/80 sm:max-w-72">
-                    {visibleContextCopy.line}
-                  </p>
                 </div>
               </div>
               <Button
@@ -1041,21 +985,6 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                 <X aria-hidden="true" />
                 <span className="sr-only">Fechar Catty</span>
               </Button>
-            </div>
-            <div className="relative mt-4 flex flex-wrap gap-2 text-xs">
-              {visibleContextCopy.chips.map((chip) => {
-                const Icon = quickReplyIcons[chip.icon];
-
-                return (
-                  <span
-                    key={`${chip.icon}-${chip.label}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 font-medium text-primary-foreground/90"
-                  >
-                    <Icon aria-hidden="true" className="size-3.5" />
-                    {chip.label}
-                  </span>
-                );
-              })}
             </div>
           </header>
 
@@ -1223,16 +1152,11 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="flex flex-col gap-3 border-t bg-white p-4">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Atalhos de estudo
+          <div className="flex flex-col gap-3 border-t bg-white/95 p-3">
+            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+              <span className="shrink-0 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Estudo
               </span>
-              <span className="rounded-full bg-primary/8 px-2 py-1 text-[0.68rem] font-semibold text-primary">
-                2 min
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
               {quickReplies.map((reply) => {
                 const Icon = quickReplyIcons[reply.icon];
 
@@ -1242,13 +1166,13 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-auto justify-start whitespace-normal rounded-xl px-3 py-2 text-left text-xs leading-5"
+                    className="h-8 shrink-0 justify-start rounded-full border border-primary/10 bg-[#fce5d8] px-3 text-xs font-semibold text-primary shadow-none hover:bg-primary/10"
                     disabled={isThinking || !canUseCattyChat}
                     onClick={() => {
                       void sendMessage(reply.text);
                     }}
                   >
-                    <Icon data-icon="inline-start" />
+                    <Icon data-icon="inline-start" className="size-3.5" />
                     {reply.label}
                   </Button>
                 );
