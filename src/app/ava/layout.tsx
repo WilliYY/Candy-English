@@ -326,8 +326,8 @@ export default async function AvaLayout({
           <div className="flex h-full flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-5 lg:px-6 lg:py-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <BrandLogo
-                className="h-14 w-[178px] overflow-hidden rounded-full sm:h-16 sm:w-[220px]"
-                imageClassName="w-[176px] scale-100 group-hover:scale-[1.015] sm:w-[214px]"
+                className="h-[5.6rem] w-[218px] overflow-hidden rounded-full sm:h-24 sm:w-[250px]"
+                imageClassName="w-[204px] scale-100 group-hover:scale-[1.01] sm:w-[218px]"
               />
               <Button asChild variant="outline" className="px-3">
                 <Link href="/">
