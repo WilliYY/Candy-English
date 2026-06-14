@@ -61,9 +61,9 @@ type CattyWidgetFeedbackKind =
   | "SHOULD_ANSWER";
 
 const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
-const CATTY_MOBILE_BREAKPOINT_PX = 768;
-const MOBILE_BALLOON_MAX_COUNT = 3;
-const MOBILE_BALLOON_HIDE_DELAY_MS = 4_000;
+const CATTY_COMPACT_BALLOON_BREAKPOINT_PX = 1024;
+const COMPACT_BALLOON_MAX_COUNT = 3;
+const COMPACT_BALLOON_HIDE_DELAY_MS = 4_000;
 
 const initialCattyMessages: CattyMessage[] = [
   {
@@ -435,12 +435,12 @@ function getRandomPublicBalloon(current?: string) {
   return templates[Math.floor(Math.random() * templates.length)];
 }
 
-function isMobileCattyViewport() {
+function isCompactCattyBalloonViewport() {
   if (typeof window === "undefined") {
     return false;
   }
 
-  return window.innerWidth < CATTY_MOBILE_BREAKPOINT_PX;
+  return window.innerWidth < CATTY_COMPACT_BALLOON_BREAKPOINT_PX;
 }
 
 function isLoggedInAvaArea(context: CattyPageContext) {
@@ -468,7 +468,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const [isThinking, setIsThinking] = useState(false);
   const [loggedInBalloon, setLoggedInBalloon] = useState("");
   const [publicBalloon, setPublicBalloon] = useState("");
-  const [isMobileBalloonViewport, setIsMobileBalloonViewport] =
+  const [isCompactBalloonViewport, setIsCompactBalloonViewport] =
     useState(false);
   const [publicNoticeVisible, setPublicNoticeVisible] = useState(false);
   const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>(
@@ -595,17 +595,20 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   }, [pathname]);
 
   useEffect(() => {
-    function refreshMobileViewport() {
-      setIsMobileBalloonViewport(isMobileCattyViewport());
+    function refreshCompactBalloonViewport() {
+      setIsCompactBalloonViewport(isCompactCattyBalloonViewport());
     }
 
-    refreshMobileViewport();
-    window.addEventListener("resize", refreshMobileViewport);
-    window.addEventListener("orientationchange", refreshMobileViewport);
+    refreshCompactBalloonViewport();
+    window.addEventListener("resize", refreshCompactBalloonViewport);
+    window.addEventListener("orientationchange", refreshCompactBalloonViewport);
 
     return () => {
-      window.removeEventListener("resize", refreshMobileViewport);
-      window.removeEventListener("orientationchange", refreshMobileViewport);
+      window.removeEventListener("resize", refreshCompactBalloonViewport);
+      window.removeEventListener(
+        "orientationchange",
+        refreshCompactBalloonViewport,
+      );
     };
   }, []);
 
@@ -618,7 +621,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     context.area,
     context.task,
     hasSessionUser,
-    isMobileBalloonViewport,
+    isCompactBalloonViewport,
     pathname,
   ]);
 
@@ -636,8 +639,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     let hideTimeoutId: number | undefined;
     let intervalId: number | undefined;
 
-    function scheduleMobileBalloonHide() {
-      if (!isMobileBalloonViewport) {
+    function scheduleCompactBalloonHide() {
+      if (!isCompactBalloonViewport) {
         return;
       }
 
@@ -647,15 +650,15 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       hideTimeoutId = window.setTimeout(() => {
         setLoggedInBalloon("");
-      }, MOBILE_BALLOON_HIDE_DELAY_MS);
+      }, COMPACT_BALLOON_HIDE_DELAY_MS);
     }
 
     function showNextLoggedInBalloon() {
       if (
-        isMobileBalloonViewport &&
-        loggedInBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+        isCompactBalloonViewport &&
+        loggedInBalloonCount.current >= COMPACT_BALLOON_MAX_COUNT
       ) {
-        scheduleMobileBalloonHide();
+        scheduleCompactBalloonHide();
         return false;
       }
 
@@ -664,7 +667,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         hideTimeoutId = undefined;
       }
 
-      if (isMobileBalloonViewport) {
+      if (isCompactBalloonViewport) {
         loggedInBalloonCount.current += 1;
       }
 
@@ -673,10 +676,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       );
 
       if (
-        isMobileBalloonViewport &&
-        loggedInBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+        isCompactBalloonViewport &&
+        loggedInBalloonCount.current >= COMPACT_BALLOON_MAX_COUNT
       ) {
-        scheduleMobileBalloonHide();
+        scheduleCompactBalloonHide();
         return false;
       }
 
@@ -707,7 +710,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     context.area,
     context.task,
     displayName,
-    isMobileBalloonViewport,
+    isCompactBalloonViewport,
     open,
     pathname,
     sessionArtifacts,
@@ -727,8 +730,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     let hideTimeoutId: number | undefined;
     let intervalId: number | undefined;
 
-    function scheduleMobileBalloonHide() {
-      if (!isMobileBalloonViewport) {
+    function scheduleCompactBalloonHide() {
+      if (!isCompactBalloonViewport) {
         return;
       }
 
@@ -738,15 +741,15 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       hideTimeoutId = window.setTimeout(() => {
         setPublicBalloon("");
-      }, MOBILE_BALLOON_HIDE_DELAY_MS);
+      }, COMPACT_BALLOON_HIDE_DELAY_MS);
     }
 
     function showNextPublicBalloon() {
       if (
-        isMobileBalloonViewport &&
-        publicBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+        isCompactBalloonViewport &&
+        publicBalloonCount.current >= COMPACT_BALLOON_MAX_COUNT
       ) {
-        scheduleMobileBalloonHide();
+        scheduleCompactBalloonHide();
         return false;
       }
 
@@ -755,17 +758,17 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         hideTimeoutId = undefined;
       }
 
-      if (isMobileBalloonViewport) {
+      if (isCompactBalloonViewport) {
         publicBalloonCount.current += 1;
       }
 
       setPublicBalloon((current) => getRandomPublicBalloon(current));
 
       if (
-        isMobileBalloonViewport &&
-        publicBalloonCount.current >= MOBILE_BALLOON_MAX_COUNT
+        isCompactBalloonViewport &&
+        publicBalloonCount.current >= COMPACT_BALLOON_MAX_COUNT
       ) {
-        scheduleMobileBalloonHide();
+        scheduleCompactBalloonHide();
         return false;
       }
 
@@ -795,7 +798,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   }, [
     context.area,
     context.task,
-    isMobileBalloonViewport,
+    isCompactBalloonViewport,
     pathname,
     publicNoticeVisible,
     showPublicBalloons,
