@@ -127,7 +127,7 @@ Admin:
 
 - A curva de nivel continua infinita por `requiredForCandyLevel`.
 - O card aplica dados persistidos com `applyCandyXpPersistence`, mantendo fallback visual se a persistencia ainda nao existir.
-- O perfil student usa XP proporcional por bloco: dados principais valem ate 150 XP e dados do aluno/responsavel valem ate 200 XP, com bonus total de 350 XP quando o perfil fica 100% completo.
+- O perfil student usa XP proporcional por bloco: dados principais valem ate 150 XP e dados do aluno/responsavel valem ate 200 XP, com bonus total de 350 XP quando o perfil fica 100% completo. A UI do perfil mostra chips de XP por campo para deixar claro quanto cada preenchimento rende ao salvar, e campos que nao entram no bonus aparecem como opcionais.
 - O catalogo inicial de badges e missoes e criado por upsert server-side em `ensureCandyXpCatalog`.
 - `completeCandyMission` fica como ponto de entrada futuro para jogos/tarefas executaveis.
 - Eventos historicos nao sao removidos quando uma entidade deixa de existir; XP representa historico conquistado.

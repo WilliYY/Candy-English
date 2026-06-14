@@ -33,9 +33,69 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/ava/user-avatar";
+import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const allowedAvatarTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
+const profileXpFormatter = new Intl.NumberFormat("pt-BR");
+
+type ProfileCompletionItem = StudentProfileCompletion["items"][number];
+
+function getProfileCompletionItem(
+  completion: StudentProfileCompletion | undefined,
+  key: ProfileCompletionItem["key"],
+) {
+  return completion?.items.find((item) => item.key === key);
+}
+
+function ProfileXpBadge({ item }: { item?: ProfileCompletionItem }) {
+  if (!item) {
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-full border border-primary/10 bg-white/80 px-2 py-1 text-[0.68rem] font-bold leading-none text-muted-foreground">
+        Opcional
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[0.68rem] font-bold leading-none shadow-sm ${
+        item.completed
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-amber-200 bg-amber-50 text-amber-900"
+      }`}
+    >
+      {item.completed ? (
+        <CheckCircle2 aria-hidden="true" className="size-3" />
+      ) : (
+        <Sparkles aria-hidden="true" className="size-3" />
+      )}
+      +{profileXpFormatter.format(item.xp)} XP
+      <span className="hidden sm:inline">
+        {item.completed ? " ativo" : " ao salvar"}
+      </span>
+    </span>
+  );
+}
+
+function ProfileFieldLabel({
+  htmlFor,
+  item,
+  label,
+  showXpHint = false,
+}: {
+  htmlFor: string;
+  item?: ProfileCompletionItem;
+  label: string;
+  showXpHint?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <FieldLabel htmlFor={htmlFor}>{label}</FieldLabel>
+      {showXpHint ? <ProfileXpBadge item={item} /> : null}
+    </div>
+  );
+}
 
 function formatFileSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toLocaleString("pt-BR", {
@@ -45,11 +105,13 @@ function formatFileSize(bytes: number) {
 
 type ProfileFormProps = {
   defaultValues: UpdateProfileInput;
+  profileCompletion?: StudentProfileCompletion;
   showStudentFields?: boolean;
 };
 
 export function ProfileForm({
   defaultValues,
+  profileCompletion,
   showStudentFields = false,
 }: ProfileFormProps) {
   const router = useRouter();
@@ -59,6 +121,9 @@ export function ProfileForm({
     defaultValues,
     resolver: zodResolver(updateProfileSchema, undefined, { raw: true }),
   });
+  const completionItem = (key: ProfileCompletionItem["key"]) =>
+    getProfileCompletionItem(profileCompletion, key);
+  const showProfileXpHints = Boolean(profileCompletion);
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
@@ -108,7 +173,12 @@ export function ProfileForm({
           </div>
           <div className="grid gap-5 md:grid-cols-2">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
-              <FieldLabel htmlFor="profile-name">Nome completo</FieldLabel>
+              <ProfileFieldLabel
+                htmlFor="profile-name"
+                item={completionItem("name")}
+                label="Nome completo"
+                showXpHint={showProfileXpHints}
+              />
               <Input
                 id="profile-name"
                 autoComplete="name"
@@ -121,7 +191,12 @@ export function ProfileForm({
             </Field>
 
             <Field data-invalid={Boolean(form.formState.errors.phone)}>
-              <FieldLabel htmlFor="profile-phone">Telefone geral</FieldLabel>
+              <ProfileFieldLabel
+                htmlFor="profile-phone"
+                item={completionItem("phone")}
+                label="Telefone geral"
+                showXpHint={showProfileXpHints}
+              />
               <Input
                 id="profile-phone"
                 autoComplete="tel"
@@ -137,7 +212,12 @@ export function ProfileForm({
               className="md:col-span-2"
               data-invalid={Boolean(form.formState.errors.address)}
             >
-              <FieldLabel htmlFor="profile-address">Endereco</FieldLabel>
+              <ProfileFieldLabel
+                htmlFor="profile-address"
+                item={completionItem("address")}
+                label="Endereco"
+                showXpHint={showProfileXpHints}
+              />
               <Input
                 id="profile-address"
                 autoComplete="street-address"
@@ -174,9 +254,12 @@ export function ProfileForm({
             </div>
             <div className="grid gap-5 md:grid-cols-2">
               <Field data-invalid={Boolean(form.formState.errors.studentPhone)}>
-                <FieldLabel htmlFor="profile-student-phone">
-                  Telefone do aluno
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-student-phone"
+                  item={completionItem("studentPhone")}
+                  label="Telefone do aluno"
+                  showXpHint={showProfileXpHints}
+                />
                 <Input
                   id="profile-student-phone"
                   autoComplete="tel"
@@ -191,9 +274,11 @@ export function ProfileForm({
               <Field
                 data-invalid={Boolean(form.formState.errors.studentPhoneAlt)}
               >
-                <FieldLabel htmlFor="profile-student-phone-alt">
-                  Segundo contato do aluno
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-student-phone-alt"
+                  label="Segundo contato do aluno"
+                  showXpHint={showProfileXpHints}
+                />
                 <Input
                   id="profile-student-phone-alt"
                   autoComplete="tel"
@@ -206,9 +291,12 @@ export function ProfileForm({
               </Field>
 
               <Field data-invalid={Boolean(form.formState.errors.birthDate)}>
-                <FieldLabel htmlFor="profile-birth-date">
-                  Data de nascimento
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-birth-date"
+                  item={completionItem("birthDate")}
+                  label="Data de nascimento"
+                  showXpHint={showProfileXpHints}
+                />
                 <Input
                   id="profile-birth-date"
                   type="date"
@@ -223,9 +311,11 @@ export function ProfileForm({
               </Field>
 
               <Field data-invalid={Boolean(form.formState.errors.gender)}>
-                <FieldLabel htmlFor="profile-gender">
-                  Identificacao de sexo
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-gender"
+                  label="Identificacao de sexo"
+                  showXpHint={showProfileXpHints}
+                />
                 <NativeSelect
                   id="profile-gender"
                   aria-invalid={Boolean(form.formState.errors.gender)}
@@ -243,9 +333,12 @@ export function ProfileForm({
               <Field
                 data-invalid={Boolean(form.formState.errors.guardianDocument)}
               >
-                <FieldLabel htmlFor="profile-guardian-document">
-                  Documento ou responsavel
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-guardian-document"
+                  item={completionItem("guardianDocument")}
+                  label="Documento ou responsavel"
+                  showXpHint={showProfileXpHints}
+                />
                 <Input
                   id="profile-guardian-document"
                   aria-invalid={Boolean(form.formState.errors.guardianDocument)}
@@ -257,9 +350,12 @@ export function ProfileForm({
               </Field>
 
               <Field data-invalid={Boolean(form.formState.errors.motherName)}>
-                <FieldLabel htmlFor="profile-mother-name">
-                  Responsavel
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-mother-name"
+                  item={completionItem("motherName")}
+                  label="Responsavel"
+                  showXpHint={showProfileXpHints}
+                />
                 <Input
                   id="profile-mother-name"
                   autoComplete="name"
@@ -272,9 +368,12 @@ export function ProfileForm({
               </Field>
 
               <Field data-invalid={Boolean(form.formState.errors.motherPhone)}>
-                <FieldLabel htmlFor="profile-mother-phone">
-                  Telefone do responsavel
-                </FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-mother-phone"
+                  item={completionItem("motherPhone")}
+                  label="Telefone do responsavel"
+                  showXpHint={showProfileXpHints}
+                />
                 <Input
                   id="profile-mother-phone"
                   autoComplete="tel"
@@ -290,7 +389,11 @@ export function ProfileForm({
                 className="md:col-span-2"
                 data-invalid={Boolean(form.formState.errors.notes)}
               >
-                <FieldLabel htmlFor="profile-notes">Observacoes</FieldLabel>
+                <ProfileFieldLabel
+                  htmlFor="profile-notes"
+                  label="Observacoes"
+                  showXpHint={showProfileXpHints}
+                />
                 <Textarea
                   id="profile-notes"
                   aria-invalid={Boolean(form.formState.errors.notes)}
@@ -329,11 +432,13 @@ export function ProfileForm({
 
 type AvatarUploadFormProps = {
   avatarPath?: string | null;
+  profileCompletion?: StudentProfileCompletion;
   userId?: string | null;
 };
 
 export function AvatarUploadForm({
   avatarPath,
+  profileCompletion,
   userId,
 }: AvatarUploadFormProps) {
   const router = useRouter();
@@ -342,6 +447,10 @@ export function AvatarUploadForm({
   const [message, setMessage] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const avatarCompletionItem = getProfileCompletionItem(
+    profileCompletion,
+    "avatarPath",
+  );
 
   const clearFile = () => {
     setFile(null);
@@ -428,9 +537,14 @@ export function AvatarUploadForm({
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary/60">
               Foto
             </p>
-            <h3 className="mt-1 text-lg font-semibold text-primary">
-              Foto do perfil
-            </h3>
+            <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+              <h3 className="text-lg font-semibold text-primary">
+                Foto do perfil
+              </h3>
+              {profileCompletion ? (
+                <ProfileXpBadge item={avatarCompletionItem} />
+              ) : null}
+            </div>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               Use uma foto quadrada ou centralizada para aparecer bem no AVA.
             </p>
@@ -439,7 +553,12 @@ export function AvatarUploadForm({
       </div>
 
       <Field>
-        <FieldLabel htmlFor="avatar">Escolher imagem</FieldLabel>
+        <ProfileFieldLabel
+          htmlFor="avatar"
+          item={avatarCompletionItem}
+          label="Escolher imagem"
+          showXpHint={Boolean(profileCompletion)}
+        />
         <Input
           id="avatar"
           ref={inputRef}

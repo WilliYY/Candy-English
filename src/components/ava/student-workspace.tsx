@@ -411,18 +411,32 @@ function ProfileCompletionCard({
           {completion.items.map((item) => (
             <div
               key={item.key}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
+              className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-semibold ${
                 item.completed
                   ? "border-emerald-300/80 bg-emerald-50 text-emerald-800"
                   : "border-primary/10 bg-white/66 text-muted-foreground"
               }`}
             >
-              {item.completed ? (
-                <CheckCircle2 aria-hidden="true" className="size-4 shrink-0" />
-              ) : (
-                <Target aria-hidden="true" className="size-4 shrink-0" />
-              )}
-              <span className="min-w-0 truncate">{item.label}</span>
+              <span className="flex min-w-0 items-center gap-2">
+                {item.completed ? (
+                  <CheckCircle2
+                    aria-hidden="true"
+                    className="size-4 shrink-0"
+                  />
+                ) : (
+                  <Target aria-hidden="true" className="size-4 shrink-0" />
+                )}
+                <span className="min-w-0 truncate">{item.label}</span>
+              </span>
+              <span
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[0.68rem] font-bold ${
+                  item.completed
+                    ? "bg-white/80 text-emerald-800"
+                    : "bg-amber-50 text-amber-900"
+                }`}
+              >
+                +{xpFormatter.format(item.xp)} XP
+              </span>
             </div>
           ))}
         </div>
@@ -1106,6 +1120,7 @@ export function StudentWorkspace({
                       studentPhone: studentProfile.studentPhone ?? "",
                       studentPhoneAlt: studentProfile.studentPhoneAlt ?? "",
                     }}
+                    profileCompletion={profileCompletion}
                     showStudentFields
                   />
                 </div>
@@ -1113,6 +1128,7 @@ export function StudentWorkspace({
                 <aside className="grid content-start gap-4 xl:sticky xl:top-6">
                   <AvatarUploadForm
                     avatarPath={currentUser.avatarPath}
+                    profileCompletion={profileCompletion}
                     userId={currentUser.id}
                   />
                 </aside>

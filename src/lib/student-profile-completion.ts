@@ -93,15 +93,62 @@ function calculateGroupXp(completedCount: number, totalCount: number, maxXp: num
   return Math.round((completedCount / totalCount) * maxXp);
 }
 
+function calculateFieldXp(
+  fieldIndex: number,
+  totalCount: number,
+  maxXp: number,
+) {
+  if (fieldIndex < 0 || totalCount <= 0) {
+    return 0;
+  }
+
+  return (
+    calculateGroupXp(fieldIndex + 1, totalCount, maxXp) -
+    calculateGroupXp(fieldIndex, totalCount, maxXp)
+  );
+}
+
 export function getStudentProfileCompletion(
   input: StudentProfileCompletionInput,
 ) {
-  const items = STUDENT_PROFILE_COMPLETION_FIELDS.map((field) => ({
-    completed: hasCompletionValue(input[field.key]),
-    groupKey: field.groupKey,
-    key: field.key,
-    label: field.label,
-  }));
+  const items = STUDENT_PROFILE_COMPLETION_FIELDS.map((field) => {
+    const group = STUDENT_PROFILE_COMPLETION_GROUPS.find(
+      (candidate) => candidate.key === field.groupKey,
+    );
+    const groupFields = STUDENT_PROFILE_COMPLETION_FIELDS.filter(
+      (candidate) => candidate.groupKey === field.groupKey,
+    );
+    const fieldIndex = groupFields.findIndex(
+      (candidate) => candidate.key === field.key,
+    );
+    const completed = hasCompletionValue(input[field.key]);
+    const completedGroupCount = groupFields.filter((candidate) =>
+      hasCompletionValue(input[candidate.key]),
+    ).length;
+    const currentGroupXp = calculateGroupXp(
+      completedGroupCount,
+      groupFields.length,
+      group?.maxXp ?? 0,
+    );
+    const nextGroupXp = calculateGroupXp(
+      Math.min(completedGroupCount + 1, groupFields.length),
+      groupFields.length,
+      group?.maxXp ?? 0,
+    );
+    const fieldXp = calculateFieldXp(
+      fieldIndex,
+      groupFields.length,
+      group?.maxXp ?? 0,
+    );
+
+    return {
+      completed,
+      groupKey: field.groupKey,
+      key: field.key,
+      label: field.label,
+      xp: completed ? fieldXp : Math.max(0, nextGroupXp - currentGroupXp),
+    };
+  });
   const groups = STUDENT_PROFILE_COMPLETION_GROUPS.map((group) => {
     const groupItems = items.filter((item) => item.groupKey === group.key);
     const completedGroupItems = groupItems.filter((item) => item.completed);
