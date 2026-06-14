@@ -134,13 +134,14 @@ Helpers:
 ### Student
 
 1. Student entra em `/ava/student`.
-2. No resumo, ve o card Candy XP com nivel, barra amarela de progresso, fontes de XP, proximas metas e roadmap de jogos.
-3. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e o aviso de manutencao temporaria da aula ao vivo.
-4. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
-5. Visualiza feedback.
-6. Edita dados pessoais permitidos, mas nao o nivel.
-7. Pode abrir `Catty aprendendo` para entender que a Catty usa memoria leve com supervisao da equipe, sem ver a tela tecnica de memorias.
-8. Nao configura diretamente o estilo da Catty; se quiser mudar um tema ou parar um meme, conversa com a teacher, que ajusta em `Catty dos alunos`.
+2. Se o aluno ainda nao tem foto de perfil, o AVA pode mostrar um popup visual com video em loop e CTA para `/ava/student?task=perfil`; ele aparece no maximo 1x ao dia por navegador, nao aparece na propria tarefa `Meu perfil` e usa `localStorage` apenas para guardar o dia visto.
+3. No resumo, ve o card Candy XP com nivel, barra amarela de progresso, fontes de XP, proximas metas e roadmap de jogos.
+4. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e o aviso de manutencao temporaria da aula ao vivo.
+5. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
+6. Visualiza feedback.
+7. Edita dados pessoais permitidos, mas nao o nivel.
+8. Pode abrir `Catty aprendendo` para entender que a Catty usa memoria leve com supervisao da equipe, sem ver a tela tecnica de memorias.
+9. Nao configura diretamente o estilo da Catty; se quiser mudar um tema ou parar um meme, conversa com a teacher, que ajusta em `Catty dos alunos`.
 
 ### Candy XP e jogos
 

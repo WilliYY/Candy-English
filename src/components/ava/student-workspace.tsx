@@ -26,6 +26,7 @@ import {
 import { AvatarUploadForm, ProfileForm } from "@/components/ava/profile-forms";
 import { LiveClassMaintenancePanel } from "@/components/ava/live-class-maintenance-panel";
 import { LiveClassRoom } from "@/components/ava/live-class-room";
+import { ProfilePhotoPopup } from "@/components/ava/profile-photo-popup";
 import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import {
@@ -929,9 +930,19 @@ export function StudentWorkspace({
       value: homeworkStatusTotals.reviewed,
     },
   ];
+  const needsProfilePhoto = !currentUser.avatarPath;
+  const profilePhotoXp =
+    profileCompletion.items.find((item) => item.key === "avatarPath")?.xp ?? 0;
 
   return (
     <section className="relative isolate mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-8 text-white sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+      <ProfilePhotoPopup
+        markSeen={needsProfilePhoto && activeTask === "perfil"}
+        photoXp={profilePhotoXp}
+        show={needsProfilePhoto && activeTask !== "perfil"}
+        userId={currentUser.id}
+      />
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(460px,560px)]">
         <div className="flex min-w-0 flex-col gap-5">
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/25 bg-white/90 px-4 py-2 text-sm font-semibold text-primary shadow-sm backdrop-blur">
