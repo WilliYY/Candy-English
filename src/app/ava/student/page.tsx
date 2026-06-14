@@ -447,6 +447,18 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
     });
   }
 
+  if (studentProfile.user.avatarPath) {
+    studentXpEvents.push({
+      kind: "PROFILE_READY",
+      metadata: {
+        firstPhotoBonus: true,
+      },
+      sourceKey: `student:profile-photo:first:${studentProfile.id}`,
+      sourceLabel: "Foto do perfil",
+      xp: CANDY_XP_REWARDS.student.profilePhoto,
+    });
+  }
+
   for (const lesson of lessons) {
     for (const homework of lesson.homeworks) {
       const submission = homework.submissions[0];

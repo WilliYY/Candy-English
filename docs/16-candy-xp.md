@@ -13,7 +13,7 @@ Arquivos principais:
 - `src/lib/candy-xp.ts`: curva infinita, snapshot visual e builders por role.
 - `src/lib/candy-xp-persistence.ts`: catalogo, ledger de eventos, streaks, badges e missoes.
 - `src/lib/candy-xp-ranking.ts`: leitura server-side do ranking interno usando `CandyXpProfile` como cache/resumo.
-- `src/lib/student-profile-completion.ts`: calculo dos dados importantes do perfil student, percentual e XP proporcional.
+- `src/lib/student-profile-completion.ts`: calculo dos dados importantes do perfil student, percentual, XP proporcional e bonus separado de foto.
 - `src/lib/candy-xp-activities.ts`: avaliacao automatica de perguntas objetivas antigas e metadados do arquivo.
 - `src/lib/validations/candy-xp-activities.ts`: schemas Zod das atividades, perguntas legadas, respostas e revisao.
 - `src/app/ava/candy-xp/actions.ts`: criacao, edicao simples, progresso, envio e correcao.
@@ -97,7 +97,8 @@ Rotas das atividades:
 
 Student:
 
-- `Perfil preparado`: progresso dos dados importantes do perfil, com 150 XP no bloco de dados principais e 200 XP no bloco de aluno/responsavel, rendendo ate 350 XP.
+- `Foto do perfil`: primeira foto enviada pelo aluno, rendendo 500 XP uma unica vez por `sourceKey` fixa.
+- `Perfil preparado`: progresso dos dados importantes do perfil, com 150 XP no bloco de dados principais e 200 XP no bloco de aluno/responsavel, rendendo ate 350 XP sem contar a foto.
 - `Aulas finalizadas`: atividade interativa criada pelo fluxo de aula e entregue, valendo 80 XP por aula finalizada.
 - `Homeworks enviadas`: homework entregue, valendo 150 XP por envio.
 - `Feedbacks recebidos`: submissao revisada pela teacher, valendo 25 XP por correcao liberada.
@@ -127,11 +128,11 @@ Admin:
 
 - A curva de nivel continua infinita por `requiredForCandyLevel`.
 - O card aplica dados persistidos com `applyCandyXpPersistence`, mantendo fallback visual se a persistencia ainda nao existir.
-- O perfil student usa XP proporcional por bloco: dados principais valem ate 150 XP e dados do aluno/responsavel valem ate 200 XP, com bonus total de 350 XP quando o perfil fica 100% completo. A UI do perfil mostra chips de XP por campo para deixar claro quanto cada preenchimento rende ao salvar, e campos que nao entram no bonus aparecem como opcionais.
+- O perfil student usa XP proporcional por bloco: dados principais valem ate 150 XP e dados do aluno/responsavel valem ate 200 XP, com bonus total de 350 XP quando esses dados ficam 100% completos. A foto do perfil vale 500 XP como fonte separada `Foto do perfil`, concedida uma unica vez pela `sourceKey` `student:profile-photo:first:{studentProfileId}`. A UI do perfil mostra chips de XP por campo para deixar claro quanto cada preenchimento rende ao salvar, e campos que nao entram no bonus aparecem como opcionais.
 - O catalogo inicial de badges e missoes e criado por upsert server-side em `ensureCandyXpCatalog`.
 - `completeCandyMission` fica como ponto de entrada futuro para jogos/tarefas executaveis.
 - Eventos historicos nao sao removidos quando uma entidade deixa de existir; XP representa historico conquistado.
-- O evento `Perfil preparado` do student e tratado como bonus de estado atual: ele pode atualizar XP/metadados conforme a porcentagem dos dados importantes muda.
+- O evento `Perfil preparado` do student e tratado como bonus de estado atual: ele pode atualizar XP/metadados conforme a porcentagem dos dados importantes muda. O evento `Foto do perfil` usa outra `sourceKey` e nao duplica quando o aluno troca ou reenviar a foto.
 - Atividades Candy XP usam models proprios para historia/PDF/envio e ainda preservam perguntas antigas quando existirem, mas a premiacao continua centralizada no ledger `CandyXpEvent`.
 - A criacao nova nao exige perguntas separadas; o admin pode editar dados principais da atividade e desenhar areas diretamente no PDF/imagem, preservando perguntas antigas apenas por compatibilidade.
 - A exclusao de atividade Candy XP remove arquivo, perguntas, liberacoes, progresso e respostas operacionais, mas nao remove `CandyXpEvent`; XP ja conquistado continua como historico do aluno.

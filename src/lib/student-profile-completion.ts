@@ -1,5 +1,6 @@
 export const STUDENT_PROFILE_MAIN_XP = 150;
 export const STUDENT_PROFILE_RESPONSIBLE_XP = 200;
+export const STUDENT_PROFILE_PHOTO_XP = 500;
 export const STUDENT_PROFILE_COMPLETION_MAX_XP =
   STUDENT_PROFILE_MAIN_XP + STUDENT_PROFILE_RESPONSIBLE_XP;
 
@@ -32,7 +33,7 @@ type StudentProfileCompletionGroupDefinition = {
 
 const STUDENT_PROFILE_COMPLETION_GROUPS = [
   {
-    description: "Foto, nome, telefone e endereco deixam seu AVA pronto.",
+    description: "Nome, telefone e endereco deixam seu AVA pronto.",
     key: "main",
     label: "Dados principais",
     maxXp: STUDENT_PROFILE_MAIN_XP,
@@ -46,7 +47,6 @@ const STUDENT_PROFILE_COMPLETION_GROUPS = [
 ] satisfies StudentProfileCompletionGroupDefinition[];
 
 const STUDENT_PROFILE_COMPLETION_FIELDS = [
-  { groupKey: "main", key: "avatarPath", label: "Foto do perfil" },
   { groupKey: "main", key: "name", label: "Nome completo" },
   { groupKey: "main", key: "phone", label: "Telefone geral" },
   { groupKey: "main", key: "address", label: "Endereco" },

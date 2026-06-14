@@ -33,17 +33,29 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { UserAvatar } from "@/components/ava/user-avatar";
-import type { StudentProfileCompletion } from "@/lib/student-profile-completion";
+import {
+  STUDENT_PROFILE_PHOTO_XP,
+  type StudentProfileCompletion,
+} from "@/lib/student-profile-completion";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 const allowedAvatarTypes = new Set(["image/png", "image/jpeg", "image/webp"]);
 const profileXpFormatter = new Intl.NumberFormat("pt-BR");
 
-type ProfileCompletionItem = StudentProfileCompletion["items"][number];
+type CompletionFieldItem = StudentProfileCompletion["items"][number];
+type ProfileCompletionItem =
+  | CompletionFieldItem
+  | {
+      completed: boolean;
+      groupKey: "main";
+      key: "avatarPath";
+      label: string;
+      xp: number;
+    };
 
 function getProfileCompletionItem(
   completion: StudentProfileCompletion | undefined,
-  key: ProfileCompletionItem["key"],
+  key: CompletionFieldItem["key"],
 ) {
   return completion?.items.find((item) => item.key === key);
 }
@@ -121,7 +133,7 @@ export function ProfileForm({
     defaultValues,
     resolver: zodResolver(updateProfileSchema, undefined, { raw: true }),
   });
-  const completionItem = (key: ProfileCompletionItem["key"]) =>
+  const completionItem = (key: CompletionFieldItem["key"]) =>
     getProfileCompletionItem(profileCompletion, key);
   const showProfileXpHints = Boolean(profileCompletion);
 
@@ -447,10 +459,15 @@ export function AvatarUploadForm({
   const [message, setMessage] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const avatarCompletionItem = getProfileCompletionItem(
-    profileCompletion,
-    "avatarPath",
-  );
+  const avatarCompletionItem = profileCompletion
+    ? {
+        completed: Boolean(avatarPath),
+        groupKey: "main" as const,
+        key: "avatarPath" as const,
+        label: "Foto do perfil",
+        xp: STUDENT_PROFILE_PHOTO_XP,
+      }
+    : undefined;
 
   const clearFile = () => {
     setFile(null);

@@ -134,7 +134,7 @@ Helpers:
 ### Student
 
 1. Student entra em `/ava/student`.
-2. Se o aluno ainda nao tem foto de perfil, o AVA pode mostrar um popup visual com video em loop e CTA para `/ava/student?task=perfil`; ele aparece no maximo 1x ao dia por navegador, nao aparece na propria tarefa `Meu perfil` e usa `localStorage` apenas para guardar o dia visto.
+2. Se o aluno ainda nao tem foto de perfil, o AVA pode mostrar um popup visual diario com apenas o video em loop e botao de fechar; ao clicar no video, o aluno vai para `/ava/student?task=perfil`. Ele aparece no maximo 1x ao dia por navegador, nao aparece na propria tarefa `Meu perfil` e usa `localStorage` apenas para guardar o dia em que o popup apareceu.
 3. No resumo, ve o card Candy XP com nivel, barra amarela de progresso, fontes de XP, proximas metas e roadmap de jogos.
 4. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e o aviso de manutencao temporaria da aula ao vivo.
 5. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente.
@@ -149,14 +149,15 @@ Helpers:
 2. A pontuacao e sincronizada no servidor a partir dos dados que cada role ja pode ver: student usa atividades do proprio aluno, teacher usa alunos/aulas/homeworks/correcoes da sua area, e admin usa indicadores operacionais permitidos.
 3. Cada origem de XP vira um `CandyXpEvent` com `sourceKey` unica por usuario; se a mesma homework, feedback, aula, rotina ou missao aparecer de novo, o XP nao duplica.
 4. `CandyXpProfile` guarda total, nivel, progresso e streak como cache recalculado pela soma dos eventos.
-5. O ranking interno do AVA aparece nos resumos de Student, Teacher e Admin, usando `CandyXpProfile` como resumo cacheado e mostrando apenas nome, foto/avatar, role, nivel, XP total e XP restante de alunos e profs.
-6. A ordenacao do ranking e feita no servidor por XP total, nivel, XP mais recente e nome; se o usuario logado for aluno/prof e estiver fora do top exibido, a propria posicao aparece separada.
-7. O card `Ranking Candy XP` mostra podium visual para os tres primeiros na primeira pagina e pagina os demais de 10 em 10; paginas seguintes continuam a lista por posicao.
-8. O mini card de perfil/XP de Student e Teacher tambem mostra a colocacao pessoal na categoria da propria role: student entre alunos e teacher entre teachers. Usuarios com 0 XP veem incentivo para comecar uma missao em vez de colocacao.
-9. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
-10. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
-11. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
-12. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
+5. A primeira foto de perfil do student gera um evento `Foto do perfil` de 500 XP com `sourceKey` fixa por perfil; trocar ou reenviar foto depois nao duplica esse bonus.
+6. O ranking interno do AVA aparece nos resumos de Student, Teacher e Admin, usando `CandyXpProfile` como resumo cacheado e mostrando apenas nome, foto/avatar, role, nivel, XP total e XP restante de alunos e profs.
+7. A ordenacao do ranking e feita no servidor por XP total, nivel, XP mais recente e nome; se o usuario logado for aluno/prof e estiver fora do top exibido, a propria posicao aparece separada.
+8. O card `Ranking Candy XP` mostra podium visual para os tres primeiros na primeira pagina e pagina os demais de 10 em 10; paginas seguintes continuam a lista por posicao.
+9. O mini card de perfil/XP de Student e Teacher tambem mostra a colocacao pessoal na categoria da propria role: student entre alunos e teacher entre teachers. Usuarios com 0 XP veem incentivo para comecar uma missao em vez de colocacao.
+10. A curva de nivel fica em `src/lib/candy-xp.ts`, inspirada no card XP do Wimifarma, mas adaptada para a Candy: requisito inicial menor, crescimento gradual e barra amarela.
+11. Niveis sao infinitos por formula: o sistema calcula a meta do proximo nivel com base no numero do nivel, sem lista fixa nem teto artificial.
+12. O roadmap mostra a fase atual do XP, missoes, conquistas e temporadas. O card de jogos/spotlight e slot visual preparado para minijogos futuros; ele nao abre jogo executavel nesta fase.
+13. `CandyMission` e `CandyMissionAttempt` ja deixam a base pronta para tarefas estilo Duolingo; atividades com historia/PDF ja existem em `/ava/student?task=candy-xp`, mas minijogos executaveis ainda precisam de fase propria.
 
 ### Atividades Candy XP
 

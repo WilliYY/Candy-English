@@ -1,4 +1,7 @@
-import { STUDENT_PROFILE_COMPLETION_MAX_XP } from "@/lib/student-profile-completion";
+import {
+  STUDENT_PROFILE_COMPLETION_MAX_XP,
+  STUDENT_PROFILE_PHOTO_XP,
+} from "@/lib/student-profile-completion";
 
 export type CandyXpRole = "admin" | "student" | "teacher";
 
@@ -20,6 +23,7 @@ export const CANDY_XP_REWARDS = {
     feedbackReviewed: 25,
     homeworkSubmitted: 150,
     lessonActivitySubmitted: 80,
+    profilePhoto: STUDENT_PROFILE_PHOTO_XP,
     profileReady: STUDENT_PROFILE_COMPLETION_MAX_XP,
   },
   teacher: {
@@ -118,6 +122,7 @@ export type BuildCandyStudentXpSnapshotInput = {
   lessonActivities: CandyXpActivityInput[];
   profileCompletionPercent: number;
   profileCompletionXp: number;
+  profilePhotoReady: boolean;
 };
 
 export type BuildCandyTeacherXpSnapshotInput = {
@@ -408,6 +413,10 @@ function getStudentNextGoals(input: BuildCandyStudentXpSnapshotInput) {
     goals.push("Entregar uma homework pendente.");
   }
 
+  if (!input.profilePhotoReady) {
+    goals.push("Enviar foto do perfil para ganhar 500 XP uma vez.");
+  }
+
   if (input.profileCompletionPercent < 100) {
     goals.push(
       "Completar dados principais e responsavel para liberar ate 350 XP.",
@@ -525,6 +534,12 @@ export function buildCandyStudentXpSnapshot(
       label: "Feedbacks recebidos",
       value: reviewedFeedbacks,
       xp: reviewedFeedbacks * CANDY_XP_REWARDS.student.feedbackReviewed,
+    },
+    {
+      description: "Primeira foto enviada no perfil.",
+      label: "Foto do perfil",
+      value: input.profilePhotoReady ? 1 : 0,
+      xp: input.profilePhotoReady ? CANDY_XP_REWARDS.student.profilePhoto : 0,
     },
     {
       description: "150 XP em dados principais + 200 XP em responsavel.",

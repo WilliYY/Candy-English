@@ -853,6 +853,7 @@ export function StudentWorkspace({
       })),
       profileCompletionPercent: profileCompletion.percent,
       profileCompletionXp: profileCompletion.xp,
+      profilePhotoReady: Boolean(currentUser.avatarPath),
     }),
     candyXpPersistence,
   );
@@ -931,14 +932,10 @@ export function StudentWorkspace({
     },
   ];
   const needsProfilePhoto = !currentUser.avatarPath;
-  const profilePhotoXp =
-    profileCompletion.items.find((item) => item.key === "avatarPath")?.xp ?? 0;
 
   return (
     <section className="relative isolate mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-8 text-white sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
       <ProfilePhotoPopup
-        markSeen={needsProfilePhoto && activeTask === "perfil"}
-        photoXp={profilePhotoXp}
         show={needsProfilePhoto && activeTask !== "perfil"}
         userId={currentUser.id}
       />
