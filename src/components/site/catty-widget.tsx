@@ -948,12 +948,12 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   return (
     <div
-      className={`fixed right-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:right-5 sm:max-w-none ${
+      className={`pointer-events-none fixed right-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:right-5 sm:max-w-none ${
         hasWhatsAppWidget ? "bottom-44 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
       {open && canUseCattyChat ? (
-        <section className="grid h-[min(620px,calc(100vh-6rem))] w-[min(420px,calc(100vw-2rem))] grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-2xl shadow-primary/20">
+        <section className="pointer-events-auto grid h-[min(620px,calc(100vh-6rem))] w-[min(420px,calc(100vw-2rem))] grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-2xl shadow-primary/20">
           <header className="relative overflow-hidden bg-primary px-4 py-3 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -1244,7 +1244,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       <Button
         type="button"
         size="lg"
-        className="catty-launcher h-14 w-14 rounded-full p-1 shadow-2xl shadow-primary/20 sm:h-16 sm:w-auto sm:px-4"
+        className="catty-launcher pointer-events-auto h-14 w-14 rounded-full p-1 shadow-2xl shadow-primary/20 sm:h-16 sm:w-auto sm:px-4"
         onClick={() => {
           if (open && canUseCattyChat) {
             setOpen(false);
