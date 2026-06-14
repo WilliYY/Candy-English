@@ -18,7 +18,7 @@ function getDailyStorageKey(userId: string) {
     year: "numeric",
   }).format(new Date());
 
-  return `candy-profile-photo-popup:v2:${userId}:${today}`;
+  return `candy-profile-photo-popup:v3:${userId}:${today}`;
 }
 
 export function ProfilePhotoPopup({
@@ -64,7 +64,7 @@ export function ProfilePhotoPopup({
       className="fixed inset-0 z-[80] flex items-center justify-center bg-primary/45 p-3 backdrop-blur-[3px] sm:p-6"
       role="dialog"
     >
-      <div className="relative w-full max-w-[min(94vw,760px)] rounded-[22px] bg-gradient-to-br from-fuchsia-300 via-white to-amber-200 p-[2px] shadow-2xl shadow-primary/35">
+      <div className="relative w-full max-w-[min(94vw,82svh,760px)] rounded-[22px] bg-gradient-to-br from-fuchsia-300 via-white to-amber-200 p-[2px] shadow-2xl shadow-primary/35">
         <button
           aria-label="Fechar video de foto do perfil"
           className="absolute -right-2 -top-2 z-10 flex size-10 items-center justify-center rounded-full border border-white/85 bg-white text-primary shadow-xl shadow-primary/20 transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:-right-3 sm:-top-3"
@@ -76,18 +76,18 @@ export function ProfilePhotoPopup({
 
         <button
           aria-label="Abrir perfil para colocar foto"
-          className="block w-full overflow-hidden rounded-[20px] border border-white/85 bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+          className="block aspect-square w-full overflow-hidden rounded-[20px] border border-white/85 bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           onClick={() => router.push(profileHref)}
           type="button"
         >
           <video
             aria-label="Video para lembrar de colocar foto no perfil"
             autoPlay
-            className="block max-h-[78svh] w-full bg-white object-contain sm:max-h-[82svh]"
+            className="block size-full bg-white object-contain"
             loop
             muted
             playsInline
-            preload="metadata"
+            preload="auto"
           >
             <source src="/brand/profile-photo-popup.mp4" type="video/mp4" />
           </video>
