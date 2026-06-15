@@ -6,6 +6,15 @@ type InstitutionalBackgroundVideoProps = {
   src: string;
 };
 
+type WindowWithIdleCallback = Window &
+  typeof globalThis & {
+    cancelIdleCallback?: (handle: number) => void;
+    requestIdleCallback?: (
+      callback: () => void,
+      options?: { timeout: number },
+    ) => number;
+  };
+
 const VIDEO_BREAKPOINT_QUERY = "(min-width: 768px)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -14,6 +23,7 @@ export function InstitutionalBackgroundVideo({
 }: InstitutionalBackgroundVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [canUseVideo, setCanUseVideo] = useState(false);
+  const [shouldMountVideo, setShouldMountVideo] = useState(false);
 
   useEffect(() => {
     const desktopQuery = window.matchMedia(VIDEO_BREAKPOINT_QUERY);
@@ -34,14 +44,46 @@ export function InstitutionalBackgroundVideo({
   }, []);
 
   useEffect(() => {
+    if (!canUseVideo) {
+      setShouldMountVideo(false);
+      return;
+    }
+
+    const idleWindow = window as WindowWithIdleCallback;
+    let timeoutHandle: number | null = null;
+    let idleHandle: number | null = null;
+
+    if (idleWindow.requestIdleCallback) {
+      idleHandle = idleWindow.requestIdleCallback(
+        () => setShouldMountVideo(true),
+        { timeout: 1200 },
+      );
+    } else {
+      timeoutHandle = window.setTimeout(() => setShouldMountVideo(true), 700);
+    }
+
+    return () => {
+      if (idleHandle !== null && idleWindow.cancelIdleCallback) {
+        idleWindow.cancelIdleCallback(idleHandle);
+      }
+
+      if (timeoutHandle !== null) {
+        window.clearTimeout(timeoutHandle);
+      }
+    };
+  }, [canUseVideo]);
+
+  useEffect(() => {
     const video = videoRef.current;
 
-    if (!video || !canUseVideo) {
+    if (!video || !canUseVideo || !shouldMountVideo) {
       return;
     }
 
     const backgroundVideo = video;
     let isVisible = true;
+
+    backgroundVideo.playbackRate = 0.85;
 
     async function playVideo() {
       if (!isVisible || !backgroundVideo.paused) {
@@ -81,16 +123,15 @@ export function InstitutionalBackgroundVideo({
       observer.disconnect();
       pauseVideo();
     };
-  }, [canUseVideo]);
+  }, [canUseVideo, shouldMountVideo]);
 
   return (
     <>
       <div className="site-institutional-video-fallback absolute inset-0 -z-20" />
-      {canUseVideo ? (
+      {canUseVideo && shouldMountVideo ? (
         <video
           ref={videoRef}
           aria-hidden="true"
-          autoPlay
           className="site-institutional-video absolute inset-0 -z-20 h-full w-full object-cover"
           disablePictureInPicture
           loop
