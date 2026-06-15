@@ -61,7 +61,7 @@ export function ProfilePhotoPopup({
   return (
     <div
       aria-modal="true"
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-primary/45 p-3 backdrop-blur-[3px] sm:p-6"
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-primary/50 p-3 sm:p-6"
       role="dialog"
     >
       <div className="relative w-full max-w-[min(94vw,82svh,760px)] rounded-[22px] bg-gradient-to-br from-fuchsia-300 via-white to-amber-200 p-[2px] shadow-2xl shadow-primary/35">
