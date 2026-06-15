@@ -89,6 +89,11 @@ export function ProfilePhotoPopup({
             playsInline
             preload="auto"
           >
+            <source
+              media="(max-width: 767px)"
+              src="/brand/profile-photo-popup-mobile.mp4"
+              type="video/mp4"
+            />
             <source src="/brand/profile-photo-popup.mp4" type="video/mp4" />
           </video>
         </button>
