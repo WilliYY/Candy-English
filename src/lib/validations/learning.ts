@@ -33,6 +33,12 @@ const optionalDate = z
     return date;
   });
 
+const studentProfileIdsSchema = z
+  .array(z.string().trim().min(1, "Selecione um aluno."))
+  .min(1, "Selecione pelo menos um aluno.")
+  .max(120, "Selecione no maximo 120 alunos por envio.")
+  .transform((ids) => Array.from(new Set(ids)));
+
 export const createLessonSchema = z.object({
   teacherProfileId: z.string().min(1, "Selecione uma teacher."),
   studentProfileId: optionalText(80, "Selecione um aluno valido."),
@@ -70,7 +76,7 @@ export const createLessonSchema = z.object({
 });
 
 export const createInteractiveHomeworkSchema = z.object({
-  studentProfileId: z.string().min(1, "Selecione um aluno."),
+  studentProfileIds: studentProfileIdsSchema,
   teacherProfileId: optionalText(80, "Selecione uma teacher valida."),
   title: z
     .string()
@@ -85,7 +91,7 @@ export const createInteractiveHomeworkSchema = z.object({
 });
 
 export const createInteractiveLessonSchema = z.object({
-  studentProfileId: z.string().min(1, "Selecione um aluno."),
+  studentProfileIds: studentProfileIdsSchema,
   teacherProfileId: optionalText(80, "Selecione uma teacher valida."),
   title: z
     .string()
@@ -139,7 +145,7 @@ export const deleteInteractiveHomeworkSchema = z.object({
 
 export const replicateInteractiveHomeworkSchema = z.object({
   homeworkId: z.string().min(1, "Homework invalida."),
-  studentProfileId: z.string().min(1, "Selecione um aluno."),
+  studentProfileIds: studentProfileIdsSchema,
 });
 
 export const detectListeningTextSchema = z.object({

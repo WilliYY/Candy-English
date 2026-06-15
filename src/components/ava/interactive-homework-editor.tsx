@@ -52,7 +52,6 @@ import {
   InteractiveHomeworkTextLineGuide,
 } from "@/components/ava/interactive-homework-text";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   LISTENING_SENTENCE_MAX_LENGTH,
@@ -1565,7 +1564,7 @@ function InteractiveHomeworkEditorItem({
   );
   const [message, setMessage] = useState<string | null>(null);
   const [shareMessage, setShareMessage] = useState<string | null>(null);
-  const [shareStudentId, setShareStudentId] = useState("");
+  const [shareStudentIds, setShareStudentIds] = useState<string[]>([]);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
   const [isSharing, startShareTransition] = useTransition();
@@ -1630,6 +1629,13 @@ function InteractiveHomeworkEditorItem({
       (student) => !blockedStudentIds.has(student.id),
     );
   }, [homework.primaryStudentId, replicatedStudents, studentOptions]);
+  const shareStudentIdSet = useMemo(
+    () => new Set(shareStudentIds),
+    [shareStudentIds],
+  );
+  const allShareStudentsSelected =
+    shareableStudentOptions.length > 0 &&
+    shareStudentIds.length === shareableStudentOptions.length;
   const isPersisting = isSaving || saveStatus === "saving";
   const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
   const availableFieldToolOptions = isCandyXpActivity
@@ -1670,6 +1676,23 @@ function InteractiveHomeworkEditorItem({
       setSelectedTool("TEXT");
     }
   }, [isCandyXpActivity, selectedTool]);
+
+  useEffect(() => {
+    setShareStudentIds((currentStudentIds) => {
+      const availableStudentIds = new Set(
+        shareableStudentOptions.map((student) => student.id),
+      );
+      const keptStudentIds = currentStudentIds.filter((studentId) =>
+        availableStudentIds.has(studentId),
+      );
+
+      if (keptStudentIds.length === currentStudentIds.length) {
+        return currentStudentIds;
+      }
+
+      return keptStudentIds;
+    });
+  }, [shareableStudentOptions]);
 
   useEffect(() => {
     return () => {
@@ -2265,12 +2288,28 @@ function InteractiveHomeworkEditorItem({
     persistFields("manual");
   }
 
+  function toggleAllShareStudents() {
+    setShareStudentIds(
+      allShareStudentsSelected
+        ? []
+        : shareableStudentOptions.map((student) => student.id),
+    );
+  }
+
+  function toggleShareStudent(studentId: string) {
+    setShareStudentIds((currentStudentIds) =>
+      currentStudentIds.includes(studentId)
+        ? currentStudentIds.filter((currentStudentId) => currentStudentId !== studentId)
+        : [...currentStudentIds, studentId],
+    );
+  }
+
   function shareHomework(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setShareMessage(null);
 
-    if (!shareStudentId) {
-      setShareMessage("Selecione um aluno para replicar.");
+    if (shareStudentIds.length === 0) {
+      setShareMessage("Selecione pelo menos um aluno para replicar.");
       return;
     }
 
@@ -2284,13 +2323,13 @@ function InteractiveHomeworkEditorItem({
     startShareTransition(async () => {
       const result = await replicateInteractiveHomeworkForStudent({
         homeworkId: homework.id,
-        studentProfileId: shareStudentId,
+        studentProfileIds: shareStudentIds,
       });
 
       setShareMessage(result.message);
 
       if (result.ok) {
-        setShareStudentId("");
+        setShareStudentIds([]);
         router.refresh();
       }
     });
@@ -2570,37 +2609,98 @@ function InteractiveHomeworkEditorItem({
             </div>
 
             <form
-              className="grid gap-2 rounded-lg border border-primary/10 bg-white/88 p-3 shadow-sm"
+              className="grid gap-3 rounded-lg border border-primary/10 bg-white/88 p-3 shadow-sm"
               onSubmit={shareHomework}
             >
-              <label
-                className="grid gap-1 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/70"
-                htmlFor={`share-homework-${homework.id}`}
-              >
-                Replicar para outro aluno
-                <NativeSelect
-                  disabled={isSharing || shareableStudentOptions.length === 0}
-                  id={`share-homework-${homework.id}`}
-                  onChange={(event) => setShareStudentId(event.target.value)}
-                  value={shareStudentId}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-primary/70">
+                  <UserPlus aria-hidden="true" className="size-3.5" />
+                  Replicar para alunos
+                </span>
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em]",
+                    shareStudentIds.length > 0
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-primary/10 bg-white text-muted-foreground",
+                  )}
                 >
-                  <option value="">
+                  {shareStudentIds.length}/{shareableStudentOptions.length}
+                </span>
+              </div>
+              <div className="overflow-hidden rounded-lg border border-primary/10 bg-white">
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-center justify-between gap-3 border-b border-primary/10 px-3 py-2 text-sm font-semibold text-primary",
+                    isSharing || shareableStudentOptions.length === 0
+                      ? "cursor-not-allowed opacity-70"
+                      : "",
+                  )}
+                  htmlFor={`share-homework-${homework.id}-all`}
+                >
+                  <span className="inline-flex min-w-0 items-center gap-2">
+                    <input
+                      checked={allShareStudentsSelected}
+                      className="size-4 accent-primary"
+                      disabled={
+                        isSharing || shareableStudentOptions.length === 0
+                      }
+                      id={`share-homework-${homework.id}-all`}
+                      onChange={toggleAllShareStudents}
+                      type="checkbox"
+                    />
+                    Selecionar todos
+                  </span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
                     {shareableStudentOptions.length > 0
-                      ? "Escolha o aluno da copia"
-                      : "Todos disponiveis ja tem replica"}
-                  </option>
-                  {shareableStudentOptions.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.label}
-                    </option>
-                  ))}
-                </NativeSelect>
-              </label>
+                      ? `${shareableStudentOptions.length} disponiveis`
+                      : "Todos ja tem replica"}
+                  </span>
+                </label>
+                {shareableStudentOptions.length > 0 ? (
+                  <div className="grid max-h-44 gap-2 overflow-y-auto p-2 sm:grid-cols-2">
+                    {shareableStudentOptions.map((student) => {
+                      const isSelected = shareStudentIdSet.has(student.id);
+
+                      return (
+                        <label
+                          className={cn(
+                            "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition",
+                            isSelected
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                              : "border-primary/10 bg-white text-primary hover:border-primary/25",
+                            isSharing ? "cursor-not-allowed" : "",
+                          )}
+                          htmlFor={`share-homework-${homework.id}-${student.id}`}
+                          key={student.id}
+                          title={student.label}
+                        >
+                          <input
+                            checked={isSelected}
+                            className="size-4 shrink-0 accent-emerald-600"
+                            disabled={isSharing}
+                            id={`share-homework-${homework.id}-${student.id}`}
+                            onChange={() => toggleShareStudent(student.id)}
+                            type="checkbox"
+                          />
+                          <span className="min-w-0 truncate">
+                            {student.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="px-3 py-3 text-sm text-muted-foreground">
+                    Todos os alunos disponiveis ja possuem replica.
+                  </p>
+                )}
+              </div>
               <Button
                 disabled={
                   isSharing ||
                   shareableStudentOptions.length === 0 ||
-                  !shareStudentId ||
+                  shareStudentIds.length === 0 ||
                   hasUnsavedChanges ||
                   isPersisting
                 }

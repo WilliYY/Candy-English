@@ -65,6 +65,7 @@ type InteractiveAssetFormErrors = Partial<
 >;
 
 type FormActionResult = {
+  createdCount?: number;
   errors?: InteractiveAssetFormErrors;
   homeworkId?: string;
   message: string;
@@ -91,6 +92,24 @@ function fieldErrors<TInput extends Record<string, unknown>>(
 function formText(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
+}
+
+function formTextArray(formData: FormData, key: string) {
+  return formData
+    .getAll(key)
+    .map((value) => (typeof value === "string" ? value.trim() : ""))
+    .filter(Boolean);
+}
+
+function getFormStudentProfileIds(formData: FormData) {
+  const selectedIds = formTextArray(formData, "studentProfileIds");
+  const legacyStudentId = formText(formData, "studentProfileId").trim();
+
+  return selectedIds.length > 0
+    ? selectedIds
+    : legacyStudentId
+      ? [legacyStudentId]
+      : [];
 }
 
 function withOptimizationMessage(baseMessage: string, optimizationMessage: string | null) {
@@ -359,7 +378,7 @@ export async function createInteractiveHomework(
   const parsed = createInteractiveHomeworkSchema.safeParse({
     dueDate: formText(formData, "dueDate"),
     instructions: formText(formData, "instructions"),
-    studentProfileId: formText(formData, "studentProfileId"),
+    studentProfileIds: getFormStudentProfileIds(formData),
     teacherProfileId: formText(formData, "teacherProfileId"),
     title: formText(formData, "title"),
   });
@@ -396,13 +415,14 @@ export async function createInteractiveHomework(
     };
   }
 
-  const [teacher, student] = await Promise.all([
+  const studentProfileIds = data.studentProfileIds;
+  const [teacher, students] = await Promise.all([
     prisma.teacherProfile.findUnique({
       where: { id: teacherProfileId },
       select: { id: true },
     }),
-    prisma.studentProfile.findUnique({
-      where: { id: data.studentProfileId },
+    prisma.studentProfile.findMany({
+      where: { id: { in: studentProfileIds } },
       select: { id: true },
     }),
   ]);
@@ -415,29 +435,34 @@ export async function createInteractiveHomework(
     };
   }
 
-  if (!student) {
+  if (students.length !== studentProfileIds.length) {
     return {
-      errors: { studentProfileId: "Aluno nao encontrado." },
+      errors: { studentProfileIds: "Um ou mais alunos nao foram encontrados." },
       ok: false,
-      message: "Aluno nao encontrado.",
+      message: "Um ou mais alunos nao foram encontrados.",
     };
   }
 
-  if (!actor.isAdmin) {
-    const assignment = await prisma.studentTeacherAssignment.findUnique({
-      where: {
-        teacherProfileId_studentProfileId: {
-          studentProfileId: student.id,
-          teacherProfileId,
-        },
-      },
-      select: { id: true },
-    });
+  const studentsById = new Map(students.map((student) => [student.id, student]));
+  const orderedStudents = studentProfileIds.map((id) => studentsById.get(id)!);
 
-    if (!assignment) {
+  if (!actor.isAdmin) {
+    const assignments = await prisma.studentTeacherAssignment.findMany({
+      where: {
+        studentProfileId: { in: studentProfileIds },
+        teacherProfileId,
+      },
+      select: { studentProfileId: true },
+    });
+    const assignedStudentIds = new Set(
+      assignments.map((assignment) => assignment.studentProfileId),
+    );
+
+    if (assignedStudentIds.size !== studentProfileIds.length) {
       return {
         errors: {
-          studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
+          studentProfileIds:
+            "Um ou mais alunos nao estao vinculados a sua area teacher.",
         },
         ok: false,
         message: "Voce so pode criar homework para alunos vinculados a voce.",
@@ -459,67 +484,78 @@ export async function createInteractiveHomework(
     };
   }
 
-  const homework = await prisma.$transaction(async (tx) => {
-    if (actor.isAdmin) {
-      await tx.studentTeacherAssignment.upsert({
-        where: {
-          teacherProfileId_studentProfileId: {
+  const homeworks = await prisma.$transaction(async (tx) => {
+    const createdHomeworks: { id: string }[] = [];
+
+    for (const student of orderedStudents) {
+      if (actor.isAdmin) {
+        await tx.studentTeacherAssignment.upsert({
+          where: {
+            teacherProfileId_studentProfileId: {
+              studentProfileId: student.id,
+              teacherProfileId,
+            },
+          },
+          create: {
             studentProfileId: student.id,
             teacherProfileId,
           },
-        },
-        create: {
+          update: {},
+        });
+      }
+
+      const lesson = await tx.lesson.create({
+        data: {
+          description:
+            data.instructions ??
+            "Aula criada automaticamente para homework interativo.",
           studentProfileId: student.id,
           teacherProfileId,
+          title: `Homework - ${data.title}`,
         },
-        update: {},
+        select: { id: true },
       });
-    }
 
-    const lesson = await tx.lesson.create({
-      data: {
-        description:
-          data.instructions ??
-          "Aula criada automaticamente para homework interativo.",
-        studentProfileId: student.id,
-        teacherProfileId,
-        title: `Homework - ${data.title}`,
-      },
-      select: { id: true },
-    });
-
-    return tx.homework.create({
-      data: {
-        assetFileName: savedAsset.originalName,
-        assetMimeType: savedAsset.mimeType,
-        assetPageCount: savedAsset.pageCount,
-        assetSizeBytes: savedAsset.sizeBytes,
-        assetStoragePath: savedAsset.relativePath,
-        dueDate: data.dueDate,
-        fieldDetectionSource: "manual",
-        instructions: data.instructions,
-        kind: "INTERACTIVE",
-        lessonId: lesson.id,
-        teacherProfileId,
-        title: data.title,
-        questions: {
-          create: {
-            prompt: "Complete a atividade interativa no arquivo anexado.",
+      const homework = await tx.homework.create({
+        data: {
+          assetFileName: savedAsset.originalName,
+          assetMimeType: savedAsset.mimeType,
+          assetPageCount: savedAsset.pageCount,
+          assetSizeBytes: savedAsset.sizeBytes,
+          assetStoragePath: savedAsset.relativePath,
+          dueDate: data.dueDate,
+          fieldDetectionSource: "manual",
+          instructions: data.instructions,
+          kind: "INTERACTIVE",
+          lessonId: lesson.id,
+          teacherProfileId,
+          title: data.title,
+          questions: {
+            create: {
+              prompt: "Complete a atividade interativa no arquivo anexado.",
+            },
           },
         },
-      },
-      select: { id: true },
-    });
+        select: { id: true },
+      });
+
+      createdHomeworks.push(homework);
+    }
+
+    return createdHomeworks;
   });
 
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");
 
   return {
-    homeworkId: homework.id,
+    createdCount: homeworks.length,
+    homeworkId: homeworks[0]?.id,
     ok: true,
     message: withOptimizationMessage(
-      "Homework interativa criada. Desenhe as areas no PDF e salve.",
+      homeworks.length === 1
+        ? "Homework interativa criada. Desenhe as areas no PDF e salve."
+        : `${homeworks.length} homeworks interativas criadas. Desenhe as areas no PDF e salve.`,
       savedAsset.optimizationMessage,
     ),
   };
@@ -540,7 +576,7 @@ export async function createInteractiveLesson(
   const parsed = createInteractiveLessonSchema.safeParse({
     instructions: formText(formData, "instructions"),
     scheduledAt: formText(formData, "scheduledAt"),
-    studentProfileId: formText(formData, "studentProfileId"),
+    studentProfileIds: getFormStudentProfileIds(formData),
     teacherProfileId: formText(formData, "teacherProfileId"),
     title: formText(formData, "title"),
   });
@@ -577,13 +613,14 @@ export async function createInteractiveLesson(
     };
   }
 
-  const [teacher, student] = await Promise.all([
+  const studentProfileIds = data.studentProfileIds;
+  const [teacher, students] = await Promise.all([
     prisma.teacherProfile.findUnique({
       where: { id: teacherProfileId },
       select: { id: true },
     }),
-    prisma.studentProfile.findUnique({
-      where: { id: data.studentProfileId },
+    prisma.studentProfile.findMany({
+      where: { id: { in: studentProfileIds } },
       select: { id: true },
     }),
   ]);
@@ -596,29 +633,34 @@ export async function createInteractiveLesson(
     };
   }
 
-  if (!student) {
+  if (students.length !== studentProfileIds.length) {
     return {
-      errors: { studentProfileId: "Aluno nao encontrado." },
+      errors: { studentProfileIds: "Um ou mais alunos nao foram encontrados." },
       ok: false,
-      message: "Aluno nao encontrado.",
+      message: "Um ou mais alunos nao foram encontrados.",
     };
   }
 
-  if (!actor.isAdmin) {
-    const assignment = await prisma.studentTeacherAssignment.findUnique({
-      where: {
-        teacherProfileId_studentProfileId: {
-          studentProfileId: student.id,
-          teacherProfileId,
-        },
-      },
-      select: { id: true },
-    });
+  const studentsById = new Map(students.map((student) => [student.id, student]));
+  const orderedStudents = studentProfileIds.map((id) => studentsById.get(id)!);
 
-    if (!assignment) {
+  if (!actor.isAdmin) {
+    const assignments = await prisma.studentTeacherAssignment.findMany({
+      where: {
+        studentProfileId: { in: studentProfileIds },
+        teacherProfileId,
+      },
+      select: { studentProfileId: true },
+    });
+    const assignedStudentIds = new Set(
+      assignments.map((assignment) => assignment.studentProfileId),
+    );
+
+    if (assignedStudentIds.size !== studentProfileIds.length) {
       return {
         errors: {
-          studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
+          studentProfileIds:
+            "Um ou mais alunos nao estao vinculados a sua area teacher.",
         },
         ok: false,
         message: "Voce so pode criar aulas para alunos vinculados a voce.",
@@ -640,65 +682,76 @@ export async function createInteractiveLesson(
     };
   }
 
-  const homework = await prisma.$transaction(async (tx) => {
-    if (actor.isAdmin) {
-      await tx.studentTeacherAssignment.upsert({
-        where: {
-          teacherProfileId_studentProfileId: {
+  const homeworks = await prisma.$transaction(async (tx) => {
+    const createdHomeworks: { id: string }[] = [];
+
+    for (const student of orderedStudents) {
+      if (actor.isAdmin) {
+        await tx.studentTeacherAssignment.upsert({
+          where: {
+            teacherProfileId_studentProfileId: {
+              studentProfileId: student.id,
+              teacherProfileId,
+            },
+          },
+          create: {
             studentProfileId: student.id,
             teacherProfileId,
           },
-        },
-        create: {
+          update: {},
+        });
+      }
+
+      const lesson = await tx.lesson.create({
+        data: {
+          description: data.instructions,
+          scheduledAt: data.scheduledAt,
           studentProfileId: student.id,
           teacherProfileId,
+          title: data.title,
         },
-        update: {},
+        select: { id: true },
       });
-    }
 
-    const lesson = await tx.lesson.create({
-      data: {
-        description: data.instructions,
-        scheduledAt: data.scheduledAt,
-        studentProfileId: student.id,
-        teacherProfileId,
-        title: data.title,
-      },
-      select: { id: true },
-    });
-
-    return tx.homework.create({
-      data: {
-        assetFileName: savedAsset.originalName,
-        assetMimeType: savedAsset.mimeType,
-        assetPageCount: savedAsset.pageCount,
-        assetSizeBytes: savedAsset.sizeBytes,
-        assetStoragePath: savedAsset.relativePath,
-        fieldDetectionSource: "lesson-manual",
-        instructions: data.instructions,
-        kind: "INTERACTIVE",
-        lessonId: lesson.id,
-        teacherProfileId,
-        title: data.title,
-        questions: {
-          create: {
-            prompt: "Complete a atividade interativa da aula.",
+      const homework = await tx.homework.create({
+        data: {
+          assetFileName: savedAsset.originalName,
+          assetMimeType: savedAsset.mimeType,
+          assetPageCount: savedAsset.pageCount,
+          assetSizeBytes: savedAsset.sizeBytes,
+          assetStoragePath: savedAsset.relativePath,
+          fieldDetectionSource: "lesson-manual",
+          instructions: data.instructions,
+          kind: "INTERACTIVE",
+          lessonId: lesson.id,
+          teacherProfileId,
+          title: data.title,
+          questions: {
+            create: {
+              prompt: "Complete a atividade interativa da aula.",
+            },
           },
         },
-      },
-      select: { id: true },
-    });
+        select: { id: true },
+      });
+
+      createdHomeworks.push(homework);
+    }
+
+    return createdHomeworks;
   });
 
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");
 
   return {
-    homeworkId: homework.id,
+    createdCount: homeworks.length,
+    homeworkId: homeworks[0]?.id,
     ok: true,
     message: withOptimizationMessage(
-      "Aula interativa criada. Desenhe as areas no PDF e salve.",
+      homeworks.length === 1
+        ? "Aula interativa criada. Desenhe as areas no PDF e salve."
+        : `${homeworks.length} aulas interativas criadas. Desenhe as areas no PDF e salve.`,
       savedAsset.optimizationMessage,
     ),
   };
@@ -1000,11 +1053,12 @@ export async function replicateInteractiveHomeworkForStudent(
         parsed.error.issues,
       ),
       ok: false,
-      message: "Selecione uma homework e um aluno.",
+      message: "Selecione uma homework e pelo menos um aluno.",
     };
   }
 
   const prisma = getPrisma();
+  const selectedStudentProfileIds = parsed.data.studentProfileIds;
   const homework = await prisma.homework.findUnique({
     where: { id: parsed.data.homeworkId },
     select: {
@@ -1055,15 +1109,14 @@ export async function replicateInteractiveHomeworkForStudent(
         },
       },
       homeworkReplicas: {
-        where: {
-          lesson: {
-            studentProfileId: parsed.data.studentProfileId,
-          },
-        },
         select: {
           id: true,
+          lesson: {
+            select: {
+              studentProfileId: true,
+            },
+          },
         },
-        take: 1,
       },
       status: true,
       teacherProfileId: true,
@@ -1093,15 +1146,25 @@ export async function replicateInteractiveHomeworkForStudent(
     };
   }
 
-  if (homework.lesson.studentProfileId === parsed.data.studentProfileId) {
+  const targetStudentProfileIds = selectedStudentProfileIds.filter(
+    (studentProfileId) => studentProfileId !== homework.lesson.studentProfileId,
+  );
+
+  if (targetStudentProfileIds.length === 0) {
     return {
       ok: false,
-      message: "Esse aluno ja e o aluno principal deste homework.",
+      message: "Os alunos selecionados ja incluem apenas o aluno principal.",
     };
   }
 
-  const student = await prisma.studentProfile.findUnique({
-    where: { id: parsed.data.studentProfileId },
+  const students = await prisma.studentProfile.findMany({
+    where: {
+      id: { in: targetStudentProfileIds },
+      user: {
+        isActive: true,
+        role: "STUDENT",
+      },
+    },
     select: {
       id: true,
       user: {
@@ -1114,13 +1177,20 @@ export async function replicateInteractiveHomeworkForStudent(
     },
   });
 
-  if (!student || student.user.role !== "STUDENT" || !student.user.isActive) {
+  if (students.length !== targetStudentProfileIds.length) {
     return {
-      errors: { studentProfileId: "Aluno nao encontrado ou inativo." },
+      errors: {
+        studentProfileIds: "Um ou mais alunos nao foram encontrados ou estao inativos.",
+      },
       ok: false,
-      message: "Aluno nao encontrado ou inativo.",
+      message: "Um ou mais alunos nao foram encontrados ou estao inativos.",
     };
   }
+
+  const studentsById = new Map(students.map((student) => [student.id, student]));
+  const orderedStudents = targetStudentProfileIds.map(
+    (studentProfileId) => studentsById.get(studentProfileId)!,
+  );
 
   if (!actor.isAdmin) {
     const teacherProfileId = actor.teacherProfileId;
@@ -1132,131 +1202,146 @@ export async function replicateInteractiveHomeworkForStudent(
       };
     }
 
-    const assignment = await prisma.studentTeacherAssignment.findUnique({
+    const assignments = await prisma.studentTeacherAssignment.findMany({
       where: {
-        teacherProfileId_studentProfileId: {
-          studentProfileId: student.id,
-          teacherProfileId,
-        },
+        studentProfileId: { in: targetStudentProfileIds },
+        teacherProfileId,
       },
-      select: { id: true },
+      select: { studentProfileId: true },
     });
+    const assignedStudentIds = new Set(
+      assignments.map((assignment) => assignment.studentProfileId),
+    );
 
-    if (!assignment) {
+    if (assignedStudentIds.size !== targetStudentProfileIds.length) {
       return {
         errors: {
-          studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
+          studentProfileIds:
+            "Um ou mais alunos nao estao vinculados a sua area teacher.",
         },
         ok: false,
-        message: "Aluno nao esta vinculado a sua area teacher.",
+        message: "Um ou mais alunos nao estao vinculados a sua area teacher.",
       };
     }
   }
 
-  if (homework.homeworkReplicas.length > 0) {
-    await prisma.homeworkStudentAssignment.deleteMany({
-      where: {
-        homeworkId: homework.id,
-        studentProfileId: student.id,
-      },
-    });
-
-    return {
-      ok: true,
-      message: `Replica para ${student.user.name} ja existe.`,
-    };
-  }
+  const replicatedStudentIds = new Set(
+    homework.homeworkReplicas
+      .map((replica) => replica.lesson.studentProfileId)
+      .filter((studentProfileId): studentProfileId is string =>
+        Boolean(studentProfileId),
+      ),
+  );
+  const alreadyReplicatedStudents = orderedStudents.filter((student) =>
+    replicatedStudentIds.has(student.id),
+  );
+  const studentsToCreate = orderedStudents.filter(
+    (student) => !replicatedStudentIds.has(student.id),
+  );
 
   await prisma.$transaction(async (tx) => {
-    if (actor.isAdmin) {
-      await tx.studentTeacherAssignment.upsert({
+    if (alreadyReplicatedStudents.length > 0) {
+      await tx.homeworkStudentAssignment.deleteMany({
         where: {
-          teacherProfileId_studentProfileId: {
-            studentProfileId: student.id,
-            teacherProfileId: homework.teacherProfileId,
+          homeworkId: homework.id,
+          studentProfileId: {
+            in: alreadyReplicatedStudents.map((student) => student.id),
           },
         },
-        create: {
-          studentProfileId: student.id,
-          teacherProfileId: homework.teacherProfileId,
-        },
-        update: {},
       });
     }
 
-    const lesson = await tx.lesson.create({
-      data: {
-        description:
-          homework.lesson.description ??
-          homework.instructions ??
-          "Aula criada automaticamente por replica de homework.",
-        scheduledAt: homework.lesson.scheduledAt,
-        status: homework.lesson.status,
-        studentProfileId: student.id,
-        teacherProfileId: homework.teacherProfileId,
-        title: homework.lesson.title,
-      },
-      select: { id: true },
-    });
+    for (const student of studentsToCreate) {
+      if (actor.isAdmin) {
+        await tx.studentTeacherAssignment.upsert({
+          where: {
+            teacherProfileId_studentProfileId: {
+              studentProfileId: student.id,
+              teacherProfileId: homework.teacherProfileId,
+            },
+          },
+          create: {
+            studentProfileId: student.id,
+            teacherProfileId: homework.teacherProfileId,
+          },
+          update: {},
+        });
+      }
 
-    await tx.homework.create({
-      data: {
-        assetFileName: homework.assetFileName,
-        assetMimeType: homework.assetMimeType,
-        assetPageCount: homework.assetPageCount,
-        assetSizeBytes: homework.assetSizeBytes,
-        assetStoragePath: homework.assetStoragePath,
-        dueDate: homework.dueDate,
-        fieldDetectionSource: homework.fieldDetectionSource,
-        instructions: homework.instructions,
-        kind: homework.kind,
-        lessonId: lesson.id,
-        replicatedFromHomeworkId: homework.id,
-        status: homework.status,
-        teacherProfileId: homework.teacherProfileId,
-        title: homework.title,
-        ...(homework.questions.length > 0
-          ? {
-              questions: {
-                createMany: {
-                  data: homework.questions.map((question) => ({
-                    expectedAnswer: question.expectedAnswer,
-                    prompt: question.prompt,
-                    sortOrder: question.sortOrder,
-                  })),
-                },
-              },
-            }
-          : {}),
-        ...(homework.interactiveFields.length > 0
-          ? {
-              interactiveFields: {
-                createMany: {
-                  data: homework.interactiveFields.map((field) => ({
-                    height: field.height,
-                    label: field.label,
-                    page: field.page,
-                    placeholder: field.placeholder,
-                    required: field.required,
-                    sortOrder: field.sortOrder,
-                    type: field.type,
-                    width: field.width,
-                    x: field.x,
-                    y: field.y,
-                  })),
-                },
-              },
-            }
-          : {}),
-      },
-    });
+      const lesson = await tx.lesson.create({
+        data: {
+          description:
+            homework.lesson.description ??
+            homework.instructions ??
+            "Aula criada automaticamente por replica de homework.",
+          scheduledAt: homework.lesson.scheduledAt,
+          status: homework.lesson.status,
+          studentProfileId: student.id,
+          teacherProfileId: homework.teacherProfileId,
+          title: homework.lesson.title,
+        },
+        select: { id: true },
+      });
 
-    await tx.homeworkStudentAssignment.deleteMany({
-      where: {
-        homeworkId: homework.id,
-        studentProfileId: student.id,
-      },
-    });
+      await tx.homework.create({
+        data: {
+          assetFileName: homework.assetFileName,
+          assetMimeType: homework.assetMimeType,
+          assetPageCount: homework.assetPageCount,
+          assetSizeBytes: homework.assetSizeBytes,
+          assetStoragePath: homework.assetStoragePath,
+          dueDate: homework.dueDate,
+          fieldDetectionSource: homework.fieldDetectionSource,
+          instructions: homework.instructions,
+          kind: homework.kind,
+          lessonId: lesson.id,
+          replicatedFromHomeworkId: homework.id,
+          status: homework.status,
+          teacherProfileId: homework.teacherProfileId,
+          title: homework.title,
+          ...(homework.questions.length > 0
+            ? {
+                questions: {
+                  createMany: {
+                    data: homework.questions.map((question) => ({
+                      expectedAnswer: question.expectedAnswer,
+                      prompt: question.prompt,
+                      sortOrder: question.sortOrder,
+                    })),
+                  },
+                },
+              }
+            : {}),
+          ...(homework.interactiveFields.length > 0
+            ? {
+                interactiveFields: {
+                  createMany: {
+                    data: homework.interactiveFields.map((field) => ({
+                      height: field.height,
+                      label: field.label,
+                      page: field.page,
+                      placeholder: field.placeholder,
+                      required: field.required,
+                      sortOrder: field.sortOrder,
+                      type: field.type,
+                      width: field.width,
+                      x: field.x,
+                      y: field.y,
+                    })),
+                  },
+                },
+              }
+            : {}),
+        },
+      });
+
+      await tx.homeworkStudentAssignment.deleteMany({
+        where: {
+          homeworkId: homework.id,
+          studentProfileId: student.id,
+        },
+      });
+    }
 
   });
 
@@ -1265,7 +1350,16 @@ export async function replicateInteractiveHomeworkForStudent(
 
   return {
     ok: true,
-    message: `Replica criada para ${student.user.name}.`,
+    message:
+      studentsToCreate.length === 0
+        ? alreadyReplicatedStudents.length === 1
+          ? `Replica para ${alreadyReplicatedStudents[0].user.name} ja existe.`
+          : `${alreadyReplicatedStudents.length} replicas ja existiam.`
+        : alreadyReplicatedStudents.length > 0
+          ? `${studentsToCreate.length} replica(s) criada(s). ${alreadyReplicatedStudents.length} ja existia(m).`
+          : studentsToCreate.length === 1
+            ? `Replica criada para ${studentsToCreate[0].user.name}.`
+            : `${studentsToCreate.length} replicas criadas.`,
   };
 }
 

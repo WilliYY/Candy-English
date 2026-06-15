@@ -12,10 +12,11 @@ import {
   LoaderCircle,
   Plus,
   UserRound,
+  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState, useTransition } from "react";
+import { type FormEvent, useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   allowHomeworkRedo,
@@ -193,6 +194,133 @@ function wait(milliseconds: number) {
   });
 }
 
+function StudentMultiSelectField({
+  disabled,
+  error,
+  id,
+  label = "Alunos",
+  onChange,
+  selectedIds,
+  students,
+}: {
+  disabled: boolean;
+  error?: string;
+  id: string;
+  label?: string;
+  onChange: (selectedIds: string[]) => void;
+  selectedIds: string[];
+  students: Option[];
+}) {
+  const selectedSet = new Set(selectedIds);
+  const allSelected = students.length > 0 && selectedIds.length === students.length;
+
+  function toggleAll() {
+    onChange(allSelected ? [] : students.map((student) => student.id));
+  }
+
+  function toggleStudent(studentId: string) {
+    onChange(
+      selectedSet.has(studentId)
+        ? selectedIds.filter((selectedId) => selectedId !== studentId)
+        : [...selectedIds, studentId],
+    );
+  }
+
+  return (
+    <Field data-invalid={Boolean(error)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FieldLabel htmlFor={`${id}-all`}>{label}</FieldLabel>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em]",
+            selectedIds.length > 0
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-primary/10 bg-white text-muted-foreground",
+          )}
+        >
+          <UsersRound aria-hidden="true" className="size-3.5" />
+          {selectedIds.length}/{students.length || 0}
+        </span>
+      </div>
+      {selectedIds.map((studentId) => (
+        <input
+          key={studentId}
+          name="studentProfileIds"
+          type="hidden"
+          value={studentId}
+        />
+      ))}
+      <div
+        className={cn(
+          "mt-1 overflow-hidden rounded-lg border bg-white/95 shadow-sm",
+          error ? "border-red-300" : "border-primary/10",
+          disabled ? "opacity-70" : "",
+        )}
+      >
+        <label
+          className={cn(
+            "flex cursor-pointer items-center justify-between gap-3 border-b border-primary/10 px-3 py-2 text-sm font-semibold text-primary",
+            disabled ? "cursor-not-allowed" : "",
+          )}
+          htmlFor={`${id}-all`}
+        >
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <input
+              checked={allSelected}
+              className="size-4 accent-primary"
+              disabled={disabled || students.length === 0}
+              id={`${id}-all`}
+              onChange={toggleAll}
+              type="checkbox"
+            />
+            Selecionar todos
+          </span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {students.length} disponiveis
+          </span>
+        </label>
+        {students.length > 0 ? (
+          <div className="grid max-h-48 gap-2 overflow-y-auto p-2 sm:grid-cols-2">
+            {students.map((student) => {
+              const isSelected = selectedSet.has(student.id);
+
+              return (
+                <label
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition",
+                    isSelected
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                      : "border-primary/10 bg-white text-primary hover:border-primary/25",
+                    disabled ? "cursor-not-allowed" : "",
+                  )}
+                  htmlFor={`${id}-${student.id}`}
+                  key={student.id}
+                  title={student.label}
+                >
+                  <input
+                    checked={isSelected}
+                    className="size-4 shrink-0 accent-emerald-600"
+                    disabled={disabled}
+                    id={`${id}-${student.id}`}
+                    onChange={() => toggleStudent(student.id)}
+                    type="checkbox"
+                  />
+                  <span className="min-w-0 truncate">{student.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="px-3 py-3 text-sm text-muted-foreground">
+            Cadastre ou vincule um aluno antes de criar.
+          </p>
+        )}
+      </div>
+      <FieldError errors={[{ message: error }]} />
+    </Field>
+  );
+}
+
 function InteractiveAssetUploadForm({
   mode,
   students,
@@ -206,19 +334,50 @@ function InteractiveAssetUploadForm({
   const copy = interactiveAssetCopy[mode];
   const isLessonMode = mode === "lesson";
   const flowSteps = isLessonMode
-    ? ["Teacher", "Aluno", "Aula"]
-    : ["Aluno", "Arquivo", "Editor"];
+    ? ["Teacher", "Alunos", "Aula"]
+    : ["Alunos", "Arquivo", "Editor"];
   const formDescription = isLessonMode
-    ? "Escolha teacher e aluno, envie o material e abra o editor da aula."
-    : "Escolha aluno, envie PDF/imagem e abra o editor para marcar as areas.";
+    ? "Escolha teacher e um ou mais alunos, envie o material e abra o editor da aula."
+    : "Escolha um ou mais alunos, envie PDF/imagem e abra o editor para marcar as areas.";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [errors, setErrors] = useState<InteractiveAssetFormErrors>({});
   const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [uploadQueue, setUploadQueue] = useState<InteractiveUploadQueueItem[]>(
     [],
   );
   const isPending = isUploading;
+
+  useEffect(() => {
+    setSelectedStudentIds((currentSelectedIds) => {
+      const availableStudentIds = new Set(students.map((student) => student.id));
+      const keptStudentIds = currentSelectedIds.filter((studentId) =>
+        availableStudentIds.has(studentId),
+      );
+
+      if (keptStudentIds.length > 0) {
+        if (keptStudentIds.length === currentSelectedIds.length) {
+          return currentSelectedIds;
+        }
+
+        return keptStudentIds;
+      }
+
+      const initialStudentIds = students[0]?.id ? [students[0].id] : [];
+
+      if (
+        initialStudentIds.length === currentSelectedIds.length &&
+        initialStudentIds.every(
+          (studentId, index) => studentId === currentSelectedIds[index],
+        )
+      ) {
+        return currentSelectedIds;
+      }
+
+      return initialStudentIds;
+    });
+  }, [students]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -232,14 +391,17 @@ function InteractiveAssetUploadForm({
     const nextErrors: InteractiveAssetFormErrors = {};
     const title = String(formData.get("title") ?? "").trim();
     const teacherProfileId = String(formData.get("teacherProfileId") ?? "");
-    const studentProfileId = String(formData.get("studentProfileId") ?? "");
+    const availableStudentIds = new Set(students.map((student) => student.id));
+    const studentProfileIds = selectedStudentIds.filter((studentId) =>
+      availableStudentIds.has(studentId),
+    );
 
     if (!teacherProfileId) {
       nextErrors.teacherProfileId = "Selecione uma teacher.";
     }
 
-    if (!studentProfileId) {
-      nextErrors.studentProfileId = "Selecione um aluno.";
+    if (studentProfileIds.length === 0) {
+      nextErrors.studentProfileIds = "Selecione pelo menos um aluno.";
     }
 
     if (title.length > 0 && title.length < 3) {
@@ -286,7 +448,9 @@ function InteractiveAssetUploadForm({
       try {
         const itemFormData = new FormData();
         itemFormData.set("teacherProfileId", teacherProfileId);
-        itemFormData.set("studentProfileId", studentProfileId);
+        studentProfileIds.forEach((studentProfileId) => {
+          itemFormData.append("studentProfileIds", studentProfileId);
+        });
         itemFormData.set(
           "title",
           titleForInteractiveUpload({
@@ -334,7 +498,7 @@ function InteractiveAssetUploadForm({
           await wait(350);
         }
 
-        createdCount += 1;
+        createdCount += result.createdCount ?? 1;
         setErrors({});
         setUploadQueue((current) =>
           updateUploadQueueItem(current, queueItem.id, {
@@ -361,7 +525,7 @@ function InteractiveAssetUploadForm({
 
     if (failedCount === 0) {
       setMessage(
-        `${createdCount} arquivo(s) criado(s). Abra cada item na lista abaixo para desenhar as areas.`,
+        `${createdCount} atividade(s) criada(s). Abra cada item na lista abaixo para desenhar as areas.`,
       );
 
       if (createdCount > 0) {
@@ -373,7 +537,7 @@ function InteractiveAssetUploadForm({
       }
     } else {
       setMessage(
-        `${createdCount} arquivo(s) criado(s), ${failedCount} com erro. Os arquivos com sucesso ja aparecem na lista.`,
+        `${createdCount} atividade(s) criada(s), ${failedCount} arquivo(s) com erro. Os arquivos com sucesso ja aparecem na lista.`,
       );
     }
 
@@ -443,7 +607,7 @@ function InteractiveAssetUploadForm({
       </div>
 
       <div className="p-4">
-        <div className="grid gap-3 rounded-lg border border-primary/10 bg-white/72 p-3 shadow-sm lg:grid-cols-[0.9fr_0.9fr_1fr_0.7fr]">
+        <div className="grid gap-3 rounded-lg border border-primary/10 bg-white/72 p-3 shadow-sm lg:grid-cols-[0.75fr_minmax(320px,1.45fr)_minmax(240px,1fr)_0.65fr]">
           <Field data-invalid={Boolean(errors.teacherProfileId)}>
             <FieldLabel htmlFor={`interactive-${mode}-teacher`}>
               Teacher
@@ -465,27 +629,14 @@ function InteractiveAssetUploadForm({
             </NativeSelect>
             <FieldError errors={[{ message: errors.teacherProfileId }]} />
           </Field>
-          <Field data-invalid={Boolean(errors.studentProfileId)}>
-            <FieldLabel htmlFor={`interactive-${mode}-student`}>
-              Aluno
-            </FieldLabel>
-            <NativeSelect
-              id={`interactive-${mode}-student`}
-              name="studentProfileId"
-              aria-invalid={Boolean(errors.studentProfileId)}
-              disabled={isPending || students.length === 0}
-            >
-              {students.length === 0 ? (
-                <option value="">Cadastre ou vincule um aluno</option>
-              ) : null}
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.label}
-                </option>
-              ))}
-            </NativeSelect>
-            <FieldError errors={[{ message: errors.studentProfileId }]} />
-          </Field>
+          <StudentMultiSelectField
+            disabled={isPending || students.length === 0}
+            error={errors.studentProfileIds}
+            id={`interactive-${mode}-students`}
+            onChange={setSelectedStudentIds}
+            selectedIds={selectedStudentIds}
+            students={students}
+          />
           <Field data-invalid={Boolean(errors.title)}>
             <FieldLabel htmlFor={`interactive-${mode}-title`}>
               {copy.titleLabel}
@@ -584,7 +735,10 @@ function InteractiveAssetUploadForm({
               className="h-11 w-full px-5 sm:w-auto"
               type="submit"
               disabled={
-                isPending || students.length === 0 || teachers.length === 0
+                isPending ||
+                students.length === 0 ||
+                teachers.length === 0 ||
+                selectedStudentIds.length === 0
               }
             >
               {isPending ? (

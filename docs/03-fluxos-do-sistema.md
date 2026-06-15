@@ -122,7 +122,7 @@ Helpers:
 1. Teacher entra em `/ava/teacher`.
 2. No resumo, ve o card Teacher XP com nivel, fontes pedagogicas, trilha infinita e proximas metas de rotina.
 3. Ve alunos vinculados.
-4. Cria aula interativa e homework interativo por arquivo do Canva.
+4. Cria aula interativa e homework interativo por arquivo do Canva, podendo selecionar um aluno, varios alunos ou todos os disponiveis no formulario.
 5. Corrige respostas e envia feedback.
 6. Ve a area de aula ao vivo em manutencao temporaria e usa mensagens enquanto a integracao de video e revisada.
 7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos` e aceitar interessados como alunos `STUDENT` vinculados a sua teacher.
