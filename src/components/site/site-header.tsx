@@ -48,16 +48,17 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
         )}
       >
         <BrandLogo
+          animated={isHome}
           className={cn(
             "shrink-0",
             isHome
               ? "h-[4.35rem] w-[230px] overflow-hidden rounded-full sm:h-[4.8rem] sm:w-[280px]"
-              : "h-[4.4rem] w-[230px] sm:h-[5.2rem] sm:w-[300px]",
+              : "h-[3.85rem] w-[190px] overflow-hidden rounded-full bg-white sm:h-[4.65rem] sm:w-[270px]",
           )}
           imageClassName={cn(
             isHome
               ? "top-[55%] w-[204px] scale-[0.96] group-hover:scale-[0.99] sm:w-[246px]"
-              : "w-[300px] sm:w-[380px]",
+              : "top-[52%] w-[184px] scale-[0.98] group-hover:scale-[1.01] sm:w-[260px]",
           )}
         />
         <nav

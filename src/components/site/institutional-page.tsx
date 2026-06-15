@@ -2,6 +2,7 @@ import type { ComponentType, SVGProps } from "react";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { InstitutionalBackgroundVideo } from "@/components/site/institutional-background-video";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
@@ -30,17 +31,7 @@ export function InstitutionalPage({
 }: InstitutionalPageProps) {
   return (
     <div className="site-institutional-page relative isolate overflow-hidden bg-primary text-white">
-      <video
-        aria-label="Fundo em video das informacoes Candy English"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
-      >
-        <source src="/brand/informacoes.mp4" type="video/mp4" />
-      </video>
+      <InstitutionalBackgroundVideo src="/brand/informacoes.mp4" />
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(39,14,50,0.82),rgba(39,14,50,0.58)_42%,rgba(39,14,50,0.9))]" />
 
       <section className="relative overflow-hidden">
@@ -49,10 +40,10 @@ export function InstitutionalPage({
           <span className="text-sm font-semibold uppercase tracking-[0.28em] text-[#e57cd8]">
             {eyebrow}
           </span>
-          <h1 className="max-w-5xl text-4xl font-semibold leading-tight tracking-normal md:text-6xl">
+          <h1 className="max-w-5xl break-words text-[2rem] font-semibold leading-[1.08] tracking-normal sm:text-4xl md:text-6xl">
             {title}
           </h1>
-          <p className="max-w-3xl text-base leading-8 text-white/75 md:text-lg">
+          <p className="max-w-3xl break-words text-base leading-8 text-white/75 md:text-lg">
             {description}
           </p>
           <Button
@@ -68,12 +59,12 @@ export function InstitutionalPage({
         </div>
       </section>
 
-      <section className="relative border-y border-white/15 bg-white/10 backdrop-blur-sm">
+      <section className="relative border-y border-white/15 bg-primary/35">
         <div className="relative z-20 mx-auto grid w-full max-w-7xl gap-5 px-6 pb-56 pt-16 md:grid-cols-2 md:pb-60 lg:px-8 lg:pb-64">
           {sections.map((section, index) => (
             <article
               key={section.title}
-              className="group flex min-h-64 flex-col justify-between rounded-lg border border-white/35 bg-white/88 p-6 text-foreground shadow-2xl shadow-black/10 backdrop-blur-md transition-transform duration-300 hover:-translate-y-1"
+              className="group flex min-h-64 flex-col justify-between rounded-lg border border-white/35 bg-white/90 p-6 text-foreground shadow-2xl shadow-black/10 transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between gap-4">

@@ -29,7 +29,7 @@ export function BrandLogo({
     <Link
       href="/"
       className={cn(
-        "group relative inline-flex h-16 w-[230px] items-center overflow-visible rounded-lg",
+        "group relative inline-flex h-16 w-[230px] items-center rounded-lg",
         variant === "light" ? "text-white" : "text-foreground",
         className,
       )}
