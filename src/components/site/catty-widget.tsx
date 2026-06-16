@@ -948,23 +948,23 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   return (
     <div
-      className={`pointer-events-none fixed right-3 z-50 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-3 sm:right-5 sm:max-w-none ${
+      className={`pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-2.5 sm:right-5 sm:max-w-none sm:gap-3 ${
         hasWhatsAppWidget ? "bottom-44 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
       {open && canUseCattyChat ? (
-        <section className="pointer-events-auto grid h-[min(620px,calc(100vh-6rem))] w-[min(420px,calc(100vw-2rem))] grid-rows-[auto_1fr_auto] overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-2xl shadow-primary/20">
-          <header className="relative overflow-hidden bg-primary px-4 py-3 text-primary-foreground">
+        <section className="catty-chat-panel pointer-events-auto grid h-[min(590px,calc(100dvh-6.75rem))] w-[min(430px,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[1.35rem] border border-primary/15 bg-card shadow-2xl shadow-primary/20 sm:h-[min(620px,calc(100dvh-7.25rem))] sm:w-[min(430px,calc(100vw-2rem))]">
+          <header className="relative overflow-hidden bg-[linear-gradient(135deg,#412a4c_0%,#55315f_58%,#6d3971_100%)] px-4 py-3 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="catty-breathe relative flex size-12 shrink-0 overflow-hidden rounded-xl border border-white/35 bg-white shadow-lg shadow-black/10">
+                <span className="catty-breathe relative flex size-12 shrink-0 overflow-hidden rounded-2xl border border-white/45 bg-white p-1 shadow-lg shadow-black/10 ring-1 ring-white/20">
                   <Image
                     src="/brand/catty.png"
                     alt=""
                     width={112}
                     height={112}
-                    sizes="48px"
-                    className="size-full object-cover"
+                    sizes="40px"
+                    className="size-full object-contain"
                     priority={false}
                   />
                 </span>
@@ -992,7 +992,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
           </header>
 
           <div
-            className="flex flex-col gap-3 overflow-y-auto bg-[#fff8fb] p-4"
+            className="min-h-0 flex flex-col gap-3 overflow-y-auto overscroll-contain bg-[#fff8fb] p-3.5 sm:p-4"
             aria-busy={isThinking}
             aria-live="polite"
           >
@@ -1011,15 +1011,15 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                     key={`${message.from}-${message.id ?? index}`}
                     className={
                       message.from === "catty"
-                        ? "max-w-[88%]"
-                        : "ml-auto max-w-[88%]"
+                        ? "max-w-[92%] break-words sm:max-w-[88%]"
+                        : "ml-auto max-w-[92%] break-words sm:max-w-[88%]"
                     }
                   >
                     <p
                       className={
                         message.from === "catty"
-                          ? "rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
-                          : "rounded-2xl rounded-tr-sm bg-primary p-3 text-sm leading-6 text-primary-foreground shadow-sm"
+                          ? "whitespace-pre-wrap break-words rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
+                          : "whitespace-pre-wrap break-words rounded-2xl rounded-tr-sm bg-primary p-3 text-sm leading-6 text-primary-foreground shadow-sm"
                       }
                     >
                       {message.text}
@@ -1139,13 +1139,13 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
               })
             ) : (
               <p
-                className="max-w-[88%] rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm"
+                className="max-w-[92%] whitespace-pre-wrap break-words rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-foreground shadow-sm sm:max-w-[88%]"
               >
                 {CATTY_AUTH_REQUIRED_REPLY}
               </p>
             )}
             {isThinking && canUseCattyChat ? (
-              <div className="flex max-w-[88%] items-center gap-2 rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-muted-foreground shadow-sm">
+              <div className="flex max-w-[92%] items-center gap-2 rounded-2xl rounded-tl-sm border border-primary/10 bg-white p-3 text-sm leading-6 text-muted-foreground shadow-sm sm:max-w-[88%]">
                 <span>Catty esta pensando</span>
                 <span className="catty-typing-dot" aria-hidden="true" />
                 <span className="catty-typing-dot [animation-delay:140ms]" aria-hidden="true" />
@@ -1155,8 +1155,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="flex flex-col gap-3 border-t bg-white/95 p-3">
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex min-h-0 flex-col gap-3 border-t bg-white/95 p-3">
+            <div className="catty-quick-replies flex flex-wrap items-center gap-2 pb-1">
               <span className="shrink-0 text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Estudo
               </span>
@@ -1169,20 +1169,20 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 shrink-0 justify-start rounded-full border border-primary/10 bg-[#fce5d8] px-3 text-xs font-semibold text-primary shadow-none hover:bg-primary/10"
+                    className="h-8 max-w-[12rem] shrink-0 justify-start rounded-full border border-primary/10 bg-[#fce5d8] px-3 text-xs font-semibold text-primary shadow-none hover:bg-primary/10"
                     disabled={isThinking || !canUseCattyChat}
                     onClick={() => {
                       void sendMessage(reply.text);
                     }}
                   >
-                    <Icon data-icon="inline-start" className="size-3.5" />
-                    {reply.label}
+                    <Icon data-icon="inline-start" className="size-3.5 shrink-0" />
+                    <span className="truncate">{reply.label}</span>
                   </Button>
                 );
               })}
             </div>
             <form
-              className="flex gap-2"
+              className="flex min-w-0 gap-2"
               onSubmit={(event) => {
                 event.preventDefault();
                 void sendMessage(draft);
@@ -1192,7 +1192,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 placeholder="Digite em portugues ou English"
-                className="rounded-xl"
+                className="min-w-0 rounded-xl"
                 disabled={isThinking || !canUseCattyChat}
                 maxLength={600}
               />
@@ -1244,7 +1244,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       <Button
         type="button"
         size="lg"
-        className="catty-launcher pointer-events-auto h-14 w-14 rounded-full p-1 shadow-2xl shadow-primary/20 sm:h-16 sm:w-auto sm:px-4"
+        className="catty-launcher pointer-events-auto h-14 w-14 overflow-visible rounded-full p-1 shadow-2xl shadow-primary/20 sm:h-16 sm:w-auto sm:px-4"
         onClick={() => {
           if (open && canUseCattyChat) {
             setOpen(false);
@@ -1254,14 +1254,14 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         }}
         aria-expanded={open || publicNoticeVisible}
       >
-        <span className="relative flex size-11 overflow-hidden rounded-full border-2 border-white/55 bg-white shadow-sm sm:mr-2">
+        <span className="relative flex size-11 overflow-hidden rounded-full border-2 border-white/55 bg-white p-0.5 shadow-sm sm:mr-2">
           <Image
             src="/brand/catty.png"
             alt=""
             width={88}
             height={88}
             sizes="44px"
-            className="size-full object-cover"
+            className="size-full object-contain"
           />
         </span>
         <span className="sr-only">Catty</span>

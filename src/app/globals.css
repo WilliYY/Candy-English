@@ -123,6 +123,19 @@ a {
   animation: catty-pop 420ms ease-out both;
 }
 
+.catty-chat-panel {
+  isolation: isolate;
+}
+
+.catty-quick-replies {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.catty-quick-replies::-webkit-scrollbar {
+  display: none;
+}
+
 .catty-speech {
   --catty-speech-accent: #e57cd8;
   --catty-speech-border: rgb(65 42 76 / 0.16);
