@@ -229,8 +229,8 @@ Helpers:
 ### Aula ao vivo
 
 1. A area esta em manutencao temporaria por `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`.
-2. Teacher abre `/ava/teacher?task=aula-ao-vivo` e ve um card de manutencao, sem formulario para criar ou reabrir sala.
-3. Student abre `/ava/student?task=aula-ao-vivo` e ve o mesmo aviso de manutencao, sem tentativa de carregar Jitsi.
+2. Teacher abre `/ava/teacher?task=aula-ao-vivo` e ve apenas o card objetivo `Em manutencao.`, sem formulario, status extra ou textos auxiliares.
+3. Student abre `/ava/student?task=aula-ao-vivo` e ve o mesmo card objetivo de manutencao, sem tentativa de carregar Jitsi.
 4. `createLiveSession` e `toggleLiveSession` continuam validando login/role no servidor e depois retornam a mensagem de manutencao, sem gravar alteracoes.
 5. Ao reativar, o fluxo previsto volta a permitir teacher, aluno ou turma geral, titulo, link externo opcional e datas opcionais no bloco superior.
 6. Se o link externo ficar vazio, o AVA cria automaticamente uma sala Jitsi Meet embutida usando o dominio configurado em `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`.

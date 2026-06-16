@@ -552,7 +552,7 @@ export function TeacherWorkspace({
 
           {activeTask === "aula-ao-vivo" ? (
             LIVE_CLASS_MAINTENANCE_ENABLED ? (
-              <LiveClassMaintenancePanel audience="teacher" />
+              <LiveClassMaintenancePanel />
             ) : (
               <div className="flex flex-col gap-6">
                 <section className="ava-soft-card rounded-xl border p-5">

@@ -1008,7 +1008,7 @@ export function StudentWorkspace({
 
           {activeTask === "aula-ao-vivo" ? (
             LIVE_CLASS_MAINTENANCE_ENABLED ? (
-              <LiveClassMaintenancePanel audience="student" />
+              <LiveClassMaintenancePanel />
             ) : liveSessions.some((session) => session.isLive) ? (
               <div className="mx-auto grid w-full max-w-6xl gap-5">
                 {liveSessions
