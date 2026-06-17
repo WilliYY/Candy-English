@@ -5,6 +5,7 @@ import {
   AlertCircle,
   BookOpen,
   CheckCircle2,
+  ChevronDown,
   Clock3,
   Files,
   FileUp,
@@ -213,6 +214,16 @@ function StudentMultiSelectField({
 }) {
   const selectedSet = new Set(selectedIds);
   const allSelected = students.length > 0 && selectedIds.length === students.length;
+  const selectedStudents = students.filter((student) => selectedSet.has(student.id));
+  const selectedPreview =
+    selectedStudents.length === 0
+      ? "Nenhum aluno selecionado"
+      : selectedStudents.length <= 2
+        ? selectedStudents.map((student) => student.label).join(", ")
+        : `${selectedStudents
+            .slice(0, 2)
+            .map((student) => student.label)
+            .join(", ")} +${selectedStudents.length - 2}`;
 
   function toggleAll() {
     onChange(allSelected ? [] : students.map((student) => student.id));
@@ -257,64 +268,91 @@ function StudentMultiSelectField({
           disabled ? "opacity-70" : "",
         )}
       >
-        <label
-          className={cn(
-            "flex cursor-pointer items-center justify-between gap-3 border-b border-primary/10 px-3 py-2 text-sm font-semibold text-primary",
-            disabled ? "cursor-not-allowed" : "",
-          )}
-          htmlFor={`${id}-all`}
-        >
-          <span className="inline-flex min-w-0 items-center gap-2">
+        <div className="grid gap-2 border-b border-primary/10 bg-gradient-to-r from-white via-emerald-50/45 to-sky-50/45 p-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <label
+            className={cn(
+              "flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 shadow-sm",
+              disabled ? "cursor-not-allowed" : "",
+            )}
+            htmlFor={`${id}-all`}
+          >
             <input
               checked={allSelected}
-              className="size-4 accent-primary"
+              className="size-4 accent-emerald-600"
               disabled={disabled || students.length === 0}
               id={`${id}-all`}
               onChange={toggleAll}
               type="checkbox"
             />
             Selecionar todos
-          </span>
-          <span className="shrink-0 text-xs text-muted-foreground">
-            {students.length} disponiveis
-          </span>
-        </label>
-        {students.length > 0 ? (
-          <div className="grid max-h-48 gap-2 overflow-y-auto p-2 sm:grid-cols-2">
-            {students.map((student) => {
-              const isSelected = selectedSet.has(student.id);
-
-              return (
-                <label
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition",
-                    isSelected
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                      : "border-primary/10 bg-white text-primary hover:border-primary/25",
-                    disabled ? "cursor-not-allowed" : "",
-                  )}
-                  htmlFor={`${id}-${student.id}`}
-                  key={student.id}
-                  title={student.label}
-                >
-                  <input
-                    checked={isSelected}
-                    className="size-4 shrink-0 accent-emerald-600"
-                    disabled={disabled}
-                    id={`${id}-${student.id}`}
-                    onChange={() => toggleStudent(student.id)}
-                    type="checkbox"
-                  />
-                  <span className="min-w-0 truncate">{student.label}</span>
-                </label>
-              );
-            })}
+          </label>
+          <div className="min-w-0 rounded-md border border-primary/10 bg-white/86 px-3 py-2 shadow-sm">
+            <span className="block text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
+              selecionados
+            </span>
+            <span
+              className={cn(
+                "block truncate text-sm font-semibold",
+                selectedStudents.length > 0 ? "text-primary" : "text-muted-foreground",
+              )}
+              title={selectedStudents.map((student) => student.label).join(", ")}
+            >
+              {selectedPreview}
+            </span>
           </div>
-        ) : (
-          <p className="px-3 py-3 text-sm text-muted-foreground">
-            Cadastre ou vincule um aluno antes de criar.
-          </p>
-        )}
+        </div>
+
+        <details className="group" open={Boolean(error) && selectedIds.length === 0}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/[0.035] [&::-webkit-details-marker]:hidden">
+            <span className="inline-flex items-center gap-2">
+              <UsersRound aria-hidden="true" className="size-4 text-sky-700" />
+              Ver alunos
+            </span>
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+              {students.length} disponiveis
+              <ChevronDown
+                aria-hidden="true"
+                className="size-4 transition-transform group-open:rotate-180"
+              />
+            </span>
+          </summary>
+          {students.length > 0 ? (
+            <div className="grid max-h-40 gap-2 overflow-y-auto border-t border-primary/10 p-2 sm:grid-cols-2">
+              {students.map((student) => {
+                const isSelected = selectedSet.has(student.id);
+
+                return (
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition",
+                      isSelected
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                        : "border-primary/10 bg-white text-primary hover:border-sky-200 hover:bg-sky-50/45",
+                      disabled ? "cursor-not-allowed" : "",
+                    )}
+                    htmlFor={`${id}-${student.id}`}
+                    key={student.id}
+                    title={student.label}
+                  >
+                    <input
+                      checked={isSelected}
+                      className="size-4 shrink-0 accent-emerald-600"
+                      disabled={disabled}
+                      id={`${id}-${student.id}`}
+                      onChange={() => toggleStudent(student.id)}
+                      type="checkbox"
+                    />
+                    <span className="min-w-0 truncate">{student.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="border-t border-primary/10 px-3 py-3 text-sm text-muted-foreground">
+              Cadastre ou vincule um aluno antes de criar.
+            </p>
+          )}
+        </details>
       </div>
       <FieldError errors={[{ message: error }]} />
     </Field>
@@ -912,8 +950,82 @@ export function CreateHomeworkForm({
   students: Option[];
   teachers: Option[];
 }) {
+  const totalFields = interactiveHomeworks.reduce(
+    (total, homework) => total + homework.fields.length,
+    0,
+  );
+  const readyHomeworks = interactiveHomeworks.filter(
+    (homework) => homework.fields.length > 0,
+  ).length;
+  const studentsWithHomeworks = new Set(
+    interactiveHomeworks
+      .map((homework) => homework.studentName)
+      .filter((studentName): studentName is string => Boolean(studentName)),
+  ).size;
+
   return (
     <div className="flex flex-col gap-6">
+      <section className="overflow-hidden rounded-lg border border-fuchsia-200/70 bg-gradient-to-br from-white via-fuchsia-50/60 to-amber-50/40 p-4 shadow-[0_18px_42px_rgba(229,124,216,0.08)]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex min-w-0 gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white shadow-[0_12px_24px_rgba(65,42,76,0.22)]">
+              <Files aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-fuchsia-700">
+                Homework Canva
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-primary">
+                Crie, organize e marque as areas do homework.
+              </h2>
+              <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+                Alunos ficam recolhidos por padrao; abra apenas quando precisar
+                escolher varios ou todos.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-4 lg:min-w-[32rem]">
+            <div className="rounded-lg border border-fuchsia-200 bg-fuchsia-50 p-3 text-fuchsia-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <FileUp aria-hidden="true" className="size-3.5" />
+                Itens
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {interactiveHomeworks.length}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sky-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <Layers2 aria-hidden="true" className="size-3.5" />
+                Areas
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {totalFields}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <UserRound aria-hidden="true" className="size-3.5" />
+                Alunos
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {studentsWithHomeworks}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+                <CheckCircle2 aria-hidden="true" className="size-3.5" />
+                Prontos
+              </span>
+              <strong className="mt-1 block text-2xl leading-none">
+                {readyHomeworks}
+              </strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <InteractiveAssetUploadForm
         mode="homework"
         students={students}

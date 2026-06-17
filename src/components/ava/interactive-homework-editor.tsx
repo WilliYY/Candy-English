@@ -1636,6 +1636,18 @@ function InteractiveHomeworkEditorItem({
   const allShareStudentsSelected =
     shareableStudentOptions.length > 0 &&
     shareStudentIds.length === shareableStudentOptions.length;
+  const sharePreviewStudents = shareableStudentOptions.filter((student) =>
+    shareStudentIdSet.has(student.id),
+  );
+  const sharePreviewLabel =
+    sharePreviewStudents.length === 0
+      ? "Nenhum aluno selecionado"
+      : sharePreviewStudents.length <= 2
+        ? sharePreviewStudents.map((student) => student.label).join(", ")
+        : `${sharePreviewStudents
+            .slice(0, 2)
+            .map((student) => student.label)
+            .join(", ")} +${sharePreviewStudents.length - 2}`;
   const isPersisting = isSaving || saveStatus === "saving";
   const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
   const availableFieldToolOptions = isCandyXpActivity
@@ -2375,10 +2387,12 @@ function InteractiveHomeworkEditorItem({
         avatar:
           "border-sky-200 bg-sky-50 text-sky-900 shadow-[0_8px_18px_rgba(14,165,233,0.12)]",
         badge: "border-sky-200 bg-sky-50 text-sky-800",
+        fileInfo: "border-indigo-200/80 bg-indigo-50/70",
         info: "border-sky-200/70 bg-white/82",
         label: "text-sky-700/80",
         shell:
           "border-sky-200/80 bg-gradient-to-br from-white via-sky-50/55 to-secondary/25 shadow-[0_14px_34px_rgba(14,165,233,0.08)] before:bg-sky-500",
+        scopeInfo: "border-sky-200/80 bg-sky-50/75",
         summary: "hover:bg-sky-50/70",
       }
     : isCandyXpActivity
@@ -2386,20 +2400,25 @@ function InteractiveHomeworkEditorItem({
           avatar:
             "border-amber-200 bg-amber-50 text-amber-900 shadow-[0_8px_18px_rgba(245,158,11,0.12)]",
           badge: "border-amber-200 bg-amber-50 text-amber-900",
+          fileInfo: "border-fuchsia-200/80 bg-fuchsia-50/60",
           info: "border-amber-200/70 bg-white/84",
           label: "text-amber-800/80",
           shell:
             "border-amber-200/80 bg-gradient-to-br from-white via-amber-50/60 to-secondary/30 shadow-[0_14px_34px_rgba(245,158,11,0.08)] before:bg-amber-400",
+          scopeInfo: "border-amber-200/80 bg-amber-50/75",
           summary: "hover:bg-amber-50/65",
         }
     : {
-        avatar: "border-primary/15 bg-white text-primary shadow-sm",
-        badge: "border-primary/15 bg-primary/[0.055] text-primary",
+        avatar:
+          "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900 shadow-[0_8px_18px_rgba(229,124,216,0.12)]",
+        badge: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-900",
+        fileInfo: "border-sky-200/80 bg-sky-50/75",
         info: "border-primary/10 bg-white/78",
-        label: "text-primary/60",
+        label: "text-primary/65",
         shell:
-          "border-primary/15 bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_14px_34px_rgba(65,42,76,0.07)] before:bg-primary/70",
-        summary: "hover:bg-white/70",
+          "border-fuchsia-200/75 bg-gradient-to-br from-white via-fuchsia-50/45 to-amber-50/35 shadow-[0_14px_34px_rgba(229,124,216,0.08)] before:bg-fuchsia-500",
+        scopeInfo: "border-amber-200/80 bg-amber-50/75",
+        summary: "hover:bg-fuchsia-50/45",
       };
   const entityBadgeLabel = isCandyXpActivity
     ? "Candy XP"
@@ -2474,7 +2493,7 @@ function InteractiveHomeworkEditorItem({
             <span
               className={cn(
                 "min-w-0 rounded-lg border p-3 shadow-sm",
-                itemTone.info,
+                itemTone.scopeInfo,
               )}
             >
               <span
@@ -2493,7 +2512,7 @@ function InteractiveHomeworkEditorItem({
             <span
               className={cn(
                 "min-w-0 rounded-lg border p-3 shadow-sm",
-                itemTone.info,
+                itemTone.fileInfo,
               )}
             >
               <span
@@ -2565,8 +2584,8 @@ function InteractiveHomeworkEditorItem({
 
       <div className="flex flex-col gap-4 border-t border-primary/15 p-4">
         {isShareableHomework ? (
-          <section className="grid gap-3 rounded-lg border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-sky-50/60 p-3 shadow-sm lg:grid-cols-[minmax(180px,0.85fr)_minmax(220px,1fr)_minmax(260px,0.95fr)] lg:items-stretch">
-            <div className="rounded-lg border border-emerald-200 bg-white/86 p-3 shadow-sm">
+          <section className="grid gap-3 rounded-lg border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-fuchsia-50/55 p-3 shadow-sm lg:grid-cols-[minmax(180px,0.75fr)_minmax(220px,0.9fr)_minmax(260px,1fr)] lg:items-stretch">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 shadow-sm">
               <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-emerald-700">
                 <UserRound aria-hidden="true" className="size-3.5" />
                 Aluno principal
@@ -2581,35 +2600,49 @@ function InteractiveHomeworkEditorItem({
               ) : null}
             </div>
 
-            <div className="rounded-lg border border-sky-200 bg-white/86 p-3 shadow-sm">
-              <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-sky-700">
-                <UsersRound aria-hidden="true" className="size-3.5" />
-                Replicas criadas
-              </span>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {replicatedStudents.length > 0 ? (
-                  replicatedStudents.map((student) => (
-                    <span
-                      className="inline-flex max-w-full items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs font-semibold text-sky-900"
-                      key={student.id}
-                      title={student.email}
-                    >
-                      <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-white text-[0.65rem] font-bold text-sky-700 shadow-sm">
-                        {getStudentInitials(student.name)}
-                      </span>
-                      <span className="min-w-0 truncate">{student.name}</span>
-                    </span>
-                  ))
-                ) : (
-                  <span className="rounded-md border border-dashed border-sky-200 bg-sky-50/55 px-3 py-2 text-xs font-medium text-sky-800">
-                    Nenhuma replica criada ainda.
-                  </span>
-                )}
+            <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-3 shadow-sm">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <span className="inline-flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em] text-sky-700">
+                  <UsersRound aria-hidden="true" className="size-3.5" />
+                  Replicas criadas
+                </span>
+                <strong className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-xs text-sky-900">
+                  {replicatedStudents.length}
+                </strong>
               </div>
+              {replicatedStudents.length > 0 ? (
+                <details className="group mt-2">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md border border-sky-200 bg-white/86 px-3 py-2 text-xs font-semibold text-sky-900 [&::-webkit-details-marker]:hidden">
+                    Ver replicas
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-4 transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <div className="mt-2 flex max-h-32 flex-wrap gap-2 overflow-y-auto">
+                    {replicatedStudents.map((student) => (
+                      <span
+                        className="inline-flex max-w-full items-center gap-2 rounded-lg border border-sky-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-sky-900"
+                        key={student.id}
+                        title={student.email}
+                      >
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-sky-50 text-[0.65rem] font-bold text-sky-700 shadow-sm">
+                          {getStudentInitials(student.name)}
+                        </span>
+                        <span className="min-w-0 truncate">{student.name}</span>
+                      </span>
+                    ))}
+                  </div>
+                </details>
+              ) : (
+                <span className="mt-2 block rounded-md border border-dashed border-sky-200 bg-white/72 px-3 py-2 text-xs font-medium text-sky-800">
+                  Nenhuma replica criada ainda.
+                </span>
+              )}
             </div>
 
             <form
-              className="grid gap-3 rounded-lg border border-primary/10 bg-white/88 p-3 shadow-sm"
+              className="grid gap-3 rounded-lg border border-fuchsia-200 bg-white/90 p-3 shadow-sm"
               onSubmit={shareHomework}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2629,72 +2662,100 @@ function InteractiveHomeworkEditorItem({
                 </span>
               </div>
               <div className="overflow-hidden rounded-lg border border-primary/10 bg-white">
-                <label
-                  className={cn(
-                    "flex cursor-pointer items-center justify-between gap-3 border-b border-primary/10 px-3 py-2 text-sm font-semibold text-primary",
-                    isSharing || shareableStudentOptions.length === 0
-                      ? "cursor-not-allowed opacity-70"
-                      : "",
-                  )}
-                  htmlFor={`share-homework-${homework.id}-all`}
-                >
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <input
-                      checked={allShareStudentsSelected}
-                      className="size-4 accent-primary"
-                      disabled={
-                        isSharing || shareableStudentOptions.length === 0
-                      }
-                      id={`share-homework-${homework.id}-all`}
-                      onChange={toggleAllShareStudents}
-                      type="checkbox"
-                    />
-                    Selecionar todos
+                <div className="grid gap-2 border-b border-primary/10 bg-gradient-to-r from-white via-emerald-50/50 to-fuchsia-50/45 p-2">
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-center justify-between gap-3 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 shadow-sm",
+                      isSharing || shareableStudentOptions.length === 0
+                        ? "cursor-not-allowed opacity-70"
+                        : "",
+                    )}
+                    htmlFor={`share-homework-${homework.id}-all`}
+                  >
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <input
+                        checked={allShareStudentsSelected}
+                        className="size-4 accent-emerald-600"
+                        disabled={
+                          isSharing || shareableStudentOptions.length === 0
+                        }
+                        id={`share-homework-${homework.id}-all`}
+                        onChange={toggleAllShareStudents}
+                        type="checkbox"
+                      />
+                      Selecionar todos
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {shareableStudentOptions.length > 0
+                        ? `${shareableStudentOptions.length} disponiveis`
+                        : "Todos ja tem replica"}
+                    </span>
+                  </label>
+                  <span
+                    className={cn(
+                      "block truncate rounded-md border border-primary/10 bg-white/86 px-3 py-2 text-sm font-semibold",
+                      sharePreviewStudents.length > 0
+                        ? "text-primary"
+                        : "text-muted-foreground",
+                    )}
+                    title={sharePreviewStudents
+                      .map((student) => student.label)
+                      .join(", ")}
+                  >
+                    {sharePreviewLabel}
                   </span>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {shareableStudentOptions.length > 0
-                      ? `${shareableStudentOptions.length} disponiveis`
-                      : "Todos ja tem replica"}
-                  </span>
-                </label>
-                {shareableStudentOptions.length > 0 ? (
-                  <div className="grid max-h-44 gap-2 overflow-y-auto p-2 sm:grid-cols-2">
-                    {shareableStudentOptions.map((student) => {
-                      const isSelected = shareStudentIdSet.has(student.id);
+                </div>
 
-                      return (
-                        <label
-                          className={cn(
-                            "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition",
-                            isSelected
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                              : "border-primary/10 bg-white text-primary hover:border-primary/25",
-                            isSharing ? "cursor-not-allowed" : "",
-                          )}
-                          htmlFor={`share-homework-${homework.id}-${student.id}`}
-                          key={student.id}
-                          title={student.label}
-                        >
-                          <input
-                            checked={isSelected}
-                            className="size-4 shrink-0 accent-emerald-600"
-                            disabled={isSharing}
-                            id={`share-homework-${homework.id}-${student.id}`}
-                            onChange={() => toggleShareStudent(student.id)}
-                            type="checkbox"
-                          />
-                          <span className="min-w-0 truncate">
-                            {student.label}
-                          </span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="px-3 py-3 text-sm text-muted-foreground">
-                    Todos os alunos disponiveis ja possuem replica.
-                  </p>
-                )}
+                <details className="group">
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-primary transition hover:bg-primary/[0.035] [&::-webkit-details-marker]:hidden">
+                    <span className="inline-flex items-center gap-2">
+                      <UsersRound aria-hidden="true" className="size-4 text-fuchsia-700" />
+                      Escolher alunos
+                    </span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-4 text-muted-foreground transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  {shareableStudentOptions.length > 0 ? (
+                    <div className="grid max-h-36 gap-2 overflow-y-auto border-t border-primary/10 p-2 sm:grid-cols-2">
+                      {shareableStudentOptions.map((student) => {
+                        const isSelected = shareStudentIdSet.has(student.id);
+
+                        return (
+                          <label
+                            className={cn(
+                              "flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm transition",
+                              isSelected
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                                : "border-primary/10 bg-white text-primary hover:border-fuchsia-200 hover:bg-fuchsia-50/45",
+                              isSharing ? "cursor-not-allowed" : "",
+                            )}
+                            htmlFor={`share-homework-${homework.id}-${student.id}`}
+                            key={student.id}
+                            title={student.label}
+                          >
+                            <input
+                              checked={isSelected}
+                              className="size-4 shrink-0 accent-emerald-600"
+                              disabled={isSharing}
+                              id={`share-homework-${homework.id}-${student.id}`}
+                              onChange={() => toggleShareStudent(student.id)}
+                              type="checkbox"
+                            />
+                            <span className="min-w-0 truncate">
+                              {student.label}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="border-t border-primary/10 px-3 py-3 text-sm text-muted-foreground">
+                      Todos os alunos disponiveis ja possuem replica.
+                    </p>
+                  )}
+                </details>
               </div>
               <Button
                 disabled={
