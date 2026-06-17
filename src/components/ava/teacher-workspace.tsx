@@ -160,8 +160,8 @@ type TeacherLesson = {
 
 type TeacherSubmission = {
   answers: unknown;
-  feedback: string | null;
-  homework: {
+    feedback: string | null;
+    homework: {
     assetFileName: string | null;
     assetMimeType: string | null;
     assetPageCount: number | null;
@@ -196,15 +196,16 @@ type TeacherSubmission = {
   };
   id: string;
   reviewedAt: Date | null;
-  status: string;
-  studentProfile: {
-    user: {
-      email: string;
-      name: string;
+    status: string;
+    studentProfile: {
+      user: {
+        email: string;
+        name: string;
+      };
     };
+    submittedAt: Date;
+    teacherAnnotations: unknown;
   };
-  submittedAt: Date;
-};
 
 type LiveSessionRow = {
   id: string;
@@ -427,6 +428,7 @@ export function TeacherWorkspace({
       status: submission.status,
       studentProfile: submission.studentProfile,
       submittedAt: submission.submittedAt.toISOString(),
+      teacherAnnotations: submission.teacherAnnotations,
     }),
   );
   const task = taskMeta[activeTask];

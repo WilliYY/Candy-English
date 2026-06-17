@@ -262,8 +262,9 @@ Helpers:
 11. Enquanto edita, a submissao fica `DRAFT`; o autosave grava em segundo plano sem recarregar a pagina inteira e o navegador mantem uma copia local temporaria para proteger contra refresh ou falha de rede. Ao clicar em entregar, a tela cancela o autosave pendente, envia os valores atuais, vira `SUBMITTED` e aparece para teacher/admin como evento novo.
 12. Teacher ou admin corrige em uma tela com abas: `Aguardando correcao` para `SUBMITTED` e `Corrigidos` para `REVIEWED`/`RETURNED`.
 13. Cada entrega da fila fica recolhida por padrao; ao abrir, o PDF/imagem aparece com texto, marcas e desenhos entregues pelo aluno sobrepostos ao arquivo.
-14. No painel lateral da entrega aberta ficam aluno, professor responsavel, aula e nota/feedback para o aluno.
-15. A avaliacao salva a entrega como `REVIEWED` e aparece para o aluno; a acao de refazer salva `RETURNED` e libera nova tentativa.
+14. Teacher/admin pode usar caneta ou texto diretamente sobre o arquivo entregue, com autosave e botao manual de salvar. Essa camada fica em `HomeworkSubmission.teacherAnnotations`, separada das respostas e invisivel para student enquanto a entrega ainda esta `SUBMITTED`.
+15. No painel lateral da entrega aberta ficam aluno, professor responsavel, aula e nota/feedback para o aluno; `Liberar refazer` tambem aceita feedback opcional para explicar o ajuste.
+16. A avaliacao salva a entrega como `REVIEWED` e aparece para o aluno; a acao de refazer salva `RETURNED`, mostra feedback/anotacoes para o aluno e libera nova tentativa. Quando o aluno entrega novamente, feedback e anotacoes antigas sao limpos.
 
 ### Financeiro
 

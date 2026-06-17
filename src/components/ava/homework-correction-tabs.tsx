@@ -59,6 +59,7 @@ export type HomeworkCorrectionSubmission = {
     };
   };
   submittedAt: string;
+  teacherAnnotations: unknown;
 };
 
 type ReviewTab = "pending" | "reviewed";
@@ -314,12 +315,15 @@ function ReviewSubmissionCard({
           {isInteractive ? (
             <InteractiveHomeworkReview
               answers={submission.answers}
+              annotations={submission.teacherAnnotations}
               assetMimeType={submission.homework.assetMimeType}
               assetPageCount={submission.homework.assetPageCount}
               className="border-primary/10"
+              editableAnnotations
               fields={submission.homework.interactiveFields}
               homeworkId={submission.homework.id}
               pageClassName="max-w-[980px]"
+              submissionId={submission.id}
               title={submission.homework.title}
             />
           ) : (
@@ -419,7 +423,10 @@ function ReviewSubmissionCard({
 
             {submission.status !== "DRAFT" &&
             submission.status !== "RETURNED" ? (
-              <AllowHomeworkRedoButton submissionId={submission.id} />
+              <AllowHomeworkRedoButton
+                defaultFeedback={submission.feedback ?? ""}
+                submissionId={submission.id}
+              />
             ) : null}
 
             <div className="mt-auto border-t border-primary/10 pt-3 text-xs text-muted-foreground">

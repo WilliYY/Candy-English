@@ -198,6 +198,58 @@ export const reviewSubmissionSchema = z.object({
     .max(6000, "O feedback pode ter no maximo 6000 caracteres."),
 });
 
+const homeworkReviewAnnotationBaseSchema = z.object({
+  color: z.enum(["white", "black", "red", "yellow", "blue", "green", "purple"]),
+  id: z.string().trim().min(1).max(80),
+  page: z.coerce.number().int().min(1).max(20),
+});
+
+const homeworkReviewAnnotationPointSchema = z
+  .tuple([z.coerce.number().min(0).max(100), z.coerce.number().min(0).max(100)])
+  .transform(([x, y]) => [
+    Math.round(x * 10) / 10,
+    Math.round(y * 10) / 10,
+  ]);
+
+export const homeworkReviewAnnotationsPayloadSchema = z.object({
+  items: z
+    .array(
+      z.discriminatedUnion("kind", [
+        homeworkReviewAnnotationBaseSchema.extend({
+          kind: z.literal("stroke"),
+          points: z
+            .array(homeworkReviewAnnotationPointSchema)
+            .min(1, "Desenhe pelo menos um ponto.")
+            .max(240, "Use menos pontos por traco."),
+          width: z.coerce.number().min(1).max(12).default(4),
+        }),
+        homeworkReviewAnnotationBaseSchema.extend({
+          kind: z.literal("text"),
+          size: z.coerce.number().min(12).max(36).default(18),
+          text: z
+            .string()
+            .trim()
+            .min(1, "Escreva a anotacao.")
+            .max(400, "A anotacao pode ter no maximo 400 caracteres."),
+          x: z.coerce.number().min(0).max(100),
+          y: z.coerce.number().min(0).max(100),
+        }),
+      ]),
+    )
+    .max(120, "Use no maximo 120 anotacoes por correcao."),
+  version: z.literal(1).default(1),
+});
+
+export const saveHomeworkReviewAnnotationsSchema = z.object({
+  annotations: homeworkReviewAnnotationsPayloadSchema.nullable(),
+  submissionId: z.string().min(1, "Resposta invalida."),
+});
+
+export const allowHomeworkRedoSchema = z.object({
+  feedback: optionalText(6000, "O feedback pode ter no maximo 6000 caracteres."),
+  submissionId: z.string().min(1, "Resposta invalida."),
+});
+
 export const homeworkSubmissionIdSchema = z.object({
   submissionId: z.string().min(1, "Resposta invalida."),
 });
@@ -232,6 +284,16 @@ export type InteractiveHomeworkAnswerInput = z.input<
   typeof interactiveHomeworkAnswerSchema
 >;
 export type ReviewSubmissionInput = z.input<typeof reviewSubmissionSchema>;
+export type HomeworkReviewAnnotationsPayloadInput = z.input<
+  typeof homeworkReviewAnnotationsPayloadSchema
+>;
+export type SaveHomeworkReviewAnnotationsInput = z.input<
+  typeof saveHomeworkReviewAnnotationsSchema
+>;
+export type SaveHomeworkReviewAnnotationsOutput = z.output<
+  typeof saveHomeworkReviewAnnotationsSchema
+>;
+export type AllowHomeworkRedoInput = z.input<typeof allowHomeworkRedoSchema>;
 export type HomeworkSubmissionIdInput = z.input<
   typeof homeworkSubmissionIdSchema
 >;

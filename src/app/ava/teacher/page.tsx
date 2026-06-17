@@ -356,6 +356,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           },
         },
         submittedAt: true,
+        teacherAnnotations: true,
       },
     }),
     prisma.liveSession.findMany({

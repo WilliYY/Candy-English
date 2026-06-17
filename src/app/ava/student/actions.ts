@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { Prisma } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { normalizeTinyTextAnswer } from "@/lib/interactive-homework-fields";
@@ -320,6 +321,7 @@ export async function submitHomework(
       reviewedByTeacherProfileId: null,
       status: "SUBMITTED",
       submittedAt: new Date(),
+      teacherAnnotations: Prisma.DbNull,
     },
   });
 
@@ -552,6 +554,7 @@ export async function submitInteractiveHomework(
       reviewedByTeacherProfileId: null,
       status: "SUBMITTED",
       submittedAt: new Date(),
+      teacherAnnotations: Prisma.DbNull,
     },
   });
 

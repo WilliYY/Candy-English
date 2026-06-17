@@ -3,6 +3,7 @@
 import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { Prisma } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
@@ -15,17 +16,20 @@ import {
   createInteractiveLessonSchema,
   createLessonSchema,
   deleteInteractiveHomeworkSchema,
-  homeworkSubmissionIdSchema,
+  allowHomeworkRedoSchema,
   replicateInteractiveHomeworkSchema,
   saveInteractiveHomeworkFieldsSchema,
+  saveHomeworkReviewAnnotationsSchema,
   reviewSubmissionSchema,
+  type AllowHomeworkRedoInput,
   type CreateInteractiveHomeworkInput,
   type CreateInteractiveLessonInput,
   type CreateLessonInput,
   type DeleteInteractiveHomeworkInput,
-  type HomeworkSubmissionIdInput,
   type ReplicateInteractiveHomeworkInput,
   type ReviewSubmissionInput,
+  type SaveHomeworkReviewAnnotationsInput,
+  type SaveHomeworkReviewAnnotationsOutput,
   type SaveInteractiveHomeworkFieldsInput,
   type SaveInteractiveHomeworkFieldsOutput,
 } from "@/lib/validations/learning";
@@ -1436,9 +1440,101 @@ export async function reviewHomeworkSubmission(
   };
 }
 
+type SaveHomeworkReviewAnnotationsResult =
+  ActionResult<SaveHomeworkReviewAnnotationsInput> & {
+    annotations?: SaveHomeworkReviewAnnotationsOutput["annotations"];
+  };
+
+export async function saveHomeworkReviewAnnotations(
+  input: SaveHomeworkReviewAnnotationsInput,
+): Promise<SaveHomeworkReviewAnnotationsResult> {
+  const actor = await getTeacherActor();
+
+  if (!actor) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para anotar homeworks.",
+    };
+  }
+
+  const parsed = saveHomeworkReviewAnnotationsSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<SaveHomeworkReviewAnnotationsInput>(
+        parsed.error.issues,
+      ),
+      ok: false,
+      message: "Revise as anotacoes da correcao.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const submission = await prisma.homeworkSubmission.findUnique({
+    where: { id: parsed.data.submissionId },
+    select: {
+      homework: {
+        select: {
+          teacherProfileId: true,
+        },
+      },
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!submission) {
+    return {
+      ok: false,
+      message: "Resposta nao encontrada.",
+    };
+  }
+
+  if (
+    !actor.isAdmin &&
+    submission.homework.teacherProfileId !== actor.teacherProfileId
+  ) {
+    return {
+      ok: false,
+      message: "Voce so pode anotar respostas das suas aulas.",
+    };
+  }
+
+  if (submission.status === "DRAFT") {
+    return {
+      ok: false,
+      message: "O aluno ainda esta editando esta homework.",
+    };
+  }
+
+  const annotations =
+    parsed.data.annotations && parsed.data.annotations.items.length > 0
+      ? parsed.data.annotations
+      : null;
+
+  await prisma.homeworkSubmission.update({
+    where: { id: submission.id },
+    data: {
+      teacherAnnotations: annotations ?? Prisma.DbNull,
+    },
+  });
+
+  revalidatePath("/ava/teacher");
+
+  if (submission.status === "RETURNED" || submission.status === "REVIEWED") {
+    revalidatePath("/ava/student");
+  }
+
+  return {
+    annotations,
+    ok: true,
+    message: "Anotacoes salvas.",
+  };
+}
+
 export async function allowHomeworkRedo(
-  input: HomeworkSubmissionIdInput,
-): Promise<ActionResult<HomeworkSubmissionIdInput>> {
+  input: AllowHomeworkRedoInput,
+): Promise<ActionResult<AllowHomeworkRedoInput>> {
   const actor = await getTeacherActor();
 
   if (!actor) {
@@ -1448,11 +1544,11 @@ export async function allowHomeworkRedo(
     };
   }
 
-  const parsed = homeworkSubmissionIdSchema.safeParse(input);
+  const parsed = allowHomeworkRedoSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
-      errors: fieldErrors<HomeworkSubmissionIdInput>(parsed.error.issues),
+      errors: fieldErrors<AllowHomeworkRedoInput>(parsed.error.issues),
       ok: false,
       message: "Resposta invalida.",
     };
@@ -1468,6 +1564,7 @@ export async function allowHomeworkRedo(
         },
       },
       id: true,
+      feedback: true,
       status: true,
     },
   });
@@ -1499,6 +1596,7 @@ export async function allowHomeworkRedo(
   await prisma.homeworkSubmission.update({
     where: { id: submission.id },
     data: {
+      feedback: parsed.data.feedback ?? submission.feedback ?? null,
       reviewedAt: null,
       reviewedByTeacherProfileId: null,
       status: "RETURNED",

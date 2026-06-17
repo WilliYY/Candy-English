@@ -1110,18 +1110,24 @@ export function ReviewSubmissionForm({
 }
 
 export function AllowHomeworkRedoButton({
+  defaultFeedback = "",
   submissionId,
 }: {
+  defaultFeedback?: string;
   submissionId: string;
 }) {
   const router = useRouter();
+  const [feedback, setFeedback] = useState(defaultFeedback);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function onClick() {
     setMessage(null);
     startTransition(async () => {
-      const result = await allowHomeworkRedo({ submissionId });
+      const result = await allowHomeworkRedo({
+        feedback,
+        submissionId,
+      });
 
       setMessage(result.message);
 
@@ -1132,7 +1138,19 @@ export function AllowHomeworkRedoButton({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50/55 p-3">
+      <Field>
+        <FieldLabel htmlFor={`redo-feedback-${submissionId}`}>
+          Feedback para refazer
+        </FieldLabel>
+        <Textarea
+          id={`redo-feedback-${submissionId}`}
+          disabled={isPending}
+          onChange={(event) => setFeedback(event.target.value)}
+          placeholder="Opcional: explique o ponto que precisa ajustar."
+          value={feedback}
+        />
+      </Field>
       <Button
         type="button"
         variant="outline"

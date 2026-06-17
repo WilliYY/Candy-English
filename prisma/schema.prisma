@@ -477,6 +477,7 @@ model HomeworkSubmission {
   status                     SubmissionStatus @default(SUBMITTED)
   submittedAt                DateTime         @default(now())
   feedback                   String?
+  teacherAnnotations         Json?
   reviewedAt                 DateTime?
   reviewedByTeacherProfileId String?
   reviewedByTeacherProfile   TeacherProfile?  @relation(fields: [reviewedByTeacherProfileId], references: [id], onDelete: SetNull)

@@ -22,6 +22,7 @@ Arquivos principais:
 - `src/components/ava/interactive-homework-document.tsx`
 - `src/components/ava/interactive-homework-editor.tsx`
 - `src/components/ava/interactive-homework-listening.tsx`
+- `src/components/ava/homework-review-annotations.tsx`
 - `src/components/ava/interactive-homework-review.tsx`
 - `src/components/ava/interactive-homework-student.tsx`
 - `src/app/ava/homework-listening-detect/route.ts`
@@ -34,6 +35,7 @@ Arquivos principais:
 - `prisma/schema.prisma`
 - `prisma/migrations/20260512120000_interactive_homework/migration.sql`
 - `prisma/migrations/20260519033000_interactive_homework_drawing_field/migration.sql`
+- `prisma/migrations/20260617120000_homework_review_annotations/migration.sql`
 
 Rotas:
 
@@ -105,7 +107,9 @@ Tabelas e enums:
 - `REVIEWED` bloqueia nova entrega e preserva feedback.
 - A tela de correcao separa entregas `SUBMITTED` em `Aguardando correcao` e entregas `REVIEWED`/`RETURNED` em `Corrigidos`; cada entrega fica recolhida por padrao para reduzir poluicao visual, com resumo de pendentes/corrigidos/devolvidos e cards que destacam aluno, status, arquivo, aula, professor e datas antes de abrir o documento.
 - Na correcao de homework interativo, o PDF/imagem com as respostas do aluno deve aparecer aberto como superficie principal, com texto, marcas e desenhos sobrepostos ao arquivo original.
-- O painel lateral da correcao mostra aluno, professor responsavel, aula e o campo de nota/feedback que aparece para o aluno.
+- A correcao de homework interativo tambem permite anotacoes visuais da teacher/admin diretamente sobre o arquivo entregue, usando caneta ou texto nas cores branco, preto, vermelho, amarelo, azul, verde e roxo. As anotacoes salvam automaticamente com botao manual de apoio, ficam em `HomeworkSubmission.teacherAnnotations`, nao alteram o arquivo original nem os campos da atividade e aparecem para o aluno somente quando a entrega estiver `RETURNED` ou `REVIEWED`.
+- A acao `Liberar refazer` aceita feedback opcional para explicar o ajuste. Quando o aluno envia a nova tentativa oficial, `feedback`, `reviewedAt`, `reviewedByTeacherProfileId` e `teacherAnnotations` sao limpos para a teacher/admin corrigir a nova entrega sem marcacoes antigas.
+- O painel lateral da correcao mostra aluno, professor responsavel, aula e o campo de nota/feedback que aparece para o aluno; o bloco de refazer tem seu proprio feedback opcional.
 - OCR/IA e opcional/futuro; o fluxo padrao atual e manual e nao deve enviar o arquivo para servicos externos sem decisao explicita.
 
 ## Decisoes tecnicas tomadas
@@ -134,6 +138,7 @@ Tabelas e enums:
 - O autosave do editor usa debounce curto, nao roda durante pointer drag e reaproveita a mesma server action segura do botao manual. O autosave reconcilia os campos pelo retorno da action sem atualizar a pagina inteira; se a teacher continuar mexendo enquanto uma gravacao esta em andamento, o retorno antigo apenas reconcilia IDs persistidos e enfileira outro autosave para confirmar a versao mais recente.
 - O autosave do aluno usa debounce curto e a server action `saveInteractiveHomeworkDraft`, mas nao chama `revalidatePath` a cada rascunho. O componente mantem o card controlado, guarda os valores atuais em memoria e em `localStorage`, ignora respostas antigas de autosave e limpa essa copia local quando a atividade e entregue ou ja esta bloqueada por `SUBMITTED`/`REVIEWED`.
 - O desenho usa helper compartilhado para serializar, validar e renderizar os tracos no aluno e na correcao, evitando diferenca visual entre o que o aluno desenhou e o que a teacher revisa.
+- As anotacoes da correcao usam uma camada vetorial propria em `src/components/ava/homework-review-annotations.tsx`, com coordenadas percentuais por pagina e validacao Zod em `saveHomeworkReviewAnnotationsSchema` para limitar quantidade, pontos e texto.
 - O helper de OCR/OpenAI permanece isolado em `src/lib/homework-ocr.ts`, mas nao faz parte do fluxo padrao atual.
 - Imagens usam a dimensao natural como pagina unica; PDFs podem renderizar multiplas paginas e campos podem ser direcionados por numero de pagina.
 
@@ -146,6 +151,7 @@ Tabelas e enums:
 - Mudar coordenadas para pixels fixos prejudica responsividade.
 - Gemini/OpenAI podem ter custo por uso; a leitura automatica de `LISTENING` usa Gemini e tenta enviar apenas o recorte do box para reduzir atraso e custo, entao deve ser usada em materiais pedagogicos autorizados e conferida pela teacher antes de salvar.
 - Campos `LISTENING` tambem usam OpenAI por clique no botao de audio; manter o texto curto e objetivo, interface amigavel para aluno e rota protegida para nao expor chave ou permitir acesso fora do aluno/teacher/admin autorizado.
+- Anotacoes visuais de correcao devem continuar separadas das respostas do aluno e nao podem ser exibidas para student antes de `RETURNED` ou `REVIEWED`.
 - Usar preset de PDF agressivo pode reduzir legibilidade de materiais do Canva; manter `ebook` salvo motivo claro e revisar PDF pesado manualmente.
 
 ## Pendencias

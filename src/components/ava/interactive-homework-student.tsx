@@ -42,6 +42,10 @@ import { InteractiveHomeworkDocument } from "@/components/ava/interactive-homewo
 import { InteractiveHomeworkListeningPlayer } from "@/components/ava/interactive-homework-listening";
 import { InteractiveHomeworkMark } from "@/components/ava/interactive-homework-mark";
 import {
+  HomeworkReviewAnnotationLayer,
+  normalizeHomeworkReviewAnnotations,
+} from "@/components/ava/homework-review-annotations";
+import {
   getInteractiveHomeworkTinyTextStyle,
   getInteractiveHomeworkTextStyle,
   InteractiveHomeworkTextFrame,
@@ -76,6 +80,7 @@ export type StudentInteractiveSubmission = {
   id: string;
   status: string;
   submittedAt: Date | string | null;
+  teacherAnnotations?: unknown;
 };
 
 export type StudentInteractiveHomework = {
@@ -675,6 +680,16 @@ export function InteractiveHomeworkStudent({
     ? "border-emerald-500/40 bg-emerald-50 text-emerald-900"
     : "border-red-500/40 bg-red-50 text-red-900";
   const lessonStatusDotClass = isComplete ? "bg-emerald-500" : "bg-red-600";
+  const teacherAnnotations = useMemo(
+    () =>
+      status === "RETURNED" || status === "REVIEWED"
+        ? normalizeHomeworkReviewAnnotations(homework.submission?.teacherAnnotations)
+        : null,
+    [homework.submission?.teacherAnnotations, status],
+  );
+  const hasTeacherAnnotations = Boolean(
+    teacherAnnotations && teacherAnnotations.items.length > 0,
+  );
 
   useEffect(() => {
     valuesRef.current = values;
@@ -903,6 +918,14 @@ export function InteractiveHomeworkStudent({
         expectedPageCount={homework.assetPageCount}
         fields={homework.fields}
         pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
+        renderPageForeground={(pageNumber) =>
+          teacherAnnotations && hasTeacherAnnotations ? (
+            <HomeworkReviewAnnotationLayer
+              annotations={teacherAnnotations}
+              pageNumber={pageNumber}
+            />
+          ) : null
+        }
         renderField={(field, index, style) => {
           const commonClass =
             "block size-full max-h-none max-w-none min-h-0 min-w-0 appearance-none border-0 bg-transparent text-left font-semibold text-primary/95 shadow-none outline-none ring-0 transition placeholder:text-transparent focus:bg-transparent focus:outline-none focus:ring-0 disabled:bg-transparent disabled:text-primary/80 disabled:opacity-100";
@@ -1046,6 +1069,12 @@ export function InteractiveHomeworkStudent({
       {homework.submission?.feedback ? (
         <div className="mt-4 rounded-lg border border-primary/20 bg-secondary p-3 text-sm leading-6">
           <strong>Feedback:</strong> {homework.submission.feedback}
+        </div>
+      ) : null}
+
+      {hasTeacherAnnotations ? (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-900">
+          A teacher marcou pontos no arquivo para voce revisar.
         </div>
       ) : null}
 

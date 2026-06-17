@@ -133,6 +133,7 @@ Enums:
 - `HomeworkStudentAssignment` permanece no schema por compatibilidade com a migration anterior, mas o fluxo atual de `Criar/Ver Homework` nao cria novo acesso compartilhado; a permissao do aluno deve vir de `Lesson.studentProfileId` da copia real.
 - `HomeworkInteractiveField` guarda tipo, pagina e posicoes percentuais do campo no arquivo e deve ser substituido em lote apenas por teacher dona da aula ou admin.
 - `HomeworkFieldType` aceita `TINY_TEXT`, `SHORT_TEXT`, `LONG_TEXT`, `CHECKBOX`, `DRAWING` e `LISTENING`; `TINY_TEXT` guarda respostas curtas normalizadas para letras/numeros, `DRAWING` salva tracos normalizados no JSON de `HomeworkSubmission.answers`, e `LISTENING` guarda o texto a ouvir no `placeholder` do campo sem exigir nem salvar resposta do aluno.
+- `HomeworkSubmission.teacherAnnotations` guarda a camada visual de correcao da teacher/admin em JSONB, separada das respostas do aluno e do arquivo original. Ela pode conter tracos e textos por pagina, aparece para o aluno apenas em `RETURNED` ou `REVIEWED` e e limpa quando o aluno envia nova tentativa oficial.
 - Excluir um `Homework` remove `HomeworkInteractiveField`, `HomeworkQuestion` e `HomeworkSubmission` por cascade; a UI deve validar role/dono antes da exclusao.
 - `SubmissionStatus.DRAFT` e autosave do aluno e nao deve disparar evento novo para teacher/admin; `SUBMITTED` e entrega, `RETURNED` e refazer liberado, `REVIEWED` e correcao final.
 - Contratos podem ser gerais ou vinculados a um aluno.
@@ -194,6 +195,7 @@ Enums:
 - Migration `20260607173000_homework_listening_field` adiciona o tipo `LISTENING` ao enum `HomeworkFieldType`.
 - Migration `20260609113000_homework_student_assignments` adicionou `HomeworkStudentAssignment` para o fluxo anterior de acesso compartilhado.
 - Migration `20260610120000_homework_replication_source` adiciona `Homework.replicatedFromHomeworkId` para rastrear replicas reais de homework por aluno, substituindo o fluxo operacional de compartilhar o mesmo homework.
+- Migration `20260617120000_homework_review_annotations` adiciona `HomeworkSubmission.teacherAnnotations` para salvar caneta/texto da correcao diretamente sobre a entrega interativa.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
@@ -221,6 +223,7 @@ Enums:
 - Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar apenas a linha mensal escolhida pela UI.
 - Fazer hard delete de `AgendaStudent` apaga ocorrencias da agenda por cascade; a UI deve retirar agenda por `isActive=false`.
 - Alterar `HomeworkInteractiveField` sem manter coordenadas percentuais por pagina pode desalinhar respostas sobre o PDF/imagem.
+- Exibir `HomeworkSubmission.teacherAnnotations` enquanto a entrega ainda esta `SUBMITTED` pode revelar marcacoes de correcao antes da devolucao/avaliacao; a UI do aluno deve filtrar por `RETURNED`/`REVIEWED`.
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
 - Criar XP sem `sourceKey` estavel pode duplicar pontos; toda missao/tarefa deve definir uma origem unica por usuario.
 - Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.

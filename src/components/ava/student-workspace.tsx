@@ -98,6 +98,7 @@ type StudentLesson = {
       id: string;
       status: string;
       submittedAt: Date;
+      teacherAnnotations: unknown;
     }[];
     title: string;
   }[];

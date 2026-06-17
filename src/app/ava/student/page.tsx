@@ -174,6 +174,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
                 id: true,
                 status: true,
                 submittedAt: true,
+                teacherAnnotations: true,
               },
               take: 1,
             },
