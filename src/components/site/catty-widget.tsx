@@ -966,7 +966,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   return (
     <div
       className={`pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-4 sm:right-5 sm:max-w-none sm:gap-6 ${
-        hasWhatsAppWidget ? "bottom-28 sm:bottom-24" : "bottom-4 sm:bottom-5"
+        hasWhatsAppWidget ? "bottom-20 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
       {open && canUseCattyChat ? (

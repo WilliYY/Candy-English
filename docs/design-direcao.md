@@ -49,7 +49,7 @@ Os assets de marca ficam em arquivos estaticos. Nao colocar logos dentro de codi
 
 Movimentos permitidos nesta fase:
 
-- hero da home com video local leve `public/brand/home-candy-2.mp4` em loop, muted/autoplay, como fundo do primeiro card dominante com fundo branco reduzido, proporcao mais fechada e zoom leve para aproveitar melhor a arte; `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` ficam embutidos dentro desse mesmo palco, aproveitando o espaco livre, tambem em loop mudo e com botoes visiveis para pausar/retomar e ligar/desligar som;
+- hero da home com video local leve `public/brand/home-candy-2.mp4` em loop, muted/autoplay, como fundo do primeiro card dominante com fundo branco reduzido, proporcao mais fechada e zoom leve para aproveitar melhor a arte em tablet/desktop; no mobile, o fundo Canva do palco sai e `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` aparecem como videos empilhados, diretos e em proporcao vertical, tambem em loop mudo e com botoes visiveis para pausar/retomar e ligar/desligar som;
 - video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa, linha divisoria dura ou degradê de transicao;
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura; o video deve ser lazy/condicional, montar apenas quando o navegador estiver ocioso, tocar apenas em telas a partir de tablet quando `prefers-reduced-motion` permitir, pausar fora da viewport e manter fallback estatico para reduzir lag;
@@ -61,7 +61,7 @@ Movimentos permitidos nesta fase:
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
 - Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA, com launcher quadrado compacto em video local leve, nome `Catty` pequeno acima do card, enquadramento sem cortar a animacao e fallback estatico para movimento reduzido.
-- Catty fica acima do WhatsApp no site institucional e no login do AVA; WhatsApp fica como botao inferior.
+- Catty fica acima do WhatsApp no site institucional e no login do AVA; no mobile, o espacamento entre Catty e WhatsApp deve ser curto para parecer um conjunto, enquanto o WhatsApp fica como botao inferior.
 
 Cuidados:
 
@@ -94,7 +94,7 @@ Cuidados:
 - Nas paginas informativas (`/sobre`, `/metodologia`, `/contato`), o footer deve invadir menos e o grid de cards deve reservar respiro inferior suficiente para nao esconder conteudo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
-- O hero da home usa `public/brand/home-candy-2.mp4` como fundo em loop leve do primeiro card, com `object-contain`, palco mais alto e zoom minimo para preservar a arte e evitar cortes na marca. `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` ficam dentro desse mesmo card como videos embutidos no espaco livre, maiores, mais altos no desktop e com `object-contain` para mostrar a pessoa sem cortar o video, nao em coluna externa, com borda roxa suave, autoplay mudo, loop e controles visiveis de pausa/play e som. O video local `public/brand/home.mp4` continua no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degrade de transicao antes do rodape.
+- O hero da home usa `public/brand/home-candy-2.mp4` como fundo em loop leve do primeiro card em tablet/desktop, com `object-contain`, palco mais alto e zoom minimo para preservar a arte e evitar cortes na marca. `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` ficam dentro desse mesmo card como videos embutidos no espaco livre, maiores, mais altos no desktop e com `object-contain` para mostrar a pessoa sem cortar o video, nao em coluna externa, com borda roxa suave, autoplay mudo, loop e controles visiveis de pausa/play e som. No mobile, os intros aparecem empilhados em cards verticais proprios e o fundo Canva do palco nao aparece. O video local `public/brand/home.mp4` continua no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degrade de transicao antes do rodape.
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
 - O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.

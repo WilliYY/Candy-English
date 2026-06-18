@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 type HomeVideoCardProps = {
   className?: string;
   label: string;
+  media?: string;
   src: string;
   title: string;
-  variant?: "support" | "embedded";
+  variant?: "support" | "embedded" | "mobileStack";
 };
 
 const controlButtonClass =
@@ -20,6 +21,7 @@ const embeddedControlButtonClass =
 export function HomeVideoCard({
   className,
   label,
+  media,
   src,
   title,
   variant = "support",
@@ -79,7 +81,8 @@ export function HomeVideoCard({
   };
 
   const isEmbedded = variant === "embedded";
-  const buttonClassName = isEmbedded
+  const isMobileStack = variant === "mobileStack";
+  const buttonClassName = isEmbedded || isMobileStack
     ? embeddedControlButtonClass
     : controlButtonClass;
 
@@ -87,19 +90,23 @@ export function HomeVideoCard({
     <article
       className={cn(
         "group flex min-h-0 flex-col overflow-hidden border border-white/80 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:border-primary/25",
-        isEmbedded
-          ? "rounded-[1.15rem] bg-white/[0.9] p-1.5 shadow-2xl shadow-primary/18 hover:shadow-primary/24"
-          : "rounded-[1.75rem] bg-white/[0.86] p-2 shadow-2xl shadow-primary/14 hover:shadow-primary/20 lg:h-full",
+        isMobileStack
+          ? "rounded-[1.35rem] bg-white/[0.92] p-2 shadow-xl shadow-primary/12 hover:shadow-primary/18"
+          : isEmbedded
+            ? "rounded-[1.15rem] bg-white/[0.9] p-1.5 shadow-2xl shadow-primary/18 hover:shadow-primary/24"
+            : "rounded-[1.75rem] bg-white/[0.86] p-2 shadow-2xl shadow-primary/14 hover:shadow-primary/20 lg:h-full",
         className,
       )}
     >
       <div
         className={cn(
           "overflow-hidden border border-primary/15 bg-white",
-          isEmbedded
-            ? "h-48 rounded-[0.9rem] sm:h-56 lg:h-[24rem] xl:h-[28rem]"
-            : "rounded-[1.25rem] lg:aspect-auto lg:min-h-0 lg:flex-1",
-          !isEmbedded && "aspect-video",
+          isMobileStack
+            ? "mx-auto aspect-[9/16] w-full max-w-[17.25rem] rounded-[1rem]"
+            : isEmbedded
+              ? "h-48 rounded-[0.9rem] sm:h-56 lg:h-[24rem] xl:h-[28rem]"
+              : "rounded-[1.25rem] lg:aspect-auto lg:min-h-0 lg:flex-1",
+          !isEmbedded && !isMobileStack && "aspect-video",
         )}
       >
         <video
@@ -112,20 +119,22 @@ export function HomeVideoCard({
           preload="auto"
           className="block h-full w-full bg-white object-contain object-center"
         >
-          <source src={src} type="video/mp4" />
+          <source src={src} type="video/mp4" media={media} />
         </video>
       </div>
 
       <div
         className={cn(
           "flex items-center justify-between gap-3",
-          isEmbedded ? "px-2 py-2" : "px-3 py-3",
+          isEmbedded || isMobileStack ? "px-2 py-2" : "px-3 py-3",
         )}
       >
         <h2
           className={cn(
             "min-w-0 font-bold leading-tight text-primary",
-            isEmbedded ? "text-sm sm:text-base" : "text-lg sm:text-xl",
+            isEmbedded || isMobileStack
+              ? "text-sm sm:text-base"
+              : "text-lg sm:text-xl",
           )}
         >
           {title}
@@ -144,7 +153,11 @@ export function HomeVideoCard({
             ) : (
               <Play aria-hidden="true" className="size-4" />
             )}
-            <span className={cn(isEmbedded ? "sr-only" : "hidden sm:inline")}>
+            <span
+              className={cn(
+                isEmbedded || isMobileStack ? "sr-only" : "hidden sm:inline",
+              )}
+            >
               {isPlaying ? "Pausar" : "Play"}
             </span>
           </button>
@@ -163,7 +176,11 @@ export function HomeVideoCard({
             ) : (
               <Volume2 aria-hidden="true" className="size-4" />
             )}
-            <span className={cn(isEmbedded ? "sr-only" : "hidden sm:inline")}>
+            <span
+              className={cn(
+                isEmbedded || isMobileStack ? "sr-only" : "hidden sm:inline",
+              )}
+            >
               {isMuted ? "Som" : "Ligado"}
             </span>
           </button>

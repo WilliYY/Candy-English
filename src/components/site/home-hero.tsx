@@ -34,11 +34,31 @@ export function HomeHero({ content }: HomeHeroProps) {
         <h1 className="sr-only">{title}</h1>
         <p className="sr-only">{description}</p>
 
-        <div className="mx-auto w-full max-w-[82rem]">
+        <div className="mx-auto w-full max-w-[23rem] md:hidden">
+          <div className="animate-fade-rise flex flex-col gap-4">
+            <HomeVideoCard
+              label="Intro Candy English 1"
+              media="(max-width: 767px)"
+              src="/brand/intro-1.mp4"
+              title="Intro 1"
+              variant="mobileStack"
+            />
+            <HomeVideoCard
+              label="Intro Candy English 2"
+              media="(max-width: 767px)"
+              src="/brand/intro-2.mp4"
+              title="Intro 2"
+              variant="mobileStack"
+            />
+          </div>
+        </div>
+
+        <div className="mx-auto hidden w-full max-w-[82rem] md:block">
           <div className="animate-fade-rise relative isolate aspect-[4/5] min-h-[34rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-1.5 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:aspect-[16/11] sm:min-h-[43rem] lg:aspect-[16/9] lg:min-h-0">
             <div className="absolute inset-2 overflow-hidden rounded-[1.5rem] bg-white">
               <HomeHeroLoopVideo
                 label="Home Candy English"
+                media="(min-width: 768px)"
                 src={homeHeroVideoUrl}
                 className="absolute inset-0 rounded-[1.5rem] object-top scale-[1.01] sm:scale-[1.025] lg:scale-[1.035]"
               />
@@ -49,12 +69,14 @@ export function HomeHero({ content }: HomeHeroProps) {
             <div className="animate-fade-rise-delay relative z-10 grid min-h-[32rem] content-end gap-3 p-3 pt-44 sm:min-h-[41rem] sm:grid-cols-2 sm:p-5 sm:pt-56 lg:absolute lg:bottom-[6.5%] lg:left-[6%] lg:min-h-0 lg:w-[70%] lg:max-w-[64rem] lg:gap-4 lg:p-0 xl:bottom-[7%] xl:left-[6%] xl:w-[69%]">
               <HomeVideoCard
                 label="Intro Candy English 1"
+                media="(min-width: 768px)"
                 src="/brand/intro-1.mp4"
                 title="Intro 1"
                 variant="embedded"
               />
               <HomeVideoCard
                 label="Intro Candy English 2"
+                media="(min-width: 768px)"
                 src="/brand/intro-2.mp4"
                 title="Intro 2"
                 variant="embedded"

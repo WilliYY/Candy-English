@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 type HomeHeroLoopVideoProps = {
   className?: string;
   label: string;
+  media?: string;
   src: string;
 };
 
 export function HomeHeroLoopVideo({
   className,
   label,
+  media,
   src,
 }: HomeHeroLoopVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,7 +54,7 @@ export function HomeHeroLoopVideo({
         className,
       )}
     >
-      <source src={src} type="video/mp4" />
+      <source src={src} type="video/mp4" media={media} />
     </video>
   );
 }
