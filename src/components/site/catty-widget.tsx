@@ -965,7 +965,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   return (
     <div
-      className={`pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-2.5 sm:right-5 sm:max-w-none sm:gap-3 ${
+      className={`pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-4 sm:right-5 sm:max-w-none sm:gap-6 ${
         hasWhatsAppWidget ? "bottom-28 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
@@ -1254,10 +1254,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       <Button
         type="button"
         size="lg"
-        className={`catty-launcher catty-launcher-card pointer-events-auto overflow-hidden border border-white/70 p-1.5 shadow-2xl shadow-primary/20 ${
+        className={`catty-launcher catty-launcher-card pointer-events-auto relative overflow-visible border border-white/70 p-1.5 shadow-2xl shadow-primary/20 ${
           open && canUseCattyChat
             ? "h-14 w-14 rounded-2xl sm:h-16 sm:w-16"
-            : "h-16 w-16 rounded-[1.15rem] sm:h-[5.5rem] sm:w-[5.5rem] sm:rounded-[1.35rem]"
+            : "h-[4.5rem] w-[4.5rem] rounded-[1.28rem] sm:h-[5.75rem] sm:w-[5.75rem] sm:rounded-[1.45rem]"
         }`}
         onClick={() => {
           if (open && canUseCattyChat) {
@@ -1272,8 +1272,12 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         <CattyLoopFrame
           className="size-full rounded-[1.05rem]"
           prefersReducedMotion={prefersReducedMotion}
-          showLabel={!open || !canUseCattyChat}
         />
+        {!open || !canUseCattyChat ? (
+          <span aria-hidden="true" className="catty-launcher-name">
+            Catty
+          </span>
+        ) : null}
         <span className="sr-only">Catty</span>
       </Button>
     </div>
@@ -1283,11 +1287,9 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 function CattyLoopFrame({
   className = "",
   prefersReducedMotion,
-  showLabel = false,
 }: {
   className?: string;
   prefersReducedMotion: boolean;
-  showLabel?: boolean;
 }) {
   return (
     <span
@@ -1311,7 +1313,6 @@ function CattyLoopFrame({
         </video>
       ) : null}
       <span className="catty-loop-poster" />
-      {showLabel ? <span className="catty-launcher-name">Catty</span> : null}
     </span>
   );
 }

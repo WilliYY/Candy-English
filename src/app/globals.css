@@ -160,7 +160,7 @@ a {
   display: block;
   height: 100%;
   inset: 0;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   position: absolute;
   width: 100%;
@@ -170,7 +170,8 @@ a {
 .catty-loop-poster {
   background-image: url("/brand/catty-loop-poster.jpg");
   background-position: center;
-  background-size: cover;
+  background-repeat: no-repeat;
+  background-size: contain;
   display: none;
 }
 
@@ -180,20 +181,21 @@ a {
 
 .catty-launcher-name {
   align-items: center;
-  background: rgb(44 19 56 / 0.74);
-  border: 1px solid rgb(255 255 255 / 0.3);
+  background: rgb(44 19 56 / 0.9);
+  border: 1px solid rgb(255 255 255 / 0.42);
   border-radius: 9999px;
-  bottom: 0.38rem;
-  box-shadow: 0 8px 18px rgb(44 19 56 / 0.22);
+  box-shadow: 0 10px 20px rgb(44 19 56 / 0.2);
   color: #fff;
   display: inline-flex;
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 800;
   justify-content: center;
   left: 50%;
   line-height: 1;
-  padding: 0.24rem 0.5rem;
+  padding: 0.22rem 0.54rem;
+  pointer-events: none;
   position: absolute;
+  top: -1.3rem;
   transform: translateX(-50%);
   z-index: 3;
 }

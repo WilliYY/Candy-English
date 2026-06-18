@@ -60,7 +60,7 @@ Movimentos permitidos nesta fase:
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
-- Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA, com launcher quadrado compacto em video local leve, nome `Catty` pequeno e fallback estatico para movimento reduzido.
+- Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA, com launcher quadrado compacto em video local leve, nome `Catty` pequeno acima do card, enquadramento sem cortar a animacao e fallback estatico para movimento reduzido.
 - Catty fica acima do WhatsApp no site institucional e no login do AVA; WhatsApp fica como botao inferior.
 
 Cuidados:
