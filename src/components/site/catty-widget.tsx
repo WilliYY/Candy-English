@@ -1306,8 +1306,8 @@ function CattyLoopFrame({
           preload="metadata"
           poster={CATTY_LOOP_POSTER}
         >
-          <source src={CATTY_LOOP_WEBM} type="video/webm" />
           <source src={CATTY_LOOP_MP4} type="video/mp4" />
+          <source src={CATTY_LOOP_WEBM} type="video/webm" />
         </video>
       ) : null}
       <span className="catty-loop-poster" />
