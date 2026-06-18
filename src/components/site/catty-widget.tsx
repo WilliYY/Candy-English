@@ -498,8 +498,13 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const hasSessionUser = Boolean(sessionUser);
   const canUseCattyChat = Boolean(hasSessionUser && isLoggedInAvaArea(context));
   const showLoggedInBalloons = canUseCattyChat;
+  const hidePublicBalloonOnMobileLogin =
+    context.area === "login" && isCompactBalloonViewport;
   const showPublicBalloons = Boolean(
-    !hasSessionUser && isPublicCattyArea(context) && !open,
+    !hidePublicBalloonOnMobileLogin &&
+      !hasSessionUser &&
+      isPublicCattyArea(context) &&
+      !open,
   );
   const visiblePublicBalloon = publicNoticeVisible
     ? CATTY_PUBLIC_LOCKED_REPLY
@@ -1236,6 +1241,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       {!open &&
       !showLoggedInBalloons &&
+      !hidePublicBalloonOnMobileLogin &&
       (showPublicBalloons || publicNoticeVisible) &&
       visiblePublicBalloon ? (
         <div

@@ -61,7 +61,7 @@ Movimentos permitidos nesta fase:
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
 - Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA, com launcher quadrado compacto em video local leve, nome `Catty` pequeno acima do card, enquadramento sem cortar a animacao e fallback estatico para movimento reduzido.
-- Catty fica acima do WhatsApp no site institucional e no login do AVA; no mobile, o espacamento entre Catty e WhatsApp deve ser curto para parecer um conjunto, enquanto o WhatsApp fica como botao inferior.
+- Catty fica acima do WhatsApp no site institucional e no login do AVA; no mobile, o espacamento entre Catty e WhatsApp deve ser curto para parecer um conjunto, enquanto o WhatsApp fica como botao inferior. Na home mobile, os baloes publicos continuam chamando clientes; no login mobile, o balao automatico fica oculto para nao cobrir o formulario.
 
 Cuidados:
 
