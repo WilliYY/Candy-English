@@ -33,7 +33,7 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 - Favicon: `public/favicon.svg`, usando a bala original da Candy centralizada sobre fundo branco circular para evitar caixa branca quadrada na aba do navegador.
 - Logo animada principal: `public/brand/candy-logo-animated.webm`, em loop mudo, com fundo transparente, recorte otimizado e poster `public/brand/candy-logo-animated-poster.png`.
 - Logos estaticas legadas/fallback: `public/brand/logo-2.svg`, `public/brand/logo-1.svg` e `public/brand/logo-3.svg`.
-- Catty: `public/brand/catty.png`
+- Catty: `public/brand/catty.png` como fallback estatico e contextos internos; launcher global usa `public/brand/catty-loop.webm` com fallback `public/brand/catty-loop.mp4` e poster `public/brand/catty-loop-poster.jpg`, todos sem audio e otimizados para loop curto.
 - Video do login do AVA: `public/brand/ava-login.mp4`
 - Video principal do contato final da home: `public/brand/home.mp4`
 - Video de fundo do hero da home: `public/brand/home-candy.mp4`
@@ -60,7 +60,7 @@ Movimentos permitidos nesta fase:
 - cards flutuantes com movimento lento;
 - marquee de palavras do metodo;
 - reveal curto em hero e blocos principais.
-- Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA.
+- Catty fixo no canto inferior direito no site institucional, no login do AVA e nos paineis logados do AVA, com launcher quadrado compacto em video local leve, nome `Catty` pequeno e fallback estatico para movimento reduzido.
 - Catty fica acima do WhatsApp no site institucional e no login do AVA; WhatsApp fica como botao inferior.
 
 Cuidados:

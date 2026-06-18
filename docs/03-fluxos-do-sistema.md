@@ -184,7 +184,7 @@ Helpers:
 
 ### Catty
 
-1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA.
+1. Usuario abre a Catty no canto inferior direito do site, login ou paineis do AVA; o launcher fechado e um card quadrado compacto com video local otimizado em loop, sem audio, nome `Catty` pequeno e poster estatico quando o navegador pede movimento reduzido.
 2. Widget identifica apenas contexto leve da tela atual (`area` e `task`) para adaptar titulo, texto de apoio e atalhos de estudo.
 3. O `RootLayout` chama `auth()` e passa para a Catty apenas o nome do usuario logado e os `CattyUserArtifact.ACTIVE` do proprio usuario, quando existem; o widget usa o primeiro nome em baloes visuais locais no AVA.
 4. Para usuarios logados no AVA, a Catty fechada alterna baloes fofos a cada 10 segundos, com saudacao por horario e, quando houver artefato ativo, nome + gosto do aluno misturados com frases genericas Candy, sem chamar IA. Em mobile menor que tablet (`<768px`), ela mostra no maximo 3 baloes automaticos por rota, mantem o ultimo por poucos segundos e depois esconde o balao.

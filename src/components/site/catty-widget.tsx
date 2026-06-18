@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
@@ -10,7 +9,6 @@ import {
   Heart,
   Lightbulb,
   LoaderCircle,
-  MessageCircle,
   MessageSquarePlus,
   PencilLine,
   Send,
@@ -64,6 +62,9 @@ const LOGGED_IN_BALLOON_INTERVAL_MS = 10_000;
 const CATTY_COMPACT_BALLOON_BREAKPOINT_PX = 1024;
 const COMPACT_BALLOON_MAX_COUNT = 3;
 const COMPACT_BALLOON_HIDE_DELAY_MS = 4_000;
+const CATTY_LOOP_POSTER = "/brand/catty-loop-poster.jpg";
+const CATTY_LOOP_MP4 = "/brand/catty-loop.mp4";
+const CATTY_LOOP_WEBM = "/brand/catty-loop.webm";
 
 const initialCattyMessages: CattyMessage[] = [
   {
@@ -471,6 +472,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const [isCompactBalloonViewport, setIsCompactBalloonViewport] =
     useState(false);
   const [publicNoticeVisible, setPublicNoticeVisible] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>(
     {},
   );
@@ -609,6 +611,21 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         "orientationchange",
         refreshCompactBalloonViewport,
       );
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    function refreshReducedMotion() {
+      setPrefersReducedMotion(mediaQuery.matches);
+    }
+
+    refreshReducedMotion();
+    mediaQuery.addEventListener("change", refreshReducedMotion);
+
+    return () => {
+      mediaQuery.removeEventListener("change", refreshReducedMotion);
     };
   }, []);
 
@@ -957,17 +974,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
           <header className="relative overflow-hidden bg-[linear-gradient(135deg,#412a4c_0%,#55315f_58%,#6d3971_100%)] px-4 py-3 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <span className="catty-breathe relative flex size-12 shrink-0 overflow-hidden rounded-2xl border border-white/45 bg-white p-1 shadow-lg shadow-black/10 ring-1 ring-white/20">
-                  <Image
-                    src="/brand/catty.png"
-                    alt=""
-                    width={112}
-                    height={112}
-                    sizes="40px"
-                    className="size-full object-contain"
-                    priority={false}
-                  />
-                </span>
+                <CattyLoopFrame
+                  className="catty-breathe size-12 shrink-0 rounded-2xl border border-white/45 bg-white p-0.5 shadow-lg shadow-black/10 ring-1 ring-white/20"
+                  prefersReducedMotion={prefersReducedMotion}
+                />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <strong className="truncate text-lg leading-none">Catty</strong>
@@ -1244,7 +1254,11 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       <Button
         type="button"
         size="lg"
-        className="catty-launcher pointer-events-auto h-14 w-14 overflow-visible rounded-full p-1 shadow-2xl shadow-primary/20 sm:h-16 sm:w-auto sm:px-4"
+        className={`catty-launcher catty-launcher-card pointer-events-auto overflow-hidden border border-white/70 p-1.5 shadow-2xl shadow-primary/20 ${
+          open && canUseCattyChat
+            ? "h-14 w-14 rounded-2xl sm:h-16 sm:w-16"
+            : "h-[4.75rem] w-[4.75rem] rounded-[1.35rem] sm:h-[5.5rem] sm:w-[5.5rem]"
+        }`}
         onClick={() => {
           if (open && canUseCattyChat) {
             setOpen(false);
@@ -1253,27 +1267,52 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
           }
         }}
         aria-expanded={open || publicNoticeVisible}
+        aria-label={open && canUseCattyChat ? "Fechar Catty" : "Abrir Catty"}
       >
-        <span className="relative flex size-11 overflow-hidden rounded-full border-2 border-white/55 bg-white p-0.5 shadow-sm sm:mr-2">
-          <Image
-            src="/brand/catty.png"
-            alt=""
-            width={88}
-            height={88}
-            sizes="44px"
-            className="size-full object-contain"
-          />
-        </span>
-        <span className="sr-only">Catty</span>
-        <span aria-hidden="true" className="hidden font-semibold sm:inline">
-          Catty
-        </span>
-        <MessageCircle
-          aria-hidden="true"
-          className="hidden size-3.5 sm:ml-1 sm:block sm:size-4"
+        <CattyLoopFrame
+          className="size-full rounded-[1.05rem]"
+          prefersReducedMotion={prefersReducedMotion}
+          showLabel={!open || !canUseCattyChat}
         />
+        <span className="sr-only">Catty</span>
       </Button>
     </div>
+  );
+}
+
+function CattyLoopFrame({
+  className = "",
+  prefersReducedMotion,
+  showLabel = false,
+}: {
+  className?: string;
+  prefersReducedMotion: boolean;
+  showLabel?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`catty-loop-frame ${
+        prefersReducedMotion ? "catty-loop-frame--static" : ""
+      } ${className}`}
+    >
+      {!prefersReducedMotion ? (
+        <video
+          className="catty-loop-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          poster={CATTY_LOOP_POSTER}
+        >
+          <source src={CATTY_LOOP_WEBM} type="video/webm" />
+          <source src={CATTY_LOOP_MP4} type="video/mp4" />
+        </video>
+      ) : null}
+      <span className="catty-loop-poster" />
+      {showLabel ? <span className="catty-launcher-name">Catty</span> : null}
+    </span>
   );
 }
 

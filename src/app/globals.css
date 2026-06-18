@@ -115,6 +115,89 @@ a {
   animation: catty-launcher-breathe 4.8s ease-in-out infinite;
 }
 
+.catty-launcher-card {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.24), transparent 34%),
+    linear-gradient(145deg, #412a4c 0%, #583064 48%, #2c1338 100%);
+  box-shadow:
+    0 18px 34px rgb(65 42 76 / 0.22),
+    inset 0 1px 0 rgb(255 255 255 / 0.28);
+  color: #fff;
+  min-width: 0;
+}
+
+.catty-launcher-card:hover {
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.28), transparent 34%),
+    linear-gradient(145deg, #4d315a 0%, #663871 50%, #321641 100%);
+}
+
+.catty-loop-frame {
+  background:
+    radial-gradient(circle at 50% 36%, rgb(255 255 255 / 0.98), rgb(252 229 216 / 0.64) 64%, rgb(65 42 76 / 0.2)),
+    #fff;
+  display: block;
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+}
+
+.catty-loop-frame::after {
+  border: 1px solid rgb(255 255 255 / 0.62);
+  border-radius: inherit;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.72),
+    inset 0 -18px 30px rgb(44 19 56 / 0.16);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.catty-loop-video,
+.catty-loop-poster {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  object-position: center;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+}
+
+.catty-loop-poster {
+  background-image: url("/brand/catty-loop-poster.jpg");
+  background-position: center;
+  background-size: cover;
+  display: none;
+}
+
+.catty-loop-frame--static .catty-loop-poster {
+  display: block;
+}
+
+.catty-launcher-name {
+  align-items: center;
+  background: rgb(44 19 56 / 0.74);
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 9999px;
+  bottom: 0.38rem;
+  box-shadow: 0 8px 18px rgb(44 19 56 / 0.22);
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 800;
+  justify-content: center;
+  left: 50%;
+  line-height: 1;
+  padding: 0.24rem 0.5rem;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
+}
+
 .catty-breathe {
   animation: catty-avatar-breathe 5.2s ease-in-out infinite;
 }
@@ -865,6 +948,19 @@ main:has(.site-institutional-page) + .candy-footer {
 
   .candy-logo-soft {
     animation: none;
+  }
+
+  .catty-launcher,
+  .catty-breathe {
+    animation: none;
+  }
+
+  .catty-loop-video {
+    display: none;
+  }
+
+  .catty-loop-poster {
+    display: block;
   }
 }
 
