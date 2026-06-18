@@ -966,7 +966,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   return (
     <div
       className={`pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-2.5 sm:right-5 sm:max-w-none sm:gap-3 ${
-        hasWhatsAppWidget ? "bottom-44 sm:bottom-24" : "bottom-4 sm:bottom-5"
+        hasWhatsAppWidget ? "bottom-28 sm:bottom-24" : "bottom-4 sm:bottom-5"
       }`}
     >
       {open && canUseCattyChat ? (
@@ -1222,7 +1222,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       {!open && showLoggedInBalloons && loggedInBalloon ? (
         <div
-          className="catty-speech catty-speech--logged pointer-events-none mr-1 mb-10 sm:mb-0"
+          className="catty-speech catty-speech--logged pointer-events-none mr-1 mb-12 sm:mb-0"
           role="status"
           aria-live="polite"
         >
@@ -1239,7 +1239,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       (showPublicBalloons || publicNoticeVisible) &&
       visiblePublicBalloon ? (
         <div
-          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1 mb-10 sm:mb-0`}
+          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1 mb-12 sm:mb-0`}
           role="status"
           aria-live="polite"
         >
