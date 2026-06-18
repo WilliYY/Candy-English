@@ -1257,7 +1257,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         className={`catty-launcher catty-launcher-card pointer-events-auto overflow-hidden border border-white/70 p-1.5 shadow-2xl shadow-primary/20 ${
           open && canUseCattyChat
             ? "h-14 w-14 rounded-2xl sm:h-16 sm:w-16"
-            : "h-[4.75rem] w-[4.75rem] rounded-[1.35rem] sm:h-[5.5rem] sm:w-[5.5rem]"
+            : "h-16 w-16 rounded-[1.15rem] sm:h-[5.5rem] sm:w-[5.5rem] sm:rounded-[1.35rem]"
         }`}
         onClick={() => {
           if (open && canUseCattyChat) {
