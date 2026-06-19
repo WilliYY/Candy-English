@@ -535,6 +535,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260619120000_site_visit_counter`, `src/lib/site-visits.ts`, `src/app/api/site-visits/route.ts`, `src/components/site/site-visit-counter.tsx` e `src/components/site/site-footer.tsx`.
 - Riscos/cuidados: manter apenas total agregado; nao salvar IP, user-agent, email, telefone ou identificador pessoal; o cooldown local reduz inflacao por refresh, mas nao substitui analytics completo.
 
+### 2026-06-19 - Sidebar responsiva do AVA como drawer
+
+- Decisao: manter a sidebar operacional permanente apenas a partir de `1280px` e usar um drawer com barra compacta de abertura em mobile/tablet.
+- Motivo: no layout empilhado, o link mudava a tarefa, mas a navegacao longa continuava antes do conteudo e parecia nao responder ao toque; em tablets de 1024px, a coluna lateral tambem comprimida demais a area de trabalho.
+- Impacto: `src/app/ava/layout.tsx`, novo `src/components/ava/ava-responsive-sidebar.tsx`, fluxo visual e direcao de design do AVA.
+- Riscos/cuidados: o drawer deve fechar por link, backdrop, `Esc` ou mudanca de rota, bloquear apenas a rolagem de fundo enquanto aberto e preservar os mesmos links e permissoes server-side.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

@@ -20,6 +20,7 @@ Rotas:
 Componentes:
 
 - `src/components/ava/ava-dashboard.tsx`
+- `src/components/ava/ava-responsive-sidebar.tsx`
 - `src/components/ava/admin-users-panel.tsx`
 - `src/components/ava/admin-credentials-panel.tsx`
 - `src/components/ava/admin-finance-panel.tsx`
@@ -299,7 +300,7 @@ Helpers:
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
 - Pre-cadastro publico nunca deve liberar login automaticamente; ele apenas cria solicitacao pendente para analise.
 - O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`.
-- Sidebar deve ser indice operacional, sem caixa interna de rolagem.
+- Sidebar deve ser indice operacional, sem caixa interna de rolagem no desktop. Em mobile e tablet abaixo de `1280px`, ela abre como drawer sobre o conteudo, fecha ao escolher um atalho, tocar fora ou pressionar `Esc` e devolve imediatamente a area util da tarefa.
 - Student tem botoes sempre visiveis.
 - Candy XP deve continuar sem ranking publico; o ranking interno do AVA so aparece para usuario logado, nao mostra email, telefone, documento, pagamento ou contrato, e usa apenas alunos/profs com XP persistido.
 - Toda nova tarefa que conceder XP deve gravar por server action/rota protegida e usar `sourceKey` estavel para evitar abuso ou pontuacao duplicada.

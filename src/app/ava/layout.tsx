@@ -31,6 +31,7 @@ import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
 import { AvaStudentBackdrop } from "@/components/ava/ava-student-backdrop";
 import { AvaNavAlertLink } from "@/components/ava/ava-nav-alert-link";
+import { AvaResponsiveSidebar } from "@/components/ava/ava-responsive-sidebar";
 import { UserAvatar } from "@/components/ava/user-avatar";
 import { getAvaNavAlertSignatures } from "@/lib/ava-nav-alerts";
 import { getPrisma } from "@/lib/prisma";
@@ -282,11 +283,11 @@ const navGroups = [
 ];
 
 const navPanelLinkClassName =
-  "relative flex min-h-11 items-center gap-2 overflow-hidden rounded-xl border border-primary/15 bg-white/82 px-3 py-2.5 text-sm font-bold text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-secondary/80 hover:shadow-md";
+  "relative flex min-h-11 touch-manipulation items-center gap-2 overflow-hidden rounded-xl border border-primary/15 bg-white/82 px-3 py-2.5 text-sm font-bold text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-secondary/80 hover:shadow-md";
 const navPanelActiveClassName =
   "ava-nav-active-glow border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90";
 const navItemLinkClassName =
-  "group/nav-item relative flex min-h-11 items-center gap-2 overflow-hidden rounded-xl border border-primary/10 bg-white/78 px-3 py-2.5 text-sm font-semibold text-primary/82 shadow-[0_6px_16px_rgb(44_19_56_/_0.035)] transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-white hover:text-primary hover:shadow-md";
+  "group/nav-item relative flex min-h-11 touch-manipulation items-center gap-2 overflow-hidden rounded-xl border border-primary/10 bg-white/78 px-3 py-2.5 text-sm font-semibold text-primary/82 shadow-[0_6px_16px_rgb(44_19_56_/_0.035)] transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-white hover:text-primary hover:shadow-md";
 const navItemActiveClassName =
   "ava-nav-active-glow border-primary/70 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:text-primary-foreground [&_[data-nav-icon]]:bg-white/16 [&_[data-nav-icon]]:text-primary-foreground [&_[data-nav-icon]]:ring-1 [&_[data-nav-icon]]:ring-white/25";
 
@@ -321,8 +322,8 @@ export default async function AvaLayout({
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background">
       <AvaStudentBackdrop />
-      <div className="relative z-10 grid min-h-screen lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="ava-sidebar-glass relative overflow-hidden border-b border-primary/15 backdrop-blur-2xl lg:border-b-0 lg:border-r lg:border-primary/20">
+      <div className="relative z-10 grid min-h-screen grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] xl:grid-rows-1">
+        <AvaResponsiveSidebar roleLabel={ROLE_LABELS[role]}>
           <div className="flex h-full flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-5 lg:px-6 lg:py-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <BrandLogo
@@ -454,7 +455,7 @@ export default async function AvaLayout({
                     }
                     className="group rounded-[1.15rem] border border-primary/16 bg-white/78 p-2 shadow-[0_10px_26px_rgb(44_19_56_/_0.06)] backdrop-blur-xl transition-colors open:border-primary/32 open:bg-white/92"
                   >
-                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl border border-primary/10 bg-gradient-to-r from-white via-white to-secondary/45 px-3 py-3 text-sm font-bold text-primary outline-none shadow-sm transition-colors hover:border-primary/18 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
+                    <summary className="flex cursor-pointer touch-manipulation list-none items-center justify-between gap-3 rounded-xl border border-primary/10 bg-gradient-to-r from-white via-white to-secondary/45 px-3 py-3 text-sm font-bold text-primary outline-none shadow-sm transition-colors hover:border-primary/18 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
                       <span className="flex min-w-0 items-center gap-2">
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10 transition-colors group-open:bg-primary group-open:text-primary-foreground">
                           <group.icon aria-hidden="true" className="size-4" />
@@ -545,7 +546,7 @@ export default async function AvaLayout({
               ) : null}
             </nav>
           </div>
-        </aside>
+        </AvaResponsiveSidebar>
 
         <main className="min-w-0">{children}</main>
       </div>
