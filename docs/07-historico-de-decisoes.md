@@ -528,6 +528,13 @@ Cada decisao deve conter:
 - Impacto: prompt server-side da Catty, personalidade oficial, fallback local, cenarios curados, smoke `audit:catty-behavior`, README e docs oficiais.
 - Riscos/cuidados: manter respostas curtas, nao transformar em aula longa, nao entregar resposta pronta de homework e preservar a diferenca de contexto para teacher/admin.
 
+### 2026-06-19 - Contador publico de visitas agregado
+
+- Decisao: criar `SiteVisitCounter`, `/api/site-visits` e um componente discreto no footer publico para mostrar o total de visitas do site institucional.
+- Motivo: exibir prova social simples no rodape sem usar Google Analytics, sem bloquear o carregamento e sem coletar dados pessoais.
+- Impacto: `prisma/schema.prisma`, migration `20260619120000_site_visit_counter`, `src/lib/site-visits.ts`, `src/app/api/site-visits/route.ts`, `src/components/site/site-visit-counter.tsx` e `src/components/site/site-footer.tsx`.
+- Riscos/cuidados: manter apenas total agregado; nao salvar IP, user-agent, email, telefone ou identificador pessoal; o cooldown local reduz inflacao por refresh, mas nao substitui analytics completo.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

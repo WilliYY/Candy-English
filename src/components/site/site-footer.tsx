@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { BrandLogo } from "@/components/site/brand-logo";
+import { SiteVisitCounter } from "@/components/site/site-visit-counter";
 
 const footerBubbles = Array.from({ length: 72 }, (_, index) => {
   const size = 2.4 + ((index * 17) % 48) / 10;
@@ -42,13 +43,16 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="candy-footer-content relative z-10">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 pb-32 pt-14 md:grid-cols-[1fr_1fr] md:items-end md:pb-12 md:pt-12 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 pb-32 pt-14 md:grid-cols-[1fr_auto_1fr] md:items-end md:pb-12 md:pt-12 lg:px-8">
           <div className="flex flex-col gap-4">
             <BrandLogo
               className="-ml-3 h-[5.25rem] w-[320px] overflow-visible"
               imageClassName="w-[400px]"
               variant="light"
             />
+          </div>
+          <div className="flex justify-start md:justify-center">
+            <SiteVisitCounter />
           </div>
           <nav
             aria-label="Rodape"

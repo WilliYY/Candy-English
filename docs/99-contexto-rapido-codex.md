@@ -32,6 +32,7 @@ Ao receber o prompt minimo, o agente deve:
 ## Estado atual resumido
 
 - Site institucional e AVA proprio em `/ava`.
+- O site publico mostra no footer um contador discreto de visitas via `/api/site-visits` e `SiteVisitCounter`; ele registra apenas total agregado, sem IP/user-agent persistido, e usa cooldown local no navegador para reduzir inflacao por refresh.
 - Roles atuais: `ADMIN`, `TEACHER` e `STUDENT`.
 - Login Google esta desativado por enquanto; o AVA usa email/senha pelo Credentials Provider.
 - Login do AVA tem pre-cadastro publico `Quero ser aluno Candy`; ele grava `StudentPreRegistration.PENDING` e nunca cria usuario, senha ou sessao automaticamente.

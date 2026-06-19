@@ -12,6 +12,7 @@ Camadas principais:
 - `src/app/ava/`: areas logadas do AVA.
 - `src/app/api/`: Auth.js e healthcheck.
 - `src/app/api/catty/chat/route.ts`: endpoint server-side da Catty protegido por `auth()`, com Gemini padrao, OpenAI acionado por chamada nominal e fallback local apenas para usuario autorizado.
+- `src/app/api/site-visits/route.ts`: endpoint publico leve para ler/incrementar o contador agregado de visitas do site institucional.
 - `src/components/site/`: header, footer, home, paginas institucionais, Catty e WhatsApp.
 - `src/components/ava/`: paineis e formularios do AVA.
 - `src/components/ui/`: componentes base shadcn/ui.
@@ -29,6 +30,7 @@ Camadas principais:
 - `src/lib/candy-xp-activities.ts`: avaliacao automatica e helpers das atividades Candy XP com PDF/perguntas antigas.
 - `src/lib/admin-credentials.ts`: criptografia e sincronizacao de credenciais administrativas vindas de integracoes externas do ambiente.
 - `src/lib/roles.ts`: helpers de roles e destinos.
+- `src/lib/site-visits.ts`: helper do contador publico de visitas, com filtro simples de bots por user-agent e whitelist de rotas publicas.
 - `src/lib/prisma.ts`: instancia lazy do Prisma.
 - `src/lib/storage.ts`: uploads e calculo de storage.
 - `src/lib/file-optimization.ts`: otimizacao server-side de PDFs pedagogicos antes de salvar no storage, com fallback seguro.
@@ -48,6 +50,7 @@ Servicos Docker:
 ## Regras de negocio que precisam ser preservadas
 
 - O site institucional e publico; o AVA e protegido.
+- O contador de visitas aparece apenas no footer do site publico, registra somente total agregado em `SiteVisitCounter`, nao salva IP, email, telefone, user-agent ou outros dados pessoais, e nao deve bloquear o carregamento se a API falhar.
 - `/ava` redireciona visitante para `/ava/login` e usuario logado para a area correta.
 - `/ava/login` pode receber pre-cadastro publico, mas ele grava apenas `StudentPreRegistration` pendente e nao participa do Auth.js ate ser aceito no modulo protegido `Aceitar alunos`.
 - `ADMIN` pode supervisionar area teacher/student, mas dados sensiveis ainda exigem validacao.
@@ -75,6 +78,7 @@ Servicos Docker:
 - UI do AVA usa tarefas por query string `?task=`.
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
+- O contador de visitas do site usa componente client no footer publico, chama `/api/site-visits` apos o carregamento, aplica cooldown local no navegador e incrementa apenas rotas institucionais (`/`, `/sobre`, `/metodologia`, `/planos`, `/contato`).
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
 - Atividades Candy XP usam rota server-side protegida para PDF/imagem e server actions para criacao, edicao de areas interativas, progresso, envio e correcao.
 - PDFs de Candy XP, homework interativo e aulas interativas passam por tentativa de otimizacao no servidor antes de serem salvos em `storage/candy-xp-assets` ou `storage/homework-assets`; se a otimizacao falhar ou nao reduzir tamanho, o arquivo original continua sendo salvo.
@@ -105,6 +109,7 @@ Servicos Docker:
 
 - Mover rotas do AVA pode quebrar redirecionamentos por role.
 - Colocar Prisma em middleware Edge pode quebrar runtime.
+- Transformar o contador de visitas em rastreamento detalhado pode criar risco de privacidade; manter apenas total agregado e sem dados pessoais.
 - Criar leitura global para teacher pode vazar dados de alunos.
 - Mudar permissao do storage pode quebrar avatar e contratos.
 - Expor assets de homework fora de rota protegida pode vazar atividades e respostas de alunos.

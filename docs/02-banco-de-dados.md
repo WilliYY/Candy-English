@@ -61,6 +61,7 @@ Operacao do AVA:
 - `ChatMessage`
 - `AppSetting`
 - `SitePageContent`
+- `SiteVisitCounter`
 - `AdminCredential`
 
 Gamificacao Candy XP:
@@ -145,6 +146,7 @@ Enums:
 - `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
 - `AdminCredential.source=ENV` identifica credenciais sincronizadas de integracoes externas do `.env`; a UI nao deve permitir excluir ou alterar o valor sensivel desses registros pelo banco.
 - `AdminCredential.sourceKey` e unico para evitar duplicar a mesma variavel de ambiente.
+- `SiteVisitCounter` guarda apenas contador agregado por chave para visitas do site publico; nao salva IP, user-agent, email, telefone ou qualquer dado pessoal.
 - `CattyConversation` guarda historico da Catty apenas para `User` autenticado, separado por `contextKey` de area/tarefa.
 - `CattyMessage` guarda mensagens do usuario e da Catty com origem opcional da resposta (`GEMINI`, `OPENAI` ou `FALLBACK`); o app pode reter ate 50.000 mensagens por conversa para acompanhar anos de estudo, mas carrega apenas uma janela recente na UI e envia somente 8 mensagens para IA.
 - `CattyLearningItem` guarda memorias controladas da Catty, como regra de personalidade, resposta ideal/ruim, vocabulario, duvida comum, exemplo de homework, orientacao teacher/aluno, bordao, correcao aprovada ou contexto Candy English.
@@ -196,6 +198,7 @@ Enums:
 - Migration `20260609113000_homework_student_assignments` adicionou `HomeworkStudentAssignment` para o fluxo anterior de acesso compartilhado.
 - Migration `20260610120000_homework_replication_source` adiciona `Homework.replicatedFromHomeworkId` para rastrear replicas reais de homework por aluno, substituindo o fluxo operacional de compartilhar o mesmo homework.
 - Migration `20260617120000_homework_review_annotations` adiciona `HomeworkSubmission.teacherAnnotations` para salvar caneta/texto da correcao diretamente sobre a entrega interativa.
+- Migration `20260619120000_site_visit_counter` adiciona `SiteVisitCounter` para exibir total agregado de visitas no footer publico sem rastrear dados pessoais.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
@@ -226,6 +229,7 @@ Enums:
 - Exibir `HomeworkSubmission.teacherAnnotations` enquanto a entrega ainda esta `SUBMITTED` pode revelar marcacoes de correcao antes da devolucao/avaliacao; a UI do aluno deve filtrar por `RETURNED`/`REVIEWED`.
 - Incluir drafts em consultas de alerta/correcao pode gerar notificacao para homework ainda nao entregue.
 - Criar XP sem `sourceKey` estavel pode duplicar pontos; toda missao/tarefa deve definir uma origem unica por usuario.
+- Usar o contador publico para analiticos detalhados pode criar risco de privacidade; ele deve permanecer agregado e sem IP/user-agent persistido.
 - Alterar a formula de nivel sem recalcular `CandyXpProfile` pode deixar cache diferente do ledger.
 - Enviar mais `CattyMessage` para IA pode aumentar custo sem ganho claro; manter o prompt limitado a 8 mensagens, mesmo com retencao longa no banco.
 - Aprovar memoria da Catty com dados sensiveis, telefone, documento, pagamento, contrato, token, chave ou email pode vazar informacao para Gemini/OpenAI; manter validacao e revisao humana.
