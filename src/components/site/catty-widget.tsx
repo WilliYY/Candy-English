@@ -1260,7 +1260,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       <Button
         type="button"
         size="lg"
-        className={`catty-launcher catty-launcher-card pointer-events-auto relative overflow-visible border border-white/70 p-1.5 shadow-2xl shadow-primary/20 ${
+        className={`catty-launcher catty-launcher-card pointer-events-auto relative overflow-visible border border-white/70 p-1 shadow-2xl shadow-primary/20 ${
           open && canUseCattyChat
             ? "h-14 w-14 rounded-2xl sm:h-16 sm:w-16"
             : "h-[4.5rem] w-[4.5rem] rounded-[1.28rem] sm:h-[5.75rem] sm:w-[5.75rem] sm:rounded-[1.45rem]"
@@ -1276,7 +1276,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         aria-label={open && canUseCattyChat ? "Fechar Catty" : "Abrir Catty"}
       >
         <CattyLoopFrame
-          className="size-full rounded-[1.05rem]"
+          className="catty-loop-frame--launcher size-full rounded-[1.05rem]"
           prefersReducedMotion={prefersReducedMotion}
         />
         {!open || !canUseCattyChat ? (
