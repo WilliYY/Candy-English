@@ -37,6 +37,7 @@ export type CattySessionContext = {
 };
 
 export type CattyIntent =
+  | "advanced_word_meaning"
   | "ava_help"
   | "candy_xp"
   | "code_api_request"
@@ -111,6 +112,13 @@ export type CattyGrammarCorrectionPlan = {
   rule: string;
 };
 
+export type CattyAdvancedWordMeaningPlan = {
+  definition?: string;
+  example?: string;
+  portuguese?: string;
+  target: string;
+};
+
 export type CattyQuestionPracticePlan = {
   opening: string;
   prompt: string;
@@ -119,6 +127,7 @@ export type CattyQuestionPracticePlan = {
 };
 
 export type CattyResponsePlan = {
+  advancedWordMeaning?: CattyAdvancedWordMeaningPlan;
   confidence: "high" | "medium" | "low";
   correction?: CattyGrammarCorrectionPlan;
   continuity?: CattyConversationContinuityPlan;
@@ -150,6 +159,7 @@ const taskLabels: Record<string, string> = {
 };
 
 const intentLabels: Record<CattyIntent, string> = {
+  advanced_word_meaning: "significado em ingles",
   ava_help: "ajuda no AVA",
   candy_xp: "Candy XP",
   code_api_request: "pedido de codigo/API",
@@ -170,6 +180,8 @@ const intentLabels: Record<CattyIntent, string> = {
 };
 
 const intentInstructions: Record<CattyIntent, string> = {
+  advanced_word_meaning:
+    "explique o sentido mais comum em ingles simples, de um exemplo curto em ingles e termine pedindo uma frase com a palavra; nao responda apenas com traducao em portugues.",
   ava_help:
     "oriente o caminho no AVA sem prometer executar acoes, alterar dados ou revelar informacoes internas.",
   candy_xp:
@@ -692,11 +704,17 @@ function extractTranslationFragment(text: string) {
     )?.[1]
     ?.trim();
 
-  if (!match) {
+  const trailingTranslationMatch = stripCattyAddress(text)
+    .match(/^([a-zA-Z-]{2,30})\s+translation\s*[?!.]*$/i)?.[1]
+    ?.trim();
+
+  const translationFragment = trailingTranslationMatch ?? match;
+
+  if (!translationFragment) {
     return "";
   }
 
-  const normalized = normalizeText(match);
+  const normalized = normalizeText(translationFragment);
 
   if (
     hasAny(normalized, [
@@ -706,12 +724,12 @@ function extractTranslationFragment(text: string) {
       "isso",
       "uma frase",
     ]) &&
-    getWordTokens(match).length <= 5
+    getWordTokens(translationFragment).length <= 5
   ) {
     return "";
   }
 
-  return match;
+  return translationFragment;
 }
 
 function getQuotedFragment(text: string) {
@@ -816,6 +834,16 @@ function getRecentUserContext(history: CattyMessage[], currentText: string) {
 
 function stripCattyAddress(text: string) {
   return text.replace(/^\/?catty\b[:,\s-]*/i, "").trim();
+}
+
+function extractSentenceCreationTarget(text: string) {
+  return (
+    stripCattyAddress(text)
+      .match(
+        /^(?:make|write|create)\s+(?:a|one)\s+sentence\s+(?:with|using)\s+["']?([a-zA-Z-]{2,30})["']?\s*[?!.]*$/i,
+      )?.[1]
+      ?.toLowerCase() ?? ""
+  );
 }
 
 function hasQuestionPracticeRequest(text: string) {
@@ -4230,6 +4258,120 @@ function extractTargetWord(text: string) {
   return "";
 }
 
+const advancedWordMeaningDictionary: Record<
+  string,
+  { definition: string; example: string; portuguese: string }
+> = {
+  beautiful: {
+    definition: "very pleasant to see, hear or experience",
+    example: "The garden is beautiful.",
+    portuguese: "bonito ou bonita",
+  },
+  homework: {
+    definition: "school work that a student does outside class",
+    example: "I do my homework after dinner.",
+    portuguese: "tarefa de casa",
+  },
+  mall: {
+    definition: "a large building with many stores",
+    example: "We go to the mall on Saturday.",
+    portuguese: "shopping center",
+  },
+  run: {
+    definition: "to move quickly using your legs",
+    example: "I run in the park every morning.",
+    portuguese: "correr",
+  },
+  water: {
+    definition: "a clear liquid that people, animals and plants need to live",
+    example: "I drink water every day.",
+    portuguese: "agua",
+  },
+};
+
+export function extractAdvancedWordMeaningTarget(text: string) {
+  const commandTarget = text
+    .trim()
+    .match(/^\/?catty\b[\s,:-]+(.+?)\s+meaning\s*[?!.]*$/i)?.[1]
+    ?.trim()
+    .replace(/^["']|["']$/g, "")
+    .replace(/\s+/g, " ");
+
+  if (!commandTarget || commandTarget.length > 40) {
+    return "";
+  }
+
+  if (
+    !/^[a-zA-Z]+(?:[-'][a-zA-Z]+)*(?:\s+[a-zA-Z]+(?:[-'][a-zA-Z]+)*){0,2}$/.test(
+      commandTarget,
+    )
+  ) {
+    return "";
+  }
+
+  const normalizedTarget = normalizeText(commandTarget);
+
+  if (
+    /^(?:define|explain|translate|translation|what|why)\b/.test(
+      normalizedTarget,
+    ) ||
+    normalizedTarget.includes("make a sentence")
+  ) {
+    return "";
+  }
+
+  return normalizedTarget;
+}
+
+function buildCattyAdvancedWordMeaningPlan(
+  text: string,
+): CattyAdvancedWordMeaningPlan | undefined {
+  const target = extractAdvancedWordMeaningTarget(text);
+
+  if (!target) {
+    return undefined;
+  }
+
+  return {
+    ...advancedWordMeaningDictionary[target],
+    target,
+  };
+}
+
+function getDisplayWord(target: string) {
+  return target.charAt(0).toUpperCase() + target.slice(1);
+}
+
+function buildAdvancedWordMeaningFallbackReply(
+  plan: CattyAdvancedWordMeaningPlan,
+) {
+  const displayWord = getDisplayWord(plan.target);
+
+  if (plan.definition && plan.example) {
+    return `Miauw 😺 ${displayWord} means ${plan.definition}. Example: ${plan.example} Can you make one sentence with ${plan.target}?`;
+  }
+
+  return `Miauw 😺 ${displayWord} can have more than one meaning. Send one short sentence with ${plan.target}, and I will explain its most common meaning in simple English. Can you write one sentence with ${plan.target}?`;
+}
+
+function formatAdvancedWordMeaningPromptContext(
+  plan?: CattyAdvancedWordMeaningPlan,
+) {
+  if (!plan) {
+    return "Nenhum comando avancado de meaning detectado.";
+  }
+
+  return [
+    `Palavra ou expressao curta: ${plan.target}.`,
+    plan.definition ? `Definicao local segura: ${plan.definition}.` : "",
+    plan.example ? `Exemplo local seguro: ${plan.example}` : "",
+    "Formato obrigatorio: `[Word] means [simple English definition]. Example: [short sentence]. Can you make one sentence with [word]?`",
+    "Nao substitua a definicao por traducao direta em portugues.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function detectCattyIntent(
   text: string,
   context?: CattyPageContext,
@@ -4244,6 +4386,14 @@ function detectCattyIntent(
 
   if (hasCodeApiRequest(text, context)) {
     return { confidence: "high", intent: "code_api_request" };
+  }
+
+  if (extractAdvancedWordMeaningTarget(text)) {
+    return { confidence: "high", intent: "advanced_word_meaning" };
+  }
+
+  if (extractSentenceCreationTarget(text)) {
+    return { confidence: "high", intent: "practice_english" };
   }
 
   if (hasQuestionPracticeRequest(text)) {
@@ -4914,8 +5064,17 @@ function buildPlannedEnglishReply(
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
+  const sentenceCreationTarget = extractSentenceCreationTarget(text);
   const continuityPlan =
     continuity ?? buildCattyConversationContinuityPlan(text, history);
+
+  if (intent === "advanced_word_meaning") {
+    const wordMeaningPlan = buildCattyAdvancedWordMeaningPlan(text);
+
+    return wordMeaningPlan
+      ? buildAdvancedWordMeaningFallbackReply(wordMeaningPlan)
+      : "Miauw 😺 send me one short English word before meaning, and I will explain it in simple English.";
+  }
 
   if (intent === "code_api_request") {
     return buildCodeApiEnglishReply();
@@ -4949,6 +5108,14 @@ function buildPlannedEnglishReply(
 
   if (intent === "lesson_material") {
     return buildLessonMaterialEnglishReply();
+  }
+
+  if (intent === "practice_english" && sentenceCreationTarget) {
+    const wordGuide = advancedWordMeaningDictionary[sentenceCreationTarget];
+
+    return wordGuide
+      ? `Miauw 😺 Example: ${wordGuide.example} Can you make another sentence with ${sentenceCreationTarget}?`
+      : `Miauw 😺 Try this pattern: I use ${sentenceCreationTarget} in my sentence. Can you make another sentence with ${sentenceCreationTarget}?`;
   }
 
   if (
@@ -5048,6 +5215,13 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "translate_sentence") {
+    const translationTarget = normalizeText(translationFragment).trim();
+    const wordGuide = advancedWordMeaningDictionary[translationTarget];
+
+    if (wordGuide && /^[a-z-]{2,30}$/.test(translationTarget)) {
+      return `Miauw, ${getDisplayWord(translationTarget)} = ${wordGuide.portuguese} in Portuguese. Example: ${wordGuide.example}`;
+    }
+
     return translationFragment
       ? "Miauw, I can translate it, but if this is homework I will explain the idea instead of giving the final answer."
       : "Miauw, send me the exact sentence you want to translate. Tiny text first, then I help.";
@@ -5090,6 +5264,12 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "explain_word") {
+    const wordGuide = advancedWordMeaningDictionary[targetWord.toLowerCase()];
+
+    if (wordGuide) {
+      return `Miauw, ${getDisplayWord(targetWord)} means "${wordGuide.portuguese}" in Portuguese. Example: ${wordGuide.example}`;
+    }
+
     if (targetWord.toLowerCase() === "playground") {
       return "Miauw, playground means parquinho: a place where children play. Example: The kids are in the playground.";
     }
@@ -5163,6 +5343,15 @@ function buildPlannedPortugueseReply(
   const correctionFragment = extractCorrectionFragment(text);
   const targetWord = extractTargetWord(text);
   const translationFragment = extractTranslationFragment(text);
+  const sentenceCreationTarget = extractSentenceCreationTarget(text);
+
+  if (intent === "advanced_word_meaning") {
+    const wordMeaningPlan = buildCattyAdvancedWordMeaningPlan(text);
+
+    return wordMeaningPlan
+      ? buildAdvancedWordMeaningFallbackReply(wordMeaningPlan)
+      : "Miauw 😺 send me one short English word before meaning, and I will explain it in simple English.";
+  }
 
   if (intent === "code_api_request") {
     return buildCodeApiPortugueseReply();
@@ -5196,6 +5385,14 @@ function buildPlannedPortugueseReply(
 
   if (intent === "lesson_material") {
     return buildLessonMaterialPortugueseReply();
+  }
+
+  if (intent === "practice_english" && sentenceCreationTarget) {
+    const wordGuide = advancedWordMeaningDictionary[sentenceCreationTarget];
+
+    return wordGuide
+      ? `Miauw 😺 Example: ${wordGuide.example} Can you make another sentence with ${sentenceCreationTarget}?`
+      : `Miauw 😺 Try this pattern: I use ${sentenceCreationTarget} in my sentence. Can you make another sentence with ${sentenceCreationTarget}?`;
   }
 
   if (hasAny(normalized, ["aula ao vivo", "meet", "jitsi"])) {
@@ -5255,6 +5452,13 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "translate_sentence") {
+    const translationTarget = normalizeText(translationFragment).trim();
+    const wordGuide = advancedWordMeaningDictionary[translationTarget];
+
+    if (wordGuide && /^[a-z-]{2,30}$/.test(translationTarget)) {
+      return `Miauw, ${translationTarget} = ${wordGuide.portuguese}. Example: ${wordGuide.example}`;
+    }
+
     return translationFragment
       ? "Miauw, eu posso traduzir, mas se for homework eu explico a ideia sem entregar a resposta final."
       : "Miauw, me manda a frase exata que voce quer traduzir. Uma frase curtinha ja basta.";
@@ -5358,6 +5562,12 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "explain_word") {
+    const wordGuide = advancedWordMeaningDictionary[targetWord.toLowerCase()];
+
+    if (wordGuide) {
+      return `Miauw, ${targetWord} significa ${wordGuide.portuguese}. Example: ${wordGuide.example}`;
+    }
+
     if (targetWord.toLowerCase() === "playground") {
       return "Miauw, playground quer dizer parquinho: um lugar onde criancas brincam. Exemplo: The kids are in the playground.";
     }
@@ -5459,7 +5669,10 @@ function buildPlannedFallbackReply(
   questionPractice?: CattyQuestionPracticePlan,
 ) {
   const shouldUseEnglishReply =
-    isEnglishMessage(text) || Boolean(continuity) || Boolean(questionPractice);
+    intent === "advanced_word_meaning" ||
+    isEnglishMessage(text) ||
+    Boolean(continuity) ||
+    Boolean(questionPractice);
   const plannedReply = shouldUseEnglishReply
     ? buildPlannedEnglishReply(
         text,
@@ -5496,6 +5709,7 @@ export function buildCattyResponsePlan(
   sessionContext?: CattySessionContext,
 ): CattyResponsePlan {
   let { confidence, intent } = detectCattyIntent(text, context);
+  const advancedWordMeaning = buildCattyAdvancedWordMeaningPlan(text);
   const correction = buildCommonEnglishCorrectionPlan(text);
   const continuity = buildCattyConversationContinuityPlan(text, history);
   const questionPractice = buildCattyQuestionPracticePlan(text, history);
@@ -5514,11 +5728,15 @@ export function buildCattyResponsePlan(
   }
 
   const language =
-    isEnglishMessage(text) || continuity || questionPractice
+    intent === "advanced_word_meaning" ||
+    isEnglishMessage(text) ||
+    continuity ||
+    questionPractice
       ? "English"
       : "Portuguese";
 
   return {
+    advancedWordMeaning,
     confidence,
     correction,
     continuity,
@@ -5750,7 +5968,8 @@ export function buildCattyInput(
     "Regra de personalidade da Catty: gatinha mascote-professora da Candy English, resposta curta, fofa, didatica e com no maximo um bordao e ate dois emojis.",
     "Regra de uso do nome: se houver primeiro nome seguro, use de forma natural no comeco da conversa, motivacao, correcao, homework ou Candy XP, mas nao em toda resposta nem em assunto sensivel.",
     "Regra de roteamento interno: Gemini e o padrao; OpenAI so quando a mensagem chama Catty; se provedores falharem, usar fallback local; baloes automaticos nao chamam IA.",
-    "Regra bilingue de pratica: quando o aluno escrever/praticar ingles ou quando voce fizer uma pergunta em ingles, mostre a traducao em portugues logo depois usando `English question = traducao curta`.",
+    "Regra bilingue de pratica: quando o aluno escrever/praticar ingles ou quando voce fizer uma pergunta em ingles, mostre a traducao em portugues logo depois usando `English question = traducao curta`; a excecao e `advanced_word_meaning`, em que ingles e principal e portugues e apenas ajuda opcional para iniciante.",
+    "Regra do comando avancado meaning: somente quando a intencao tecnica for `advanced_word_meaning`, responda com definicao simples em ingles, `Example:` em ingles e uma pergunta curta para o aluno criar frase; nao responda apenas com traducao em portugues. Ajuda curta em portugues so pode ser complemento para iniciante.",
     "Formato ideal: abertura curta da Catty, ajuda principal e uma pergunta pequena com traducao quando estiver em ingles.",
     "Regra de pergunta pedida: se o aluno pedir uma pergunta, faca a pergunta diretamente; use o tema pedido ou uma pergunta curta de pratica se nao houver tema; toda pergunta em ingles deve vir com `= portugues`.",
     "Regra de continuidade: quando a mensagem atual for uma frase curta em ingles, mantenha o mesmo assunto, elogie ou corrija de leve e faca uma pergunta curta relacionada com traducao em portugues.",
@@ -5776,6 +5995,8 @@ export function buildCattyInput(
     formatCattyCorrectionPromptContext(plan.correction),
     "Pergunta pedida pelo aluno:",
     formatCattyQuestionPracticePromptContext(plan.questionPractice),
+    "Comando avancado de meaning:",
+    formatAdvancedWordMeaningPromptContext(plan.advancedWordMeaning),
     "Artefato de personalidade sugerido:",
     formatCattyArtifactPromptContext(artifactSelection, {
       history,

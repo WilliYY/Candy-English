@@ -67,6 +67,7 @@ const fallbackFriendlyCategories: CattyLearningCategoryInput[] = [
 const intentCategoryHints: Partial<
   Record<CattyIntent, CattyLearningCategoryInput[]>
 > = {
+  advanced_word_meaning: ["VOCABULARY", "COMMON_QUESTION", "IDEAL_REPLY"],
   ava_help: ["CANDY_CONTEXT", "COMMON_QUESTION", "STUDENT_GUIDANCE"],
   candy_xp: ["CANDY_CONTEXT", "COMMON_QUESTION", "STUDENT_GUIDANCE"],
   code_api_request: ["IDEAL_REPLY", "PERSONALITY_RULE", "STUDENT_GUIDANCE"],

@@ -542,6 +542,13 @@ Cada decisao deve conter:
 - Impacto: `src/app/ava/layout.tsx`, novo `src/components/ava/ava-responsive-sidebar.tsx`, fluxo visual e direcao de design do AVA.
 - Riscos/cuidados: o drawer deve fechar por link, backdrop, `Esc` ou mudanca de rota, bloquear apenas a rolagem de fundo enquanto aberto e preservar os mesmos links e permissoes server-side.
 
+### 2026-06-20 - Comando avancado de significado da Catty
+
+- Decisao: criar a intencao `advanced_word_meaning` para o padrao explicito `Catty, [word] meaning`, com definicao simples, exemplo e pergunta em ingles.
+- Motivo: alunos mais avancados precisam aprender o conceito em ingles sem receber apenas equivalencia direta em portugues.
+- Impacto: detector/plano/fallback em `src/lib/catty.ts`, regra compartilhada dos provedores em `/api/catty/chat`, personalidade, Learning Center, cinco cenarios de vocabulario, smoke de dez comandos e docs oficiais.
+- Riscos/cuidados: manter prioridade antes da traducao, limitar o alvo a ate 3 palavras/40 caracteres, nao ativar por palavra solta ou `translation`, usar apenas o sentido mais comum e deixar portugues como ajuda opcional para iniciante.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

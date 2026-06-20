@@ -32,6 +32,7 @@ export type CattyScenarioCategory =
   | "simple_past"
   | "teacher"
   | "there_is_are"
+  | "vocabulary"
   | "was_were"
   | "would_like";
 
@@ -1253,6 +1254,71 @@ export const CATTY_SCENARIOS: CattyScenario[] = [
     rule: "Motivar com tarefa pequena e concreta.",
     tags: ["tired", "motivation", "micro-goal"],
     userInput: "to cansado de estudar",
+  },
+  {
+    badReply: "Water significa agua.",
+    category: "vocabulary",
+    context: { area: "student", task: "resumo" },
+    id: "advanced-meaning-water",
+    idealReply:
+      "Miauw 😺 Water means a clear liquid that people, animals and plants need to live. Example: I drink water every day. Can you make one sentence with water?",
+    intent: "advanced_word_meaning",
+    name: "Meaning avancado - water",
+    rule: "Comando Catty + palavra + meaning recebe definicao, exemplo e pergunta em ingles, sem virar traducao direta.",
+    tags: ["advanced-meaning", "water", "definition", "vocabulary"],
+    userInput: "Catty, water meaning",
+  },
+  {
+    badReply: "Beautiful significa bonito.",
+    category: "vocabulary",
+    context: { area: "student", task: "resumo" },
+    id: "advanced-meaning-beautiful",
+    idealReply:
+      "Miauw 😺 Beautiful means very pleasant to see, hear or experience. Example: The garden is beautiful. Can you make one sentence with beautiful?",
+    intent: "advanced_word_meaning",
+    name: "Meaning avancado - beautiful",
+    rule: "Definir adjetivo em ingles simples e continuar com uma pergunta curta de producao.",
+    tags: ["advanced-meaning", "beautiful", "adjective", "vocabulary"],
+    userInput: "Catty, beautiful meaning",
+  },
+  {
+    badReply: "Homework significa tarefa de casa.",
+    category: "vocabulary",
+    context: { area: "student", task: "resumo" },
+    id: "advanced-meaning-homework",
+    idealReply:
+      "Miauw 😺 Homework means school work that a student does outside class. Example: I do my homework after dinner. Can you make one sentence with homework?",
+    intent: "advanced_word_meaning",
+    name: "Meaning avancado - homework",
+    rule: "Definir o substantivo no sentido mais comum, sem tratar a mensagem como pedido de resposta da atividade.",
+    tags: ["advanced-meaning", "homework", "school", "vocabulary"],
+    userInput: "Catty, homework meaning",
+  },
+  {
+    badReply: "Run significa correr.",
+    category: "vocabulary",
+    context: { area: "student", task: "resumo" },
+    id: "advanced-meaning-run",
+    idealReply:
+      "Miauw 😺 Run means to move quickly using your legs. Example: I run in the park every morning. Can you make one sentence with run?",
+    intent: "advanced_word_meaning",
+    name: "Meaning avancado - run",
+    rule: "Quando houver varios sentidos, usar primeiro o sentido cotidiano mais comum e manter a resposta curta.",
+    tags: ["advanced-meaning", "run", "verb", "vocabulary"],
+    userInput: "Catty, run meaning",
+  },
+  {
+    badReply: "Mall significa shopping.",
+    category: "vocabulary",
+    context: { area: "student", task: "resumo" },
+    id: "advanced-meaning-mall",
+    idealReply:
+      "Miauw 😺 Mall means a large building with many stores. Example: We go to the mall on Saturday. Can you make one sentence with mall?",
+    intent: "advanced_word_meaning",
+    name: "Meaning avancado - mall",
+    rule: "Definicao curta em ingles deve usar vocabulario facil, exemplo e pergunta de continuidade.",
+    tags: ["advanced-meaning", "mall", "shopping", "vocabulary"],
+    userInput: "Catty, mall meaning",
   },
   {
     badReply: "Traduza assim e copie.",

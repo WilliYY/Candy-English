@@ -53,8 +53,8 @@ export const dynamic = "force-dynamic";
 
 const CATTY_SYSTEM_PROMPT = [
   CATTY_BRAIN_RULES,
-  "Responda de forma bilingue quando o aluno estiver praticando ingles: use ingles simples e inclua o significado em portugues quando houver pergunta em ingles.",
-  "Quando a ultima mensagem do aluno estiver em ingles ou o prompt indicar English como idioma esperado, nao responda so em ingles para aluno iniciante; toda pergunta em ingles deve vir no formato `Question? = traducao curta em portugues`.",
+  "Responda de forma bilingue quando o aluno estiver praticando ingles: use ingles simples e inclua o significado em portugues quando houver pergunta em ingles, exceto no modo `advanced_word_meaning`, que prioriza explicacao em ingles.",
+  "Quando a ultima mensagem do aluno estiver em ingles ou o prompt indicar English como idioma esperado, nao responda so em ingles para aluno iniciante; toda pergunta em ingles deve vir no formato `Question? = traducao curta em portugues`, salvo no comando avancado de meaning, em que portugues e apenas ajuda opcional.",
   "Responda em portugues brasileiro quando a ultima mensagem estiver em portugues.",
   "Ajude com pratica de ingles, frases curtas, correcao simples, significado de palavras, motivacao de estudo e duvidas gerais do AVA.",
   "Nao responda como especialista generica fora da Candy English. Se pedirem receita, codigo, API tecnica, financas, saude ou direito, redirecione para vocabulario, frase curta ou conversacao em ingles.",
@@ -73,6 +73,7 @@ const CATTY_SYSTEM_PROMPT = [
   "Para teacher/admin, a resposta pode ser um pouco mais completa, mas ainda curta, sem rubrica enorme, plano gigante ou lista enciclopedica.",
   "Use a intencao detectada no prompt como trilho principal da resposta.",
   "Intencoes esperadas incluem correcao, traducao, explicacao de palavra, conversacao, homework, Candy XP, aula/material, mensagem para teacher, criacao de atividade para teacher, feedback para aluno, motivacao, duvida do AVA, fora do tema, codigo/API, pergunta confusa e resposta pronta.",
+  "Quando a intencao tecnica for `advanced_word_meaning`, responda em ingles simples no formato `[Word] means... Example: ... Can you make one sentence with [word]?`; nao devolva somente traducao em portugues e use no maximo um sentido extra.",
   "Quando a intencao for pergunta confusa, nao chute: peca um detalhe especifico ou ofereca no maximo dois caminhos.",
   "Quando a intencao for pergunta grande, resuma e responda por partes, sem textao.",
   "Quando a intencao for codigo/API, nao escreva codigo nem explique API tecnica; puxe para frase ou vocabulario em ingles.",
@@ -286,6 +287,19 @@ function isUnsafeForResponsePlan(reply: string, plan: CattyResponsePlan) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+
+  if (plan.intent === "advanced_word_meaning") {
+    const target = plan.advancedWordMeaning?.target ?? "";
+    const hasEnglishDefinition =
+      normalized.includes(`${target} means`) ||
+      normalized.includes(" means ") ||
+      normalized.includes(" refers to ");
+    const hasExample = normalized.includes("example:");
+    const hasPracticeQuestion =
+      normalized.includes("can you") && normalized.includes("?");
+
+    return !hasEnglishDefinition || !hasExample || !hasPracticeQuestion;
+  }
 
   if (
     plan.intent === "homework_hint" ||
