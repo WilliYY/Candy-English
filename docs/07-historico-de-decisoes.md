@@ -551,9 +551,9 @@ Cada decisao deve conter:
 
 ### 2026-06-20 - Leitura mobile do homework e atividade interativa
 
-- Decisao: manter o arquivo interativo do Student em largura minima de `560px` abaixo de `640px`, dentro de rolagem horizontal local, com acao de abrir sempre visivel, item unico aberto por padrao, paginas PDF renderizadas progressivamente e fallback para o arquivo original protegido.
-- Motivo: reduzir uma folha A4 para a largura interna de um card mobile deixava o material praticamente ilegivel e, em PDFs maiores, o custo de varios canvases podia resultar em uma area visual vazia mesmo depois de abrir a atividade.
-- Impacto: `interactive-homework-document.tsx`, `interactive-homework-student.tsx`, `student-workspace.tsx`, fluxo visual Student e documentacao do homework.
+- Decisao: manter o arquivo interativo do Student em largura minima de `560px` abaixo de `640px`, dentro de rolagem horizontal local, com acao de abrir sempre visivel, homework/aula mais recentes abertas automaticamente no mobile, paginas PDF renderizadas progressivamente e fallback para o arquivo original protegido.
+- Motivo: reduzir uma folha A4 para a largura interna de um card mobile deixava o material praticamente ilegivel; alem disso, alunos com varias homeworks continuavam vendo todos os cards recolhidos porque a primeira correcao so abria item unico. Em PDFs maiores, o custo de varios canvases tambem podia resultar em uma area visual vazia.
+- Impacto: `interactive-homework-document.tsx`, `interactive-homework-student.tsx`, novo `responsive-details.tsx`, `student-workspace.tsx`, fluxo visual Student e documentacao do homework.
 - Riscos/cuidados: preservar coordenadas percentuais dos campos, restringir a largura minima somente a celular, manter tablet/desktop fluidos, nao alterar upload/autosave/permissoes e continuar servindo o original apenas pela rota protegida.
 
 ## Regras de negocio que precisam ser preservadas

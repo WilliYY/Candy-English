@@ -599,11 +599,13 @@ export function InteractiveHomeworkStudent({
   defaultOpen = false,
   displayMode = "accordion",
   homework,
+  openOnMobile = false,
 }: {
   context?: "candy-xp" | "homework" | "lesson";
   defaultOpen?: boolean;
   displayMode?: "accordion" | "panel";
   homework: StudentInteractiveHomework;
+  openOnMobile?: boolean;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
@@ -698,8 +700,11 @@ export function InteractiveHomeworkStudent({
   }, [values]);
 
   useEffect(() => {
-    setIsOpen(defaultOpen);
-  }, [defaultOpen, homework.id]);
+    setIsOpen(
+      defaultOpen ||
+        (openOnMobile && window.matchMedia("(max-width: 639px)").matches),
+    );
+  }, [defaultOpen, homework.id, openOnMobile]);
 
   useEffect(() => {
     if (homeworkId.current !== homework.id) {

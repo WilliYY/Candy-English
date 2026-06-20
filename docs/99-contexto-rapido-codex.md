@@ -53,7 +53,7 @@ Ao receber o prompt minimo, o agente deve:
 - Campo de desenho funciona com mouse/dedo e permite desfazer o ultimo traco.
 - Atividades criadas por `Criar/Ver Aulas` aparecem em `Aulas e Materiais`.
 - Atividades criadas por `Criar/Ver Homework` aparecem em `Responder homework`.
-- No Student mobile, homework e atividade interativa mostram acao clara de abrir/fechar; item unico abre por padrao. O PDF/imagem usa modo de leitura com pagina minima de `560px` abaixo de `640px`, rolagem horizontal local, renderizacao gradual de paginas, menor densidade de canvas e fallback protegido para abrir o arquivo original quando houver falha visual. Tablet/desktop continuam responsivos sem largura minima.
+- No Student mobile, homework e atividade interativa mostram acao clara de abrir/fechar; a homework mais recente abre automaticamente mesmo quando ha varias, e a aula mais recente abre com sua primeira atividade. O PDF/imagem usa modo de leitura com pagina minima de `560px` abaixo de `640px`, rolagem horizontal local, renderizacao gradual de paginas, menor densidade de canvas e fallback protegido para abrir o arquivo original quando houver falha visual. Itens antigos ficam recolhidos para nao carregar varios PDFs, e tablet/desktop continuam responsivos sem largura minima.
 - Corrigir homework mostra o PDF com a entrega marcada e separa `Aguardando correcao` de `Corrigidos`.
 - Itens de correcao ficam minimizados por padrao.
 - Contratos PDF sao visualizados no AVA por rota protegida.

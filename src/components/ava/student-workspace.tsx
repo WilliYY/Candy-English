@@ -27,6 +27,7 @@ import { AvatarUploadForm, ProfileForm } from "@/components/ava/profile-forms";
 import { LiveClassMaintenancePanel } from "@/components/ava/live-class-maintenance-panel";
 import { LiveClassRoom } from "@/components/ava/live-class-room";
 import { ProfilePhotoPopup } from "@/components/ava/profile-photo-popup";
+import { ResponsiveDetails } from "@/components/ava/responsive-details";
 import { InteractiveHomeworkStudent } from "@/components/ava/interactive-homework-student";
 import { StudentHomeworkForm } from "@/components/ava/student-homework-form";
 import {
@@ -807,6 +808,9 @@ export function StudentWorkspace({
     0,
   );
   const homeworkCount = homeworkItems.length;
+  const firstInteractiveHomeworkId = homeworkItems.find(
+    ({ homework }) => homework.kind === "INTERACTIVE",
+  )?.homework.id;
   const homeworkStatusTotals = homeworkItems.reduce(
     (totals, { homework }) => {
       const status = homework.submissions[0]?.status;
@@ -1263,7 +1267,7 @@ export function StudentWorkspace({
                   </div>
                 </div>
 
-                {visibleLessons.map((lesson) => {
+                {visibleLessons.map((lesson, lessonIndex) => {
                   const lessonActivities = lesson.homeworks.filter(
                     isInteractiveLessonHomework,
                   );
@@ -1328,9 +1332,10 @@ export function StudentWorkspace({
                     : "bg-sky-100 text-sky-700";
 
                   return (
-                    <details
+                    <ResponsiveDetails
                       key={lesson.id}
                       className="group relative overflow-hidden rounded-2xl border border-primary/15 bg-white/95 shadow-sm transition hover:border-primary/25 hover:shadow-md"
+                      openOnMobile={lessonIndex === 0}
                     >
                       <span
                         aria-hidden="true"
@@ -1534,11 +1539,14 @@ export function StudentWorkspace({
                                 cada
                               </span>
                             </div>
-                            {lessonActivities.map((homework) => (
+                            {lessonActivities.map((homework, activityIndex) => (
                               <InteractiveHomeworkStudent
                                 key={homework.id}
                                 context="lesson"
                                 defaultOpen={lessonActivities.length === 1}
+                                openOnMobile={
+                                  lessonIndex === 0 && activityIndex === 0
+                                }
                                 homework={{
                                   assetFileName: homework.assetFileName,
                                   assetMimeType: homework.assetMimeType,
@@ -1555,7 +1563,7 @@ export function StudentWorkspace({
                           </div>
                         ) : null}
                       </div>
-                    </details>
+                    </ResponsiveDetails>
                   );
                 })}
               </div>
@@ -1631,6 +1639,7 @@ export function StudentWorkspace({
                       <InteractiveHomeworkStudent
                         key={homework.id}
                         defaultOpen={homeworkCount === 1}
+                        openOnMobile={homework.id === firstInteractiveHomeworkId}
                         homework={{
                           assetFileName: homework.assetFileName,
                           assetMimeType: homework.assetMimeType,
