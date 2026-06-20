@@ -114,9 +114,13 @@ export type CattyGrammarCorrectionPlan = {
 
 export type CattyAdvancedWordMeaningPlan = {
   definition?: string;
+  displayTarget: string;
   example?: string;
+  invitation?: string;
+  opening?: string;
   portuguese?: string;
   target: string;
+  tooLong?: boolean;
 };
 
 export type CattyQuestionPracticePlan = {
@@ -181,7 +185,7 @@ const intentLabels: Record<CattyIntent, string> = {
 
 const intentInstructions: Record<CattyIntent, string> = {
   advanced_word_meaning:
-    "explique o sentido mais comum em ingles simples, de um exemplo curto em ingles e termine pedindo uma frase com a palavra; nao responda apenas com traducao em portugues.",
+    "explique o sentido mais comum da palavra ou expressao em ingles simples, de um exemplo curto e termine com `Your turn`; aceite ate 15 palavras e, acima disso, peca um alvo menor; nao responda apenas com traducao em portugues.",
   ava_help:
     "oriente o caminho no AVA sem prometer executar acoes, alterar dados ou revelar informacoes internas.",
   candy_xp:
@@ -4258,83 +4262,298 @@ function extractTargetWord(text: string) {
   return "";
 }
 
-const advancedWordMeaningDictionary: Record<
+type CattyLocalWordMeaning = {
+  definition: string;
+  example: string;
+  invitation?: string;
+  opening?: string;
+  portuguese: string;
+};
+
+export const CATTY_LOCAL_WORD_MEANINGS: Record<
   string,
-  { definition: string; example: string; portuguese: string }
+  CattyLocalWordMeaning
 > = {
+  attendant: {
+    definition: "a person who helps customers or visitors in a place",
+    example: "The store attendant helped me find a jacket.",
+    portuguese: "atendente",
+  },
+  "be into": {
+    definition: "to like or be very interested in something",
+    example: "I'm into games and music.",
+    invitation: "Your turn: what are you into?",
+    opening: "Awnn, good phrase 🎮",
+    portuguese: "gostar muito de",
+  },
   beautiful: {
-    definition: "very pleasant to see, hear or experience",
-    example: "The garden is beautiful.",
+    definition: "very pretty or nice to see",
+    example: "The flower is beautiful.",
+    invitation: "Your turn: make one sentence with beautiful.",
+    opening: "Uwau ✨",
     portuguese: "bonito ou bonita",
+  },
+  buy: {
+    definition: "to get something by paying money for it",
+    example: "I want to buy a new jacket.",
+    portuguese: "comprar",
+  },
+  cafe: {
+    definition: "a small place where people buy drinks and light food",
+    example: "We meet at the cafe after class.",
+    portuguese: "cafe",
+  },
+  "come back": {
+    definition: "to return to a place",
+    example: "I come back home at six.",
+    portuguese: "voltar",
+  },
+  fit: {
+    definition: "to be the right size or shape for someone or something",
+    example: "This jacket fits me well.",
+    portuguese: "servir ou caber",
+  },
+  food: {
+    definition: "things that people or animals eat",
+    example: "Healthy food gives us energy.",
+    portuguese: "comida",
+  },
+  "get up": {
+    definition: "to leave your bed after sleeping",
+    example: "I get up at seven every day.",
+    portuguese: "levantar da cama",
+  },
+  "go out": {
+    definition: "to leave home to spend time somewhere else",
+    example: "We go out with friends on Saturday.",
+    portuguese: "sair",
+  },
+  happy: {
+    definition: "feeling pleased, cheerful or good",
+    example: "I am happy today.",
+    portuguese: "feliz",
+  },
+  "how are you": {
+    definition: "a common question used to ask how someone feels",
+    example: "Hi, Anna. How are you?",
+    invitation: "Your turn: answer the question How are you?",
+    portuguese: "como voce esta",
   },
   homework: {
     definition: "school work that a student does outside class",
     example: "I do my homework after dinner.",
     portuguese: "tarefa de casa",
   },
+  hungry: {
+    definition: "needing or wanting food",
+    example: "I am hungry after class.",
+    portuguese: "com fome",
+  },
+  jacket: {
+    definition: "a short coat worn on the upper body",
+    example: "My blue jacket is warm.",
+    portuguese: "jaqueta",
+  },
+  lesson: {
+    definition: "a period of time when someone learns or teaches something",
+    example: "Today's English lesson is about shopping.",
+    portuguese: "aula ou licao",
+  },
+  like: {
+    definition: "to enjoy or think something is good",
+    example: "I like chocolate.",
+    portuguese: "gostar",
+  },
+  "look after": {
+    definition: "to take care of someone or something",
+    example: "I look after my dog.",
+    invitation: "Your turn: who do you look after?",
+    opening: "Pss pss 🐾",
+    portuguese: "cuidar de",
+  },
   mall: {
     definition: "a large building with many stores",
     example: "We go to the mall on Saturday.",
     portuguese: "shopping center",
   },
+  need: {
+    definition: "to require something because it is important or necessary",
+    example: "I need water after I run.",
+    portuguese: "precisar",
+  },
+  play: {
+    definition: "to do a game or activity for fun",
+    example: "I play soccer with my friends.",
+    portuguese: "brincar ou jogar",
+  },
+  price: {
+    definition: "the amount of money something costs",
+    example: "The price of this jacket is good.",
+    portuguese: "preco",
+  },
   run: {
-    definition: "to move quickly using your legs",
-    example: "I run in the park every morning.",
+    definition: "to move fast with your legs",
+    example: "I run in the park.",
+    invitation: "Your turn: can you use run?",
+    opening: "Miauw 😺",
     portuguese: "correr",
   },
+  sad: {
+    definition: "feeling unhappy or upset",
+    example: "She feels sad today.",
+    portuguese: "triste",
+  },
+  study: {
+    definition: "to spend time learning about a subject",
+    example: "I study English every day.",
+    portuguese: "estudar",
+  },
+  "take care": {
+    definition: "to keep someone or something safe and well",
+    example: "I take care of my little brother.",
+    invitation: "Your turn: who do you take care of?",
+    portuguese: "cuidar",
+  },
+  thirsty: {
+    definition: "needing or wanting a drink",
+    example: "I am thirsty after the game.",
+    portuguese: "com sede",
+  },
+  tired: {
+    definition: "needing rest or sleep",
+    example: "I am tired after work.",
+    portuguese: "cansado ou cansada",
+  },
+  "try on": {
+    definition: "to put on clothes to see how they look or fit",
+    example: "Can I try on this jacket?",
+    portuguese: "experimentar roupa",
+  },
+  ugly: {
+    definition: "not pleasant or nice to look at",
+    example: "The old wall looks ugly.",
+    portuguese: "feio ou feia",
+  },
+  "wake up": {
+    definition: "to stop sleeping",
+    example: "I wake up at six thirty.",
+    portuguese: "acordar",
+  },
+  walk: {
+    definition: "to move on foot at a normal speed",
+    example: "I walk to school every morning.",
+    portuguese: "caminhar",
+  },
+  want: {
+    definition: "to wish to have or do something",
+    example: "I want a glass of water.",
+    portuguese: "querer",
+  },
   water: {
-    definition: "a clear liquid that people, animals and plants need to live",
+    definition: "a clear liquid people drink",
     example: "I drink water every day.",
+    invitation: "Your turn: make one sentence with water.",
     portuguese: "agua",
   },
 };
 
-export function extractAdvancedWordMeaningTarget(text: string) {
-  const commandTarget = text
-    .trim()
-    .match(/^\/?catty\b[\s,:-]+(.+?)\s+meaning\s*[?!.]*$/i)?.[1]
-    ?.trim()
-    .replace(/^["']|["']$/g, "")
-    .replace(/\s+/g, " ");
+type ParsedAdvancedWordMeaningCommand = {
+  displayTarget: string;
+  target: string;
+  tooLong: boolean;
+};
 
-  if (!commandTarget || commandTarget.length > 40) {
-    return "";
+function normalizeMeaningTarget(value: string) {
+  return normalizeText(value.replace(/[’‘]/g, "'")).replace(/\s+/g, " ").trim();
+}
+
+function parseAdvancedWordMeaningCommand(
+  text: string,
+): ParsedAdvancedWordMeaningCommand | undefined {
+  if (!/^\s*\/?catty\b/i.test(text)) {
+    return undefined;
   }
 
+  const command = stripCattyAddress(text);
+  const patterns = [
+    /^explain\s+(?:the\s+)?meaning\s+of\s+(.+?)\s*[?!.]*$/i,
+    /^what\s+does\s+(.+?)\s+mean\s*[?!.]*$/i,
+    /^meaning\s+of\s+(.+?)\s*[?!.]*$/i,
+    /^(.+?)\s+meaning\s*[?!.]*$/i,
+  ];
+  let rawTarget = "";
+
+  for (const pattern of patterns) {
+    const match = command.match(pattern)?.[1]?.trim();
+
+    if (match) {
+      rawTarget = match;
+      break;
+    }
+  }
+
+  const displayTarget = rawTarget
+    .replace(/^["“”']|["“”']$/gu, "")
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+
   if (
-    !/^[a-zA-Z]+(?:[-'][a-zA-Z]+)*(?:\s+[a-zA-Z]+(?:[-'][a-zA-Z]+)*){0,2}$/.test(
-      commandTarget,
+    !displayTarget ||
+    !/^\p{L}+(?:[-']\p{L}+)*(?:\s+\p{L}+(?:[-']\p{L}+)*)*$/u.test(
+      displayTarget,
     )
   ) {
-    return "";
+    return undefined;
   }
 
-  const normalizedTarget = normalizeText(commandTarget);
+  const words = displayTarget.match(/\p{L}+(?:[-']\p{L}+)*/gu) ?? [];
 
-  if (
-    /^(?:define|explain|translate|translation|what|why)\b/.test(
-      normalizedTarget,
-    ) ||
-    normalizedTarget.includes("make a sentence")
-  ) {
-    return "";
-  }
+  return {
+    displayTarget,
+    target: normalizeMeaningTarget(displayTarget),
+    tooLong: words.length > 15,
+  };
+}
 
-  return normalizedTarget;
+export function extractAdvancedWordMeaningTarget(text: string) {
+  return parseAdvancedWordMeaningCommand(text)?.target ?? "";
 }
 
 function buildCattyAdvancedWordMeaningPlan(
   text: string,
 ): CattyAdvancedWordMeaningPlan | undefined {
-  const target = extractAdvancedWordMeaningTarget(text);
+  const command = parseAdvancedWordMeaningCommand(text);
 
-  if (!target) {
+  if (!command) {
     return undefined;
   }
 
+  const intoMatch = command.target.match(/^(?:i'm|i am)\s+into\s+(.+)$/);
+  const lookupKey = intoMatch ? "be into" : command.target;
+  const localMeaning = CATTY_LOCAL_WORD_MEANINGS[lookupKey];
+
+  if (intoMatch && localMeaning) {
+    const interest = intoMatch[1];
+
+    return {
+      ...localMeaning,
+      definition: `I like ${interest} a lot`,
+      displayTarget: command.displayTarget,
+      example:
+        interest === "games"
+          ? "I'm into games and music."
+          : `I'm into ${interest}.`,
+      target: command.target,
+      tooLong: command.tooLong,
+    };
+  }
+
   return {
-    ...advancedWordMeaningDictionary[target],
-    target,
+    ...localMeaning,
+    displayTarget: command.displayTarget,
+    target: command.target,
+    tooLong: command.tooLong,
   };
 }
 
@@ -4345,13 +4564,22 @@ function getDisplayWord(target: string) {
 function buildAdvancedWordMeaningFallbackReply(
   plan: CattyAdvancedWordMeaningPlan,
 ) {
-  const displayWord = getDisplayWord(plan.target);
+  const displayWord = getDisplayWord(plan.displayTarget);
 
-  if (plan.definition && plan.example) {
-    return `Miauw 😺 ${displayWord} means ${plan.definition}. Example: ${plan.example} Can you make one sentence with ${plan.target}?`;
+  if (plan.tooLong) {
+    return "Miauw 😺 That target is too long. Send one word or a shorter expression with up to 15 words.";
   }
 
-  return `Miauw 😺 ${displayWord} can have more than one meaning. Send one short sentence with ${plan.target}, and I will explain its most common meaning in simple English. Can you write one sentence with ${plan.target}?`;
+  if (plan.definition && plan.example) {
+    const opening = plan.opening ?? "Miauw 😺";
+    const invitation =
+      plan.invitation ??
+      `Your turn: make one sentence with ${plan.displayTarget}.`;
+
+    return `${opening} ${displayWord} means ${plan.definition}. Example: ${plan.example} ${invitation}`;
+  }
+
+  return `Miauw 😺 ${displayWord} can have more than one meaning. Send one short example sentence, and I will explain its most common meaning in simple English.`;
 }
 
 function formatAdvancedWordMeaningPromptContext(
@@ -4362,10 +4590,15 @@ function formatAdvancedWordMeaningPromptContext(
   }
 
   return [
-    `Palavra ou expressao curta: ${plan.target}.`,
+    `Palavra ou expressao curta: ${plan.displayTarget}.`,
+    `Quantidade maxima permitida: 15 palavras. Alvo acima do limite: ${plan.tooLong ? "sim" : "nao"}.`,
+    plan.tooLong
+      ? "Peca uma palavra ou expressao menor; nao tente definir o texto longo."
+      : "",
     plan.definition ? `Definicao local segura: ${plan.definition}.` : "",
     plan.example ? `Exemplo local seguro: ${plan.example}` : "",
-    "Formato obrigatorio: `[Word] means [simple English definition]. Example: [short sentence]. Can you make one sentence with [word]?`",
+    plan.invitation ? `Convite local seguro: ${plan.invitation}` : "",
+    "Formato obrigatorio quando o alvo estiver no limite: abertura curta, `[Word or phrase] means [simple English definition]. Example: [short sentence]. Your turn: [short invitation].`",
     "Nao substitua a definicao por traducao direta em portugues.",
   ]
     .filter(Boolean)
@@ -5111,7 +5344,7 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "practice_english" && sentenceCreationTarget) {
-    const wordGuide = advancedWordMeaningDictionary[sentenceCreationTarget];
+    const wordGuide = CATTY_LOCAL_WORD_MEANINGS[sentenceCreationTarget];
 
     return wordGuide
       ? `Miauw 😺 Example: ${wordGuide.example} Can you make another sentence with ${sentenceCreationTarget}?`
@@ -5216,7 +5449,7 @@ function buildPlannedEnglishReply(
 
   if (intent === "translate_sentence") {
     const translationTarget = normalizeText(translationFragment).trim();
-    const wordGuide = advancedWordMeaningDictionary[translationTarget];
+    const wordGuide = CATTY_LOCAL_WORD_MEANINGS[translationTarget];
 
     if (wordGuide && /^[a-z-]{2,30}$/.test(translationTarget)) {
       return `Miauw, ${getDisplayWord(translationTarget)} = ${wordGuide.portuguese} in Portuguese. Example: ${wordGuide.example}`;
@@ -5264,7 +5497,7 @@ function buildPlannedEnglishReply(
   }
 
   if (intent === "explain_word") {
-    const wordGuide = advancedWordMeaningDictionary[targetWord.toLowerCase()];
+    const wordGuide = CATTY_LOCAL_WORD_MEANINGS[targetWord.toLowerCase()];
 
     if (wordGuide) {
       return `Miauw, ${getDisplayWord(targetWord)} means "${wordGuide.portuguese}" in Portuguese. Example: ${wordGuide.example}`;
@@ -5388,7 +5621,7 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "practice_english" && sentenceCreationTarget) {
-    const wordGuide = advancedWordMeaningDictionary[sentenceCreationTarget];
+    const wordGuide = CATTY_LOCAL_WORD_MEANINGS[sentenceCreationTarget];
 
     return wordGuide
       ? `Miauw 😺 Example: ${wordGuide.example} Can you make another sentence with ${sentenceCreationTarget}?`
@@ -5453,7 +5686,7 @@ function buildPlannedPortugueseReply(
 
   if (intent === "translate_sentence") {
     const translationTarget = normalizeText(translationFragment).trim();
-    const wordGuide = advancedWordMeaningDictionary[translationTarget];
+    const wordGuide = CATTY_LOCAL_WORD_MEANINGS[translationTarget];
 
     if (wordGuide && /^[a-z-]{2,30}$/.test(translationTarget)) {
       return `Miauw, ${translationTarget} = ${wordGuide.portuguese}. Example: ${wordGuide.example}`;
@@ -5562,7 +5795,7 @@ function buildPlannedPortugueseReply(
   }
 
   if (intent === "explain_word") {
-    const wordGuide = advancedWordMeaningDictionary[targetWord.toLowerCase()];
+    const wordGuide = CATTY_LOCAL_WORD_MEANINGS[targetWord.toLowerCase()];
 
     if (wordGuide) {
       return `Miauw, ${targetWord} significa ${wordGuide.portuguese}. Example: ${wordGuide.example}`;

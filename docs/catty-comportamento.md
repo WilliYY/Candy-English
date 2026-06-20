@@ -18,7 +18,7 @@ O enriquecimento de artefatos fica em `src/lib/catty-artifact-enrichment.ts` e a
 
 ## Repertorio de cenarios
 
-O arquivo `src/lib/catty-scenarios.ts` guarda uma base tipada com 107 cenarios curados para a Catty. Cada item tem nome, intencao, entrada do usuario, contexto opcional, memoria opcional do aluno, resposta ruim a evitar, resposta ideal, regra usada e tags. A base tambem e indexada por intencao em `CATTY_SCENARIOS_BY_INTENT`, e a selecao local pontua intencao, texto, contexto, historico recente e memorias pessoais seguras para escolher ate 4 cenarios relevantes por mensagem.
+O arquivo `src/lib/catty-scenarios.ts` guarda uma base tipada com 115 cenarios curados para a Catty. Cada item tem nome, intencao, entrada do usuario, contexto opcional, memoria opcional do aluno, resposta ruim a evitar, resposta ideal, regra usada e tags. A base tambem e indexada por intencao em `CATTY_SCENARIOS_BY_INTENT`, e a selecao local pontua intencao, texto, contexto, historico recente e memorias pessoais seguras para escolher ate 4 cenarios relevantes por mensagem.
 
 Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gemini/OpenAI seguirem o mesmo padrao de tom e regra pedagogica sem receber a base inteira toda hora. No fallback do servidor, quando nao ha IA e existe match forte ou entrada exata, a rota pode usar a resposta ideal curada antes do fallback generico, preservando o fallback gramatical local quando ele ja corrige e continua melhor. O repertorio cobre gostos pessoais, comida, animais, carros, games, temas geek genericos, rotina, simple past, futuro com `will`, perguntas com `do/does/did`, `was/were`, `there is/there are`, `would like`, shopping, restaurante, homework, Candy XP, teacher, admin, mensagens, confusao, aluno cansado e pedidos de resposta pronta.
 
@@ -66,11 +66,13 @@ Antes de cair em `confusing_question`, a Catty tambem tenta uma camada de follow
 
 ## Meaning avancado em ingles
 
-O comando `Catty, [word] meaning` ou `Catty [word] meaning` ativa a intencao `advanced_word_meaning` antes da traducao comum. O extrator aceita somente uma palavra ou expressao curta de ate 3 palavras e 40 caracteres, sempre com `Catty` no inicio e `meaning` no fim; pedidos longos ou comandos como `translate`, `translation` e `make a sentence` ficam fora desse modo.
+Os comandos `Catty, [target] meaning`, `Catty, what does [target] mean?`, `Catty, meaning of [target]` e `Catty, explain the meaning of [target]` ativam a intencao `advanced_word_meaning` antes da traducao comum. O alvo pode ser uma palavra, expressao curta ou phrasal verb com ate 15 palavras. A mensagem precisa chamar `Catty`; pedidos normais de traducao, palavra solta, `translation` e `make a sentence` continuam em seus fluxos proprios. Acima de 15 palavras, a Catty pede um alvo menor em vez de tentar definir o texto inteiro.
 
-Nesse modo, a resposta usa definicao simples em ingles, `Example:` com frase curta e uma pergunta para o aluno produzir uma frase. Nao deve responder somente `word = traducao`; para iniciante, portugues pode aparecer apenas como ajuda curta. O fallback local conhece `water`, `beautiful`, `homework`, `run` e `mall`; Gemini/OpenAI recebem a mesma regra no prompt e respostas sem definicao, exemplo ou pergunta sao descartadas pela rota.
+Nesse modo, a resposta usa definicao simples em ingles, `Example:` com frase curta e `Your turn:` para o aluno praticar. Nao deve responder somente `word = traducao`; para iniciante, portugues pode aparecer apenas como ajuda curta. Gemini/OpenAI recebem a mesma regra no prompt e respostas sem definicao, exemplo ou convite sao descartadas pela rota.
 
-Exemplo: `Catty, water meaning` -> `Miauw 😺 Water means a clear liquid that people, animals and plants need to live. Example: I drink water every day. Can you make one sentence with water?`
+O fallback local inicial cobre 33 alvos: `water`, `food`, `beautiful`, `ugly`, `happy`, `sad`, `tired`, `hungry`, `thirsty`, `mall`, `attendant`, `price`, `jacket`, `fit`, `try on`, `buy`, `cafe`, `homework`, `lesson`, `run`, `walk`, `play`, `study`, `like`, `want`, `need`, `look after`, `take care`, `get up`, `wake up`, `go out`, `come back` e `be into`. A forma `I'm into [interest]` reutiliza `be into` e preserva o interesse no exemplo e no convite.
+
+Exemplo: `Catty, water meaning` -> `Miauw 😺 Water means a clear liquid people drink. Example: I drink water every day. Your turn: make one sentence with water.`
 
 | # | Antes generico | Depois esperado |
 |---|---|---|
@@ -210,7 +212,7 @@ Casos obrigatorios de pratica bilingue:
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 107 cenarios de repertorio, os 10 casos do comando meaning/traducao, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, 20 follow-ups curtos com ultima pergunta da Catty, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 115 cenarios de repertorio, os 13 casos obrigatorios do comando meaning/traducao, os 33 fallbacks locais de meaning, o limite de 15 palavras, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, 20 follow-ups curtos com ultima pergunta da Catty, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 

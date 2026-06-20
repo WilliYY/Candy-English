@@ -544,10 +544,10 @@ Cada decisao deve conter:
 
 ### 2026-06-20 - Comando avancado de significado da Catty
 
-- Decisao: criar a intencao `advanced_word_meaning` para o padrao explicito `Catty, [word] meaning`, com definicao simples, exemplo e pergunta em ingles.
+- Decisao: manter a intencao `advanced_word_meaning` para comandos explicitos com `Catty`, aceitando `[target] meaning`, `what does [target] mean?`, `meaning of [target]` e `explain the meaning of [target]`, com definicao simples, exemplo e convite em ingles.
 - Motivo: alunos mais avancados precisam aprender o conceito em ingles sem receber apenas equivalencia direta em portugues.
-- Impacto: detector/plano/fallback em `src/lib/catty.ts`, regra compartilhada dos provedores em `/api/catty/chat`, personalidade, Learning Center, cinco cenarios de vocabulario, smoke de dez comandos e docs oficiais.
-- Riscos/cuidados: manter prioridade antes da traducao, limitar o alvo a ate 3 palavras/40 caracteres, nao ativar por palavra solta ou `translation`, usar apenas o sentido mais comum e deixar portugues como ajuda opcional para iniciante.
+- Impacto: detector/plano/fallback e tabela local com 33 significados em `src/lib/catty.ts`, regra compartilhada dos provedores em `/api/catty/chat`, personalidade, 13 cenarios de meaning, smoke dos 13 comandos obrigatorios e docs oficiais.
+- Riscos/cuidados: manter prioridade antes da traducao, limitar o alvo a ate 15 palavras, pedir alvo menor acima do limite, nao ativar por palavra solta ou `translation`, usar apenas o sentido mais comum e deixar portugues como ajuda opcional para iniciante.
 
 ## Regras de negocio que precisam ser preservadas
 

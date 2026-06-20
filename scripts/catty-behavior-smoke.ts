@@ -1,4 +1,5 @@
 import {
+  CATTY_LOCAL_WORD_MEANINGS,
   buildCattyInput,
   buildCattyResponsePlan,
   buildFallbackCattyReply,
@@ -283,6 +284,14 @@ function assertCattyScenarioBase() {
     "advanced-meaning-homework",
     "advanced-meaning-run",
     "advanced-meaning-mall",
+    "advanced-meaning-water-what-does",
+    "advanced-meaning-water-meaning-of",
+    "advanced-meaning-look-after",
+    "advanced-meaning-take-care",
+    "advanced-meaning-how-are-you",
+    "advanced-meaning-into-games",
+    "advanced-meaning-explain-mall",
+    "advanced-meaning-over-limit",
   ]) {
     assertCondition(
       CATTY_SCENARIOS.some((scenario) => scenario.id === requiredId),
@@ -316,9 +325,14 @@ function assertAdvancedWordMeaningCommand() {
   const advancedCases = [
     { message: "Catty, water meaning", target: "water" },
     { message: "Catty water meaning", target: "water" },
+    { message: "Catty, what does water mean?", target: "water" },
+    { message: "Catty, meaning of water", target: "water" },
     { message: "Catty, beautiful meaning", target: "beautiful" },
     { message: "Catty, run meaning", target: "run" },
-    { message: "Catty, mall meaning", target: "mall" },
+    { message: "Catty, look after meaning", target: "look after" },
+    { message: "Catty, take care meaning", target: "take care" },
+    { message: "Catty, I’m into games meaning", target: "i'm into games" },
+    { message: "Catty, explain the meaning of mall", target: "mall" },
   ];
 
   for (const testCase of advancedCases) {
@@ -335,7 +349,7 @@ function assertAdvancedWordMeaningCommand() {
     );
     assertCondition(
       plan.advancedWordMeaning?.target === testCase.target,
-      `${testCase.message}: palavra extraida incorretamente.`,
+      `${testCase.message}: palavra ou expressao extraida incorretamente.`,
     );
     assertCondition(
       plan.language === "English",
@@ -344,9 +358,8 @@ function assertAdvancedWordMeaningCommand() {
     assertCondition(
       normalizedReply.includes(`${testCase.target} means`) &&
         normalizedReply.includes("example:") &&
-        normalizedReply.includes("can you") &&
-        normalizedReply.includes("?"),
-      `${testCase.message}: fallback nao trouxe definicao, exemplo e pergunta. Resposta: ${plan.fallbackReply}`,
+        normalizedReply.includes("your turn:"),
+      `${testCase.message}: fallback nao trouxe definicao, exemplo e convite. Resposta: ${plan.fallbackReply}`,
     );
     assertCondition(
       !normalizedReply.includes(" significa ") &&
@@ -355,9 +368,89 @@ function assertAdvancedWordMeaningCommand() {
     );
     assertCondition(
       prompt.includes("Regra do comando avancado meaning") &&
-        prompt.includes(`Palavra ou expressao curta: ${testCase.target}`) &&
+        normalizeText(prompt).includes(
+          `palavra ou expressao curta: ${testCase.target}`,
+        ) &&
+        prompt.includes("Quantidade maxima permitida: 15 palavras") &&
         prompt.includes("Nao substitua a definicao por traducao direta"),
       `${testCase.message}: prompt de Gemini/OpenAI nao recebeu regra avancada.`,
+    );
+  }
+
+  const phraseWithinLimitPlan = buildCattyResponsePlan(
+    "Catty, very very very long phrase with many words meaning",
+    context,
+  );
+  assertCondition(
+    phraseWithinLimitPlan.intent === "advanced_word_meaning" &&
+      phraseWithinLimitPlan.advancedWordMeaning?.target ===
+        "very very very long phrase with many words" &&
+      !phraseWithinLimitPlan.advancedWordMeaning.tooLong,
+    "expressao com oito palavras deveria ser aceita pelo limite de 15.",
+  );
+  assertCondition(
+    normalizeText(phraseWithinLimitPlan.fallbackReply).includes(
+      "short example sentence",
+    ),
+    "expressao sem fallback local deveria pedir um exemplo curto para contexto.",
+  );
+
+  const overLimitPlan = buildCattyResponsePlan(
+    "Catty, this phrase has way too many separate words for one clear vocabulary target in a short meaning command today please meaning",
+    context,
+  );
+  assertCondition(
+    overLimitPlan.intent === "advanced_word_meaning" &&
+      overLimitPlan.advancedWordMeaning?.tooLong === true,
+    "alvo acima de 15 palavras deveria ser marcado como longo.",
+  );
+  assertCondition(
+    normalizeText(overLimitPlan.fallbackReply).includes("up to 15 words"),
+    "fallback acima do limite deveria pedir uma expressao menor.",
+  );
+
+  const requiredLocalMeanings = [
+    "water",
+    "food",
+    "beautiful",
+    "ugly",
+    "happy",
+    "sad",
+    "tired",
+    "hungry",
+    "thirsty",
+    "mall",
+    "attendant",
+    "price",
+    "jacket",
+    "fit",
+    "try on",
+    "buy",
+    "cafe",
+    "homework",
+    "lesson",
+    "run",
+    "walk",
+    "play",
+    "study",
+    "like",
+    "want",
+    "need",
+    "look after",
+    "take care",
+    "get up",
+    "wake up",
+    "go out",
+    "come back",
+    "be into",
+  ];
+
+  for (const target of requiredLocalMeanings) {
+    const localMeaning = CATTY_LOCAL_WORD_MEANINGS[target];
+
+    assertCondition(
+      Boolean(localMeaning?.definition && localMeaning.example),
+      `fallback local obrigatorio ausente ou incompleto: ${target}.`,
     );
   }
 
@@ -373,6 +466,18 @@ function assertAdvancedWordMeaningCommand() {
     "pedido normal de significado deveria continuar como traducao simples.",
   );
 
+  const namedTranslationPlan = buildCattyResponsePlan(
+    "Catty, water translation",
+    context,
+  );
+  assertCondition(
+    namedTranslationPlan.intent === "translate_sentence" &&
+      normalizeText(namedTranslationPlan.fallbackReply).includes(
+        "water = agua",
+      ),
+    "Catty water translation deveria manter o fluxo de traducao.",
+  );
+
   const translationPlan = buildCattyResponsePlan("translate water", context);
   assertCondition(
     translationPlan.intent === "translate_sentence" &&
@@ -384,18 +489,6 @@ function assertAdvancedWordMeaningCommand() {
   assertCondition(
     bareWordPlan.intent !== "advanced_word_meaning",
     "palavra solta nao deveria ativar meaning avancado.",
-  );
-
-  const namedTranslationPlan = buildCattyResponsePlan(
-    "Catty, water translation",
-    context,
-  );
-  assertCondition(
-    namedTranslationPlan.intent === "translate_sentence" &&
-      normalizeText(namedTranslationPlan.fallbackReply).includes(
-        "water = agua",
-      ),
-    "Catty water translation deveria manter o fluxo de traducao.",
   );
 
   const sentencePlan = buildCattyResponsePlan(
@@ -2801,7 +2894,7 @@ function main() {
   assertCondition(validUserMemory.success, "memoria pessoal valida foi recusada.");
 
   console.log(
-    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 10 comandos meaning/traducao, 50 cenarios de follow-up curto, 20 fallbacks por cenario, 20 interacoes, 20 follow-ups curtos, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
+    `Catty behavior smoke OK: ${CATTY_BEHAVIOR_EXAMPLES.length} exemplos, ${CATTY_SCENARIOS.length} cenarios, 13 comandos obrigatorios meaning/traducao, 33 fallbacks locais de meaning, 50 cenarios de follow-up curto, 20 fallbacks por cenario, 20 interacoes, 20 follow-ups curtos, ${grammarCorrectionCases.length} correcoes e 6 sequencias validadas.`,
   );
 }
 
