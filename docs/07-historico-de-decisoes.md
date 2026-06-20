@@ -549,6 +549,13 @@ Cada decisao deve conter:
 - Impacto: detector/plano/fallback e tabela local com 33 significados em `src/lib/catty.ts`, regra compartilhada dos provedores em `/api/catty/chat`, personalidade, 13 cenarios de meaning, smoke dos 13 comandos obrigatorios e docs oficiais.
 - Riscos/cuidados: manter prioridade antes da traducao, limitar o alvo a ate 15 palavras, pedir alvo menor acima do limite, nao ativar por palavra solta ou `translation`, usar apenas o sentido mais comum e deixar portugues como ajuda opcional para iniciante.
 
+### 2026-06-20 - Leitura mobile do homework e atividade interativa
+
+- Decisao: manter o arquivo interativo do Student em largura minima de `560px` abaixo de `640px`, dentro de rolagem horizontal local, com acao de abrir sempre visivel, item unico aberto por padrao, paginas PDF renderizadas progressivamente e fallback para o arquivo original protegido.
+- Motivo: reduzir uma folha A4 para a largura interna de um card mobile deixava o material praticamente ilegivel e, em PDFs maiores, o custo de varios canvases podia resultar em uma area visual vazia mesmo depois de abrir a atividade.
+- Impacto: `interactive-homework-document.tsx`, `interactive-homework-student.tsx`, `student-workspace.tsx`, fluxo visual Student e documentacao do homework.
+- Riscos/cuidados: preservar coordenadas percentuais dos campos, restringir a largura minima somente a celular, manter tablet/desktop fluidos, nao alterar upload/autosave/permissoes e continuar servindo o original apenas pela rota protegida.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

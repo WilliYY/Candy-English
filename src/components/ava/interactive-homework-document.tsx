@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle } from "lucide-react";
+import { ExternalLink, LoaderCircle } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -39,6 +39,7 @@ type InteractiveHomeworkDocumentProps<
   className?: string;
   expectedPageCount?: number | null;
   fields: TField[];
+  mobileReadable?: boolean;
   pageClassName?: string;
   renderPageForeground?: (pageNumber: number) => ReactNode;
   renderPageOverlay?: (pageNumber: number) => ReactNode;
@@ -124,6 +125,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
   assetUrl,
   className,
   fieldsByPage,
+  mobileReadable,
   pageClassName,
   renderPageForeground,
   renderPageOverlay,
@@ -133,6 +135,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
   assetUrl: string;
   className?: string;
   fieldsByPage: Map<number, IndexedField<TField>[]>;
+  mobileReadable?: boolean;
   pageClassName?: string;
   renderPageForeground?: (pageNumber: number) => ReactNode;
   renderPageOverlay?: (pageNumber: number) => ReactNode;
@@ -144,13 +147,32 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
   title: string;
 }) {
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [imageStatus, setImageStatus] = useState<
+    "error" | "loading" | "ready"
+  >("loading");
+
+  useEffect(() => {
+    setImageStatus("loading");
+  }, [assetUrl]);
 
   return (
-    <div className={cn("flex w-full justify-center", className)}>
+    <div
+      aria-label={mobileReadable ? `Documento ${title}` : undefined}
+      className={cn(
+        "flex w-full",
+        mobileReadable
+          ? "justify-start overflow-x-auto overscroll-x-contain pb-2 sm:justify-center sm:overflow-visible sm:pb-0"
+          : "justify-center",
+        className,
+      )}
+      role={mobileReadable ? "region" : undefined}
+      tabIndex={mobileReadable ? 0 : undefined}
+    >
       <div
         data-homework-page="1"
         className={cn(
-          "relative isolate w-full max-w-[920px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner",
+          "relative isolate mx-auto w-full max-w-[920px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner",
+          mobileReadable && "min-w-[560px] sm:min-w-0",
           pageClassName,
         )}
         style={{
@@ -162,6 +184,7 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
           data-homework-page-media="1"
           alt={`Homework ${title}`}
           className="absolute inset-0 z-0 size-full object-fill"
+          onError={() => setImageStatus("error")}
           onLoad={(event) => {
             const image = event.currentTarget;
 
@@ -171,9 +194,30 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
                 width: image.naturalWidth,
               });
             }
+
+            setImageStatus("ready");
           }}
           src={assetUrl}
         />
+        {imageStatus === "loading" ? (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-white text-primary">
+            <LoaderCircle aria-hidden="true" className="size-6 animate-spin" />
+          </div>
+        ) : null}
+        {imageStatus === "error" ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white px-4 text-center text-sm text-muted-foreground">
+            <span>Nao foi possivel mostrar esta imagem.</span>
+            <a
+              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-2 font-semibold text-primary"
+              href={assetUrl}
+              rel="noreferrer"
+              target="_blank"
+            >
+              Abrir arquivo original
+              <ExternalLink aria-hidden="true" className="size-4" />
+            </a>
+          </div>
+        ) : null}
         <PageOverlay
           fields={fieldsByPage.get(1) ?? []}
           pageNumber={1}
@@ -187,7 +231,9 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
 }
 
 function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
+  assetUrl,
   fields,
+  mobileReadable,
   pageClassName,
   pageNumber,
   pdf,
@@ -195,7 +241,9 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
   renderPageOverlay,
   renderField,
 }: {
+  assetUrl: string;
   fields: IndexedField<TField>[];
+  mobileReadable?: boolean;
   pageClassName?: string;
   pageNumber: number;
   pdf: PDFDocumentProxy;
@@ -211,6 +259,7 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
   const pageRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [renderWidth, setRenderWidth] = useState(0);
 
@@ -233,9 +282,31 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
   }, []);
 
   useEffect(() => {
+    const node = pageRef.current;
+
+    if (!node || typeof IntersectionObserver === "undefined") {
+      setShouldRender(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldRender(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(node);
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
 
-    if (!canvas || renderWidth <= 0) {
+    if (!canvas || renderWidth <= 0 || !shouldRender) {
       return undefined;
     }
 
@@ -253,7 +324,13 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
         }
 
         const baseViewport = page.getViewport({ scale: 1 });
-        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        const maxPixelRatio = window.matchMedia("(max-width: 639px)").matches
+          ? 1.25
+          : 2;
+        const pixelRatio = Math.min(
+          window.devicePixelRatio || 1,
+          maxPixelRatio,
+        );
         const cssWidth = Math.max(280, renderWidth);
         const scale = cssWidth / baseViewport.width;
         const viewport = page.getViewport({ scale: scale * pixelRatio });
@@ -290,7 +367,7 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [pageNumber, pdf, renderWidth]);
+  }, [pageNumber, pdf, renderWidth, shouldRender]);
 
   return (
     <div
@@ -298,6 +375,7 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
       data-homework-page={pageNumber}
       className={cn(
         "relative isolate mx-auto w-full max-w-[920px] overflow-hidden rounded-lg border-2 border-primary/25 bg-white shadow-inner",
+        mobileReadable && "min-w-[560px] sm:min-w-0",
         pageClassName,
       )}
       style={{
@@ -316,8 +394,17 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
         </div>
       ) : null}
       {error ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-white px-4 text-center text-sm text-muted-foreground">
-          Nao foi possivel renderizar esta pagina.
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-white px-4 text-center text-sm text-muted-foreground">
+          <span>Nao foi possivel renderizar esta pagina.</span>
+          <a
+            className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-2 font-semibold text-primary"
+            href={assetUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Abrir arquivo original
+            <ExternalLink aria-hidden="true" className="size-4" />
+          </a>
         </div>
       ) : null}
       <PageOverlay
@@ -336,6 +423,7 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
   className,
   expectedPageCount,
   fieldsByPage,
+  mobileReadable,
   pageClassName,
   renderPageForeground,
   renderPageOverlay,
@@ -345,6 +433,7 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
   className?: string;
   expectedPageCount?: number | null;
   fieldsByPage: Map<number, IndexedField<TField>[]>;
+  mobileReadable?: boolean;
   pageClassName?: string;
   renderPageForeground?: (pageNumber: number) => ReactNode;
   renderPageOverlay?: (pageNumber: number) => ReactNode;
@@ -403,11 +492,20 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
     return (
       <div
         className={cn(
-          "rounded-lg border-2 border-primary/25 bg-white p-6 text-sm text-muted-foreground",
+          "flex min-h-48 flex-col items-center justify-center gap-3 rounded-lg border-2 border-primary/25 bg-white p-6 text-center text-sm text-muted-foreground",
           className,
         )}
       >
-        Nao foi possivel carregar o PDF.
+        <span>Nao foi possivel carregar o PDF.</span>
+        <a
+          className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-2 font-semibold text-primary"
+          href={assetUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Abrir arquivo original
+          <ExternalLink aria-hidden="true" className="size-4" />
+        </a>
       </div>
     );
   }
@@ -426,11 +524,23 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
   }
 
   return (
-    <div className={cn("flex w-full flex-col gap-4", className)}>
+    <div
+      aria-label={mobileReadable ? "Documento da atividade" : undefined}
+      className={cn(
+        "flex w-full flex-col gap-4",
+        mobileReadable &&
+          "overflow-x-auto overscroll-x-contain pb-2 sm:overflow-visible sm:pb-0",
+        className,
+      )}
+      role={mobileReadable ? "region" : undefined}
+      tabIndex={mobileReadable ? 0 : undefined}
+    >
       {pages.map((pageNumber) => (
         <PdfCanvasPage
           key={pageNumber}
+          assetUrl={assetUrl}
           fields={fieldsByPage.get(pageNumber) ?? []}
+          mobileReadable={mobileReadable}
           pageClassName={pageClassName}
           pageNumber={pageNumber}
           pdf={pdf}
@@ -451,6 +561,7 @@ export function InteractiveHomeworkDocument<
   className,
   expectedPageCount,
   fields,
+  mobileReadable = false,
   pageClassName,
   renderPageForeground,
   renderPageOverlay,
@@ -465,6 +576,7 @@ export function InteractiveHomeworkDocument<
         assetUrl={assetUrl}
         className={className}
         fieldsByPage={fieldsByPage}
+        mobileReadable={mobileReadable}
         pageClassName={pageClassName}
         renderPageForeground={renderPageForeground}
         renderPageOverlay={renderPageOverlay}
@@ -480,6 +592,7 @@ export function InteractiveHomeworkDocument<
       className={className}
       expectedPageCount={expectedPageCount}
       fieldsByPage={fieldsByPage}
+      mobileReadable={mobileReadable}
       pageClassName={pageClassName}
       renderPageForeground={renderPageForeground}
       renderPageOverlay={renderPageOverlay}

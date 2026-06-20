@@ -3,8 +3,10 @@
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ClipboardCheck,
   Eraser,
+  ExternalLink,
   FileText,
   LoaderCircle,
   RotateCcw,
@@ -875,10 +877,10 @@ export function InteractiveHomeworkStudent({
     <div
       className={
         isLessonContext
-          ? "border-t border-primary/15 p-5 md:p-6"
+          ? "border-t border-primary/15 p-3 sm:p-4 md:p-6"
           : displayMode === "panel"
-            ? "bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5"
-            : "border-t border-primary/15 bg-gradient-to-b from-white to-primary/[0.03] p-4 md:p-5"
+            ? "bg-gradient-to-b from-white to-primary/[0.03] p-3 sm:p-4 md:p-5"
+            : "border-t border-primary/15 bg-gradient-to-b from-white to-primary/[0.03] p-3 sm:p-4 md:p-5"
       }
     >
       <div className="mb-4 grid gap-2 text-sm text-muted-foreground md:grid-cols-[1fr_auto] md:items-start">
@@ -912,11 +914,30 @@ export function InteractiveHomeworkStudent({
         </span>
       </div>
 
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-3 rounded-lg border border-primary/10 bg-white/80 px-3 py-2 text-xs shadow-sm">
+        <span className="flex min-w-0 items-center gap-2 font-semibold text-primary">
+          <FileText aria-hidden="true" className="size-4 shrink-0" />
+          <span className="truncate">
+            {homework.assetFileName ?? fallbackAssetLabel}
+          </span>
+        </span>
+        <a
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 font-semibold text-primary"
+          href={assetUrl}
+          rel="noreferrer"
+          target="_blank"
+        >
+          Abrir arquivo
+          <ExternalLink aria-hidden="true" className="size-3.5" />
+        </a>
+      </div>
+
       <InteractiveHomeworkDocument
         assetMimeType={homework.assetMimeType}
         assetUrl={assetUrl}
         expectedPageCount={homework.assetPageCount}
         fields={homework.fields}
+        mobileReadable
         pageClassName={isLessonContext ? "max-w-[1120px]" : "max-w-[980px]"}
         renderPageForeground={(pageNumber) =>
           teacherAnnotations && hasTeacherAnnotations ? (
@@ -1154,7 +1175,7 @@ export function InteractiveHomeworkStudent({
       <summary
         className={
           isLessonContext
-            ? "flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 hover:bg-primary/5 md:px-6 [&::-webkit-details-marker]:hidden"
+            ? "flex cursor-pointer list-none flex-col items-stretch gap-3 px-4 py-4 hover:bg-primary/5 sm:flex-row sm:items-center sm:justify-between md:px-6 [&::-webkit-details-marker]:hidden"
             : "flex cursor-pointer list-none flex-col gap-3 px-5 py-4 hover:bg-primary/5 sm:flex-row sm:items-center sm:justify-between [&::-webkit-details-marker]:hidden"
         }
       >
@@ -1203,14 +1224,23 @@ export function InteractiveHomeworkStudent({
           </span>
         </span>
         {isLessonContext ? (
-          <span
-            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${lessonStatusClass}`}
-          >
+          <span className="flex w-full shrink-0 items-center justify-between gap-2 sm:w-auto sm:justify-end">
             <span
-              aria-hidden="true"
-              className={`size-2.5 rounded-full ${lessonStatusDotClass}`}
-            />
-            {isComplete ? "Concluido" : "Nao concluido"}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold ${lessonStatusClass}`}
+            >
+              <span
+                aria-hidden="true"
+                className={`size-2.5 rounded-full ${lessonStatusDotClass}`}
+              />
+              {isComplete ? "Concluido" : "Nao concluido"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+              {isOpen ? "Fechar" : "Abrir"}
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 transition group-open:rotate-180"
+              />
+            </span>
           </span>
         ) : (
           <span className="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
@@ -1234,8 +1264,16 @@ export function InteractiveHomeworkStudent({
               />
               {displayedStatusLabel}
             </span>
-            <span className="hidden rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm sm:inline-flex">
-              {isCandyXpContext ? "Abrir missao" : "Abrir atividade"}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+              {isOpen
+                ? "Fechar"
+                : isCandyXpContext
+                  ? "Abrir missao"
+                  : "Abrir atividade"}
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 transition group-open:rotate-180"
+              />
             </span>
           </span>
         )}

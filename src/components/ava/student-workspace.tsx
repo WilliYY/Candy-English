@@ -1538,6 +1538,7 @@ export function StudentWorkspace({
                               <InteractiveHomeworkStudent
                                 key={homework.id}
                                 context="lesson"
+                                defaultOpen={lessonActivities.length === 1}
                                 homework={{
                                   assetFileName: homework.assetFileName,
                                   assetMimeType: homework.assetMimeType,
@@ -1629,6 +1630,7 @@ export function StudentWorkspace({
                     return (
                       <InteractiveHomeworkStudent
                         key={homework.id}
+                        defaultOpen={homeworkCount === 1}
                         homework={{
                           assetFileName: homework.assetFileName,
                           assetMimeType: homework.assetMimeType,
