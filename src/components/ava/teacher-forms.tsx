@@ -243,7 +243,7 @@ function StudentMultiSelectField({
   return (
     <Field data-invalid={Boolean(error)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <FieldLabel htmlFor={`${id}-all`}>{label}</FieldLabel>
+        <FieldLabel id={`${id}-label`}>{label}</FieldLabel>
         <span
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold tabular-nums",
@@ -265,11 +265,13 @@ function StudentMultiSelectField({
         />
       ))}
       <div
+        aria-labelledby={`${id}-label`}
         className={cn(
           "mt-1 overflow-hidden rounded-lg border bg-white/95 shadow-sm",
           error ? "border-red-300" : "border-primary/10",
           disabled ? "opacity-70" : "",
         )}
+        role="group"
       >
         <div className="grid gap-2 border-b border-primary/10 bg-emerald-50/35 p-2">
           <div className="flex min-w-0 items-stretch gap-2">
