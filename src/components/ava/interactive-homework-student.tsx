@@ -5,10 +5,11 @@ import {
   CheckCircle2,
   ChevronDown,
   ClipboardCheck,
+  Download,
   Eraser,
-  ExternalLink,
   FileText,
   LoaderCircle,
+  RefreshCw,
   RotateCcw,
   Save,
   Send,
@@ -98,6 +99,13 @@ export type StudentInteractiveHomework = {
   title: string;
   xpReward?: number;
 };
+
+const HOMEWORK_CONNECTION_MESSAGE =
+  "A atividade foi atualizada no servidor. Seu rascunho continua salvo neste aparelho. Atualize para continuar.";
+
+function getAssetDownloadUrl(assetUrl: string) {
+  return `${assetUrl}${assetUrl.includes("?") ? "&" : "?"}download=1`;
+}
 
 const studentHomeworkDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -609,6 +617,7 @@ export function InteractiveHomeworkStudent({
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
+  const [needsReload, setNeedsReload] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -635,6 +644,7 @@ export function InteractiveHomeworkStudent({
     ? status === "REVIEWED"
     : isCompleteStatus(status);
   const assetUrl = homework.assetUrl ?? `/ava/homework-assets/${homework.id}`;
+  const assetDownloadUrl = getAssetDownloadUrl(assetUrl);
   const statusAccent = statusAccentClass(status);
   const statusTone = statusClass(status);
   const statusIconTone = statusIconClass(status);
@@ -713,6 +723,7 @@ export function InteractiveHomeworkStudent({
       mounted.current = false;
       setDraftHydrated(false);
       setMessage(null);
+      setNeedsReload(false);
       setSaveState("idle");
       setValues(initialValues);
       return;
@@ -772,31 +783,41 @@ export function InteractiveHomeworkStudent({
     saveRequest.current = requestId;
 
     const timeout = window.setTimeout(async () => {
-      const result = isCandyXpContext
-        ? await saveCandyXpActivityDraft({
-            activityId: homework.id,
-            answers: buildCandyXpAnswersPayload(homework.fields, valuesSnapshot),
-          })
-        : await saveInteractiveHomeworkDraft({
-            answers: buildAnswersPayload(homework.fields, valuesSnapshot),
-            homeworkId: homework.id,
-          });
+      try {
+        const result = isCandyXpContext
+          ? await saveCandyXpActivityDraft({
+              activityId: homework.id,
+              answers: buildCandyXpAnswersPayload(homework.fields, valuesSnapshot),
+            })
+          : await saveInteractiveHomeworkDraft({
+              answers: buildAnswersPayload(homework.fields, valuesSnapshot),
+              homeworkId: homework.id,
+            });
 
-      if (requestId !== saveRequest.current) {
-        return;
-      }
+        if (requestId !== saveRequest.current) {
+          return;
+        }
 
-      if (!result.ok) {
-        setMessage(result.message);
-        setSaveState("idle");
-        return;
-      }
+        if (!result.ok) {
+          setMessage(result.message);
+          setNeedsReload(false);
+          setSaveState("idle");
+          return;
+        }
 
-      setMessage(null);
+        setMessage(null);
+        setNeedsReload(false);
 
-      if (valuesSignature(valuesRef.current) === savedSignature) {
-        dirtyValues.current = false;
-        setSaveState("saved");
+        if (valuesSignature(valuesRef.current) === savedSignature) {
+          dirtyValues.current = false;
+          setSaveState("saved");
+        }
+      } catch {
+        if (requestId === saveRequest.current) {
+          setMessage(HOMEWORK_CONNECTION_MESSAGE);
+          setNeedsReload(true);
+          setSaveState("idle");
+        }
       }
     }, 900);
 
@@ -834,6 +855,7 @@ export function InteractiveHomeworkStudent({
 
   function submit() {
     setMessage(null);
+    setNeedsReload(false);
     if (autosaveTimeout.current) {
       window.clearTimeout(autosaveTimeout.current);
       autosaveTimeout.current = null;
@@ -842,38 +864,49 @@ export function InteractiveHomeworkStudent({
     const currentValues = valuesRef.current;
 
     startTransition(async () => {
-      const result = isCandyXpContext
-        ? await submitCandyXpActivity({
-            activityId: homework.id,
-            answers: buildCandyXpAnswersPayload(homework.fields, currentValues),
-          })
-        : await submitInteractiveHomework({
-            answers: buildAnswersPayload(homework.fields, currentValues),
-            homeworkId: homework.id,
-          });
+      try {
+        const result = isCandyXpContext
+          ? await submitCandyXpActivity({
+              activityId: homework.id,
+              answers: buildCandyXpAnswersPayload(homework.fields, currentValues),
+            })
+          : await submitInteractiveHomework({
+              answers: buildAnswersPayload(homework.fields, currentValues),
+              homeworkId: homework.id,
+            });
 
-      setMessage(result.message);
+        setMessage(result.message);
 
-      if (result.ok) {
-        clearStoredDraft(homework.id, context);
-        dirtyValues.current = false;
-        setSaveState("saved");
-        router.refresh();
+        if (result.ok) {
+          clearStoredDraft(homework.id, context);
+          dirtyValues.current = false;
+          setSaveState("saved");
+          router.refresh();
+        }
+      } catch {
+        setMessage(HOMEWORK_CONNECTION_MESSAGE);
+        setNeedsReload(true);
       }
     });
   }
 
   function reopen() {
     setMessage(null);
+    setNeedsReload(false);
     startTransition(async () => {
-      const result = await reopenInteractiveHomeworkDraft({
-        homeworkId: homework.id,
-      });
+      try {
+        const result = await reopenInteractiveHomeworkDraft({
+          homeworkId: homework.id,
+        });
 
-      setMessage(result.message);
+        setMessage(result.message);
 
-      if (result.ok) {
-        router.refresh();
+        if (result.ok) {
+          router.refresh();
+        }
+      } catch {
+        setMessage(HOMEWORK_CONNECTION_MESSAGE);
+        setNeedsReload(true);
       }
     });
   }
@@ -928,12 +961,11 @@ export function InteractiveHomeworkStudent({
         </span>
         <a
           className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/15 bg-primary/5 px-3 py-1.5 font-semibold text-primary"
-          href={assetUrl}
-          rel="noreferrer"
-          target="_blank"
+          download={homework.assetFileName ?? true}
+          href={assetDownloadUrl}
         >
-          Abrir arquivo
-          <ExternalLink aria-hidden="true" className="size-3.5" />
+          Baixar PDF
+          <Download aria-hidden="true" className="size-3.5" />
         </a>
       </div>
 
@@ -1105,9 +1137,21 @@ export function InteractiveHomeworkStudent({
       ) : null}
 
       {message ? (
-        <p className="mt-3 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground">
-          {message}
-        </p>
+        <div className="mt-3 flex flex-col gap-2 rounded-md border bg-background px-3 py-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-pretty">{message}</p>
+          {needsReload ? (
+            <Button
+              className="shrink-0"
+              onClick={() => window.location.reload()}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <RefreshCw aria-hidden="true" className="size-4" />
+              Atualizar atividade
+            </Button>
+          ) : null}
+        </div>
       ) : null}
 
       <div

@@ -8,7 +8,7 @@ import { getStoragePath } from "@/lib/storage";
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ homeworkId: string }> },
 ) {
   const session = await auth();
@@ -80,10 +80,14 @@ export async function GET(
     file.byteOffset,
     file.byteOffset + file.byteLength,
   ) as ArrayBuffer;
+  const disposition = new URL(request.url).searchParams.has("download")
+    ? "attachment"
+    : "inline";
 
   return new NextResponse(body, {
     headers: {
-      "Content-Disposition": `inline; filename="${encodeURIComponent(
+      "Cache-Control": "private, no-store",
+      "Content-Disposition": `${disposition}; filename="${encodeURIComponent(
         homework.assetFileName ?? "homework",
       )}"`,
       "Content-Type": homework.assetMimeType,

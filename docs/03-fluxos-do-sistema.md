@@ -123,7 +123,7 @@ Helpers:
 1. Teacher entra em `/ava/teacher`.
 2. No resumo, ve o card Teacher XP com nivel, fontes pedagogicas, trilha infinita e proximas metas de rotina.
 3. Ve alunos vinculados.
-4. Cria aula interativa e homework interativo por arquivo do Canva, podendo selecionar um aluno, varios alunos ou todos os disponiveis no formulario.
+4. Cria aula interativa e homework interativo por arquivo do Canva, podendo selecionar um aluno, varios alunos ou todos os disponiveis no formulario; ao marcar todos, o seletor usa um resumo curto com total e acao separada para limpar, sem comprimir os controles.
 5. Corrige respostas e envia feedback.
 6. Ve a area de aula ao vivo em manutencao temporaria e usa mensagens enquanto a integracao de video e revisada.
 7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos` e aceitar interessados como alunos `STUDENT` vinculados a sua teacher.
@@ -138,7 +138,7 @@ Helpers:
 2. Se o aluno ainda nao tem foto de perfil, o AVA pode mostrar um popup visual diario com apenas o video em loop e botao de fechar; ao clicar no video, o aluno vai para `/ava/student?task=perfil`. Ele aparece no maximo 1x ao dia por navegador, nao aparece na propria tarefa `Meu perfil` e usa `localStorage` apenas para guardar o dia em que o popup apareceu.
 3. No resumo, ve o card Candy XP com nivel, barra amarela de progresso, fontes de XP, proximas metas e roadmap de jogos.
 4. Ve aulas, materiais, homework interativo, mensagens, contratos, perfil e o aviso de manutencao temporaria da aula ao vivo.
-5. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente. No celular, a acao de abrir fica sempre visivel, a homework mais recente e a aula mais recente abrem automaticamente, e o documento usa uma largura minima legivel com rolagem horizontal, carregamento explicito e acesso protegido ao arquivo original se o canvas falhar.
+5. Responde homework online; no modo interativo digita, marca ou desenha sobre o arquivo e o rascunho e salvo automaticamente. No celular, a acao de abrir fica sempre visivel, a homework mais recente e a aula mais recente abrem automaticamente, e o documento usa uma largura minima legivel com rolagem horizontal e carregamento explicito. O original fica disponivel como download protegido, sem trocar a tela pelo visualizador do navegador; falha de conexao ou aba antiga preserva o rascunho e oferece `Atualizar atividade` dentro do card.
 6. Visualiza feedback.
 7. Edita dados pessoais permitidos, mas nao o nivel.
 8. Pode abrir `Catty aprendendo` para entender que a Catty usa memoria leve com supervisao da equipe, sem ver a tela tecnica de memorias.

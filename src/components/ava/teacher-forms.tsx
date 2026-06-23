@@ -14,6 +14,7 @@ import {
   Plus,
   UserRound,
   UsersRound,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -216,7 +217,9 @@ function StudentMultiSelectField({
   const allSelected = students.length > 0 && selectedIds.length === students.length;
   const selectedStudents = students.filter((student) => selectedSet.has(student.id));
   const selectedPreview =
-    selectedStudents.length === 0
+    allSelected
+      ? `Todos os ${students.length} alunos selecionados`
+      : selectedStudents.length === 0
       ? "Nenhum aluno selecionado"
       : selectedStudents.length <= 2
         ? selectedStudents.map((student) => student.label).join(", ")
@@ -243,7 +246,7 @@ function StudentMultiSelectField({
         <FieldLabel htmlFor={`${id}-all`}>{label}</FieldLabel>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.08em]",
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold tabular-nums",
             selectedIds.length > 0
               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
               : "border-primary/10 bg-white text-muted-foreground",
@@ -268,32 +271,66 @@ function StudentMultiSelectField({
           disabled ? "opacity-70" : "",
         )}
       >
-        <div className="grid gap-2 border-b border-primary/10 bg-gradient-to-r from-white via-emerald-50/45 to-sky-50/45 p-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-          <label
-            className={cn(
-              "flex cursor-pointer items-center gap-2 rounded-md border border-emerald-200 bg-white px-3 py-2 text-sm font-semibold text-emerald-900 shadow-sm",
-              disabled ? "cursor-not-allowed" : "",
-            )}
-            htmlFor={`${id}-all`}
+        <div className="grid gap-2 border-b border-primary/10 bg-emerald-50/35 p-2">
+          <div className="flex min-w-0 items-stretch gap-2">
+            <label
+              className={cn(
+                "flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-md border px-3 py-2 shadow-sm",
+                allSelected
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-950"
+                  : "border-primary/10 bg-white text-primary",
+                disabled ? "cursor-not-allowed" : "",
+              )}
+              htmlFor={`${id}-all`}
+            >
+              <input
+                checked={allSelected}
+                className="size-4 shrink-0 accent-emerald-600"
+                disabled={disabled || students.length === 0}
+                id={`${id}-all`}
+                onChange={toggleAll}
+                type="checkbox"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold">
+                  Selecionar todos
+                </span>
+                <span className="block truncate text-xs font-medium text-muted-foreground">
+                  {allSelected
+                    ? `${students.length} alunos marcados`
+                    : `${students.length - selectedStudents.length} ainda nao marcados`}
+                </span>
+              </span>
+            </label>
+            {selectedIds.length > 0 ? (
+              <Button
+                aria-label="Limpar selecao de alunos"
+                className="h-auto shrink-0 self-stretch px-3 text-muted-foreground"
+                disabled={disabled}
+                onClick={() => onChange([])}
+                size="sm"
+                title="Limpar selecao"
+                type="button"
+                variant="outline"
+              >
+                <X aria-hidden="true" className="size-4" />
+                <span className="hidden md:inline">Limpar</span>
+              </Button>
+            ) : null}
+          </div>
+          <div
+            aria-live="polite"
+            className="min-w-0 rounded-md border border-primary/10 bg-white px-3 py-2 shadow-sm"
           >
-            <input
-              checked={allSelected}
-              className="size-4 accent-emerald-600"
-              disabled={disabled || students.length === 0}
-              id={`${id}-all`}
-              onChange={toggleAll}
-              type="checkbox"
-            />
-            Selecionar todos
-          </label>
-          <div className="min-w-0 rounded-md border border-primary/10 bg-white/86 px-3 py-2 shadow-sm">
-            <span className="block text-[0.62rem] font-bold uppercase tracking-[0.1em] text-muted-foreground">
-              selecionados
+            <span className="block text-xs font-bold text-muted-foreground">
+              Resumo da selecao
             </span>
             <span
               className={cn(
-                "block truncate text-sm font-semibold",
-                selectedStudents.length > 0 ? "text-primary" : "text-muted-foreground",
+                "mt-0.5 block line-clamp-2 break-words text-sm font-semibold text-pretty",
+                selectedStudents.length > 0
+                  ? "text-primary"
+                  : "text-muted-foreground",
               )}
               title={selectedStudents.map((student) => student.label).join(", ")}
             >

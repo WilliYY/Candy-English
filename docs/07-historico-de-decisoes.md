@@ -556,6 +556,13 @@ Cada decisao deve conter:
 - Impacto: `interactive-homework-document.tsx`, `interactive-homework-student.tsx`, novo `responsive-details.tsx`, `student-workspace.tsx`, fluxo visual Student e documentacao do homework.
 - Riscos/cuidados: preservar coordenadas percentuais dos campos, restringir a largura minima somente a celular, manter tablet/desktop fluidos, nao alterar upload/autosave/permissoes e continuar servindo o original apenas pela rota protegida.
 
+### 2026-06-23 - Selecao em lote estavel e contingencia interna do homework
+
+- Decisao: quando todos os alunos forem marcados na criacao de aula/homework, mostrar um resumo curto pelo total e uma acao separada para limpar, sem usar a lista completa de nomes como coluna. No Student, manter o PDF no canvas interno, transformar o original em download protegido, usar `no-store` nos assets e capturar falhas de Server Action/conexao dentro do card com rascunho local preservado.
+- Motivo: a lista completa comprimida quebrava a leitura do seletor; alem disso, uma aba aberta antes de deploy pode chamar uma Server Action antiga e expor uma mensagem tecnica, enquanto abrir o original em nova aba mostra a interface do navegador em vez do AVA.
+- Impacto: `teacher-forms.tsx`, `interactive-homework-student.tsx`, `interactive-homework-document.tsx`, rotas protegidas de assets de homework/Candy XP e documentacao do fluxo.
+- Riscos/cuidados: manter a selecao enviada inalterada, continuar validando aluno/teacher no servidor, nao apagar o rascunho em falha, preservar a leitura inline usada pelo PDF.js e aplicar download apenas quando a query explicita estiver presente.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

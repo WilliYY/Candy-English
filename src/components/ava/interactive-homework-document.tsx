@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, LoaderCircle } from "lucide-react";
+import { Download, LoaderCircle } from "lucide-react";
 import {
   useEffect,
   useMemo,
@@ -55,6 +55,10 @@ const DEFAULT_PAGE_SIZE = {
   height: 842,
   width: 595,
 };
+
+function getAssetDownloadUrl(assetUrl: string) {
+  return `${assetUrl}${assetUrl.includes("?") ? "&" : "?"}download=1`;
+}
 
 function clampPercent(value: number, fallback = 0) {
   if (!Number.isFinite(value)) {
@@ -209,12 +213,10 @@ function ImageDocument<TField extends InteractiveHomeworkDocumentField>({
             <span>Nao foi possivel mostrar esta imagem.</span>
             <a
               className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-2 font-semibold text-primary"
-              href={assetUrl}
-              rel="noreferrer"
-              target="_blank"
+              href={getAssetDownloadUrl(assetUrl)}
             >
-              Abrir arquivo original
-              <ExternalLink aria-hidden="true" className="size-4" />
+              Baixar arquivo original
+              <Download aria-hidden="true" className="size-4" />
             </a>
           </div>
         ) : null}
@@ -398,12 +400,10 @@ function PdfCanvasPage<TField extends InteractiveHomeworkDocumentField>({
           <span>Nao foi possivel renderizar esta pagina.</span>
           <a
             className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-2 font-semibold text-primary"
-            href={assetUrl}
-            rel="noreferrer"
-            target="_blank"
+            href={getAssetDownloadUrl(assetUrl)}
           >
-            Abrir arquivo original
-            <ExternalLink aria-hidden="true" className="size-4" />
+            Baixar arquivo original
+            <Download aria-hidden="true" className="size-4" />
           </a>
         </div>
       ) : null}
@@ -499,12 +499,10 @@ function PdfDocument<TField extends InteractiveHomeworkDocumentField>({
         <span>Nao foi possivel carregar o PDF.</span>
         <a
           className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-2 font-semibold text-primary"
-          href={assetUrl}
-          rel="noreferrer"
-          target="_blank"
+          href={getAssetDownloadUrl(assetUrl)}
         >
-          Abrir arquivo original
-          <ExternalLink aria-hidden="true" className="size-4" />
+          Baixar arquivo original
+          <Download aria-hidden="true" className="size-4" />
         </a>
       </div>
     );

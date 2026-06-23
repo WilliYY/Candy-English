@@ -79,7 +79,7 @@ Servicos Docker:
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
 - O contador de visitas do site usa componente client no footer publico, chama `/api/site-visits` apos o carregamento, aplica cooldown local no navegador e incrementa apenas rotas institucionais (`/`, `/sobre`, `/metodologia`, `/planos`, `/contato`).
-- Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets.
+- Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets. Assets de homework/Candy XP usam `Cache-Control: private, no-store`; a leitura interna continua inline para o PDF.js e a query `?download=1` responde como anexo para evitar abrir a interface externa do navegador.
 - Atividades Candy XP usam rota server-side protegida para PDF/imagem e server actions para criacao, edicao de areas interativas, progresso, envio e correcao.
 - PDFs de Candy XP, homework interativo e aulas interativas passam por tentativa de otimizacao no servidor antes de serem salvos em `storage/candy-xp-assets` ou `storage/homework-assets`; se a otimizacao falhar ou nao reduzir tamanho, o arquivo original continua sendo salvo.
 - Docker final usa `output: "standalone"`.
