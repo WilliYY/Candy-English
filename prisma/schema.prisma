@@ -524,19 +524,20 @@ model ContractDocument {
 }
 
 model FinancialStudent {
-  id            String             @id @default(cuid())
-  name          String
-  amountCents   Int
-  paymentDay    Int
-  paymentMethod String             @default("PIX")
-  phone         String?
-  cpf           String?
-  email         String?
-  address       String?
-  payments      FinancialPayment[]
-  logs          FinancialLog[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id                String             @id @default(cuid())
+  name              String
+  amountCents       Int
+  installmentsTotal Int?
+  paymentDay        Int
+  paymentMethod     String             @default("PIX")
+  phone             String?
+  cpf               String?
+  email             String?
+  address           String?
+  payments          FinancialPayment[]
+  logs              FinancialLog[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
   @@index([paymentDay, name])
 }
@@ -548,20 +549,22 @@ model FinancialPayment {
   studentId             String
   student               FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
   isActive              Boolean          @default(true)
-  snapshotName          String
-  snapshotAmountCents   Int
-  snapshotPaymentDay    Int
-  snapshotPaymentMethod String           @default("PIX")
-  snapshotPhone         String?
-  snapshotCpf           String?
-  snapshotEmail         String?
-  snapshotAddress       String?
-  isPaid                Boolean          @default(false)
-  paidAt                DateTime?
-  note                  String?
-  logs                  FinancialLog[]
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  snapshotName              String
+  snapshotAmountCents       Int
+  snapshotInstallmentNumber Int?
+  snapshotInstallmentsTotal Int?
+  snapshotPaymentDay        Int
+  snapshotPaymentMethod     String           @default("PIX")
+  snapshotPhone             String?
+  snapshotCpf               String?
+  snapshotEmail             String?
+  snapshotAddress           String?
+  isPaid                    Boolean          @default(false)
+  paidAt                    DateTime?
+  note                      String?
+  logs                      FinancialLog[]
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
 
   @@unique([studentId, year, month])
   @@index([year, month, isActive])

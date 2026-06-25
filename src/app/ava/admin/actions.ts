@@ -84,6 +84,7 @@ type FinancialSnapshotSource = {
   amountCents: number;
   cpf: string | null;
   email: string | null;
+  installmentsTotal: number | null;
   name: string;
   paymentDay: number;
   paymentMethod: string;
@@ -94,12 +95,45 @@ function getFinanceMonthsFrom(month: number) {
   return FINANCE_YEAR_MONTHS.filter((candidateMonth) => candidateMonth >= month);
 }
 
-function buildFinancialPaymentSnapshot(student: FinancialSnapshotSource) {
+function getFinanceMonthsForPlan(month: number, installmentsTotal?: number) {
+  if (!installmentsTotal) {
+    return getFinanceMonthsFrom(month);
+  }
+
+  const lastMonth = Math.min(12, month + installmentsTotal - 1);
+
+  return FINANCE_YEAR_MONTHS.filter(
+    (candidateMonth) => candidateMonth >= month && candidateMonth <= lastMonth,
+  );
+}
+
+function getFinancialInstallmentNumber(
+  month: number,
+  startMonth: number,
+  installmentsTotal?: number | null,
+) {
+  if (!installmentsTotal) {
+    return null;
+  }
+
+  const installmentNumber = month - startMonth + 1;
+
+  return installmentNumber >= 1 && installmentNumber <= installmentsTotal
+    ? installmentNumber
+    : null;
+}
+
+function buildFinancialPaymentSnapshot(
+  student: FinancialSnapshotSource,
+  installmentNumber?: number | null,
+) {
   return {
     snapshotAddress: student.address,
     snapshotAmountCents: student.amountCents,
     snapshotCpf: student.cpf,
     snapshotEmail: student.email,
+    snapshotInstallmentNumber: installmentNumber ?? null,
+    snapshotInstallmentsTotal: student.installmentsTotal,
     snapshotName: student.name,
     snapshotPaymentDay: student.paymentDay,
     snapshotPaymentMethod: student.paymentMethod,
@@ -980,6 +1014,7 @@ export async function createFinancialStudent(
         amountCents: parsed.data.amount,
         cpf: parsed.data.cpf,
         email: parsed.data.email,
+        installmentsTotal: parsed.data.installmentsTotal ?? null,
         name: parsed.data.name,
         paymentDay: parsed.data.paymentDay,
         paymentMethod: parsed.data.paymentMethod,
@@ -987,12 +1022,21 @@ export async function createFinancialStudent(
       },
     });
 
-    const snapshot = buildFinancialPaymentSnapshot(student);
-    const financeMonths = getFinanceMonthsFrom(parsed.data.month);
+    const financeMonths = getFinanceMonthsForPlan(
+      parsed.data.month,
+      parsed.data.installmentsTotal,
+    );
 
     await tx.financialPayment.createMany({
       data: financeMonths.map((month) => ({
-        ...snapshot,
+        ...buildFinancialPaymentSnapshot(
+          student,
+          getFinancialInstallmentNumber(
+            month,
+            parsed.data.month,
+            student.installmentsTotal,
+          ),
+        ),
         isActive: true,
         isPaid: month === parsed.data.month && Boolean(parsed.data.paidAt),
         month,
@@ -1018,7 +1062,9 @@ export async function createFinancialStudent(
       data: {
         action: "CREATE",
         createdByUserId: session.user.id,
-        description: `Aluno financeiro criado: ${student.name}.`,
+        description: student.installmentsTotal
+          ? `Aluno financeiro criado: ${student.name}, em ${student.installmentsTotal} parcela(s).`
+          : `Aluno financeiro criado: ${student.name}.`,
         paymentId: payment?.id,
         studentId: student.id,
       },
@@ -1076,15 +1122,19 @@ export async function updateFinancialStudent(
         amountCents: parsed.data.amount,
         cpf: parsed.data.cpf ?? null,
         email: parsed.data.email ?? null,
+        installmentsTotal: parsed.data.installmentsTotal ?? null,
         name: parsed.data.name,
         paymentDay: parsed.data.paymentDay,
         paymentMethod: parsed.data.paymentMethod,
         phone: parsed.data.phone ?? null,
       },
     });
-    const snapshot = buildFinancialPaymentSnapshot(updatedStudent);
+    const financeMonths = getFinanceMonthsForPlan(
+      parsed.data.month,
+      updatedStudent.installmentsTotal ?? undefined,
+    );
 
-    for (const month of getFinanceMonthsFrom(parsed.data.month)) {
+    for (const month of financeMonths) {
       const existingPayment = await tx.financialPayment.findUnique({
         where: {
           studentId_year_month: {
@@ -1095,6 +1145,14 @@ export async function updateFinancialStudent(
         },
         select: { id: true },
       });
+      const snapshot = buildFinancialPaymentSnapshot(
+        updatedStudent,
+        getFinancialInstallmentNumber(
+          month,
+          parsed.data.month,
+          updatedStudent.installmentsTotal,
+        ),
+      );
 
       if (existingPayment) {
         await tx.financialPayment.update({
@@ -1114,11 +1172,35 @@ export async function updateFinancialStudent(
       }
     }
 
+    if (updatedStudent.installmentsTotal) {
+      const activeMonths = new Set(financeMonths);
+
+      await tx.financialPayment.updateMany({
+        where: {
+          month: {
+            gte: parsed.data.month,
+          },
+          studentId: student.id,
+          year: parsed.data.year,
+          NOT: {
+            month: {
+              in: Array.from(activeMonths),
+            },
+          },
+        },
+        data: {
+          isActive: false,
+        },
+      });
+    }
+
     await tx.financialLog.create({
       data: {
         action: "UPDATE_STUDENT",
         createdByUserId: session.user.id,
-        description: `Dados financeiros atualizados a partir do mes ${parsed.data.month}: ${updatedStudent.name}.`,
+        description: updatedStudent.installmentsTotal
+          ? `Dados financeiros atualizados a partir do mes ${parsed.data.month}: ${updatedStudent.name}, ${updatedStudent.installmentsTotal} parcela(s).`
+          : `Dados financeiros atualizados a partir do mes ${parsed.data.month}: ${updatedStudent.name}.`,
         studentId: updatedStudent.id,
       },
     });
@@ -1163,6 +1245,7 @@ export async function updateFinancialPaymentDetails(
       cpf: true,
       email: true,
       id: true,
+      installmentsTotal: true,
       name: true,
       paymentDay: true,
       paymentMethod: true,
@@ -1186,8 +1269,12 @@ export async function updateFinancialPaymentDetails(
           year: parsed.data.year,
         },
       },
-      select: { isPaid: true },
+      select: { isPaid: true, snapshotAmountCents: true },
     });
+    const snapshotSource = {
+      ...student,
+      amountCents: parsed.data.amount ?? currentPayment?.snapshotAmountCents ?? student.amountCents,
+    };
     const payment = await tx.financialPayment.upsert({
       where: {
         studentId_year_month: {
@@ -1197,7 +1284,14 @@ export async function updateFinancialPaymentDetails(
         },
       },
       create: {
-        ...buildFinancialPaymentSnapshot(student),
+        ...buildFinancialPaymentSnapshot(
+          snapshotSource,
+          getFinancialInstallmentNumber(
+            parsed.data.month,
+            parsed.data.month,
+            student.installmentsTotal,
+          ),
+        ),
         isActive: true,
         isPaid: Boolean(parsed.data.paidAt),
         month: parsed.data.month,
@@ -1210,6 +1304,9 @@ export async function updateFinancialPaymentDetails(
         isPaid: parsed.data.paidAt ? true : currentPayment?.isPaid ?? false,
         note: parsed.data.note ?? null,
         paidAt: parsed.data.paidAt ?? null,
+        ...(parsed.data.amount
+          ? { snapshotAmountCents: parsed.data.amount }
+          : {}),
       },
     });
 
@@ -1263,6 +1360,7 @@ export async function toggleFinancialPaymentStatus(
       cpf: true,
       email: true,
       id: true,
+      installmentsTotal: true,
       name: true,
       paymentDay: true,
       paymentMethod: true,
@@ -1297,7 +1395,14 @@ export async function toggleFinancialPaymentStatus(
         },
       },
       create: {
-        ...buildFinancialPaymentSnapshot(student),
+        ...buildFinancialPaymentSnapshot(
+          student,
+          getFinancialInstallmentNumber(
+            parsed.data.month,
+            parsed.data.month,
+            student.installmentsTotal,
+          ),
+        ),
         isActive: true,
         isPaid: parsed.data.isPaid,
         month: parsed.data.month,
@@ -1374,16 +1479,24 @@ export async function deleteFinancialStudent(
   await prisma.$transaction(async (tx) => {
     await tx.financialLog.create({
       data: {
-        action: "DELETE",
+        action: parsed.data.mode === "FROM_MONTH" ? "CLOSE_STUDENT" : "DELETE",
         createdByUserId: session.user.id,
-        description: `Aluno financeiro retirado do mes ${parsed.data.month}: ${student.name}.`,
+        description:
+          parsed.data.mode === "FROM_MONTH"
+            ? `Aluno financeiro encerrado a partir do mes ${parsed.data.month}: ${student.name}.`
+            : `Aluno financeiro retirado do mes ${parsed.data.month}: ${student.name}.`,
         studentId: student.id,
       },
     });
 
     await tx.financialPayment.updateMany({
       where: {
-        month: parsed.data.month,
+        month:
+          parsed.data.mode === "FROM_MONTH"
+            ? {
+                gte: parsed.data.month,
+              }
+            : parsed.data.month,
         studentId: student.id,
         year: parsed.data.year,
       },
@@ -1397,7 +1510,10 @@ export async function deleteFinancialStudent(
 
   return {
     ok: true,
-    message: "Aluno retirado deste mes.",
+    message:
+      parsed.data.mode === "FROM_MONTH"
+        ? "Aluno encerrado a partir deste mes."
+        : "Aluno retirado deste mes.",
   };
 }
 

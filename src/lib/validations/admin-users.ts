@@ -36,6 +36,54 @@ const moneySchema = z
   }, "Informe um valor valido maior que zero.")
   .transform((value) => parseMoneyToCents(value) ?? 0);
 
+const optionalMoneySchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, ctx) => {
+    if (!value) {
+      return undefined;
+    }
+
+    const cents = parseMoneyToCents(value);
+
+    if (cents === null || cents <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Informe um valor valido maior que zero.",
+      });
+      return z.NEVER;
+    }
+
+    return cents;
+  });
+
+const optionalInstallmentsSchema = z
+  .string()
+  .trim()
+  .optional()
+  .transform((value, ctx) => {
+    if (!value) {
+      return undefined;
+    }
+
+    const numericValue = Number(value);
+
+    if (
+      !Number.isInteger(numericValue) ||
+      numericValue < 1 ||
+      numericValue > 60
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Informe de 1 a 60 parcelas, ou deixe em branco.",
+      });
+      return z.NEVER;
+    }
+
+    return numericValue;
+  });
+
 const optionalDateSchema = z
   .string()
   .optional()
@@ -100,6 +148,7 @@ const financialStudentBaseSchema = z.object({
   amount: moneySchema,
   cpf: optionalText(32, "O CPF pode ter no maximo 32 caracteres."),
   email: optionalEmailSchema,
+  installmentsTotal: optionalInstallmentsSchema,
   name: z
     .string()
     .trim()
@@ -298,6 +347,7 @@ export const adminFinanceStudentUpdateSchema = financialStudentBaseSchema.extend
 });
 
 export const adminFinancePaymentUpdateSchema = z.object({
+  amount: optionalMoneySchema,
   month: financeMonthSchema,
   note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
   paidAt: optionalDateSchema,
@@ -314,6 +364,7 @@ export const adminFinanceStatusSchema = z.object({
 
 export const adminFinanceStudentDeleteSchema = z.object({
   month: financeMonthSchema,
+  mode: z.enum(["MONTH", "FROM_MONTH"]).default("MONTH"),
   studentId: z.string().min(1, "Aluno financeiro invalido."),
   year: year2026Schema,
 });

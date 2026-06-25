@@ -140,6 +140,8 @@ Enums:
 - Contratos podem ser gerais ou vinculados a um aluno.
 - Chat deve sempre estar preso ao vinculo teacher/aluno.
 - Financeiro guarda cadastro/base em `FinancialStudent` e snapshots mensais ativos/inativos em `FinancialPayment`.
+- `FinancialStudent.installmentsTotal` guarda a quantidade opcional de parcelas; `NULL` significa mensalidade recorrente normal.
+- `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` guardam a parcela congelada daquele mes, sem recalcular historico antigo.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
 - Agenda guarda alunos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`.
 - Reposicoes da agenda usam `AgendaLesson.isMakeup=true` e podem apontar para a aula original por `makeupForLessonId`.
@@ -190,6 +192,7 @@ Enums:
 - Uploads nao ficam no banco; o banco guarda metadados e caminhos.
 - Migration `20260510203000_recurring_finance_students` converteu `FinancialEntry` em estrutura recorrente.
 - Migration `20260511110000_finance_month_snapshots` adicionou snapshots mensais em `FinancialPayment` para preservar meses fechados.
+- Migration `20260625120000_simple_finance_installments` adiciona metadados opcionais de parcelas ao financeiro simples, preservando linhas antigas como mensalidade recorrente.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.

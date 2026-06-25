@@ -2,7 +2,9 @@
 
 ## O que esta parte do sistema faz
 
-O modulo Financeiro e um controle interno do administrador em `/ava/admin?task=financeiro`. Ele organiza mensalidades de 2026 por aluno financeiro recorrente, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado.
+O modulo Financeiro e um controle interno do administrador em `/ava/admin?task=financeiro`. Ele funciona como uma lista simples de alunos pagantes, com cards por aluno no mes selecionado, acao rapida para marcar como pago, filtros por status e um painel de historico ao clicar no aluno.
+
+Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado.
 
 Nao e gateway de pagamento, nao emite boleto, nao cobra automaticamente e nao integra com banco.
 
@@ -18,6 +20,7 @@ Arquivos:
 - `prisma/schema.prisma`
 - `prisma/migrations/20260510203000_recurring_finance_students/migration.sql`
 - `prisma/migrations/20260511110000_finance_month_snapshots/migration.sql`
+- `prisma/migrations/20260625120000_simple_finance_installments/migration.sql`
 
 Tabelas:
 
@@ -33,17 +36,20 @@ Rota:
 
 - Apenas `ADMIN` visualiza e escreve no financeiro.
 - `FinancialStudent` guarda o cadastro recorrente/base do aluno financeiro.
-- `FinancialPayment` guarda a linha mensal: mes, ano, status, data paga, observacao, `isActive` e snapshot de nome, valor, dia de pagamento, forma, telefone, CPF, email e endereco.
+- `FinancialStudent.installmentsTotal` e opcional; quando vazio, o aluno segue como mensalidade recorrente normal.
+- `FinancialPayment` guarda a linha mensal: mes, ano, status, data paga, observacao, `isActive` e snapshot de nome, valor, dia de pagamento, forma, telefone, CPF, email, endereco e dados de parcela quando houver.
+- `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` registram a parcela daquele mes, como `1/12`, sem alterar pagamentos antigos.
 - Observacao e pagamento sao por mes; ao trocar mes, esses campos nao devem carregar automaticamente de outro mes.
-- Ao criar aluno em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
-- Ao editar dados recorrentes em um mes, a edicao vale do mes selecionado em diante; meses anteriores ficam preservados.
-- Ao retirar aluno em um mes, apenas a linha daquele mes fica inativa; os outros meses continuam seguindo os registros ativos ja criados.
+- Ao criar aluno recorrente em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
+- Ao criar aluno com quantidade de parcelas, o sistema cria apenas as parcelas possiveis daquele mes ate dezembro de 2026.
+- Ao editar dados fixos em um mes, a edicao vale do mes selecionado em diante; meses anteriores ficam preservados.
+- Ao retirar aluno em um mes, a UI permite inativar apenas o mes selecionado ou encerrar a partir daquele mes, sempre por soft remove em `FinancialPayment.isActive=false`.
 - Alunos ativos no mes aparecem ordenados por dia de pagamento crescente.
-- Status padrao e pendente/vermelho.
-- Ao marcar como pago, o status fica verde e pode receber data paga.
+- Status padrao e pendente; se o dia previsto passou, o card fica atrasado. Ao marcar como pago, o card fica verde e recebe data paga.
 - Indicador de devedores conta alunos pendentes cujo dia previsto ja passou no mes selecionado.
 - `FinancialLog` registra criacao, edicao, status, exclusao e exportacao.
 - O log financeiro fica recolhido por padrao em um card separado abaixo da lista para nao alongar a tela de cobranca.
+- Valor, data paga e observacao podem ser ajustados por mes no historico do aluno, sem alterar automaticamente os outros meses.
 
 ## Decisoes tecnicas tomadas
 
@@ -53,16 +59,20 @@ Rota:
 - Exportacao PDF/Excel acontece no cliente com os dados ja carregados na pagina autorizada.
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
-- A tela do financeiro e organizada em blocos visuais: `Visao do mes` com metricas e seletor de mes, `Adicionar aluno financeiro` com dados principais e extras recolhidos, `Alunos do mes` com legenda de status e tabela/lista colorida, e `Log financeiro` recolhido no final.
-- As linhas do financeiro usam uma tabela visual estilo planilha em desktop, com cabecalho mensal, linhas coloridas por status, total mensal no rodape e detalhes expansiveis; em telas menores preservam leitura em cards compactos.
+- A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, filtro de mes, busca por nome/telefone, filtro por status e cards coloridos por aluno.
+- Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
+- Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.
 - A migration `20260511110000_finance_month_snapshots` preenche snapshots e cria linhas mensais ausentes de 2026 para alunos ja existentes.
+- A migration `20260625120000_simple_finance_installments` adiciona apenas metadados opcionais de parcelas; dados antigos continuam com `NULL` e sao tratados como mensalidade recorrente.
 
 ## Riscos ao alterar esta parte
 
 - Misturar dados recorrentes e mensais pode fazer observacoes ou alteracoes de aluno vazarem para meses errados.
 - Remover ordenacao por `paymentDay` prejudica uso tipo planilha.
 - Apagar fisicamente `FinancialStudent` remove pagamentos mensais por cascade; a UI deve retirar apenas a linha mensal atual por `isActive=false`.
+- Encerrar aluno financeiro deve continuar inativando snapshots mensais, nunca apagando o cadastro nem pagamentos antigos.
+- Alterar parcelas precisa manter meses anteriores fechados e nao recalcular historico ja pago.
 - Transformar exportacao em endpoint publico pode vazar dados financeiros.
 - Alterar calculo de devedores sem considerar ano/mes pode gerar alerta errado.
 - Editar snapshots de meses anteriores por engano quebra o conceito de mes fechado.

@@ -219,6 +219,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260511110000_finance_month_snapshots`, `src/app/ava/admin/actions.ts`, `src/components/ava/admin-finance-panel.tsx`, `src/app/ava/admin/page.tsx`, `docs/13-financeiro.md`.
 - Riscos/cuidados: nao fazer hard delete de `FinancialStudent` pela UI; preservar snapshots dos meses anteriores e rodar migration no deploy antes de recriar o app.
 
+### 2026-06-25 - Financeiro simples em cards com parcelas opcionais
+
+- Decisao: simplificar o painel financeiro para cards por aluno, contadores no topo, busca/filtro, acao rapida de pagamento e painel de historico por aluno; adicionar `installmentsTotal` em `FinancialStudent` e snapshots opcionais de parcela em `FinancialPayment`.
+- Motivo: o uso diario precisava ser mais visual e manual, como agenda mensal de pagamentos, sem tabela grande nem informacao espalhada.
+- Impacto: `prisma/schema.prisma`, migration `20260625120000_simple_finance_installments`, `src/components/ava/admin-finance-panel.tsx`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/lib/validations/admin-users.ts`, docs oficiais.
+- Riscos/cuidados: continuar lendo cards e historico pelos snapshots mensais, nao pelos dados fixos atuais; parcelas sao opcionais e dados antigos seguem como recorrentes; inativacao continua por `FinancialPayment.isActive=false`, nunca por hard delete.
+
 ### 2026-05-11 - Agenda administrativa 2026
 
 - Decisao: criar modulo `Agenda` em `/ava/admin?task=agenda` com `AgendaStudent`, `AgendaLesson` e `AgendaLog`.
