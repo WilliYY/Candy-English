@@ -392,6 +392,12 @@ export const adminAgendaScheduleCreateSchema = z.object({
   year: year2026Schema,
 });
 
+export const adminAgendaStudentUpdateSchema =
+  adminAgendaScheduleCreateSchema.extend({
+    isActive: z.boolean(),
+    studentId: z.string().min(1, "Aluno da agenda invalido."),
+  });
+
 export const adminAgendaAttendanceSchema = z.object({
   lessonId: z.string().min(1, "Aula da agenda invalida."),
   status: z.enum(["SCHEDULED", "ATTENDED", "MISSED", "MAKEUP_ATTENDED"]),
@@ -455,6 +461,9 @@ export type AdminFinanceExportLogInput = z.input<
 >;
 export type AdminAgendaScheduleCreateInput = z.input<
   typeof adminAgendaScheduleCreateSchema
+>;
+export type AdminAgendaStudentUpdateInput = z.input<
+  typeof adminAgendaStudentUpdateSchema
 >;
 export type AdminAgendaAttendanceInput = z.input<
   typeof adminAgendaAttendanceSchema

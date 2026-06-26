@@ -589,16 +589,20 @@ model FinancialLog {
 }
 
 model AgendaStudent {
-  id        String         @id @default(cuid())
-  name      String
-  phone     String?
-  notes     String?
-  lessons   AgendaLesson[]
-  logs      AgendaLog[]
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id          String         @id @default(cuid())
+  name        String
+  phone       String?
+  notes       String?
+  isActive    Boolean        @default(true)
+  defaultTime String?
+  weekdayMask Int            @default(0)
+  lessons     AgendaLesson[]
+  logs        AgendaLog[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@index([name])
+  @@index([isActive, name])
 }
 
 model AgendaLesson {

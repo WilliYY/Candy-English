@@ -226,6 +226,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260625120000_simple_finance_installments`, `src/components/ava/admin-finance-panel.tsx`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/lib/validations/admin-users.ts`, docs oficiais.
 - Riscos/cuidados: continuar lendo cards e historico pelos snapshots mensais, nao pelos dados fixos atuais; parcelas sao opcionais e dados antigos seguem como recorrentes; inativacao continua por `FinancialPayment.isActive=false`, nunca por hard delete.
 
+### 2026-06-26 - Agenda interna simples com calendario mensal
+
+- Decisao: refazer `/ava/admin?task=agenda` como agenda interna simples, separada dos alunos do AVA, com calendario mensal, dia selecionado, cadastro recorrente, busca, cards por aluno, historico e edicao/inativacao de rotina.
+- Motivo: o uso diario precisava ser mais parecido com uma agenda operacional, sem fila confusa, tabela grande ou dependencia de `User`/`StudentProfile`.
+- Impacto: `prisma/schema.prisma`, migration `20260626120000_simple_internal_agenda`, `src/components/ava/admin-agenda-panel.tsx`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/lib/validations/admin-users.ts`, docs oficiais.
+- Riscos/cuidados: agenda continua admin-only; editar/inativar deve preservar `AgendaLesson` antigo como historico e nunca transformar aluno interno em aluno do AVA.
+
 ### 2026-05-11 - Agenda administrativa 2026
 
 - Decisao: criar modulo `Agenda` em `/ava/admin?task=agenda` com `AgendaStudent`, `AgendaLesson` e `AgendaLog`.

@@ -143,7 +143,8 @@ Enums:
 - `FinancialStudent.installmentsTotal` guarda a quantidade opcional de parcelas; `NULL` significa mensalidade recorrente normal.
 - `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` guardam a parcela congelada daquele mes, sem recalcular historico antigo.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
-- Agenda guarda alunos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`.
+- Agenda guarda alunos internos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`; ela nao cria nem vincula `User` ou `StudentProfile`.
+- `AgendaStudent.isActive`, `defaultTime` e `weekdayMask` guardam o estado atual da rotina interna para edicao/inativacao, enquanto `AgendaLesson` preserva as ocorrencias e o historico de presenca/falta.
 - Reposicoes da agenda usam `AgendaLesson.isMakeup=true` e podem apontar para a aula original por `makeupForLessonId`.
 - `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
 - `AdminCredential.source=ENV` identifica credenciais sincronizadas de integracoes externas do `.env`; a UI nao deve permitir excluir ou alterar o valor sensivel desses registros pelo banco.
@@ -194,6 +195,7 @@ Enums:
 - Migration `20260511110000_finance_month_snapshots` adicionou snapshots mensais em `FinancialPayment` para preservar meses fechados.
 - Migration `20260625120000_simple_finance_installments` adiciona metadados opcionais de parcelas ao financeiro simples, preservando linhas antigas como mensalidade recorrente.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
+- Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
 - Migration `20260606120000_interactive_homework_tiny_text_field` adiciona o tipo `TINY_TEXT` ao enum `HomeworkFieldType`.

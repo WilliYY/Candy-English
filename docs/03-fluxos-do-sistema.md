@@ -285,14 +285,15 @@ Helpers:
 ### Agenda
 
 1. Admin abre `/ava/admin?task=agenda`.
-2. Cadastra aluno, telefone opcional, dias da semana e horario.
-3. O sistema cria ocorrencias de aula do mes selecionado ate dezembro de 2026.
-4. Admin marca se o aluno foi, faltou ou reseta a presenca.
-5. Quando o aluno falta, admin pode cadastrar uma reposicao com data e horario.
-6. A tela mostra alunos do dia e proximas aulas com horario.
-7. No bloco `Hoje`, admin pode confirmar presenca rapidamente pelo icone verde, registrar falta pelo icone vermelho ou abrir `Reagendar`.
-8. Ao clicar no nome do aluno em `Hoje` ou `Proximas aulas`, a tela rola ate a linha mensal daquele aluno.
-9. Aulas de hoje sem acao saem da fila visual depois de 2 horas do horario previsto, sem apagar o registro.
+2. A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje.
+3. Admin navega pelo calendario mensal, usa `Hoje`, mes anterior/proximo e clica em qualquer dia para ver os alunos internos daquele dia.
+4. Admin cadastra aluno interno da agenda com nome, telefone opcional, dias da semana, horario e observacao; esse cadastro nao cria usuario, login nem `StudentProfile`.
+5. O sistema cria ocorrencias recorrentes do mes selecionado ate dezembro de 2026 e evita duplicar o mesmo nome no mesmo dia/horario ativo.
+6. No dia selecionado, cada aluno aparece em card com nome, horario, telefone, observacao curta, status e botoes `Veio`, `Nao veio` e `Resetar`.
+7. O card muda de cor por status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
+8. Admin pode buscar por nome/telefone, clicar em um aluno e abrir detalhe com dados, edicao da rotina, presencas, faltas e historico.
+9. Ao editar, o sistema atualiza a rotina do mes selecionado em diante sem apagar historico antigo.
+10. Ao inativar, o aluno para de aparecer nas proximas ocorrencias, mas o historico fica salvo.
 
 ### Manutencao
 

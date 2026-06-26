@@ -297,9 +297,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         name: "asc",
       },
       select: {
+        defaultTime: true,
         id: true,
+        isActive: true,
         name: true,
+        notes: true,
         phone: true,
+        weekdayMask: true,
       },
     }),
     prisma.agendaLesson.findMany({
@@ -844,9 +848,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         studentName: log.student?.name ?? null,
       }))}
       agendaStudents={agendaStudents.map((student) => ({
+        defaultTime: student.defaultTime,
         id: student.id,
+        isActive: student.isActive,
         name: student.name,
+        notes: student.notes,
         phone: student.phone,
+        weekdayMask: student.weekdayMask,
       }))}
       assignments={assignments.map((assignment) => ({
         createdAt: assignment.createdAt,

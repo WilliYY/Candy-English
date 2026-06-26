@@ -26,6 +26,7 @@ import {
   adminAgendaMakeupSchema,
   adminAgendaRemoveStudentSchema,
   adminAgendaScheduleCreateSchema,
+  adminAgendaStudentUpdateSchema,
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
@@ -43,6 +44,7 @@ import {
   type AdminAgendaMakeupInput,
   type AdminAgendaRemoveStudentInput,
   type AdminAgendaScheduleCreateInput,
+  type AdminAgendaStudentUpdateInput,
   type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
@@ -166,6 +168,14 @@ function getAgendaRecurringDates(startMonth: number, weekdays: number[]) {
   }
 
   return dates;
+}
+
+function buildAgendaWeekdayMask(weekdays: number[]) {
+  return weekdays.reduce((mask, weekday) => mask | (1 << weekday), 0);
+}
+
+function getAgendaDateKey(date: Date) {
+  return date.toISOString().slice(0, 10);
 }
 
 function isUniqueConstraintError(error: unknown) {
@@ -1592,13 +1602,43 @@ export async function createAgendaSchedule(
   }
 
   const prisma = getPrisma();
+  const duplicateLesson = await prisma.agendaLesson.findFirst({
+    where: {
+      isActive: true,
+      isMakeup: false,
+      time: parsed.data.time,
+      weekday: {
+        in: parsed.data.weekdays,
+      },
+      year: parsed.data.year,
+      student: {
+        name: {
+          equals: parsed.data.name,
+          mode: "insensitive",
+        },
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (duplicateLesson) {
+    return {
+      ok: false,
+      message: "Esse aluno ja tem agenda ativa nesse dia e horario.",
+    };
+  }
 
   await prisma.$transaction(async (tx) => {
     const student = await tx.agendaStudent.create({
       data: {
+        defaultTime: parsed.data.time,
+        isActive: true,
         name: parsed.data.name,
         notes: parsed.data.notes ?? null,
         phone: parsed.data.phone ?? null,
+        weekdayMask: buildAgendaWeekdayMask(parsed.data.weekdays),
       },
     });
 
@@ -1635,6 +1675,197 @@ export async function createAgendaSchedule(
   return {
     ok: true,
     message: "Aluno adicionado na agenda.",
+  };
+}
+
+export async function updateAgendaStudentSchedule(
+  input: AdminAgendaStudentUpdateInput,
+): Promise<AdminActionResult<AdminAgendaStudentUpdateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para editar agenda.",
+    };
+  }
+
+  const parsed = adminAgendaStudentUpdateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminAgendaStudentUpdateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados do aluno da agenda.",
+    };
+  }
+
+  const dates = parsed.data.isActive
+    ? getAgendaRecurringDates(parsed.data.month, parsed.data.weekdays)
+    : [];
+
+  if (parsed.data.isActive && dates.length === 0) {
+    return {
+      ok: false,
+      message: "Nenhum dia encontrado para essa agenda.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const student = await prisma.agendaStudent.findUnique({
+    where: { id: parsed.data.studentId },
+    select: { id: true, name: true },
+  });
+
+  if (!student) {
+    return {
+      ok: false,
+      message: "Aluno da agenda nao encontrado.",
+    };
+  }
+
+  if (parsed.data.isActive) {
+    const duplicateLesson = await prisma.agendaLesson.findFirst({
+      where: {
+        isActive: true,
+        isMakeup: false,
+        studentId: {
+          not: student.id,
+        },
+        time: parsed.data.time,
+        weekday: {
+          in: parsed.data.weekdays,
+        },
+        year: parsed.data.year,
+        student: {
+          name: {
+            equals: parsed.data.name,
+            mode: "insensitive",
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (duplicateLesson) {
+      return {
+        ok: false,
+        message: "Esse aluno ja tem agenda ativa nesse dia e horario.",
+      };
+    }
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.agendaStudent.update({
+      where: { id: student.id },
+      data: {
+        defaultTime: parsed.data.isActive ? parsed.data.time : null,
+        isActive: parsed.data.isActive,
+        name: parsed.data.name,
+        notes: parsed.data.notes ?? null,
+        phone: parsed.data.phone ?? null,
+        weekdayMask: parsed.data.isActive
+          ? buildAgendaWeekdayMask(parsed.data.weekdays)
+          : 0,
+      },
+    });
+
+    await tx.agendaLesson.updateMany({
+      where: {
+        isMakeup: false,
+        month: {
+          gte: parsed.data.month,
+        },
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+      data: {
+        isActive: false,
+      },
+    });
+
+    if (parsed.data.isActive) {
+      const existingLessons = await tx.agendaLesson.findMany({
+        where: {
+          isMakeup: false,
+          month: {
+            gte: parsed.data.month,
+          },
+          studentId: student.id,
+          year: parsed.data.year,
+        },
+        select: {
+          date: true,
+          id: true,
+          time: true,
+        },
+      });
+      const existingByDateTime = new Map(
+        existingLessons.map((lesson) => [
+          `${getAgendaDateKey(lesson.date)}|${lesson.time}`,
+          lesson.id,
+        ]),
+      );
+      const missingDates: Date[] = [];
+
+      for (const date of dates) {
+        const key = `${getAgendaDateKey(date)}|${parsed.data.time}`;
+        const existingLessonId = existingByDateTime.get(key);
+
+        if (existingLessonId) {
+          await tx.agendaLesson.update({
+            where: { id: existingLessonId },
+            data: {
+              isActive: true,
+            },
+          });
+        } else {
+          missingDates.push(date);
+        }
+      }
+
+      if (missingDates.length > 0) {
+        await tx.agendaLesson.createMany({
+          data: missingDates.map((date) => {
+            const parts = getAgendaDateParts(date);
+
+            return {
+              date,
+              isActive: true,
+              isMakeup: false,
+              month: parts.month,
+              status: "SCHEDULED",
+              studentId: student.id,
+              time: parsed.data.time,
+              weekday: parts.weekday,
+              year: parsed.data.year,
+            };
+          }),
+        });
+      }
+    }
+
+    await tx.agendaLog.create({
+      data: {
+        action: parsed.data.isActive ? "UPDATE_SCHEDULE" : "INACTIVATE_STUDENT",
+        createdByUserId: session.user.id,
+        description: parsed.data.isActive
+          ? `Agenda atualizada para ${parsed.data.name}.`
+          : `Aluno inativado na agenda: ${parsed.data.name}.`,
+        studentId: student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: parsed.data.isActive
+      ? "Agenda do aluno atualizada."
+      : "Aluno inativado na agenda.",
   };
 }
 
@@ -1844,6 +2075,17 @@ export async function removeAgendaStudentFromMonth(
   }
 
   await prisma.$transaction(async (tx) => {
+    await tx.agendaStudent.update({
+      where: {
+        id: student.id,
+      },
+      data: {
+        defaultTime: null,
+        isActive: false,
+        weekdayMask: 0,
+      },
+    });
+
     await tx.agendaLesson.updateMany({
       where: {
         isMakeup: false,
