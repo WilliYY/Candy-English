@@ -233,6 +233,13 @@ Cada decisao deve conter:
 - Impacto: `prisma/schema.prisma`, migration `20260626120000_simple_internal_agenda`, `src/components/ava/admin-agenda-panel.tsx`, `src/app/ava/admin/actions.ts`, `src/app/ava/admin/page.tsx`, `src/lib/validations/admin-users.ts`, docs oficiais.
 - Riscos/cuidados: agenda continua admin-only; editar/inativar deve preservar `AgendaLesson` antigo como historico e nunca transformar aluno interno em aluno do AVA.
 
+### 2026-06-27 - Agenda com exclusao definitiva e detalhe abaixo da lista
+
+- Decisao: adicionar botao `Excluir` para remover definitivamente cadastros internos da agenda criados por engano e mover o detalhe/historico do aluno para baixo da lista interna.
+- Motivo: o admin precisa limpar cadastros de teste/erro e a leitura fica mais natural quando o detalhe aparece depois da lista clicada.
+- Impacto: `src/app/ava/admin/actions.ts`, `src/components/ava/admin-agenda-panel.tsx`, `src/lib/validations/admin-users.ts`, `docs/03-fluxos-do-sistema.md`, `docs/14-agenda.md`.
+- Riscos/cuidados: `Excluir` remove `AgendaStudent` e ocorrencias por cascade; para preservar historico, usar `Inativar`.
+
 ### 2026-05-11 - Agenda administrativa 2026
 
 - Decisao: criar modulo `Agenda` em `/ava/admin?task=agenda` com `AgendaStudent`, `AgendaLesson` e `AgendaLog`.

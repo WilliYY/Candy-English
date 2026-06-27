@@ -398,6 +398,10 @@ export const adminAgendaStudentUpdateSchema =
     studentId: z.string().min(1, "Aluno da agenda invalido."),
   });
 
+export const adminAgendaStudentDeleteSchema = z.object({
+  studentId: z.string().min(1, "Aluno da agenda invalido."),
+});
+
 export const adminAgendaAttendanceSchema = z.object({
   lessonId: z.string().min(1, "Aula da agenda invalida."),
   status: z.enum(["SCHEDULED", "ATTENDED", "MISSED", "MAKEUP_ATTENDED"]),
@@ -464,6 +468,9 @@ export type AdminAgendaScheduleCreateInput = z.input<
 >;
 export type AdminAgendaStudentUpdateInput = z.input<
   typeof adminAgendaStudentUpdateSchema
+>;
+export type AdminAgendaStudentDeleteInput = z.input<
+  typeof adminAgendaStudentDeleteSchema
 >;
 export type AdminAgendaAttendanceInput = z.input<
   typeof adminAgendaAttendanceSchema

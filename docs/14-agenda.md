@@ -2,7 +2,7 @@
 
 ## O que esta parte do sistema faz
 
-O modulo Agenda e um controle interno simples do administrador em `/ava/admin?task=agenda`. Ele substitui o uso de sheets para organizar quais alunos internos vem em quais dias e horarios, confirmar presenca, registrar falta, consultar historico e inativar rotinas sem apagar registros antigos.
+O modulo Agenda e um controle interno simples do administrador em `/ava/admin?task=agenda`. Ele substitui o uso de sheets para organizar quais alunos internos vem em quais dias e horarios, confirmar presenca, registrar falta, consultar historico, inativar rotinas sem apagar registros antigos e excluir cadastros criados por engano.
 
 O modulo e administrativo. Ele nao usa alunos do AVA, nao cria `User`, nao cria `StudentProfile` e nao substitui o fluxo pedagogico de aulas, materiais e homework da area teacher/student.
 
@@ -47,6 +47,7 @@ Rota:
 - A action de cadastro recusa duplicidade quando o mesmo nome ja tem agenda ativa no mesmo dia/horario.
 - Ao editar a rotina, o sistema desativa ocorrencias recorrentes futuras do mes selecionado em diante e cria/reativa as novas ocorrencias, preservando historico antigo.
 - Inativar aluno marca `AgendaStudent.isActive=false`, limpa horario/dias padrao e inativa ocorrencias recorrentes do mes selecionado em diante; registros antigos permanecem no historico.
+- Excluir aluno da agenda e uma acao definitiva de `ADMIN`: remove o `AgendaStudent` e suas ocorrencias por cascade, mantendo um log textual da exclusao. Para preservar historico, usar `Inativar`.
 - As ocorrencias aparecem por calendario mensal e por lista do dia selecionado, ordenadas por horario.
 - Status padrao e `SCHEDULED`.
 - Presenca confirmada vira `ATTENDED`.
@@ -57,7 +58,7 @@ Rota:
 - Cores de status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
 - A lista do dia possui busca por nome/telefone.
 - O botao `Adicionar neste dia` preseleciona o dia da semana do dia selecionado no formulario.
-- Clicar em um aluno abre detalhe com dados, edicao de rotina, presencas, faltas e historico de ocorrencias ativas/inativas.
+- Clicar em um aluno da lista interna destaca o card e abre abaixo da lista o detalhe com dados, edicao de rotina, presencas, faltas, historico de ocorrencias ativas/inativas e acoes `Inativar`/`Excluir`.
 - O log da agenda fica recolhido por padrao em um card abaixo da agenda.
 - `AgendaLog` registra criacao, edicao, presenca, falta, reposicao e inativacao.
 
@@ -76,6 +77,7 @@ Rota:
 ## Riscos ao alterar esta parte
 
 - Apagar fisicamente `AgendaStudent` remove ocorrencias por cascade.
+- O botao `Excluir` deve continuar com confirmacao clara, pois remove o historico de ocorrencias daquele cadastro.
 - Misturar agenda com aulas pedagogicas pode confundir presenca administrativa com conteudo de aula.
 - Gerar ocorrencias duplicadas pode poluir meses futuros.
 - Alterar timezone sem cuidado pode deslocar datas.

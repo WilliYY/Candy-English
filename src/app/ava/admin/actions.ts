@@ -26,6 +26,7 @@ import {
   adminAgendaMakeupSchema,
   adminAgendaRemoveStudentSchema,
   adminAgendaScheduleCreateSchema,
+  adminAgendaStudentDeleteSchema,
   adminAgendaStudentUpdateSchema,
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
@@ -44,6 +45,7 @@ import {
   type AdminAgendaMakeupInput,
   type AdminAgendaRemoveStudentInput,
   type AdminAgendaScheduleCreateInput,
+  type AdminAgendaStudentDeleteInput,
   type AdminAgendaStudentUpdateInput,
   type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
@@ -1866,6 +1868,74 @@ export async function updateAgendaStudentSchedule(
     message: parsed.data.isActive
       ? "Agenda do aluno atualizada."
       : "Aluno inativado na agenda.",
+  };
+}
+
+export async function deleteAgendaStudent(
+  input: AdminAgendaStudentDeleteInput,
+): Promise<AdminActionResult<AdminAgendaStudentDeleteInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir aluno da agenda.",
+    };
+  }
+
+  const parsed = adminAgendaStudentDeleteSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminAgendaStudentDeleteInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise o aluno da agenda.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const student = await prisma.agendaStudent.findUnique({
+    where: { id: parsed.data.studentId },
+    select: {
+      _count: {
+        select: {
+          lessons: true,
+        },
+      },
+      id: true,
+      name: true,
+    },
+  });
+
+  if (!student) {
+    return {
+      ok: false,
+      message: "Aluno da agenda nao encontrado.",
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.agendaLog.create({
+      data: {
+        action: "DELETE_STUDENT",
+        createdByUserId: session.user.id,
+        description: `Aluno excluido da agenda: ${student.name}. ${student._count.lessons} ocorrencia(s) removida(s).`,
+        studentId: student.id,
+      },
+    });
+
+    await tx.agendaStudent.delete({
+      where: {
+        id: student.id,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Aluno excluido da agenda.",
   };
 }
 

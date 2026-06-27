@@ -291,9 +291,10 @@ Helpers:
 5. O sistema cria ocorrencias recorrentes do mes selecionado ate dezembro de 2026 e evita duplicar o mesmo nome no mesmo dia/horario ativo.
 6. No dia selecionado, cada aluno aparece em card com nome, horario, telefone, observacao curta, status e botoes `Veio`, `Nao veio` e `Resetar`.
 7. O card muda de cor por status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
-8. Admin pode buscar por nome/telefone, clicar em um aluno e abrir detalhe com dados, edicao da rotina, presencas, faltas e historico.
+8. Admin pode buscar por nome/telefone, clicar em um aluno da lista interna e abrir abaixo da lista o detalhe com dados, edicao da rotina, presencas, faltas e historico.
 9. Ao editar, o sistema atualiza a rotina do mes selecionado em diante sem apagar historico antigo.
 10. Ao inativar, o aluno para de aparecer nas proximas ocorrencias, mas o historico fica salvo.
+11. Ao excluir, o admin confirma uma acao definitiva que remove o cadastro interno da agenda e suas ocorrencias; para preservar historico, deve usar `Inativar`.
 
 ### Manutencao
 

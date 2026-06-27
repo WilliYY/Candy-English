@@ -16,6 +16,7 @@ import {
   RotateCcw,
   Save,
   Search,
+  Trash2,
   UserRound,
   Users,
   XCircle,
@@ -25,6 +26,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   createAgendaSchedule,
+  deleteAgendaStudent,
   updateAgendaAttendance,
   updateAgendaStudentSchedule,
 } from "@/app/ava/admin/actions";
@@ -443,6 +445,7 @@ export function AdminAgendaPanel({
   );
   const [message, setMessage] = useState<string | null>(null);
   const [editMessage, setEditMessage] = useState<string | null>(null);
+  const [listMessage, setListMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isEditPending, startEditTransition] = useTransition();
   const selectedDate = parseDayKey(selectedDayKey);
@@ -616,6 +619,7 @@ export function AdminAgendaPanel({
 
     setSelectedStudentId(student.id);
     setEditMessage(null);
+    setListMessage(null);
     editForm.reset(
       buildEditValues(student, lessons, activeMonth, selectedWeekday),
     );
@@ -712,6 +716,35 @@ export function AdminAgendaPanel({
         }
       });
     })();
+  }
+
+  function deleteSelectedStudent() {
+    if (!selectedStudent) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Excluir definitivamente ${selectedStudent.name} da agenda? Isso remove o cadastro interno e as ocorrencias dele. Para manter historico, use Inativar.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    startEditTransition(async () => {
+      const result = await deleteAgendaStudent({
+        studentId: selectedStudent.id,
+      });
+
+      if (!result.ok) {
+        setEditMessage(result.message);
+        return;
+      }
+
+      setSelectedStudentId(null);
+      setListMessage(result.message);
+      router.refresh();
+    });
   }
 
   return (
@@ -1095,7 +1128,7 @@ export function AdminAgendaPanel({
       </form>
 
       {selectedStudent ? (
-        <section className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
+        <section className="order-[30] rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -1244,6 +1277,16 @@ export function AdminAgendaPanel({
                   <XCircle data-icon="inline-start" />
                   Inativar
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={isEditPending}
+                  className="border-red-300 bg-red-50 text-red-800 hover:bg-red-100"
+                  onClick={deleteSelectedStudent}
+                >
+                  <Trash2 data-icon="inline-start" />
+                  Excluir
+                </Button>
               </div>
               {editMessage ? (
                 <p className="mt-3 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm font-medium text-primary">
@@ -1287,7 +1330,7 @@ export function AdminAgendaPanel({
                               {formatDate(lesson.date)} as {lesson.time}
                             </strong>
                             <span className="text-xs text-muted-foreground">
-                              {lesson.isMakeup ? "Reposicao" : "Rotina"} ·{" "}
+                              {lesson.isMakeup ? "Reposicao" : "Rotina"} -{" "}
                               {lesson.isActive ? "ativo" : "inativo"}
                             </span>
                           </div>
@@ -1310,7 +1353,7 @@ export function AdminAgendaPanel({
         </section>
       ) : null}
 
-      <section className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
+      <section className="order-[20] rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -1361,7 +1404,7 @@ export function AdminAgendaPanel({
                   <span className="mt-2 block text-xs opacity-80">
                     {schedule.weekdays.map(getWeekdayLabel).join(", ") ||
                       "Sem dias ativos"}{" "}
-                    · {schedule.time}
+                    - {schedule.time}
                   </span>
                   {student.phone ? (
                     <span className="mt-1 block truncate text-xs opacity-80">
@@ -1373,9 +1416,14 @@ export function AdminAgendaPanel({
             })}
           </div>
         )}
+        {listMessage ? (
+          <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+            {listMessage}
+          </p>
+        ) : null}
       </section>
 
-      <details className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
+      <details className="order-[40] rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
           <span className="inline-flex items-center gap-2">
             <Pencil aria-hidden="true" className="size-4" />
