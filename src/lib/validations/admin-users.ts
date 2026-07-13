@@ -141,6 +141,12 @@ export const FINANCIAL_PAYMENT_METHODS = [
   "OTHER",
 ] as const;
 
+export const FINANCIAL_UNITS = ["IVATE", "DOURADINA"] as const;
+
+const financialUnitSchema = z.enum(FINANCIAL_UNITS, {
+  error: "Selecione uma unidade valida.",
+});
+
 const year2026Schema = z.literal(2026);
 
 const financeMonthSchema = z
@@ -178,6 +184,7 @@ const financialStudentBaseSchema = z.object({
     .max(31, "O dia precisa estar entre 1 e 31."),
   paymentMethod: z.enum(FINANCIAL_PAYMENT_METHODS),
   phone: optionalText(40, "O telefone pode ter no maximo 40 caracteres."),
+  unit: financialUnitSchema,
 });
 
 export const adminCreateUserSchema = z
@@ -408,6 +415,7 @@ export const adminFinanceExpenseCreateSchema = z
     month: financeMonthSchema,
     note: optionalText(600, "A observacao pode ter no maximo 600 caracteres."),
     purchasedAt: financeExpenseDateSchema,
+    unit: financialUnitSchema,
     year: year2026Schema,
   })
   .superRefine((data, ctx) => {

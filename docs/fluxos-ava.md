@@ -192,9 +192,9 @@ flowchart TD
 ```mermaid
 flowchart TD
   A["ADMIN abre /ava/admin?task=financeiro"] --> B["Escolhe um mes de 2026"]
-  B --> C["Adiciona aluno financeiro com nome, valor, dia e forma de pagamento"]
+  B --> C["Adiciona aluno financeiro com unidade, nome, valor, dia e forma de pagamento"]
   C --> D["Sistema salva FinancialStudent para repetir mes a mes"]
-  D --> E["Sistema cria FinancialPayment do mes se houver data paga ou observacao"]
+  D --> E["Sistema cria FinancialPayment com snapshot de unidade, valor, status e observacao"]
   E --> F["Alunos aparecem ordenados pelo dia de pagamento"]
   F --> G["ADMIN alterna status vermelho pendente / verde pago"]
   F --> H["ADMIN edita data paga e observacao do mes"]

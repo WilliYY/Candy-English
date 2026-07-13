@@ -42,6 +42,7 @@ import {
 } from "@/app/ava/admin/actions";
 import {
   FINANCIAL_PAYMENT_METHODS,
+  FINANCIAL_UNITS,
   adminFinanceExpenseCreateSchema,
   adminFinancePaymentUpdateSchema,
   adminFinanceStudentCreateSchema,
@@ -66,8 +67,10 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 
 type PaymentMethod = (typeof FINANCIAL_PAYMENT_METHODS)[number];
+type FinancialUnit = (typeof FINANCIAL_UNITS)[number];
 type FinanceStatus = "paid" | "pending" | "overdue" | "inactive";
 type FinanceView = "STUDENTS" | "EXPENSES";
+type UnitFilter = "ALL" | FinancialUnit;
 
 export type AdminFinanceExpenseRow = {
   actorName: string;
@@ -78,6 +81,7 @@ export type AdminFinanceExpenseRow = {
   month: number;
   note: string | null;
   purchasedAt: string;
+  unit: FinancialUnit;
   year: number;
 };
 
@@ -98,6 +102,7 @@ export type AdminFinancePaymentRow = {
   snapshotPaymentDay: number;
   snapshotPaymentMethod: string;
   snapshotPhone: string | null;
+  snapshotUnit: FinancialUnit;
   updatedAt: string;
   year: number;
 };
@@ -114,6 +119,7 @@ export type AdminFinanceStudentRow = {
   paymentMethod: string;
   payments: AdminFinancePaymentRow[];
   phone: string | null;
+  unit: FinancialUnit;
 };
 
 export type AdminFinanceLogRow = {
@@ -185,6 +191,16 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
   PIX: "Pix",
 };
 
+const financialUnitLabels: Record<FinancialUnit, string> = {
+  DOURADINA: "Unidade 2 Douradina",
+  IVATE: "Unidade 1 Ivaté",
+};
+
+const financialUnitShortLabels: Record<FinancialUnit, string> = {
+  DOURADINA: "Douradina",
+  IVATE: "Ivaté",
+};
+
 const createDefaultValues = (
   month: number,
 ): AdminFinanceStudentCreateInput => ({
@@ -200,6 +216,7 @@ const createDefaultValues = (
   paymentDay: 1,
   paymentMethod: "PIX",
   phone: "",
+  unit: "IVATE",
   year: 2026,
 });
 
@@ -234,6 +251,7 @@ const createExpenseDefaultValues = (
   month,
   note: "",
   purchasedAt: getDefaultExpenseDate(month),
+  unit: "IVATE",
   year: 2026,
 });
 
@@ -287,6 +305,14 @@ function normalizePaymentMethod(value: string): PaymentMethod {
 
 function formatPaymentMethod(value: string) {
   return paymentMethodLabels[normalizePaymentMethod(value)];
+}
+
+function formatFinancialUnit(unit: FinancialUnit) {
+  return financialUnitLabels[unit];
+}
+
+function formatFinancialUnitShort(unit: FinancialUnit) {
+  return financialUnitShortLabels[unit];
 }
 
 function getDueDate(month: number, paymentDay: number) {
@@ -434,6 +460,7 @@ function buildFinanceMonthRows(
         paymentMethod: payment.snapshotPaymentMethod,
         phone: payment.snapshotPhone,
         status,
+        unit: payment.snapshotUnit,
       };
     })
     .filter((row): row is FinanceMonthRow => row !== null)
@@ -482,6 +509,7 @@ function buildExportRows(rows: FinanceMonthRow[]) {
     parcela: getInstallmentLabel(row.payment),
     status: getStatusLabel(row.status),
     telefone: row.phone ?? "",
+    unidade: formatFinancialUnit(row.unit),
     valor: formatCurrency(row.amountCents),
   }));
 }
@@ -490,6 +518,7 @@ function buildFinanceTableHtml(rows: FinanceMonthRow[], title: string) {
   const exportRows = buildExportRows(rows);
   const headings = [
     "Nome",
+    "Unidade",
     "Valor",
     "Dia",
     "Status",
@@ -504,6 +533,7 @@ function buildFinanceTableHtml(rows: FinanceMonthRow[], title: string) {
     .map(
       (row) => `<tr>
         <td>${escapeHtml(row.nome)}</td>
+        <td>${escapeHtml(row.unidade)}</td>
         <td>${escapeHtml(row.valor)}</td>
         <td>${escapeHtml(row.dia)}</td>
         <td>${escapeHtml(row.status)}</td>
@@ -814,6 +844,7 @@ function FinanceStudentEditForm({
       paymentMethod: normalizePaymentMethod(row.paymentMethod),
       phone: row.phone ?? "",
       studentId: row.id,
+      unit: row.unit,
       year: 2026,
     },
   });
@@ -914,6 +945,24 @@ function FinanceStudentEditForm({
             ))}
           </NativeSelect>
           <FieldError errors={[form.formState.errors.paymentMethod]} />
+        </Field>
+        <Field data-invalid={Boolean(form.formState.errors.unit)}>
+          <FieldLabel htmlFor={`finance-edit-unit-${row.id}`}>
+            Unidade
+          </FieldLabel>
+          <NativeSelect
+            id={`finance-edit-unit-${row.id}`}
+            aria-invalid={Boolean(form.formState.errors.unit)}
+            disabled={isPending}
+            {...form.register("unit")}
+          >
+            {FINANCIAL_UNITS.map((unit) => (
+              <option key={unit} value={unit}>
+                {financialUnitLabels[unit]}
+              </option>
+            ))}
+          </NativeSelect>
+          <FieldError errors={[form.formState.errors.unit]} />
         </Field>
         <Field data-invalid={Boolean(form.formState.errors.installmentsTotal)}>
           <FieldLabel htmlFor={`finance-edit-installments-${row.id}`}>
@@ -1151,6 +1200,8 @@ export function AdminFinancePanel({
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | FinanceStatus>("ALL");
+  const [unitFilter, setUnitFilter] = useState<UnitFilter>("ALL");
+  const [expenseUnitFilter, setExpenseUnitFilter] = useState<UnitFilter>("ALL");
   const [message, setMessage] = useState<string | null>(null);
   const [expenseMessage, setExpenseMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -1173,9 +1224,17 @@ export function AdminFinancePanel({
     [activeMonth, students],
   );
 
+  const unitMonthRows = useMemo(
+    () =>
+      monthRows.filter(
+        (row) => unitFilter === "ALL" || row.unit === unitFilter,
+      ),
+    [monthRows, unitFilter],
+  );
+
   const monthSummary = useMemo(
     () =>
-      monthRows.reduce(
+      unitMonthRows.reduce(
         (accumulator, row) => {
           accumulator.total += row.amountCents;
 
@@ -1204,14 +1263,16 @@ export function AdminFinancePanel({
           total: 0,
         },
       ),
-    [monthRows],
+    [unitMonthRows],
   );
 
   const monthCounts = useMemo(
     () =>
       months.reduce<Record<number, { all: number; overdue: number }>>(
         (accumulator, month) => {
-          const rows = buildFinanceMonthRows(students, month.value);
+          const rows = buildFinanceMonthRows(students, month.value).filter(
+            (row) => unitFilter === "ALL" || row.unit === unitFilter,
+          );
 
           accumulator[month.value] = {
             all: rows.length,
@@ -1222,7 +1283,7 @@ export function AdminFinancePanel({
         },
         {},
       ),
-    [students],
+    [students, unitFilter],
   );
 
   const monthExpenses = useMemo(
@@ -1241,9 +1302,18 @@ export function AdminFinancePanel({
     [activeMonth, expenses],
   );
 
+  const visibleMonthExpenses = useMemo(
+    () =>
+      monthExpenses.filter(
+        (expense) =>
+          expenseUnitFilter === "ALL" || expense.unit === expenseUnitFilter,
+      ),
+    [expenseUnitFilter, monthExpenses],
+  );
+
   const expenseSummary = useMemo(
     () =>
-      monthExpenses.reduce(
+      visibleMonthExpenses.reduce(
         (accumulator, expense) => {
           accumulator.total += expense.amountCents;
           accumulator.count += 1;
@@ -1255,18 +1325,18 @@ export function AdminFinancePanel({
           total: 0,
         },
       ),
-    [monthExpenses],
+    [visibleMonthExpenses],
   );
   const averageExpenseAmount =
     expenseSummary.count > 0
       ? Math.round(expenseSummary.total / expenseSummary.count)
       : 0;
-  const latestExpense = monthExpenses[0] ?? null;
+  const latestExpense = visibleMonthExpenses[0] ?? null;
 
   const filteredRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
-    return monthRows.filter((row) => {
+    return unitMonthRows.filter((row) => {
       const matchesSearch =
         !normalizedSearch ||
         row.name.toLowerCase().includes(normalizedSearch) ||
@@ -1279,7 +1349,7 @@ export function AdminFinancePanel({
 
       return matchesSearch && matchesStatus;
     });
-  }, [monthRows, searchTerm, statusFilter]);
+  }, [searchTerm, statusFilter, unitMonthRows]);
 
   const selectedRow =
     filteredRows.find((row) => row.id === selectedStudentId) ??
@@ -1293,6 +1363,11 @@ export function AdminFinancePanel({
     form.setValue("month", month);
     expenseForm.setValue("month", month);
     expenseForm.setValue("purchasedAt", getDefaultExpenseDate(month));
+    form.setValue("unit", unitFilter === "ALL" ? "IVATE" : unitFilter);
+    expenseForm.setValue(
+      "unit",
+      expenseUnitFilter === "ALL" ? "IVATE" : expenseUnitFilter,
+    );
   }
 
   const onSubmit = form.handleSubmit((values) => {
@@ -1320,7 +1395,10 @@ export function AdminFinancePanel({
         return;
       }
 
-      form.reset(createDefaultValues(activeMonth));
+      form.reset({
+        ...createDefaultValues(activeMonth),
+        unit: unitFilter === "ALL" ? "IVATE" : unitFilter,
+      });
       setMessage(result.message);
       router.refresh();
     });
@@ -1359,7 +1437,10 @@ export function AdminFinancePanel({
         return;
       }
 
-      expenseForm.reset(createExpenseDefaultValues(activeMonth));
+      expenseForm.reset({
+        ...createExpenseDefaultValues(activeMonth),
+        unit: expenseUnitFilter === "ALL" ? "IVATE" : expenseUnitFilter,
+      });
       setExpenseMessage(result.message);
       router.refresh();
     });
@@ -1396,7 +1477,7 @@ export function AdminFinancePanel({
               <FinanceExportButtons
                 activeMonth={activeMonth}
                 activeMonthLabel={activeMonthLabel}
-                rows={monthRows}
+                rows={unitMonthRows}
               />
             </div>
           ) : (
@@ -1414,7 +1495,7 @@ export function AdminFinancePanel({
               detail: "Controle de alunos",
               icon: UserRound,
               label: "Alunos",
-              metric: `${monthRows.length} aluno(s)`,
+              metric: `${unitMonthRows.length} aluno(s)`,
               value: "STUDENTS" as const,
             },
             {
@@ -1505,7 +1586,7 @@ export function AdminFinancePanel({
                   {formatCurrency(monthSummary.total)}
                 </strong>
                 <span className="mt-1 block text-xs text-sky-900/75">
-                  {monthRows.length} aluno(s) ativo(s)
+                  {unitMonthRows.length} aluno(s) ativo(s)
                 </span>
               </div>
               <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/80 p-3 shadow-sm">
@@ -1577,7 +1658,7 @@ export function AdminFinancePanel({
               </div>
             </div>
 
-            <div className="mx-4 mb-4 grid gap-2 rounded-lg border border-primary/12 bg-white/78 p-3 text-sm text-primary shadow-sm sm:grid-cols-3">
+            <div className="mx-4 mb-4 grid gap-2 rounded-lg border border-primary/12 bg-white/78 p-3 text-sm text-primary shadow-sm sm:grid-cols-2 xl:grid-cols-4">
               <span className="inline-flex min-w-0 items-center gap-2">
                 <span className="size-2 rounded-full bg-emerald-500" />
                 <span className="truncate">
@@ -1594,6 +1675,15 @@ export function AdminFinancePanel({
                 <span className="size-2 rounded-full bg-red-500" />
                 <span className="truncate">
                   Vencido: {formatCurrency(monthSummary.overdue)}
+                </span>
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                <span className="truncate">
+                  Unidade:{" "}
+                  {unitFilter === "ALL"
+                    ? "Todas"
+                    : formatFinancialUnitShort(unitFilter)}
                 </span>
               </span>
             </div>
@@ -1669,7 +1759,7 @@ export function AdminFinancePanel({
           </span>
         </div>
         <FieldGroup className="gap-3 p-4">
-          <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(120px,0.65fr)_90px_minmax(150px,0.8fr)_110px_auto] xl:items-start">
+          <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(150px,0.85fr)_minmax(120px,0.65fr)_90px_minmax(150px,0.8fr)_110px_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>
               <Input
@@ -1680,6 +1770,22 @@ export function AdminFinancePanel({
                 {...form.register("name")}
               />
               <FieldError errors={[form.formState.errors.name]} />
+            </Field>
+            <Field data-invalid={Boolean(form.formState.errors.unit)}>
+              <FieldLabel htmlFor="finance-unit">Unidade</FieldLabel>
+              <NativeSelect
+                id="finance-unit"
+                aria-invalid={Boolean(form.formState.errors.unit)}
+                disabled={isPending}
+                {...form.register("unit")}
+              >
+                {FINANCIAL_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {formatFinancialUnitShort(unit)}
+                  </option>
+                ))}
+              </NativeSelect>
+              <FieldError errors={[form.formState.errors.unit]} />
             </Field>
             <Field data-invalid={Boolean(form.formState.errors.amount)}>
               <FieldLabel htmlFor="finance-amount">Valor mensal</FieldLabel>
@@ -1866,8 +1972,8 @@ export function AdminFinancePanel({
               </span>
             </span>
           </span>
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_170px] xl:min-w-[31rem]">
-            <label className="relative min-w-0">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px_190px] xl:min-w-[43rem]">
+              <label className="relative min-w-0">
               <Search
                 aria-hidden="true"
                 className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/50"
@@ -1891,6 +1997,27 @@ export function AdminFinancePanel({
               <option value="pending">Pendentes</option>
               <option value="overdue">Atrasados</option>
             </NativeSelect>
+            <NativeSelect
+              aria-label="Filtrar unidade"
+              value={unitFilter}
+              onChange={(event) => {
+                const nextUnit = event.target.value as UnitFilter;
+                setUnitFilter(nextUnit);
+                setSelectedStudentId(null);
+
+                if (nextUnit !== "ALL") {
+                  form.setValue("unit", nextUnit);
+                }
+              }}
+              className="h-10 border-white/40 bg-white text-primary"
+            >
+              <option value="ALL">Todas unidades</option>
+              {FINANCIAL_UNITS.map((unit) => (
+                <option key={unit} value={unit}>
+                  {formatFinancialUnitShort(unit)}
+                </option>
+              ))}
+            </NativeSelect>
           </div>
         </div>
 
@@ -1899,7 +2026,7 @@ export function AdminFinancePanel({
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/12 bg-white/78 p-3 text-xs font-semibold text-muted-foreground shadow-sm">
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <SlidersHorizontal aria-hidden="true" className="size-3.5" />
-                Mostrando {filteredRows.length} de {monthRows.length}
+                Mostrando {filteredRows.length} de {unitMonthRows.length}
               </span>
               <span className="flex flex-wrap items-center gap-2">
                 <StatusPill status="paid" />
@@ -1954,11 +2081,20 @@ export function AdminFinancePanel({
                             <strong className="line-clamp-2 block break-words text-base leading-5">
                               {row.name}
                             </strong>
-                            {row.phone ? (
-                              <span className="mt-1 block truncate text-xs opacity-75">
-                                {row.phone}
+                            <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-75">
+                              {row.phone ? (
+                                <span className="min-w-0 truncate">
+                                  {row.phone}
+                                </span>
+                              ) : null}
+                              <span className="inline-flex min-w-0 items-center gap-1 rounded-full border border-white/70 bg-white/70 px-2 py-0.5 font-bold text-primary shadow-sm">
+                                <MapPin
+                                  aria-hidden="true"
+                                  className="size-3 shrink-0"
+                                />
+                                {formatFinancialUnitShort(row.unit)}
                               </span>
-                            ) : null}
+                            </span>
                           </span>
                         </span>
                         <StatusPill status={row.status} />
@@ -2061,6 +2197,13 @@ export function AdminFinancePanel({
                       {formatPaymentMethod(selectedRow.paymentMethod)}
                     </span>
                     <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2">
+                      <MapPin
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-primary"
+                      />
+                      {formatFinancialUnitShort(selectedRow.unit)}
+                    </span>
+                    <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2">
                       <Phone
                         aria-hidden="true"
                         className="size-4 shrink-0 text-primary"
@@ -2138,6 +2281,9 @@ export function AdminFinancePanel({
                                 <StatusPill status={status} />
                                 <span className="rounded-full border border-white/80 bg-white/70 px-2 py-0.5 text-xs font-semibold">
                                   {getInstallmentLabel(payment)}
+                                </span>
+                                <span className="rounded-full border border-white/80 bg-white/70 px-2 py-0.5 text-xs font-semibold">
+                                  {formatFinancialUnitShort(payment.snapshotUnit)}
                                 </span>
                               </span>
                               <span className="mt-2 grid gap-1 text-xs opacity-75 sm:grid-cols-2">
@@ -2219,7 +2365,7 @@ export function AdminFinancePanel({
             </span>
           </div>
 
-          <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
             <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/70 p-3 shadow-sm">
               <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
                 <ReceiptText aria-hidden="true" className="size-4" />
@@ -2254,6 +2400,34 @@ export function AdminFinancePanel({
               </strong>
               <span className="mt-1 block text-xs text-primary/65">
                 calculada so pelos gastos
+              </span>
+            </div>
+            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+                <MapPin aria-hidden="true" className="size-4" />
+                Unidade
+              </span>
+              <NativeSelect
+                value={expenseUnitFilter}
+                onChange={(event) => {
+                  const nextUnit = event.target.value as UnitFilter;
+                  setExpenseUnitFilter(nextUnit);
+
+                  if (nextUnit !== "ALL") {
+                    expenseForm.setValue("unit", nextUnit);
+                  }
+                }}
+                className="mt-2"
+              >
+                <option value="ALL">Todas unidades</option>
+                {FINANCIAL_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {formatFinancialUnitShort(unit)}
+                  </option>
+                ))}
+              </NativeSelect>
+              <span className="mt-2 block text-xs text-primary/60">
+                Filtro interno das compras
               </span>
             </div>
             <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
@@ -2294,7 +2468,7 @@ export function AdminFinancePanel({
               </span>
             </div>
             <FieldGroup className="gap-3 p-4">
-              <div className="grid gap-3 lg:grid-cols-[minmax(190px,1.3fr)_150px_minmax(120px,0.7fr)_minmax(170px,0.9fr)_auto] lg:items-start">
+              <div className="grid gap-3 lg:grid-cols-[minmax(180px,1.2fr)_160px_150px_minmax(120px,0.7fr)_minmax(170px,0.9fr)_auto] lg:items-start">
                 <Field
                   data-invalid={Boolean(expenseForm.formState.errors.itemName)}
                 >
@@ -2313,6 +2487,24 @@ export function AdminFinancePanel({
                   <FieldError
                     errors={[expenseForm.formState.errors.itemName]}
                   />
+                </Field>
+                <Field data-invalid={Boolean(expenseForm.formState.errors.unit)}>
+                  <FieldLabel htmlFor="finance-expense-unit">
+                    Unidade
+                  </FieldLabel>
+                  <NativeSelect
+                    id="finance-expense-unit"
+                    aria-invalid={Boolean(expenseForm.formState.errors.unit)}
+                    disabled={isExpensePending}
+                    {...expenseForm.register("unit")}
+                  >
+                    {FINANCIAL_UNITS.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {formatFinancialUnitShort(unit)}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                  <FieldError errors={[expenseForm.formState.errors.unit]} />
                 </Field>
                 <Field
                   data-invalid={Boolean(expenseForm.formState.errors.purchasedAt)}
@@ -2416,19 +2608,21 @@ export function AdminFinancePanel({
                 </span>
               </span>
               <span className="rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold text-primary">
-                {monthExpenses.length} registro(s)
+                {visibleMonthExpenses.length} registro(s)
               </span>
             </div>
-            {monthExpenses.length === 0 ? (
+            {visibleMonthExpenses.length === 0 ? (
               <div className="flex min-h-36 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/20 bg-white p-4 text-center">
                 <ShoppingCart aria-hidden="true" className="text-primary" />
                 <p className="max-w-sm text-sm text-muted-foreground">
-                  Nenhum pagamento da loja registrado para este mes ainda.
+                  {expenseUnitFilter === "ALL"
+                    ? "Nenhum pagamento da loja registrado para este mes ainda."
+                    : `Nenhum pagamento da loja em ${formatFinancialUnitShort(expenseUnitFilter)} para este mes.`}
                 </p>
               </div>
             ) : (
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {monthExpenses.map((expense) => (
+                {visibleMonthExpenses.map((expense) => (
                   <article
                     key={expense.id}
                     className="relative overflow-hidden rounded-lg border border-primary/15 bg-white p-3 pt-4 shadow-[0_10px_24px_rgba(58,29,75,0.08)]"
@@ -2457,6 +2651,15 @@ export function AdminFinancePanel({
                           className="size-4 shrink-0 text-primary"
                         />
                         {formatDate(expense.purchasedAt)}
+                      </span>
+                      <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
+                        <MapPin
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-primary"
+                        />
+                        <span className="truncate">
+                          {formatFinancialUnitShort(expense.unit)}
+                        </span>
                       </span>
                       <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
                         <UserRound

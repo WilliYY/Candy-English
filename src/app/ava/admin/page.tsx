@@ -249,6 +249,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         paymentMethod: true,
         paymentDay: true,
         phone: true,
+        unit: true,
         payments: {
           where: {
             year: 2026,
@@ -270,6 +271,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             snapshotPaymentDay: true,
             snapshotPaymentMethod: true,
             snapshotPhone: true,
+            snapshotUnit: true,
             updatedAt: true,
             year: true,
           },
@@ -311,6 +313,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         month: true,
         note: true,
         purchasedAt: true,
+        unit: true,
         year: true,
       },
       where: {
@@ -915,6 +918,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         month: expense.month,
         note: expense.note,
         purchasedAt: expense.purchasedAt.toISOString(),
+        unit: expense.unit,
         year: expense.year,
       }))}
       financeStudents={financeStudents.map((student) => ({
@@ -944,10 +948,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           snapshotPaymentDay: payment.snapshotPaymentDay,
           snapshotPaymentMethod: payment.snapshotPaymentMethod,
           snapshotPhone: payment.snapshotPhone,
+          snapshotUnit: payment.snapshotUnit,
           updatedAt: payment.updatedAt.toISOString(),
           year: payment.year,
         })),
         phone: student.phone,
+        unit: student.unit,
       }))}
       initialAgendaMonth={initialAgendaMonth}
       initialFinanceMonth={initialFinanceMonth}

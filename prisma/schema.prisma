@@ -207,6 +207,11 @@ enum CattyArtifactEnrichmentStatus {
   ARCHIVED
 }
 
+enum FinancialUnit {
+  IVATE
+  DOURADINA
+}
+
 model User {
   id                               String                      @id @default(cuid())
   name                             String
@@ -527,6 +532,7 @@ model ContractDocument {
 model FinancialStudent {
   id                String             @id @default(cuid())
   name              String
+  unit              FinancialUnit      @default(IVATE)
   amountCents       Int
   installmentsTotal Int?
   paymentDay        Int
@@ -540,6 +546,7 @@ model FinancialStudent {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
 
+  @@index([unit, paymentDay, name])
   @@index([paymentDay, name])
 }
 
@@ -556,6 +563,7 @@ model FinancialPayment {
   snapshotInstallmentsTotal Int?
   snapshotPaymentDay        Int
   snapshotPaymentMethod     String           @default("PIX")
+  snapshotUnit              FinancialUnit    @default(IVATE)
   snapshotPhone             String?
   snapshotCpf               String?
   snapshotEmail             String?
@@ -568,6 +576,7 @@ model FinancialPayment {
   updatedAt                 DateTime         @updatedAt
 
   @@unique([studentId, year, month])
+  @@index([year, month, snapshotUnit, isActive])
   @@index([year, month, isActive])
   @@index([year, month, isPaid])
   @@index([isPaid])
@@ -594,6 +603,7 @@ model FinancialExpense {
   year            Int      @default(2026)
   month           Int
   itemName        String
+  unit            FinancialUnit @default(IVATE)
   purchasedAt     DateTime @default(now())
   amountCents     Int
   actorName       String
@@ -603,6 +613,7 @@ model FinancialExpense {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  @@index([year, month, unit, purchasedAt])
   @@index([year, month, purchasedAt])
   @@index([createdByUserId])
 }

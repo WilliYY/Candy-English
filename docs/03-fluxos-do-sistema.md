@@ -272,15 +272,16 @@ Helpers:
 1. Admin abre `/ava/admin?task=financeiro`.
 2. Seleciona um mes de 2026 no topo ou nos botoes de meses.
 3. Ve contadores de total previsto, recebido, pendentes, atrasados e quantidade de alunos ativos no mes.
-4. Adiciona aluno financeiro com nome, valor mensal, dia usual, forma padrao, telefone opcional, observacao opcional e quantidade opcional de parcelas.
+4. Adiciona aluno financeiro com nome, unidade (`Unidade 1 Ivaté` ou `Unidade 2 Douradina`), valor mensal, dia usual, forma padrao, telefone opcional, observacao opcional e quantidade opcional de parcelas.
 5. O aluno aparece em card visual; pago fica verde, atrasado fica vermelho e pendente fica amarelo/roxo.
-6. Admin pode buscar por nome/telefone e filtrar por pago, pendente ou atrasado.
+6. Admin pode buscar por nome/telefone e filtrar por pago, pendente, atrasado ou unidade.
 7. O botao rapido `Pago hoje` marca o mes como pago; `Desfazer` volta o mes para pendente.
-8. Ao clicar no card, abre o painel de historico do aluno com dados fixos, meses/parcelas, status, valor, data paga, forma e observacao.
+8. Ao clicar no card, abre o painel de historico do aluno com dados fixos, unidade, meses/parcelas, status, valor, data paga, forma e observacao.
 9. No historico, admin pode marcar/desfazer pagamento, alterar valor daquele mes, data paga e observacao sem recalcular meses anteriores.
-10. Em dados fixos, admin pode editar nome, valor padrao, dia, forma, parcelas e contato a partir do mes selecionado em diante.
+10. Em dados fixos, admin pode editar nome, unidade, valor padrao, dia, forma, parcelas e contato a partir do mes selecionado em diante.
 11. Admin pode inativar somente o mes selecionado ou encerrar o aluno a partir daquele mes, sempre preservando historico antigo.
-12. Exporta PDF/Excel e acompanha log em card separado.
+12. Exporta PDF/Excel com a unidade de cada aluno e acompanha log em card separado.
+13. Na aba `Pagamentos`, admin registra gastos internos da loja com unidade, insumo, data, valor e quem fez a compra; esses registros sao separados dos alunos financeiros.
 
 ### Agenda
 

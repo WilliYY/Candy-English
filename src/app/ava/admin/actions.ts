@@ -95,6 +95,7 @@ type FinancialSnapshotSource = {
   paymentDay: number;
   paymentMethod: string;
   phone: string | null;
+  unit: AdminFinanceStudentCreateInput["unit"];
 };
 
 function getFinanceMonthsFrom(month: number) {
@@ -144,6 +145,7 @@ function buildFinancialPaymentSnapshot(
     snapshotPaymentDay: student.paymentDay,
     snapshotPaymentMethod: student.paymentMethod,
     snapshotPhone: student.phone,
+    snapshotUnit: student.unit,
   };
 }
 
@@ -1033,6 +1035,7 @@ export async function createFinancialStudent(
         paymentDay: parsed.data.paymentDay,
         paymentMethod: parsed.data.paymentMethod,
         phone: parsed.data.phone,
+        unit: parsed.data.unit,
       },
     });
 
@@ -1141,6 +1144,7 @@ export async function updateFinancialStudent(
         paymentDay: parsed.data.paymentDay,
         paymentMethod: parsed.data.paymentMethod,
         phone: parsed.data.phone ?? null,
+        unit: parsed.data.unit,
       },
     });
     const financeMonths = getFinanceMonthsForPlan(
@@ -1264,6 +1268,7 @@ export async function updateFinancialPaymentDetails(
       paymentDay: true,
       paymentMethod: true,
       phone: true,
+      unit: true,
     },
   });
 
@@ -1379,6 +1384,7 @@ export async function toggleFinancialPaymentStatus(
       paymentDay: true,
       paymentMethod: true,
       phone: true,
+      unit: true,
     },
   });
 
@@ -1605,6 +1611,7 @@ export async function createFinancialExpense(
         month: parsed.data.month,
         note: parsed.data.note ?? null,
         purchasedAt: parsed.data.purchasedAt,
+        unit: parsed.data.unit,
         year: parsed.data.year,
       },
     });

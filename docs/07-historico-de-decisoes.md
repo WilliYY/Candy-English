@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-13 - Financeiro por unidade
+
+- Decisao: adicionar unidades fixas `Unidade 1 Ivaté` e `Unidade 2 Douradina` ao financeiro, gravando `FinancialStudent.unit`, `FinancialPayment.snapshotUnit` e `FinancialExpense.unit`.
+- Motivo: permitir visualizar alunos financeiros e gastos internos por unidade sem misturar historico mensal nem compras da loja.
+- Impacto: `prisma/schema.prisma`, migration `20260713133000_financial_units`, `src/app/ava/admin/page.tsx`, `src/app/ava/admin/actions.ts`, `src/components/ava/admin-finance-panel.tsx`, `src/lib/validations/admin-users.ts`, `docs/02-banco-de-dados.md`, `docs/13-financeiro.md`, `docs/03-fluxos-do-sistema.md`, `docs/design-direcao.md`.
+- Riscos/cuidados: registros antigos entram como `IVATE`; historico de meses deve ler `snapshotUnit`, enquanto gastos internos usam unidade propria em `FinancialExpense`.
+
 ### 2026-07-13 - Financeiro com abas de alunos e pagamentos internos
 
 - Decisao: dividir o financeiro admin em `Alunos` e `Pagamentos`, mantendo mensalidades/parcelas em `FinancialPayment` e registrando gastos/insumos da loja em `FinancialExpense`.

@@ -4,9 +4,9 @@
 
 O modulo Financeiro e um controle interno do administrador em `/ava/admin?task=financeiro`. Ele funciona como uma lista simples de alunos pagantes, com cards por aluno no mes selecionado, acao rapida para marcar como pago, filtros por status e um painel de historico ao clicar no aluno.
 
-Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado.
+Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
-Tambem possui a aba `Pagamentos`, que registra gastos internos da loja por mes, como insumos comprados, data, valor e pessoa que fez a acao.
+Tambem possui a aba `Pagamentos`, que registra gastos internos da loja por mes e por unidade, como insumos comprados, data, valor e pessoa que fez a acao.
 
 Nao e gateway de pagamento, nao emite boleto, nao cobra automaticamente e nao integra com banco.
 
@@ -24,6 +24,7 @@ Arquivos:
 - `prisma/migrations/20260511110000_finance_month_snapshots/migration.sql`
 - `prisma/migrations/20260625120000_simple_finance_installments/migration.sql`
 - `prisma/migrations/20260713120000_financial_expenses/migration.sql`
+- `prisma/migrations/20260713133000_financial_units/migration.sql`
 
 Tabelas:
 
@@ -39,9 +40,10 @@ Rota:
 ## Regras de negocio que precisam ser preservadas
 
 - Apenas `ADMIN` visualiza e escreve no financeiro.
-- `FinancialStudent` guarda o cadastro recorrente/base do aluno financeiro.
+- `FinancialStudent` guarda o cadastro recorrente/base do aluno financeiro, incluindo a unidade atual do aluno.
 - `FinancialStudent.installmentsTotal` e opcional; quando vazio, o aluno segue como mensalidade recorrente normal.
-- `FinancialPayment` guarda a linha mensal: mes, ano, status, data paga, observacao, `isActive` e snapshot de nome, valor, dia de pagamento, forma, telefone, CPF, email, endereco e dados de parcela quando houver.
+- `FinancialPayment` guarda a linha mensal: mes, ano, status, data paga, observacao, `isActive` e snapshot de nome, valor, unidade, dia de pagamento, forma, telefone, CPF, email, endereco e dados de parcela quando houver.
+- `FinancialPayment.snapshotUnit` preserva a unidade daquele mes; meses antigos nao mudam se o cadastro do aluno trocar de unidade depois.
 - `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` registram a parcela daquele mes, como `1/12`, sem alterar pagamentos antigos.
 - Observacao e pagamento sao por mes; ao trocar mes, esses campos nao devem carregar automaticamente de outro mes.
 - Ao criar aluno recorrente em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
@@ -54,7 +56,7 @@ Rota:
 - `FinancialLog` registra criacao, edicao, status, exclusao e exportacao.
 - O log financeiro fica recolhido por padrao em um card separado abaixo da lista para nao alongar a tela de cobranca.
 - Valor, data paga e observacao podem ser ajustados por mes no historico do aluno, sem alterar automaticamente os outros meses.
-- `FinancialExpense` guarda gastos internos por ano/mes, com insumo, data da compra, valor, pessoa responsavel e observacao opcional.
+- `FinancialExpense` guarda gastos internos por ano/mes/unidade, com insumo, data da compra, valor, pessoa responsavel e observacao opcional.
 - A data do gasto precisa pertencer ao mes selecionado, para o relatorio mensal nao misturar compras de outro mes.
 
 ## Decisoes tecnicas tomadas
@@ -69,12 +71,15 @@ Rota:
 - A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido, meses escaneaveis, cards de aluno com valor em destaque, vencimento/status discretos, metadados compactos de forma/parcela e historico preenchido automaticamente pelo primeiro resultado visivel.
 - O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
 - A area `Pagamentos` e controle interno separado: nao mostra totais de alunos, recebidos, pendentes, atrasados nem saldo baseado em mensalidades.
+- As unidades fixas do financeiro sao `IVATE` (`Unidade 1 Ivaté`) e `DOURADINA` (`Unidade 2 Douradina`); registros antigos entram por padrao como `IVATE`.
+- A UI mostra filtro/chip de unidade nos alunos, historico mensal, exportacao PDF/Excel e pagamentos internos da loja.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.
 - A migration `20260511110000_finance_month_snapshots` preenche snapshots e cria linhas mensais ausentes de 2026 para alunos ja existentes.
 - A migration `20260625120000_simple_finance_installments` adiciona apenas metadados opcionais de parcelas; dados antigos continuam com `NULL` e sao tratados como mensalidade recorrente.
 - A migration `20260713120000_financial_expenses` adiciona `FinancialExpense` para registrar gastos mensais internos sem misturar com `FinancialPayment`.
+- A migration `20260713133000_financial_units` adiciona `FinancialUnit`, `FinancialStudent.unit`, `FinancialPayment.snapshotUnit` e `FinancialExpense.unit`.
 
 ## Riscos ao alterar esta parte
 
@@ -87,6 +92,7 @@ Rota:
 - Alterar calculo de devedores sem considerar ano/mes pode gerar alerta errado.
 - Editar snapshots de meses anteriores por engano quebra o conceito de mes fechado.
 - Misturar `FinancialExpense` com `FinancialPayment` pode confundir entradas de alunos com saidas da loja; manter as abas e tabelas separadas.
+- Ler a unidade do cadastro atual em vez de `FinancialPayment.snapshotUnit` pode reescrever visualmente meses antigos; historico deve usar snapshot.
 
 ## Pendencias
 

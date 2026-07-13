@@ -195,8 +195,9 @@ Essa decisao evita carregar Prisma/pg em middleware Edge e mantem a autorizacao 
 - `AppSetting` guarda configuracoes operacionais simples, como modo manutencao.
 - `ChatThread` representa a conversa privada de um vinculo teacher-aluno.
 - `ChatMessage` guarda mensagens do chatbox com `senderUserId`, sempre validado por role e vinculo antes da escrita.
-- `FinancialStudent` guarda os dados recorrentes do financeiro administrativo: nome, valor em centavos, dia de pagamento, forma de pagamento, telefone, CPF, email e endereco.
-- `FinancialPayment` guarda o estado mensal de 2026 para cada aluno financeiro: status pago/pendente, data real de pagamento e observacao do mes.
+- `FinancialStudent` guarda os dados recorrentes do financeiro administrativo: nome, unidade, valor em centavos, dia de pagamento, forma de pagamento, telefone, CPF, email e endereco.
+- `FinancialPayment` guarda o estado mensal de 2026 para cada aluno financeiro: status pago/pendente, unidade congelada do mes, data real de pagamento e observacao do mes.
+- `FinancialExpense` guarda gastos internos da loja por mes e unidade, separado dos pagamentos dos alunos.
 - `FinancialLog` guarda um historico simples de acoes no financeiro, incluindo criacao, edicao, mudanca de status, exclusao e exportacao.
 
 ### Docker
@@ -434,7 +435,7 @@ A vigesima quinta fase adiciona controle financeiro interno para administradores
 A vigesima sexta fase transforma o Financeiro em uma agenda recorrente de alunos:
 
 - `FinancialStudent` substitui a linha solta como cadastro recorrente do aluno financeiro;
-- `FinancialPayment` separa o que pertence ao mes, permitindo que observacao e data paga zerem naturalmente nos outros meses;
+- `FinancialPayment` separa o que pertence ao mes, permitindo que observacao, unidade e data paga fiquem congeladas no snapshot daquele mes;
 - `FinancialLog` registra as acoes feitas por admin no financeiro;
 - a migration `20260510203000_recurring_finance_students` preserva linhas antigas de `FinancialEntry` convertendo-as para aluno financeiro e pagamento mensal;
 - a UI mostra nome, valor, dia, status, forma de pagamento e data paga como campos principais, mantendo telefone, CPF, email, endereco e observacao recolhidos;
