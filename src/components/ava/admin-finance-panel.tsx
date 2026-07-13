@@ -1257,6 +1257,11 @@ export function AdminFinancePanel({
       ),
     [monthExpenses],
   );
+  const averageExpenseAmount =
+    expenseSummary.count > 0
+      ? Math.round(expenseSummary.total / expenseSummary.count)
+      : 0;
+  const latestExpense = monthExpenses[0] ?? null;
 
   const filteredRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -1325,7 +1330,6 @@ export function AdminFinancePanel({
   const collectionRate =
     monthSummary.total > 0 ? (monthSummary.paid / monthSummary.total) * 100 : 0;
   const visiblePendingAmount = monthSummary.pending - monthSummary.overdue;
-  const estimatedBalance = monthSummary.paid - expenseSummary.total;
 
   const onExpenseSubmit = expenseForm.handleSubmit((values) => {
     setExpenseMessage(null);
@@ -1371,23 +1375,35 @@ export function AdminFinancePanel({
             </span>
             <span className="min-w-0">
               <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/60">
-                Financeiro simples
+                {financeView === "STUDENTS"
+                  ? "Financeiro simples"
+                  : "Controle interno"}
               </span>
               <strong className="mt-1 block text-xl text-primary">
-                {activeMonthLabel} de 2026
+                {financeView === "STUDENTS"
+                  ? `${activeMonthLabel} de 2026`
+                  : `Pagamentos da loja - ${activeMonthLabel}`}
               </strong>
               <span className="mt-1 block text-sm text-muted-foreground">
-                Lista manual de alunos pagantes, parcelas e status do mes.
+                {financeView === "STUDENTS"
+                  ? "Lista manual de alunos pagantes, parcelas e status do mes."
+                  : "Gastos, insumos e compras do mes, separados dos alunos."}
               </span>
             </span>
           </span>
-          <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[19rem]">
-            <FinanceExportButtons
-              activeMonth={activeMonth}
-              activeMonthLabel={activeMonthLabel}
-              rows={monthRows}
-            />
-          </div>
+          {financeView === "STUDENTS" ? (
+            <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[19rem]">
+              <FinanceExportButtons
+                activeMonth={activeMonth}
+                activeMonthLabel={activeMonthLabel}
+                rows={monthRows}
+              />
+            </div>
+          ) : (
+            <span className="w-fit rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold uppercase text-primary shadow-sm">
+              Separado dos alunos
+            </span>
+          )}
         </div>
 
         <div className="grid gap-3 border-b border-primary/10 bg-white/60 p-4 md:grid-cols-2">
@@ -1395,7 +1411,7 @@ export function AdminFinancePanel({
             {
               description:
                 "Mensalidades, parcelas, status, historico e cadastro financeiro.",
-              detail: `${formatCurrency(monthSummary.paid)} recebido`,
+              detail: "Controle de alunos",
               icon: UserRound,
               label: "Alunos",
               metric: `${monthRows.length} aluno(s)`,
@@ -1403,8 +1419,8 @@ export function AdminFinancePanel({
             },
             {
               description:
-                "Insumos e compras da loja salvos dentro do mes selecionado.",
-              detail: `${monthExpenses.length} registro(s)`,
+                "Insumos e compras internas salvos no mes selecionado.",
+              detail: "Controle interno",
               icon: ShoppingCart,
               label: "Pagamentos",
               metric: formatCurrency(expenseSummary.total),
@@ -1477,145 +1493,154 @@ export function AdminFinancePanel({
           })}
         </div>
 
-        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_1fr_1fr_1.15fr]">
-          <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/80 p-3 shadow-sm">
-            <span className="flex items-center gap-2 text-sm font-semibold text-sky-950">
-              <ReceiptText aria-hidden="true" className="size-4" />
-              Total previsto
-            </span>
-            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
-              {formatCurrency(monthSummary.total)}
-            </strong>
-            <span className="mt-1 block text-xs text-sky-900/75">
-              {monthRows.length} aluno(s) ativo(s)
-            </span>
-          </div>
-          <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/80 p-3 shadow-sm">
-            <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
-              <CheckCircle2 aria-hidden="true" className="size-4" />
-              Recebido
-            </span>
-            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-emerald-700">
-              {formatCurrency(monthSummary.paid)}
-            </strong>
-            <span className="mt-1 block text-xs text-emerald-900/75">
-              {monthSummary.paidCount} pago(s) no mes
-            </span>
-          </div>
-          <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-100/75 p-3 shadow-sm">
-            <span className="flex items-center gap-2 text-sm font-semibold text-amber-950">
-              <Clock3 aria-hidden="true" className="size-4" />
-              Pendentes
-            </span>
-            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-amber-800">
-              {monthSummary.pendingCount}
-            </strong>
-            <span className="mt-1 block text-xs text-amber-900/75">
-              {formatCurrency(monthSummary.pending)} em aberto
-            </span>
-          </div>
-          <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/75 p-3 shadow-sm">
-            <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
-              <AlertTriangle aria-hidden="true" className="size-4" />
-              Atrasados
-            </span>
-            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-red-700">
-              {monthSummary.overdueCount}
-            </strong>
-            <span className="mt-1 block text-xs text-red-900/75">
-              {formatCurrency(monthSummary.overdue)} vencido(s)
-            </span>
-          </div>
-          <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
-            <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
-              <CalendarDays aria-hidden="true" className="size-4" />
-              Mes atual
-            </span>
-            <NativeSelect
-              value={activeMonth}
-              onChange={(event) => handleMonthChange(Number(event.target.value))}
-              className="mt-2"
-            >
-              {months.map((month) => (
-                <option key={month.value} value={month.value}>
-                  {month.label}
-                </option>
-              ))}
-            </NativeSelect>
-            <div className="mt-3">
-              <div className="flex items-center justify-between gap-2 text-xs font-semibold text-primary/70">
-                <span>Recebimento</span>
-                <span>{formatPercent(collectionRate)}</span>
+        {financeView === "STUDENTS" ? (
+          <>
+            <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_1fr_1fr_1.15fr]">
+              <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/80 p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-sky-950">
+                  <ReceiptText aria-hidden="true" className="size-4" />
+                  Total previsto
+                </span>
+                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
+                  {formatCurrency(monthSummary.total)}
+                </strong>
+                <span className="mt-1 block text-xs text-sky-900/75">
+                  {monthRows.length} aluno(s) ativo(s)
+                </span>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-primary/10">
-                <span
-                  className="block h-full rounded-full bg-emerald-500"
-                  style={{ width: `${Math.min(collectionRate, 100)}%` }}
-                />
+              <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/80 p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
+                  <CheckCircle2 aria-hidden="true" className="size-4" />
+                  Recebido
+                </span>
+                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-emerald-700">
+                  {formatCurrency(monthSummary.paid)}
+                </strong>
+                <span className="mt-1 block text-xs text-emerald-900/75">
+                  {monthSummary.paidCount} pago(s) no mes
+                </span>
+              </div>
+              <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-100/75 p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-amber-950">
+                  <Clock3 aria-hidden="true" className="size-4" />
+                  Pendentes
+                </span>
+                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-amber-800">
+                  {monthSummary.pendingCount}
+                </strong>
+                <span className="mt-1 block text-xs text-amber-900/75">
+                  {formatCurrency(monthSummary.pending)} em aberto
+                </span>
+              </div>
+              <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/75 p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
+                  <AlertTriangle aria-hidden="true" className="size-4" />
+                  Atrasados
+                </span>
+                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-red-700">
+                  {monthSummary.overdueCount}
+                </strong>
+                <span className="mt-1 block text-xs text-red-900/75">
+                  {formatCurrency(monthSummary.overdue)} vencido(s)
+                </span>
+              </div>
+              <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+                  <CalendarDays aria-hidden="true" className="size-4" />
+                  Mes atual
+                </span>
+                <NativeSelect
+                  value={activeMonth}
+                  onChange={(event) =>
+                    handleMonthChange(Number(event.target.value))
+                  }
+                  className="mt-2"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <div className="mt-3">
+                  <div className="flex items-center justify-between gap-2 text-xs font-semibold text-primary/70">
+                    <span>Recebimento</span>
+                    <span>{formatPercent(collectionRate)}</span>
+                  </div>
+                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-primary/10">
+                    <span
+                      className="block h-full rounded-full bg-emerald-500"
+                      style={{ width: `${Math.min(collectionRate, 100)}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <div className="mx-4 mb-4 grid gap-2 rounded-lg border border-primary/12 bg-white/78 p-3 text-sm text-primary shadow-sm sm:grid-cols-3">
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <span className="size-2 rounded-full bg-emerald-500" />
-            <span className="truncate">
-              Recebido: {formatCurrency(monthSummary.paid)}
-            </span>
-          </span>
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <span className="size-2 rounded-full bg-amber-500" />
-            <span className="truncate">
-              A receber: {formatCurrency(Math.max(visiblePendingAmount, 0))}
-            </span>
-          </span>
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <span className="size-2 rounded-full bg-red-500" />
-            <span className="truncate">
-              Vencido: {formatCurrency(monthSummary.overdue)}
-            </span>
-          </span>
-        </div>
+            <div className="mx-4 mb-4 grid gap-2 rounded-lg border border-primary/12 bg-white/78 p-3 text-sm text-primary shadow-sm sm:grid-cols-3">
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <span className="size-2 rounded-full bg-emerald-500" />
+                <span className="truncate">
+                  Recebido: {formatCurrency(monthSummary.paid)}
+                </span>
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <span className="size-2 rounded-full bg-amber-500" />
+                <span className="truncate">
+                  A receber: {formatCurrency(Math.max(visiblePendingAmount, 0))}
+                </span>
+              </span>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                <span className="size-2 rounded-full bg-red-500" />
+                <span className="truncate">
+                  Vencido: {formatCurrency(monthSummary.overdue)}
+                </span>
+              </span>
+            </div>
 
-        <div className="border-t border-primary/10 bg-white/45 p-4">
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-12">
-            {months.map((month) => {
-              const counts = monthCounts[month.value] ?? { all: 0, overdue: 0 };
+            <div className="border-t border-primary/10 bg-white/45 p-4">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-12">
+                {months.map((month) => {
+                  const counts = monthCounts[month.value] ?? {
+                    all: 0,
+                    overdue: 0,
+                  };
 
-              return (
-                <button
-                  key={month.value}
-                  type="button"
-                  onClick={() => handleMonthChange(month.value)}
-                  className={cn(
-                    "min-w-0 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
-                    activeMonth === month.value
-                      ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
-                      : "border-primary/15 bg-white/90 text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
-                  )}
-                >
-                  <span className="block">{month.shortLabel}</span>
-                  <span className="mt-1 block text-xs opacity-85">
-                    {counts.all} aluno(s)
-                  </span>
-                  {counts.overdue > 0 ? (
-                    <span
+                  return (
+                    <button
+                      key={month.value}
+                      type="button"
+                      onClick={() => handleMonthChange(month.value)}
                       className={cn(
-                        "mt-2 inline-flex rounded-full px-2 py-0.5 text-[0.68rem]",
+                        "min-w-0 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
                         activeMonth === month.value
-                          ? "bg-white text-red-700"
-                          : "bg-red-600 text-white",
+                          ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
+                          : "border-primary/15 bg-white/90 text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
                       )}
                     >
-                      {counts.overdue} venc.
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                      <span className="block">{month.shortLabel}</span>
+                      <span className="mt-1 block text-xs opacity-85">
+                        {counts.all} aluno(s)
+                      </span>
+                      {counts.overdue > 0 ? (
+                        <span
+                          className={cn(
+                            "mt-2 inline-flex rounded-full px-2 py-0.5 text-[0.68rem]",
+                            activeMonth === month.value
+                              ? "bg-white text-red-700"
+                              : "bg-red-600 text-white",
+                          )}
+                        >
+                          {counts.overdue} venc.
+                        </span>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        ) : null}
       </section>
 
       {financeView === "STUDENTS" ? (
@@ -2207,40 +2232,28 @@ export function AdminFinancePanel({
                 {expenseSummary.count} pagamento(s) no mes
               </span>
             </div>
-            <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/75 p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
-                <CheckCircle2 aria-hidden="true" className="size-4" />
-                Recebido de alunos
-              </span>
-              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-emerald-700">
-                {formatCurrency(monthSummary.paid)}
-              </strong>
-              <span className="mt-1 block text-xs text-emerald-900/75">
-                Base para saldo do mes
-              </span>
-            </div>
-            <div
-              className={cn(
-                "rounded-lg border bg-gradient-to-br via-white p-3 shadow-sm",
-                estimatedBalance >= 0
-                  ? "border-sky-200 from-sky-50 to-sky-100/75"
-                  : "border-amber-200 from-amber-50 to-amber-100/75",
-              )}
-            >
+            <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-3 shadow-sm">
               <span className="flex items-center gap-2 text-sm font-semibold text-primary">
-                <CircleDollarSign aria-hidden="true" className="size-4" />
-                Saldo estimado
+                <ShoppingCart aria-hidden="true" className="size-4" />
+                Registros
               </span>
-              <strong
-                className={cn(
-                  "mt-2 block text-2xl font-semibold tabular-nums",
-                  estimatedBalance >= 0 ? "text-sky-800" : "text-amber-800",
-                )}
-              >
-                {formatCurrency(estimatedBalance)}
+              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-primary">
+                {expenseSummary.count}
               </strong>
               <span className="mt-1 block text-xs text-primary/65">
-                Recebido menos pagamentos
+                compra(s) salvas no mes
+              </span>
+            </div>
+            <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/75 p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+                <CircleDollarSign aria-hidden="true" className="size-4" />
+                Media por compra
+              </span>
+              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
+                {formatCurrency(averageExpenseAmount)}
+              </strong>
+              <span className="mt-1 block text-xs text-primary/65">
+                calculada so pelos gastos
               </span>
             </div>
             <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
@@ -2259,6 +2272,10 @@ export function AdminFinancePanel({
                   </option>
                 ))}
               </NativeSelect>
+              <span className="mt-2 block text-xs text-primary/60">
+                Ultimo:{" "}
+                {latestExpense ? formatDate(latestExpense.purchasedAt) : "sem registro"}
+              </span>
             </div>
           </div>
 

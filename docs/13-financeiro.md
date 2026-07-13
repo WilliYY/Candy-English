@@ -68,6 +68,7 @@ Rota:
 - A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, filtro de mes, busca por nome/telefone, filtro por status e cards coloridos por aluno.
 - A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido, meses escaneaveis, cards de aluno com valor em destaque, vencimento/status discretos, metadados compactos de forma/parcela e historico preenchido automaticamente pelo primeiro resultado visivel.
 - O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
+- A area `Pagamentos` e controle interno separado: nao mostra totais de alunos, recebidos, pendentes, atrasados nem saldo baseado em mensalidades.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.
