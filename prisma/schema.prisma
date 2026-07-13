@@ -250,6 +250,7 @@ model User {
   reviewedCattyArtifactEnrichments CattyArtifactEnrichment[]   @relation("CattyArtifactEnrichmentReviewedBy")
   sentChatMessages                 ChatMessage[]
   uploadedContracts                ContractDocument[]          @relation("UploadedContracts")
+  createdFinancialExpenses         FinancialExpense[]          @relation("FinancialExpenseCreatedBy")
   createdAt                        DateTime                    @default(now())
   updatedAt                        DateTime                    @updatedAt
 
@@ -586,6 +587,24 @@ model FinancialLog {
 
   @@index([createdAt])
   @@index([studentId])
+}
+
+model FinancialExpense {
+  id              String   @id @default(cuid())
+  year            Int      @default(2026)
+  month           Int
+  itemName        String
+  purchasedAt     DateTime @default(now())
+  amountCents     Int
+  actorName       String
+  note            String?
+  createdByUserId String?
+  createdByUser   User?    @relation("FinancialExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([year, month, purchasedAt])
+  @@index([createdByUserId])
 }
 
 model AgendaStudent {

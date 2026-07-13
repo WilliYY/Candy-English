@@ -22,6 +22,7 @@ import {
   RotateCcw,
   Save,
   Search,
+  ShoppingCart,
   SlidersHorizontal,
   Trash2,
   UserRound,
@@ -31,6 +32,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
+  createFinancialExpense,
   createFinancialStudent,
   deleteFinancialStudent,
   recordFinancialExport,
@@ -40,9 +42,11 @@ import {
 } from "@/app/ava/admin/actions";
 import {
   FINANCIAL_PAYMENT_METHODS,
+  adminFinanceExpenseCreateSchema,
   adminFinancePaymentUpdateSchema,
   adminFinanceStudentCreateSchema,
   adminFinanceStudentUpdateSchema,
+  type AdminFinanceExpenseCreateInput,
   type AdminFinanceExportLogInput,
   type AdminFinancePaymentUpdateInput,
   type AdminFinanceStudentCreateInput,
@@ -63,6 +67,19 @@ import { Textarea } from "@/components/ui/textarea";
 
 type PaymentMethod = (typeof FINANCIAL_PAYMENT_METHODS)[number];
 type FinanceStatus = "paid" | "pending" | "overdue" | "inactive";
+type FinanceView = "STUDENTS" | "EXPENSES";
+
+export type AdminFinanceExpenseRow = {
+  actorName: string;
+  amountCents: number;
+  createdAt: string;
+  id: string;
+  itemName: string;
+  month: number;
+  note: string | null;
+  purchasedAt: string;
+  year: number;
+};
 
 export type AdminFinancePaymentRow = {
   id: string;
@@ -117,6 +134,7 @@ type FinanceMonthRow = AdminFinanceStudentRow & {
 };
 
 type AdminFinancePanelProps = {
+  expenses: AdminFinanceExpenseRow[];
   initialMonth: number;
   logs: AdminFinanceLogRow[];
   students: AdminFinanceStudentRow[];
@@ -147,6 +165,7 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
+  timeZone: "UTC",
   year: "numeric",
 });
 
@@ -184,8 +203,46 @@ const createDefaultValues = (
   year: 2026,
 });
 
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0");
+}
+
+function formatInputDate(date: Date) {
+  return [
+    date.getFullYear(),
+    padDatePart(date.getMonth() + 1),
+    padDatePart(date.getDate()),
+  ].join("-");
+}
+
+function getDefaultExpenseDate(month: number) {
+  const today = new Date();
+
+  if (today.getFullYear() === 2026 && today.getMonth() + 1 === month) {
+    return formatInputDate(today);
+  }
+
+  return `2026-${padDatePart(month)}-01`;
+}
+
+const createExpenseDefaultValues = (
+  month: number,
+): AdminFinanceExpenseCreateInput => ({
+  actorName: "",
+  amount: "",
+  itemName: "",
+  month,
+  note: "",
+  purchasedAt: getDefaultExpenseDate(month),
+  year: 2026,
+});
+
 function formatCurrency(cents: number) {
   return currencyFormatter.format(cents / 100);
+}
+
+function formatPercent(value: number) {
+  return `${Math.round(value)}%`;
 }
 
 function formatAmountInput(cents: number) {
@@ -281,39 +338,61 @@ function getInstallmentLabel(payment: AdminFinancePaymentRow) {
   return "Mensalidade";
 }
 
+function getPaymentTimelineLabel(row: FinanceMonthRow) {
+  if (row.isPaid) {
+    return row.paidAt ? `Pago em ${formatDate(row.paidAt)}` : "Pago sem data";
+  }
+
+  if (row.isOverdue) {
+    return `Venceu dia ${row.paymentDay}`;
+  }
+
+  return `Vence dia ${row.paymentDay}`;
+}
+
 function getStatusClasses(status: FinanceStatus) {
   if (status === "paid") {
     return {
+      accent: "bg-emerald-500",
+      amount: "text-emerald-800",
       badge:
         "border-emerald-200 bg-emerald-50 text-emerald-800 ring-emerald-200/80",
-      card:
-        "border-emerald-300 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/70 text-emerald-950",
-      icon: "bg-emerald-600 text-white",
+      card: "border-emerald-200 bg-white text-emerald-950",
+      icon: "bg-emerald-600 text-white shadow-emerald-200",
+      timeline:
+        "border-emerald-200 bg-emerald-50 text-emerald-800 ring-emerald-100",
     };
   }
 
   if (status === "overdue") {
     return {
+      accent: "bg-red-500",
+      amount: "text-red-800",
       badge: "border-red-200 bg-red-50 text-red-800 ring-red-200/80",
-      card:
-        "border-red-300 bg-gradient-to-br from-red-50 via-white to-rose-100/70 text-red-950",
-      icon: "bg-red-600 text-white",
+      card: "border-red-200 bg-white text-red-950",
+      icon: "bg-red-600 text-white shadow-red-200",
+      timeline: "border-red-200 bg-red-50 text-red-800 ring-red-100",
     };
   }
 
   if (status === "inactive") {
     return {
+      accent: "bg-slate-400",
+      amount: "text-slate-700",
       badge: "border-slate-200 bg-slate-50 text-slate-600 ring-slate-200/80",
       card: "border-slate-200 bg-slate-50 text-slate-600",
-      icon: "bg-slate-500 text-white",
+      icon: "bg-slate-500 text-white shadow-slate-200",
+      timeline: "border-slate-200 bg-slate-50 text-slate-600 ring-slate-100",
     };
   }
 
   return {
+    accent: "bg-amber-500",
+    amount: "text-primary",
     badge: "border-amber-200 bg-amber-50 text-amber-900 ring-amber-200/80",
-    card:
-      "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-[#f5ecff] text-primary",
-    icon: "bg-amber-500 text-white",
+    card: "border-amber-200 bg-white text-primary",
+    icon: "bg-amber-500 text-white shadow-amber-200",
+    timeline: "border-amber-200 bg-amber-50 text-amber-900 ring-amber-100",
   };
 }
 
@@ -505,7 +584,7 @@ function StatusPill({ status }: { status: FinanceStatus }) {
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold uppercase ring-1",
+        "inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold shadow-sm",
         classes.badge,
       )}
     >
@@ -560,10 +639,10 @@ function FinanceStatusButton({
           handleClick();
         }}
         className={cn(
-          "justify-center border text-white shadow-sm",
+          "w-full justify-center border shadow-sm",
           isPaid
-            ? "border-amber-700 bg-amber-600 hover:bg-amber-700"
-            : "border-emerald-700 bg-emerald-600 hover:bg-emerald-700",
+            ? "border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100"
+            : "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700",
         )}
       >
         {isPending ? (
@@ -1061,22 +1140,32 @@ function FinanceExportButtons({
 }
 
 export function AdminFinancePanel({
+  expenses,
   initialMonth,
   logs,
   students,
 }: AdminFinancePanelProps) {
   const router = useRouter();
   const [activeMonth, setActiveMonth] = useState(initialMonth);
+  const [financeView, setFinanceView] = useState<FinanceView>("STUDENTS");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | FinanceStatus>("ALL");
   const [message, setMessage] = useState<string | null>(null);
+  const [expenseMessage, setExpenseMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isExpensePending, startExpenseTransition] = useTransition();
   const form = useForm<AdminFinanceStudentCreateInput>({
     resolver: zodResolver(adminFinanceStudentCreateSchema, undefined, {
       raw: true,
     }),
     defaultValues: createDefaultValues(initialMonth),
+  });
+  const expenseForm = useForm<AdminFinanceExpenseCreateInput>({
+    resolver: zodResolver(adminFinanceExpenseCreateSchema, undefined, {
+      raw: true,
+    }),
+    defaultValues: createExpenseDefaultValues(initialMonth),
   });
 
   const monthRows = useMemo(
@@ -1099,12 +1188,14 @@ export function AdminFinancePanel({
           }
 
           if (row.isOverdue) {
+            accumulator.overdue += row.amountCents;
             accumulator.overdueCount += 1;
           }
 
           return accumulator;
         },
         {
+          overdue: 0,
           overdueCount: 0,
           paid: 0,
           paidCount: 0,
@@ -1134,6 +1225,39 @@ export function AdminFinancePanel({
     [students],
   );
 
+  const monthExpenses = useMemo(
+    () =>
+      expenses
+        .filter(
+          (expense) => expense.year === 2026 && expense.month === activeMonth,
+        )
+        .sort(
+          (left, right) =>
+            new Date(right.purchasedAt).getTime() -
+              new Date(left.purchasedAt).getTime() ||
+            new Date(right.createdAt).getTime() -
+              new Date(left.createdAt).getTime(),
+        ),
+    [activeMonth, expenses],
+  );
+
+  const expenseSummary = useMemo(
+    () =>
+      monthExpenses.reduce(
+        (accumulator, expense) => {
+          accumulator.total += expense.amountCents;
+          accumulator.count += 1;
+
+          return accumulator;
+        },
+        {
+          count: 0,
+          total: 0,
+        },
+      ),
+    [monthExpenses],
+  );
+
   const filteredRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -1153,12 +1277,17 @@ export function AdminFinancePanel({
   }, [monthRows, searchTerm, statusFilter]);
 
   const selectedRow =
-    monthRows.find((row) => row.id === selectedStudentId) ?? null;
+    filteredRows.find((row) => row.id === selectedStudentId) ??
+    filteredRows[0] ??
+    null;
+  const selectedRowId = selectedRow?.id ?? null;
 
   function handleMonthChange(month: number) {
     setActiveMonth(month);
     setSelectedStudentId(null);
     form.setValue("month", month);
+    expenseForm.setValue("month", month);
+    expenseForm.setValue("purchasedAt", getDefaultExpenseDate(month));
   }
 
   const onSubmit = form.handleSubmit((values) => {
@@ -1193,11 +1322,49 @@ export function AdminFinancePanel({
   });
 
   const activeMonthLabel = getMonthLabel(activeMonth);
+  const collectionRate =
+    monthSummary.total > 0 ? (monthSummary.paid / monthSummary.total) * 100 : 0;
+  const visiblePendingAmount = monthSummary.pending - monthSummary.overdue;
+  const estimatedBalance = monthSummary.paid - expenseSummary.total;
+
+  const onExpenseSubmit = expenseForm.handleSubmit((values) => {
+    setExpenseMessage(null);
+
+    startExpenseTransition(async () => {
+      const result = await createFinancialExpense({
+        ...values,
+        month: activeMonth,
+        year: 2026,
+      });
+
+      if (!result.ok) {
+        if (result.errors) {
+          Object.entries(result.errors).forEach(([field, fieldMessage]) => {
+            if (fieldMessage) {
+              expenseForm.setError(
+                field as keyof AdminFinanceExpenseCreateInput,
+                {
+                  message: fieldMessage,
+                },
+              );
+            }
+          });
+        }
+
+        setExpenseMessage(result.message);
+        return;
+      }
+
+      expenseForm.reset(createExpenseDefaultValues(activeMonth));
+      setExpenseMessage(result.message);
+      router.refresh();
+    });
+  });
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:pr-20">
-      <section className="overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff7fb] to-[#eef9ff] shadow-[0_20px_56px_rgba(65,42,76,0.1)]">
-        <div className="flex flex-col gap-4 border-b border-primary/10 bg-white/75 p-4 xl:flex-row xl:items-center xl:justify-between">
+      <section className="overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_20px_56px_rgba(65,42,76,0.1)] ring-1 ring-white/70">
+        <div className="flex flex-col gap-4 border-b border-primary/10 bg-white/82 p-4 xl:flex-row xl:items-center xl:justify-between">
           <span className="flex min-w-0 items-center gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_12px_28px_rgba(65,42,76,0.2)]">
               <WalletCards aria-hidden="true" className="size-5" />
@@ -1223,53 +1390,140 @@ export function AdminFinancePanel({
           </div>
         </div>
 
-        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 shadow-sm">
+        <div className="grid gap-3 border-b border-primary/10 bg-white/60 p-4 md:grid-cols-2">
+          {[
+            {
+              description:
+                "Mensalidades, parcelas, status, historico e cadastro financeiro.",
+              detail: `${formatCurrency(monthSummary.paid)} recebido`,
+              icon: UserRound,
+              label: "Alunos",
+              metric: `${monthRows.length} aluno(s)`,
+              value: "STUDENTS" as const,
+            },
+            {
+              description:
+                "Insumos e compras da loja salvos dentro do mes selecionado.",
+              detail: `${monthExpenses.length} registro(s)`,
+              icon: ShoppingCart,
+              label: "Pagamentos",
+              metric: formatCurrency(expenseSummary.total),
+              value: "EXPENSES" as const,
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = financeView === item.value;
+
+            return (
+              <button
+                key={item.value}
+                aria-pressed={isActive}
+                type="button"
+                onClick={() => setFinanceView(item.value)}
+                className={cn(
+                  "group flex min-h-[8.5rem] min-w-0 flex-col items-start justify-between rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5",
+                  isActive
+                    ? "border-primary bg-primary text-primary-foreground shadow-[0_18px_38px_rgba(65,42,76,0.18)]"
+                    : "border-primary/15 bg-white text-primary shadow-sm hover:border-primary/40 hover:bg-[#fbf7ff]",
+                )}
+              >
+                <span className="flex w-full min-w-0 items-start justify-between gap-3">
+                  <span
+                    className={cn(
+                      "flex size-11 shrink-0 items-center justify-center rounded-lg",
+                      isActive
+                        ? "bg-white/15 text-white ring-1 ring-white/20"
+                        : "bg-primary/10 text-primary",
+                    )}
+                  >
+                    <Icon aria-hidden="true" className="size-5" />
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
+                      isActive
+                        ? "bg-white/15 text-white"
+                        : "bg-primary/[0.08] text-primary",
+                    )}
+                  >
+                    {item.metric}
+                  </span>
+                </span>
+                <span className="mt-4 block min-w-0">
+                  <strong className="block text-lg leading-5">
+                    {item.label}
+                  </strong>
+                  <span
+                    className={cn(
+                      "mt-1.5 block text-sm leading-5",
+                      isActive ? "text-white/78" : "text-muted-foreground",
+                    )}
+                  >
+                    {item.description}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    "mt-4 inline-flex rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
+                    isActive
+                      ? "bg-white text-primary"
+                      : "bg-[#fbf7ff] text-primary",
+                  )}
+                >
+                  {item.detail}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_1fr_1fr_1.15fr]">
+          <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/80 p-3 shadow-sm">
             <span className="flex items-center gap-2 text-sm font-semibold text-sky-950">
               <ReceiptText aria-hidden="true" className="size-4" />
               Total previsto
             </span>
-            <strong className="mt-2 block text-2xl font-semibold text-sky-800">
+            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
               {formatCurrency(monthSummary.total)}
             </strong>
             <span className="mt-1 block text-xs text-sky-900/75">
               {monthRows.length} aluno(s) ativo(s)
             </span>
           </div>
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 shadow-sm">
+          <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/80 p-3 shadow-sm">
             <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
               <CheckCircle2 aria-hidden="true" className="size-4" />
               Recebido
             </span>
-            <strong className="mt-2 block text-2xl font-semibold text-emerald-700">
+            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-emerald-700">
               {formatCurrency(monthSummary.paid)}
             </strong>
             <span className="mt-1 block text-xs text-emerald-900/75">
               {monthSummary.paidCount} pago(s) no mes
             </span>
           </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 shadow-sm">
+          <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-100/75 p-3 shadow-sm">
             <span className="flex items-center gap-2 text-sm font-semibold text-amber-950">
               <Clock3 aria-hidden="true" className="size-4" />
               Pendentes
             </span>
-            <strong className="mt-2 block text-2xl font-semibold text-amber-800">
+            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-amber-800">
               {monthSummary.pendingCount}
             </strong>
             <span className="mt-1 block text-xs text-amber-900/75">
               {formatCurrency(monthSummary.pending)} em aberto
             </span>
           </div>
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 shadow-sm">
+          <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/75 p-3 shadow-sm">
             <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
               <AlertTriangle aria-hidden="true" className="size-4" />
               Atrasados
             </span>
-            <strong className="mt-2 block text-2xl font-semibold text-red-700">
+            <strong className="mt-2 block text-2xl font-semibold tabular-nums text-red-700">
               {monthSummary.overdueCount}
             </strong>
             <span className="mt-1 block text-xs text-red-900/75">
-              Dia de pagamento ja passou
+              {formatCurrency(monthSummary.overdue)} vencido(s)
             </span>
           </div>
           <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
@@ -1288,7 +1542,40 @@ export function AdminFinancePanel({
                 </option>
               ))}
             </NativeSelect>
+            <div className="mt-3">
+              <div className="flex items-center justify-between gap-2 text-xs font-semibold text-primary/70">
+                <span>Recebimento</span>
+                <span>{formatPercent(collectionRate)}</span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-primary/10">
+                <span
+                  className="block h-full rounded-full bg-emerald-500"
+                  style={{ width: `${Math.min(collectionRate, 100)}%` }}
+                />
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="mx-4 mb-4 grid gap-2 rounded-lg border border-primary/12 bg-white/78 p-3 text-sm text-primary shadow-sm sm:grid-cols-3">
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="size-2 rounded-full bg-emerald-500" />
+            <span className="truncate">
+              Recebido: {formatCurrency(monthSummary.paid)}
+            </span>
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="size-2 rounded-full bg-amber-500" />
+            <span className="truncate">
+              A receber: {formatCurrency(Math.max(visiblePendingAmount, 0))}
+            </span>
+          </span>
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <span className="size-2 rounded-full bg-red-500" />
+            <span className="truncate">
+              Vencido: {formatCurrency(monthSummary.overdue)}
+            </span>
+          </span>
         </div>
 
         <div className="border-t border-primary/10 bg-white/45 p-4">
@@ -1331,6 +1618,8 @@ export function AdminFinancePanel({
         </div>
       </section>
 
+      {financeView === "STUDENTS" ? (
+        <>
       <form
         onSubmit={onSubmit}
         className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_16px_44px_rgba(65,42,76,0.08)]"
@@ -1582,14 +1871,16 @@ export function AdminFinancePanel({
 
         <div className="grid gap-4 bg-[#fbf7ff] p-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.64fr)]">
           <div className="grid content-start gap-3">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <span className="inline-flex items-center gap-1 text-primary">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/12 bg-white/78 p-3 text-xs font-semibold text-muted-foreground shadow-sm">
+              <span className="inline-flex items-center gap-1.5 text-primary">
                 <SlidersHorizontal aria-hidden="true" className="size-3.5" />
-                {filteredRows.length} de {monthRows.length}
+                Mostrando {filteredRows.length} de {monthRows.length}
               </span>
-              <StatusPill status="paid" />
-              <StatusPill status="pending" />
-              <StatusPill status="overdue" />
+              <span className="flex flex-wrap items-center gap-2">
+                <StatusPill status="paid" />
+                <StatusPill status="pending" />
+                <StatusPill status="overdue" />
+              </span>
             </div>
 
             {filteredRows.length === 0 ? (
@@ -1600,75 +1891,100 @@ export function AdminFinancePanel({
                 </p>
               </div>
             ) : (
-              <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-2">
                 {filteredRows.map((row) => {
                   const classes = getStatusClasses(row.status);
-                  const isSelected = selectedStudentId === row.id;
+                  const isSelected = selectedRowId === row.id;
 
                   return (
                     <article
                       key={`${row.id}-${activeMonth}-${row.payment.updatedAt}`}
                       className={cn(
-                        "group min-w-0 rounded-lg border p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+                        "group relative flex min-h-[17rem] min-w-0 flex-col overflow-hidden rounded-lg border p-3 pt-4 text-left shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)]",
                         classes.card,
-                        isSelected ? "ring-2 ring-primary/55" : "",
+                        isSelected
+                          ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-[#fbf7ff]"
+                          : "",
                       )}
                     >
+                      <span
+                        aria-hidden="true"
+                        className={cn("absolute inset-x-0 top-0 h-1", classes.accent)}
+                      />
                       <button
                         type="button"
                         onClick={() => setSelectedStudentId(row.id)}
-                        className="flex w-full min-w-0 items-start justify-between gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="flex w-full min-w-0 items-start justify-between gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
-                        <span className="flex min-w-0 items-center gap-2">
+                        <span className="flex min-w-0 flex-1 items-center gap-2">
                           <span
                             className={cn(
-                              "flex size-10 shrink-0 items-center justify-center rounded-lg text-xs font-bold uppercase shadow-sm",
+                              "flex size-11 shrink-0 items-center justify-center rounded-lg text-xs font-bold uppercase shadow-sm",
                               classes.icon,
                             )}
                           >
                             {getFinanceInitials(row.name)}
                           </span>
-                          <span className="min-w-0">
-                            <strong className="block truncate text-base">
+                          <span className="min-w-0 flex-1">
+                            <strong className="line-clamp-2 block break-words text-base leading-5">
                               {row.name}
                             </strong>
-                            <span className="mt-1 block truncate text-xs opacity-75">
-                              {row.phone || "Sem telefone"}
-                            </span>
+                            {row.phone ? (
+                              <span className="mt-1 block truncate text-xs opacity-75">
+                                {row.phone}
+                              </span>
+                            ) : null}
                           </span>
                         </span>
                         <StatusPill status={row.status} />
                       </button>
 
-                      <span className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                        <span className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
-                          <span className="block text-[0.68rem] font-bold uppercase opacity-65">
-                            Valor
-                          </span>
-                          <span className="mt-1 block font-semibold">
-                            {formatCurrency(row.amountCents)}
-                          </span>
-                        </span>
-                        <span className="rounded-lg border border-white/70 bg-white/70 px-3 py-2">
-                          <span className="block text-[0.68rem] font-bold uppercase opacity-65">
-                            Dia
-                          </span>
-                          <span className="mt-1 block font-semibold">
-                            {row.paymentDay}
-                          </span>
-                        </span>
+                      <span
+                        className={cn(
+                          "mt-3 inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold ring-1",
+                          classes.timeline,
+                        )}
+                      >
+                        <CalendarDays aria-hidden="true" className="size-3.5" />
+                        {getPaymentTimelineLabel(row)}
                       </span>
 
-                      <span className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
-                        <span className="rounded-full border border-white/70 bg-white/75 px-2.5 py-1">
+                      <div className="mt-3 rounded-lg border border-primary/10 bg-[#fbf7ff] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+                        <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] opacity-60">
+                          Valor do mes
+                        </span>
+                        <span className="mt-2 grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                          <strong
+                            className={cn(
+                              "min-w-0 text-[1.65rem] font-extrabold leading-none tabular-nums tracking-normal",
+                              classes.amount,
+                            )}
+                          >
+                            {formatCurrency(row.amountCents)}
+                          </strong>
+                          <span className="shrink-0 rounded-full border border-primary/10 bg-white px-2.5 py-1 text-xs font-bold text-primary shadow-sm">
+                            Dia {row.paymentDay}
+                          </span>
+                        </span>
+                      </div>
+
+                      <span className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-primary/75">
+                        <WalletCards
+                          aria-hidden="true"
+                          className="size-3.5 shrink-0"
+                        />
+                        <span className="truncate">
                           {formatPaymentMethod(row.paymentMethod)}
                         </span>
-                        <span className="rounded-full border border-white/70 bg-white/75 px-2.5 py-1">
+                        <span aria-hidden="true" className="opacity-45">
+                          /
+                        </span>
+                        <span className="truncate">
                           {getInstallmentLabel(row.payment)}
                         </span>
                       </span>
 
-                      <span className="mt-4 grid gap-2">
+                      <span className="mt-auto grid gap-2 pt-4">
                         <FinanceStatusButton
                           isPaid={row.isPaid}
                           month={activeMonth}
@@ -1850,12 +2166,301 @@ export function AdminFinancePanel({
           </aside>
         </div>
 
-        <div className="border-t border-primary/15 bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/70 px-4 py-3 text-sm font-bold text-primary">
-          Total mensal: {formatCurrency(monthSummary.total)} | Recebido:{" "}
-          {formatCurrency(monthSummary.paid)} | Em aberto:{" "}
-          {formatCurrency(monthSummary.pending)}
+        <div className="grid gap-2 border-t border-primary/15 bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/70 px-4 py-3 text-sm font-bold text-primary sm:grid-cols-3">
+          <span>Total mensal: {formatCurrency(monthSummary.total)}</span>
+          <span>Recebido: {formatCurrency(monthSummary.paid)}</span>
+          <span>Em aberto: {formatCurrency(monthSummary.pending)}</span>
         </div>
       </section>
+        </>
+      ) : (
+        <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.1)]">
+          <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4 xl:flex-row xl:items-center xl:justify-between">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <ShoppingCart aria-hidden="true" className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-lg text-primary">
+                  Pagamentos da loja - {activeMonthLabel}
+                </strong>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Registre insumos, data, valor e quem fez a compra no mes.
+                </span>
+              </span>
+            </span>
+            <span className="w-fit rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold uppercase text-primary">
+              Controle interno
+            </span>
+          </div>
+
+          <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/70 p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
+                <ReceiptText aria-hidden="true" className="size-4" />
+                Total gasto
+              </span>
+              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-red-700">
+                {formatCurrency(expenseSummary.total)}
+              </strong>
+              <span className="mt-1 block text-xs text-red-900/75">
+                {expenseSummary.count} pagamento(s) no mes
+              </span>
+            </div>
+            <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/75 p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
+                <CheckCircle2 aria-hidden="true" className="size-4" />
+                Recebido de alunos
+              </span>
+              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-emerald-700">
+                {formatCurrency(monthSummary.paid)}
+              </strong>
+              <span className="mt-1 block text-xs text-emerald-900/75">
+                Base para saldo do mes
+              </span>
+            </div>
+            <div
+              className={cn(
+                "rounded-lg border bg-gradient-to-br via-white p-3 shadow-sm",
+                estimatedBalance >= 0
+                  ? "border-sky-200 from-sky-50 to-sky-100/75"
+                  : "border-amber-200 from-amber-50 to-amber-100/75",
+              )}
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+                <CircleDollarSign aria-hidden="true" className="size-4" />
+                Saldo estimado
+              </span>
+              <strong
+                className={cn(
+                  "mt-2 block text-2xl font-semibold tabular-nums",
+                  estimatedBalance >= 0 ? "text-sky-800" : "text-amber-800",
+                )}
+              >
+                {formatCurrency(estimatedBalance)}
+              </strong>
+              <span className="mt-1 block text-xs text-primary/65">
+                Recebido menos pagamentos
+              </span>
+            </div>
+            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+                <CalendarDays aria-hidden="true" className="size-4" />
+                Mes do registro
+              </span>
+              <NativeSelect
+                value={activeMonth}
+                onChange={(event) => handleMonthChange(Number(event.target.value))}
+                className="mt-2"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          </div>
+
+          <form
+            onSubmit={onExpenseSubmit}
+            className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-[#fbf7ff] shadow-sm"
+            noValidate
+          >
+            <div className="border-b border-primary/10 bg-white/78 p-4">
+              <strong className="block text-base text-primary">
+                Novo pagamento
+              </strong>
+              <span className="mt-1 block text-sm text-muted-foreground">
+                Exemplo: garrafa de agua, copos, material de aula ou insumo da
+                loja.
+              </span>
+            </div>
+            <FieldGroup className="gap-3 p-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(190px,1.3fr)_150px_minmax(120px,0.7fr)_minmax(170px,0.9fr)_auto] lg:items-start">
+                <Field
+                  data-invalid={Boolean(expenseForm.formState.errors.itemName)}
+                >
+                  <FieldLabel htmlFor="finance-expense-item">
+                    Insumos
+                  </FieldLabel>
+                  <Input
+                    id="finance-expense-item"
+                    aria-invalid={Boolean(
+                      expenseForm.formState.errors.itemName,
+                    )}
+                    disabled={isExpensePending}
+                    placeholder="Ex: Garrafa de agua"
+                    {...expenseForm.register("itemName")}
+                  />
+                  <FieldError
+                    errors={[expenseForm.formState.errors.itemName]}
+                  />
+                </Field>
+                <Field
+                  data-invalid={Boolean(expenseForm.formState.errors.purchasedAt)}
+                >
+                  <FieldLabel htmlFor="finance-expense-date">Data</FieldLabel>
+                  <Input
+                    id="finance-expense-date"
+                    type="date"
+                    aria-invalid={Boolean(
+                      expenseForm.formState.errors.purchasedAt,
+                    )}
+                    disabled={isExpensePending}
+                    {...expenseForm.register("purchasedAt")}
+                  />
+                  <FieldError
+                    errors={[expenseForm.formState.errors.purchasedAt]}
+                  />
+                </Field>
+                <Field
+                  data-invalid={Boolean(expenseForm.formState.errors.amount)}
+                >
+                  <FieldLabel htmlFor="finance-expense-amount">Valor</FieldLabel>
+                  <Input
+                    id="finance-expense-amount"
+                    inputMode="decimal"
+                    aria-invalid={Boolean(expenseForm.formState.errors.amount)}
+                    disabled={isExpensePending}
+                    placeholder="0,00"
+                    {...expenseForm.register("amount")}
+                  />
+                  <FieldError errors={[expenseForm.formState.errors.amount]} />
+                </Field>
+                <Field
+                  data-invalid={Boolean(expenseForm.formState.errors.actorName)}
+                >
+                  <FieldLabel htmlFor="finance-expense-actor">
+                    Quem fez
+                  </FieldLabel>
+                  <Input
+                    id="finance-expense-actor"
+                    aria-invalid={Boolean(
+                      expenseForm.formState.errors.actorName,
+                    )}
+                    disabled={isExpensePending}
+                    placeholder="Nome da pessoa"
+                    {...expenseForm.register("actorName")}
+                  />
+                  <FieldError
+                    errors={[expenseForm.formState.errors.actorName]}
+                  />
+                </Field>
+                <Button
+                  type="submit"
+                  className="h-10 shadow-sm lg:mt-6"
+                  disabled={isExpensePending}
+                >
+                  {isExpensePending ? (
+                    <LoaderCircle
+                      data-icon="inline-start"
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Save data-icon="inline-start" />
+                  )}
+                  Salvar
+                </Button>
+              </div>
+              <Field data-invalid={Boolean(expenseForm.formState.errors.note)}>
+                <FieldLabel htmlFor="finance-expense-note">
+                  Observacao opcional
+                </FieldLabel>
+                <Textarea
+                  id="finance-expense-note"
+                  aria-invalid={Boolean(expenseForm.formState.errors.note)}
+                  className="min-h-16 resize-y"
+                  disabled={isExpensePending}
+                  placeholder="Detalhe rapido, se precisar."
+                  {...expenseForm.register("note")}
+                />
+                <FieldError errors={[expenseForm.formState.errors.note]} />
+              </Field>
+            </FieldGroup>
+            {expenseMessage ? (
+              <p
+                className="mx-4 mb-4 rounded-lg border bg-white px-4 py-3 text-sm text-muted-foreground"
+                role="status"
+              >
+                {expenseMessage}
+              </p>
+            ) : null}
+          </form>
+
+          <div className="border-t border-primary/10 bg-[#fbf7ff] p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <span>
+                <strong className="block text-lg text-primary">
+                  Compras salvas em {activeMonthLabel}
+                </strong>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Historico mensal de insumos e pagamentos da loja.
+                </span>
+              </span>
+              <span className="rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold text-primary">
+                {monthExpenses.length} registro(s)
+              </span>
+            </div>
+            {monthExpenses.length === 0 ? (
+              <div className="flex min-h-36 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/20 bg-white p-4 text-center">
+                <ShoppingCart aria-hidden="true" className="text-primary" />
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Nenhum pagamento da loja registrado para este mes ainda.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {monthExpenses.map((expense) => (
+                  <article
+                    key={expense.id}
+                    className="relative overflow-hidden rounded-lg border border-primary/15 bg-white p-3 pt-4 shadow-[0_10px_24px_rgba(58,29,75,0.08)]"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-0 top-0 h-1 bg-red-500"
+                    />
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/55">
+                          Insumo
+                        </span>
+                        <strong className="mt-1 block break-words text-base leading-5 text-primary">
+                          {expense.itemName}
+                        </strong>
+                      </span>
+                      <span className="shrink-0 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-xs font-bold tabular-nums text-red-800">
+                        {formatCurrency(expense.amountCents)}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+                      <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2">
+                        <CalendarDays
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-primary"
+                        />
+                        {formatDate(expense.purchasedAt)}
+                      </span>
+                      <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
+                        <UserRound
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-primary"
+                        />
+                        <span className="truncate">{expense.actorName}</span>
+                      </span>
+                    </div>
+                    {expense.note ? (
+                      <p className="mt-3 line-clamp-2 rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2 text-sm text-primary/75">
+                        {expense.note}
+                      </p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <details
         id="financeiro-log"

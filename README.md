@@ -24,7 +24,7 @@ Ja existe:
 - pre-cadastro publico no login do AVA para interessados solicitarem contato, salvo como pendente sem criar usuario, senha ou sessao ate Admin/Teacher aceitar no modulo protegido `Aceitar alunos`;
 - contador discreto de visitas no footer do site publico, salvo como total agregado em `SiteVisitCounter`, com registro client-side leve e sem armazenar IP, user-agent ou dados pessoais;
 - contratos e avatar servidos por rotas protegidas;
-- financeiro admin simples em cards para 2026, com `FinancialStudent`, snapshots mensais em `FinancialPayment`, parcelas opcionais, historico por aluno e `FinancialLog`;
+- financeiro admin simples em cards para 2026, com `FinancialStudent`, snapshots mensais em `FinancialPayment`, parcelas opcionais, historico por aluno, gastos mensais da loja em `FinancialExpense` e `FinancialLog`;
 - agenda admin interna para 2026, separada dos alunos do AVA, com calendario mensal, cadastro recorrente por dias/horario, presenca, falta, historico e inativacao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave, selecao direta de aluno e replicacao de homework ja editada para outro aluno sem novo upload;
 - campos Listening no homework/aula interativa, com leitura Gemini do texto dentro da area desenhada pela teacher, botao de volume posicionado no fim da area, audio OpenAI text-to-speech em ingles e botao unico que alterna ouvir/pausar, retomando a proxima reproducao em velocidade normal/devagar;

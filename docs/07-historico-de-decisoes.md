@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-13 - Financeiro com abas de alunos e pagamentos internos
+
+- Decisao: dividir o financeiro admin em `Alunos` e `Pagamentos`, mantendo mensalidades/parcelas em `FinancialPayment` e registrando gastos/insumos da loja em `FinancialExpense`.
+- Motivo: facilitar a leitura dos cards de alunos e permitir controle mensal de compras internas sem misturar entrada de alunos com saida da loja.
+- Impacto: `prisma/schema.prisma`, migration `20260713120000_financial_expenses`, `src/app/ava/admin/page.tsx`, `src/app/ava/admin/actions.ts`, `src/components/ava/admin-finance-panel.tsx`, `src/components/ava/admin-users-panel.tsx`, `src/lib/validations/admin-users.ts`, `docs/02-banco-de-dados.md`, `docs/13-financeiro.md`, `docs/design-direcao.md`.
+- Riscos/cuidados: em deploy, aplicar a migration antes de recriar o app; manter `FinancialExpense` separado de `FinancialPayment` para nao confundir pagamentos de alunos com gastos internos.
+
 ### 2026-05 - Aplicacao propria, nao WordPress
 
 - Decisao: Candy English sera uma aplicacao Next.js propria.

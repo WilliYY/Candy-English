@@ -67,6 +67,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     contracts,
     financeStudents,
     financeLogs,
+    financeExpenses,
     agendaStudents,
     agendaLessons,
     agendaLogs,
@@ -291,6 +292,30 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
       },
       take: 30,
+    }),
+    prisma.financialExpense.findMany({
+      orderBy: [
+        {
+          purchasedAt: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+      select: {
+        actorName: true,
+        amountCents: true,
+        createdAt: true,
+        id: true,
+        itemName: true,
+        month: true,
+        note: true,
+        purchasedAt: true,
+        year: true,
+      },
+      where: {
+        year: 2026,
+      },
     }),
     prisma.agendaStudent.findMany({
       orderBy: {
@@ -880,6 +905,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         description: log.description,
         id: log.id,
         studentName: log.student?.name ?? null,
+      }))}
+      financeExpenses={financeExpenses.map((expense) => ({
+        actorName: expense.actorName,
+        amountCents: expense.amountCents,
+        createdAt: expense.createdAt.toISOString(),
+        id: expense.id,
+        itemName: expense.itemName,
+        month: expense.month,
+        note: expense.note,
+        purchasedAt: expense.purchasedAt.toISOString(),
+        year: expense.year,
       }))}
       financeStudents={financeStudents.map((student) => ({
         address: student.address,

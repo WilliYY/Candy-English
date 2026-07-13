@@ -6,6 +6,8 @@ O modulo Financeiro e um controle interno do administrador em `/ava/admin?task=f
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado.
 
+Tambem possui a aba `Pagamentos`, que registra gastos internos da loja por mes, como insumos comprados, data, valor e pessoa que fez a acao.
+
 Nao e gateway de pagamento, nao emite boleto, nao cobra automaticamente e nao integra com banco.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
@@ -21,11 +23,13 @@ Arquivos:
 - `prisma/migrations/20260510203000_recurring_finance_students/migration.sql`
 - `prisma/migrations/20260511110000_finance_month_snapshots/migration.sql`
 - `prisma/migrations/20260625120000_simple_finance_installments/migration.sql`
+- `prisma/migrations/20260713120000_financial_expenses/migration.sql`
 
 Tabelas:
 
 - `FinancialStudent`
 - `FinancialPayment`
+- `FinancialExpense`
 - `FinancialLog`
 
 Rota:
@@ -50,6 +54,8 @@ Rota:
 - `FinancialLog` registra criacao, edicao, status, exclusao e exportacao.
 - O log financeiro fica recolhido por padrao em um card separado abaixo da lista para nao alongar a tela de cobranca.
 - Valor, data paga e observacao podem ser ajustados por mes no historico do aluno, sem alterar automaticamente os outros meses.
+- `FinancialExpense` guarda gastos internos por ano/mes, com insumo, data da compra, valor, pessoa responsavel e observacao opcional.
+- A data do gasto precisa pertencer ao mes selecionado, para o relatorio mensal nao misturar compras de outro mes.
 
 ## Decisoes tecnicas tomadas
 
@@ -60,11 +66,14 @@ Rota:
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
 - A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, filtro de mes, busca por nome/telefone, filtro por status e cards coloridos por aluno.
+- A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido, meses escaneaveis, cards de aluno com valor em destaque, vencimento/status discretos, metadados compactos de forma/parcela e historico preenchido automaticamente pelo primeiro resultado visivel.
+- O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.
 - A migration `20260511110000_finance_month_snapshots` preenche snapshots e cria linhas mensais ausentes de 2026 para alunos ja existentes.
 - A migration `20260625120000_simple_finance_installments` adiciona apenas metadados opcionais de parcelas; dados antigos continuam com `NULL` e sao tratados como mensalidade recorrente.
+- A migration `20260713120000_financial_expenses` adiciona `FinancialExpense` para registrar gastos mensais internos sem misturar com `FinancialPayment`.
 
 ## Riscos ao alterar esta parte
 
@@ -76,14 +85,15 @@ Rota:
 - Transformar exportacao em endpoint publico pode vazar dados financeiros.
 - Alterar calculo de devedores sem considerar ano/mes pode gerar alerta errado.
 - Editar snapshots de meses anteriores por engano quebra o conceito de mes fechado.
+- Misturar `FinancialExpense` com `FinancialPayment` pode confundir entradas de alunos com saidas da loja; manter as abas e tabelas separadas.
 
 ## Pendencias
 
 - Nao ha importacao em massa de planilha.
-- Nao ha filtro/busca por aluno.
 - Nao ha relatorio anual consolidado.
 - Nao ha pagamento online nem conciliacao.
 - Nao ha auditoria financeira avancada alem do log simples.
+- Nao ha edicao/exclusao de gastos da aba `Pagamentos`; por enquanto o fluxo e apenas registrar e consultar por mes.
 
 ## Como pode evoluir
 

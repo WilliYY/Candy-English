@@ -158,6 +158,35 @@ function getWeekdayLabel(weekday: number) {
   return weekdays.find((item) => item.value === weekday)?.longLabel ?? "Dia";
 }
 
+function getWeekdayShortLabel(weekday: number) {
+  return weekdays.find((item) => item.value === weekday)?.label ?? "Dia";
+}
+
+function formatWeekdayList(values: number[]) {
+  if (values.length === 0) {
+    return "Sem dias ativos";
+  }
+
+  return values.map(getWeekdayShortLabel).join(", ");
+}
+
+function getAgendaInitials(name: string) {
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return "CE";
+  }
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 function pad(value: number) {
   return String(value).padStart(2, "0");
 }
@@ -260,40 +289,52 @@ function createDefaultValues(
 function getStatusMeta(status: AdminAgendaLessonStatus) {
   if (status === "ATTENDED" || status === "MAKEUP_ATTENDED") {
     return {
+      accentClassName: "bg-emerald-500",
       cardClassName:
-        "border-emerald-200 bg-[linear-gradient(135deg,#f0fdf4_0%,#ffffff_100%)]",
+        "border-emerald-200 bg-white text-emerald-950",
       dotClassName: "bg-emerald-500",
+      iconClassName: "bg-emerald-600 text-white shadow-emerald-200",
       label: status === "MAKEUP_ATTENDED" ? "Reposicao feita" : "Veio",
       pillClassName: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      softClassName: "border-emerald-100 bg-emerald-50 text-emerald-800",
     };
   }
 
   if (status === "MISSED") {
     return {
+      accentClassName: "bg-red-500",
       cardClassName:
-        "border-red-200 bg-[linear-gradient(135deg,#fff1f2_0%,#ffffff_100%)]",
+        "border-red-200 bg-white text-red-950",
       dotClassName: "bg-red-500",
+      iconClassName: "bg-red-600 text-white shadow-red-200",
       label: "Nao veio",
       pillClassName: "border-red-200 bg-red-50 text-red-800",
+      softClassName: "border-red-100 bg-red-50 text-red-800",
     };
   }
 
   if (status === "MAKEUP_SCHEDULED") {
     return {
+      accentClassName: "bg-amber-500",
       cardClassName:
-        "border-amber-200 bg-[linear-gradient(135deg,#fffbeb_0%,#ffffff_100%)]",
+        "border-amber-200 bg-white text-amber-950",
       dotClassName: "bg-amber-500",
+      iconClassName: "bg-amber-500 text-white shadow-amber-200",
       label: "Reposicao",
       pillClassName: "border-amber-200 bg-amber-50 text-amber-900",
+      softClassName: "border-amber-100 bg-amber-50 text-amber-900",
     };
   }
 
   return {
+    accentClassName: "bg-primary",
     cardClassName:
-      "border-primary/20 bg-[linear-gradient(135deg,#faf5ff_0%,#ffffff_100%)]",
+      "border-primary/20 bg-white text-primary",
     dotClassName: "bg-primary",
+    iconClassName: "bg-primary text-primary-foreground shadow-primary/20",
     label: "Previsto",
     pillClassName: "border-primary/20 bg-primary/5 text-primary",
+    softClassName: "border-primary/10 bg-primary/5 text-primary",
   };
 }
 
@@ -380,12 +421,12 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
       <Button
         type="button"
         size="sm"
         disabled={isPending}
-        className="h-8 border border-emerald-700 bg-emerald-600 px-3 text-white hover:bg-emerald-700"
+        className="h-9 justify-center border border-emerald-700 bg-emerald-600 px-3 text-white hover:bg-emerald-700"
         onClick={() => submitStatus("ATTENDED")}
       >
         {isPending ? (
@@ -399,7 +440,7 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
         type="button"
         size="sm"
         disabled={isPending}
-        className="h-8 border border-red-700 bg-red-600 px-3 text-white hover:bg-red-700"
+        className="h-9 justify-center border border-red-700 bg-red-600 px-3 text-white hover:bg-red-700"
         onClick={() => submitStatus("MISSED")}
       >
         <XCircle data-icon="inline-start" />
@@ -411,7 +452,7 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
           size="sm"
           variant="outline"
           disabled={isPending}
-          className="h-8 border-primary/25 px-3 text-primary"
+          className="h-9 justify-center border-primary/25 px-3 text-primary sm:col-span-2 2xl:col-span-1"
           onClick={() => submitStatus("SCHEDULED")}
         >
           <RotateCcw data-icon="inline-start" />
@@ -520,20 +561,51 @@ export function AdminAgendaPanel({
       new Map(),
     );
   }, [monthLessons]);
-  const selectedDayLessons = (monthLessonsByDay.get(selectedDayKey) ?? []).filter(
-    (lesson) => {
-      const query = search.trim().toLocaleLowerCase("pt-BR");
+  const selectedDayAllLessons = monthLessonsByDay.get(selectedDayKey) ?? [];
+  const selectedDayLessons = selectedDayAllLessons.filter((lesson) => {
+    const query = search.trim().toLocaleLowerCase("pt-BR");
 
-      if (!query) {
-        return true;
-      }
+    if (!query) {
+      return true;
+    }
 
-      return (
-        lesson.studentName.toLocaleLowerCase("pt-BR").includes(query) ||
-        lesson.studentPhone?.toLocaleLowerCase("pt-BR").includes(query)
-      );
-    },
-  );
+    return (
+      lesson.studentName.toLocaleLowerCase("pt-BR").includes(query) ||
+      lesson.studentPhone?.toLocaleLowerCase("pt-BR").includes(query)
+    );
+  });
+  const selectedDayAttendedCount = selectedDayAllLessons.filter(
+    (lesson) =>
+      lesson.status === "ATTENDED" || lesson.status === "MAKEUP_ATTENDED",
+  ).length;
+  const selectedDayMissedCount = selectedDayAllLessons.filter(
+    (lesson) => lesson.status === "MISSED",
+  ).length;
+  const selectedDayScheduledCount = selectedDayAllLessons.filter(
+    (lesson) =>
+      lesson.status === "SCHEDULED" || lesson.status === "MAKEUP_SCHEDULED",
+  ).length;
+  const upcomingLessons = useMemo(() => {
+    const start = parseDayKey(todayKey);
+    const end = parseDayKey(todayKey);
+
+    start.setHours(0, 0, 0, 0);
+    end.setDate(end.getDate() + 7);
+    end.setHours(23, 59, 59, 999);
+
+    return lessons
+      .filter((lesson) => {
+        if (lesson.year !== AGENDA_YEAR || !lesson.isActive) {
+          return false;
+        }
+
+        const date = parseLessonDate(lesson.date);
+
+        return date >= start && date <= end;
+      })
+      .sort(sortLessons)
+      .slice(0, 6);
+  }, [lessons, todayKey]);
   const attendedCount = monthLessons.filter(
     (lesson) =>
       lesson.status === "ATTENDED" || lesson.status === "MAKEUP_ATTENDED",
@@ -749,11 +821,11 @@ export function AdminAgendaPanel({
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:pr-20">
-      <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-sm">
-        <div className="border-b border-primary/15 bg-[linear-gradient(135deg,#faf5ff_0%,#fff7ed_100%)] p-4">
+      <section className="overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_20px_56px_rgba(65,42,76,0.1)] ring-1 ring-white/70">
+        <div className="border-b border-primary/15 bg-white/82 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+              <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-[0_12px_28px_rgba(65,42,76,0.2)]">
                 <CalendarDays aria-hidden="true" className="size-5" />
               </span>
               <div className="min-w-0">
@@ -802,28 +874,84 @@ export function AdminAgendaPanel({
             <AgendaMetric
               label="Previstos"
               value={scheduledCount}
-              className="border-primary/20 bg-white/85"
+              className="border-primary/20 bg-gradient-to-br from-white via-[#fbf7ff] to-white"
             />
             <AgendaMetric
               label="Vieram"
               value={attendedCount}
-              className="border-emerald-200 bg-emerald-50"
+              className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/75"
             />
             <AgendaMetric
               label="Nao vieram"
               value={missedCount}
-              className="border-red-200 bg-red-50"
+              className="border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/70"
             />
             <AgendaMetric
               label="Alunos ativos"
               value={activeStudentsCount}
-              className="border-amber-200 bg-amber-50"
+              className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-100/70"
             />
+          </div>
+          <div className="mt-4 rounded-lg border border-primary/12 bg-white/78 p-3 shadow-sm">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <span>
+                <span className="block text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/60">
+                  Fila operacional
+                </span>
+                <strong className="text-sm text-primary">
+                  Hoje e proximos 7 dias
+                </strong>
+              </span>
+              <span className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
+                {upcomingLessons.length} aula(s)
+              </span>
+            </div>
+            {upcomingLessons.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-primary/15 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+                Nenhuma aula ativa nessa janela.
+              </p>
+            ) : (
+              <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+                {upcomingLessons.map((lesson) => {
+                  const meta = getStatusMeta(lesson.status);
+
+                  return (
+                    <button
+                      key={lesson.id}
+                      type="button"
+                      className="min-w-0 rounded-lg border border-primary/12 bg-white px-3 py-2 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+                      onClick={() => {
+                        setActiveMonth(lesson.month);
+                        setSelectedDayKey(getLessonDayKey(lesson));
+                        openStudent(lesson.studentId);
+                      }}
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate text-xs font-bold text-primary">
+                          {formatShortDate(lesson.date)} as {lesson.time}
+                        </span>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full border px-2 py-0.5 text-[0.68rem] font-bold",
+                            meta.pillClassName,
+                          )}
+                        >
+                          {meta.label}
+                        </span>
+                      </span>
+                      <span className="mt-1 block truncate text-sm font-semibold text-primary">
+                        {lesson.studentName}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="grid gap-4 p-3 md:p-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(340px,0.95fr)]">
-          <div className="rounded-lg border border-primary/15 bg-[#fefbff] p-3">
+        <div className="grid gap-4 p-3 md:p-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
+          <div className="rounded-lg border border-primary/15 bg-white/82 p-3 shadow-sm">
             <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
               {weekdays.map((weekday) => (
                 <span key={weekday.value}>{weekday.label}</span>
@@ -836,6 +964,7 @@ export function AdminAgendaPanel({
                 }
 
                 const dayLessons = monthLessonsByDay.get(cell.key) ?? [];
+                const firstLesson = dayLessons[0];
                 const isSelected = selectedDayKey === cell.key;
                 const isToday = todayKey === cell.key;
                 const hasMissed = dayLessons.some(
@@ -856,7 +985,7 @@ export function AdminAgendaPanel({
                       setSelectedStudentId(null);
                     }}
                     className={cn(
-                      "min-h-[76px] rounded-lg border bg-white p-2 text-left transition-all",
+                      "min-h-[92px] rounded-lg border bg-white p-2 text-left transition-all",
                       "hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-sm",
                       isSelected
                         ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
@@ -881,8 +1010,25 @@ export function AdminAgendaPanel({
                         </span>
                       ) : null}
                     </span>
+                    {firstLesson ? (
+                      <span
+                        className={cn(
+                          "mt-2 block min-w-0 rounded-md px-1.5 py-1 text-[0.68rem] font-semibold leading-tight",
+                          isSelected
+                            ? "bg-white/15 text-white"
+                            : "bg-primary/5 text-primary",
+                        )}
+                      >
+                        <span className="block truncate">
+                          {firstLesson.time}
+                        </span>
+                        <span className="block truncate opacity-80">
+                          {firstLesson.studentName}
+                        </span>
+                      </span>
+                    ) : null}
                     {dayLessons.length > 0 ? (
-                      <span className="mt-3 flex gap-1">
+                      <span className="mt-2 flex items-center gap-1">
                         <span
                           className={cn(
                             "size-2 rounded-full",
@@ -894,6 +1040,16 @@ export function AdminAgendaPanel({
                         ) : null}
                         {dayLessons.length > 2 ? (
                           <span className="size-2 rounded-full bg-amber-500" />
+                        ) : null}
+                        {dayLessons.length > 1 ? (
+                          <span
+                            className={cn(
+                              "ml-auto text-[0.68rem] font-bold",
+                              isSelected ? "text-white/75" : "text-primary/55",
+                            )}
+                          >
+                            +{dayLessons.length - 1}
+                          </span>
                         ) : null}
                       </span>
                     ) : null}
@@ -926,6 +1082,32 @@ export function AdminAgendaPanel({
                   Adicionar neste dia
                 </Button>
               </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <span className="rounded-lg border border-primary/10 bg-primary/5 px-3 py-2">
+                  <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary/60">
+                    Previstas
+                  </span>
+                  <strong className="mt-1 block text-lg leading-none text-primary">
+                    {selectedDayScheduledCount}
+                  </strong>
+                </span>
+                <span className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                  <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] text-emerald-700/75">
+                    Vieram
+                  </span>
+                  <strong className="mt-1 block text-lg leading-none text-emerald-800">
+                    {selectedDayAttendedCount}
+                  </strong>
+                </span>
+                <span className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                  <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] text-red-700/75">
+                    Faltas
+                  </span>
+                  <strong className="mt-1 block text-lg leading-none text-red-800">
+                    {selectedDayMissedCount}
+                  </strong>
+                </span>
+              </div>
               <div className="mt-3 flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2">
                 <Search aria-hidden="true" className="size-4 text-primary" />
                 <input
@@ -953,54 +1135,75 @@ export function AdminAgendaPanel({
                     <article
                       key={lesson.id}
                       className={cn(
-                        "rounded-lg border p-3 shadow-sm",
+                        "relative overflow-hidden rounded-lg border p-3 pt-4 shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)]",
                         meta.cardClassName,
                       )}
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
+                      <span
+                        aria-hidden="true"
+                        className={cn("absolute inset-x-0 top-0 h-1", meta.accentClassName)}
+                      />
+                      <div className="flex items-start justify-between gap-3">
                         <button
                           type="button"
-                          className="min-w-0 text-left"
+                          className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                           onClick={() => openStudent(lesson.studentId)}
                         >
-                          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                            <span
-                              className={cn(
-                                "size-2 rounded-full",
-                                meta.dotClassName,
-                              )}
-                            />
-                            {lesson.isMakeup ? "Reposicao" : "Aula prevista"}
+                          <span
+                            className={cn(
+                              "grid size-11 shrink-0 place-items-center rounded-lg text-xs font-bold uppercase shadow-sm",
+                              meta.iconClassName,
+                            )}
+                          >
+                            {getAgendaInitials(lesson.studentName)}
                           </span>
-                          <strong className="mt-1 block truncate text-base text-primary">
-                            {lesson.studentName}
-                          </strong>
-                          <span className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <Clock aria-hidden="true" className="size-4" />
-                            {lesson.time}
-                            {lesson.studentPhone ? (
-                              <>
-                                <Phone aria-hidden="true" className="size-4" />
-                                {lesson.studentPhone}
-                              </>
+                          <span className="min-w-0">
+                            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                              <span
+                                className={cn(
+                                  "size-2 rounded-full",
+                                  meta.dotClassName,
+                                )}
+                              />
+                              {lesson.isMakeup ? "Reposicao" : "Aula prevista"}
+                            </span>
+                            <strong className="mt-1 block truncate text-lg leading-6 text-primary">
+                              {lesson.studentName}
+                            </strong>
+                            <span className="mt-2 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
+                                  meta.softClassName,
+                                )}
+                              >
+                                <Clock aria-hidden="true" className="size-4" />
+                                {lesson.time}
+                              </span>
+                              <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-1.5 text-primary/75">
+                                <Phone aria-hidden="true" className="size-4 shrink-0" />
+                                <span className="truncate">
+                                  {lesson.studentPhone || "Sem telefone"}
+                                </span>
+                              </span>
+                            </span>
+                            {lesson.studentNotes ? (
+                              <span className="mt-2 line-clamp-2 block rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2 text-sm text-primary/75">
+                                {lesson.studentNotes}
+                              </span>
                             ) : null}
                           </span>
-                          {lesson.studentNotes ? (
-                            <span className="mt-2 line-clamp-2 block text-sm text-muted-foreground">
-                              {lesson.studentNotes}
-                            </span>
-                          ) : null}
                         </button>
                         <span
                           className={cn(
-                            "rounded-full border px-2.5 py-1 text-xs font-bold",
+                            "shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm",
                             meta.pillClassName,
                           )}
                         >
                           {meta.label}
                         </span>
                       </div>
-                      <div className="mt-3">
+                      <div className="mt-3 border-t border-primary/10 pt-3">
                         <AgendaAttendanceButtons lesson={lesson} />
                       </div>
                     </article>
@@ -1377,9 +1580,32 @@ export function AdminAgendaPanel({
             Nenhum aluno interno cadastrado na agenda.
           </p>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {students.map((student) => {
               const schedule = getStudentSchedule(student, lessons);
+              const studentLessons = lessons
+                .filter(
+                  (lesson) => lesson.studentId === student.id && lesson.isActive,
+                )
+                .sort(sortLessons);
+              const studentMonthLessons = monthLessons.filter(
+                (lesson) => lesson.studentId === student.id,
+              );
+              const nextStudentLesson =
+                studentLessons.find(
+                  (lesson) => getLessonDayKey(lesson) >= todayKey,
+                ) ?? studentLessons[0];
+              const studentAttended = lessons.filter(
+                (lesson) =>
+                  lesson.studentId === student.id &&
+                  (lesson.status === "ATTENDED" ||
+                    lesson.status === "MAKEUP_ATTENDED"),
+              ).length;
+              const studentMissed = lessons.filter(
+                (lesson) =>
+                  lesson.studentId === student.id && lesson.status === "MISSED",
+              ).length;
+              const isSelected = selectedStudentId === student.id;
 
               return (
                 <button
@@ -1387,30 +1613,83 @@ export function AdminAgendaPanel({
                   type="button"
                   onClick={() => openStudent(student.id)}
                   className={cn(
-                    "rounded-lg border p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
-                    selectedStudentId === student.id
-                      ? "border-primary bg-primary text-primary-foreground"
+                    "relative min-w-0 overflow-hidden rounded-lg border p-3 pt-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+                    isSelected
+                      ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/35 ring-offset-2 ring-offset-white"
                       : student.isActive
                         ? "border-primary/15 bg-white text-primary"
                         : "border-muted bg-muted/35 text-muted-foreground",
                   )}
                 >
-                  <span className="flex items-center justify-between gap-2">
-                    <strong className="truncate text-sm">{student.name}</strong>
-                    <span className="text-xs font-bold">
-                      {student.isActive ? "Ativo" : "Inativo"}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute inset-x-0 top-0 h-1",
+                      student.isActive ? "bg-primary" : "bg-muted-foreground/40",
+                    )}
+                  />
+                  <span className="flex min-w-0 items-start gap-3">
+                    <span
+                      className={cn(
+                        "grid size-10 shrink-0 place-items-center rounded-lg text-xs font-bold uppercase shadow-sm",
+                        isSelected
+                          ? "bg-white/15 text-white"
+                          : "bg-primary text-primary-foreground",
+                      )}
+                    >
+                      {getAgendaInitials(student.name)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center justify-between gap-2">
+                        <strong className="truncate text-base leading-5">
+                          {student.name}
+                        </strong>
+                        <span
+                          className={cn(
+                            "shrink-0 rounded-full border px-2 py-0.5 text-[0.68rem] font-bold",
+                            isSelected
+                              ? "border-white/25 bg-white/15 text-white"
+                              : student.isActive
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                : "border-muted bg-white text-muted-foreground",
+                          )}
+                        >
+                          {student.isActive ? "Ativo" : "Inativo"}
+                        </span>
+                      </span>
+                      <span className="mt-2 block truncate text-xs font-semibold opacity-80">
+                        {formatWeekdayList(schedule.weekdays)} / {schedule.time}
+                      </span>
+                      {student.phone ? (
+                        <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs opacity-75">
+                          <Phone aria-hidden="true" className="size-3.5 shrink-0" />
+                          <span className="truncate">{student.phone}</span>
+                        </span>
+                      ) : null}
                     </span>
                   </span>
-                  <span className="mt-2 block text-xs opacity-80">
-                    {schedule.weekdays.map(getWeekdayLabel).join(", ") ||
-                      "Sem dias ativos"}{" "}
-                    - {schedule.time}
-                  </span>
-                  {student.phone ? (
-                    <span className="mt-1 block truncate text-xs opacity-80">
-                      {student.phone}
+                  <span
+                    className={cn(
+                      "mt-3 grid gap-2 rounded-lg border px-2.5 py-2 text-xs",
+                      isSelected
+                        ? "border-white/20 bg-white/10"
+                        : "border-primary/10 bg-[#fbf7ff] text-primary/80",
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-bold">Proxima</span>
+                      <span className="truncate">
+                        {nextStudentLesson
+                          ? `${formatShortDate(nextStudentLesson.date)} as ${nextStudentLesson.time}`
+                          : "Sem aula ativa"}
+                      </span>
                     </span>
-                  ) : null}
+                    <span className="grid grid-cols-3 gap-1 text-center font-bold">
+                      <span>{studentMonthLessons.length} no mes</span>
+                      <span>{studentAttended} veio</span>
+                      <span>{studentMissed} falta</span>
+                    </span>
+                  </span>
                 </button>
               );
             })}

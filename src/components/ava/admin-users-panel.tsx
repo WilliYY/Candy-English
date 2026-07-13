@@ -46,6 +46,7 @@ import { CattyArtifactsPanel } from "@/components/ava/catty-artifacts-panel";
 import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import {
   AdminFinancePanel,
+  type AdminFinanceExpenseRow,
   type AdminFinanceLogRow,
   type AdminFinanceStudentRow,
 } from "@/components/ava/admin-finance-panel";
@@ -201,6 +202,7 @@ type AdminUsersPanelProps = {
     role: Role;
   };
   financeLogs: AdminFinanceLogRow[];
+  financeExpenses: AdminFinanceExpenseRow[];
   financeStudents: AdminFinanceStudentRow[];
   initialAgendaMonth: number;
   initialFinanceMonth: number;
@@ -1402,6 +1404,7 @@ export function AdminUsersPanel({
   contracts,
   currentUser,
   financeLogs,
+  financeExpenses,
   financeStudents,
   initialAgendaMonth,
   initialFinanceMonth,
@@ -1646,6 +1649,7 @@ export function AdminUsersPanel({
 
           {activeTask === "financeiro" ? (
             <AdminFinancePanel
+              expenses={financeExpenses}
               logs={financeLogs}
               students={financeStudents}
               initialMonth={initialFinanceMonth}

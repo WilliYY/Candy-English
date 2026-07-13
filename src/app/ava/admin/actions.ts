@@ -28,6 +28,7 @@ import {
   adminAgendaScheduleCreateSchema,
   adminAgendaStudentDeleteSchema,
   adminAgendaStudentUpdateSchema,
+  adminFinanceExpenseCreateSchema,
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
@@ -51,6 +52,7 @@ import {
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
   type AdminFinanceExportLogInput,
+  type AdminFinanceExpenseCreateInput,
   type AdminFinancePaymentUpdateInput,
   type AdminFinanceStatusInput,
   type AdminFinanceStudentCreateInput,
@@ -1566,6 +1568,61 @@ export async function recordFinancialExport(
   return {
     ok: true,
     message: "Exportacao registrada no log.",
+  };
+}
+
+export async function createFinancialExpense(
+  input: AdminFinanceExpenseCreateInput,
+): Promise<AdminActionResult<AdminFinanceExpenseCreateInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para registrar pagamento da loja.",
+    };
+  }
+
+  const parsed = adminFinanceExpenseCreateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminFinanceExpenseCreateInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise os dados do pagamento.",
+    };
+  }
+
+  const prisma = getPrisma();
+
+  await prisma.$transaction(async (tx) => {
+    const expense = await tx.financialExpense.create({
+      data: {
+        actorName: parsed.data.actorName,
+        amountCents: parsed.data.amount,
+        createdByUserId: session.user.id,
+        itemName: parsed.data.itemName,
+        month: parsed.data.month,
+        note: parsed.data.note ?? null,
+        purchasedAt: parsed.data.purchasedAt,
+        year: parsed.data.year,
+      },
+    });
+
+    await tx.financialLog.create({
+      data: {
+        action: "EXPENSE",
+        createdByUserId: session.user.id,
+        description: `Pagamento da loja registrado: ${expense.itemName}, feito por ${expense.actorName}.`,
+      },
+    });
+  });
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: "Pagamento da loja registrado.",
   };
 }
 

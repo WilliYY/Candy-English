@@ -82,6 +82,7 @@ Financeiro:
 
 - `FinancialStudent`
 - `FinancialPayment`
+- `FinancialExpense`
 - `FinancialLog`
 
 Agenda:
@@ -142,6 +143,7 @@ Enums:
 - Financeiro guarda cadastro/base em `FinancialStudent` e snapshots mensais ativos/inativos em `FinancialPayment`.
 - `FinancialStudent.installmentsTotal` guarda a quantidade opcional de parcelas; `NULL` significa mensalidade recorrente normal.
 - `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` guardam a parcela congelada daquele mes, sem recalcular historico antigo.
+- `FinancialExpense` registra gastos internos da loja por ano/mes, com insumo, data da compra, valor, responsavel informado e usuario admin criador opcional.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
 - Agenda guarda alunos internos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`; ela nao cria nem vincula `User` ou `StudentProfile`.
 - `AgendaStudent.isActive`, `defaultTime` e `weekdayMask` guardam o estado atual da rotina interna para edicao/inativacao, enquanto `AgendaLesson` preserva as ocorrencias e o historico de presenca/falta.
@@ -194,6 +196,7 @@ Enums:
 - Migration `20260510203000_recurring_finance_students` converteu `FinancialEntry` em estrutura recorrente.
 - Migration `20260511110000_finance_month_snapshots` adicionou snapshots mensais em `FinancialPayment` para preservar meses fechados.
 - Migration `20260625120000_simple_finance_installments` adiciona metadados opcionais de parcelas ao financeiro simples, preservando linhas antigas como mensalidade recorrente.
+- Migration `20260713120000_financial_expenses` adiciona `FinancialExpense` para gastos/insumos mensais da loja, separado dos pagamentos dos alunos.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
@@ -229,6 +232,7 @@ Enums:
 - Trocar a chave `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` sem plano de rotacao pode tornar credenciais antigas ilegíveis.
 - Alterar cascade/set null sem revisar contratos, chat e financeiro pode apagar historico indevidamente.
 - Fazer hard delete de `FinancialStudent` no financeiro apaga pagamentos mensais por cascade; a regra atual e inativar apenas a linha mensal escolhida pela UI.
+- Misturar `FinancialExpense` com `FinancialPayment` quebra a leitura de entradas e saidas; gastos da loja devem continuar em tabela e aba separadas.
 - Fazer hard delete de `AgendaStudent` apaga ocorrencias da agenda por cascade; a UI deve retirar agenda por `isActive=false`.
 - Alterar `HomeworkInteractiveField` sem manter coordenadas percentuais por pagina pode desalinhar respostas sobre o PDF/imagem.
 - Exibir `HomeworkSubmission.teacherAnnotations` enquanto a entrega ainda esta `SUBMITTED` pode revelar marcacoes de correcao antes da devolucao/avaliacao; a UI do aluno deve filtrar por `RETURNED`/`REVIEWED`.

@@ -71,6 +71,7 @@ Rota:
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
 - A tela da Agenda usa hierarquia operacional simples: cabecalho do mes, metricas, calendario mensal, lista do dia selecionado, cadastro rapido, detalhe/historico do aluno e log recolhido.
+- A tela da Agenda prioriza leitura rapida: fila de hoje/proximos 7 dias no topo, calendario mensal com primeiro horario/aluno por dia, totais do dia selecionado, cards de aula com status/horario/telefone/observacao e cards de alunos internos com rotina, proxima aula e contadores de presenca/falta.
 - O painel evita tabela grande e usa cards empilhados no mobile para facilitar toque em `Veio` e `Nao veio`.
 - A busca e o detalhe trabalham apenas com `AgendaStudent`, sem consultar `User`/`StudentProfile`.
 

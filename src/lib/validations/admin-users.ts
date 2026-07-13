@@ -105,6 +105,23 @@ const optionalDateSchema = z
     return date;
   });
 
+const financeExpenseDateSchema = z
+  .string()
+  .min(1, "Informe a data da compra.")
+  .transform((value, ctx) => {
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    if (Number.isNaN(date.getTime()) || date.getUTCFullYear() !== 2026) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Informe uma data valida em 2026.",
+      });
+      return z.NEVER;
+    }
+
+    return date;
+  });
+
 const optionalEmailSchema = z
   .string()
   .trim()
@@ -375,6 +392,34 @@ export const adminFinanceExportLogSchema = z.object({
   year: year2026Schema,
 });
 
+export const adminFinanceExpenseCreateSchema = z
+  .object({
+    actorName: z
+      .string()
+      .trim()
+      .min(2, "Informe quem fez a acao.")
+      .max(120, "O nome pode ter no maximo 120 caracteres."),
+    amount: moneySchema,
+    itemName: z
+      .string()
+      .trim()
+      .min(2, "Informe o insumo comprado.")
+      .max(160, "O insumo pode ter no maximo 160 caracteres."),
+    month: financeMonthSchema,
+    note: optionalText(600, "A observacao pode ter no maximo 600 caracteres."),
+    purchasedAt: financeExpenseDateSchema,
+    year: year2026Schema,
+  })
+  .superRefine((data, ctx) => {
+    if (data.purchasedAt.getUTCMonth() + 1 !== data.month) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A data precisa estar no mes selecionado.",
+        path: ["purchasedAt"],
+      });
+    }
+  });
+
 export const adminAgendaScheduleCreateSchema = z.object({
   month: financeMonthSchema,
   name: z
@@ -462,6 +507,9 @@ export type AdminFinanceStudentDeleteInput = z.input<
 >;
 export type AdminFinanceExportLogInput = z.input<
   typeof adminFinanceExportLogSchema
+>;
+export type AdminFinanceExpenseCreateInput = z.input<
+  typeof adminFinanceExpenseCreateSchema
 >;
 export type AdminAgendaScheduleCreateInput = z.input<
   typeof adminAgendaScheduleCreateSchema
