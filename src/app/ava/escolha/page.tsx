@@ -81,7 +81,7 @@ export default async function AvaAreaChoicePage() {
   ];
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+    <section className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 bg-background px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="rounded-2xl border border-primary/15 bg-white/84 p-5 shadow-[0_20px_60px_rgba(65,42,76,0.1)] sm:p-7">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <span className="min-w-0">

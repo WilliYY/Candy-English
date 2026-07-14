@@ -224,6 +224,7 @@ Enums:
 - Migration `20260604170000_student_pre_registration_review` adiciona metadados de revisao e conversao do pre-cadastro para o modulo `Aceitar alunos`.
 - Migration `20260714143000_secretaria_pre_registration` move o pre-cadastro para o controle interno da Secretaria, torna email opcional, adiciona telefone normalizado unico, unidade, teacher responsavel, criador, agenda pretendida, combinado de pagamento e os status `WAITING_PAYMENT`/`READY_TO_CONVERT`.
 - Migration `20260714170000_linked_pre_registration_conversion` adiciona os ids linkados de conversao em `StudentPreRegistration`, relacoes para `StudentProfile`, `FinancialStudent` e `AgendaStudent`, alem de `AgendaStudent.unit`.
+- Migration `20260714193000_repair_agenda_student_unit` repara de forma idempotente bancos onde `AgendaStudent.unit` ficou ausente apesar da migration de conversao linkada estar registrada como aplicada.
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 - Migration `20260605210000_catty_learning_center` adiciona Catty Learning Center com itens aprovaveis e feedback/sugestoes.
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.

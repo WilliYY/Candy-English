@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import {
   normalizeTeacherTask,
+  type TeacherTask,
   TeacherWorkspace,
 } from "@/components/ava/teacher-workspace";
+import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import { requireAvaRole } from "@/lib/authorization";
 import {
   CANDY_XP_REWARDS,
@@ -40,6 +42,11 @@ type TeacherPageProps = {
   }>;
 };
 
+const secretariaTeacherTasks = new Set<TeacherTask>([
+  "aceitar-alunos",
+  "contratos",
+]);
+
 export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   const session = await requireAvaRole(["ADMIN", "TEACHER"], "/ava/teacher");
   const prisma = getPrisma();
@@ -48,6 +55,9 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     ? params?.task[0]
     : params?.task;
   const activeTask = normalizeTeacherTask(requestedTask);
+  const workspaceArea = secretariaTeacherTasks.has(activeTask)
+    ? "SECRETARIA"
+    : "AVA";
   const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
     ? params?.preStatus[0]
     : params?.preStatus;
@@ -748,7 +758,8 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   });
 
   return (
-    <TeacherWorkspace
+    <AvaWorkspaceShell area={workspaceArea}>
+      <TeacherWorkspace
       activeTask={activeTask}
       candyXpPersistence={candyXpPersistence}
       candyXpRanking={candyXpRanking}
@@ -881,6 +892,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         id: teacher.id,
         label: `${teacher.user.name} - ${teacher.user.email}`,
       }))}
-    />
+      />
+    </AvaWorkspaceShell>
   );
 }

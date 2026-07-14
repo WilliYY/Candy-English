@@ -213,6 +213,86 @@ async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
   console.log("OK secretaria teacher limited");
 }
 
+async function assertAreaChoiceShell(role: SmokeRole, cookie: string) {
+  if (role === "STUDENT") {
+    return;
+  }
+
+  const response = await fetch(buildUrl("/ava/escolha"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+
+  if (!response.ok) {
+    throw new Error(`${role} esperava acessar escolha, recebeu ${response.status}`);
+  }
+
+  const text = await response.text();
+  const forbiddenShellText = [
+    "Area de trabalho",
+    "Admin AVA",
+    "Teacher AVA",
+    "Painel Admin AVA",
+    "Painel Teacher AVA",
+    "Navegacao principal do AVA",
+  ];
+
+  for (const fragment of forbiddenShellText) {
+    if (text.includes(fragment)) {
+      throw new Error(`Tela de escolha vazou sidebar/atalho: ${fragment}`);
+    }
+  }
+
+  if (!text.includes("Entrar no AVA") || !text.includes("Entrar na Secretaria")) {
+    throw new Error("Tela de escolha sem cards AVA e Secretaria.");
+  }
+
+  console.log(`OK escolha limpa ${role.toLowerCase()}`);
+}
+
+async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
+  const path =
+    role === "ADMIN"
+      ? "/ava/admin?task=usuarios"
+      : role === "TEACHER"
+        ? "/ava/teacher?task=resumo"
+        : "/ava/student";
+  const response = await fetch(buildUrl(path), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+
+  if (!response.ok) {
+    throw new Error(`${role} esperava acessar ${path}, recebeu ${response.status}`);
+  }
+
+  const text = await response.text();
+
+  if (role === "ADMIN") {
+    if (
+      !text.includes("Admin AVA") ||
+      text.includes("/ava/admin?task=financeiro")
+    ) {
+      throw new Error("Sidebar do AVA Admin veio incompleta ou misturada.");
+    }
+  }
+
+  if (role === "TEACHER") {
+    if (
+      !text.includes("Teacher AVA") ||
+      text.includes("/ava/admin?task=financeiro")
+    ) {
+      throw new Error("Sidebar do AVA Teacher veio incompleta ou misturada.");
+    }
+  }
+
+  if (role === "STUDENT" && text.includes("Secretaria")) {
+    throw new Error("Student recebeu atalho de Secretaria.");
+  }
+
+  console.log(`OK workspace pedagogico ${role.toLowerCase()}`);
+}
+
 async function assertAdminOnlySecretariaTasks(role: SmokeRole, cookie: string) {
   if (role === "ADMIN") {
     return;
@@ -288,6 +368,8 @@ async function main() {
     await createSmokeUser(role, email);
     const cookie = await signInWithCredentials(email);
     await assertRoleRedirect(role, cookie);
+    await assertAreaChoiceShell(role, cookie);
+    await assertPedagogicalWorkspace(role, cookie);
     await assertSecretariaPermissions(role, cookie);
     await assertAdminOnlySecretariaTasks(role, cookie);
   }

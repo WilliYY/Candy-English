@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import {
   AdminUsersPanel,
+  type AdminTask,
   normalizeAdminTask,
 } from "@/components/ava/admin-users-panel";
+import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import { syncEnvironmentAdminCredentials } from "@/lib/admin-credentials";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { requireAvaRole } from "@/lib/authorization";
@@ -40,6 +42,16 @@ type AdminPageProps = {
   }>;
 };
 
+const secretariaAdminTasks = new Set<AdminTask>([
+  "aceitar-alunos",
+  "agenda",
+  "apis-senhas",
+  "contratos",
+  "criar-admin",
+  "editar-site",
+  "financeiro",
+]);
+
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const session = await requireAvaRole(["ADMIN"], "/ava/admin");
   const prisma = getPrisma();
@@ -48,6 +60,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     ? params?.task[0]
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
+  const workspaceArea = secretariaAdminTasks.has(activeTask)
+    ? "SECRETARIA"
+    : "AVA";
   const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
     ? params?.preStatus[0]
     : params?.preStatus;
@@ -773,7 +788,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   });
 
   return (
-    <AdminUsersPanel
+    <AvaWorkspaceShell area={workspaceArea}>
+      <AdminUsersPanel
       activeTask={activeTask}
       adminCredentials={adminCredentials.map((credential) => ({
         createdAt: credential.createdAt.toISOString(),
@@ -1052,7 +1068,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         isActive: teacher.user.isActive,
         label: `${teacher.user.name} - ${teacher.user.email}`,
       }))}
-      users={users}
-    />
+        users={users}
+      />
+    </AvaWorkspaceShell>
   );
 }

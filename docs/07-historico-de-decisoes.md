@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Shell lateral somente depois da escolha de area
+
+- Decisao: manter `/ava/layout.tsx` leve e mover a sidebar completa para `AvaWorkspaceShell`, usado apenas por `/ava/admin`, `/ava/teacher`, `/ava/student` e `/ava/secretaria` com modo `AVA`, `SECRETARIA` ou `STUDENT`.
+- Motivo: `/ava/escolha` deve ser uma tela limpa com os cards AVA/Secretaria e nao deve buscar nem renderizar menus completos antes da escolha.
+- Impacto: `src/app/ava/layout.tsx`, `src/components/ava/ava-workspace-shell.tsx`, paginas Admin/Teacher/Student/Secretaria, `src/components/ava/ava-responsive-sidebar.tsx`, `scripts/auth-smoke.ts` e docs oficiais.
+- Riscos/cuidados: links antigos por `?task=` continuam protegidos no servidor; o modo da sidebar e visual e nao substitui `requireAvaRole` nem validacoes por dado.
+
 ### 2026-07-14 - Login obrigatorio na conversao de pre-cadastro
 
 - Decisao: a conversao `Tornar aluno` passa a exigir sempre `emailForLogin` e `initialPassword` na UI e no servidor; o email existente preenche o campo, sem email a UI mostra sugestao baseada no nome, e a senha inicial visivel/editavel e gerada por nome simplificado + `candy`.

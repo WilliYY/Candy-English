@@ -12,11 +12,13 @@ import {
 import { cn } from "@/lib/utils";
 
 type AvaResponsiveSidebarProps = {
+  areaLabel?: string;
   children: ReactNode;
   roleLabel: string;
 };
 
 export function AvaResponsiveSidebar({
+  areaLabel = "AVA",
   children,
   roleLabel,
 }: AvaResponsiveSidebarProps) {
@@ -78,6 +80,13 @@ export function AvaResponsiveSidebar({
     }
   }
 
+  const menuTitle =
+    areaLabel === "Secretaria" ? "Menu da Secretaria" : "Menu do AVA";
+  const navigationLabel =
+    areaLabel === "Secretaria"
+      ? "Navegacao principal da Secretaria"
+      : "Navegacao principal do AVA";
+
   return (
     <>
       <header className="sticky top-0 z-40 border-b border-primary/15 bg-white/94 px-3 py-2.5 shadow-[0_10px_28px_rgb(44_19_56_/_0.1)] backdrop-blur-xl xl:hidden">
@@ -93,9 +102,9 @@ export function AvaResponsiveSidebar({
             <Menu aria-hidden="true" className="size-5" />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-sm font-bold">Menu do AVA</span>
+            <span className="block text-sm font-bold">{menuTitle}</span>
             <span className="block truncate text-xs font-semibold text-muted-foreground">
-              {roleLabel} · toque para escolher uma area
+              {roleLabel} - {areaLabel}
             </span>
           </span>
           <PanelLeftClose
@@ -108,7 +117,7 @@ export function AvaResponsiveSidebar({
       {open ? (
         <button
           type="button"
-          aria-label="Fechar menu do AVA"
+          aria-label={`Fechar ${menuTitle.toLowerCase()}`}
           className="fixed inset-0 z-[60] cursor-default bg-primary/38 backdrop-blur-[2px] xl:hidden"
           onClick={closeAndRestoreFocus}
         />
@@ -116,7 +125,7 @@ export function AvaResponsiveSidebar({
 
       <aside
         id="ava-responsive-navigation"
-        aria-label="Navegacao principal do AVA"
+        aria-label={navigationLabel}
         className={cn(
           "ava-sidebar-glass fixed inset-y-0 left-0 z-[70] w-[min(90vw,360px)] overflow-y-auto border-r border-primary/20 shadow-[24px_0_54px_rgb(44_19_56_/_0.2)] transition-transform duration-200 ease-out xl:relative xl:inset-auto xl:z-auto xl:w-auto xl:translate-x-0 xl:overflow-hidden xl:shadow-none",
           open
@@ -127,7 +136,7 @@ export function AvaResponsiveSidebar({
       >
         <div className="sticky top-0 z-30 flex items-center justify-between border-b border-primary/12 bg-white/96 px-4 py-3 backdrop-blur-xl xl:hidden">
           <div>
-            <p className="text-sm font-bold text-primary">Navegacao do AVA</p>
+            <p className="text-sm font-bold text-primary">{navigationLabel}</p>
             <p className="text-xs font-semibold text-muted-foreground">
               {roleLabel}
             </p>

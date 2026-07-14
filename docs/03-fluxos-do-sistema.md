@@ -91,14 +91,15 @@ Helpers:
 ### Escolha AVA ou Secretaria
 
 1. Admin ou Teacher autenticado abre `/ava` ou `/ava/escolha`.
-2. A tela mostra dois blocos grandes: `AVA`, para rotina pedagogica, e `Secretaria`, para controle interno.
+2. A tela mostra dois blocos grandes: `AVA`, para rotina pedagogica, e `Secretaria`, para controle interno, sem carregar nem renderizar a sidebar completa da area de trabalho.
 3. Clicar em `AVA` leva Admin para `/ava/admin?task=usuarios` e Teacher para `/ava/teacher?task=resumo`.
 4. Clicar em `Secretaria` leva para `/ava/secretaria`, um painel protegido de atalhos.
 5. A tela usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada.
 6. Admin ve atalhos completos: pre-cadastros, financeiro, agenda, contratos, administracao, APIs/senhas, unidades/gastos e relatorios simples vinculados ao financeiro.
 7. Teacher ve somente Secretaria limitada: pre-cadastros proprios/atribuidos e contratos permitidos; financeiro geral, agenda completa, gastos, APIs e administracao seguem exclusivos de Admin.
 8. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
-9. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
+9. O shell lateral e renderizado somente dentro das areas escolhidas: tarefas pedagogicas mostram grupos do AVA, tarefas administrativas mostram grupos da Secretaria, e a lateral mantem atalho para `Trocar area`.
+10. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
 
 ### Pre-cadastro de interessado
 

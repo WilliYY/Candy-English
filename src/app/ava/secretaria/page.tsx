@@ -11,6 +11,7 @@ import {
   UserPlus,
   WalletCards,
 } from "lucide-react";
+import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import { requireAvaRole } from "@/lib/authorization";
 import {
   canAccessSecretariaFeature,
@@ -127,7 +128,8 @@ export default async function SecretariaPage() {
         ];
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+    <AvaWorkspaceShell area="SECRETARIA">
+      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-[0_20px_60px_rgba(65,42,76,0.1)]">
         <div className="bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/80 p-5 sm:p-7">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -212,6 +214,7 @@ export default async function SecretariaPage() {
           );
         })}
       </div>
-    </section>
+      </section>
+    </AvaWorkspaceShell>
   );
 }

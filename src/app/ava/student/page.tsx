@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AvaDashboard } from "@/components/ava/ava-dashboard";
+import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import {
   normalizeStudentTask,
   StudentWorkspace,
@@ -42,21 +43,27 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   const maintenanceMode = await isMaintenanceModeEnabled();
 
   if (session.user.role === "STUDENT" && maintenanceMode) {
-    return <StudentMaintenanceScreen />;
+    return (
+      <AvaWorkspaceShell area="STUDENT">
+        <StudentMaintenanceScreen />
+      </AvaWorkspaceShell>
+    );
   }
 
   if (session.user.role !== "STUDENT") {
     return (
-      <AvaDashboard
-        title="Student"
-        description="Area do aluno. Use uma conta STUDENT para visualizar aulas, homeworks e feedbacks como aluno."
-        items={[
-          "Materiais disponiveis",
-          "Atividades online",
-          "Feedbacks recebidos",
-        ]}
-        user={session.user}
-      />
+      <AvaWorkspaceShell area="STUDENT">
+        <AvaDashboard
+          title="Student"
+          description="Area do aluno. Use uma conta STUDENT para visualizar aulas, homeworks e feedbacks como aluno."
+          items={[
+            "Materiais disponiveis",
+            "Atividades online",
+            "Feedbacks recebidos",
+          ]}
+          user={session.user}
+        />
+      </AvaWorkspaceShell>
     );
   }
 
@@ -90,12 +97,14 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
 
   if (!studentProfile) {
     return (
-      <AvaDashboard
-        title="Student"
-        description="Seu usuario ainda nao possui perfil de aluno vinculado."
-        items={["Entre em contato com a administracao do AVA."]}
-        user={session.user}
-      />
+      <AvaWorkspaceShell area="STUDENT">
+        <AvaDashboard
+          title="Student"
+          description="Seu usuario ainda nao possui perfil de aluno vinculado."
+          items={["Entre em contato com a administracao do AVA."]}
+          user={session.user}
+        />
+      </AvaWorkspaceShell>
     );
   }
 
@@ -509,6 +518,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
   });
 
   return (
+    <AvaWorkspaceShell area="STUDENT">
       <StudentWorkspace
         activeTask={activeTask}
         candyXpActivities={candyXpActivities.map((activity) => ({
@@ -599,6 +609,7 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         id: assignment.teacherProfileId,
         label: `${assignment.teacherProfile.user.name} - ${assignment.teacherProfile.user.email}`,
       }))}
-    />
+      />
+    </AvaWorkspaceShell>
   );
 }

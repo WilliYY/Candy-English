@@ -83,6 +83,7 @@ Rotas protegidas:
 - `TEACHER` acessa teacher e student, mas dados editaveis dependem de vinculo.
 - `STUDENT` acessa student e apenas os proprios dados.
 - Depois do login, `ADMIN` e `TEACHER` entram em `/ava/escolha`; `STUDENT` entra direto em `/ava/student`.
+- `/ava/escolha` usa layout limpo sem sidebar de trabalho; a sidebar protegida aparece apenas depois que Admin/Teacher entram em `AVA` ou `Secretaria`.
 - `/ava/secretaria` aceita apenas `ADMIN` e `TEACHER`; Student nao ve nem acessa a Secretaria.
 - A Secretaria possui matriz central em `SECRETARIA_PERMISSION_MATRIX` (`src/lib/roles.ts`) para documentar e renderizar o escopo por role; cada destino continua validando role e permissao por dado no servidor.
 - Matriz da Secretaria:
@@ -150,6 +151,7 @@ Rotas protegidas:
 - Credentials Provider e o login principal.
 - `getDefaultAvaPath` direciona `ADMIN` e `TEACHER` para `/ava/escolha`; `STUDENT` continua indo para `/ava/student`.
 - A escolha pos-login e a Secretaria usam `requireAvaRole` em Server Component, sem criar nova role.
+- O shell lateral do AVA fica em `AvaWorkspaceShell` e recebe o modo atual (`AVA`, `SECRETARIA` ou `STUDENT`) pelas paginas protegidas, evitando buscar dados de sidebar em `/ava/escolha`.
 - `scripts/auth-smoke.ts` valida que Admin ve atalhos completos da Secretaria, Teacher ve atalhos limitados, Student e redirecionado para `/ava/student`, e Teacher/Student nao entram em `/ava/admin?task=financeiro`, `/ava/admin?task=agenda` ou `/ava/admin?task=apis-senhas`.
 - Google Provider foi removido temporariamente; o provider ativo e Credentials.
 - `StudentPreRegistration` guarda interessados da Secretaria fora do fluxo de Auth.js, com email opcional, telefone normalizado, unidade, agenda pretendida e combinado de pagamento.
