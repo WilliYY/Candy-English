@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertCircle,
   ArrowRight,
   Banknote,
   BrainCircuit,
@@ -23,6 +24,7 @@ import {
   UserRound,
   UsersRound,
   WalletCards,
+  X,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -35,6 +37,7 @@ import {
 } from "@/app/ava/pre-registrations/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { SecretariaPreRegistrationInput } from "@/lib/validations/pre-registration";
 import { cn } from "@/lib/utils";
@@ -757,6 +760,141 @@ function RejectForm({ requestId }: { requestId: string }) {
   );
 }
 
+type ConversionFlowState =
+  | "incomplete"
+  | "ready"
+  | "converting"
+  | "converted"
+  | "error";
+
+const conversionFlowMeta = {
+  converted: {
+    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    icon: CheckCircle2,
+    label: "Convertido",
+  },
+  converting: {
+    className: "border-sky-200 bg-sky-50 text-sky-800",
+    icon: LoaderCircle,
+    label: "Convertendo",
+  },
+  error: {
+    className: "border-destructive/25 bg-destructive/10 text-destructive",
+    icon: AlertCircle,
+    label: "Erro",
+  },
+  incomplete: {
+    className: "border-amber-200 bg-amber-50 text-amber-900",
+    icon: Clock3,
+    label: "Incompleto",
+  },
+  ready: {
+    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    icon: ShieldCheck,
+    label: "Pronto",
+  },
+} satisfies Record<
+  ConversionFlowState,
+  {
+    className: string;
+    icon: typeof UserRound;
+    label: string;
+  }
+>;
+
+function ConversionStatePill({ state }: { state: ConversionFlowState }) {
+  const meta = conversionFlowMeta[state];
+  const Icon = meta.icon;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em]",
+        meta.className,
+      )}
+    >
+      <Icon
+        aria-hidden="true"
+        className={cn("size-3.5", state === "converting" && "animate-spin")}
+      />
+      {meta.label}
+    </span>
+  );
+}
+
+function ConversionInfoTile({
+  description,
+  icon: Icon,
+  label,
+  tone = "neutral",
+  value,
+}: {
+  description?: React.ReactNode;
+  icon: typeof UserRound;
+  label: string;
+  tone?: "neutral" | "success" | "info" | "warning";
+  value: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "min-w-0 rounded-lg border bg-white/88 p-3 shadow-sm shadow-primary/5",
+        tone === "neutral" && "border-primary/10",
+        tone === "success" && "border-emerald-200 bg-emerald-50/60",
+        tone === "info" && "border-sky-200 bg-sky-50/60",
+        tone === "warning" && "border-amber-200 bg-amber-50/70",
+      )}
+    >
+      <p className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+        <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+        <span className="truncate">{label}</span>
+      </p>
+      <div className="mt-1 break-words text-sm font-semibold text-primary">
+        {value}
+      </div>
+      {description ? (
+        <div className="mt-1 text-xs leading-5 text-muted-foreground">
+          {description}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ConversionStepCard({
+  children,
+  description,
+  icon: Icon,
+  step,
+  title,
+}: {
+  children: React.ReactNode;
+  description: string;
+  icon: typeof UserRound;
+  step: number;
+  title: string;
+}) {
+  return (
+    <section className="rounded-xl border border-primary/12 bg-white/88 p-4 shadow-sm shadow-primary/5">
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-sm">
+          {step}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Icon aria-hidden="true" className="size-4 text-primary" />
+            <h5 className="text-sm font-semibold text-primary">{title}</h5>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </div>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
 function AcceptForm({
   request,
   teacherOptions,
@@ -771,9 +909,12 @@ function AcceptForm({
   const [cattyContext, setCattyContext] = useState("");
   const [confirmConversion, setConfirmConversion] = useState(false);
   const [emailForLogin, setEmailForLogin] = useState(request.email ?? "");
+  const [hasConverted, setHasConverted] = useState(false);
+  const [hasSubmissionError, setHasSubmissionError] = useState(false);
   const [initialPassword, setInitialPassword] = useState(() =>
     buildDefaultInitialPassword(request.fullName),
   );
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [cattyContextError, setCattyContextError] = useState<string | null>(
@@ -786,10 +927,65 @@ function AcceptForm({
   const [teacherProfileIdForConversion, setTeacherProfileIdForConversion] =
     useState(request.assignedTeacherId ?? "");
   const [isPending, startTransition] = useTransition();
+  const selectedTeacher = teacherOptions.find(
+    (teacher) => teacher.id === teacherProfileIdForConversion,
+  );
   const isEmailForLoginValid = isValidEmailForLogin(emailForLogin);
   const isInitialPasswordValid = initialPassword.trim().length >= 8;
+  const teacherSummary =
+    viewerRole === "TEACHER"
+      ? request.assignedTeacherName ?? "Sua teacher"
+      : selectedTeacher?.label ?? request.assignedTeacherName ?? "Sem teacher";
+  const scheduleDays =
+    formatWeekdayMask(request.intendedWeekdayMask) ?? "Dias nao informados";
+  const scheduleTime = request.intendedTime ?? "Horario nao informado";
+  const scheduleSummary = [
+    formatWeekdayMask(request.intendedWeekdayMask),
+    request.intendedTime,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+  const paymentMethodLabel = request.paymentMethod
+    ? paymentMethodLabels[request.paymentMethod as PaymentMethod] ??
+      request.paymentMethod
+    : "Forma nao informada";
+  const financeSummary = [
+    formatCurrency(request.tuitionCents) ?? "Mensalidade pendente",
+    request.paymentDay ? `dia ${request.paymentDay}` : "dia pendente",
+    paymentMethodLabel,
+    request.installmentsTotal
+      ? `${request.installmentsTotal} parcela(s)`
+      : "recorrente",
+  ].join(" / ");
+  const missingRequirements = useMemo(() => {
+    const items: string[] = [];
+
+    if (!isEmailForLoginValid) {
+      items.push("email/login valido");
+    }
+
+    if (!isInitialPasswordValid) {
+      items.push("senha inicial com 8+ caracteres");
+    }
+
+    if (!confirmConversion) {
+      items.push("confirmacao final");
+    }
+
+    return items;
+  }, [confirmConversion, isEmailForLoginValid, isInitialPasswordValid]);
+  const isReadyToConvert = missingRequirements.length === 0;
+  const conversionState: ConversionFlowState = isPending
+    ? "converting"
+    : hasConverted
+      ? "converted"
+      : hasSubmissionError
+        ? "error"
+        : isReadyToConvert
+          ? "ready"
+          : "incomplete";
   const disableConversionButton =
-    isPending || !isEmailForLoginValid || !isInitialPasswordValid;
+    isPending || hasConverted || !isReadyToConvert;
   const emailValidationMessage =
     emailError ??
     (!isEmailForLoginValid
@@ -800,33 +996,35 @@ function AcceptForm({
     (!isInitialPasswordValid
       ? "A senha inicial precisa ter pelo menos 8 caracteres."
       : null);
-  const selectedTeacher = teacherOptions.find(
-    (teacher) => teacher.id === teacherProfileIdForConversion,
-  );
-  const teacherSummary =
-    viewerRole === "TEACHER"
-      ? request.assignedTeacherName ?? "Sua teacher"
-      : selectedTeacher?.label ?? request.assignedTeacherName ?? "Sem teacher";
-  const scheduleSummary = [
-    formatWeekdayMask(request.intendedWeekdayMask),
-    request.intendedTime,
-  ]
-    .filter(Boolean)
-    .join(" - ");
-  const financeSummary = [
-    formatCurrency(request.tuitionCents) ?? "mensalidade pendente",
-    request.paymentDay ? `dia ${request.paymentDay}` : "dia pendente",
-    request.paymentMethod
-      ? paymentMethodLabels[request.paymentMethod as PaymentMethod] ??
-        request.paymentMethod
-      : "forma pendente",
-    request.installmentsTotal
-      ? `${request.installmentsTotal} parcela(s)`
-      : "recorrente",
-  ].join(" / ");
+  const confirmValidationMessage =
+    confirmError ??
+    (!confirmConversion ? "Confirme a criacao antes de converter." : null);
+  const convertedUserLabel =
+    emailForLogin.trim() || request.convertedUserEmail || "login criado";
+
+  function resetSubmissionFeedback() {
+    setHasSubmissionError(false);
+    setMessage(null);
+    setRequestError(null);
+  }
+
+  function handleClosePanel() {
+    if (isPending) return;
+
+    setIsPanelOpen(false);
+
+    if (hasConverted) {
+      router.refresh();
+    }
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (disableConversionButton) {
+      return;
+    }
+
     setMessage(null);
     setRequestError(null);
     setCattyContextError(null);
@@ -834,6 +1032,7 @@ function AcceptForm({
     setEmailError(null);
     setPasswordError(null);
     setTeacherError(null);
+    setHasSubmissionError(false);
 
     startTransition(async () => {
       const result = await acceptStudentPreRegistration({
@@ -854,271 +1053,546 @@ function AcceptForm({
         setRequestError(result.errors?.requestId ?? null);
         setTeacherError(result.errors?.teacherProfileIdForConversion ?? null);
         setMessage(result.message);
+        setHasSubmissionError(true);
         return;
       }
 
       setCattyContext("");
       setConfirmConversion(false);
-      setEmailForLogin("");
       setInitialPassword("");
       setMessage(result.message);
-      router.refresh();
+      setHasConverted(true);
+      setHasSubmissionError(false);
     });
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
-      <div className="grid gap-2 rounded-xl border border-primary/12 bg-primary/[0.03] p-3">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary/60">
-          Resumo da conversao
-        </p>
-        <div className="grid gap-2">
-          <div className="rounded-lg border border-primary/10 bg-white/85 p-3">
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/50">
-              AVA
-            </p>
-            <p className="mt-1 text-sm font-semibold text-primary">
-              {request.fullName}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              User STUDENT + StudentProfile
-            </p>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3">
-              <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-emerald-800/65">
-                Unidade e teacher
-              </p>
-              <p className="mt-1 text-sm font-semibold text-emerald-950">
-                {unitLabels[request.unit]}
-              </p>
-              <p className="mt-1 line-clamp-2 text-xs text-emerald-900/70">
-                {teacherSummary}
-              </p>
-            </div>
-            <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-3">
-              <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-sky-800/65">
-                Agenda
-              </p>
-              <p className="mt-1 text-sm font-semibold text-sky-950">
-                {scheduleSummary || "Dias e horario pendentes"}
-              </p>
-              <p className="mt-1 text-xs text-sky-900/70">
-                Ocorrencias futuras ate dezembro/2026
-              </p>
-            </div>
-          </div>
-          <div className="rounded-lg border border-amber-200 bg-amber-50/75 p-3">
-            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-amber-900/65">
-              Financeiro
-            </p>
-            <p className="mt-1 text-sm font-semibold text-amber-950">
-              {financeSummary}
-            </p>
-            <p className="mt-1 text-xs text-amber-900/70">
-              FinancialStudent + snapshots mensais de 2026
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <section className="rounded-xl border border-primary/12 bg-white/82 p-4 shadow-sm shadow-primary/5">
+    <>
+      <div className="rounded-xl border border-primary/12 bg-primary/[0.03] p-3 shadow-sm shadow-primary/5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h5 className="text-sm font-semibold text-primary">
-              Login do aluno no AVA
+          <div className="min-w-0">
+            <ConversionStatePill state={conversionState} />
+            <h5 className="mt-3 text-sm font-semibold text-primary">
+              Painel de conversao
             </h5>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Revise o login e a senha inicial antes de converter.
+              Revise AVA, login, financeiro e agenda antes de criar o aluno.
             </p>
           </div>
-          <span className="w-fit rounded-full border border-primary/10 bg-primary/8 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/70">
-            obrigatorio
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary shadow-sm">
+            <UserPlus aria-hidden="true" className="size-4" />
           </span>
         </div>
 
-        <div className="mt-4 grid gap-3">
-          <label className="grid gap-1 text-sm font-semibold text-primary">
-            Email/login
-            <Input
-              type="email"
-              autoComplete="email"
-              disabled={isPending}
-              aria-invalid={Boolean(emailValidationMessage)}
-              placeholder="email@exemplo.com"
-              value={emailForLogin}
-              onChange={(event) => {
-                setEmailForLogin(event.target.value);
-                setEmailError(null);
-              }}
-              className="bg-white"
-            />
-          </label>
-          <div className="flex flex-col gap-2 rounded-lg border border-primary/10 bg-primary/[0.03] px-3 py-2 text-xs text-muted-foreground">
-            <span>
-              Sugestao:{" "}
-              <button
-                type="button"
-                className="font-semibold text-primary underline-offset-4 hover:underline"
-                disabled={isPending}
-                onClick={() => {
-                  setEmailForLogin(suggestedLogin);
-                  setEmailError(null);
-                }}
-              >
-                {suggestedLogin}
-              </button>
-            </span>
-            {request.email ? (
-              <span>Preenchido com o email do pre-cadastro; edite se precisar.</span>
-            ) : (
-              <span>Sem email no pre-cadastro; confirme digitando ou usando a sugestao.</span>
-            )}
+        {hasConverted ? (
+          <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
+            Aluno criado. A senha inicial nao fica visivel depois da conversao.
           </div>
-          {emailValidationMessage ? (
-            <p className="text-xs font-medium text-destructive">
-              {emailValidationMessage}
-            </p>
-          ) : null}
-
-          <label className="grid gap-1 text-sm font-semibold text-primary">
-            Senha inicial
-            <Input
-              type="text"
-              autoComplete="off"
-              disabled={isPending}
-              aria-invalid={Boolean(passwordValidationMessage)}
-              placeholder="Senha inicial do aluno"
-              value={initialPassword}
-              onChange={(event) => {
-                setInitialPassword(event.target.value);
-                setPasswordError(null);
-              }}
-              className="bg-white font-mono"
-            />
-          </label>
-          <p className="text-xs leading-5 text-muted-foreground">
-            A senha sugerida usa o nome simplificado + candy. Ela sera salva
-            somente como hash seguro e nao aparece depois da conversao.
-          </p>
-          {passwordValidationMessage ? (
-            <p className="text-xs font-medium text-destructive">
-              {passwordValidationMessage}
-            </p>
-          ) : null}
-        </div>
-      </section>
-
-      {viewerRole === "ADMIN" ? (
-        <div>
-          <label className="grid gap-1 text-sm font-semibold text-primary">
-            Teacher para vinculo
-            <select
-              value={teacherProfileIdForConversion}
-              onChange={(event) =>
-                setTeacherProfileIdForConversion(event.target.value)
-              }
-              disabled={isPending}
-              aria-invalid={Boolean(teacherError)}
-              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
-            >
-              <option value="">Sem teacher definida</option>
-              {teacherOptions.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {teacherError ? (
-            <p className="mt-1 text-xs font-medium text-destructive">
-              {teacherError}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
-      <details className="rounded-lg border border-primary/15 bg-primary/[0.03] p-3 text-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-primary [&::-webkit-details-marker]:hidden">
-          <span className="inline-flex items-center gap-2 font-semibold">
-            <BrainCircuit aria-hidden="true" className="size-4" />
-            Contexto Catty
-          </span>
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/70">
-            opcional
-          </span>
-        </summary>
-        <div className="mt-3">
-          <Textarea
-            value={cattyContext}
-            onChange={(event) => setCattyContext(event.target.value)}
-            disabled={isPending}
-            aria-invalid={Boolean(cattyContextError)}
-            placeholder="Ex: gosta de exemplos com jogos; trava em do/does; prefere explicacao curta."
-            className="min-h-20 resize-y bg-white text-sm"
-          />
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            Memoria pedagogica leve. Nao inclua dados sensiveis.
-          </p>
-          {cattyContextError ? (
-            <p className="mt-1 text-xs font-medium text-destructive">
-              {cattyContextError}
-            </p>
-          ) : null}
-        </div>
-      </details>
-
-      <label className="flex items-start gap-3 rounded-lg border border-primary/12 bg-white/80 p-3 text-sm text-primary shadow-sm shadow-primary/5">
-        <input
-          type="checkbox"
-          checked={confirmConversion}
-          disabled={isPending}
-          onChange={(event) => setConfirmConversion(event.target.checked)}
-          className="mt-0.5 size-4 rounded border-primary/30 accent-primary"
-        />
-        <span>
-          <span className="block font-semibold">
-            Confirmo criar AVA, financeiro e agenda.
-          </span>
-          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-            Se algo falhar, a transaction cancela tudo e o pre-cadastro continua
-            sem conversao.
-          </span>
-          {confirmError ? (
-            <span className="mt-1 block text-xs font-medium text-destructive">
-              {confirmError}
-            </span>
-          ) : null}
-        </span>
-      </label>
-
-      <Button
-        type="submit"
-        className="h-11 w-full"
-        disabled={disableConversionButton}
-      >
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        ) : missingRequirements.length > 0 ? (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/75 px-3 py-2 text-xs leading-5 text-amber-900">
+            Falta: {missingRequirements.join(", ")}.
+          </div>
         ) : (
-          <UserCheck data-icon="inline-start" />
+          <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
+            Pronto para abrir o resumo final e converter.
+          </div>
         )}
-        Tornar aluno
-      </Button>
 
-      {message ? (
-        <p
-          className="rounded-lg border bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground"
-          role="status"
+        <Button
+          type="button"
+          className="mt-3 h-10 w-full"
+          variant={hasConverted ? "outline" : "default"}
+          onClick={() => setIsPanelOpen(true)}
         >
-          {message}
-        </p>
+          <ClipboardCheck data-icon="inline-start" />
+          {hasConverted ? "Ver resultado" : "Abrir painel"}
+        </Button>
+      </div>
+
+      {isPanelOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-primary/45 p-2 sm:items-center sm:p-4">
+          <section
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby={`conversion-title-${request.id}`}
+            className="flex max-h-[calc(100vh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-primary/15 bg-[#fefbfa] shadow-[0_24px_80px_rgba(44,19,56,0.28)] sm:max-h-[calc(100vh-2rem)]"
+          >
+            <header className="border-b border-primary/10 bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/85 p-4 sm:p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+                      <UserPlus aria-hidden="true" className="size-4" />
+                    </span>
+                    <ConversionStatePill state={conversionState} />
+                  </div>
+                  <h4
+                    id={`conversion-title-${request.id}`}
+                    className="mt-3 text-xl font-semibold text-primary sm:text-2xl"
+                  >
+                    Tornar aluno
+                  </h4>
+                  <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+                    Confira tudo que sera criado em uma transaction: acesso do
+                    AVA, financeiro, agenda e vinculo com teacher.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={isPending}
+                  onClick={handleClosePanel}
+                  aria-label="Fechar painel de conversao"
+                >
+                  <X aria-hidden="true" className="size-4" />
+                </Button>
+              </div>
+            </header>
+
+            <form
+              onSubmit={handleSubmit}
+              className="flex min-h-0 flex-1 flex-col"
+              noValidate
+            >
+              <div className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+                  <div className="grid gap-4">
+                    <ConversionStepCard
+                      step={1}
+                      icon={UserRound}
+                      title="Dados do aluno"
+                      description="Identidade, contato, unidade, teacher e status atual."
+                    >
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <ConversionInfoTile
+                          icon={UserRound}
+                          label="Nome"
+                          value={request.fullName}
+                        />
+                        <ConversionInfoTile
+                          icon={Phone}
+                          label="Telefone"
+                          value={request.phone}
+                        />
+                        <ConversionInfoTile
+                          icon={Store}
+                          label="Unidade"
+                          tone="success"
+                          value={unitLabels[request.unit]}
+                        />
+                        <ConversionInfoTile
+                          icon={UserCheck}
+                          label="Teacher"
+                          tone="success"
+                          value={teacherSummary}
+                        />
+                        <ConversionInfoTile
+                          icon={ClipboardCheck}
+                          label="Status"
+                          value={statusMeta[request.status].label}
+                        />
+                        <ConversionInfoTile
+                          icon={Mail}
+                          label="Email do pre-cadastro"
+                          value={request.email ?? "Nao informado"}
+                        />
+                      </div>
+
+                      {viewerRole === "ADMIN" ? (
+                        <label className="mt-3 grid gap-1 text-sm font-semibold text-primary">
+                          Teacher para vinculo
+                          <NativeSelect
+                            value={teacherProfileIdForConversion}
+                            onChange={(event) => {
+                              setTeacherProfileIdForConversion(
+                                event.target.value,
+                              );
+                              setTeacherError(null);
+                              resetSubmissionFeedback();
+                            }}
+                            disabled={isPending || hasConverted}
+                            aria-invalid={Boolean(teacherError)}
+                          >
+                            <option value="">Sem teacher definida</option>
+                            {teacherOptions.map((teacher) => (
+                              <option key={teacher.id} value={teacher.id}>
+                                {teacher.label}
+                              </option>
+                            ))}
+                          </NativeSelect>
+                          {teacherError ? (
+                            <span className="text-xs font-medium text-destructive">
+                              {teacherError}
+                            </span>
+                          ) : null}
+                        </label>
+                      ) : null}
+                    </ConversionStepCard>
+
+                    <ConversionStepCard
+                      step={2}
+                      icon={ShieldCheck}
+                      title="Login do AVA"
+                      description="Email/login e senha inicial precisam estar claros antes de criar o acesso."
+                    >
+                      {hasConverted ? (
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-800">
+                          Login criado para <strong>{convertedUserLabel}</strong>.
+                          A senha inicial foi removida da tela depois da
+                          conversao.
+                        </div>
+                      ) : (
+                        <div className="grid gap-3">
+                          <label className="grid gap-1 text-sm font-semibold text-primary">
+                            Email/login
+                            <Input
+                              type="email"
+                              autoComplete="email"
+                              disabled={isPending}
+                              aria-invalid={Boolean(emailValidationMessage)}
+                              placeholder="email@exemplo.com"
+                              value={emailForLogin}
+                              onChange={(event) => {
+                                setEmailForLogin(event.target.value);
+                                setEmailError(null);
+                                resetSubmissionFeedback();
+                              }}
+                            />
+                          </label>
+                          <div className="flex flex-col gap-2 rounded-lg border border-primary/10 bg-primary/[0.03] px-3 py-2 text-xs text-muted-foreground">
+                            <span>
+                              Sugestao:{" "}
+                              <button
+                                type="button"
+                                className="font-semibold text-primary underline-offset-4 hover:underline"
+                                disabled={isPending}
+                                onClick={() => {
+                                  setEmailForLogin(suggestedLogin);
+                                  setEmailError(null);
+                                  resetSubmissionFeedback();
+                                }}
+                              >
+                                {suggestedLogin}
+                              </button>
+                            </span>
+                            <span>
+                              {request.email
+                                ? "Preenchido com o email do pre-cadastro; edite se precisar."
+                                : "Sem email no pre-cadastro; confirme digitando ou usando a sugestao."}
+                            </span>
+                          </div>
+                          {emailValidationMessage ? (
+                            <p className="text-xs font-medium text-destructive">
+                              {emailValidationMessage}
+                            </p>
+                          ) : null}
+
+                          <label className="grid gap-1 text-sm font-semibold text-primary">
+                            Senha inicial
+                            <Input
+                              type="text"
+                              autoComplete="off"
+                              disabled={isPending}
+                              aria-invalid={Boolean(passwordValidationMessage)}
+                              placeholder="Senha inicial do aluno"
+                              value={initialPassword}
+                              onChange={(event) => {
+                                setInitialPassword(event.target.value);
+                                setPasswordError(null);
+                                resetSubmissionFeedback();
+                              }}
+                              className="font-mono"
+                            />
+                          </label>
+                          <p className="text-xs leading-5 text-muted-foreground">
+                            A senha sugerida usa o nome simplificado + candy.
+                            Ela sera salva somente como hash seguro.
+                          </p>
+                          {passwordValidationMessage ? (
+                            <p className="text-xs font-medium text-destructive">
+                              {passwordValidationMessage}
+                            </p>
+                          ) : null}
+                        </div>
+                      )}
+                    </ConversionStepCard>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <ConversionStepCard
+                        step={3}
+                        icon={WalletCards}
+                        title="Financeiro"
+                        description="Dados que alimentam o controle interno."
+                      >
+                        <div className="grid gap-3">
+                          <ConversionInfoTile
+                            icon={Banknote}
+                            label="Valor"
+                            tone="warning"
+                            value={
+                              formatCurrency(request.tuitionCents) ??
+                              "Nao informado"
+                            }
+                          />
+                          <ConversionInfoTile
+                            icon={CalendarClock}
+                            label="Dia de pagamento"
+                            value={
+                              request.paymentDay
+                                ? `Dia ${request.paymentDay}`
+                                : "Nao informado"
+                            }
+                          />
+                          <ConversionInfoTile
+                            icon={CreditCard}
+                            label="Forma"
+                            value={paymentMethodLabel}
+                          />
+                          <ConversionInfoTile
+                            icon={ClipboardCheck}
+                            label="Parcelas"
+                            value={
+                              request.installmentsTotal
+                                ? `${request.installmentsTotal} parcela(s)`
+                                : "Recorrente"
+                            }
+                          />
+                          <ConversionInfoTile
+                            icon={Store}
+                            label="Unidade"
+                            tone="success"
+                            value={unitLabels[request.unit]}
+                          />
+                        </div>
+                      </ConversionStepCard>
+
+                      <ConversionStepCard
+                        step={4}
+                        icon={CalendarClock}
+                        title="Agenda"
+                        description="Rotina interna que sera criada para o aluno."
+                      >
+                        <div className="grid gap-3">
+                          <ConversionInfoTile
+                            icon={CalendarClock}
+                            label="Dias de aula"
+                            tone="info"
+                            value={scheduleDays}
+                          />
+                          <ConversionInfoTile
+                            icon={Clock3}
+                            label="Horario"
+                            value={scheduleTime}
+                          />
+                          <ConversionInfoTile
+                            icon={MessageSquareText}
+                            label="Observacao"
+                            value={request.notes ?? "Sem observacao"}
+                          />
+                        </div>
+                      </ConversionStepCard>
+                    </div>
+                  </div>
+
+                  <aside className="grid gap-4 self-start">
+                    <ConversionStepCard
+                      step={5}
+                      icon={ClipboardCheck}
+                      title="Confirmacao"
+                      description="Resumo final antes de criar o aluno real."
+                    >
+                      <div className="grid gap-3">
+                        <ConversionInfoTile
+                          icon={UserPlus}
+                          label="AVA"
+                          value={request.fullName}
+                          description="User STUDENT + StudentProfile"
+                        />
+                        <ConversionInfoTile
+                          icon={ShieldCheck}
+                          label="Login"
+                          tone={isEmailForLoginValid ? "success" : "warning"}
+                          value={
+                            emailForLogin.trim() || "Email/login pendente"
+                          }
+                          description={
+                            hasConverted
+                              ? "Senha removida da tela."
+                              : isInitialPasswordValid
+                                ? "Senha valida para gerar hash seguro."
+                                : "Senha ainda invalida."
+                          }
+                        />
+                        <ConversionInfoTile
+                          icon={WalletCards}
+                          label="Financeiro"
+                          tone="warning"
+                          value={financeSummary}
+                        />
+                        <ConversionInfoTile
+                          icon={CalendarClock}
+                          label="Agenda"
+                          tone="info"
+                          value={scheduleSummary || "Agenda pendente"}
+                        />
+
+                        {!hasConverted ? (
+                          <details className="rounded-lg border border-primary/15 bg-primary/[0.03] p-3 text-sm">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-primary [&::-webkit-details-marker]:hidden">
+                              <span className="inline-flex items-center gap-2 font-semibold">
+                                <BrainCircuit
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                Contexto Catty
+                              </span>
+                              <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/70">
+                                opcional
+                              </span>
+                            </summary>
+                            <div className="mt-3">
+                              <Textarea
+                                value={cattyContext}
+                                onChange={(event) => {
+                                  setCattyContext(event.target.value);
+                                  setCattyContextError(null);
+                                  resetSubmissionFeedback();
+                                }}
+                                disabled={isPending}
+                                aria-invalid={Boolean(cattyContextError)}
+                                placeholder="Ex: gosta de exemplos com jogos; trava em do/does; prefere explicacao curta."
+                                className="min-h-24 resize-y text-sm"
+                              />
+                              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                                Memoria pedagogica leve. Nao inclua dados
+                                sensiveis.
+                              </p>
+                              {cattyContextError ? (
+                                <p className="mt-1 text-xs font-medium text-destructive">
+                                  {cattyContextError}
+                                </p>
+                              ) : null}
+                            </div>
+                          </details>
+                        ) : null}
+
+                        {!hasConverted ? (
+                          <label className="flex items-start gap-3 rounded-lg border border-primary/12 bg-white/85 p-3 text-sm text-primary shadow-sm shadow-primary/5">
+                            <input
+                              type="checkbox"
+                              checked={confirmConversion}
+                              disabled={isPending}
+                              onChange={(event) => {
+                                setConfirmConversion(event.target.checked);
+                                setConfirmError(null);
+                                resetSubmissionFeedback();
+                              }}
+                              className="mt-0.5 size-4 rounded border-primary/30 accent-primary"
+                            />
+                            <span>
+                              <span className="block font-semibold">
+                                Confirmo criar AVA, financeiro e agenda.
+                              </span>
+                              <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                                Se algo falhar, a transaction cancela tudo e o
+                                pre-cadastro continua sem conversao.
+                              </span>
+                              {confirmValidationMessage ? (
+                                <span className="mt-1 block text-xs font-medium text-destructive">
+                                  {confirmValidationMessage}
+                                </span>
+                              ) : null}
+                            </span>
+                          </label>
+                        ) : (
+                          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-800">
+                            Conversao concluida. Atualize a lista para ver o
+                            pre-cadastro em Convertido.
+                          </div>
+                        )}
+
+                        {missingRequirements.length > 0 && !hasConverted ? (
+                          <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-900">
+                            Falta: {missingRequirements.join(", ")}.
+                          </div>
+                        ) : null}
+
+                        {message ? (
+                          <p
+                            className={cn(
+                              "rounded-lg border px-3 py-2 text-xs leading-5",
+                              hasConverted
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                            role="status"
+                          >
+                            {message}
+                          </p>
+                        ) : null}
+                        {requestError ? (
+                          <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+                            {requestError}
+                          </p>
+                        ) : null}
+                      </div>
+                    </ConversionStepCard>
+                  </aside>
+                </div>
+              </div>
+
+              <footer className="border-t border-primary/10 bg-white/92 p-3 sm:p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-2 text-xs leading-5 text-muted-foreground">
+                    <ConversionStatePill state={conversionState} />
+                    <span className="min-w-0">
+                      {hasConverted
+                        ? "Aluno criado com sucesso."
+                        : isReadyToConvert
+                          ? "Tudo pronto para converter."
+                          : "Complete os itens obrigatorios para liberar."}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isPending}
+                      onClick={handleClosePanel}
+                    >
+                      {hasConverted ? "Fechar e atualizar" : "Cancelar"}
+                    </Button>
+                    {hasConverted ? (
+                      <Button type="button" onClick={() => router.refresh()}>
+                        <CheckCircle2 data-icon="inline-start" />
+                        Atualizar lista
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        className="min-w-48"
+                        disabled={disableConversionButton}
+                      >
+                        {isPending ? (
+                          <LoaderCircle
+                            data-icon="inline-start"
+                            className="animate-spin"
+                          />
+                        ) : (
+                          <UserCheck data-icon="inline-start" />
+                        )}
+                        Criar aluno no AVA
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </footer>
+            </form>
+          </section>
+        </div>
       ) : null}
-      {requestError ? (
-        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
-          {requestError}
-        </p>
-      ) : null}
-    </form>
+    </>
   );
 }
 
