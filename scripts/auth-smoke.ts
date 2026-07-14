@@ -41,6 +41,10 @@ function assertNoServerException(path: string, response: Response, text: string)
   }
 }
 
+function normalizeHtmlText(text: string) {
+  return text.replaceAll("&amp;", "&");
+}
+
 function getSetCookies(headers: Headers) {
   const headerWithCookies = headers as Headers & {
     getSetCookie?: () => string[];
@@ -186,6 +190,7 @@ async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
 
   const text = await response.text();
   assertNoServerException("/ava/secretaria", response, text);
+  const normalizedText = normalizeHtmlText(text);
 
   if (role === "ADMIN") {
     const requiredAdminLinks = [
@@ -196,7 +201,7 @@ async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
     ];
 
     for (const link of requiredAdminLinks) {
-      if (!text.includes(link)) {
+      if (!normalizedText.includes(link)) {
         throw new Error(`Secretaria admin sem atalho esperado: ${link}`);
       }
     }
@@ -211,12 +216,12 @@ async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
     "/ava/admin?task=apis-senhas",
   ];
 
-  if (!text.includes("/ava/teacher?task=aceitar-alunos")) {
+  if (!normalizedText.includes("/ava/teacher?task=aceitar-alunos")) {
     throw new Error("Secretaria teacher sem atalho de pre-cadastros.");
   }
 
   for (const link of forbiddenTeacherLinks) {
-    if (text.includes(link)) {
+    if (normalizedText.includes(link)) {
       throw new Error(`Secretaria teacher vazou atalho admin: ${link}`);
     }
   }
@@ -280,6 +285,7 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
 
   const text = await response.text();
   assertNoServerException(path, response, text);
+  const normalizedText = normalizeHtmlText(text);
 
   if (role === "ADMIN") {
     if (
@@ -296,7 +302,7 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
     ];
 
     for (const link of forbiddenAdminAvaLinks) {
-      if (text.includes(link)) {
+      if (normalizedText.includes(link)) {
         throw new Error(`AVA Admin vazou link de Secretaria: ${link}`);
       }
     }
@@ -319,7 +325,7 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
     ];
 
     for (const fragment of forbiddenTeacherAvaFragments) {
-      if (text.includes(fragment)) {
+      if (normalizedText.includes(fragment)) {
         throw new Error(`AVA Teacher vazou item administrativo: ${fragment}`);
       }
     }
@@ -392,12 +398,13 @@ async function assertTeacherAvaTaskRoutes(role: SmokeRole, cookie: string) {
 
     const text = await response.text();
     assertNoServerException(path, response, text);
+    const normalizedText = normalizeHtmlText(text);
 
     if (
       path.includes("aceitar-alunos") &&
-      (text.includes("/ava/admin?task=financeiro") ||
-        text.includes("/ava/admin?task=agenda") ||
-        text.includes("/ava/admin?task=apis-senhas"))
+      (normalizedText.includes("/ava/admin?task=financeiro") ||
+        normalizedText.includes("/ava/admin?task=agenda") ||
+        normalizedText.includes("/ava/admin?task=apis-senhas"))
     ) {
       throw new Error(`Teacher Secretaria vazou link admin em ${path}.`);
     }
@@ -472,8 +479,9 @@ async function assertSecretariaUnitLinks(role: SmokeRole, cookie: string) {
 
     const text = await response.text();
     assertNoServerException(unitPath.path, response, text);
+    const normalizedText = normalizeHtmlText(text);
 
-    if (text.includes("Admin AVA") || text.includes("Teacher AVA")) {
+    if (normalizedText.includes("Admin AVA") || normalizedText.includes("Teacher AVA")) {
       throw new Error(`Secretaria misturou menu pedagogico em ${unitPath.path}.`);
     }
 
@@ -488,7 +496,7 @@ async function assertSecretariaUnitLinks(role: SmokeRole, cookie: string) {
       ];
 
       for (const link of expectedLinks) {
-        if (!text.includes(link)) {
+        if (!normalizedText.includes(link)) {
           throw new Error(`Secretaria admin sem link ${link} em ${unitPath.label}.`);
         }
       }
@@ -500,7 +508,7 @@ async function assertSecretariaUnitLinks(role: SmokeRole, cookie: string) {
         : "";
       const expectedLink = `/ava/teacher?task=aceitar-alunos${suffix}`;
 
-      if (!text.includes(expectedLink)) {
+      if (!normalizedText.includes(expectedLink)) {
         throw new Error(`Secretaria teacher sem link ${expectedLink}.`);
       }
 
@@ -509,7 +517,7 @@ async function assertSecretariaUnitLinks(role: SmokeRole, cookie: string) {
         "/ava/admin?task=agenda",
         "/ava/admin?task=apis-senhas",
       ]) {
-        if (text.includes(forbiddenLink)) {
+        if (normalizedText.includes(forbiddenLink)) {
           throw new Error(`Secretaria teacher vazou ${forbiddenLink}.`);
         }
       }
