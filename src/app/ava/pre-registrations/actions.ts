@@ -33,6 +33,23 @@ type ReviewerContext = {
   teacherProfileId: string | null;
 };
 
+const CONVERSION_YEAR = 2026;
+const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
+const agendaTimePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+type FinancialSnapshotSource = {
+  address: string | null;
+  amountCents: number;
+  cpf: string | null;
+  email: string | null;
+  installmentsTotal: number | null;
+  name: string;
+  paymentDay: number;
+  paymentMethod: string;
+  phone: string | null;
+  unit: "IVATE" | "DOURADINA";
+};
+
 function fieldErrors<TInput extends Record<string, unknown>>(
   issues: { message: string; path: PropertyKey[] }[],
 ) {
@@ -123,6 +140,105 @@ function formatWeekdayMask(mask: number | null | undefined) {
   const selected = labels.filter((_, index) => (mask & (1 << index)) !== 0);
 
   return selected.length > 0 ? selected.join(", ") : null;
+}
+
+function decodeWeekdayMask(mask: number) {
+  return Array.from({ length: 7 }, (_, index) => index).filter(
+    (weekday) => (mask & (1 << weekday)) !== 0,
+  );
+}
+
+function getConversionStartMonth(date = new Date()) {
+  return date.getFullYear() === CONVERSION_YEAR ? date.getMonth() + 1 : 1;
+}
+
+function getFinanceMonthsFrom(month: number) {
+  return FINANCE_YEAR_MONTHS.filter((candidateMonth) => candidateMonth >= month);
+}
+
+function getFinanceMonthsForPlan(month: number, installmentsTotal?: number | null) {
+  if (!installmentsTotal) {
+    return getFinanceMonthsFrom(month);
+  }
+
+  const lastMonth = Math.min(12, month + installmentsTotal - 1);
+
+  return FINANCE_YEAR_MONTHS.filter(
+    (candidateMonth) => candidateMonth >= month && candidateMonth <= lastMonth,
+  );
+}
+
+function getFinancialInstallmentNumber(
+  month: number,
+  startMonth: number,
+  installmentsTotal?: number | null,
+) {
+  if (!installmentsTotal) {
+    return null;
+  }
+
+  const installmentNumber = month - startMonth + 1;
+
+  return installmentNumber >= 1 && installmentNumber <= installmentsTotal
+    ? installmentNumber
+    : null;
+}
+
+function buildFinancialPaymentSnapshot(
+  student: FinancialSnapshotSource,
+  installmentNumber?: number | null,
+) {
+  return {
+    snapshotAddress: student.address,
+    snapshotAmountCents: student.amountCents,
+    snapshotCpf: student.cpf,
+    snapshotEmail: student.email,
+    snapshotInstallmentNumber: installmentNumber ?? null,
+    snapshotInstallmentsTotal: student.installmentsTotal,
+    snapshotName: student.name,
+    snapshotPaymentDay: student.paymentDay,
+    snapshotPaymentMethod: student.paymentMethod,
+    snapshotPhone: student.phone,
+    snapshotUnit: student.unit,
+  };
+}
+
+function getAgendaDateParts(date: Date) {
+  return {
+    month: date.getUTCMonth() + 1,
+    weekday: date.getUTCDay(),
+    year: date.getUTCFullYear(),
+  };
+}
+
+function getAgendaRecurringDates(startMonth: number, weekdays: number[]) {
+  const selectedWeekdays = new Set(weekdays);
+  const dates: Date[] = [];
+
+  for (let month = startMonth; month <= 12; month += 1) {
+    const lastDay = new Date(Date.UTC(CONVERSION_YEAR, month, 0)).getUTCDate();
+
+    for (let day = 1; day <= lastDay; day += 1) {
+      const date = new Date(Date.UTC(CONVERSION_YEAR, month - 1, day, 12));
+
+      if (selectedWeekdays.has(date.getUTCDay())) {
+        dates.push(date);
+      }
+    }
+  }
+
+  return dates;
+}
+
+function mapPreRegistrationPaymentMethod(method: string) {
+  const methodMap: Record<string, string> = {
+    CARTAO: "CREDIT_CARD",
+    DINHEIRO: "CASH",
+    OUTRO: "OTHER",
+    PIX: "PIX",
+  };
+
+  return methodMap[method] ?? "OTHER";
 }
 
 function buildStudentNotes(request: {
@@ -424,6 +540,10 @@ export async function acceptStudentPreRegistration(
           assignedTeacherProfileId: true,
           birthDate: true,
           city: true,
+          convertedAgendaStudentId: true,
+          convertedFinancialStudentId: true,
+          convertedStudentProfileId: true,
+          convertedUserId: true,
           createdByUserId: true,
           email: true,
           englishGoal: true,
@@ -433,13 +553,17 @@ export async function acceptStudentPreRegistration(
           guardianName: true,
           guardianPhone: true,
           id: true,
+          installmentsTotal: true,
           intendedTime: true,
           intendedWeekdayMask: true,
           notes: true,
+          paymentDay: true,
+          paymentMethod: true,
           phone: true,
           secondaryContact: true,
           status: true,
           studentPhone: true,
+          tuitionCents: true,
           unit: true,
         },
       });
@@ -450,6 +574,15 @@ export async function acceptStudentPreRegistration(
 
       if (!canUsePreRegistration(context, request)) {
         throw new Error("REQUEST_FORBIDDEN");
+      }
+
+      if (
+        request.convertedUserId ||
+        request.convertedStudentProfileId ||
+        request.convertedFinancialStudentId ||
+        request.convertedAgendaStudentId
+      ) {
+        throw new Error("REQUEST_ALREADY_CONVERTED");
       }
 
       if (
@@ -469,6 +602,59 @@ export async function acceptStudentPreRegistration(
         throw new Error("EMAIL_REQUIRED");
       }
 
+      if (
+        !request.tuitionCents ||
+        request.tuitionCents <= 0 ||
+        !request.paymentDay ||
+        !request.paymentMethod
+      ) {
+        throw new Error("FINANCE_REQUIRED");
+      }
+
+      const agendaWeekdays = decodeWeekdayMask(request.intendedWeekdayMask);
+
+      if (
+        agendaWeekdays.length === 0 ||
+        !request.intendedTime ||
+        !agendaTimePattern.test(request.intendedTime)
+      ) {
+        throw new Error("AGENDA_REQUIRED");
+      }
+      const intendedTime = request.intendedTime;
+
+      let teacherProfileId: string | null = null;
+
+      if (context.session.user.role === "TEACHER") {
+        if (!context.teacherProfileId) {
+          throw new Error("TEACHER_PROFILE_REQUIRED");
+        }
+
+        if (
+          request.assignedTeacherProfileId &&
+          request.assignedTeacherProfileId !== context.teacherProfileId
+        ) {
+          throw new Error("REQUEST_FORBIDDEN");
+        }
+
+        teacherProfileId = context.teacherProfileId;
+      } else {
+        teacherProfileId =
+          parsed.data.teacherProfileIdForConversion ??
+          request.assignedTeacherProfileId ??
+          null;
+      }
+
+      if (teacherProfileId) {
+        const teacherProfile = await tx.teacherProfile.findUnique({
+          where: { id: teacherProfileId },
+          select: { id: true },
+        });
+
+        if (!teacherProfile) {
+          throw new Error("TEACHER_NOT_FOUND");
+        }
+      }
+
       const existingUser = await tx.user.findUnique({
         where: { email: emailForLogin },
         select: { id: true },
@@ -476,6 +662,60 @@ export async function acceptStudentPreRegistration(
 
       if (existingUser) {
         throw new Error("USER_EMAIL_EXISTS");
+      }
+
+      const contactPhone = request.studentPhone ?? request.phone;
+      const duplicateChecks: Promise<unknown>[] = [
+        tx.user.findFirst({
+          where: {
+            OR: [
+              { phone: contactPhone },
+              { studentProfile: { studentPhone: contactPhone } },
+            ],
+          },
+          select: { id: true },
+        }),
+        tx.financialStudent.findFirst({
+          where: {
+            OR: [
+              { phone: contactPhone },
+              { email: emailForLogin },
+            ],
+          },
+          select: { id: true },
+        }),
+        tx.agendaLesson.findFirst({
+          where: {
+            isActive: true,
+            isMakeup: false,
+            time: intendedTime,
+            weekday: {
+              in: agendaWeekdays,
+            },
+            year: CONVERSION_YEAR,
+            student: {
+              name: {
+                equals: request.fullName,
+                mode: "insensitive",
+              },
+            },
+          },
+          select: { id: true },
+        }),
+      ];
+      const [existingPhoneUser, existingFinancialStudent, existingAgendaLesson] =
+        await Promise.all(duplicateChecks);
+
+      if (existingPhoneUser) {
+        throw new Error("USER_PHONE_EXISTS");
+      }
+
+      if (existingFinancialStudent) {
+        throw new Error("FINANCIAL_DUPLICATE");
+      }
+
+      if (existingAgendaLesson) {
+        throw new Error("AGENDA_DUPLICATE");
       }
 
       const user = await tx.user.create({
@@ -503,10 +743,6 @@ export async function acceptStudentPreRegistration(
         },
       });
 
-      const teacherProfileId =
-        request.assignedTeacherProfileId ??
-        (context.session.user.role === "TEACHER" ? context.teacherProfileId : null);
-
       if (teacherProfileId) {
         await tx.studentTeacherAssignment.upsert({
           where: {
@@ -523,22 +759,141 @@ export async function acceptStudentPreRegistration(
         });
       }
 
+      const financialStudent = await tx.financialStudent.create({
+        data: {
+          address: request.address ?? request.city,
+          amountCents: request.tuitionCents,
+          cpf: null,
+          email: emailForLogin,
+          installmentsTotal: request.installmentsTotal,
+          name: request.fullName,
+          paymentDay: request.paymentDay,
+          paymentMethod: mapPreRegistrationPaymentMethod(request.paymentMethod),
+          phone: contactPhone,
+          unit: request.unit,
+        },
+      });
+      const conversionMonth = getConversionStartMonth();
+      const financeMonths = getFinanceMonthsForPlan(
+        conversionMonth,
+        financialStudent.installmentsTotal,
+      );
+
+      await tx.financialPayment.createMany({
+        data: financeMonths.map((month) => ({
+          ...buildFinancialPaymentSnapshot(
+            financialStudent,
+            getFinancialInstallmentNumber(
+              month,
+              conversionMonth,
+              financialStudent.installmentsTotal,
+            ),
+          ),
+          isActive: true,
+          isPaid: false,
+          month,
+          note:
+            month === conversionMonth
+              ? "Criado a partir do pre-cadastro da Secretaria."
+              : null,
+          paidAt: null,
+          studentId: financialStudent.id,
+          year: CONVERSION_YEAR,
+        })),
+      });
+
+      const firstPayment = await tx.financialPayment.findUnique({
+        where: {
+          studentId_year_month: {
+            month: conversionMonth,
+            studentId: financialStudent.id,
+            year: CONVERSION_YEAR,
+          },
+        },
+        select: { id: true },
+      });
+
+      await tx.financialLog.create({
+        data: {
+          action: "CREATE_FROM_PRE_REGISTRATION",
+          createdByUserId: context.session.user.id,
+          description: `Aluno financeiro criado a partir do pre-cadastro: ${financialStudent.name}.`,
+          paymentId: firstPayment?.id,
+          studentId: financialStudent.id,
+        },
+      });
+
+      const agendaDates = getAgendaRecurringDates(
+        conversionMonth,
+        agendaWeekdays,
+      );
+
+      if (agendaDates.length === 0) {
+        throw new Error("AGENDA_REQUIRED");
+      }
+
+      const agendaStudent = await tx.agendaStudent.create({
+        data: {
+          defaultTime: request.intendedTime,
+          isActive: true,
+          name: request.fullName,
+          notes: request.notes,
+          phone: contactPhone,
+          unit: request.unit,
+          weekdayMask: request.intendedWeekdayMask,
+        },
+      });
+
+      await tx.agendaLesson.createMany({
+        data: agendaDates.map((date) => {
+          const dateParts = getAgendaDateParts(date);
+
+          return {
+            date,
+            isActive: true,
+            isMakeup: false,
+            month: dateParts.month,
+            notes: "Criada a partir do pre-cadastro da Secretaria.",
+            status: "SCHEDULED",
+            studentId: agendaStudent.id,
+            time: intendedTime,
+            weekday: dateParts.weekday,
+            year: dateParts.year,
+          };
+        }),
+      });
+
+      await tx.agendaLog.create({
+        data: {
+          action: "CREATE_FROM_PRE_REGISTRATION",
+          createdByUserId: context.session.user.id,
+          description: `Agenda criada a partir do pre-cadastro para ${agendaStudent.name}: ${agendaDates.length} aula(s) ate dezembro.`,
+          studentId: agendaStudent.id,
+        },
+      });
+
       await tx.studentPreRegistration.update({
         where: { id: request.id },
         data: {
+          assignedTeacherProfileId: teacherProfileId,
+          convertedAgendaStudentId: agendaStudent.id,
+          convertedFinancialStudentId: financialStudent.id,
+          convertedStudentProfileId: studentProfile.id,
           convertedUserId: user.id,
           email: request.email ?? emailForLogin,
           reviewedAt: new Date(),
           reviewedByUserId: context.session.user.id,
           status: "APPROVED",
-          statusNote: "Convertido em aluno STUDENT.",
+          statusNote: "Convertido em aluno com AVA, financeiro e agenda.",
         },
       });
     });
   } catch (error) {
+    const errorMessage = (error as Error).message;
+
     if (
       isUniqueConstraintError(error) ||
-      (error as Error).message === "USER_EMAIL_EXISTS"
+      errorMessage === "USER_EMAIL_EXISTS"
     ) {
       return {
         errors: {
@@ -549,7 +904,7 @@ export async function acceptStudentPreRegistration(
       };
     }
 
-    if ((error as Error).message === "EMAIL_REQUIRED") {
+    if (errorMessage === "EMAIL_REQUIRED") {
       return {
         errors: {
           requestId: "Informe um email antes de tornar aluno.",
@@ -559,34 +914,112 @@ export async function acceptStudentPreRegistration(
       };
     }
 
-    if ((error as Error).message === "REQUEST_FORBIDDEN") {
+    if (errorMessage === "FINANCE_REQUIRED") {
+      return {
+        errors: {
+          requestId:
+            "Preencha mensalidade, dia de pagamento e forma antes de converter.",
+        },
+        ok: false,
+        message:
+          "Preencha o combinado financeiro antes de tornar aluno.",
+      };
+    }
+
+    if (errorMessage === "AGENDA_REQUIRED") {
+      return {
+        errors: {
+          requestId: "Preencha dias e horario de aula antes de converter.",
+        },
+        ok: false,
+        message: "Preencha a agenda pretendida antes de tornar aluno.",
+      };
+    }
+
+    if (errorMessage === "REQUEST_FORBIDDEN") {
       return {
         ok: false,
         message: "Voce nao tem permissao para este pre-cadastro.",
       };
     }
 
-    if ((error as Error).message === "REQUEST_NOT_FOUND") {
+    if (errorMessage === "REQUEST_NOT_FOUND") {
       return {
         ok: false,
         message: "Solicitacao nao encontrada.",
       };
     }
 
-    if ((error as Error).message === "REQUEST_NOT_ACCEPTABLE") {
+    if (errorMessage === "REQUEST_NOT_ACCEPTABLE") {
       return {
         ok: false,
         message: "Esta solicitacao nao pode mais ser aceita.",
       };
     }
 
+    if (errorMessage === "REQUEST_ALREADY_CONVERTED") {
+      return {
+        ok: false,
+        message: "Este pre-cadastro ja foi convertido.",
+      };
+    }
+
+    if (errorMessage === "TEACHER_PROFILE_REQUIRED") {
+      return {
+        ok: false,
+        message: "Perfil teacher nao encontrado para converter este aluno.",
+      };
+    }
+
+    if (errorMessage === "TEACHER_NOT_FOUND") {
+      return {
+        errors: {
+          teacherProfileIdForConversion: "Teacher responsavel nao encontrada.",
+        },
+        ok: false,
+        message: "Revise a teacher responsavel antes de converter.",
+      };
+    }
+
+    if (errorMessage === "USER_PHONE_EXISTS") {
+      return {
+        errors: {
+          requestId: "Ja existe usuario com telefone igual ou parecido.",
+        },
+        ok: false,
+        message: "Ja existe um aluno com este telefone no AVA.",
+      };
+    }
+
+    if (errorMessage === "FINANCIAL_DUPLICATE") {
+      return {
+        errors: {
+          requestId: "Ja existe aluno financeiro com este email ou telefone.",
+        },
+        ok: false,
+        message:
+          "Ja existe um registro financeiro com este email ou telefone.",
+      };
+    }
+
+    if (errorMessage === "AGENDA_DUPLICATE") {
+      return {
+        errors: {
+          requestId:
+            "Ja existe agenda ativa com este nome, dias e horario.",
+        },
+        ok: false,
+        message: "Ja existe uma agenda ativa parecida para este aluno.",
+      };
+    }
+
     return {
       ok: false,
-      message: "Nao foi possivel aceitar o aluno agora.",
+      message: "Nao foi possivel converter o aluno agora.",
     };
   }
 
-  let message = "Aluno aceito e conta STUDENT criada com sucesso.";
+  let message = "Aluno convertido com AVA, financeiro e agenda criados.";
 
   if (parsed.data.cattyContext && createdUserId) {
     const source =
@@ -605,9 +1038,10 @@ export async function acceptStudentPreRegistration(
 
     if (!memoryResult.ok) {
       message =
-        "Aluno aceito, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
+        "Aluno convertido, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
     } else {
-      message = "Aluno aceito com contexto Catty inicial.";
+      message =
+        "Aluno convertido com AVA, financeiro, agenda e contexto Catty inicial.";
     }
   }
 

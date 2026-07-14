@@ -95,8 +95,9 @@ Rotas protegidas:
 - `ADMIN` pode criar, ver, atualizar status e converter todos os pre-cadastros da Secretaria.
 - `TEACHER` pode criar pre-cadastro e ver/atualizar/converter apenas registros criados por ela (`createdByUserId`) ou atribuidos a sua `TeacherProfile` (`assignedTeacherProfileId`).
 - `STUDENT` nao acessa pre-cadastros nem Secretaria.
-- Ao converter, o servidor cria somente `User.role=STUDENT` e `StudentProfile`; nao cria financeiro nem agenda automaticamente.
-- Quando `TEACHER` converte um aluno, ou quando o registro tem teacher responsavel, o servidor tambem cria o vinculo `StudentTeacherAssignment`.
+- Ao converter, o servidor cria `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction.
+- `TEACHER` so converte pre-cadastro criado por ela ou atribuido a sua `TeacherProfile`; se o registro tiver outra teacher responsavel, a conversao e bloqueada. Essa escrita cria apenas os dados linkados daquele interessado e nao libera acesso ao financeiro completo nem a agenda interna.
+- `ADMIN` pode escolher a teacher no momento da conversao e converter qualquer pre-cadastro.
 - O fluxo de aceite nunca cria `ADMIN` ou `TEACHER` e nunca retorna/loga a senha inicial em texto puro.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
 - Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
@@ -143,7 +144,7 @@ Rotas protegidas:
 - A escolha pos-login e a Secretaria usam `requireAvaRole` em Server Component, sem criar nova role.
 - Google Provider foi removido temporariamente; o provider ativo e Credentials.
 - `StudentPreRegistration` guarda interessados da Secretaria fora do fluxo de Auth.js, com email opcional, telefone normalizado, unidade, agenda pretendida e combinado de pagamento.
-- `StudentPreRegistration` tambem guarda metadados de criacao, teacher responsavel, revisao/conversao; `APPROVED` e usado como status tecnico para `Convertido` na UI, e `WAITING_PAYMENT`/`READY_TO_CONVERT` cobrem a conversa antes do aceite.
+- `StudentPreRegistration` tambem guarda metadados de criacao, teacher responsavel, revisao/conversao e os ids linkados criados por `Tornar aluno`; `APPROVED` e usado como status tecnico para `Convertido` na UI, e `WAITING_PAYMENT`/`READY_TO_CONVERT` cobrem a conversa antes do aceite.
 - `src/lib/whatsapp.ts` monta os links publicos do WhatsApp com `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` e fallback seguro para o numero publico atual.
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.
@@ -168,8 +169,8 @@ Rotas protegidas:
 ## Riscos ao alterar esta parte
 
 - Remover validacao de `isActive` permite acesso de usuario bloqueado.
-- Criar usuario automaticamente a partir de `StudentPreRegistration` liberaria acesso sem revisao admin.
 - Criar usuario automaticamente a partir de `StudentPreRegistration` liberaria acesso sem revisao admin/teacher.
+- Criar somente parte da conversao fora de transaction poderia liberar acesso sem financeiro/agenda ou deixar registros internos sem aluno real linkado.
 - Permitir que Teacher escolha role no aceite abriria escalacao de privilegio; o fluxo deve fixar `STUDENT` no servidor.
 - Confiar apenas no menu do client vaza dados.
 - Alterar callbacks JWT/session pode quebrar redirecionamento por role.

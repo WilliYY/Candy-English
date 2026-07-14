@@ -55,6 +55,8 @@ export type AdminAgendaLessonStatus =
   | "MISSED"
   | "SCHEDULED";
 
+type FinancialUnit = "IVATE" | "DOURADINA";
+
 export type AdminAgendaLessonRow = {
   date: string;
   id: string;
@@ -68,6 +70,7 @@ export type AdminAgendaLessonRow = {
   studentName: string;
   studentNotes: string | null;
   studentPhone: string | null;
+  studentUnit: FinancialUnit;
   time: string;
   weekday: number;
   year: number;
@@ -80,6 +83,7 @@ export type AdminAgendaStudentRow = {
   name: string;
   notes: string | null;
   phone: string | null;
+  unit: FinancialUnit;
   weekdayMask: number;
 };
 
@@ -134,6 +138,11 @@ const weekdays = [
   { label: "Sex", longLabel: "Sexta", value: 5 },
   { label: "Sab", longLabel: "Sabado", value: 6 },
 ];
+
+const unitLabels: Record<FinancialUnit, string> = {
+  DOURADINA: "Unidade 2 Douradina",
+  IVATE: "Unidade 1 Ivate",
+};
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -1170,6 +1179,9 @@ export function AdminAgendaPanel({
                             <strong className="mt-1 block truncate text-lg leading-6 text-primary">
                               {lesson.studentName}
                             </strong>
+                            <span className="mt-1 inline-flex rounded-full border border-primary/10 bg-white px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-primary/65">
+                              {unitLabels[lesson.studentUnit]}
+                            </span>
                             <span className="mt-2 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                               <span
                                 className={cn(
@@ -1344,6 +1356,9 @@ export function AdminAgendaPanel({
                 <h2 className="mt-1 text-lg font-semibold text-primary">
                   {selectedStudent.name}
                 </h2>
+                <span className="mt-2 inline-flex rounded-full border border-primary/10 bg-primary/5 px-2.5 py-1 text-xs font-bold text-primary/70">
+                  {unitLabels[selectedStudent.unit]}
+                </span>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -1659,6 +1674,16 @@ export function AdminAgendaPanel({
                       </span>
                       <span className="mt-2 block truncate text-xs font-semibold opacity-80">
                         {formatWeekdayList(schedule.weekdays)} / {schedule.time}
+                      </span>
+                      <span
+                        className={cn(
+                          "mt-1 inline-flex rounded-full border px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-[0.08em]",
+                          isSelected
+                            ? "border-white/20 bg-white/15 text-white"
+                            : "border-primary/10 bg-white/75 text-primary/70",
+                        )}
+                      >
+                        {unitLabels[student.unit]}
                       </span>
                       {student.phone ? (
                         <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs opacity-75">

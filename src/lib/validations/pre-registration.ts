@@ -330,12 +330,19 @@ export const preRegistrationAcceptSchema = z
       160,
       "O contexto Catty pode ter no maximo 160 caracteres.",
     ),
+    confirmConversion: z.boolean().refine((value) => value, {
+      message: "Confirme a conversao completa do pre-cadastro.",
+    }),
     emailForLogin: optionalEmail(),
     initialPassword: z
       .string()
       .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")
       .max(120, "A senha inicial pode ter no maximo 120 caracteres."),
     requestId: z.string().min(1, "Solicitacao invalida."),
+    teacherProfileIdForConversion: optionalText(
+      80,
+      "Teacher para vinculo invalida.",
+    ),
   })
   .superRefine((data, ctx) => {
     if (data.cattyContext && hasSensitiveCattyUserMemoryText(data.cattyContext)) {

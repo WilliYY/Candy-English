@@ -625,6 +625,9 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         assignedTeacherProfileId: true,
         birthDate: true,
         city: true,
+        convertedAgendaStudentId: true,
+        convertedFinancialStudentId: true,
+        convertedStudentProfileId: true,
         convertedUser: {
           select: {
             email: true,
@@ -846,6 +849,9 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         assignedTeacherName: request.assignedTeacherProfile?.user.name ?? null,
         birthDate: request.birthDate?.toISOString() ?? null,
         city: request.city,
+        convertedAgendaStudentId: request.convertedAgendaStudentId,
+        convertedFinancialStudentId: request.convertedFinancialStudentId,
+        convertedStudentProfileId: request.convertedStudentProfileId,
         convertedUserEmail: request.convertedUser?.email ?? null,
         convertedUserName: request.convertedUser?.name ?? null,
         createdAt: request.createdAt.toISOString(),

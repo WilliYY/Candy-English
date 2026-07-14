@@ -25,6 +25,7 @@ Arquivos:
 - `prisma/migrations/20260625120000_simple_finance_installments/migration.sql`
 - `prisma/migrations/20260713120000_financial_expenses/migration.sql`
 - `prisma/migrations/20260713133000_financial_units/migration.sql`
+- `prisma/migrations/20260714170000_linked_pre_registration_conversion/migration.sql`
 
 Tabelas:
 
@@ -40,6 +41,7 @@ Rota:
 ## Regras de negocio que precisam ser preservadas
 
 - Apenas `ADMIN` visualiza e escreve no financeiro.
+- Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `FinancialStudent` e seus `FinancialPayment` dentro da transaction de `Tornar aluno`, sem acessar a tela financeira nem consultar outros alunos/unidades.
 - `FinancialStudent` guarda o cadastro recorrente/base do aluno financeiro, incluindo a unidade atual do aluno.
 - `FinancialStudent.installmentsTotal` e opcional; quando vazio, o aluno segue como mensalidade recorrente normal.
 - `FinancialPayment` guarda a linha mensal: mes, ano, status, data paga, observacao, `isActive` e snapshot de nome, valor, unidade, dia de pagamento, forma, telefone, CPF, email, endereco e dados de parcela quando houver.
@@ -48,6 +50,7 @@ Rota:
 - Observacao e pagamento sao por mes; ao trocar mes, esses campos nao devem carregar automaticamente de outro mes.
 - Ao criar aluno recorrente em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
 - Ao criar aluno com quantidade de parcelas, o sistema cria apenas as parcelas possiveis daquele mes ate dezembro de 2026.
+- Ao converter pre-cadastro em aluno, o financeiro usa a mesma regra de meses/snapshots: cria `FinancialStudent` com unidade, valor, dia, forma e parcelas do pre-cadastro, e cria `FinancialPayment` do mes atual ate dezembro de 2026 ou ate o fim das parcelas.
 - Ao editar dados fixos em um mes, a edicao vale do mes selecionado em diante; meses anteriores ficam preservados.
 - Ao editar dados fixos/parcelas, meses existentes que continuam dentro do novo plano voltam a `isActive=true`; meses fora do plano ficam inativos quando houver total de parcelas.
 - Ao retirar aluno em um mes, a UI permite inativar apenas o mes selecionado ou encerrar a partir daquele mes, sempre por soft remove em `FinancialPayment.isActive=false`.
@@ -82,6 +85,7 @@ Rota:
 - A migration `20260625120000_simple_finance_installments` adiciona apenas metadados opcionais de parcelas; dados antigos continuam com `NULL` e sao tratados como mensalidade recorrente.
 - A migration `20260713120000_financial_expenses` adiciona `FinancialExpense` para registrar gastos mensais internos sem misturar com `FinancialPayment`.
 - A migration `20260713133000_financial_units` adiciona `FinancialUnit`, `FinancialStudent.unit`, `FinancialPayment.snapshotUnit` e `FinancialExpense.unit`.
+- A migration `20260714170000_linked_pre_registration_conversion` adiciona o vinculo de conversao entre `StudentPreRegistration` e `FinancialStudent`.
 
 ## Riscos ao alterar esta parte
 

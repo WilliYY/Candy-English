@@ -65,6 +65,9 @@ export type StudentPreRegistrationReviewRow = {
   assignedTeacherName: string | null;
   birthDate: string | null;
   city: string | null;
+  convertedAgendaStudentId: string | null;
+  convertedFinancialStudentId: string | null;
+  convertedStudentProfileId: string | null;
   convertedUserEmail: string | null;
   convertedUserName: string | null;
   createdAt: string;
@@ -519,48 +522,91 @@ function RejectForm({ requestId }: { requestId: string }) {
 }
 
 function AcceptForm({
-  requestId,
-  requiresEmail,
+  request,
+  teacherOptions,
+  viewerRole,
 }: {
-  requestId: string;
-  requiresEmail: boolean;
+  request: StudentPreRegistrationReviewRow;
+  teacherOptions: PreRegistrationTeacherOption[];
+  viewerRole: "ADMIN" | "TEACHER";
 }) {
   const router = useRouter();
   const [cattyContext, setCattyContext] = useState("");
+  const [confirmConversion, setConfirmConversion] = useState(false);
   const [emailForLogin, setEmailForLogin] = useState("");
   const [initialPassword, setInitialPassword] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [requestError, setRequestError] = useState<string | null>(null);
   const [cattyContextError, setCattyContextError] = useState<string | null>(
     null,
   );
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [teacherError, setTeacherError] = useState<string | null>(null);
+  const [teacherProfileIdForConversion, setTeacherProfileIdForConversion] =
+    useState(request.assignedTeacherId ?? "");
   const [isPending, startTransition] = useTransition();
+  const requiresEmail = !request.email;
+  const selectedTeacher = teacherOptions.find(
+    (teacher) => teacher.id === teacherProfileIdForConversion,
+  );
+  const teacherSummary =
+    viewerRole === "TEACHER"
+      ? request.assignedTeacherName ?? "Sua teacher"
+      : selectedTeacher?.label ?? request.assignedTeacherName ?? "Sem teacher";
+  const scheduleSummary = [
+    formatWeekdayMask(request.intendedWeekdayMask),
+    request.intendedTime,
+  ]
+    .filter(Boolean)
+    .join(" - ");
+  const financeSummary = [
+    formatCurrency(request.tuitionCents) ?? "mensalidade pendente",
+    request.paymentDay ? `dia ${request.paymentDay}` : "dia pendente",
+    request.paymentMethod
+      ? paymentMethodLabels[request.paymentMethod as PaymentMethod] ??
+        request.paymentMethod
+      : "forma pendente",
+    request.installmentsTotal
+      ? `${request.installmentsTotal} parcela(s)`
+      : "recorrente",
+  ].join(" / ");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
+    setRequestError(null);
     setCattyContextError(null);
+    setConfirmError(null);
     setEmailError(null);
     setPasswordError(null);
+    setTeacherError(null);
 
     startTransition(async () => {
       const result = await acceptStudentPreRegistration({
         cattyContext,
+        confirmConversion,
         emailForLogin,
         initialPassword,
-        requestId,
+        requestId: request.id,
+        teacherProfileIdForConversion:
+          viewerRole === "ADMIN" ? teacherProfileIdForConversion : undefined,
       });
 
       if (!result.ok) {
         setCattyContextError(result.errors?.cattyContext ?? null);
+        setConfirmError(result.errors?.confirmConversion ?? null);
         setEmailError(result.errors?.emailForLogin ?? null);
         setPasswordError(result.errors?.initialPassword ?? null);
+        setRequestError(result.errors?.requestId ?? null);
+        setTeacherError(result.errors?.teacherProfileIdForConversion ?? null);
         setMessage(result.message);
         return;
       }
 
       setCattyContext("");
+      setConfirmConversion(false);
       setEmailForLogin("");
       setInitialPassword("");
       setMessage(result.message);
@@ -570,6 +616,60 @@ function AcceptForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
+      <div className="grid gap-2 rounded-xl border border-primary/12 bg-primary/[0.03] p-3">
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary/60">
+          Resumo da conversao
+        </p>
+        <div className="grid gap-2">
+          <div className="rounded-lg border border-primary/10 bg-white/85 p-3">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/50">
+              AVA
+            </p>
+            <p className="mt-1 text-sm font-semibold text-primary">
+              {request.fullName}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              User STUDENT + StudentProfile
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/70 p-3">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-emerald-800/65">
+                Unidade e teacher
+              </p>
+              <p className="mt-1 text-sm font-semibold text-emerald-950">
+                {unitLabels[request.unit]}
+              </p>
+              <p className="mt-1 line-clamp-2 text-xs text-emerald-900/70">
+                {teacherSummary}
+              </p>
+            </div>
+            <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-3">
+              <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-sky-800/65">
+                Agenda
+              </p>
+              <p className="mt-1 text-sm font-semibold text-sky-950">
+                {scheduleSummary || "Dias e horario pendentes"}
+              </p>
+              <p className="mt-1 text-xs text-sky-900/70">
+                Ocorrencias futuras ate dezembro/2026
+              </p>
+            </div>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50/75 p-3">
+            <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-amber-900/65">
+              Financeiro
+            </p>
+            <p className="mt-1 text-sm font-semibold text-amber-950">
+              {financeSummary}
+            </p>
+            <p className="mt-1 text-xs text-amber-900/70">
+              FinancialStudent + snapshots mensais de 2026
+            </p>
+          </div>
+        </div>
+      </div>
+
       {requiresEmail ? (
         <div>
           <Input
@@ -588,6 +688,35 @@ function AcceptForm({
           {emailError ? (
             <p className="mt-1 text-xs font-medium text-destructive">
               {emailError}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {viewerRole === "ADMIN" ? (
+        <div>
+          <label className="grid gap-1 text-sm font-semibold text-primary">
+            Teacher para vinculo
+            <select
+              value={teacherProfileIdForConversion}
+              onChange={(event) =>
+                setTeacherProfileIdForConversion(event.target.value)
+              }
+              disabled={isPending}
+              aria-invalid={Boolean(teacherError)}
+              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm shadow-xs outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            >
+              <option value="">Sem teacher definida</option>
+              {teacherOptions.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {teacherError ? (
+            <p className="mt-1 text-xs font-medium text-destructive">
+              {teacherError}
             </p>
           ) : null}
         </div>
@@ -644,6 +773,30 @@ function AcceptForm({
         </div>
       </details>
 
+      <label className="flex items-start gap-3 rounded-lg border border-primary/12 bg-white/80 p-3 text-sm text-primary shadow-sm shadow-primary/5">
+        <input
+          type="checkbox"
+          checked={confirmConversion}
+          disabled={isPending}
+          onChange={(event) => setConfirmConversion(event.target.checked)}
+          className="mt-0.5 size-4 rounded border-primary/30 accent-primary"
+        />
+        <span>
+          <span className="block font-semibold">
+            Confirmo criar AVA, financeiro e agenda.
+          </span>
+          <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+            Se algo falhar, a transaction cancela tudo e o pre-cadastro continua
+            sem conversao.
+          </span>
+          {confirmError ? (
+            <span className="mt-1 block text-xs font-medium text-destructive">
+              {confirmError}
+            </span>
+          ) : null}
+        </span>
+      </label>
+
       <Button type="submit" className="h-11 w-full" disabled={isPending}>
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
@@ -659,6 +812,11 @@ function AcceptForm({
           role="status"
         >
           {message}
+        </p>
+      ) : null}
+      {requestError ? (
+        <p className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+          {requestError}
         </p>
       ) : null}
     </form>
@@ -1358,10 +1516,16 @@ export function StudentPreRegistrationReviewPanel({
       ) : (
         <div className="grid gap-4">
           {requests.map((request) => {
-            const canAccept =
-              request.status !== "APPROVED" && request.status !== "REJECTED";
+            const isConverted = Boolean(
+              request.convertedUserName ||
+                request.convertedStudentProfileId ||
+                request.convertedFinancialStudentId ||
+                request.convertedAgendaStudentId ||
+                request.status === "APPROVED",
+            );
+            const canAccept = !isConverted && request.status !== "REJECTED";
             const canReject =
-              request.status !== "APPROVED" && request.status !== "REJECTED";
+              !isConverted && request.status !== "REJECTED";
             const receivedDate =
               formatDate(request.createdAt) ?? "Data nao informada";
             const personInitial =
@@ -1574,6 +1738,21 @@ export function StudentPreRegistrationReviewPanel({
                               : null
                           }
                         />
+                        <DetailItem
+                          icon={UserRound}
+                          label="StudentProfile ID"
+                          value={request.convertedStudentProfileId}
+                        />
+                        <DetailItem
+                          icon={WalletCards}
+                          label="Financeiro ID"
+                          value={request.convertedFinancialStudentId}
+                        />
+                        <DetailItem
+                          icon={CalendarClock}
+                          label="Agenda ID"
+                          value={request.convertedAgendaStudentId}
+                        />
                       </dl>
                     </section>
                   </div>
@@ -1588,21 +1767,24 @@ export function StudentPreRegistrationReviewPanel({
                           Tornar aluno
                         </h4>
                         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                          Cria apenas a conta STUDENT e o vinculo teacher quando
-                          houver teacher responsavel. Financeiro e agenda nao
-                          sao criados automaticamente.
+                          Cria conta STUDENT, perfil do aluno, vinculo teacher,
+                          financeiro e agenda em uma transaction.
                         </p>
                       </div>
                     </div>
 
                     {canAccept ? (
                       <AcceptForm
-                        requestId={request.id}
-                        requiresEmail={!request.email}
+                        request={request}
+                        teacherOptions={teacherOptions}
+                        viewerRole={viewerRole}
                       />
                     ) : (
                       <p className="rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground">
                         Este pre-cadastro ja saiu da fila de conversao.
+                        {isConverted
+                          ? " Os IDs linkados ficam no historico ao lado."
+                          : ""}
                       </p>
                     )}
 

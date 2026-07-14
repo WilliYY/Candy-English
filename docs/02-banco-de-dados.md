@@ -125,8 +125,9 @@ Enums:
 
 - `User.email` e unico.
 - `StudentPreRegistration.email` e opcional e unico quando preenchido; `phoneNormalized` tambem e unico para evitar duplicidade por telefone no fluxo interno da Secretaria.
-- `StudentPreRegistration` guarda unidade (`FinancialUnit`), teacher responsavel opcional, usuario que criou, cidade, nivel estimado, dias/horario pretendidos, mensalidade combinada, dia de pagamento, forma e parcelas sem criar financeiro, agenda ou login automaticamente.
-- `StudentPreRegistration.reviewedByUserId`, `reviewedAt`, `convertedUserId` e `statusNote` registram revisao/conversao sem armazenar senha inicial.
+- `StudentPreRegistration` guarda unidade (`FinancialUnit`), teacher responsavel opcional, usuario que criou, cidade, nivel estimado, dias/horario pretendidos, mensalidade combinada, dia de pagamento, forma e parcelas sem criar financeiro, agenda ou login no momento da criacao.
+- `StudentPreRegistration.reviewedByUserId`, `reviewedAt`, `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId`, `convertedAgendaStudentId` e `statusNote` registram revisao/conversao sem armazenar senha inicial.
+- Ao clicar em `Tornar aluno`, a action protegida cria `User`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, `FinancialPayment` e `AgendaStudent`/`AgendaLesson` em uma transaction; se qualquer parte falhar, o pre-cadastro continua sem ids convertidos.
 - `StudentPreRegistrationStatus` preserva os status antigos e adiciona `WAITING_PAYMENT` e `READY_TO_CONVERT`; na UI da Secretaria eles aparecem como `Aguardando pagamento` e `Pronto para virar aluno`.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
@@ -150,7 +151,8 @@ Enums:
 - `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` guardam a parcela congelada daquele mes, sem recalcular historico antigo.
 - `FinancialExpense` registra gastos internos da loja por ano/mes/unidade, com insumo, data da compra, valor, responsavel informado e usuario admin criador opcional.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
-- Agenda guarda alunos internos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`; ela nao cria nem vincula `User` ou `StudentProfile`.
+- Agenda guarda alunos internos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`; a criacao manual da agenda nao cria nem vincula `User` ou `StudentProfile`.
+- `AgendaStudent.unit` guarda a unidade interna do aluno da agenda, usando `IVATE` por padrao para registros antigos.
 - `AgendaStudent.isActive`, `defaultTime` e `weekdayMask` guardam o estado atual da rotina interna para edicao/inativacao, enquanto `AgendaLesson` preserva as ocorrencias e o historico de presenca/falta.
 - Reposicoes da agenda usam `AgendaLesson.isMakeup=true` e podem apontar para a aula original por `makeupForLessonId`.
 - `AdminCredential` guarda registros admin de APIs/senhas com `secretCiphertext`, `secretDigest` e `secretPreview`; o valor em claro nunca deve ser gravado.
@@ -221,6 +223,7 @@ Enums:
 - Migration `20260604153000_student_pre_registration` adiciona `StudentPreRegistration` para interessados solicitarem cadastro pelo login sem criar `User`, senha ou sessao.
 - Migration `20260604170000_student_pre_registration_review` adiciona metadados de revisao e conversao do pre-cadastro para o modulo `Aceitar alunos`.
 - Migration `20260714143000_secretaria_pre_registration` move o pre-cadastro para o controle interno da Secretaria, torna email opcional, adiciona telefone normalizado unico, unidade, teacher responsavel, criador, agenda pretendida, combinado de pagamento e os status `WAITING_PAYMENT`/`READY_TO_CONVERT`.
+- Migration `20260714170000_linked_pre_registration_conversion` adiciona os ids linkados de conversao em `StudentPreRegistration`, relacoes para `StudentProfile`, `FinancialStudent` e `AgendaStudent`, alem de `AgendaStudent.unit`.
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 - Migration `20260605210000_catty_learning_center` adiciona Catty Learning Center com itens aprovaveis e feedback/sugestoes.
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.
@@ -259,7 +262,7 @@ Enums:
 - Expor `CandyXpActivity.assetPath` diretamente fora da rota protegida vaza historias/atividades privadas.
 - Alterar perguntas ou respostas corretas depois de alunos responderem exige cuidado para nao invalidar historico de nota e XP ja concedido.
 - Habilitar `LISTENING` em `CandyXpActivityInteractiveField` sem rotas proprias de audio/OCR pode quebrar envio ou revisao, pois o suporte atual de listening e especifico de homework/aula interativa.
-- Transformar `StudentPreRegistration` diretamente em login sem revisao admin/teacher quebraria a regra de acesso controlado ao AVA.
+- Converter `StudentPreRegistration` fora da transaction linkada pode deixar aluno criado sem financeiro/agenda ou financeiro/agenda sem login.
 
 ## Pendencias
 

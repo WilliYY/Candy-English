@@ -20,6 +20,7 @@ Arquivos:
 - `prisma/schema.prisma`
 - `prisma/migrations/20260511160000_admin_agenda_module/migration.sql`
 - `prisma/migrations/20260626120000_simple_internal_agenda/migration.sql`
+- `prisma/migrations/20260714170000_linked_pre_registration_conversion/migration.sql`
 
 Tabelas:
 
@@ -37,11 +38,12 @@ Rota:
 
 ## Regras de negocio que precisam ser preservadas
 
-- Apenas `ADMIN` visualiza e escreve na agenda.
-- Agenda e separada dos alunos do AVA; cadastro da agenda nao cria login, usuario ou perfil de aluno.
+- Apenas `ADMIN` visualiza e escreve na tela da agenda.
+- Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `AgendaStudent` e suas `AgendaLesson` futuras dentro da transaction de `Tornar aluno`, sem acessar a agenda completa.
+- Agenda e separada dos alunos do AVA; cadastro manual da agenda nao cria login, usuario ou perfil de aluno.
 - A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje quando o navegador esta em 2026.
 - O admin ve calendario mensal, botao `Hoje`, navegacao de mes, dia atual destacado, dia selecionado destacado e contagem visual de aulas por dia.
-- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, dias da semana, horario e observacao opcional.
+- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit`.
 - O sistema cria ocorrencias do mes escolhido ate dezembro de 2026.
 - `AgendaStudent.isActive`, `AgendaStudent.defaultTime` e `AgendaStudent.weekdayMask` guardam o estado atual da rotina para edicao rapida; `AgendaLesson` continua guardando as ocorrencias reais e o historico.
 - A action de cadastro recusa duplicidade quando o mesmo nome ja tem agenda ativa no mesmo dia/horario.
@@ -67,6 +69,7 @@ Rota:
 - A agenda usa ocorrencias reais por data em `AgendaLesson`, em vez de calcular tudo dinamicamente no cliente.
 - A rotina atual tambem fica resumida em `AgendaStudent` por `isActive`, `defaultTime` e `weekdayMask` para permitir edicao e reativacao sem depender apenas da derivacao das ocorrencias.
 - As datas de agenda usam ano 2026 e horario separado em string `HH:mm`.
+- `AgendaStudent.unit` usa as unidades fixas `IVATE` e `DOURADINA`; registros antigos recebem `IVATE` por padrao.
 - Reposicoes sao ocorrencias independentes, ligadas opcionalmente a aula original por `makeupForLessonId`.
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
@@ -74,6 +77,7 @@ Rota:
 - A tela da Agenda prioriza leitura rapida: fila de hoje/proximos 7 dias no topo, calendario mensal com primeiro horario/aluno por dia, totais do dia selecionado, cards de aula com status/horario/telefone/observacao e cards de alunos internos com rotina, proxima aula e contadores de presenca/falta.
 - O painel evita tabela grande e usa cards empilhados no mobile para facilitar toque em `Veio` e `Nao veio`.
 - A busca e o detalhe trabalham apenas com `AgendaStudent`, sem consultar `User`/`StudentProfile`.
+- A migration `20260714170000_linked_pre_registration_conversion` adiciona `AgendaStudent.unit` e o vinculo de conversao entre `StudentPreRegistration` e `AgendaStudent`.
 
 ## Riscos ao alterar esta parte
 
@@ -81,6 +85,7 @@ Rota:
 - O botao `Excluir` deve continuar com confirmacao clara, pois remove o historico de ocorrencias daquele cadastro.
 - Misturar agenda com aulas pedagogicas pode confundir presenca administrativa com conteudo de aula.
 - Gerar ocorrencias duplicadas pode poluir meses futuros.
+- Converter pre-cadastro sem transaction pode deixar agenda criada sem aluno real ou sem financeiro correspondente.
 - Alterar timezone sem cuidado pode deslocar datas.
 - Transformar agenda em acesso de teacher/student exige nova revisao de permissao.
 - Ao editar recorrencia, cuidar para inativar apenas ocorrencias futuras/operacionais e manter historico consultavel.

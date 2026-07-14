@@ -266,66 +266,73 @@ model User {
 }
 
 model StudentProfile {
-  id                  String                      @id @default(cuid())
-  userId              String                      @unique
-  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level               String?
-  birthDate           DateTime?
-  guardianDocument    String?
-  gender              String?
-  studentPhone        String?
-  studentPhoneAlt     String?
-  motherName          String?
-  motherPhone         String?
-  notes               String?
-  chatThreads         ChatThread[]
-  teacherAssignments  StudentTeacherAssignment[]  @relation("StudentAssignments")
-  lessons             Lesson[]
-  homeworkAssignments HomeworkStudentAssignment[]
-  submissions         HomeworkSubmission[]
-  candyXpAssignments  CandyXpActivityAssignment[]
-  candyXpSubmissions  CandyXpActivitySubmission[]
-  contracts           ContractDocument[]
-  liveSessions        LiveSession[]
+  id                              String                      @id @default(cuid())
+  userId                          String                      @unique
+  user                            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level                           String?
+  birthDate                       DateTime?
+  guardianDocument                String?
+  gender                          String?
+  studentPhone                    String?
+  studentPhoneAlt                 String?
+  motherName                      String?
+  motherPhone                     String?
+  notes                           String?
+  chatThreads                     ChatThread[]
+  teacherAssignments              StudentTeacherAssignment[]  @relation("StudentAssignments")
+  lessons                         Lesson[]
+  homeworkAssignments             HomeworkStudentAssignment[]
+  submissions                     HomeworkSubmission[]
+  candyXpAssignments              CandyXpActivityAssignment[]
+  candyXpSubmissions              CandyXpActivitySubmission[]
+  contracts                       ContractDocument[]
+  liveSessions                    LiveSession[]
+  convertedStudentPreRegistration StudentPreRegistration?     @relation("StudentPreRegistrationConvertedStudentProfile")
 }
 
 model StudentPreRegistration {
-  id                       String                       @id @default(cuid())
-  status                   StudentPreRegistrationStatus @default(PENDING)
-  fullName                 String
-  email                    String?                      @unique
-  phone                    String
-  phoneNormalized          String?                      @unique
-  address                  String?
-  city                     String?
-  unit                     FinancialUnit                @default(IVATE)
-  birthDate                DateTime?
-  studentPhone             String?
-  secondaryContact         String?
-  guardianDocument         String?
-  guardianName             String?
-  guardianPhone            String?
-  notes                    String?
-  englishGoal              String
-  estimatedLevel           String?
-  assignedTeacherProfileId String?
-  assignedTeacherProfile   TeacherProfile?              @relation("StudentPreRegistrationAssignedTeacher", fields: [assignedTeacherProfileId], references: [id], onDelete: SetNull)
-  createdByUserId          String?
-  createdByUser            User?                        @relation("StudentPreRegistrationCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  reviewedAt               DateTime?
-  reviewedByUserId         String?
-  reviewedByUser           User?                        @relation("StudentPreRegistrationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  convertedUserId          String?                      @unique
-  convertedUser            User?                        @relation("StudentPreRegistrationConvertedUser", fields: [convertedUserId], references: [id], onDelete: SetNull)
-  statusNote               String?
-  intendedWeekdayMask      Int                          @default(0)
-  intendedTime             String?
-  tuitionCents             Int?
-  paymentDay               Int?
-  paymentMethod            String?
-  installmentsTotal        Int?
-  createdAt                DateTime                     @default(now())
-  updatedAt                DateTime                     @updatedAt
+  id                          String                       @id @default(cuid())
+  status                      StudentPreRegistrationStatus @default(PENDING)
+  fullName                    String
+  email                       String?                      @unique
+  phone                       String
+  phoneNormalized             String?                      @unique
+  address                     String?
+  city                        String?
+  unit                        FinancialUnit                @default(IVATE)
+  birthDate                   DateTime?
+  studentPhone                String?
+  secondaryContact            String?
+  guardianDocument            String?
+  guardianName                String?
+  guardianPhone               String?
+  notes                       String?
+  englishGoal                 String
+  estimatedLevel              String?
+  assignedTeacherProfileId    String?
+  assignedTeacherProfile      TeacherProfile?              @relation("StudentPreRegistrationAssignedTeacher", fields: [assignedTeacherProfileId], references: [id], onDelete: SetNull)
+  createdByUserId             String?
+  createdByUser               User?                        @relation("StudentPreRegistrationCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedAt                  DateTime?
+  reviewedByUserId            String?
+  reviewedByUser              User?                        @relation("StudentPreRegistrationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  convertedUserId             String?                      @unique
+  convertedUser               User?                        @relation("StudentPreRegistrationConvertedUser", fields: [convertedUserId], references: [id], onDelete: SetNull)
+  convertedStudentProfileId   String?                      @unique
+  convertedStudentProfile     StudentProfile?              @relation("StudentPreRegistrationConvertedStudentProfile", fields: [convertedStudentProfileId], references: [id], onDelete: SetNull)
+  convertedFinancialStudentId String?                      @unique
+  convertedFinancialStudent   FinancialStudent?            @relation("StudentPreRegistrationConvertedFinancialStudent", fields: [convertedFinancialStudentId], references: [id], onDelete: SetNull)
+  convertedAgendaStudentId    String?                      @unique
+  convertedAgendaStudent      AgendaStudent?               @relation("StudentPreRegistrationConvertedAgendaStudent", fields: [convertedAgendaStudentId], references: [id], onDelete: SetNull)
+  statusNote                  String?
+  intendedWeekdayMask         Int                          @default(0)
+  intendedTime                String?
+  tuitionCents                Int?
+  paymentDay                  Int?
+  paymentMethod               String?
+  installmentsTotal           Int?
+  createdAt                   DateTime                     @default(now())
+  updatedAt                   DateTime                     @updatedAt
 
   @@index([status, createdAt])
   @@index([createdAt])
@@ -334,6 +341,9 @@ model StudentPreRegistration {
   @@index([createdByUserId, status, createdAt])
   @@index([reviewedByUserId])
   @@index([convertedUserId])
+  @@index([convertedStudentProfileId])
+  @@index([convertedFinancialStudentId])
+  @@index([convertedAgendaStudentId])
 }
 
 model TeacherProfile {
@@ -551,21 +561,22 @@ model ContractDocument {
 }
 
 model FinancialStudent {
-  id                String             @id @default(cuid())
-  name              String
-  unit              FinancialUnit      @default(IVATE)
-  amountCents       Int
-  installmentsTotal Int?
-  paymentDay        Int
-  paymentMethod     String             @default("PIX")
-  phone             String?
-  cpf               String?
-  email             String?
-  address           String?
-  payments          FinancialPayment[]
-  logs              FinancialLog[]
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+  id                              String                  @id @default(cuid())
+  name                            String
+  unit                            FinancialUnit           @default(IVATE)
+  amountCents                     Int
+  installmentsTotal               Int?
+  paymentDay                      Int
+  paymentMethod                   String                  @default("PIX")
+  phone                           String?
+  cpf                             String?
+  email                           String?
+  address                         String?
+  payments                        FinancialPayment[]
+  logs                            FinancialLog[]
+  convertedStudentPreRegistration StudentPreRegistration? @relation("StudentPreRegistrationConvertedFinancialStudent")
+  createdAt                       DateTime                @default(now())
+  updatedAt                       DateTime                @updatedAt
 
   @@index([unit, paymentDay, name])
   @@index([paymentDay, name])
@@ -640,18 +651,21 @@ model FinancialExpense {
 }
 
 model AgendaStudent {
-  id          String         @id @default(cuid())
-  name        String
-  phone       String?
-  notes       String?
-  isActive    Boolean        @default(true)
-  defaultTime String?
-  weekdayMask Int            @default(0)
-  lessons     AgendaLesson[]
-  logs        AgendaLog[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id                              String                  @id @default(cuid())
+  name                            String
+  unit                            FinancialUnit           @default(IVATE)
+  phone                           String?
+  notes                           String?
+  isActive                        Boolean                 @default(true)
+  defaultTime                     String?
+  weekdayMask                     Int                     @default(0)
+  lessons                         AgendaLesson[]
+  logs                            AgendaLog[]
+  convertedStudentPreRegistration StudentPreRegistration? @relation("StudentPreRegistrationConvertedAgendaStudent")
+  createdAt                       DateTime                @default(now())
+  updatedAt                       DateTime                @updatedAt
 
+  @@index([unit, isActive, name])
   @@index([name])
   @@index([isActive, name])
 }

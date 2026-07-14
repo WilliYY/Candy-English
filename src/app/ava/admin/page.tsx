@@ -335,6 +335,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         name: true,
         notes: true,
         phone: true,
+        unit: true,
         weekdayMask: true,
       },
     }),
@@ -365,6 +366,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             name: true,
             notes: true,
             phone: true,
+            unit: true,
           },
         },
         time: true,
@@ -607,6 +609,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
         assignedTeacherProfileId: true,
         city: true,
+        convertedAgendaStudentId: true,
+        convertedFinancialStudentId: true,
+        convertedStudentProfileId: true,
         convertedUser: {
           select: {
             email: true,
@@ -895,6 +900,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         studentName: lesson.student.name,
         studentNotes: lesson.student.notes,
         studentPhone: lesson.student.phone,
+        studentUnit: lesson.student.unit,
         time: lesson.time,
         weekday: lesson.weekday,
         year: lesson.year,
@@ -912,6 +918,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         name: student.name,
         notes: student.notes,
         phone: student.phone,
+        unit: student.unit,
         weekdayMask: student.weekdayMask,
       }))}
       assignments={assignments.map((assignment) => ({
@@ -1010,6 +1017,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         assignedTeacherName: request.assignedTeacherProfile?.user.name ?? null,
         birthDate: request.birthDate?.toISOString() ?? null,
         city: request.city,
+        convertedAgendaStudentId: request.convertedAgendaStudentId,
+        convertedFinancialStudentId: request.convertedFinancialStudentId,
+        convertedStudentProfileId: request.convertedStudentProfileId,
         convertedUserEmail: request.convertedUser?.email ?? null,
         convertedUserName: request.convertedUser?.name ?? null,
         createdAt: request.createdAt.toISOString(),
