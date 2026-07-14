@@ -1,6 +1,30 @@
 import { z } from "zod";
 import { hasSensitiveCattyUserMemoryText } from "@/lib/validations/catty-user-memory";
 
+export const PRE_REGISTRATION_STATUSES = [
+  "PENDING",
+  "CONTACTED",
+  "WAITING_PAYMENT",
+  "READY_TO_CONVERT",
+  "APPROVED",
+  "REJECTED",
+] as const;
+
+export const SECRETARIA_PRE_REGISTRATION_STATUSES = [
+  "PENDING",
+  "CONTACTED",
+  "WAITING_PAYMENT",
+  "READY_TO_CONVERT",
+  "REJECTED",
+] as const;
+
+export const PRE_REGISTRATION_PAYMENT_METHODS = [
+  "PIX",
+  "DINHEIRO",
+  "CARTAO",
+  "OUTRO",
+] as const;
+
 function optionalText(maxLength: number, message: string) {
   return z
     .string()
@@ -38,6 +62,114 @@ const optionalBirthDateSchema = z
 
     return date;
   });
+
+function optionalInteger({
+  max,
+  maxMessage,
+  min,
+  minMessage,
+}: {
+  max: number;
+  maxMessage: string;
+  min: number;
+  minMessage: string;
+}) {
+  return z
+    .string()
+    .trim()
+    .optional()
+    .transform((value, ctx) => {
+      if (!value) {
+        return undefined;
+      }
+
+      const parsed = Number(value);
+
+      if (!Number.isInteger(parsed)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Informe um numero inteiro valido.",
+        });
+        return z.NEVER;
+      }
+
+      if (parsed < min) {
+        ctx.addIssue({
+          code: "custom",
+          message: minMessage,
+        });
+        return z.NEVER;
+      }
+
+      if (parsed > max) {
+        ctx.addIssue({
+          code: "custom",
+          message: maxMessage,
+        });
+        return z.NEVER;
+      }
+
+      return parsed;
+    });
+}
+
+function optionalEmail() {
+  return z
+    .string()
+    .trim()
+    .max(180, "O email pode ter no maximo 180 caracteres.")
+    .optional()
+    .transform((value, ctx) => {
+      if (!value) {
+        return undefined;
+      }
+
+      const parsed = z.string().email("Informe um email valido.").safeParse(value);
+
+      if (!parsed.success) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Informe um email valido.",
+        });
+        return z.NEVER;
+      }
+
+      return parsed.data.toLowerCase();
+    });
+}
+
+function optionalMoneyCents() {
+  return z
+    .string()
+    .trim()
+    .max(32, "O valor pode ter no maximo 32 caracteres.")
+    .optional()
+    .transform((value, ctx) => {
+      if (!value) {
+        return undefined;
+      }
+
+      const normalized = value
+        .replace(/[R$\s]/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".");
+      const parsed = Number(normalized);
+
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Informe um valor valido.",
+        });
+        return z.NEVER;
+      }
+
+      return Math.round(parsed * 100);
+    });
+}
+
+export function normalizePhoneDigits(value: string) {
+  return value.replace(/\D/g, "");
+}
 
 export const studentPreRegistrationSchema = z.object({
   address: optionalText(
@@ -92,23 +224,100 @@ export const studentPreRegistrationSchema = z.object({
   ),
 });
 
+export const secretariaPreRegistrationSchema = z.object({
+  assignedTeacherProfileId: optionalText(
+    80,
+    "Teacher responsavel invalida.",
+  ),
+  birthDate: optionalBirthDateSchema,
+  city: optionalText(120, "Cidade pode ter no maximo 120 caracteres."),
+  email: optionalEmail(),
+  englishGoal: z
+    .string()
+    .trim()
+    .min(5, "Conte um pouquinho do objetivo com o ingles.")
+    .max(1000, "O objetivo pode ter no maximo 1000 caracteres."),
+  estimatedLevel: optionalText(
+    80,
+    "Nivel estimado pode ter no maximo 80 caracteres.",
+  ),
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "Informe o nome completo.")
+    .max(120, "O nome pode ter no maximo 120 caracteres."),
+  guardianName: optionalText(
+    120,
+    "O responsavel pode ter no maximo 120 caracteres.",
+  ),
+  installmentsTotal: optionalInteger({
+    max: 60,
+    maxMessage: "A quantidade de parcelas deve ser ate 60.",
+    min: 1,
+    minMessage: "A quantidade de parcelas deve ser maior que zero.",
+  }),
+  intendedTime: optionalText(
+    20,
+    "Horario pretendido pode ter no maximo 20 caracteres.",
+  ),
+  intendedWeekdayMask: z.coerce
+    .number()
+    .int("Dias pretendidos invalidos.")
+    .min(0, "Dias pretendidos invalidos.")
+    .max(127, "Dias pretendidos invalidos.")
+    .default(0),
+  notes: optionalText(
+    1000,
+    "As observacoes podem ter no maximo 1000 caracteres.",
+  ),
+  paymentDay: optionalInteger({
+    max: 31,
+    maxMessage: "O dia de pagamento deve ser no maximo 31.",
+    min: 1,
+    minMessage: "O dia de pagamento deve ser maior que zero.",
+  }),
+  paymentMethod: z.enum(PRE_REGISTRATION_PAYMENT_METHODS).optional(),
+  phone: z
+    .string()
+    .trim()
+    .min(8, "Informe um telefone para contato.")
+    .max(40, "O telefone pode ter no maximo 40 caracteres.")
+    .refine(
+      (value) => normalizePhoneDigits(value).length >= 8,
+      "Informe um telefone com DDD.",
+    ),
+  status: z.enum(SECRETARIA_PRE_REGISTRATION_STATUSES).default("PENDING"),
+  tuitionAmount: optionalMoneyCents(),
+  unit: z.enum(["IVATE", "DOURADINA"], {
+    message: "Selecione a unidade.",
+  }),
+});
+
 export type StudentPreRegistrationInput = z.input<
   typeof studentPreRegistrationSchema
 >;
 export type StudentPreRegistrationData = z.output<
   typeof studentPreRegistrationSchema
 >;
+export type SecretariaPreRegistrationInput = z.input<
+  typeof secretariaPreRegistrationSchema
+>;
+export type SecretariaPreRegistrationData = z.output<
+  typeof secretariaPreRegistrationSchema
+>;
 
-export const studentPreRegistrationStatusSchema = z.enum([
-  "PENDING",
-  "CONTACTED",
-  "APPROVED",
-  "REJECTED",
-]);
+export const studentPreRegistrationStatusSchema = z.enum(
+  PRE_REGISTRATION_STATUSES,
+);
 
 export const preRegistrationReviewSchema = z.object({
   requestId: z.string().min(1, "Solicitacao invalida."),
-  status: z.enum(["CONTACTED", "REJECTED"]),
+  status: z.enum([
+    "CONTACTED",
+    "WAITING_PAYMENT",
+    "READY_TO_CONVERT",
+    "REJECTED",
+  ]),
   statusNote: optionalText(
     1000,
     "A observacao pode ter no maximo 1000 caracteres.",
@@ -121,6 +330,7 @@ export const preRegistrationAcceptSchema = z
       160,
       "O contexto Catty pode ter no maximo 160 caracteres.",
     ),
+    emailForLogin: optionalEmail(),
     initialPassword: z
       .string()
       .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")

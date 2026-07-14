@@ -21,7 +21,10 @@ import type {
   CattyLearningFeedbackKindInput,
   CattyLearningIntentInput,
 } from "@/lib/validations/catty-learning";
-import { studentPreRegistrationStatusSchema } from "@/lib/validations/pre-registration";
+import {
+  PRE_REGISTRATION_STATUSES,
+  studentPreRegistrationStatusSchema,
+} from "@/lib/validations/pre-registration";
 
 export const metadata: Metadata = {
   title: "Admin AVA",
@@ -55,6 +58,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const preRegistrationStatus = parsedPreRegistrationStatus.success
     ? parsedPreRegistrationStatus.data
     : "PENDING";
+  const preRegistrationStatuses = PRE_REGISTRATION_STATUSES;
 
   await syncEnvironmentAdminCredentials(session.user.id);
 
@@ -590,6 +594,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       select: {
         address: true,
         birthDate: true,
+        assignedTeacherProfile: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
+        assignedTeacherProfileId: true,
+        city: true,
         convertedUser: {
           select: {
             email: true,
@@ -597,14 +614,26 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           },
         },
         createdAt: true,
+        createdByUser: {
+          select: {
+            name: true,
+            role: true,
+          },
+        },
         email: true,
         englishGoal: true,
+        estimatedLevel: true,
         fullName: true,
         guardianDocument: true,
         guardianName: true,
         guardianPhone: true,
         id: true,
+        installmentsTotal: true,
+        intendedTime: true,
+        intendedWeekdayMask: true,
         notes: true,
+        paymentDay: true,
+        paymentMethod: true,
         phone: true,
         reviewedAt: true,
         reviewedByUser: {
@@ -616,14 +645,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         status: true,
         statusNote: true,
         studentPhone: true,
+        tuitionCents: true,
+        unit: true,
       },
     }),
-    Promise.all([
-      prisma.studentPreRegistration.count({ where: { status: "PENDING" } }),
-      prisma.studentPreRegistration.count({ where: { status: "CONTACTED" } }),
-      prisma.studentPreRegistration.count({ where: { status: "APPROVED" } }),
-      prisma.studentPreRegistration.count({ where: { status: "REJECTED" } }),
-    ]),
+    Promise.all(
+      preRegistrationStatuses.map((status) =>
+        prisma.studentPreRegistration.count({ where: { status } }),
+      ),
+    ),
   ]);
   const currentDate = new Date();
   const initialFinanceMonth =
@@ -959,12 +989,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}
       preRegistrationStatus={preRegistrationStatus}
-      preRegistrationStatusCounts={{
-        APPROVED: studentPreRegistrationStatusCounts[2],
-        CONTACTED: studentPreRegistrationStatusCounts[1],
-        PENDING: studentPreRegistrationStatusCounts[0],
-        REJECTED: studentPreRegistrationStatusCounts[3],
-      }}
+      preRegistrationStatusCounts={Object.fromEntries(
+        preRegistrationStatuses.map((status, index) => [
+          status,
+          studentPreRegistrationStatusCounts[index] ?? 0,
+        ]),
+      ) as Record<(typeof preRegistrationStatuses)[number], number>}
       students={students.map((student) => ({
         email: student.user.email,
         id: student.id,
@@ -974,18 +1004,31 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       storageUsageBytes={storageUsageBytes}
       studentPreRegistrations={studentPreRegistrations.map((request) => ({
         address: request.address,
+        assignedTeacherEmail:
+          request.assignedTeacherProfile?.user.email ?? null,
+        assignedTeacherId: request.assignedTeacherProfileId,
+        assignedTeacherName: request.assignedTeacherProfile?.user.name ?? null,
         birthDate: request.birthDate?.toISOString() ?? null,
+        city: request.city,
         convertedUserEmail: request.convertedUser?.email ?? null,
         convertedUserName: request.convertedUser?.name ?? null,
         createdAt: request.createdAt.toISOString(),
+        createdByName: request.createdByUser?.name ?? null,
+        createdByRole: request.createdByUser?.role ?? null,
         email: request.email,
         englishGoal: request.englishGoal,
+        estimatedLevel: request.estimatedLevel,
         fullName: request.fullName,
         guardianDocument: request.guardianDocument,
         guardianName: request.guardianName,
         guardianPhone: request.guardianPhone,
         id: request.id,
+        installmentsTotal: request.installmentsTotal,
+        intendedTime: request.intendedTime,
+        intendedWeekdayMask: request.intendedWeekdayMask,
         notes: request.notes,
+        paymentDay: request.paymentDay,
+        paymentMethod: request.paymentMethod,
         phone: request.phone,
         reviewedAt: request.reviewedAt?.toISOString() ?? null,
         reviewedByName: request.reviewedByUser?.name ?? null,
@@ -993,6 +1036,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         status: request.status,
         statusNote: request.statusNote,
         studentPhone: request.studentPhone,
+        tuitionCents: request.tuitionCents,
+        unit: request.unit,
       }))}
       teachers={teachers.map((teacher) => ({
         email: teacher.user.email,

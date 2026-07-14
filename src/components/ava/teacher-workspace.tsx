@@ -711,6 +711,7 @@ export function TeacherWorkspace({
               basePath="/ava/teacher"
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
+              teacherOptions={teachers}
               viewerRole="TEACHER"
             />
           ) : null}

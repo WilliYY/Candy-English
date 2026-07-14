@@ -16,6 +16,8 @@ enum Role {
 enum StudentPreRegistrationStatus {
   PENDING
   CONTACTED
+  WAITING_PAYMENT
+  READY_TO_CONVERT
   APPROVED
   REJECTED
 }
@@ -232,6 +234,7 @@ model User {
   updatedCredentials               AdminCredential[]           @relation("AdminCredentialUpdatedBy")
   createdCandyXpActivities         CandyXpActivity[]           @relation("CandyXpActivityCreatedBy")
   reviewedCandyXpSubmissions       CandyXpActivitySubmission[] @relation("CandyXpSubmissionReviewedBy")
+  createdStudentPreRegistrations   StudentPreRegistration[]    @relation("StudentPreRegistrationCreatedBy")
   reviewedStudentPreRegistrations  StudentPreRegistration[]    @relation("StudentPreRegistrationReviewedBy")
   convertedStudentPreRegistration  StudentPreRegistration?     @relation("StudentPreRegistrationConvertedUser")
   candyXpProfile                   CandyXpProfile?
@@ -287,47 +290,65 @@ model StudentProfile {
 }
 
 model StudentPreRegistration {
-  id               String                       @id @default(cuid())
-  status           StudentPreRegistrationStatus @default(PENDING)
-  fullName         String
-  email            String                       @unique
-  phone            String
-  address          String?
-  birthDate        DateTime?
-  studentPhone     String?
-  secondaryContact String?
-  guardianDocument String?
-  guardianName     String?
-  guardianPhone    String?
-  notes            String?
-  englishGoal      String
-  reviewedAt       DateTime?
-  reviewedByUserId String?
-  reviewedByUser   User?                        @relation("StudentPreRegistrationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  convertedUserId  String?                      @unique
-  convertedUser    User?                        @relation("StudentPreRegistrationConvertedUser", fields: [convertedUserId], references: [id], onDelete: SetNull)
-  statusNote       String?
-  createdAt        DateTime                     @default(now())
-  updatedAt        DateTime                     @updatedAt
+  id                       String                       @id @default(cuid())
+  status                   StudentPreRegistrationStatus @default(PENDING)
+  fullName                 String
+  email                    String?                      @unique
+  phone                    String
+  phoneNormalized          String?                      @unique
+  address                  String?
+  city                     String?
+  unit                     FinancialUnit                @default(IVATE)
+  birthDate                DateTime?
+  studentPhone             String?
+  secondaryContact         String?
+  guardianDocument         String?
+  guardianName             String?
+  guardianPhone            String?
+  notes                    String?
+  englishGoal              String
+  estimatedLevel           String?
+  assignedTeacherProfileId String?
+  assignedTeacherProfile   TeacherProfile?              @relation("StudentPreRegistrationAssignedTeacher", fields: [assignedTeacherProfileId], references: [id], onDelete: SetNull)
+  createdByUserId          String?
+  createdByUser            User?                        @relation("StudentPreRegistrationCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  reviewedAt               DateTime?
+  reviewedByUserId         String?
+  reviewedByUser           User?                        @relation("StudentPreRegistrationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  convertedUserId          String?                      @unique
+  convertedUser            User?                        @relation("StudentPreRegistrationConvertedUser", fields: [convertedUserId], references: [id], onDelete: SetNull)
+  statusNote               String?
+  intendedWeekdayMask      Int                          @default(0)
+  intendedTime             String?
+  tuitionCents             Int?
+  paymentDay               Int?
+  paymentMethod            String?
+  installmentsTotal        Int?
+  createdAt                DateTime                     @default(now())
+  updatedAt                DateTime                     @updatedAt
 
   @@index([status, createdAt])
   @@index([createdAt])
+  @@index([unit, status, createdAt])
+  @@index([assignedTeacherProfileId, status, createdAt])
+  @@index([createdByUserId, status, createdAt])
   @@index([reviewedByUserId])
   @@index([convertedUserId])
 }
 
 model TeacherProfile {
-  id                  String                      @id @default(cuid())
-  userId              String                      @unique
-  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bio                 String?
-  studentAssignments  StudentTeacherAssignment[]  @relation("TeacherAssignments")
-  chatThreads         ChatThread[]
-  lessons             Lesson[]
-  homeworks           Homework[]
-  sharedHomeworks     HomeworkStudentAssignment[]
-  reviewedSubmissions HomeworkSubmission[]
-  liveSessions        LiveSession[]
+  id                              String                      @id @default(cuid())
+  userId                          String                      @unique
+  user                            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bio                             String?
+  studentAssignments              StudentTeacherAssignment[]  @relation("TeacherAssignments")
+  chatThreads                     ChatThread[]
+  lessons                         Lesson[]
+  homeworks                       Homework[]
+  sharedHomeworks                 HomeworkStudentAssignment[]
+  reviewedSubmissions             HomeworkSubmission[]
+  liveSessions                    LiveSession[]
+  assignedStudentPreRegistrations StudentPreRegistration[]    @relation("StudentPreRegistrationAssignedTeacher")
 }
 
 model StudentTeacherAssignment {
@@ -551,12 +572,12 @@ model FinancialStudent {
 }
 
 model FinancialPayment {
-  id                    String           @id @default(cuid())
-  year                  Int              @default(2026)
-  month                 Int
-  studentId             String
-  student               FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  isActive              Boolean          @default(true)
+  id                        String           @id @default(cuid())
+  year                      Int              @default(2026)
+  month                     Int
+  studentId                 String
+  student                   FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  isActive                  Boolean          @default(true)
   snapshotName              String
   snapshotAmountCents       Int
   snapshotInstallmentNumber Int?
@@ -599,19 +620,19 @@ model FinancialLog {
 }
 
 model FinancialExpense {
-  id              String   @id @default(cuid())
-  year            Int      @default(2026)
+  id              String        @id @default(cuid())
+  year            Int           @default(2026)
   month           Int
   itemName        String
   unit            FinancialUnit @default(IVATE)
-  purchasedAt     DateTime @default(now())
+  purchasedAt     DateTime      @default(now())
   amountCents     Int
   actorName       String
   note            String?
   createdByUserId String?
-  createdByUser   User?    @relation("FinancialExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdByUser   User?         @relation("FinancialExpenseCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([year, month, unit, purchasedAt])
   @@index([year, month, purchasedAt])

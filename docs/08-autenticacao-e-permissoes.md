@@ -91,9 +91,12 @@ Rotas protegidas:
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Login Google esta desativado nesta fase; o login ativo e por email/senha com Credentials Provider.
 - O botao publico `Quero ser aluno Candy` no login abre WhatsApp e nao cria `StudentPreRegistration`.
-- `StudentPreRegistration` continua fora do Auth.js e so vira acesso real depois de aceite protegido por `ADMIN` ou `TEACHER`.
-- `ADMIN` e `TEACHER` podem revisar pre-cadastros no modulo `Aceitar alunos`; ao aceitar, o servidor cria somente `User.role=STUDENT` e `StudentProfile`.
-- Quando `TEACHER` aceita um aluno, o servidor tambem cria o vinculo `StudentTeacherAssignment` com a propria teacher.
+- `StudentPreRegistration` continua fora do Auth.js e so vira acesso real depois de `Tornar aluno` por action protegida por `ADMIN` ou `TEACHER`.
+- `ADMIN` pode criar, ver, atualizar status e converter todos os pre-cadastros da Secretaria.
+- `TEACHER` pode criar pre-cadastro e ver/atualizar/converter apenas registros criados por ela (`createdByUserId`) ou atribuidos a sua `TeacherProfile` (`assignedTeacherProfileId`).
+- `STUDENT` nao acessa pre-cadastros nem Secretaria.
+- Ao converter, o servidor cria somente `User.role=STUDENT` e `StudentProfile`; nao cria financeiro nem agenda automaticamente.
+- Quando `TEACHER` converte um aluno, ou quando o registro tem teacher responsavel, o servidor tambem cria o vinculo `StudentTeacherAssignment`.
 - O fluxo de aceite nunca cria `ADMIN` ou `TEACHER` e nunca retorna/loga a senha inicial em texto puro.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
 - Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
@@ -139,8 +142,8 @@ Rotas protegidas:
 - `getDefaultAvaPath` direciona `ADMIN` e `TEACHER` para `/ava/escolha`; `STUDENT` continua indo para `/ava/student`.
 - A escolha pos-login e a Secretaria usam `requireAvaRole` em Server Component, sem criar nova role.
 - Google Provider foi removido temporariamente; o provider ativo e Credentials.
-- `StudentPreRegistration` guarda interessados como solicitacao pendente fora do fluxo de Auth.js.
-- `StudentPreRegistration` tambem guarda metadados de revisao/conversao; `APPROVED` e usado como status tecnico para `Convertido em aluno` na UI.
+- `StudentPreRegistration` guarda interessados da Secretaria fora do fluxo de Auth.js, com email opcional, telefone normalizado, unidade, agenda pretendida e combinado de pagamento.
+- `StudentPreRegistration` tambem guarda metadados de criacao, teacher responsavel, revisao/conversao; `APPROVED` e usado como status tecnico para `Convertido` na UI, e `WAITING_PAYMENT`/`READY_TO_CONVERT` cobrem a conversa antes do aceite.
 - `src/lib/whatsapp.ts` monta os links publicos do WhatsApp com `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` e fallback seguro para o numero publico atual.
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.

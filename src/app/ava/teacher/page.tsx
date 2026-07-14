@@ -21,7 +21,10 @@ import type {
   CattyLearningFeedbackKindInput,
   CattyLearningIntentInput,
 } from "@/lib/validations/catty-learning";
-import { studentPreRegistrationStatusSchema } from "@/lib/validations/pre-registration";
+import {
+  PRE_REGISTRATION_STATUSES,
+  studentPreRegistrationStatusSchema,
+} from "@/lib/validations/pre-registration";
 
 export const metadata: Metadata = {
   title: "Teacher AVA",
@@ -52,11 +55,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     studentPreRegistrationStatusSchema.safeParse(
       requestedPreRegistrationStatus,
     );
-  const preRegistrationStatus =
-    parsedPreRegistrationStatus.success &&
-    ["PENDING", "CONTACTED"].includes(parsedPreRegistrationStatus.data)
-      ? parsedPreRegistrationStatus.data
-      : "PENDING";
+  const preRegistrationStatus = parsedPreRegistrationStatus.success
+    ? parsedPreRegistrationStatus.data
+    : "PENDING";
+  const preRegistrationStatuses = PRE_REGISTRATION_STATUSES;
   const currentTeacherProfile =
     session.user.role === "TEACHER"
       ? await prisma.teacherProfile.findUnique({
@@ -83,6 +85,19 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   const lessonWhere =
     session.user.role === "TEACHER"
       ? { teacherProfileId: teacherProfileIdForFiltering }
+      : {};
+  const preRegistrationOwnershipWhere =
+    session.user.role === "TEACHER"
+      ? {
+          OR: [
+            {
+              assignedTeacherProfileId: teacherProfileIdForFiltering,
+            },
+            {
+              createdByUserId: session.user.id,
+            },
+          ],
+        }
       : {};
   const submissionWhere =
     session.user.role === "TEACHER"
@@ -586,14 +601,30 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     }),
     prisma.studentPreRegistration.findMany({
       where: {
-        status: preRegistrationStatus,
+        AND: [
+          { status: preRegistrationStatus },
+          preRegistrationOwnershipWhere,
+        ],
       },
       orderBy: {
         createdAt: "desc",
       },
       select: {
         address: true,
+        assignedTeacherProfile: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
+        assignedTeacherProfileId: true,
         birthDate: true,
+        city: true,
         convertedUser: {
           select: {
             email: true,
@@ -601,14 +632,26 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           },
         },
         createdAt: true,
+        createdByUser: {
+          select: {
+            name: true,
+            role: true,
+          },
+        },
         email: true,
         englishGoal: true,
+        estimatedLevel: true,
         fullName: true,
         guardianDocument: true,
         guardianName: true,
         guardianPhone: true,
         id: true,
+        installmentsTotal: true,
+        intendedTime: true,
+        intendedWeekdayMask: true,
         notes: true,
+        paymentDay: true,
+        paymentMethod: true,
         phone: true,
         reviewedAt: true,
         reviewedByUser: {
@@ -620,12 +663,19 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         status: true,
         statusNote: true,
         studentPhone: true,
+        tuitionCents: true,
+        unit: true,
       },
     }),
-    Promise.all([
-      prisma.studentPreRegistration.count({ where: { status: "PENDING" } }),
-      prisma.studentPreRegistration.count({ where: { status: "CONTACTED" } }),
-    ]),
+    Promise.all(
+      preRegistrationStatuses.map((status) =>
+        prisma.studentPreRegistration.count({
+          where: {
+            AND: [{ status }, preRegistrationOwnershipWhere],
+          },
+        }),
+      ),
+    ),
   ]);
   let candyXpPersistence: CandyXpPersistenceSnapshot | null = null;
 
@@ -782,26 +832,39 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         level: student.level,
       }))}
       preRegistrationStatus={preRegistrationStatus}
-      preRegistrationStatusCounts={{
-        APPROVED: 0,
-        CONTACTED: studentPreRegistrationStatusCounts[1],
-        PENDING: studentPreRegistrationStatusCounts[0],
-        REJECTED: 0,
-      }}
+      preRegistrationStatusCounts={Object.fromEntries(
+        preRegistrationStatuses.map((status, index) => [
+          status,
+          studentPreRegistrationStatusCounts[index] ?? 0,
+        ]),
+      ) as Record<(typeof preRegistrationStatuses)[number], number>}
       studentPreRegistrations={studentPreRegistrations.map((request) => ({
         address: request.address,
+        assignedTeacherEmail:
+          request.assignedTeacherProfile?.user.email ?? null,
+        assignedTeacherId: request.assignedTeacherProfileId,
+        assignedTeacherName: request.assignedTeacherProfile?.user.name ?? null,
         birthDate: request.birthDate?.toISOString() ?? null,
+        city: request.city,
         convertedUserEmail: request.convertedUser?.email ?? null,
         convertedUserName: request.convertedUser?.name ?? null,
         createdAt: request.createdAt.toISOString(),
+        createdByName: request.createdByUser?.name ?? null,
+        createdByRole: request.createdByUser?.role ?? null,
         email: request.email,
         englishGoal: request.englishGoal,
+        estimatedLevel: request.estimatedLevel,
         fullName: request.fullName,
         guardianDocument: request.guardianDocument,
         guardianName: request.guardianName,
         guardianPhone: request.guardianPhone,
         id: request.id,
+        installmentsTotal: request.installmentsTotal,
+        intendedTime: request.intendedTime,
+        intendedWeekdayMask: request.intendedWeekdayMask,
         notes: request.notes,
+        paymentDay: request.paymentDay,
+        paymentMethod: request.paymentMethod,
         phone: request.phone,
         reviewedAt: request.reviewedAt?.toISOString() ?? null,
         reviewedByName: request.reviewedByUser?.name ?? null,
@@ -809,6 +872,8 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         status: request.status,
         statusNote: request.statusNote,
         studentPhone: request.studentPhone,
+        tuitionCents: request.tuitionCents,
+        unit: request.unit,
       }))}
       submissions={submissions}
       teachers={teachers.map((teacher) => ({

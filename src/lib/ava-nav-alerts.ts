@@ -196,7 +196,14 @@ export async function getAvaNavAlertSignatures(
         ? prisma.studentPreRegistration.findFirst({
             where:
               role === "TEACHER"
-                ? { status: { in: ["PENDING", "CONTACTED"] } }
+                ? teacherProfileId
+                  ? {
+                      OR: [
+                        { assignedTeacherProfileId: teacherProfileId },
+                        { createdByUserId: userId },
+                      ],
+                    }
+                  : { id: "__missing_teacher_profile__" }
                 : {},
             orderBy: { updatedAt: "desc" },
             select: { id: true, updatedAt: true },

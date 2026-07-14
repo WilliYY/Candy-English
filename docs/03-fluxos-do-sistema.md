@@ -103,9 +103,13 @@ Helpers:
 2. O botao abre WhatsApp em nova aba usando o numero publico configurado em `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE`, ou o fallback seguro de `src/lib/whatsapp.ts`.
 3. A mensagem ja vai preenchida com interesse em ser aluno Candy English.
 4. Esse clique nao chama server action e nao cria `StudentPreRegistration`.
-5. Pre-cadastros continuam como fluxo protegido da Secretaria/Admin/Teacher, revisados em `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`.
-6. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory`.
-7. Quando uma Teacher aceita o aluno, o sistema tambem cria o vinculo `StudentTeacherAssignment` com essa teacher; Admin aceita sem vinculo automatico e pode vincular depois.
+5. Pre-cadastros passam a ser criados manualmente dentro da Secretaria, em `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`, depois da conversa da equipe com o interessado.
+6. Admin pode criar e ver todos os pre-cadastros; Teacher cria e ve apenas os proprios ou os atribuidos a sua `TeacherProfile`.
+7. O formulario interno salva nome, telefone, email opcional, nascimento, responsavel, cidade, unidade `Ivaté`/`Douradina`, objetivo, nivel estimado, observacoes, teacher responsavel, dias/horario pretendidos, mensalidade, dia de pagamento, forma e parcelas.
+8. Status visuais da Secretaria: `Novo` (`PENDING`), `Em conversa` (`CONTACTED`), `Aguardando pagamento` (`WAITING_PAYMENT`), `Pronto para virar aluno` (`READY_TO_CONVERT`), `Recusado` (`REJECTED`) e `Convertido` (`APPROVED`).
+9. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; isso so acontece parcialmente quando alguem clica em `Tornar aluno`.
+10. Ao tornar aluno, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com dados pedagogicos/contato, exige senha inicial e email de login se ainda nao houver email no pre-cadastro, e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory`.
+11. Quando uma Teacher torna aluno, ou quando o pre-cadastro tem teacher responsavel, o sistema cria o vinculo `StudentTeacherAssignment`; financeiro e agenda continuam manuais.
 
 ### Admin
 
@@ -114,7 +118,7 @@ Helpers:
 3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
-5. Admin revisa pre-cadastros em `Aceitar alunos`, com filtros por pendente, em analise, convertido e recusado.
+5. Admin cria e acompanha pre-cadastros em `Aceitar alunos`, com filtros por novo, em conversa, aguardando pagamento, pronto para virar aluno, convertido e recusado.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin usa `Catty dos alunos` para escolher aluno, cadastrar gostos, gerar emojis/sons/bordoes e ver um resumo simples das memorias ativas daquele aluno.
 8. Admin ajusta temas, gosto principal, emojis, sons e bordoes por aluno em `Catty dos alunos`; temas ativos entram na Catty, pendentes aguardam revisao, desativados criam preferencia `avoid_*` e arquivados ficam fora do prompt.
@@ -300,7 +304,7 @@ Helpers:
 1. Admin ou Teacher abre `/ava/secretaria` depois da escolha pos-login ou pela sidebar.
 2. A pagina agrupa atalhos administrativos, sem substituir as rotas antigas por `?task=`.
 3. Admin ve pre-cadastros, financeiro, agenda, contratos, administracao e sistema.
-4. Teacher ve somente pre-cadastros e contratos permitidos por role/vinculo.
+4. Teacher ve somente pre-cadastros proprios/atribuidos e contratos permitidos por role/vinculo.
 5. Student nao acessa `/ava/secretaria`; ao tentar, a autorizacao o redireciona para o AVA Student.
 
 ### Agenda
@@ -329,7 +333,8 @@ Helpers:
 - `/ava/escolha` separa visualmente `AVA` e `Secretaria` para Admin/Teacher; Student nunca deve ver Secretaria.
 - `/ava/secretaria` e um painel de atalhos protegidos, nao uma permissao nova nem substituto das validacoes server-side das tarefas existentes.
 - O botao publico `Quero ser aluno Candy` abre WhatsApp e nao cria pre-cadastro sozinho.
-- Pre-cadastro nunca deve liberar login automaticamente; quando existir solicitacao, ela deve ser revisada pela equipe antes de virar aluno.
+- Pre-cadastro nunca deve liberar login automaticamente; quando existir solicitacao, ela deve ser criada/revisada pela equipe antes de virar aluno.
+- Pre-cadastro da Secretaria nao deve criar financeiro ou agenda automaticamente; unidade, pagamento e horario pretendido sao dados internos para orientar a equipe.
 - O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem no desktop. Em mobile e tablet abaixo de `1280px`, ela abre como drawer sobre o conteudo, fecha ao escolher um atalho, tocar fora ou pressionar `Esc` e devolve imediatamente a area util da tarefa.
 - Student tem botoes sempre visiveis.

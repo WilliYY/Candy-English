@@ -74,7 +74,7 @@ Servicos Docker:
 - Escritas sensiveis ficam em server actions.
 - `src/lib/whatsapp.ts` centraliza o numero publico da Candy e as URLs `wa.me` usadas pelo site e pelo login, com fallback seguro se `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` nao estiver configurado.
 - `src/app/ava/login/actions.ts` e `src/components/ava/student-pre-registration-form.tsx` ficam como legado do fluxo de pre-cadastro, sem entrada publica no login.
-- `src/app/ava/pre-registrations/actions.ts` contem actions protegidas por `ADMIN`/`TEACHER` para marcar analise, recusar e converter pre-cadastro em `User.role=STUDENT` com `StudentProfile`.
+- `src/app/ava/pre-registrations/actions.ts` contem actions protegidas por `ADMIN`/`TEACHER` para criar pre-cadastro interno na Secretaria, atualizar status, recusar e converter em `User.role=STUDENT` com `StudentProfile`; Teacher so opera registros criados por ela ou atribuidos a sua `TeacherProfile`.
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.

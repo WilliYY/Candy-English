@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Pre-cadastros internos na Secretaria
+
+- Decisao: mover a criacao operacional de `StudentPreRegistration` para a Secretaria, mantendo `/ava/admin?task=aceitar-alunos` e `/ava/teacher?task=aceitar-alunos` como rotas antigas compativeis, mas com formulario interno completo, filtros de status e conversao protegida por `Tornar aluno`.
+- Motivo: o primeiro contato acontece pelo WhatsApp; depois Admin/Teacher registra manualmente unidade, teacher responsavel, agenda pretendida e combinado de pagamento sem criar aluno, financeiro ou agenda automaticamente.
+- Impacto: `prisma/schema.prisma`, migration `20260714143000_secretaria_pre_registration`, `src/app/ava/pre-registrations/actions.ts`, `src/lib/validations/pre-registration.ts`, paginas Admin/Teacher, `student-pre-registration-review-panel.tsx`, alertas da sidebar, README e docs oficiais.
+- Riscos/cuidados: Teacher so deve ver registros criados por ela ou atribuidos a sua `TeacherProfile`; email e opcional no pre-cadastro, mas a conversao para login exige email; financeiro e agenda continuam manuais apos a conversao.
+
 ### 2026-07-14 - Botao Quero ser aluno Candy via WhatsApp
 
 - Decisao: trocar o CTA publico `Quero ser aluno Candy` em `/ava/login` para abrir WhatsApp em nova aba com mensagem pronta, centralizando o numero em `src/lib/whatsapp.ts` e `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` com fallback seguro.

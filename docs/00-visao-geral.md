@@ -4,7 +4,7 @@
 
 Este documento e a porta de entrada da memoria longa do Candy English. Ele resume o estado real do projeto e aponta para os documentos especializados.
 
-Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: contato publico por WhatsApp, pre-cadastro com aceite protegido pela equipe, aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas, Candy XP persistente por role, atividades gamificadas de historia e controle de acessos.
+Candy English combina site institucional e AVA proprio em `/ava`. O sistema atende administradores, teachers e alunos, com foco em rotina escolar online: contato publico por WhatsApp, pre-cadastro interno da Secretaria com aceite protegido pela equipe, aulas interativas, materiais, homework interativo, feedback, contratos, aula ao vivo, mensagens, financeiro interno, agenda administrativa, cofre administrativo de APIs/senhas, Candy XP persistente por role, atividades gamificadas de historia e controle de acessos.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -36,8 +36,8 @@ Rotas principais:
 - `ADMIN`, `TEACHER` e `STUDENT` sao os perfis atuais.
 - Areas protegidas devem validar permissao no servidor.
 - O botao publico `Quero ser aluno Candy` no login deve abrir WhatsApp e nao salvar pre-cadastro automaticamente.
-- Pre-cadastros devem permanecer no fluxo protegido da equipe; nunca podem criar usuario, senha, role ou sessao automaticamente sem aceite humano.
-- Admin/Teacher podem aceitar pre-cadastros apenas pelo modulo protegido `Aceitar alunos`; o servidor cria sempre `STUDENT` e nunca roles avancadas.
+- Pre-cadastros devem permanecer no fluxo protegido da Secretaria; nunca podem criar usuario, senha, role, financeiro, agenda ou sessao automaticamente sem aceite humano.
+- Admin pode ver todos os pre-cadastros; Teacher ve apenas os proprios ou atribuidos. Admin/Teacher podem converter pre-cadastros apenas pelo modulo protegido `Aceitar alunos`; o servidor cria sempre `STUDENT` e nunca roles avancadas.
 - Admins podem criar usuarios, ativar/desativar acessos e redefinir senhas pela interface protegida.
 - Admins podem registrar APIs/senhas em `/ava/admin?task=apis-senhas`; os valores ficam criptografados e so devem ser revelados pela UI protegida.
 - O aluno so acessa dados do proprio perfil.

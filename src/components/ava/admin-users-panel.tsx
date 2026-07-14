@@ -1619,6 +1619,7 @@ export function AdminUsersPanel({
               basePath="/ava/admin"
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
+              teacherOptions={teachers}
               viewerRole="ADMIN"
             />
           ) : null}

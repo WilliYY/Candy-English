@@ -124,8 +124,10 @@ Enums:
 ## Regras de negocio que precisam ser preservadas
 
 - `User.email` e unico.
-- `StudentPreRegistration.email` e unico e guarda solicitacoes operacionais; nao cria acesso ao AVA ate uma action protegida converter em `User.role=STUDENT`.
+- `StudentPreRegistration.email` e opcional e unico quando preenchido; `phoneNormalized` tambem e unico para evitar duplicidade por telefone no fluxo interno da Secretaria.
+- `StudentPreRegistration` guarda unidade (`FinancialUnit`), teacher responsavel opcional, usuario que criou, cidade, nivel estimado, dias/horario pretendidos, mensalidade combinada, dia de pagamento, forma e parcelas sem criar financeiro, agenda ou login automaticamente.
 - `StudentPreRegistration.reviewedByUserId`, `reviewedAt`, `convertedUserId` e `statusNote` registram revisao/conversao sem armazenar senha inicial.
+- `StudentPreRegistrationStatus` preserva os status antigos e adiciona `WAITING_PAYMENT` e `READY_TO_CONVERT`; na UI da Secretaria eles aparecem como `Aguardando pagamento` e `Pronto para virar aluno`.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
@@ -218,6 +220,7 @@ Enums:
 - Migration `20260609110000_candy_xp_interactive_fields` adiciona `CandyXpActivityInteractiveField` para editar areas diretamente sobre o PDF/imagem da missao.
 - Migration `20260604153000_student_pre_registration` adiciona `StudentPreRegistration` para interessados solicitarem cadastro pelo login sem criar `User`, senha ou sessao.
 - Migration `20260604170000_student_pre_registration_review` adiciona metadados de revisao e conversao do pre-cadastro para o modulo `Aceitar alunos`.
+- Migration `20260714143000_secretaria_pre_registration` move o pre-cadastro para o controle interno da Secretaria, torna email opcional, adiciona telefone normalizado unico, unidade, teacher responsavel, criador, agenda pretendida, combinado de pagamento e os status `WAITING_PAYMENT`/`READY_TO_CONVERT`.
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 - Migration `20260605210000_catty_learning_center` adiciona Catty Learning Center com itens aprovaveis e feedback/sugestoes.
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.

@@ -18,11 +18,11 @@ Ja existe:
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - escolha pos-login para `ADMIN` e `TEACHER` separando `AVA` pedagogico e `Secretaria`; `STUDENT` entra direto no AVA Student;
-- admin com cadastro de usuarios, aceite/recusa de pre-cadastros, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva e areas interativas sobre o arquivo;
-- teacher com aceite de pre-cadastros como alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
+- admin com cadastro de usuarios, pre-cadastros internos da Secretaria, aceite/recusa/conversao de interessados, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva e areas interativas sobre o arquivo;
+- teacher com pre-cadastros proprios da Secretaria, conversao protegida para alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, resposta no PDF/imagem, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
-- botao `Quero ser aluno Candy` no login do AVA abrindo WhatsApp em nova aba com mensagem pronta; pre-cadastros ficam no fluxo protegido de Secretaria/Admin/Teacher e nao sao criados automaticamente por visitante;
+- botao `Quero ser aluno Candy` no login do AVA abrindo WhatsApp em nova aba com mensagem pronta; pre-cadastros ficam no fluxo protegido de Secretaria/Admin/Teacher, guardam unidade, teacher responsavel, agenda pretendida e combinado de pagamento, e nao sao criados automaticamente por visitante;
 - contador discreto de visitas no footer do site publico, salvo como total agregado em `SiteVisitCounter`, com registro client-side leve e sem armazenar IP, user-agent ou dados pessoais;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin simples em cards para 2026, com `FinancialStudent`, unidade `Unidade 1 Ivaté`/`Unidade 2 Douradina`, snapshots mensais em `FinancialPayment`, parcelas opcionais, historico por aluno, gastos mensais da loja em `FinancialExpense` e `FinancialLog`;
