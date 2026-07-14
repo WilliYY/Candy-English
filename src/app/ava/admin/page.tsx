@@ -587,9 +587,6 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
     }),
     prisma.studentPreRegistration.findMany({
-      where: {
-        status: preRegistrationStatus,
-      },
       orderBy: {
         createdAt: "desc",
       },

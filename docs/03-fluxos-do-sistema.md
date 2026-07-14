@@ -110,11 +110,14 @@ Helpers:
 6. Admin pode criar e ver todos os pre-cadastros; Teacher cria e ve apenas os proprios ou os atribuidos a sua `TeacherProfile`.
 7. O formulario interno salva nome, telefone, email opcional, nascimento, responsavel, cidade, unidade `Ivaté`/`Douradina`, objetivo, nivel estimado, observacoes, teacher responsavel, dias/horario pretendidos, mensalidade, dia de pagamento, forma e parcelas.
 8. Status visuais da Secretaria: `Novo` (`PENDING`), `Em conversa` (`CONTACTED`), `Aguardando pagamento` (`WAITING_PAYMENT`), `Pronto para virar aluno` (`READY_TO_CONVERT`), `Recusado` (`REJECTED`) e `Convertido` (`APPROVED`).
-9. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; ele apenas guarda os dados combinados para conversao posterior.
-10. Ao clicar em `Tornar aluno`, a UI mostra um resumo de AVA, unidade/teacher, financeiro e agenda, exige senha inicial, email de login quando necessario e confirmacao explicita.
-11. A action protegida converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson`, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
-12. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
-13. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
+9. A tela tem busca inteligente no topo do modulo: filtra nome, telefone, email, documento do responsavel, responsavel, cidade, unidade e status, normalizando acentos, maiusculas/minusculas e telefone/documento sem espacos, pontos, tracos ou parenteses.
+10. A busca e client-side apenas sobre a lista ja autorizada pelo servidor: Admin recebe todos os pre-cadastros; Teacher recebe somente registros criados por ela ou atribuidos a sua `TeacherProfile`.
+11. Quando ha termo digitado, resultados exatos aparecem primeiro; se nao houver exato, a UI mostra correspondencias parciais ou proximas. Sem resultado, aparece `Nenhum pre-cadastro encontrado.`
+12. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; ele apenas guarda os dados combinados para conversao posterior.
+13. Ao clicar em `Tornar aluno`, a UI mostra um resumo de AVA, unidade/teacher, financeiro e agenda, exige senha inicial, email de login quando necessario e confirmacao explicita.
+14. A action protegida converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson`, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
+15. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
+16. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
 
 ### Admin
 
@@ -123,7 +126,7 @@ Helpers:
 3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
-5. Admin cria e acompanha pre-cadastros em `Aceitar alunos`, com filtros por novo, em conversa, aguardando pagamento, pronto para virar aluno, convertido e recusado.
+5. Admin cria e acompanha pre-cadastros em `Aceitar alunos`, com filtros por novo, em conversa, aguardando pagamento, pronto para virar aluno, convertido e recusado, alem de busca por nome, telefone, email, documento, cidade, unidade e status.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin usa `Catty dos alunos` para escolher aluno, cadastrar gostos, gerar emojis/sons/bordoes e ver um resumo simples das memorias ativas daquele aluno.
 8. Admin ajusta temas, gosto principal, emojis, sons e bordoes por aluno em `Catty dos alunos`; temas ativos entram na Catty, pendentes aguardam revisao, desativados criam preferencia `avoid_*` e arquivados ficam fora do prompt.
@@ -147,7 +150,7 @@ Helpers:
 4. Cria aula interativa e homework interativo por arquivo do Canva, podendo selecionar um aluno, varios alunos ou todos os disponiveis no formulario; ao marcar todos, o seletor usa um resumo curto com total e acao separada para limpar, sem comprimir os controles.
 5. Corrige respostas e envia feedback.
 6. Ve a area de aula ao vivo em manutencao temporaria e usa mensagens enquanto a integracao de video e revisada.
-7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos` e converter interessados proprios/atribuidos em alunos `STUDENT` vinculados a sua teacher; a conversao tambem cria o financeiro e a agenda daquele interessado, sem dar acesso ao financeiro completo.
+7. Pode revisar pre-cadastros pendentes/em analise em `Aceitar alunos`, buscar apenas dentro dos registros proprios/atribuidos e converter interessados proprios/atribuidos em alunos `STUDENT` vinculados a sua teacher; a conversao tambem cria o financeiro e a agenda daquele interessado, sem dar acesso ao financeiro completo.
 8. Pode sugerir aprendizados e revisar feedbacks visiveis no `Catty Learning`, mas nao aprova memoria global.
 9. Pode usar `Catty dos alunos` somente para alunos vinculados, escolhendo aluno, gosto, emojis, sons e bordoes sem acessar alunos de outra teacher.
 10. Pode ajustar `Catty dos alunos` somente dos alunos vinculados, aprovando tema seguro como artefato ativo, marcando gosto principal ou marcando como nao usar.

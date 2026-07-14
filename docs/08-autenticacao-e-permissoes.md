@@ -99,6 +99,8 @@ Rotas protegidas:
 - `ADMIN` pode criar, ver, atualizar status e converter todos os pre-cadastros da Secretaria.
 - `TEACHER` pode criar pre-cadastro e ver/atualizar/converter apenas registros criados por ela (`createdByUserId`) ou atribuidos a sua `TeacherProfile` (`assignedTeacherProfileId`).
 - `STUDENT` nao acessa pre-cadastros nem Secretaria.
+- A busca de pre-cadastros fica no client, mas opera somente sobre a lista ja filtrada pelo server component: Admin recebe todos os registros; Teacher recebe apenas registros proprios/atribuidos. Student nao recebe componente nem dados.
+- A normalizacao da busca remove acentos, ignora maiusculas/minusculas e compara telefone/documento tambem por digitos, sem espacos, pontos, tracos ou parenteses; resultados exatos ficam antes dos parciais/proximos.
 - Ao converter, o servidor cria `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction.
 - `TEACHER` so converte pre-cadastro criado por ela ou atribuido a sua `TeacherProfile`; se o registro tiver outra teacher responsavel, a conversao e bloqueada. Essa escrita cria apenas os dados linkados daquele interessado e nao libera acesso ao financeiro completo nem a agenda interna.
 - `ADMIN` pode escolher a teacher no momento da conversao e converter qualquer pre-cadastro.

@@ -600,12 +600,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       actorUserId: session.user.id,
     }),
     prisma.studentPreRegistration.findMany({
-      where: {
-        AND: [
-          { status: preRegistrationStatus },
-          preRegistrationOwnershipWhere,
-        ],
-      },
+      where: preRegistrationOwnershipWhere,
       orderBy: {
         createdAt: "desc",
       },

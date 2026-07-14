@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Busca inteligente de pre-cadastros
+
+- Decisao: adicionar busca client-side no painel de pre-cadastros da Secretaria, usando todos os registros ja autorizados para a role logada e ordenando correspondencias exatas antes de parciais/proximas.
+- Motivo: Admin e Teacher precisam localizar interessados rapidamente por nome, telefone, email, documento, responsavel, cidade, unidade ou status sem criar nova query ampla nem vazar dados entre teachers.
+- Impacto: `src/app/ava/admin/page.tsx`, `src/app/ava/teacher/page.tsx`, `src/components/ava/student-pre-registration-review-panel.tsx`, `docs/03-fluxos-do-sistema.md`, `docs/08-autenticacao-e-permissoes.md` e `docs/99-contexto-rapido-codex.md`.
+- Riscos/cuidados: Teacher deve receber do servidor apenas pre-cadastros criados por ela ou atribuidos a sua `TeacherProfile`; a busca no client nunca deve ser usada como substituto de permissao server-side.
+
 ### 2026-07-14 - Matriz de permissoes da Secretaria
 
 - Decisao: centralizar o escopo de Secretaria em `SECRETARIA_PERMISSION_MATRIX`, usando a matriz para renderizar `/ava/secretaria` e validar por smoke que Admin tem atalhos completos, Teacher tem atalhos limitados e Student nao entra.

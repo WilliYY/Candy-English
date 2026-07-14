@@ -14,6 +14,7 @@ import {
   MapPin,
   MessageSquareText,
   Phone,
+  Search,
   ShieldCheck,
   Sparkles,
   Store,
@@ -295,6 +296,209 @@ function formatWeekdayMask(mask: number) {
     .map((weekday) => weekday.label);
 
   return selected.length > 0 ? selected.join(", ") : null;
+}
+
+function normalizeSearchText(value: string | null | undefined) {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeCompactSearchText(value: string | null | undefined) {
+  return normalizeSearchText(value).replace(/[^a-z0-9]/g, "");
+}
+
+function normalizeDigits(value: string | null | undefined) {
+  return (value ?? "").replace(/\D/g, "");
+}
+
+function levenshteinDistance(left: string, right: string) {
+  if (left === right) return 0;
+  if (left.length === 0) return right.length;
+  if (right.length === 0) return left.length;
+
+  const previousRow = Array.from(
+    { length: right.length + 1 },
+    (_, index) => index,
+  );
+  const currentRow = new Array<number>(right.length + 1);
+
+  for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
+    currentRow[0] = leftIndex;
+
+    for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
+      const substitutionCost =
+        left[leftIndex - 1] === right[rightIndex - 1] ? 0 : 1;
+
+      currentRow[rightIndex] = Math.min(
+        currentRow[rightIndex - 1] + 1,
+        previousRow[rightIndex] + 1,
+        previousRow[rightIndex - 1] + substitutionCost,
+      );
+    }
+
+    for (let index = 0; index <= right.length; index += 1) {
+      previousRow[index] = currentRow[index];
+    }
+  }
+
+  return previousRow[right.length];
+}
+
+function similarityScore(left: string, right: string) {
+  if (!left || !right) return 0;
+
+  const longest = Math.max(left.length, right.length);
+
+  if (longest === 0) return 0;
+
+  return (longest - levenshteinDistance(left, right)) / longest;
+}
+
+function closestSimilarityScore(query: string, target: string) {
+  const candidates = [target, ...target.split(" ")].filter(
+    (candidate) => candidate.length >= 2,
+  );
+
+  return candidates.reduce(
+    (bestScore, candidate) =>
+      Math.max(bestScore, similarityScore(query, candidate)),
+    0,
+  );
+}
+
+type SearchTarget = {
+  compact: string;
+  digits: string;
+  priority: number;
+  text: string;
+};
+
+function buildSearchTargets(request: StudentPreRegistrationReviewRow) {
+  const rawTargets: Array<[string | null | undefined, number]> = [
+    [request.fullName, 10],
+    [request.phone, 9],
+    [request.studentPhone, 8],
+    [request.secondaryContact, 7],
+    [request.email, 9],
+    [request.guardianDocument, 9],
+    [request.guardianName, 8],
+    [request.guardianPhone, 7],
+    [request.city, 6],
+    [request.address, 5],
+    [unitLabels[request.unit], 7],
+    [request.unit, 7],
+    [statusMeta[request.status].label, 7],
+    [request.status, 7],
+    [request.assignedTeacherName, 5],
+  ];
+
+  return rawTargets
+    .map<SearchTarget | null>(([value, priority]) => {
+      const text = normalizeSearchText(value);
+
+      if (!text) return null;
+
+      return {
+        compact: normalizeCompactSearchText(value),
+        digits: normalizeDigits(value),
+        priority,
+        text,
+      };
+    })
+    .filter((target): target is SearchTarget => Boolean(target));
+}
+
+function scoreTargetForSearch(
+  target: SearchTarget,
+  queryText: string,
+  queryCompact: string,
+  queryDigits: string,
+) {
+  if (queryText && target.text === queryText) {
+    return { exact: true, score: 1000 + target.priority };
+  }
+
+  if (queryCompact && target.compact === queryCompact) {
+    return { exact: true, score: 990 + target.priority };
+  }
+
+  if (queryDigits && target.digits === queryDigits) {
+    return { exact: true, score: 980 + target.priority };
+  }
+
+  if (queryText && target.text.startsWith(queryText)) {
+    return { exact: false, score: 850 + target.priority };
+  }
+
+  if (queryDigits.length >= 3 && target.digits.includes(queryDigits)) {
+    return { exact: false, score: 780 + target.priority };
+  }
+
+  if (queryCompact.length >= 3 && target.compact.includes(queryCompact)) {
+    return { exact: false, score: 740 + target.priority };
+  }
+
+  if (queryText && target.text.includes(queryText)) {
+    return { exact: false, score: 700 + target.priority };
+  }
+
+  const queryTokens = queryText.split(" ").filter(Boolean);
+
+  if (
+    queryTokens.length > 1 &&
+    queryTokens.every((token) => target.text.includes(token))
+  ) {
+    return { exact: false, score: 660 + target.priority };
+  }
+
+  if (queryText.length >= 3) {
+    const similarity = closestSimilarityScore(queryText, target.text);
+
+    if (similarity >= 0.68) {
+      return {
+        exact: false,
+        score: 320 + Math.round(similarity * 220) + target.priority,
+      };
+    }
+  }
+
+  return { exact: false, score: 0 };
+}
+
+function scoreRequestForSearch(
+  request: StudentPreRegistrationReviewRow,
+  query: string,
+) {
+  const queryText = normalizeSearchText(query);
+  const queryCompact = normalizeCompactSearchText(query);
+  const queryDigits = normalizeDigits(query);
+
+  return buildSearchTargets(request).reduce(
+    (bestMatch, target) => {
+      const match = scoreTargetForSearch(
+        target,
+        queryText,
+        queryCompact,
+        queryDigits,
+      );
+
+      if (match.score > bestMatch.score) {
+        return match;
+      }
+
+      if (match.score === bestMatch.score && match.exact) {
+        return match;
+      }
+
+      return bestMatch;
+    },
+    { exact: false, score: 0 },
+  );
 }
 
 function DetailItem({
@@ -1349,13 +1553,43 @@ export function StudentPreRegistrationReviewPanel({
   teacherOptions,
   viewerRole,
 }: StudentPreRegistrationReviewPanelProps) {
+  const [searchTerm, setSearchTerm] = useState("");
   const statusOptions = useMemo(() => allStatusOptions, []);
   const activeMeta = statusMeta[activeStatus];
   const ActiveIcon = activeMeta.icon;
+  const trimmedSearchTerm = searchTerm.trim();
+  const isSearching = trimmedSearchTerm.length > 0;
+  const visibleRequests = useMemo(() => {
+    if (!isSearching) {
+      return requests.filter((request) => request.status === activeStatus);
+    }
+
+    return requests
+      .map((request) => ({
+        match: scoreRequestForSearch(request, trimmedSearchTerm),
+        request,
+      }))
+      .filter(({ match }) => match.score > 0)
+      .sort((left, right) => {
+        if (left.match.exact !== right.match.exact) {
+          return left.match.exact ? -1 : 1;
+        }
+
+        if (left.match.score !== right.match.score) {
+          return right.match.score - left.match.score;
+        }
+
+        return (
+          new Date(right.request.createdAt).getTime() -
+          new Date(left.request.createdAt).getTime()
+        );
+      })
+      .map(({ request }) => request);
+  }, [activeStatus, isSearching, requests, trimmedSearchTerm]);
   const visibleRequestsLabel =
-    requests.length === 1
-      ? "1 pre-cadastro neste filtro"
-      : `${requests.length} pre-cadastros neste filtro`;
+    visibleRequests.length === 1
+      ? "1 pre-cadastro encontrado"
+      : `${visibleRequests.length} pre-cadastros encontrados`;
   const totalActive =
     statusCounts.PENDING +
     statusCounts.CONTACTED +
@@ -1431,6 +1665,33 @@ export function StudentPreRegistrationReviewPanel({
               );
             })}
           </div>
+
+          <div className="mt-5 rounded-xl border border-primary/10 bg-white/82 p-3 shadow-sm shadow-primary/5">
+            <label className="grid gap-2 text-sm font-semibold text-primary">
+              Busca inteligente
+              <span className="relative">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  type="search"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Buscar por nome, telefone, email ou documento..."
+                  className="h-11 bg-white pl-10"
+                />
+              </span>
+            </label>
+            <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+              <span>{visibleRequestsLabel}</span>
+              <span>
+                {isSearching
+                  ? "Busca em todos os status autorizados, com exatos primeiro."
+                  : `Mostrando status: ${activeMeta.label}.`}
+              </span>
+            </div>
+          </div>
         </div>
 
         <nav
@@ -1482,7 +1743,7 @@ export function StudentPreRegistrationReviewPanel({
         viewerRole={viewerRole}
       />
 
-      {requests.length === 0 ? (
+      {visibleRequests.length === 0 ? (
         <div className="ava-soft-card flex min-h-60 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed p-6 text-center">
           <span
             className={cn(
@@ -1494,10 +1755,14 @@ export function StudentPreRegistrationReviewPanel({
           </span>
           <div className="max-w-md">
             <h3 className="text-lg font-semibold text-primary">
-              {activeMeta.emptyTitle}
+              {isSearching
+                ? "Nenhum pr\u00e9-cadastro encontrado."
+                : activeMeta.emptyTitle}
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {activeMeta.emptyDescription}
+              {isSearching
+                ? "Tente parte do nome, telefone sem mascara, email, documento, cidade, unidade ou status."
+                : activeMeta.emptyDescription}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
@@ -1515,7 +1780,7 @@ export function StudentPreRegistrationReviewPanel({
         </div>
       ) : (
         <div className="grid gap-4">
-          {requests.map((request) => {
+          {visibleRequests.map((request) => {
             const isConverted = Boolean(
               request.convertedUserName ||
                 request.convertedStudentProfileId ||
