@@ -2,9 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
-
-const whatsappUrl =
-  "https://wa.me/5544997382355?text=Ol%C3%A1%21%20Tenho%20interesse%20em%20mais%20informa%C3%A7%C3%B5es";
+import { CANDY_SITE_WHATSAPP_URL } from "@/lib/whatsapp";
 
 export function WhatsAppWidget() {
   const pathname = usePathname();
@@ -15,7 +13,7 @@ export function WhatsAppWidget() {
 
   return (
     <a
-      href={whatsappUrl}
+      href={CANDY_SITE_WHATSAPP_URL}
       target="_blank"
       rel="noreferrer"
       aria-label="Falar com a Candy English pelo WhatsApp"

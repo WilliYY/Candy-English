@@ -90,8 +90,8 @@ Rotas protegidas:
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Login Google esta desativado nesta fase; o login ativo e por email/senha com Credentials Provider.
-- Pre-cadastro publico no login apenas cria `StudentPreRegistration.PENDING`; nao cria senha, `User`, role ou sessao.
-- Pre-cadastro publico no login apenas cria `StudentPreRegistration.PENDING`; nao cria senha, `User`, role ou sessao.
+- O botao publico `Quero ser aluno Candy` no login abre WhatsApp e nao cria `StudentPreRegistration`.
+- `StudentPreRegistration` continua fora do Auth.js e so vira acesso real depois de aceite protegido por `ADMIN` ou `TEACHER`.
 - `ADMIN` e `TEACHER` podem revisar pre-cadastros no modulo `Aceitar alunos`; ao aceitar, o servidor cria somente `User.role=STUDENT` e `StudentProfile`.
 - Quando `TEACHER` aceita um aluno, o servidor tambem cria o vinculo `StudentTeacherAssignment` com a propria teacher.
 - O fluxo de aceite nunca cria `ADMIN` ou `TEACHER` e nunca retorna/loga a senha inicial em texto puro.
@@ -141,6 +141,7 @@ Rotas protegidas:
 - Google Provider foi removido temporariamente; o provider ativo e Credentials.
 - `StudentPreRegistration` guarda interessados como solicitacao pendente fora do fluxo de Auth.js.
 - `StudentPreRegistration` tambem guarda metadados de revisao/conversao; `APPROVED` e usado como status tecnico para `Convertido em aluno` na UI.
+- `src/lib/whatsapp.ts` monta os links publicos do WhatsApp com `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` e fallback seguro para o numero publico atual.
 - `auth()` e usado em server components/actions.
 - `requireAvaRole` redireciona usuarios sem sessao ou sem permissao.
 - O token/session recebe `id` e `role`.

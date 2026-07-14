@@ -19,11 +19,17 @@ const checks: SmokeCheck[] = [
     expect: (response) => response.ok,
   },
   {
-    name: "pre-registration success banner",
-    path: "/?cadastro=sucesso",
-    expect: async (response) =>
-      response.ok &&
-      (await response.text()).includes("Cadastro enviado com sucesso"),
+    name: "ava login whatsapp cta",
+    path: "/ava/login",
+    expect: async (response) => {
+      const text = await response.text();
+
+      return (
+        response.ok &&
+        text.includes("Quero ser aluno Candy") &&
+        text.includes("wa.me")
+      );
+    },
   },
   {
     name: "ava login",

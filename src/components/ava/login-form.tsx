@@ -1,19 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Eye,
-  EyeOff,
-  HeartHandshake,
-  LoaderCircle,
-  LogIn,
-} from "lucide-react";
+import { Eye, EyeOff, LoaderCircle, LogIn } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
-import { StudentPreRegistrationForm } from "@/components/ava/student-pre-registration-form";
+import { CANDY_STUDENT_WHATSAPP_URL } from "@/lib/whatsapp";
+import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -44,7 +39,6 @@ export function LoginForm({
   const searchParams = useSearchParams();
   const [authError, setAuthError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [showPreRegistration, setShowPreRegistration] = useState(false);
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -148,26 +142,23 @@ export function LoginForm({
           )}
           Entrar
         </Button>
-
       </form>
 
       <div className="border-t border-primary/10 pt-5">
-        <Button
-          type="button"
-          variant="secondary"
-          size="lg"
-          className="w-full"
-          onClick={() => setShowPreRegistration((current) => !current)}
-          aria-expanded={showPreRegistration}
-        >
-          <HeartHandshake data-icon="inline-start" />
-          {showPreRegistration
-            ? "Fechar pre-cadastro"
-            : "Quero ser aluno Candy"}
+        <Button asChild variant="secondary" size="lg" className="w-full">
+          <a
+            href={CANDY_STUDENT_WHATSAPP_URL}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <WhatsAppIcon data-icon="inline-start" />
+            Quero ser aluno Candy
+          </a>
         </Button>
+        <p className="mt-3 text-center text-xs leading-5 text-muted-foreground">
+          Abre o WhatsApp com uma mensagem pronta para a equipe Candy.
+        </p>
       </div>
-
-      {showPreRegistration ? <StudentPreRegistrationForm /> : null}
     </div>
   );
 }

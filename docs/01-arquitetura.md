@@ -52,7 +52,7 @@ Servicos Docker:
 - O site institucional e publico; o AVA e protegido.
 - O contador de visitas aparece apenas no footer do site publico, registra somente total agregado em `SiteVisitCounter`, nao salva IP, email, telefone, user-agent ou outros dados pessoais, e nao deve bloquear o carregamento se a API falhar.
 - `/ava` redireciona visitante para `/ava/login` e usuario logado para a area correta.
-- `/ava/login` pode receber pre-cadastro publico, mas ele grava apenas `StudentPreRegistration` pendente e nao participa do Auth.js ate ser aceito no modulo protegido `Aceitar alunos`.
+- `/ava/login` mostra o botao publico `Quero ser aluno Candy`, que abre WhatsApp em nova aba com mensagem pronta e nao grava `StudentPreRegistration`.
 - `ADMIN` pode supervisionar area teacher/student, mas dados sensiveis ainda exigem validacao.
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
@@ -72,7 +72,8 @@ Servicos Docker:
 - Next.js App Router e usado em todo o projeto.
 - Autorizacao de paginas fica em server components com `requireAvaRole`.
 - Escritas sensiveis ficam em server actions.
-- `src/app/ava/login/actions.ts` contem a action publica de pre-cadastro; ela valida dados, evita duplicidade de email e nao cria `User`.
+- `src/lib/whatsapp.ts` centraliza o numero publico da Candy e as URLs `wa.me` usadas pelo site e pelo login, com fallback seguro se `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` nao estiver configurado.
+- `src/app/ava/login/actions.ts` e `src/components/ava/student-pre-registration-form.tsx` ficam como legado do fluxo de pre-cadastro, sem entrada publica no login.
 - `src/app/ava/pre-registrations/actions.ts` contem actions protegidas por `ADMIN`/`TEACHER` para marcar analise, recusar e converter pre-cadastro em `User.role=STUDENT` com `StudentProfile`.
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.

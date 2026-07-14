@@ -100,14 +100,12 @@ Helpers:
 ### Pre-cadastro de interessado
 
 1. Visitante abre `/ava/login` e clica em `Quero ser aluno Candy`.
-2. O formulario coleta nome, email, telefone, cidade/endereco, data de nascimento, contatos, documento, responsavel, observacoes e objetivo com o ingles.
-3. `requestStudentPreRegistration` valida os dados no servidor e grava `StudentPreRegistration` com status `PENDING`.
-4. O fluxo nao cria `User`, nao cria senha, nao define role e nao gera sessao.
-5. Se o email ja existir como usuario ou solicitacao, o sistema nao cria duplicidade e retorna a mesma mensagem amigavel para evitar exposicao de cadastro.
-6. No sucesso, a pessoa volta para a home (`/?cadastro=sucesso`) e ve a confirmacao: `Cadastro enviado com sucesso. A equipe Candy vai analisar seus dados e entrar em contato.`
-7. Admin ou Teacher abre `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`, revisa os dados e pode marcar `em analise`, recusar ou aceitar.
-8. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory`.
-9. Quando uma Teacher aceita o aluno, o sistema tambem cria o vinculo `StudentTeacherAssignment` com essa teacher; Admin aceita sem vinculo automatico e pode vincular depois.
+2. O botao abre WhatsApp em nova aba usando o numero publico configurado em `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE`, ou o fallback seguro de `src/lib/whatsapp.ts`.
+3. A mensagem ja vai preenchida com interesse em ser aluno Candy English.
+4. Esse clique nao chama server action e nao cria `StudentPreRegistration`.
+5. Pre-cadastros continuam como fluxo protegido da Secretaria/Admin/Teacher, revisados em `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`.
+6. Ao aceitar, a action protegida cria apenas `User.role=STUDENT`, cria `StudentProfile` com os dados preenchidos, exige senha inicial digitada por Admin/Teacher e muda a solicitacao para `APPROVED`, exibida na UI como `Convertido em aluno`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory`.
+7. Quando uma Teacher aceita o aluno, o sistema tambem cria o vinculo `StudentTeacherAssignment` com essa teacher; Admin aceita sem vinculo automatico e pode vincular depois.
 
 ### Admin
 
@@ -330,7 +328,8 @@ Helpers:
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
 - `/ava/escolha` separa visualmente `AVA` e `Secretaria` para Admin/Teacher; Student nunca deve ver Secretaria.
 - `/ava/secretaria` e um painel de atalhos protegidos, nao uma permissao nova nem substituto das validacoes server-side das tarefas existentes.
-- Pre-cadastro publico nunca deve liberar login automaticamente; ele apenas cria solicitacao pendente para analise.
+- O botao publico `Quero ser aluno Candy` abre WhatsApp e nao cria pre-cadastro sozinho.
+- Pre-cadastro nunca deve liberar login automaticamente; quando existir solicitacao, ela deve ser revisada pela equipe antes de virar aluno.
 - O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem no desktop. Em mobile e tablet abaixo de `1280px`, ela abre como drawer sobre o conteudo, fecha ao escolher um atalho, tocar fora ou pressionar `Esc` e devolve imediatamente a area util da tarefa.
 - Student tem botoes sempre visiveis.

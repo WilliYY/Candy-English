@@ -22,7 +22,7 @@ Ja existe:
 - teacher com aceite de pre-cadastros como alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, resposta no PDF/imagem, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
-- pre-cadastro publico no login do AVA para interessados solicitarem contato, salvo como pendente sem criar usuario, senha ou sessao ate Admin/Teacher aceitar no modulo protegido `Aceitar alunos`;
+- botao `Quero ser aluno Candy` no login do AVA abrindo WhatsApp em nova aba com mensagem pronta; pre-cadastros ficam no fluxo protegido de Secretaria/Admin/Teacher e nao sao criados automaticamente por visitante;
 - contador discreto de visitas no footer do site publico, salvo como total agregado em `SiteVisitCounter`, com registro client-side leve e sem armazenar IP, user-agent ou dados pessoais;
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin simples em cards para 2026, com `FinancialStudent`, unidade `Unidade 1 Ivaté`/`Unidade 2 Douradina`, snapshots mensais em `FinancialPayment`, parcelas opcionais, historico por aluno, gastos mensais da loja em `FinancialExpense` e `FinancialLog`;
@@ -117,6 +117,7 @@ Variaveis principais:
 - `AUTH_SECRET`: segredo do Auth.js.
 - `ADMIN_CREDENTIALS_SECRET`: segredo opcional para criptografar APIs/senhas salvas no admin; se ficar vazio, `AUTH_SECRET` e usado.
 - `AUTH_URL` e `NEXTAUTH_URL`: URL publica do app.
+- `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE`: numero publico usado nos links `wa.me` do site e do login; se ausente, o codigo usa o telefone publico atual da Candy como fallback seguro.
 - `AVA_STORAGE_DIR`: diretorio de uploads, em producao `/app/storage`.
 - `PDF_OPTIMIZATION_ENABLED`: ativa/desativa a tentativa de otimizacao de PDFs pedagogicos protegidos, como Candy XP, homework interativo e aulas interativas.
 - `PDF_OPTIMIZATION_PRESET`: preset do Ghostscript para PDF, por padrao `ebook`.

@@ -17,6 +17,10 @@ import {
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
 import { Button } from "@/components/ui/button";
 import { getSitePageContent } from "@/lib/site-content";
+import {
+  CANDY_SITE_WHATSAPP_URL,
+  CANDY_WHATSAPP_DISPLAY_PHONE,
+} from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -38,15 +42,12 @@ const workflow = [
   },
 ];
 
-const whatsappUrl =
-  "https://wa.me/5544997382355?text=Ol%C3%A1%21%20Tenho%20interesse%20em%20mais%20informa%C3%A7%C3%B5es";
-
 const contactLinks = [
   {
     description:
       "Canal principal para tirar duvidas e combinar proximos passos.",
-    detail: "+55 44 99738-2355",
-    href: whatsappUrl,
+    detail: CANDY_WHATSAPP_DISPLAY_PHONE,
+    href: CANDY_SITE_WHATSAPP_URL,
     icon: WhatsAppIcon,
     label: "WhatsApp",
   },
@@ -191,7 +192,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 size="lg"
                 className="w-fit rounded-full px-7 shadow-lg shadow-primary/15"
               >
-                <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                <a
+                  href={CANDY_SITE_WHATSAPP_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Falar no WhatsApp
                   <ArrowRight data-icon="inline-end" />
                 </a>

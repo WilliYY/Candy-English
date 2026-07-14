@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Botao Quero ser aluno Candy via WhatsApp
+
+- Decisao: trocar o CTA publico `Quero ser aluno Candy` em `/ava/login` para abrir WhatsApp em nova aba com mensagem pronta, centralizando o numero em `src/lib/whatsapp.ts` e `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` com fallback seguro.
+- Motivo: evitar que visitante crie pre-cadastro automaticamente pelo login e levar o primeiro contato para atendimento da Candy.
+- Impacto: `src/components/ava/login-form.tsx`, `src/lib/whatsapp.ts`, links de WhatsApp do site, `.env.example`, smoke de servidor e docs oficiais.
+- Riscos/cuidados: manter `StudentPreRegistration` e o modulo protegido `Aceitar alunos`; o CTA publico nao deve voltar a chamar action de pre-cadastro sem nova decisao.
+
 ### 2026-07-14 - Escolha AVA ou Secretaria apos login
 
 - Decisao: adicionar `/ava/escolha` para Admin/Teacher escolherem entre `AVA` e `Secretaria`, criar `/ava/secretaria` como painel protegido de atalhos e reorganizar a sidebar por area sem remover os links antigos por `?task=`.

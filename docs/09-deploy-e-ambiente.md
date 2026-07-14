@@ -53,6 +53,7 @@ Operacao por agente:
 - `PDF_OPTIMIZATION_ENABLED` controla a tentativa de otimizacao server-side de PDFs pedagogicos protegidos, como Candy XP, homework interativo e aulas interativas; por padrao fica ligada.
 - `PDF_OPTIMIZATION_PRESET` define o preset do Ghostscript, com `ebook` como padrao equilibrado.
 - `PDF_MAX_UPLOAD_MB` define o limite para esses PDFs pedagogicos, mantendo margem abaixo do limite de Server Actions.
+- `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` define o numero publico usado nos links `wa.me` do site e do login. Como e variavel publica e lida no build, trocar o numero exige rebuild/recreate do app; se ficar ausente, `src/lib/whatsapp.ts` usa o telefone publico atual como fallback seguro.
 - `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN` define o dominio Jitsi usado pelo embed de aula ao vivo. Como e variavel publica e lida no build, trocar o dominio exige rebuild/recreate do app.
 - A aula ao vivo pode ser pausada temporariamente pelo codigo com `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`; quando ativo, teacher/student veem aviso de manutencao e as actions bloqueiam criacao/reativacao apos validar role.
 - `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
