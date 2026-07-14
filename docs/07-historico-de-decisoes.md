@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Login obrigatorio na conversao de pre-cadastro
+
+- Decisao: a conversao `Tornar aluno` passa a exigir sempre `emailForLogin` e `initialPassword` na UI e no servidor; o email existente preenche o campo, sem email a UI mostra sugestao baseada no nome, e a senha inicial visivel/editavel e gerada por nome simplificado + `candy`.
+- Motivo: nenhum pre-cadastro deve virar `User.role=STUDENT` sem login revisado e senha inicial conhecida pela equipe no momento da conversao, mantendo a senha apenas como hash depois de enviada.
+- Impacto: `src/components/ava/student-pre-registration-review-panel.tsx`, `src/lib/validations/pre-registration.ts`, `src/app/ava/pre-registrations/actions.ts`, `docs/03-fluxos-do-sistema.md`, `docs/08-autenticacao-e-permissoes.md` e `docs/99-contexto-rapido-codex.md`.
+- Riscos/cuidados: nao persistir senha em texto puro, nao gerar login escondido sem revisao humana, manter `User.email` unico e bloquear tambem email ja usado por outro pre-cadastro.
+
 ### 2026-07-14 - Busca inteligente de pre-cadastros
 
 - Decisao: adicionar busca client-side no painel de pre-cadastros da Secretaria, usando todos os registros ja autorizados para a role logada e ordenando correspondencias exatas antes de parciais/proximas.

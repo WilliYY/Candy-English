@@ -114,10 +114,12 @@ Helpers:
 10. A busca e client-side apenas sobre a lista ja autorizada pelo servidor: Admin recebe todos os pre-cadastros; Teacher recebe somente registros criados por ela ou atribuidos a sua `TeacherProfile`.
 11. Quando ha termo digitado, resultados exatos aparecem primeiro; se nao houver exato, a UI mostra correspondencias parciais ou proximas. Sem resultado, aparece `Nenhum pre-cadastro encontrado.`
 12. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; ele apenas guarda os dados combinados para conversao posterior.
-13. Ao clicar em `Tornar aluno`, a UI mostra um resumo de AVA, unidade/teacher, financeiro e agenda, exige senha inicial, email de login quando necessario e confirmacao explicita.
-14. A action protegida converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson`, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
-15. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
-16. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
+13. Ao clicar em `Tornar aluno`, a UI mostra um resumo de AVA, unidade/teacher, financeiro e agenda, exige confirmacao explicita e mostra a secao `Login do aluno no AVA`.
+14. `Login do aluno no AVA` sempre exige email/login e senha inicial antes de liberar o botao. Se o pre-cadastro ja tem email, o campo vem preenchido; se nao tem, fica vazio e mostra uma sugestao visual baseada no nome, como `maria.silva@candy.local`, para a equipe confirmar ou editar.
+15. A senha inicial vem visivel e editavel, gerada por nome simplificado + `candy` (`Maria Silva` vira `mariacandy`, `Joao Pedro` vira `joaocandy`), com minimo de 8 caracteres. Se a equipe apagar e digitar outra senha valida, essa senha e respeitada.
+16. A action protegida valida email/login e senha no servidor, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, hash a senha com `bcryptjs` e converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson`, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
+17. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
+18. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
 
 ### Admin
 
@@ -343,7 +345,7 @@ Helpers:
 - O botao publico `Quero ser aluno Candy` abre WhatsApp e nao cria pre-cadastro sozinho.
 - Pre-cadastro nunca deve liberar login automaticamente; quando existir solicitacao, ela deve ser criada/revisada pela equipe antes de virar aluno.
 - Pre-cadastro da Secretaria nao deve criar financeiro ou agenda no momento do cadastro; isso so acontece no botao `Tornar aluno`, em transaction, depois de confirmacao.
-- O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`, bloqueando segunda conversao pelo status/ids linkados e por duplicidade de email/telefone.
+- O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`, exigindo email/login e senha inicial visiveis na UI, bloqueando segunda conversao pelo status/ids linkados e por duplicidade de email/telefone.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem no desktop. Em mobile e tablet abaixo de `1280px`, ela abre como drawer sobre o conteudo, fecha ao escolher um atalho, tocar fora ou pressionar `Esc` e devolve imediatamente a area util da tarefa.
 - Student tem botoes sempre visiveis.
 - Candy XP deve continuar sem ranking publico; o ranking interno do AVA so aparece para usuario logado, nao mostra email, telefone, documento, pagamento ou contrato, e usa apenas alunos/profs com XP persistido.

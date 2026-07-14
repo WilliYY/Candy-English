@@ -316,6 +316,38 @@ function normalizeDigits(value: string | null | undefined) {
   return (value ?? "").replace(/\D/g, "");
 }
 
+function getSimplifiedNameTokens(value: string) {
+  return normalizeSearchText(value).split(" ").filter(Boolean);
+}
+
+function buildSuggestedLogin(fullName: string) {
+  const tokens = getSimplifiedNameTokens(fullName);
+  const firstToken = tokens[0] ?? "aluno";
+  const lastToken = tokens.length > 1 ? tokens[tokens.length - 1] : "";
+  const loginName = lastToken ? `${firstToken}.${lastToken}` : firstToken;
+
+  return `${loginName}@candy.local`;
+}
+
+function buildDefaultInitialPassword(fullName: string) {
+  const tokens = getSimplifiedNameTokens(fullName);
+  const firstToken = tokens[0] ?? "aluno";
+  const compactName = tokens.join("");
+  const firstNamePassword = `${firstToken}candy`;
+
+  if (firstNamePassword.length >= 8) {
+    return firstNamePassword;
+  }
+
+  const compactPassword = `${compactName}candy`;
+
+  return compactPassword.length >= 8 ? compactPassword : "alunocandy";
+}
+
+function isValidEmailForLogin(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 function levenshteinDistance(left: string, right: string) {
   if (left === right) return 0;
   if (left.length === 0) return right.length;
@@ -735,10 +767,13 @@ function AcceptForm({
   viewerRole: "ADMIN" | "TEACHER";
 }) {
   const router = useRouter();
+  const suggestedLogin = buildSuggestedLogin(request.fullName);
   const [cattyContext, setCattyContext] = useState("");
   const [confirmConversion, setConfirmConversion] = useState(false);
-  const [emailForLogin, setEmailForLogin] = useState("");
-  const [initialPassword, setInitialPassword] = useState("");
+  const [emailForLogin, setEmailForLogin] = useState(request.email ?? "");
+  const [initialPassword, setInitialPassword] = useState(() =>
+    buildDefaultInitialPassword(request.fullName),
+  );
   const [message, setMessage] = useState<string | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
   const [cattyContextError, setCattyContextError] = useState<string | null>(
@@ -751,7 +786,20 @@ function AcceptForm({
   const [teacherProfileIdForConversion, setTeacherProfileIdForConversion] =
     useState(request.assignedTeacherId ?? "");
   const [isPending, startTransition] = useTransition();
-  const requiresEmail = !request.email;
+  const isEmailForLoginValid = isValidEmailForLogin(emailForLogin);
+  const isInitialPasswordValid = initialPassword.trim().length >= 8;
+  const disableConversionButton =
+    isPending || !isEmailForLoginValid || !isInitialPasswordValid;
+  const emailValidationMessage =
+    emailError ??
+    (!isEmailForLoginValid
+      ? "Informe um email/login valido para liberar a conversao."
+      : null);
+  const passwordValidationMessage =
+    passwordError ??
+    (!isInitialPasswordValid
+      ? "A senha inicial precisa ter pelo menos 8 caracteres."
+      : null);
   const selectedTeacher = teacherOptions.find(
     (teacher) => teacher.id === teacherProfileIdForConversion,
   );
@@ -874,28 +922,92 @@ function AcceptForm({
         </div>
       </div>
 
-      {requiresEmail ? (
-        <div>
-          <Input
-            type="email"
-            autoComplete="email"
-            disabled={isPending}
-            aria-invalid={Boolean(emailError)}
-            placeholder="Email para criar login"
-            value={emailForLogin}
-            onChange={(event) => setEmailForLogin(event.target.value)}
-            className="bg-white"
-          />
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            O email e opcional no pre-cadastro, mas necessario para criar login.
+      <section className="rounded-xl border border-primary/12 bg-white/82 p-4 shadow-sm shadow-primary/5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h5 className="text-sm font-semibold text-primary">
+              Login do aluno no AVA
+            </h5>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Revise o login e a senha inicial antes de converter.
+            </p>
+          </div>
+          <span className="w-fit rounded-full border border-primary/10 bg-primary/8 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/70">
+            obrigatorio
+          </span>
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          <label className="grid gap-1 text-sm font-semibold text-primary">
+            Email/login
+            <Input
+              type="email"
+              autoComplete="email"
+              disabled={isPending}
+              aria-invalid={Boolean(emailValidationMessage)}
+              placeholder="email@exemplo.com"
+              value={emailForLogin}
+              onChange={(event) => {
+                setEmailForLogin(event.target.value);
+                setEmailError(null);
+              }}
+              className="bg-white"
+            />
+          </label>
+          <div className="flex flex-col gap-2 rounded-lg border border-primary/10 bg-primary/[0.03] px-3 py-2 text-xs text-muted-foreground">
+            <span>
+              Sugestao:{" "}
+              <button
+                type="button"
+                className="font-semibold text-primary underline-offset-4 hover:underline"
+                disabled={isPending}
+                onClick={() => {
+                  setEmailForLogin(suggestedLogin);
+                  setEmailError(null);
+                }}
+              >
+                {suggestedLogin}
+              </button>
+            </span>
+            {request.email ? (
+              <span>Preenchido com o email do pre-cadastro; edite se precisar.</span>
+            ) : (
+              <span>Sem email no pre-cadastro; confirme digitando ou usando a sugestao.</span>
+            )}
+          </div>
+          {emailValidationMessage ? (
+            <p className="text-xs font-medium text-destructive">
+              {emailValidationMessage}
+            </p>
+          ) : null}
+
+          <label className="grid gap-1 text-sm font-semibold text-primary">
+            Senha inicial
+            <Input
+              type="text"
+              autoComplete="off"
+              disabled={isPending}
+              aria-invalid={Boolean(passwordValidationMessage)}
+              placeholder="Senha inicial do aluno"
+              value={initialPassword}
+              onChange={(event) => {
+                setInitialPassword(event.target.value);
+                setPasswordError(null);
+              }}
+              className="bg-white font-mono"
+            />
+          </label>
+          <p className="text-xs leading-5 text-muted-foreground">
+            A senha sugerida usa o nome simplificado + candy. Ela sera salva
+            somente como hash seguro e nao aparece depois da conversao.
           </p>
-          {emailError ? (
-            <p className="mt-1 text-xs font-medium text-destructive">
-              {emailError}
+          {passwordValidationMessage ? (
+            <p className="text-xs font-medium text-destructive">
+              {passwordValidationMessage}
             </p>
           ) : null}
         </div>
-      ) : null}
+      </section>
 
       {viewerRole === "ADMIN" ? (
         <div>
@@ -925,27 +1037,6 @@ function AcceptForm({
           ) : null}
         </div>
       ) : null}
-
-      <div>
-        <Input
-          type="password"
-          autoComplete="new-password"
-          disabled={isPending}
-          aria-invalid={Boolean(passwordError)}
-          placeholder="Senha inicial do aluno"
-          value={initialPassword}
-          onChange={(event) => setInitialPassword(event.target.value)}
-          className="bg-white"
-        />
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Envie a senha por um canal seguro. Ela nao aparece em logs.
-        </p>
-        {passwordError ? (
-          <p className="mt-1 text-xs font-medium text-destructive">
-            {passwordError}
-          </p>
-        ) : null}
-      </div>
 
       <details className="rounded-lg border border-primary/15 bg-primary/[0.03] p-3 text-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-primary [&::-webkit-details-marker]:hidden">
@@ -1001,7 +1092,11 @@ function AcceptForm({
         </span>
       </label>
 
-      <Button type="submit" className="h-11 w-full" disabled={isPending}>
+      <Button
+        type="submit"
+        className="h-11 w-full"
+        disabled={disableConversionButton}
+      >
         {isPending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
         ) : (

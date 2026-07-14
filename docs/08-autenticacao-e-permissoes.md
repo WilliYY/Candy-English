@@ -101,10 +101,12 @@ Rotas protegidas:
 - `STUDENT` nao acessa pre-cadastros nem Secretaria.
 - A busca de pre-cadastros fica no client, mas opera somente sobre a lista ja filtrada pelo server component: Admin recebe todos os registros; Teacher recebe apenas registros proprios/atribuidos. Student nao recebe componente nem dados.
 - A normalizacao da busca remove acentos, ignora maiusculas/minusculas e compara telefone/documento tambem por digitos, sem espacos, pontos, tracos ou parenteses; resultados exatos ficam antes dos parciais/proximos.
+- A conversao `Tornar aluno` sempre exige `emailForLogin` e `initialPassword` no formulario. O email do pre-cadastro pode preencher o campo, mas o Admin/Teacher precisa revisar; sem email, a UI mostra sugestao baseada no nome e mantem o campo vazio ate alguem confirmar ou editar.
+- A senha inicial aparece visivel/editavel antes da conversao, gerada por nome simplificado + `candy`, e precisa ter no minimo 8 caracteres. O servidor recebe apenas para gerar `passwordHash` com `bcryptjs`; a senha em texto puro nao e persistida nem exibida depois da conversao.
 - Ao converter, o servidor cria `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction.
 - `TEACHER` so converte pre-cadastro criado por ela ou atribuido a sua `TeacherProfile`; se o registro tiver outra teacher responsavel, a conversao e bloqueada. Essa escrita cria apenas os dados linkados daquele interessado e nao libera acesso ao financeiro completo nem a agenda interna.
 - `ADMIN` pode escolher a teacher no momento da conversao e converter qualquer pre-cadastro.
-- O fluxo de aceite nunca cria `ADMIN` ou `TEACHER` e nunca retorna/loga a senha inicial em texto puro.
+- O fluxo de aceite nunca cria `ADMIN` ou `TEACHER`, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, e nunca retorna/loga a senha inicial em texto puro.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
 - Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
 - Apenas `ADMIN` pode editar nome, email e telefone principal de usuarios `STUDENT` pela tela `Usuarios`; a server action valida role `ADMIN`, confirma que o alvo e aluno e incrementa `sessionVersion` quando o email muda.

@@ -596,11 +596,7 @@ export async function acceptStudentPreRegistration(
         throw new Error("REQUEST_NOT_ACCEPTABLE");
       }
 
-      const emailForLogin = request.email ?? parsed.data.emailForLogin ?? null;
-
-      if (!emailForLogin) {
-        throw new Error("EMAIL_REQUIRED");
-      }
+      const emailForLogin = parsed.data.emailForLogin;
 
       if (
         !request.tuitionCents ||
@@ -662,6 +658,22 @@ export async function acceptStudentPreRegistration(
 
       if (existingUser) {
         throw new Error("USER_EMAIL_EXISTS");
+      }
+
+      const existingPreRegistration = await tx.studentPreRegistration.findFirst({
+        where: {
+          email: emailForLogin,
+          NOT: {
+            id: request.id,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (existingPreRegistration) {
+        throw new Error("PRE_REGISTRATION_EMAIL_EXISTS");
       }
 
       const contactPhone = request.studentPhone ?? request.phone;
@@ -897,10 +909,20 @@ export async function acceptStudentPreRegistration(
     ) {
       return {
         errors: {
-          requestId: "Ja existe um usuario com este email.",
+          emailForLogin: "Ja existe um usuario com este email/login.",
         },
         ok: false,
         message: "Ja existe um usuario com este email no AVA.",
+      };
+    }
+
+    if (errorMessage === "PRE_REGISTRATION_EMAIL_EXISTS") {
+      return {
+        errors: {
+          emailForLogin: "Ja existe outro pre-cadastro com este email/login.",
+        },
+        ok: false,
+        message: "Ja existe outro pre-cadastro com este email/login.",
       };
     }
 

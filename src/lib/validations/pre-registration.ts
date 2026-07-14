@@ -138,6 +138,16 @@ function optionalEmail() {
     });
 }
 
+function requiredEmail() {
+  return z
+    .string()
+    .trim()
+    .min(1, "Informe o email/login do aluno.")
+    .max(180, "O email pode ter no maximo 180 caracteres.")
+    .email("Informe um email valido.")
+    .transform((value) => value.toLowerCase());
+}
+
 function optionalMoneyCents() {
   return z
     .string()
@@ -333,9 +343,10 @@ export const preRegistrationAcceptSchema = z
     confirmConversion: z.boolean().refine((value) => value, {
       message: "Confirme a conversao completa do pre-cadastro.",
     }),
-    emailForLogin: optionalEmail(),
+    emailForLogin: requiredEmail(),
     initialPassword: z
       .string()
+      .trim()
       .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")
       .max(120, "A senha inicial pode ter no maximo 120 caracteres."),
     requestId: z.string().min(1, "Solicitacao invalida."),
