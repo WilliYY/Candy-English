@@ -50,7 +50,7 @@ Rota:
 - Observacao e pagamento sao por mes; ao trocar mes, esses campos nao devem carregar automaticamente de outro mes.
 - Ao criar aluno recorrente em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
 - Ao criar aluno com quantidade de parcelas, o sistema cria apenas as parcelas possiveis daquele mes ate dezembro de 2026.
-- Ao converter pre-cadastro em aluno, o financeiro usa a mesma regra de meses/snapshots: cria `FinancialStudent` com unidade, valor, dia, forma e parcelas do pre-cadastro, e cria `FinancialPayment` do mes atual ate dezembro de 2026 ou ate o fim das parcelas.
+- Ao converter pre-cadastro em aluno, o financeiro usa a mesma regra de meses/snapshots: cria `FinancialStudent` com unidade, valor, dia, forma e parcelas do pre-cadastro, e cria `FinancialPayment` do mes atual ate dezembro de 2026 ou ate o fim das parcelas. Mensalidade, dia de pagamento e forma sao obrigatorios; se faltarem, a UI e a action bloqueiam antes de criar `User`, aluno, financeiro ou agenda.
 - Ao editar dados fixos em um mes, a edicao vale do mes selecionado em diante; meses anteriores ficam preservados.
 - Ao editar dados fixos/parcelas, meses existentes que continuam dentro do novo plano voltam a `isActive=true`; meses fora do plano ficam inativos quando houver total de parcelas.
 - Ao retirar aluno em um mes, a UI permite inativar apenas o mes selecionado ou encerrar a partir daquele mes, sempre por soft remove em `FinancialPayment.isActive=false`.

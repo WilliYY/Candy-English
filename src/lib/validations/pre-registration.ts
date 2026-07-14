@@ -343,6 +343,7 @@ export const preRegistrationAcceptSchema = z
     confirmConversion: z.boolean().refine((value) => value, {
       message: "Confirme a conversao completa do pre-cadastro.",
     }),
+    confirmMissingAgendaData: z.boolean().optional().default(false),
     emailForLogin: requiredEmail(),
     initialPassword: z
       .string()

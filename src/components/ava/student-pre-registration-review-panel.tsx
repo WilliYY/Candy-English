@@ -159,6 +159,8 @@ const weekdays = [
   { label: "Sab", value: 6 },
 ] as const;
 
+const agendaTimePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
+
 const paymentMethodLabels: Record<PaymentMethod, string> = {
   CARTAO: "Cartao",
   DINHEIRO: "Dinheiro",
@@ -908,6 +910,8 @@ function AcceptForm({
   const suggestedLogin = buildSuggestedLogin(request.fullName);
   const [cattyContext, setCattyContext] = useState("");
   const [confirmConversion, setConfirmConversion] = useState(false);
+  const [confirmMissingAgendaData, setConfirmMissingAgendaData] =
+    useState(false);
   const [emailForLogin, setEmailForLogin] = useState(request.email ?? "");
   const [hasConverted, setHasConverted] = useState(false);
   const [hasSubmissionError, setHasSubmissionError] = useState(false);
@@ -921,6 +925,9 @@ function AcceptForm({
     null,
   );
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [missingAgendaError, setMissingAgendaError] = useState<string | null>(
+    null,
+  );
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [teacherError, setTeacherError] = useState<string | null>(null);
@@ -932,6 +939,24 @@ function AcceptForm({
   );
   const isEmailForLoginValid = isValidEmailForLogin(emailForLogin);
   const isInitialPasswordValid = initialPassword.trim().length >= 8;
+  const missingFinancialFields = [
+    !request.tuitionCents || request.tuitionCents <= 0
+      ? "mensalidade"
+      : null,
+    request.paymentDay ? null : "dia de pagamento",
+    request.paymentMethod ? null : "forma de pagamento",
+  ].filter(Boolean) as string[];
+  const missingAgendaFields = [
+    request.intendedWeekdayMask > 0 ? null : "dias de aula",
+    request.intendedTime && agendaTimePattern.test(request.intendedTime)
+      ? null
+      : "horario",
+  ].filter(Boolean) as string[];
+  const hasRequiredFinancialData = missingFinancialFields.length === 0;
+  const hasCompleteAgendaData = missingAgendaFields.length === 0;
+  const needsAgendaConfirmation = !hasCompleteAgendaData;
+  const missingFinancialSummary = missingFinancialFields.join(", ");
+  const missingAgendaSummary = missingAgendaFields.join(", ");
   const teacherSummary =
     viewerRole === "TEACHER"
       ? request.assignedTeacherName ?? "Sua teacher"
@@ -968,12 +993,29 @@ function AcceptForm({
       items.push("senha inicial com 8+ caracteres");
     }
 
+    if (!hasRequiredFinancialData) {
+      items.push(`financeiro: ${missingFinancialSummary}`);
+    }
+
+    if (needsAgendaConfirmation && !confirmMissingAgendaData) {
+      items.push(`confirmar agenda pendente: ${missingAgendaSummary}`);
+    }
+
     if (!confirmConversion) {
       items.push("confirmacao final");
     }
 
     return items;
-  }, [confirmConversion, isEmailForLoginValid, isInitialPasswordValid]);
+  }, [
+    confirmConversion,
+    confirmMissingAgendaData,
+    hasRequiredFinancialData,
+    isEmailForLoginValid,
+    isInitialPasswordValid,
+    missingAgendaSummary,
+    missingFinancialSummary,
+    needsAgendaConfirmation,
+  ]);
   const isReadyToConvert = missingRequirements.length === 0;
   const conversionState: ConversionFlowState = isPending
     ? "converting"
@@ -999,6 +1041,11 @@ function AcceptForm({
   const confirmValidationMessage =
     confirmError ??
     (!confirmConversion ? "Confirme a criacao antes de converter." : null);
+  const missingAgendaValidationMessage =
+    missingAgendaError ??
+    (needsAgendaConfirmation && !confirmMissingAgendaData
+      ? "Confirme que a agenda sera preenchida depois para liberar a conversao."
+      : null);
   const convertedUserLabel =
     emailForLogin.trim() || request.convertedUserEmail || "login criado";
 
@@ -1029,6 +1076,7 @@ function AcceptForm({
     setRequestError(null);
     setCattyContextError(null);
     setConfirmError(null);
+    setMissingAgendaError(null);
     setEmailError(null);
     setPasswordError(null);
     setTeacherError(null);
@@ -1038,6 +1086,7 @@ function AcceptForm({
       const result = await acceptStudentPreRegistration({
         cattyContext,
         confirmConversion,
+        confirmMissingAgendaData,
         emailForLogin,
         initialPassword,
         requestId: request.id,
@@ -1048,6 +1097,7 @@ function AcceptForm({
       if (!result.ok) {
         setCattyContextError(result.errors?.cattyContext ?? null);
         setConfirmError(result.errors?.confirmConversion ?? null);
+        setMissingAgendaError(result.errors?.confirmMissingAgendaData ?? null);
         setEmailError(result.errors?.emailForLogin ?? null);
         setPasswordError(result.errors?.initialPassword ?? null);
         setRequestError(result.errors?.requestId ?? null);
@@ -1059,6 +1109,7 @@ function AcceptForm({
 
       setCattyContext("");
       setConfirmConversion(false);
+      setConfirmMissingAgendaData(false);
       setInitialPassword("");
       setMessage(result.message);
       setHasConverted(true);
@@ -1364,6 +1415,21 @@ function AcceptForm({
                             tone="success"
                             value={unitLabels[request.unit]}
                           />
+                          {!hasRequiredFinancialData ? (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-900">
+                              <span className="flex items-start gap-2">
+                                <AlertCircle
+                                  aria-hidden="true"
+                                  className="mt-0.5 size-4 shrink-0"
+                                />
+                                <span>
+                                  Complete {missingFinancialSummary} no
+                                  pre-cadastro antes de converter. O financeiro
+                                  e obrigatorio para criar o aluno linkado.
+                                </span>
+                              </span>
+                            </div>
+                          ) : null}
                         </div>
                       </ConversionStepCard>
 
@@ -1390,6 +1456,38 @@ function AcceptForm({
                             label="Observacao"
                             value={request.notes ?? "Sem observacao"}
                           />
+                          {needsAgendaConfirmation && !hasConverted ? (
+                            <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-900">
+                              <input
+                                type="checkbox"
+                                checked={confirmMissingAgendaData}
+                                disabled={isPending}
+                                onChange={(event) => {
+                                  setConfirmMissingAgendaData(
+                                    event.target.checked,
+                                  );
+                                  setMissingAgendaError(null);
+                                  resetSubmissionFeedback();
+                                }}
+                                className="mt-0.5 size-4 rounded border-amber-300 accent-primary"
+                              />
+                              <span>
+                                <span className="block font-semibold">
+                                  Agenda incompleta: {missingAgendaSummary}.
+                                </span>
+                                <span className="mt-1 block text-muted-foreground">
+                                  Converter mesmo assim cria o aluno na agenda
+                                  sem ocorrencias; complete dias e horario
+                                  depois.
+                                </span>
+                                {missingAgendaValidationMessage ? (
+                                  <span className="mt-1 block font-medium text-destructive">
+                                    {missingAgendaValidationMessage}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </label>
+                          ) : null}
                         </div>
                       </ConversionStepCard>
                     </div>
@@ -1427,14 +1525,30 @@ function AcceptForm({
                         <ConversionInfoTile
                           icon={WalletCards}
                           label="Financeiro"
-                          tone="warning"
+                          tone={hasRequiredFinancialData ? "success" : "warning"}
                           value={financeSummary}
+                          description={
+                            hasRequiredFinancialData
+                              ? "FinancialStudent e snapshots mensais."
+                              : `Bloqueado: falta ${missingFinancialSummary}.`
+                          }
                         />
                         <ConversionInfoTile
                           icon={CalendarClock}
                           label="Agenda"
-                          tone="info"
-                          value={scheduleSummary || "Agenda pendente"}
+                          tone={hasCompleteAgendaData ? "info" : "warning"}
+                          value={
+                            hasCompleteAgendaData
+                              ? scheduleSummary
+                              : `Pendente: ${missingAgendaSummary}`
+                          }
+                          description={
+                            hasCompleteAgendaData
+                              ? "AgendaStudent e ocorrencias futuras."
+                              : confirmMissingAgendaData
+                                ? "Vai criar AgendaStudent sem ocorrencias."
+                                : "Exige confirmacao para converter."
+                          }
                         />
 
                         {!hasConverted ? (

@@ -530,6 +530,7 @@ export async function acceptStudentPreRegistration(
   const prisma = getPrisma();
   const passwordHash = await hash(parsed.data.initialPassword, 12);
   let createdUserId: string | null = null;
+  let postConversionMessage = "Aluno convertido com AVA, financeiro e agenda criados.";
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -608,15 +609,16 @@ export async function acceptStudentPreRegistration(
       }
 
       const agendaWeekdays = decodeWeekdayMask(request.intendedWeekdayMask);
+      const hasCompleteAgendaData = Boolean(
+        agendaWeekdays.length > 0 &&
+          request.intendedTime &&
+          agendaTimePattern.test(request.intendedTime),
+      );
 
-      if (
-        agendaWeekdays.length === 0 ||
-        !request.intendedTime ||
-        !agendaTimePattern.test(request.intendedTime)
-      ) {
-        throw new Error("AGENDA_REQUIRED");
+      if (!hasCompleteAgendaData && !parsed.data.confirmMissingAgendaData) {
+        throw new Error("AGENDA_CONFIRMATION_REQUIRED");
       }
-      const intendedTime = request.intendedTime;
+      const intendedTime = hasCompleteAgendaData ? request.intendedTime : null;
 
       let teacherProfileId: string | null = null;
 
@@ -677,7 +679,7 @@ export async function acceptStudentPreRegistration(
       }
 
       const contactPhone = request.studentPhone ?? request.phone;
-      const duplicateChecks: Promise<unknown>[] = [
+      const [existingPhoneUser, existingFinancialStudent] = await Promise.all([
         tx.user.findFirst({
           where: {
             OR: [
@@ -689,34 +691,32 @@ export async function acceptStudentPreRegistration(
         }),
         tx.financialStudent.findFirst({
           where: {
-            OR: [
-              { phone: contactPhone },
-              { email: emailForLogin },
-            ],
+            OR: [{ phone: contactPhone }, { email: emailForLogin }],
           },
           select: { id: true },
         }),
-        tx.agendaLesson.findFirst({
-          where: {
-            isActive: true,
-            isMakeup: false,
-            time: intendedTime,
-            weekday: {
-              in: agendaWeekdays,
-            },
-            year: CONVERSION_YEAR,
-            student: {
-              name: {
-                equals: request.fullName,
-                mode: "insensitive",
+      ]);
+      const existingAgendaLesson =
+        hasCompleteAgendaData && intendedTime
+          ? await tx.agendaLesson.findFirst({
+              where: {
+                isActive: true,
+                isMakeup: false,
+                time: intendedTime,
+                weekday: {
+                  in: agendaWeekdays,
+                },
+                year: CONVERSION_YEAR,
+                student: {
+                  name: {
+                    equals: request.fullName,
+                    mode: "insensitive",
+                  },
+                },
               },
-            },
-          },
-          select: { id: true },
-        }),
-      ];
-      const [existingPhoneUser, existingFinancialStudent, existingAgendaLesson] =
-        await Promise.all(duplicateChecks);
+              select: { id: true },
+            })
+          : null;
 
       if (existingPhoneUser) {
         throw new Error("USER_PHONE_EXISTS");
@@ -835,54 +835,69 @@ export async function acceptStudentPreRegistration(
         },
       });
 
-      const agendaDates = getAgendaRecurringDates(
-        conversionMonth,
-        agendaWeekdays,
-      );
+      const agendaDates =
+        hasCompleteAgendaData && intendedTime
+          ? getAgendaRecurringDates(conversionMonth, agendaWeekdays)
+          : [];
 
-      if (agendaDates.length === 0) {
+      if (hasCompleteAgendaData && agendaDates.length === 0) {
         throw new Error("AGENDA_REQUIRED");
       }
 
+      const agendaPendingNote =
+        hasCompleteAgendaData
+          ? null
+          : "Agenda convertida sem ocorrencias por confirmacao da Secretaria; preencher dias e horario depois.";
+      const agendaStudentNotes = [request.notes, agendaPendingNote]
+        .filter(Boolean)
+        .join("\n\n");
+
       const agendaStudent = await tx.agendaStudent.create({
         data: {
-          defaultTime: request.intendedTime,
+          defaultTime: intendedTime,
           isActive: true,
           name: request.fullName,
-          notes: request.notes,
+          notes: agendaStudentNotes || null,
           phone: contactPhone,
           unit: request.unit,
           weekdayMask: request.intendedWeekdayMask,
         },
       });
 
-      await tx.agendaLesson.createMany({
-        data: agendaDates.map((date) => {
-          const dateParts = getAgendaDateParts(date);
+      if (agendaDates.length > 0 && intendedTime) {
+        await tx.agendaLesson.createMany({
+          data: agendaDates.map((date) => {
+            const dateParts = getAgendaDateParts(date);
 
-          return {
-            date,
-            isActive: true,
-            isMakeup: false,
-            month: dateParts.month,
-            notes: "Criada a partir do pre-cadastro da Secretaria.",
-            status: "SCHEDULED",
-            studentId: agendaStudent.id,
-            time: intendedTime,
-            weekday: dateParts.weekday,
-            year: dateParts.year,
-          };
-        }),
-      });
+            return {
+              date,
+              isActive: true,
+              isMakeup: false,
+              month: dateParts.month,
+              notes: "Criada a partir do pre-cadastro da Secretaria.",
+              status: "SCHEDULED",
+              studentId: agendaStudent.id,
+              time: intendedTime,
+              weekday: dateParts.weekday,
+              year: dateParts.year,
+            };
+          }),
+        });
+      }
 
       await tx.agendaLog.create({
         data: {
           action: "CREATE_FROM_PRE_REGISTRATION",
           createdByUserId: context.session.user.id,
-          description: `Agenda criada a partir do pre-cadastro para ${agendaStudent.name}: ${agendaDates.length} aula(s) ate dezembro.`,
+          description: hasCompleteAgendaData
+            ? `Agenda criada a partir do pre-cadastro para ${agendaStudent.name}: ${agendaDates.length} aula(s) ate dezembro.`
+            : `Agenda criada a partir do pre-cadastro para ${agendaStudent.name} sem ocorrencias; dias e horario ficaram pendentes.`,
           studentId: agendaStudent.id,
         },
       });
+      postConversionMessage = hasCompleteAgendaData
+        ? "Aluno convertido com AVA, financeiro e agenda criados."
+        : "Aluno convertido com AVA e financeiro. Agenda criada sem ocorrencias; preencha dias e horario depois.";
 
       await tx.studentPreRegistration.update({
         where: { id: request.id },
@@ -896,7 +911,9 @@ export async function acceptStudentPreRegistration(
           reviewedAt: new Date(),
           reviewedByUserId: context.session.user.id,
           status: "APPROVED",
-          statusNote: "Convertido em aluno com AVA, financeiro e agenda.",
+          statusNote: hasCompleteAgendaData
+            ? "Convertido em aluno com AVA, financeiro e agenda."
+            : "Convertido em aluno com AVA, financeiro e agenda pendente de dias/horario.",
         },
       });
     });
@@ -955,6 +972,18 @@ export async function acceptStudentPreRegistration(
         },
         ok: false,
         message: "Preencha a agenda pretendida antes de tornar aluno.",
+      };
+    }
+
+    if (errorMessage === "AGENDA_CONFIRMATION_REQUIRED") {
+      return {
+        errors: {
+          confirmMissingAgendaData:
+            "Confirme que a agenda sera preenchida depois.",
+        },
+        ok: false,
+        message:
+          "A agenda esta incompleta. Confirme o preenchimento posterior antes de converter.",
       };
     }
 
@@ -1041,7 +1070,7 @@ export async function acceptStudentPreRegistration(
     };
   }
 
-  let message = "Aluno convertido com AVA, financeiro e agenda criados.";
+  let message = postConversionMessage;
 
   if (parsed.data.cattyContext && createdUserId) {
     const source =
@@ -1062,8 +1091,7 @@ export async function acceptStudentPreRegistration(
       message =
         "Aluno convertido, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
     } else {
-      message =
-        "Aluno convertido com AVA, financeiro, agenda e contexto Catty inicial.";
+      message = `${postConversionMessage} Contexto Catty inicial salvo.`;
     }
   }
 
