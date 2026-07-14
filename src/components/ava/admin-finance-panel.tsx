@@ -65,6 +65,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 
 type PaymentMethod = (typeof FINANCIAL_PAYMENT_METHODS)[number];
 type FinancialUnit = (typeof FINANCIAL_UNITS)[number];
@@ -142,6 +143,7 @@ type FinanceMonthRow = AdminFinanceStudentRow & {
 type AdminFinancePanelProps = {
   expenses: AdminFinanceExpenseRow[];
   initialMonth: number;
+  initialUnitFilter?: SecretariaUnitFilter;
   logs: AdminFinanceLogRow[];
   students: AdminFinanceStudentRow[];
 };
@@ -224,8 +226,19 @@ const financialUnitToneClasses: Record<
   },
 };
 
+function normalizeInitialUnitFilter(
+  filter: SecretariaUnitFilter | undefined,
+): UnitFilter {
+  return filter === "IVATE" || filter === "DOURADINA" ? filter : "ALL";
+}
+
+function getDefaultUnitForFilter(filter: UnitFilter): FinancialUnit {
+  return filter === "ALL" ? "IVATE" : filter;
+}
+
 const createDefaultValues = (
   month: number,
+  unit: FinancialUnit = "IVATE",
 ): AdminFinanceStudentCreateInput => ({
   address: "",
   amount: "",
@@ -239,7 +252,7 @@ const createDefaultValues = (
   paymentDay: 1,
   paymentMethod: "PIX",
   phone: "",
-  unit: "IVATE",
+  unit,
   year: 2026,
 });
 
@@ -267,6 +280,7 @@ function getDefaultExpenseDate(month: number) {
 
 const createExpenseDefaultValues = (
   month: number,
+  unit: FinancialUnit = "IVATE",
 ): AdminFinanceExpenseCreateInput => ({
   actorName: "",
   amount: "",
@@ -274,7 +288,7 @@ const createExpenseDefaultValues = (
   month,
   note: "",
   purchasedAt: getDefaultExpenseDate(month),
-  unit: "IVATE",
+  unit,
   year: 2026,
 });
 
@@ -1218,17 +1232,21 @@ function FinanceExportButtons({
 export function AdminFinancePanel({
   expenses,
   initialMonth,
+  initialUnitFilter,
   logs,
   students,
 }: AdminFinancePanelProps) {
   const router = useRouter();
+  const initialPanelUnitFilter = normalizeInitialUnitFilter(initialUnitFilter);
+  const initialFormUnit = getDefaultUnitForFilter(initialPanelUnitFilter);
   const [activeMonth, setActiveMonth] = useState(initialMonth);
   const [financeView, setFinanceView] = useState<FinanceView>("STUDENTS");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | FinanceStatus>("ALL");
-  const [unitFilter, setUnitFilter] = useState<UnitFilter>("ALL");
-  const [expenseUnitFilter, setExpenseUnitFilter] = useState<UnitFilter>("ALL");
+  const [unitFilter, setUnitFilter] = useState<UnitFilter>(initialPanelUnitFilter);
+  const [expenseUnitFilter, setExpenseUnitFilter] =
+    useState<UnitFilter>(initialPanelUnitFilter);
   const [message, setMessage] = useState<string | null>(null);
   const [expenseMessage, setExpenseMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -1237,13 +1255,13 @@ export function AdminFinancePanel({
     resolver: zodResolver(adminFinanceStudentCreateSchema, undefined, {
       raw: true,
     }),
-    defaultValues: createDefaultValues(initialMonth),
+    defaultValues: createDefaultValues(initialMonth, initialFormUnit),
   });
   const expenseForm = useForm<AdminFinanceExpenseCreateInput>({
     resolver: zodResolver(adminFinanceExpenseCreateSchema, undefined, {
       raw: true,
     }),
-    defaultValues: createExpenseDefaultValues(initialMonth),
+    defaultValues: createExpenseDefaultValues(initialMonth, initialFormUnit),
   });
 
   const monthRows = useMemo(

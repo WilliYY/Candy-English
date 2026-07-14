@@ -97,9 +97,11 @@ Helpers:
 5. A tela usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada.
 6. Admin ve atalhos completos: pre-cadastros, financeiro, agenda, contratos, administracao, APIs/senhas, unidades/gastos e relatorios simples vinculados ao financeiro.
 7. Teacher ve somente Secretaria limitada: pre-cadastros proprios/atribuidos e contratos permitidos; financeiro geral, agenda completa, gastos, APIs e administracao seguem exclusivos de Admin.
-8. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
-9. O shell lateral e renderizado somente dentro das areas escolhidas: tarefas pedagogicas mostram grupos do AVA, tarefas administrativas mostram grupos da Secretaria, e a lateral mantem atalho para `Trocar area`.
-10. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
+8. A Secretaria mostra um filtro geral de polo logo abaixo do titulo: `Todos os polos`, `Polo 1 — Ivaté` e `Polo 2 — Douradina`. O filtro usa `unit=IVATE` ou `unit=DOURADINA` na URL quando ha polo especifico.
+9. Ao abrir pre-cadastros, financeiro ou agenda a partir da Secretaria, o `unit` selecionado e preservado nos links e aplicado nas consultas server-side dos dados sensiveis.
+10. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
+11. O shell lateral e renderizado somente dentro das areas escolhidas: tarefas pedagogicas mostram grupos do AVA, tarefas administrativas mostram grupos da Secretaria, e a lateral mantem atalho para `Trocar area`.
+12. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
 
 ### Pre-cadastro de interessado
 
@@ -113,16 +115,17 @@ Helpers:
 8. Status visuais da Secretaria: `Novo` (`PENDING`), `Em conversa` (`CONTACTED`), `Aguardando pagamento` (`WAITING_PAYMENT`), `Pronto para virar aluno` (`READY_TO_CONVERT`), `Recusado` (`REJECTED`) e `Convertido` (`APPROVED`).
 9. A tela tem busca inteligente no topo do modulo: filtra nome, telefone, email, documento do responsavel, responsavel, cidade, unidade e status, normalizando acentos, maiusculas/minusculas e telefone/documento sem espacos, pontos, tracos ou parenteses.
 10. A busca e client-side apenas sobre a lista ja autorizada pelo servidor: Admin recebe todos os pre-cadastros; Teacher recebe somente registros criados por ela ou atribuidos a sua `TeacherProfile`.
-11. Quando ha termo digitado, resultados exatos aparecem primeiro; se nao houver exato, a UI mostra correspondencias parciais ou proximas. Sem resultado, aparece `Nenhum pre-cadastro encontrado.`
-12. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; ele apenas guarda os dados combinados para conversao posterior.
-13. Ao clicar em `Tornar aluno`, a UI abre um painel/modal de conversao em etapas curtas: `Dados do aluno`, `Login do AVA`, `Financeiro`, `Agenda` e `Confirmacao`.
-14. `Login do aluno no AVA` sempre exige email/login e senha inicial antes de liberar o botao. Se o pre-cadastro ja tem email, o campo vem preenchido; se nao tem, fica vazio e mostra uma sugestao visual baseada no nome, como `maria.silva@candy.local`, para a equipe confirmar ou editar.
-15. A senha inicial vem visivel e editavel, gerada por nome simplificado + `candy` (`Maria Silva` vira `mariacandy`, `Joao Pedro` vira `joaocandy`), com minimo de 8 caracteres. Se a equipe apagar e digitar outra senha valida, essa senha e respeitada.
-16. O painel mostra estados de `Incompleto`, `Pronto`, `Convertendo`, `Convertido` e `Erro`; o botao `Criar aluno no AVA` fica bloqueado ate email/login, senha, financeiro obrigatorio e confirmacao final estarem validos.
-17. Se faltar mensalidade, dia de pagamento ou forma, a UI e a action bloqueiam a conversao antes de criar qualquer dado. Se faltarem dias ou horario de agenda, Admin/Teacher podem confirmar que vao preencher depois; nesse caso a transaction cria `AgendaStudent` linkado sem ocorrencias em `AgendaLesson` e registra essa pendencia no log.
-18. A action protegida valida email/login e senha no servidor, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, hash a senha com `bcryptjs` e converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson` quando a agenda estiver completa, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
-19. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
-20. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
+11. Quando a Secretaria envia `unit=IVATE` ou `unit=DOURADINA`, o servidor filtra a lista e os contadores de status antes de enviar os dados para Admin/Teacher; Teacher continua limitado aos proprios ou atribuidos.
+12. Quando ha termo digitado, resultados exatos aparecem primeiro; se nao houver exato, a UI mostra correspondencias parciais ou proximas. Sem resultado, aparece `Nenhum pre-cadastro encontrado.`
+13. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; ele apenas guarda os dados combinados para conversao posterior.
+14. Ao clicar em `Tornar aluno`, a UI abre um painel/modal de conversao em etapas curtas: `Dados do aluno`, `Login do AVA`, `Financeiro`, `Agenda` e `Confirmacao`.
+15. `Login do aluno no AVA` sempre exige email/login e senha inicial antes de liberar o botao. Se o pre-cadastro ja tem email, o campo vem preenchido; se nao tem, fica vazio e mostra uma sugestao visual baseada no nome, como `maria.silva@candy.local`, para a equipe confirmar ou editar.
+16. A senha inicial vem visivel e editavel, gerada por nome simplificado + `candy` (`Maria Silva` vira `mariacandy`, `Joao Pedro` vira `joaocandy`), com minimo de 8 caracteres. Se a equipe apagar e digitar outra senha valida, essa senha e respeitada.
+17. O painel mostra estados de `Incompleto`, `Pronto`, `Convertendo`, `Convertido` e `Erro`; o botao `Criar aluno no AVA` fica bloqueado ate email/login, senha, financeiro obrigatorio e confirmacao final estarem validos.
+18. Se faltar mensalidade, dia de pagamento ou forma, a UI e a action bloqueiam a conversao antes de criar qualquer dado. Se faltarem dias ou horario de agenda, Admin/Teacher podem confirmar que vao preencher depois; nesse caso a transaction cria `AgendaStudent` linkado sem ocorrencias em `AgendaLesson` e registra essa pendencia no log.
+19. A action protegida valida email/login e senha no servidor, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, hash a senha com `bcryptjs` e converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson` quando a agenda estiver completa, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
+20. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
+21. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
 
 ### Admin
 

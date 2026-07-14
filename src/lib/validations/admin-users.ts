@@ -438,6 +438,7 @@ export const adminAgendaScheduleCreateSchema = z.object({
   notes: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
   phone: optionalText(40, "O telefone pode ter no maximo 40 caracteres."),
   time: agendaTimeSchema,
+  unit: financialUnitSchema,
   weekdays: z
     .array(agendaWeekdaySchema)
     .min(1, "Selecione pelo menos um dia da semana.")

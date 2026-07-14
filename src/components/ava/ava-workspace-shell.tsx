@@ -41,6 +41,10 @@ import { AvaResponsiveSidebar } from "@/components/ava/ava-responsive-sidebar";
 import { UserAvatar } from "@/components/ava/user-avatar";
 import { getAvaNavAlertSignatures } from "@/lib/ava-nav-alerts";
 import { getPrisma } from "@/lib/prisma";
+import {
+  type SecretariaUnitFilter,
+  withSecretariaUnitParam,
+} from "@/lib/secretaria-unit-filter";
 
 const navGroups = [
   {
@@ -311,9 +315,11 @@ function isVisibleInWorkspaceArea(
 export async function AvaWorkspaceShell({
   area,
   children,
+  unitFilter,
 }: Readonly<{
   area: AvaWorkspaceArea;
   children: React.ReactNode;
+  unitFilter?: SecretariaUnitFilter;
 }>) {
   const session = await auth();
   const role = isRole(session?.user?.role) ? session.user.role : null;
@@ -322,6 +328,8 @@ export async function AvaWorkspaceShell({
     ? navGroups.filter((group) => isVisibleInWorkspaceArea(group, role, area))
     : [];
   const areaLabel = getWorkspaceAreaLabel(area);
+  const getWorkspaceHref = (href: string) =>
+    area === "SECRETARIA" ? withSecretariaUnitParam(href, unitFilter) : href;
 
   if (!role || !userId) {
     return <div className="min-h-screen overflow-x-hidden">{children}</div>;
@@ -422,7 +430,10 @@ export async function AvaWorkspaceShell({
                       AVA
                     </AvaNavAlertLink>
                     <AvaNavAlertLink
-                      href="/ava/secretaria"
+                      href={withSecretariaUnitParam(
+                        "/ava/secretaria",
+                        unitFilter,
+                      )}
                       className="relative flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-primary/10 bg-[#fff7fb] px-2.5 py-2 text-sm font-bold text-primary shadow-sm transition-all hover:border-primary/25 hover:bg-white"
                       activeClassName={navItemActiveClassName}
                     >
@@ -480,7 +491,7 @@ export async function AvaWorkspaceShell({
                         </div>
                         <div className="relative z-10 flex flex-col gap-2">
                           <AvaNavAlertLink
-                            href={group.href}
+                            href={getWorkspaceHref(group.href)}
                             signature={navAlertSignatures[group.href]}
                             className={navPanelLinkClassName}
                             activeClassName={navPanelActiveClassName}
@@ -491,7 +502,7 @@ export async function AvaWorkspaceShell({
                           {group.links.map((link) => (
                             <AvaNavAlertLink
                               key={`${group.href}-${link.href}-${link.label}`}
-                              href={link.href}
+                              href={getWorkspaceHref(link.href)}
                               signature={navAlertSignatures[link.href]}
                               className={navItemLinkClassName}
                               activeClassName={navItemActiveClassName}
@@ -559,7 +570,7 @@ export async function AvaWorkspaceShell({
 
                       <div className="mt-2 flex flex-col gap-1.5 border-l border-primary/18 pl-3">
                         <AvaNavAlertLink
-                          href={group.href}
+                          href={getWorkspaceHref(group.href)}
                           signature={navAlertSignatures[group.href]}
                           className={navPanelLinkClassName}
                           activeClassName={
@@ -599,7 +610,7 @@ export async function AvaWorkspaceShell({
                                 </span>
                               ) : null}
                               <AvaNavAlertLink
-                                href={link.href}
+                                href={getWorkspaceHref(link.href)}
                                 signature={navAlertSignatures[link.href]}
                                 className={navItemLinkClassName}
                                 activeClassName={navItemActiveClassName}

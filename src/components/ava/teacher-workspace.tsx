@@ -61,6 +61,7 @@ import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
+import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 
 export const teacherTaskIds = [
   "resumo",
@@ -248,6 +249,7 @@ type TeacherWorkspaceProps = {
   liveSessions: LiveSessionRow[];
   preRegistrationStatus: PreRegistrationStatus;
   preRegistrationStatusCounts: Record<PreRegistrationStatus, number>;
+  secretariaUnitFilter?: SecretariaUnitFilter;
   students: Option[];
   studentPreRegistrations: StudentPreRegistrationReviewRow[];
   submissions: TeacherSubmission[];
@@ -365,6 +367,7 @@ export function TeacherWorkspace({
   liveSessions,
   preRegistrationStatus,
   preRegistrationStatusCounts,
+  secretariaUnitFilter = "all",
   students,
   studentPreRegistrations,
   submissions,
@@ -711,6 +714,7 @@ export function TeacherWorkspace({
               basePath="/ava/teacher"
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
+              unitFilter={secretariaUnitFilter}
               teacherOptions={teachers}
               viewerRole="TEACHER"
             />

@@ -27,6 +27,10 @@ import {
   PRE_REGISTRATION_STATUSES,
   studentPreRegistrationStatusSchema,
 } from "@/lib/validations/pre-registration";
+import {
+  getSecretariaSelectedUnit,
+  normalizeSecretariaUnitFilter,
+} from "@/lib/secretaria-unit-filter";
 
 export const metadata: Metadata = {
   title: "Teacher AVA",
@@ -39,6 +43,7 @@ type TeacherPageProps = {
   searchParams?: Promise<{
     preStatus?: string | string[];
     task?: string | string[];
+    unit?: string | string[];
   }>;
 };
 
@@ -58,6 +63,9 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   const workspaceArea = secretariaTeacherTasks.has(activeTask)
     ? "SECRETARIA"
     : "AVA";
+  const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
+  const selectedUnit = getSecretariaSelectedUnit(unitFilter);
+  const preRegistrationUnitWhere = selectedUnit ? { unit: selectedUnit } : {};
   const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
     ? params?.preStatus[0]
     : params?.preStatus;
@@ -109,6 +117,12 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           ],
         }
       : {};
+  const preRegistrationWhere =
+    session.user.role === "TEACHER"
+      ? {
+          AND: [preRegistrationOwnershipWhere, preRegistrationUnitWhere],
+        }
+      : preRegistrationUnitWhere;
   const submissionWhere =
     session.user.role === "TEACHER"
       ? {
@@ -610,7 +624,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       actorUserId: session.user.id,
     }),
     prisma.studentPreRegistration.findMany({
-      where: preRegistrationOwnershipWhere,
+      where: preRegistrationWhere,
       orderBy: {
         createdAt: "desc",
       },
@@ -679,7 +693,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       preRegistrationStatuses.map((status) =>
         prisma.studentPreRegistration.count({
           where: {
-            AND: [{ status }, preRegistrationOwnershipWhere],
+            AND: [{ status }, preRegistrationWhere],
           },
         }),
       ),
@@ -758,7 +772,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   });
 
   return (
-    <AvaWorkspaceShell area={workspaceArea}>
+    <AvaWorkspaceShell area={workspaceArea} unitFilter={unitFilter}>
       <TeacherWorkspace
       activeTask={activeTask}
       candyXpPersistence={candyXpPersistence}
@@ -847,6 +861,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           studentPreRegistrationStatusCounts[index] ?? 0,
         ]),
       ) as Record<(typeof preRegistrationStatuses)[number], number>}
+      secretariaUnitFilter={unitFilter}
       studentPreRegistrations={studentPreRegistrations.map((request) => ({
         address: request.address,
         assignedTeacherEmail:

@@ -39,6 +39,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type SecretariaUnitFilter,
+  withSecretariaUnitParam,
+} from "@/lib/secretaria-unit-filter";
 import type { SecretariaPreRegistrationInput } from "@/lib/validations/pre-registration";
 import { cn } from "@/lib/utils";
 
@@ -108,6 +112,7 @@ type StudentPreRegistrationReviewPanelProps = {
   requests: StudentPreRegistrationReviewRow[];
   statusCounts: Record<PreRegistrationStatus, number>;
   teacherOptions: PreRegistrationTeacherOption[];
+  unitFilter?: SecretariaUnitFilter;
   viewerRole: "ADMIN" | "TEACHER";
 };
 
@@ -267,6 +272,13 @@ const defaultCreateState: CreateFormState = {
   tuitionAmount: "",
   unit: "IVATE",
 };
+
+function createDefaultCreateState(unit: FinancialUnit = "IVATE"): CreateFormState {
+  return {
+    ...defaultCreateState,
+    unit,
+  };
+}
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -1711,14 +1723,18 @@ function AcceptForm({
 }
 
 function CreatePreRegistrationForm({
+  initialUnit,
   teacherOptions,
   viewerRole,
 }: {
+  initialUnit: FinancialUnit;
   teacherOptions: PreRegistrationTeacherOption[];
   viewerRole: "ADMIN" | "TEACHER";
 }) {
   const router = useRouter();
-  const [form, setForm] = useState<CreateFormState>(defaultCreateState);
+  const [form, setForm] = useState<CreateFormState>(() =>
+    createDefaultCreateState(initialUnit),
+  );
   const [errors, setErrors] = useState<
     Partial<Record<keyof SecretariaPreRegistrationInput, string>>
   >({});
@@ -1775,7 +1791,7 @@ function CreatePreRegistrationForm({
         return;
       }
 
-      setForm(defaultCreateState);
+      setForm(createDefaultCreateState(initialUnit));
       setMessage(result.message);
       router.refresh();
     });
@@ -2234,6 +2250,7 @@ export function StudentPreRegistrationReviewPanel({
   requests,
   statusCounts,
   teacherOptions,
+  unitFilter = "all",
   viewerRole,
 }: StudentPreRegistrationReviewPanelProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -2283,6 +2300,12 @@ export function StudentPreRegistrationReviewPanel({
     { icon: MessageSquareText, label: "Acompanhar conversa" },
     { icon: UserCheck, label: "Tornar aluno" },
   ];
+  const getStatusHref = (status: PreRegistrationStatus) =>
+    withSecretariaUnitParam(
+      `${basePath}?task=aceitar-alunos&preStatus=${status}`,
+      unitFilter,
+    );
+  const initialCreateUnit = unitFilter === "all" ? "IVATE" : unitFilter;
 
   return (
     <div className="flex flex-col gap-5">
@@ -2400,7 +2423,7 @@ export function StudentPreRegistrationReviewPanel({
                 )}
               >
                 <Link
-                  href={`${basePath}?task=aceitar-alunos&preStatus=${status}`}
+                  href={getStatusHref(status)}
                 >
                   <span className="inline-flex min-w-0 items-center gap-2">
                     <Icon aria-hidden="true" className="size-4 shrink-0" />
@@ -2422,6 +2445,7 @@ export function StudentPreRegistrationReviewPanel({
       </section>
 
       <CreatePreRegistrationForm
+        initialUnit={initialCreateUnit}
         teacherOptions={teacherOptions}
         viewerRole={viewerRole}
       />
@@ -2454,7 +2478,7 @@ export function StudentPreRegistrationReviewPanel({
           </div>
           {activeStatus !== "PENDING" && statusCounts.PENDING > 0 ? (
             <Button asChild variant="outline" size="sm">
-              <Link href={`${basePath}?task=aceitar-alunos&preStatus=PENDING`}>
+              <Link href={getStatusHref("PENDING")}>
                 Ver novos
                 <ArrowRight data-icon="inline-end" />
               </Link>

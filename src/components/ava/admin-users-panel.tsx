@@ -77,6 +77,7 @@ import type { CandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import type { Role } from "@/lib/roles";
+import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 import { cn } from "@/lib/utils";
 
 export const adminTaskIds = [
@@ -209,6 +210,7 @@ type AdminUsersPanelProps = {
   maintenanceMode: boolean;
   preRegistrationStatus: PreRegistrationStatus;
   preRegistrationStatusCounts: Record<PreRegistrationStatus, number>;
+  secretariaUnitFilter?: SecretariaUnitFilter;
   students: CandyXpStudentOption[];
   storageUsageBytes: number;
   studentPreRegistrations: StudentPreRegistrationReviewRow[];
@@ -1411,6 +1413,7 @@ export function AdminUsersPanel({
   maintenanceMode,
   preRegistrationStatus,
   preRegistrationStatusCounts,
+  secretariaUnitFilter = "all",
   students,
   storageUsageBytes,
   studentPreRegistrations,
@@ -1619,6 +1622,7 @@ export function AdminUsersPanel({
               basePath="/ava/admin"
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
+              unitFilter={secretariaUnitFilter}
               teacherOptions={teachers}
               viewerRole="ADMIN"
             />
@@ -1651,6 +1655,7 @@ export function AdminUsersPanel({
           {activeTask === "financeiro" ? (
             <AdminFinancePanel
               expenses={financeExpenses}
+              initialUnitFilter={secretariaUnitFilter}
               logs={financeLogs}
               students={financeStudents}
               initialMonth={initialFinanceMonth}
@@ -1660,6 +1665,7 @@ export function AdminUsersPanel({
           {activeTask === "agenda" ? (
             <AdminAgendaPanel
               initialMonth={initialAgendaMonth}
+              initialUnitFilter={secretariaUnitFilter}
               lessons={agendaLessons}
               logs={agendaLogs}
               students={agendaStudents}

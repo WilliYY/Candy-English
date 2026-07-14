@@ -1685,6 +1685,7 @@ export async function createAgendaSchedule(
           equals: parsed.data.name,
           mode: "insensitive",
         },
+        unit: parsed.data.unit,
       },
     },
     select: {
@@ -1707,6 +1708,7 @@ export async function createAgendaSchedule(
         name: parsed.data.name,
         notes: parsed.data.notes ?? null,
         phone: parsed.data.phone ?? null,
+        unit: parsed.data.unit,
         weekdayMask: buildAgendaWeekdayMask(parsed.data.weekdays),
       },
     });
@@ -1811,6 +1813,7 @@ export async function updateAgendaStudentSchedule(
             equals: parsed.data.name,
             mode: "insensitive",
           },
+          unit: parsed.data.unit,
         },
       },
       select: {
@@ -1835,6 +1838,7 @@ export async function updateAgendaStudentSchedule(
         name: parsed.data.name,
         notes: parsed.data.notes ?? null,
         phone: parsed.data.phone ?? null,
+        unit: parsed.data.unit,
         weekdayMask: parsed.data.isActive
           ? buildAgendaWeekdayMask(parsed.data.weekdays)
           : 0,

@@ -27,6 +27,10 @@ import {
   PRE_REGISTRATION_STATUSES,
   studentPreRegistrationStatusSchema,
 } from "@/lib/validations/pre-registration";
+import {
+  getSecretariaSelectedUnit,
+  normalizeSecretariaUnitFilter,
+} from "@/lib/secretaria-unit-filter";
 
 export const metadata: Metadata = {
   title: "Admin AVA",
@@ -39,6 +43,7 @@ type AdminPageProps = {
   searchParams?: Promise<{
     preStatus?: string | string[];
     task?: string | string[];
+    unit?: string | string[];
   }>;
 };
 
@@ -63,6 +68,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const workspaceArea = secretariaAdminTasks.has(activeTask)
     ? "SECRETARIA"
     : "AVA";
+  const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
+  const selectedUnit = getSecretariaSelectedUnit(unitFilter);
+  const studentPreRegistrationWhere = selectedUnit
+    ? { unit: selectedUnit }
+    : {};
+  const financeStudentWhere = selectedUnit ? { unit: selectedUnit } : {};
+  const financePaymentWhere = selectedUnit
+    ? { snapshotUnit: selectedUnit, year: 2026 }
+    : { year: 2026 };
+  const financeExpenseWhere = selectedUnit
+    ? { unit: selectedUnit, year: 2026 }
+    : { year: 2026 };
+  const agendaStudentWhere = selectedUnit ? { unit: selectedUnit } : {};
+  const agendaLessonWhere = selectedUnit
+    ? { student: { unit: selectedUnit }, year: 2026 }
+    : { year: 2026 };
   const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
     ? params?.preStatus[0]
     : params?.preStatus;
@@ -249,6 +270,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
     }),
     prisma.financialStudent.findMany({
+      where: financeStudentWhere,
       orderBy: [
         {
           paymentDay: "asc",
@@ -270,9 +292,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         phone: true,
         unit: true,
         payments: {
-          where: {
-            year: 2026,
-          },
+          where: financePaymentWhere,
           select: {
             id: true,
             isActive: true,
@@ -335,11 +355,10 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         unit: true,
         year: true,
       },
-      where: {
-        year: 2026,
-      },
+      where: financeExpenseWhere,
     }),
     prisma.agendaStudent.findMany({
+      where: agendaStudentWhere,
       orderBy: {
         name: "asc",
       },
@@ -363,9 +382,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           time: "asc",
         },
       ],
-      where: {
-        year: 2026,
-      },
+      where: agendaLessonWhere,
       select: {
         date: true,
         id: true,
@@ -602,6 +619,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
     }),
     prisma.studentPreRegistration.findMany({
+      where: studentPreRegistrationWhere,
       orderBy: {
         createdAt: "desc",
       },
@@ -668,7 +686,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     }),
     Promise.all(
       preRegistrationStatuses.map((status) =>
-        prisma.studentPreRegistration.count({ where: { status } }),
+        prisma.studentPreRegistration.count({
+          where: {
+            ...studentPreRegistrationWhere,
+            status,
+          },
+        }),
       ),
     ),
   ]);
@@ -788,7 +811,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   });
 
   return (
-    <AvaWorkspaceShell area={workspaceArea}>
+    <AvaWorkspaceShell area={workspaceArea} unitFilter={unitFilter}>
       <AdminUsersPanel
       activeTask={activeTask}
       adminCredentials={adminCredentials.map((credential) => ({
@@ -1015,6 +1038,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           studentPreRegistrationStatusCounts[index] ?? 0,
         ]),
       ) as Record<(typeof preRegistrationStatuses)[number], number>}
+      secretariaUnitFilter={unitFilter}
       students={students.map((student) => ({
         email: student.user.email,
         id: student.id,

@@ -43,7 +43,8 @@ Rota:
 - Agenda e separada dos alunos do AVA; cadastro manual da agenda nao cria login, usuario ou perfil de aluno.
 - A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje quando o navegador esta em 2026.
 - O admin ve calendario mensal, botao `Hoje`, navegacao de mes, dia atual destacado, dia selecionado destacado e contagem visual de aulas por dia.
-- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando a conversao foi confirmada sem dias/horario.
+- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, unidade, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando a conversao foi confirmada sem dias/horario.
+- Quando a Secretaria abre a agenda com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega somente `AgendaStudent` daquela unidade e ocorrencias de `AgendaLesson` ligadas a alunos daquele polo. Sem `unit`, ou com `unit=all`, mostra todos os polos.
 - O sistema cria ocorrencias do mes escolhido ate dezembro de 2026.
 - `AgendaStudent.isActive`, `AgendaStudent.defaultTime` e `AgendaStudent.weekdayMask` guardam o estado atual da rotina para edicao rapida; `AgendaLesson` continua guardando as ocorrencias reais e o historico.
 - A action de cadastro recusa duplicidade quando o mesmo nome ja tem agenda ativa no mesmo dia/horario.
@@ -70,6 +71,7 @@ Rota:
 - A rotina atual tambem fica resumida em `AgendaStudent` por `isActive`, `defaultTime` e `weekdayMask` para permitir edicao e reativacao sem depender apenas da derivacao das ocorrencias.
 - As datas de agenda usam ano 2026 e horario separado em string `HH:mm`.
 - `AgendaStudent.unit` usa as unidades fixas `IVATE` e `DOURADINA`; registros antigos recebem `IVATE` por padrao.
+- O filtro geral da Secretaria preserva o parametro `unit` ao abrir `Agenda`; o formulario de cadastro rapido e a edicao de rotina tambem salvam a unidade explicitamente.
 - Reposicoes sao ocorrencias independentes, ligadas opcionalmente a aula original por `makeupForLessonId`.
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.

@@ -33,6 +33,7 @@ import {
 import {
   adminAgendaScheduleCreateSchema,
   adminAgendaStudentUpdateSchema,
+  FINANCIAL_UNITS,
   type AdminAgendaAttendanceInput,
   type AdminAgendaScheduleCreateInput,
   type AdminAgendaStudentUpdateInput,
@@ -45,8 +46,10 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 
 export type AdminAgendaLessonStatus =
   | "ATTENDED"
@@ -96,6 +99,7 @@ export type AdminAgendaLogRow = {
 
 type AdminAgendaPanelProps = {
   initialMonth: number;
+  initialUnitFilter?: SecretariaUnitFilter;
   lessons: AdminAgendaLessonRow[];
   logs: AdminAgendaLogRow[];
   students: AdminAgendaStudentRow[];
@@ -283,6 +287,7 @@ function decodeWeekdayMask(mask: number) {
 function createDefaultValues(
   month: number,
   weekdaysValue: number[] = [],
+  unit: FinancialUnit = "IVATE",
 ): AdminAgendaScheduleCreateInput {
   return {
     month,
@@ -290,9 +295,16 @@ function createDefaultValues(
     notes: "",
     phone: "",
     time: "08:00",
+    unit,
     weekdays: weekdaysValue,
     year: AGENDA_YEAR,
   };
+}
+
+function getDefaultUnitForFilter(
+  filter: SecretariaUnitFilter | undefined,
+): FinancialUnit {
+  return filter === "DOURADINA" || filter === "IVATE" ? filter : "IVATE";
 }
 
 function getStatusMeta(status: AdminAgendaLessonStatus) {
@@ -386,6 +398,7 @@ function buildEditValues(
     phone: student.phone ?? "",
     studentId: student.id,
     time: schedule.time,
+    unit: student.unit,
     weekdays: schedule.weekdays.length > 0 ? schedule.weekdays : [fallbackWeekday],
     year: AGENDA_YEAR,
   };
@@ -474,11 +487,13 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
 
 export function AdminAgendaPanel({
   initialMonth,
+  initialUnitFilter,
   lessons,
   logs,
   students,
 }: AdminAgendaPanelProps) {
   const router = useRouter();
+  const initialFormUnit = getDefaultUnitForFilter(initialUnitFilter);
   const today = useMemo(() => new Date(), []);
   const todayIsAgendaYear = today.getFullYear() === AGENDA_YEAR;
   const todayMonth = todayIsAgendaYear
@@ -503,7 +518,11 @@ export function AdminAgendaPanel({
   const activeMonthLabel = getMonthLabel(activeMonth);
 
   const form = useForm<AdminAgendaScheduleCreateInput>({
-    defaultValues: createDefaultValues(activeMonth, [selectedWeekday]),
+    defaultValues: createDefaultValues(
+      activeMonth,
+      [selectedWeekday],
+      initialFormUnit,
+    ),
     resolver: zodResolver(adminAgendaScheduleCreateSchema),
   });
   const editForm = useForm<AdminAgendaStudentUpdateInput>({
@@ -518,6 +537,7 @@ export function AdminAgendaPanel({
             phone: "",
             studentId: "",
             time: "08:00",
+            unit: initialFormUnit,
             weekdays: [selectedWeekday],
             year: AGENDA_YEAR,
           },
@@ -731,7 +751,7 @@ export function AdminAgendaPanel({
         return;
       }
 
-      form.reset(createDefaultValues(activeMonth, [selectedWeekday]));
+      form.reset(createDefaultValues(activeMonth, [selectedWeekday], values.unit));
       setMessage(result.message);
       router.refresh();
     });
@@ -1254,7 +1274,7 @@ export function AdminAgendaPanel({
           </span>
         </div>
         <FieldGroup className="gap-3">
-          <div className="grid gap-3 lg:grid-cols-[minmax(190px,1fr)_minmax(130px,0.6fr)_minmax(110px,0.42fr)_auto]">
+          <div className="grid gap-3 lg:grid-cols-[minmax(190px,1fr)_minmax(130px,0.6fr)_minmax(150px,0.56fr)_minmax(110px,0.42fr)_auto]">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="agenda-name">Nome do aluno</FieldLabel>
               <Input
@@ -1274,6 +1294,21 @@ export function AdminAgendaPanel({
                 {...form.register("phone")}
               />
               <FieldError errors={[form.formState.errors.phone]} />
+            </Field>
+            <Field data-invalid={Boolean(form.formState.errors.unit)}>
+              <FieldLabel htmlFor="agenda-unit">Unidade</FieldLabel>
+              <NativeSelect
+                id="agenda-unit"
+                disabled={isPending}
+                {...form.register("unit")}
+              >
+                {FINANCIAL_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unitLabels[unit]}
+                  </option>
+                ))}
+              </NativeSelect>
+              <FieldError errors={[form.formState.errors.unit]} />
             </Field>
             <Field data-invalid={Boolean(form.formState.errors.time)}>
               <FieldLabel htmlFor="agenda-time">Horario</FieldLabel>
@@ -1406,7 +1441,7 @@ export function AdminAgendaPanel({
                   />
                   <FieldError errors={[editForm.formState.errors.name]} />
                 </Field>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <Field
                     data-invalid={Boolean(editForm.formState.errors.phone)}
                   >
@@ -1418,6 +1453,21 @@ export function AdminAgendaPanel({
                       {...editForm.register("phone")}
                     />
                     <FieldError errors={[editForm.formState.errors.phone]} />
+                  </Field>
+                  <Field data-invalid={Boolean(editForm.formState.errors.unit)}>
+                    <FieldLabel htmlFor="agenda-edit-unit">Unidade</FieldLabel>
+                    <NativeSelect
+                      id="agenda-edit-unit"
+                      disabled={isEditPending}
+                      {...editForm.register("unit")}
+                    >
+                      {FINANCIAL_UNITS.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unitLabels[unit]}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                    <FieldError errors={[editForm.formState.errors.unit]} />
                   </Field>
                   <Field data-invalid={Boolean(editForm.formState.errors.time)}>
                     <FieldLabel htmlFor="agenda-edit-time">Horario</FieldLabel>

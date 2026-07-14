@@ -6,6 +6,7 @@ import {
   FileText,
   KeyRound,
   LockKeyhole,
+  MapPin,
   Settings,
   UserCheck,
   UserPlus,
@@ -21,6 +22,12 @@ import {
   type SecretariaAccessScope,
   type SecretariaFeature,
 } from "@/lib/roles";
+import {
+  SECRETARIA_UNIT_FILTER_OPTIONS,
+  SECRETARIA_UNIT_LABELS,
+  normalizeSecretariaUnitFilter,
+  withSecretariaUnitParam,
+} from "@/lib/secretaria-unit-filter";
 
 export const metadata: Metadata = {
   title: "Secretaria",
@@ -99,15 +106,28 @@ const scopeLabels: Record<SecretariaAccessScope, string> = {
   OWN_OR_ASSIGNED: "proprio/atribuido",
 };
 
+type SecretariaPageProps = {
+  searchParams?: Promise<{
+    unit?: string | string[];
+  }>;
+};
+
 function getCardHref(card: SecretariaCard, role: Role) {
   return role === "TEACHER" ? card.teacherHref ?? card.adminHref : card.adminHref;
 }
 
-export default async function SecretariaPage() {
+function getSecretariaFilterHref(value: string) {
+  return value === "all" ? "/ava/secretaria" : `/ava/secretaria?unit=${value}`;
+}
+
+export default async function SecretariaPage({ searchParams }: SecretariaPageProps) {
   const session = await requireAvaRole(
     ["ADMIN", "TEACHER"],
     "/ava/secretaria",
   );
+  const params = searchParams ? await searchParams : undefined;
+  const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
+  const unitLabel = SECRETARIA_UNIT_LABELS[unitFilter];
   const permission = SECRETARIA_PERMISSION_MATRIX[session.user.role];
   const cards = secretariaCards.filter((card) =>
     canAccessSecretariaFeature(session.user.role, card.feature),
@@ -128,7 +148,7 @@ export default async function SecretariaPage() {
         ];
 
   return (
-    <AvaWorkspaceShell area="SECRETARIA">
+    <AvaWorkspaceShell area="SECRETARIA" unitFilter={unitFilter}>
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="overflow-hidden rounded-2xl border border-primary/15 bg-white shadow-[0_20px_60px_rgba(65,42,76,0.1)]">
         <div className="bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/80 p-5 sm:p-7">
@@ -150,6 +170,49 @@ export default async function SecretariaPage() {
             <span className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
               <LockKeyhole aria-hidden="true" className="size-7" />
             </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-primary/12 bg-white/90 shadow-sm">
+        <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <MapPin aria-hidden="true" className="size-5" />
+            </span>
+            <span className="min-w-0">
+              <span className="text-xs font-bold uppercase tracking-[0.16em] text-primary/55">
+                Filtro de polo
+              </span>
+              <strong className="mt-1 block text-lg text-primary">
+                Filtro atual: {unitLabel}
+              </strong>
+              <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                Use este filtro para abrir pre-cadastros, financeiro e agenda
+                ja no escopo do polo selecionado.
+              </span>
+            </span>
+          </div>
+          <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-wrap lg:justify-end lg:overflow-visible lg:px-0 lg:pb-0">
+            {SECRETARIA_UNIT_FILTER_OPTIONS.map((option) => {
+              const isActive = option.value === unitFilter;
+
+              return (
+                <Link
+                  key={option.value}
+                  href={getSecretariaFilterHref(option.value)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={
+                    isActive
+                      ? "inline-flex min-h-10 shrink-0 items-center rounded-full border border-primary bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-md shadow-primary/20"
+                      : "inline-flex min-h-10 shrink-0 items-center rounded-full border border-primary/15 bg-[#fbf7ff] px-4 py-2 text-sm font-bold text-primary/75 transition hover:border-primary/30 hover:bg-white"
+                  }
+                  title={option.description}
+                >
+                  {option.label}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -179,7 +242,10 @@ export default async function SecretariaPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {cards.map((card) => {
-          const href = getCardHref(card, session.user.role);
+          const href = withSecretariaUnitParam(
+            getCardHref(card, session.user.role),
+            unitFilter,
+          );
 
           return (
             <Link
