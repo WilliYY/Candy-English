@@ -73,7 +73,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   const studentPreRegistrationWhere = selectedUnit
     ? { unit: selectedUnit }
     : {};
-  const financeStudentWhere = selectedUnit ? { unit: selectedUnit } : {};
+  const financeStudentWhere = selectedUnit
+    ? {
+        payments: {
+          some: {
+            isActive: true,
+            snapshotUnit: selectedUnit,
+            year: 2026,
+          },
+        },
+      }
+    : {};
   const financePaymentWhere = selectedUnit
     ? { snapshotUnit: selectedUnit, year: 2026 }
     : { year: 2026 };

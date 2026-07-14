@@ -62,7 +62,8 @@ Rota:
 - Valor, data paga e observacao podem ser ajustados por mes no historico do aluno, sem alterar automaticamente os outros meses.
 - `FinancialExpense` guarda gastos internos por ano/mes/unidade, com insumo, data da compra, valor, pessoa responsavel e observacao opcional.
 - A data do gasto precisa pertencer ao mes selecionado, para o relatorio mensal nao misturar compras de outro mes.
-- Quando a Secretaria abre o financeiro com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega somente alunos financeiros daquela unidade atual, pagamentos mensais daquele `snapshotUnit` e gastos internos daquela unidade. Sem `unit`, ou com `unit=all`, o painel mostra todos os polos.
+- Quando a Secretaria abre o financeiro com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega alunos que possuem pagamentos ativos em 2026 com aquele `FinancialPayment.snapshotUnit`, e nao apenas pela unidade atual do cadastro. Isso preserva meses antigos se o aluno trocar de unidade depois.
+- O filtro `unit=IVATE` ou `unit=DOURADINA` tambem limita os pagamentos mensais pelo `snapshotUnit` e os gastos internos por `FinancialExpense.unit`. Sem `unit`, ou com `unit=all`, o painel mostra todos os polos.
 
 ## Decisoes tecnicas tomadas
 
@@ -76,9 +77,9 @@ Rota:
 - A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido, meses escaneaveis, cards de aluno com valor em destaque, vencimento/status discretos, metadados compactos de forma/parcela e historico preenchido automaticamente pelo primeiro resultado visivel.
 - O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
 - A area `Pagamentos` e controle interno separado: nao mostra totais de alunos, recebidos, pendentes, atrasados nem saldo baseado em mensalidades.
-- A area `Pagamentos` usa resumo mensal proprio, totais por unidade, filtros de unidade/mes separados, formulario compacto com observacao recolhida e lista em tabela no desktop para facilitar leitura de insumo, data, responsavel, unidade e valor.
+- A area `Pagamentos` usa resumo mensal proprio, totais por Polo 1/Polo 2, filtro de polo sincronizado com a aba de alunos, formulario compacto com observacao recolhida e lista em tabela no desktop para facilitar leitura de insumo, data, responsavel, polo e valor.
 - As unidades fixas do financeiro sao `IVATE` (`Unidade 1 Ivaté`) e `DOURADINA` (`Unidade 2 Douradina`); registros antigos entram por padrao como `IVATE`.
-- A UI mostra filtro/chip de unidade nos alunos, historico mensal, exportacao PDF/Excel e pagamentos internos da loja.
+- A UI mostra chips de polo no topo do financeiro, perto do filtro de mes. Os cards/listas exibem badge `Polo 1 - Ivaté` ou `Polo 2 - Douradina`; em `Todos`, os gastos exibem totais separados por polo e total geral.
 - A Secretaria possui um filtro geral de polo antes dos cards principais; os links para `Financeiro` preservam o parametro `unit` e inicializam os filtros internos da tela com o polo selecionado.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.

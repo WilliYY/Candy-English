@@ -193,14 +193,14 @@ const paymentMethodLabels: Record<PaymentMethod, string> = {
   PIX: "Pix",
 };
 
-const financialUnitLabels: Record<FinancialUnit, string> = {
-  DOURADINA: "Unidade 2 Douradina",
-  IVATE: "Unidade 1 Ivaté",
-};
-
 const financialUnitShortLabels: Record<FinancialUnit, string> = {
   DOURADINA: "Douradina",
   IVATE: "Ivaté",
+};
+
+const financialUnitPoloLabels: Record<FinancialUnit, string> = {
+  DOURADINA: "Polo 2",
+  IVATE: "Polo 1",
 };
 
 const financialUnitToneClasses: Record<
@@ -344,16 +344,99 @@ function formatPaymentMethod(value: string) {
   return paymentMethodLabels[normalizePaymentMethod(value)];
 }
 
-function formatFinancialUnit(unit: FinancialUnit) {
-  return financialUnitLabels[unit];
-}
-
 function formatFinancialUnitShort(unit: FinancialUnit) {
   return financialUnitShortLabels[unit];
 }
 
+function formatFinancialUnitPolo(unit: FinancialUnit) {
+  return financialUnitPoloLabels[unit];
+}
+
+function formatFinancialUnitWithPolo(unit: FinancialUnit) {
+  return `${formatFinancialUnitPolo(unit)} - ${formatFinancialUnitShort(unit)}`;
+}
+
+function formatUnitFilterDisplay(filter: UnitFilter) {
+  return filter === "ALL"
+    ? "Todos os polos"
+    : formatFinancialUnitWithPolo(filter);
+}
+
 function getFinancialUnitTone(unit: FinancialUnit) {
   return financialUnitToneClasses[unit];
+}
+
+const unitFilterOptions: ReadonlyArray<{
+  description: string;
+  label: string;
+  value: UnitFilter;
+}> = [
+  {
+    description: `${financialUnitShortLabels.IVATE} e ${financialUnitShortLabels.DOURADINA}`,
+    label: "Todos",
+    value: "ALL",
+  },
+  {
+    description: financialUnitShortLabels.IVATE,
+    label: "Polo 1",
+    value: "IVATE",
+  },
+  {
+    description: financialUnitShortLabels.DOURADINA,
+    label: "Polo 2",
+    value: "DOURADINA",
+  },
+];
+
+function UnitFilterChips({
+  compact = false,
+  onChange,
+  value,
+}: {
+  compact?: boolean;
+  onChange: (nextValue: UnitFilter) => void;
+  value: UnitFilter;
+}) {
+  return (
+    <div
+      className={cn(
+        "-mx-1 flex gap-2 overflow-x-auto px-1 pb-1",
+        compact
+          ? "flex-wrap overflow-visible"
+          : "sm:flex-wrap sm:overflow-visible",
+      )}
+    >
+      {unitFilterOptions.map((option) => {
+        const isActive = value === option.value;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={isActive}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "min-w-fit rounded-lg border px-3 py-2 text-left text-sm font-bold transition-all",
+              compact ? "px-2.5 py-1.5 text-xs" : "",
+              isActive
+                ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
+                : "border-primary/15 bg-white text-primary shadow-sm hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
+            )}
+          >
+            <span className="block leading-4">{option.label}</span>
+            <span
+              className={cn(
+                "mt-0.5 block text-[0.68rem] font-semibold leading-3",
+                isActive ? "text-white/75" : "text-primary/58",
+              )}
+            >
+              {option.description}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function getDueDate(month: number, paymentDay: number) {
@@ -550,7 +633,7 @@ function buildExportRows(rows: FinanceMonthRow[]) {
     parcela: getInstallmentLabel(row.payment),
     status: getStatusLabel(row.status),
     telefone: row.phone ?? "",
-    unidade: formatFinancialUnit(row.unit),
+    unidade: formatFinancialUnitWithPolo(row.unit),
     valor: formatCurrency(row.amountCents),
   }));
 }
@@ -559,7 +642,7 @@ function buildFinanceTableHtml(rows: FinanceMonthRow[], title: string) {
   const exportRows = buildExportRows(rows);
   const headings = [
     "Nome",
-    "Unidade",
+    "Polo",
     "Valor",
     "Dia",
     "Status",
@@ -999,7 +1082,7 @@ function FinanceStudentEditForm({
           >
             {FINANCIAL_UNITS.map((unit) => (
               <option key={unit} value={unit}>
-                {financialUnitLabels[unit]}
+                {formatFinancialUnitWithPolo(unit)}
               </option>
             ))}
           </NativeSelect>
@@ -1379,8 +1462,10 @@ export function AdminFinancePanel({
   const latestExpense = visibleMonthExpenses[0] ?? null;
   const expenseScopeLabel =
     expenseUnitFilter === "ALL"
-      ? "todas as unidades"
-      : formatFinancialUnitShort(expenseUnitFilter);
+      ? "todos os polos"
+      : formatFinancialUnitWithPolo(expenseUnitFilter);
+  const expenseBreakdownUnits =
+    expenseUnitFilter === "ALL" ? FINANCIAL_UNITS : [expenseUnitFilter];
   const expenseUnitSummary = useMemo(() => {
     const summary = FINANCIAL_UNITS.reduce<
       Record<FinancialUnit, { count: number; total: number }>
@@ -1427,6 +1512,21 @@ export function AdminFinancePanel({
     filteredRows[0] ??
     null;
   const selectedRowId = selectedRow?.id ?? null;
+
+  function handleFinanceUnitFilterChange(nextUnit: UnitFilter) {
+    setUnitFilter(nextUnit);
+    setExpenseUnitFilter(nextUnit);
+    setSelectedStudentId(null);
+
+    form.setValue("unit", getDefaultUnitForFilter(nextUnit));
+    expenseForm.setValue("unit", getDefaultUnitForFilter(nextUnit));
+
+    const params = new URLSearchParams(window.location.search);
+    params.set("unit", nextUnit === "ALL" ? "all" : nextUnit);
+    router.replace(`${window.location.pathname}?${params.toString()}`, {
+      scroll: false,
+    });
+  }
 
   function handleMonthChange(month: number) {
     setActiveMonth(month);
@@ -1645,6 +1745,43 @@ export function AdminFinancePanel({
           })}
         </div>
 
+        <div className="border-b border-primary/10 bg-white/72 p-4">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px] xl:items-end">
+            <div className="min-w-0">
+              <span className="flex items-center gap-2 text-sm font-bold text-primary">
+                <MapPin aria-hidden="true" className="size-4" />
+                Filtro de polo
+              </span>
+              <UnitFilterChips
+                value={unitFilter}
+                onChange={handleFinanceUnitFilterChange}
+              />
+              <p className="mt-1 text-xs font-semibold text-primary/60">
+                Filtro atual: {formatUnitFilterDisplay(unitFilter)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+                <CalendarDays aria-hidden="true" className="size-4" />
+                Mes do financeiro
+              </span>
+              <NativeSelect
+                value={activeMonth}
+                onChange={(event) =>
+                  handleMonthChange(Number(event.target.value))
+                }
+                className="mt-2"
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          </div>
+        </div>
+
         {financeView === "STUDENTS" ? (
           <>
             <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_1fr_1fr_1.15fr]">
@@ -1698,22 +1835,17 @@ export function AdminFinancePanel({
               </div>
               <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
                 <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
-                  <CalendarDays aria-hidden="true" className="size-4" />
-                  Mes atual
+                  <MapPin aria-hidden="true" className="size-4" />
+                  Polo atual
                 </span>
-                <NativeSelect
-                  value={activeMonth}
-                  onChange={(event) =>
-                    handleMonthChange(Number(event.target.value))
-                  }
-                  className="mt-2"
-                >
-                  {months.map((month) => (
-                    <option key={month.value} value={month.value}>
-                      {month.label}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <strong className="mt-2 block truncate text-lg text-primary">
+                  {unitFilter === "ALL"
+                    ? "Todos"
+                    : formatFinancialUnitPolo(unitFilter)}
+                </strong>
+                <span className="mt-1 block truncate text-xs text-primary/60">
+                  {formatUnitFilterDisplay(unitFilter)}
+                </span>
                 <div className="mt-3">
                   <div className="flex items-center justify-between gap-2 text-xs font-semibold text-primary/70">
                     <span>Recebimento</span>
@@ -1751,10 +1883,10 @@ export function AdminFinancePanel({
               <span className="inline-flex min-w-0 items-center gap-2">
                 <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
                 <span className="truncate">
-                  Unidade:{" "}
+                  Polo:{" "}
                   {unitFilter === "ALL"
-                    ? "Todas"
-                    : formatFinancialUnitShort(unitFilter)}
+                    ? "Todos"
+                    : formatFinancialUnitWithPolo(unitFilter)}
                 </span>
               </span>
             </div>
@@ -1852,7 +1984,7 @@ export function AdminFinancePanel({
               >
                 {FINANCIAL_UNITS.map((unit) => (
                   <option key={unit} value={unit}>
-                    {formatFinancialUnitShort(unit)}
+                    {formatFinancialUnitWithPolo(unit)}
                   </option>
                 ))}
               </NativeSelect>
@@ -2043,7 +2175,7 @@ export function AdminFinancePanel({
               </span>
             </span>
           </span>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px_190px] xl:min-w-[43rem]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px] xl:min-w-[32rem]">
               <label className="relative min-w-0">
               <Search
                 aria-hidden="true"
@@ -2067,27 +2199,6 @@ export function AdminFinancePanel({
               <option value="paid">Pagos</option>
               <option value="pending">Pendentes</option>
               <option value="overdue">Atrasados</option>
-            </NativeSelect>
-            <NativeSelect
-              aria-label="Filtrar unidade"
-              value={unitFilter}
-              onChange={(event) => {
-                const nextUnit = event.target.value as UnitFilter;
-                setUnitFilter(nextUnit);
-                setSelectedStudentId(null);
-
-                if (nextUnit !== "ALL") {
-                  form.setValue("unit", nextUnit);
-                }
-              }}
-              className="h-10 border-white/40 bg-white text-primary"
-            >
-              <option value="ALL">Todas unidades</option>
-              {FINANCIAL_UNITS.map((unit) => (
-                <option key={unit} value={unit}>
-                  {formatFinancialUnitShort(unit)}
-                </option>
-              ))}
             </NativeSelect>
           </div>
         </div>
@@ -2163,7 +2274,7 @@ export function AdminFinancePanel({
                                   aria-hidden="true"
                                   className="size-3 shrink-0"
                                 />
-                                {formatFinancialUnitShort(row.unit)}
+                                {formatFinancialUnitWithPolo(row.unit)}
                               </span>
                             </span>
                           </span>
@@ -2453,7 +2564,7 @@ export function AdminFinancePanel({
                   >
                     <span className="flex min-w-0 items-center gap-2 text-xs font-bold uppercase text-current/70">
                       <span className={cn("size-2 rounded-full", tone.dot)} />
-                      {formatFinancialUnit(unit)}
+                      Total gasto {formatFinancialUnitWithPolo(unit)}
                     </span>
                     <span className="flex min-w-0 items-end justify-between gap-3">
                       <strong className="truncate text-lg leading-6 tabular-nums">
@@ -2473,7 +2584,9 @@ export function AdminFinancePanel({
             <div className="rounded-lg border border-primary bg-primary p-4 text-primary-foreground shadow-[0_16px_34px_rgba(65,42,76,0.18)]">
               <span className="flex items-center gap-2 text-sm font-bold text-white/82">
                 <ReceiptText aria-hidden="true" className="size-4" />
-                Gasto do mes
+                {expenseUnitFilter === "ALL"
+                  ? "Total geral"
+                  : `Total ${formatFinancialUnitPolo(expenseUnitFilter)}`}
               </span>
               <strong className="mt-3 block text-3xl font-extrabold leading-none tabular-nums tracking-normal">
                 {formatCurrency(expenseSummary.total)}
@@ -2482,7 +2595,7 @@ export function AdminFinancePanel({
                 {expenseSummary.count} compra(s) em {expenseScopeLabel}
               </span>
               <div className="mt-4 grid gap-2 text-xs font-bold sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                {FINANCIAL_UNITS.map((unit) => {
+                {expenseBreakdownUnits.map((unit) => {
                   const summary = expenseUnitSummary[unit];
 
                   return (
@@ -2491,7 +2604,7 @@ export function AdminFinancePanel({
                       className="min-w-0 rounded-lg bg-white/12 px-2.5 py-2 ring-1 ring-white/15"
                     >
                       <span className="block truncate text-white/70">
-                        {formatFinancialUnitShort(unit)}
+                        {formatFinancialUnitWithPolo(unit)}
                       </span>
                       <span className="mt-1 block truncate tabular-nums text-white">
                         {formatCurrency(summary.total)}
@@ -2530,27 +2643,15 @@ export function AdminFinancePanel({
               <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
                 <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
                   <MapPin aria-hidden="true" className="size-4" />
-                  Unidade
+                  Polo
                 </span>
-                <NativeSelect
-                  value={expenseUnitFilter}
-                  onChange={(event) => {
-                    const nextUnit = event.target.value as UnitFilter;
-                    setExpenseUnitFilter(nextUnit);
-
-                    if (nextUnit !== "ALL") {
-                      expenseForm.setValue("unit", nextUnit);
-                    }
-                  }}
-                  className="mt-2"
-                >
-                  <option value="ALL">Todas unidades</option>
-                  {FINANCIAL_UNITS.map((unit) => (
-                    <option key={unit} value={unit}>
-                      {formatFinancialUnitShort(unit)}
-                    </option>
-                  ))}
-                </NativeSelect>
+                <div className="mt-2">
+                  <UnitFilterChips
+                    compact
+                    value={expenseUnitFilter}
+                    onChange={handleFinanceUnitFilterChange}
+                  />
+                </div>
                 <span className="mt-2 block text-xs text-primary/60">
                   {expenseScopeLabel}
                 </span>
@@ -2668,7 +2769,7 @@ export function AdminFinancePanel({
                   >
                     {FINANCIAL_UNITS.map((unit) => (
                       <option key={unit} value={unit}>
-                        {formatFinancialUnitShort(unit)}
+                        {formatFinancialUnitWithPolo(unit)}
                       </option>
                     ))}
                   </NativeSelect>
@@ -2766,7 +2867,7 @@ export function AdminFinancePanel({
                 <p className="max-w-sm text-sm text-muted-foreground">
                   {expenseUnitFilter === "ALL"
                     ? "Use o formulario acima para salvar a primeira compra interna do mes."
-                    : `Ainda nao ha compra registrada em ${formatFinancialUnitShort(expenseUnitFilter)} neste mes.`}
+                    : `Ainda nao ha compra registrada em ${formatFinancialUnitWithPolo(expenseUnitFilter)} neste mes.`}
                 </p>
               </div>
             ) : (
@@ -2776,7 +2877,7 @@ export function AdminFinancePanel({
                     <thead className="bg-[#fbf7ff] text-xs font-bold uppercase text-primary/70">
                       <tr>
                         <th className="px-3 py-2">Insumo</th>
-                        <th className="px-3 py-2">Unidade</th>
+                        <th className="px-3 py-2">Polo</th>
                         <th className="px-3 py-2">Data</th>
                         <th className="px-3 py-2">Quem fez</th>
                         <th className="px-3 py-2 text-right">Valor</th>
@@ -2816,7 +2917,7 @@ export function AdminFinancePanel({
                                   aria-hidden="true"
                                   className={cn("size-2 rounded-full", tone.dot)}
                                 />
-                                {formatFinancialUnitShort(expense.unit)}
+                                {formatFinancialUnitWithPolo(expense.unit)}
                               </span>
                             </td>
                             <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">
@@ -2882,7 +2983,7 @@ export function AdminFinancePanel({
                               className="size-4 shrink-0"
                             />
                             <span className="truncate">
-                              {formatFinancialUnitShort(expense.unit)}
+                              {formatFinancialUnitWithPolo(expense.unit)}
                             </span>
                           </span>
                           <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
