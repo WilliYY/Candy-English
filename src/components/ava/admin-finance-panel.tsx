@@ -201,6 +201,29 @@ const financialUnitShortLabels: Record<FinancialUnit, string> = {
   IVATE: "Ivaté",
 };
 
+const financialUnitToneClasses: Record<
+  FinancialUnit,
+  {
+    badge: string;
+    dot: string;
+    panel: string;
+    stripe: string;
+  }
+> = {
+  DOURADINA: {
+    badge: "border-sky-200 bg-sky-50 text-sky-800",
+    dot: "bg-sky-500",
+    panel: "border-sky-200 bg-sky-50/80 text-sky-950",
+    stripe: "bg-sky-500",
+  },
+  IVATE: {
+    badge: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800",
+    dot: "bg-fuchsia-500",
+    panel: "border-fuchsia-200 bg-fuchsia-50/80 text-fuchsia-950",
+    stripe: "bg-fuchsia-500",
+  },
+};
+
 const createDefaultValues = (
   month: number,
 ): AdminFinanceStudentCreateInput => ({
@@ -313,6 +336,10 @@ function formatFinancialUnit(unit: FinancialUnit) {
 
 function formatFinancialUnitShort(unit: FinancialUnit) {
   return financialUnitShortLabels[unit];
+}
+
+function getFinancialUnitTone(unit: FinancialUnit) {
+  return financialUnitToneClasses[unit];
 }
 
 function getDueDate(month: number, paymentDay: number) {
@@ -1332,6 +1359,32 @@ export function AdminFinancePanel({
       ? Math.round(expenseSummary.total / expenseSummary.count)
       : 0;
   const latestExpense = visibleMonthExpenses[0] ?? null;
+  const expenseScopeLabel =
+    expenseUnitFilter === "ALL"
+      ? "todas as unidades"
+      : formatFinancialUnitShort(expenseUnitFilter);
+  const expenseUnitSummary = useMemo(() => {
+    const summary = FINANCIAL_UNITS.reduce<
+      Record<FinancialUnit, { count: number; total: number }>
+    >(
+      (accumulator, unit) => {
+        accumulator[unit] = {
+          count: 0,
+          total: 0,
+        };
+
+        return accumulator;
+      },
+      {} as Record<FinancialUnit, { count: number; total: number }>,
+    );
+
+    monthExpenses.forEach((expense) => {
+      summary[expense.unit].count += 1;
+      summary[expense.unit].total += expense.amountCents;
+    });
+
+    return summary;
+  }, [monthExpenses]);
 
   const filteredRows = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -2226,6 +2279,7 @@ export function AdminFinancePanel({
                     </summary>
                     <div className="mt-3">
                       <FinanceStudentEditForm
+                        key={`${selectedRow.id}-${activeMonth}-${selectedRow.payment.id}`}
                         month={activeMonth}
                         row={selectedRow}
                       />
@@ -2346,129 +2400,194 @@ export function AdminFinancePanel({
         </>
       ) : (
         <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.1)]">
-          <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4 xl:flex-row xl:items-center xl:justify-between">
-            <span className="flex min-w-0 items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                <ShoppingCart aria-hidden="true" className="size-5" />
-              </span>
-              <span className="min-w-0">
-                <strong className="block text-lg text-primary">
-                  Pagamentos da loja - {activeMonthLabel}
-                </strong>
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  Registre insumos, data, valor e quem fez a compra no mes.
+          <div className="border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                  <ShoppingCart aria-hidden="true" className="size-5" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-lg text-primary">
+                    Pagamentos da loja - {activeMonthLabel}
+                  </strong>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    Compras internas separadas por mes e unidade.
+                  </span>
                 </span>
               </span>
-            </span>
-            <span className="w-fit rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold uppercase text-primary">
-              Controle interno
-            </span>
+              <span className="w-fit rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold uppercase text-primary shadow-sm">
+                Controle interno
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {FINANCIAL_UNITS.map((unit) => {
+                const summary = expenseUnitSummary[unit];
+                const tone = getFinancialUnitTone(unit);
+
+                return (
+                  <div
+                    key={unit}
+                    className={cn(
+                      "grid min-w-0 gap-1 rounded-lg border px-3 py-2 shadow-sm",
+                      tone.panel,
+                    )}
+                  >
+                    <span className="flex min-w-0 items-center gap-2 text-xs font-bold uppercase text-current/70">
+                      <span className={cn("size-2 rounded-full", tone.dot)} />
+                      {formatFinancialUnit(unit)}
+                    </span>
+                    <span className="flex min-w-0 items-end justify-between gap-3">
+                      <strong className="truncate text-lg leading-6 tabular-nums">
+                        {formatCurrency(summary.total)}
+                      </strong>
+                      <span className="shrink-0 rounded-full bg-white/75 px-2 py-0.5 text-xs font-bold">
+                        {summary.count} registro(s)
+                      </span>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5">
-            <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/70 p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
+          <div className="grid gap-3 p-4 xl:grid-cols-[minmax(240px,1.15fr)_minmax(0,2fr)]">
+            <div className="rounded-lg border border-primary bg-primary p-4 text-primary-foreground shadow-[0_16px_34px_rgba(65,42,76,0.18)]">
+              <span className="flex items-center gap-2 text-sm font-bold text-white/82">
                 <ReceiptText aria-hidden="true" className="size-4" />
-                Total gasto
+                Gasto do mes
               </span>
-              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-red-700">
+              <strong className="mt-3 block text-3xl font-extrabold leading-none tabular-nums tracking-normal">
                 {formatCurrency(expenseSummary.total)}
               </strong>
-              <span className="mt-1 block text-xs text-red-900/75">
-                {expenseSummary.count} pagamento(s) no mes
+              <span className="mt-2 block text-sm font-semibold text-white/74">
+                {expenseSummary.count} compra(s) em {expenseScopeLabel}
               </span>
-            </div>
-            <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-primary">
-                <ShoppingCart aria-hidden="true" className="size-4" />
-                Registros
-              </span>
-              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-primary">
-                {expenseSummary.count}
-              </strong>
-              <span className="mt-1 block text-xs text-primary/65">
-                compra(s) salvas no mes
-              </span>
-            </div>
-            <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/75 p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-primary">
-                <CircleDollarSign aria-hidden="true" className="size-4" />
-                Media por compra
-              </span>
-              <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
-                {formatCurrency(averageExpenseAmount)}
-              </strong>
-              <span className="mt-1 block text-xs text-primary/65">
-                calculada so pelos gastos
-              </span>
-            </div>
-            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
-                <MapPin aria-hidden="true" className="size-4" />
-                Unidade
-              </span>
-              <NativeSelect
-                value={expenseUnitFilter}
-                onChange={(event) => {
-                  const nextUnit = event.target.value as UnitFilter;
-                  setExpenseUnitFilter(nextUnit);
+              <div className="mt-4 grid gap-2 text-xs font-bold sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                {FINANCIAL_UNITS.map((unit) => {
+                  const summary = expenseUnitSummary[unit];
 
-                  if (nextUnit !== "ALL") {
-                    expenseForm.setValue("unit", nextUnit);
-                  }
-                }}
-                className="mt-2"
-              >
-                <option value="ALL">Todas unidades</option>
-                {FINANCIAL_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {formatFinancialUnitShort(unit)}
-                  </option>
-                ))}
-              </NativeSelect>
-              <span className="mt-2 block text-xs text-primary/60">
-                Filtro interno das compras
-              </span>
+                  return (
+                    <span
+                      key={unit}
+                      className="min-w-0 rounded-lg bg-white/12 px-2.5 py-2 ring-1 ring-white/15"
+                    >
+                      <span className="block truncate text-white/70">
+                        {formatFinancialUnitShort(unit)}
+                      </span>
+                      <span className="mt-1 block truncate tabular-nums text-white">
+                        {formatCurrency(summary.total)}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
-            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
-                <CalendarDays aria-hidden="true" className="size-4" />
-                Mes do registro
-              </span>
-              <NativeSelect
-                value={activeMonth}
-                onChange={(event) => handleMonthChange(Number(event.target.value))}
-                className="mt-2"
-              >
-                {months.map((month) => (
-                  <option key={month.value} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </NativeSelect>
-              <span className="mt-2 block text-xs text-primary/60">
-                Ultimo:{" "}
-                {latestExpense ? formatDate(latestExpense.purchasedAt) : "sem registro"}
-              </span>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <ShoppingCart aria-hidden="true" className="size-4" />
+                  Registros
+                </span>
+                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-primary">
+                  {expenseSummary.count}
+                </strong>
+                <span className="mt-1 block text-xs text-primary/65">
+                  compra(s) no filtro
+                </span>
+              </div>
+              <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/75 p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-primary">
+                  <CircleDollarSign aria-hidden="true" className="size-4" />
+                  Media
+                </span>
+                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
+                  {formatCurrency(averageExpenseAmount)}
+                </strong>
+                <span className="mt-1 block text-xs text-primary/65">
+                  por compra
+                </span>
+              </div>
+              <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+                  <MapPin aria-hidden="true" className="size-4" />
+                  Unidade
+                </span>
+                <NativeSelect
+                  value={expenseUnitFilter}
+                  onChange={(event) => {
+                    const nextUnit = event.target.value as UnitFilter;
+                    setExpenseUnitFilter(nextUnit);
+
+                    if (nextUnit !== "ALL") {
+                      expenseForm.setValue("unit", nextUnit);
+                    }
+                  }}
+                  className="mt-2"
+                >
+                  <option value="ALL">Todas unidades</option>
+                  {FINANCIAL_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {formatFinancialUnitShort(unit)}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <span className="mt-2 block text-xs text-primary/60">
+                  {expenseScopeLabel}
+                </span>
+              </div>
+              <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+                <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+                  <CalendarDays aria-hidden="true" className="size-4" />
+                  Mes
+                </span>
+                <NativeSelect
+                  value={activeMonth}
+                  onChange={(event) =>
+                    handleMonthChange(Number(event.target.value))
+                  }
+                  className="mt-2"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <span className="mt-2 block text-xs text-primary/60">
+                  Ultimo:{" "}
+                  {latestExpense ? formatDate(latestExpense.purchasedAt) : "sem registro"}
+                </span>
+              </div>
             </div>
           </div>
 
           <form
             onSubmit={onExpenseSubmit}
-            className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-[#fbf7ff] shadow-sm"
+            className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_12px_30px_rgba(65,42,76,0.08)]"
             noValidate
           >
-            <div className="border-b border-primary/10 bg-white/78 p-4">
-              <strong className="block text-base text-primary">
-                Novo pagamento
-              </strong>
-              <span className="mt-1 block text-sm text-muted-foreground">
-                Exemplo: garrafa de agua, copos, material de aula ou insumo da
-                loja.
+            <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4 xl:flex-row xl:items-center xl:justify-between">
+              <span className="min-w-0">
+                <strong className="block text-base text-primary">
+                  Novo pagamento
+                </strong>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Registre uma compra interna sem misturar com mensalidades.
+                </span>
+              </span>
+              <span className="flex flex-wrap items-center gap-2 text-xs font-bold text-primary">
+                <span className="rounded-full border border-primary/15 bg-white px-2.5 py-1">
+                  {activeMonthLabel}
+                </span>
+                <span className="rounded-full border border-primary/15 bg-white px-2.5 py-1">
+                  {expenseScopeLabel}
+                </span>
               </span>
             </div>
-            <FieldGroup className="gap-3 p-4">
-              <div className="grid gap-3 lg:grid-cols-[minmax(180px,1.2fr)_160px_150px_minmax(120px,0.7fr)_minmax(170px,0.9fr)_auto] lg:items-start">
+            <FieldGroup className="gap-4 bg-[#fbf7ff] p-4">
+              <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.25fr)_minmax(110px,0.56fr)_145px_150px_minmax(170px,0.9fr)_auto] xl:items-start">
                 <Field
                   data-invalid={Boolean(expenseForm.formState.errors.itemName)}
                 >
@@ -2488,23 +2607,19 @@ export function AdminFinancePanel({
                     errors={[expenseForm.formState.errors.itemName]}
                   />
                 </Field>
-                <Field data-invalid={Boolean(expenseForm.formState.errors.unit)}>
-                  <FieldLabel htmlFor="finance-expense-unit">
-                    Unidade
-                  </FieldLabel>
-                  <NativeSelect
-                    id="finance-expense-unit"
-                    aria-invalid={Boolean(expenseForm.formState.errors.unit)}
+                <Field
+                  data-invalid={Boolean(expenseForm.formState.errors.amount)}
+                >
+                  <FieldLabel htmlFor="finance-expense-amount">Valor</FieldLabel>
+                  <Input
+                    id="finance-expense-amount"
+                    inputMode="decimal"
+                    aria-invalid={Boolean(expenseForm.formState.errors.amount)}
                     disabled={isExpensePending}
-                    {...expenseForm.register("unit")}
-                  >
-                    {FINANCIAL_UNITS.map((unit) => (
-                      <option key={unit} value={unit}>
-                        {formatFinancialUnitShort(unit)}
-                      </option>
-                    ))}
-                  </NativeSelect>
-                  <FieldError errors={[expenseForm.formState.errors.unit]} />
+                    placeholder="0,00"
+                    {...expenseForm.register("amount")}
+                  />
+                  <FieldError errors={[expenseForm.formState.errors.amount]} />
                 </Field>
                 <Field
                   data-invalid={Boolean(expenseForm.formState.errors.purchasedAt)}
@@ -2523,19 +2638,23 @@ export function AdminFinancePanel({
                     errors={[expenseForm.formState.errors.purchasedAt]}
                   />
                 </Field>
-                <Field
-                  data-invalid={Boolean(expenseForm.formState.errors.amount)}
-                >
-                  <FieldLabel htmlFor="finance-expense-amount">Valor</FieldLabel>
-                  <Input
-                    id="finance-expense-amount"
-                    inputMode="decimal"
-                    aria-invalid={Boolean(expenseForm.formState.errors.amount)}
+                <Field data-invalid={Boolean(expenseForm.formState.errors.unit)}>
+                  <FieldLabel htmlFor="finance-expense-unit">
+                    Unidade
+                  </FieldLabel>
+                  <NativeSelect
+                    id="finance-expense-unit"
+                    aria-invalid={Boolean(expenseForm.formState.errors.unit)}
                     disabled={isExpensePending}
-                    placeholder="0,00"
-                    {...expenseForm.register("amount")}
-                  />
-                  <FieldError errors={[expenseForm.formState.errors.amount]} />
+                    {...expenseForm.register("unit")}
+                  >
+                    {FINANCIAL_UNITS.map((unit) => (
+                      <option key={unit} value={unit}>
+                        {formatFinancialUnitShort(unit)}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                  <FieldError errors={[expenseForm.formState.errors.unit]} />
                 </Field>
                 <Field
                   data-invalid={Boolean(expenseForm.formState.errors.actorName)}
@@ -2558,7 +2677,7 @@ export function AdminFinancePanel({
                 </Field>
                 <Button
                   type="submit"
-                  className="h-10 shadow-sm lg:mt-6"
+                  className="h-10 shadow-sm lg:mt-6 xl:w-full"
                   disabled={isExpensePending}
                 >
                   {isExpensePending ? (
@@ -2572,20 +2691,29 @@ export function AdminFinancePanel({
                   Salvar
                 </Button>
               </div>
-              <Field data-invalid={Boolean(expenseForm.formState.errors.note)}>
-                <FieldLabel htmlFor="finance-expense-note">
-                  Observacao opcional
-                </FieldLabel>
-                <Textarea
-                  id="finance-expense-note"
-                  aria-invalid={Boolean(expenseForm.formState.errors.note)}
-                  className="min-h-16 resize-y"
-                  disabled={isExpensePending}
-                  placeholder="Detalhe rapido, se precisar."
-                  {...expenseForm.register("note")}
-                />
-                <FieldError errors={[expenseForm.formState.errors.note]} />
-              </Field>
+              <details className="group rounded-lg border border-primary/12 bg-white px-3 py-2">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-primary [&::-webkit-details-marker]:hidden">
+                  <span>Observacao opcional</span>
+                  <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+                </summary>
+                <Field
+                  className="mt-3"
+                  data-invalid={Boolean(expenseForm.formState.errors.note)}
+                >
+                  <FieldLabel htmlFor="finance-expense-note">
+                    Detalhe rapido
+                  </FieldLabel>
+                  <Textarea
+                    id="finance-expense-note"
+                    aria-invalid={Boolean(expenseForm.formState.errors.note)}
+                    className="min-h-16 resize-y"
+                    disabled={isExpensePending}
+                    placeholder="Ex: comprado para a unidade, evento ou reposicao."
+                    {...expenseForm.register("note")}
+                  />
+                  <FieldError errors={[expenseForm.formState.errors.note]} />
+                </Field>
+              </details>
             </FieldGroup>
             {expenseMessage ? (
               <p
@@ -2612,71 +2740,151 @@ export function AdminFinancePanel({
               </span>
             </div>
             {visibleMonthExpenses.length === 0 ? (
-              <div className="flex min-h-36 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/20 bg-white p-4 text-center">
-                <ShoppingCart aria-hidden="true" className="text-primary" />
+              <div className="flex min-h-28 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-primary/20 bg-white p-4 text-center">
+                <ShoppingCart aria-hidden="true" className="size-5 text-primary" />
+                <strong className="text-primary">
+                  Nenhum gasto em {activeMonthLabel}
+                </strong>
                 <p className="max-w-sm text-sm text-muted-foreground">
                   {expenseUnitFilter === "ALL"
-                    ? "Nenhum pagamento da loja registrado para este mes ainda."
-                    : `Nenhum pagamento da loja em ${formatFinancialUnitShort(expenseUnitFilter)} para este mes.`}
+                    ? "Use o formulario acima para salvar a primeira compra interna do mes."
+                    : `Ainda nao ha compra registrada em ${formatFinancialUnitShort(expenseUnitFilter)} neste mes.`}
                 </p>
               </div>
             ) : (
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {visibleMonthExpenses.map((expense) => (
-                  <article
-                    key={expense.id}
-                    className="relative overflow-hidden rounded-lg border border-primary/15 bg-white p-3 pt-4 shadow-[0_10px_24px_rgba(58,29,75,0.08)]"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className="absolute inset-x-0 top-0 h-1 bg-red-500"
-                    />
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="min-w-0">
-                        <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/55">
-                          Insumo
-                        </span>
-                        <strong className="mt-1 block break-words text-base leading-5 text-primary">
-                          {expense.itemName}
-                        </strong>
-                      </span>
-                      <span className="shrink-0 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-xs font-bold tabular-nums text-red-800">
-                        {formatCurrency(expense.amountCents)}
-                      </span>
-                    </div>
-                    <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
-                      <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2">
-                        <CalendarDays
+              <>
+                <div className="hidden overflow-hidden rounded-lg border border-primary/15 bg-white shadow-sm xl:block">
+                  <table className="w-full border-collapse text-left text-sm">
+                    <thead className="bg-[#fbf7ff] text-xs font-bold uppercase text-primary/70">
+                      <tr>
+                        <th className="px-3 py-2">Insumo</th>
+                        <th className="px-3 py-2">Unidade</th>
+                        <th className="px-3 py-2">Data</th>
+                        <th className="px-3 py-2">Quem fez</th>
+                        <th className="px-3 py-2 text-right">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-primary/10">
+                      {visibleMonthExpenses.map((expense) => {
+                        const tone = getFinancialUnitTone(expense.unit);
+
+                        return (
+                          <tr
+                            key={expense.id}
+                            className="align-top transition-colors hover:bg-[#fbf7ff]"
+                          >
+                            <td className="min-w-0 px-3 py-3">
+                              <strong className="block break-words text-primary">
+                                {expense.itemName}
+                              </strong>
+                              {expense.note ? (
+                                <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">
+                                  {expense.note}
+                                </span>
+                              ) : (
+                                <span className="mt-1 block text-xs text-muted-foreground">
+                                  Sem observacao
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3">
+                              <span
+                                className={cn(
+                                  "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold",
+                                  tone.badge,
+                                )}
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className={cn("size-2 rounded-full", tone.dot)}
+                                />
+                                {formatFinancialUnitShort(expense.unit)}
+                              </span>
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">
+                              {formatDate(expense.purchasedAt)}
+                            </td>
+                            <td className="max-w-44 px-3 py-3 text-muted-foreground">
+                              <span className="block truncate">
+                                {expense.actorName}
+                              </span>
+                            </td>
+                            <td className="whitespace-nowrap px-3 py-3 text-right font-extrabold tabular-nums text-red-700">
+                              {formatCurrency(expense.amountCents)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:hidden">
+                  {visibleMonthExpenses.map((expense) => {
+                    const tone = getFinancialUnitTone(expense.unit);
+
+                    return (
+                      <article
+                        key={expense.id}
+                        className="relative overflow-hidden rounded-lg border border-primary/15 bg-white p-3 pt-4 shadow-[0_10px_24px_rgba(58,29,75,0.08)]"
+                      >
+                        <span
                           aria-hidden="true"
-                          className="size-4 shrink-0 text-primary"
+                          className={cn("absolute inset-x-0 top-0 h-1", tone.stripe)}
                         />
-                        {formatDate(expense.purchasedAt)}
-                      </span>
-                      <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
-                        <MapPin
-                          aria-hidden="true"
-                          className="size-4 shrink-0 text-primary"
-                        />
-                        <span className="truncate">
-                          {formatFinancialUnitShort(expense.unit)}
-                        </span>
-                      </span>
-                      <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
-                        <UserRound
-                          aria-hidden="true"
-                          className="size-4 shrink-0 text-primary"
-                        />
-                        <span className="truncate">{expense.actorName}</span>
-                      </span>
-                    </div>
-                    {expense.note ? (
-                      <p className="mt-3 line-clamp-2 rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2 text-sm text-primary/75">
-                        {expense.note}
-                      </p>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="min-w-0">
+                            <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/55">
+                              Insumo
+                            </span>
+                            <strong className="mt-1 block break-words text-base leading-5 text-primary">
+                              {expense.itemName}
+                            </strong>
+                          </span>
+                          <span className="shrink-0 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-xs font-bold tabular-nums text-red-800">
+                            {formatCurrency(expense.amountCents)}
+                          </span>
+                        </div>
+                        <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+                          <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2">
+                            <CalendarDays
+                              aria-hidden="true"
+                              className="size-4 shrink-0 text-primary"
+                            />
+                            {formatDate(expense.purchasedAt)}
+                          </span>
+                          <span
+                            className={cn(
+                              "inline-flex min-w-0 items-center gap-2 rounded-lg border px-2.5 py-2",
+                              tone.badge,
+                            )}
+                          >
+                            <MapPin
+                              aria-hidden="true"
+                              className="size-4 shrink-0"
+                            />
+                            <span className="truncate">
+                              {formatFinancialUnitShort(expense.unit)}
+                            </span>
+                          </span>
+                          <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-2">
+                            <UserRound
+                              aria-hidden="true"
+                              className="size-4 shrink-0 text-primary"
+                            />
+                            <span className="truncate">{expense.actorName}</span>
+                          </span>
+                        </div>
+                        {expense.note ? (
+                          <p className="mt-3 line-clamp-2 rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2 text-sm text-primary/75">
+                            {expense.note}
+                          </p>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </div>
         </section>

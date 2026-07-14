@@ -49,6 +49,7 @@ Rota:
 - Ao criar aluno recorrente em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
 - Ao criar aluno com quantidade de parcelas, o sistema cria apenas as parcelas possiveis daquele mes ate dezembro de 2026.
 - Ao editar dados fixos em um mes, a edicao vale do mes selecionado em diante; meses anteriores ficam preservados.
+- Ao editar dados fixos/parcelas, meses existentes que continuam dentro do novo plano voltam a `isActive=true`; meses fora do plano ficam inativos quando houver total de parcelas.
 - Ao retirar aluno em um mes, a UI permite inativar apenas o mes selecionado ou encerrar a partir daquele mes, sempre por soft remove em `FinancialPayment.isActive=false`.
 - Alunos ativos no mes aparecem ordenados por dia de pagamento crescente.
 - Status padrao e pendente; se o dia previsto passou, o card fica atrasado. Ao marcar como pago, o card fica verde e recebe data paga.
@@ -71,6 +72,7 @@ Rota:
 - A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido, meses escaneaveis, cards de aluno com valor em destaque, vencimento/status discretos, metadados compactos de forma/parcela e historico preenchido automaticamente pelo primeiro resultado visivel.
 - O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
 - A area `Pagamentos` e controle interno separado: nao mostra totais de alunos, recebidos, pendentes, atrasados nem saldo baseado em mensalidades.
+- A area `Pagamentos` usa resumo mensal proprio, totais por unidade, filtros de unidade/mes separados, formulario compacto com observacao recolhida e lista em tabela no desktop para facilitar leitura de insumo, data, responsavel, unidade e valor.
 - As unidades fixas do financeiro sao `IVATE` (`Unidade 1 Ivaté`) e `DOURADINA` (`Unidade 2 Douradina`); registros antigos entram por padrao como `IVATE`.
 - A UI mostra filtro/chip de unidade nos alunos, historico mensal, exportacao PDF/Excel e pagamentos internos da loja.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.

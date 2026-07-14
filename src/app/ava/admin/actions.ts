@@ -1175,7 +1175,10 @@ export async function updateFinancialStudent(
       if (existingPayment) {
         await tx.financialPayment.update({
           where: { id: existingPayment.id },
-          data: snapshot,
+          data: {
+            ...snapshot,
+            isActive: true,
+          },
         });
       } else {
         await tx.financialPayment.create({

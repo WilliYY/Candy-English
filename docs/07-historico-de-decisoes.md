@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Financeiro com pagamentos internos mais escaneaveis
+
+- Decisao: refinar a aba `Pagamentos` do financeiro com resumo mensal proprio, totais por unidade, formulario compacto e lista em tabela no desktop; corrigir a edicao de alunos para remontar o formulario selecionado e reativar meses que continuam dentro do plano novo.
+- Motivo: melhorar leitura operacional dos gastos internos sem misturar com mensalidades e evitar estados antigos ao alternar aluno ou alterar parcelas.
+- Impacto: `src/components/ava/admin-finance-panel.tsx`, `src/app/ava/admin/actions.ts`, `docs/13-financeiro.md`, `docs/design-direcao.md`.
+- Riscos/cuidados: `FinancialExpense` continua separado de `FinancialPayment`; meses anteriores seguem historico fechado e a reativacao vale apenas para meses incluidos na edicao a partir do mes selecionado.
+
 ### 2026-07-13 - Financeiro por unidade
 
 - Decisao: adicionar unidades fixas `Unidade 1 Ivaté` e `Unidade 2 Douradina` ao financeiro, gravando `FinancialStudent.unit`, `FinancialPayment.snapshotUnit` e `FinancialExpense.unit`.
