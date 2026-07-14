@@ -147,6 +147,104 @@ async function assertRoleRedirect(role: SmokeRole, cookie: string) {
   console.log(`OK login ${role.toLowerCase()} -> ${expectedPath}`);
 }
 
+async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
+  const response = await fetch(buildUrl("/ava/secretaria"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const location = response.headers.get("location");
+
+  if (role === "STUDENT") {
+    if (
+      ![302, 303, 307, 308].includes(response.status) ||
+      !location?.includes("/ava/student")
+    ) {
+      throw new Error(
+        `Student nao deve acessar Secretaria, recebeu ${response.status} ${location ?? ""}`,
+      );
+    }
+
+    console.log("OK secretaria blocks student");
+    return;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `${role} esperava acessar Secretaria, recebeu HTTP ${response.status}`,
+    );
+  }
+
+  const text = await response.text();
+
+  if (role === "ADMIN") {
+    const requiredAdminLinks = [
+      "/ava/admin?task=aceitar-alunos",
+      "/ava/admin?task=financeiro",
+      "/ava/admin?task=agenda",
+      "/ava/admin?task=apis-senhas",
+    ];
+
+    for (const link of requiredAdminLinks) {
+      if (!text.includes(link)) {
+        throw new Error(`Secretaria admin sem atalho esperado: ${link}`);
+      }
+    }
+
+    console.log("OK secretaria admin complete");
+    return;
+  }
+
+  const forbiddenTeacherLinks = [
+    "/ava/admin?task=financeiro",
+    "/ava/admin?task=agenda",
+    "/ava/admin?task=apis-senhas",
+  ];
+
+  if (!text.includes("/ava/teacher?task=aceitar-alunos")) {
+    throw new Error("Secretaria teacher sem atalho de pre-cadastros.");
+  }
+
+  for (const link of forbiddenTeacherLinks) {
+    if (text.includes(link)) {
+      throw new Error(`Secretaria teacher vazou atalho admin: ${link}`);
+    }
+  }
+
+  console.log("OK secretaria teacher limited");
+}
+
+async function assertAdminOnlySecretariaTasks(role: SmokeRole, cookie: string) {
+  if (role === "ADMIN") {
+    return;
+  }
+
+  const protectedPaths = [
+    "/ava/admin?task=financeiro",
+    "/ava/admin?task=agenda",
+    "/ava/admin?task=apis-senhas",
+  ];
+  const expectedPath = getDefaultAvaPath(role);
+
+  for (const path of protectedPaths) {
+    const response = await fetch(buildUrl(path), {
+      headers: { cookie },
+      redirect: "manual",
+    });
+    const location = response.headers.get("location");
+
+    if (
+      ![302, 303, 307, 308].includes(response.status) ||
+      !location?.includes(expectedPath)
+    ) {
+      throw new Error(
+        `Role ${role} nao deve acessar ${path}, recebeu ${response.status} ${location ?? ""}`,
+      );
+    }
+  }
+
+  console.log(`OK admin-only secretaria tasks block ${role.toLowerCase()}`);
+}
+
 async function reportGoogleProvider() {
   const response = await fetch(buildUrl("/api/auth/providers"));
 
@@ -190,6 +288,8 @@ async function main() {
     await createSmokeUser(role, email);
     const cookie = await signInWithCredentials(email);
     await assertRoleRedirect(role, cookie);
+    await assertSecretariaPermissions(role, cookie);
+    await assertAdminOnlySecretariaTasks(role, cookie);
   }
 
   await reportGoogleProvider();

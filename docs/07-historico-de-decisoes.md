@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Matriz de permissoes da Secretaria
+
+- Decisao: centralizar o escopo de Secretaria em `SECRETARIA_PERMISSION_MATRIX`, usando a matriz para renderizar `/ava/secretaria` e validar por smoke que Admin tem atalhos completos, Teacher tem atalhos limitados e Student nao entra.
+- Motivo: Admin e Teacher acessam a mesma area visual, mas com poderes diferentes; a separacao precisa ficar explicita no codigo e testada no servidor, nao apenas escondida por UI.
+- Impacto: `src/lib/roles.ts`, `src/app/ava/secretaria/page.tsx`, `scripts/auth-smoke.ts`, `docs/03-fluxos-do-sistema.md`, `docs/08-autenticacao-e-permissoes.md` e `docs/99-contexto-rapido-codex.md`.
+- Riscos/cuidados: `TEACHER` nao deve receber financeiro geral, gastos, agenda completa, credenciais ou registros de outras teachers; actions antigas continuam como fonte final de permissao por role/dado.
+
 ### 2026-07-14 - Conversao linkada de pre-cadastro
 
 - Decisao: o botao `Tornar aluno` da Secretaria passa a converter o pre-cadastro em `User` STUDENT, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`/`FinancialPayment`, `AgendaStudent`/`AgendaLesson` e ids linkados em `StudentPreRegistration` dentro de uma transaction.

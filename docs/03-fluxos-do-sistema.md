@@ -94,8 +94,11 @@ Helpers:
 2. A tela mostra dois blocos grandes: `AVA`, para rotina pedagogica, e `Secretaria`, para controle interno.
 3. Clicar em `AVA` leva Admin para `/ava/admin?task=usuarios` e Teacher para `/ava/teacher?task=resumo`.
 4. Clicar em `Secretaria` leva para `/ava/secretaria`, um painel protegido de atalhos.
-5. Teacher ve somente atalhos permitidos, como pre-cadastros e contratos; financeiro, agenda, APIs e manutencao seguem exclusivos de Admin.
-6. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
+5. A tela usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada.
+6. Admin ve atalhos completos: pre-cadastros, financeiro, agenda, contratos, administracao, APIs/senhas, unidades/gastos e relatorios simples vinculados ao financeiro.
+7. Teacher ve somente Secretaria limitada: pre-cadastros proprios/atribuidos e contratos permitidos; financeiro geral, agenda completa, gastos, APIs e administracao seguem exclusivos de Admin.
+8. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
+9. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
 
 ### Pre-cadastro de interessado
 
@@ -111,6 +114,7 @@ Helpers:
 10. Ao clicar em `Tornar aluno`, a UI mostra um resumo de AVA, unidade/teacher, financeiro e agenda, exige senha inicial, email de login quando necessario e confirmacao explicita.
 11. A action protegida converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson`, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade.
 12. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
+13. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
 
 ### Admin
 
