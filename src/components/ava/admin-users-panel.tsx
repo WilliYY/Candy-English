@@ -1538,19 +1538,81 @@ export function AdminUsersPanel({
     }),
     candyXpPersistence,
   );
+  const adminHeroMetrics = [
+    {
+      className: "border-violet-200 bg-violet-50 text-violet-900",
+      icon: UsersRound,
+      label: "Usuarios",
+      value: totals.total,
+    },
+    {
+      className: "border-emerald-200 bg-emerald-50 text-emerald-900",
+      icon: Power,
+      label: "Ativos",
+      value: totals.active,
+    },
+    {
+      className: "border-amber-200 bg-amber-50 text-amber-900",
+      icon: Link2,
+      label: "Vinculos",
+      value: assignments.length,
+    },
+  ] satisfies Array<{
+    className: string;
+    icon: LucideIcon;
+    label: string;
+    value: number;
+  }>;
 
   return (
     <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(460px,560px)]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/15 bg-primary/10 px-3 py-2 text-sm font-semibold text-primary">
-            <ShieldCheck aria-hidden="true" />
-            Painel protegido por role ADMIN
-          </div>
-          <div className="flex flex-col gap-4">
-            <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal md:text-5xl">
-              Admin Candy English
-            </h1>
+        <div className="relative min-w-0 overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(115deg,#ffffff_0%,#fff7fb_42%,#effcff_100%)] p-5 shadow-[0_24px_64px_rgba(65,42,76,0.12)] sm:p-7">
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 h-1.5 bg-[linear-gradient(90deg,#7c3aed,#ec4899,#f59e0b,#10b981,#06b6d4)]"
+          />
+          <div className="relative z-10 flex min-w-0 flex-col gap-5">
+            <div className="inline-flex w-fit items-center gap-2 rounded-lg border border-primary/15 bg-white/82 px-3 py-2 text-sm font-semibold text-primary shadow-sm">
+              <ShieldCheck aria-hidden="true" className="size-4" />
+              Painel protegido por role ADMIN
+            </div>
+            <div className="flex flex-col gap-3">
+              <h1 className="max-w-4xl text-3xl font-semibold leading-tight tracking-normal text-primary md:text-5xl">
+                Admin Candy English
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+                Gestao operacional do AVA com usuarios, vinculos, XP e rotinas
+                administrativas em uma visao mais clara.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {adminHeroMetrics.map((metric) => {
+                const MetricIcon = metric.icon;
+
+                return (
+                  <div
+                    key={metric.label}
+                    className={cn(
+                      "flex min-w-0 items-center gap-3 rounded-lg border px-3 py-3 shadow-sm",
+                      metric.className,
+                    )}
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white/84 shadow-sm">
+                      <MetricIcon aria-hidden="true" className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[0.66rem] font-bold uppercase tracking-[0.14em] opacity-70">
+                        {metric.label}
+                      </span>
+                      <strong className="text-xl leading-none">
+                        {metric.value}
+                      </strong>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
@@ -1564,18 +1626,30 @@ export function AdminUsersPanel({
         />
       </div>
 
-      <Card className="ava-panel-card overflow-hidden">
-        <CardHeader className="ava-task-header border-b border-primary/15 bg-primary/10 px-4 py-5 sm:px-7">
-          <div className="flex min-h-12 flex-col items-center justify-center gap-3 text-center sm:relative sm:flex-row">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm sm:absolute sm:left-0">
+      <Card className="ava-panel-card overflow-hidden rounded-xl border-primary/15 shadow-[0_24px_64px_rgba(65,42,76,0.12)]">
+        <CardHeader className="ava-task-header relative overflow-hidden border-b border-primary/15 bg-[linear-gradient(115deg,#412a4c_0%,#7c3aed_45%,#ec4899_76%,#f59e0b_100%)] px-4 py-5 text-white sm:px-7">
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:38px_38px] opacity-45"
+          />
+          <div className="relative z-10 flex min-h-12 flex-col items-center justify-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/18 text-white shadow-sm ring-1 ring-white/25">
               <TaskIcon aria-hidden="true" />
             </span>
-            <CardTitle className="px-0 text-center text-lg sm:px-14 sm:text-xl">
-              {task.title}
-            </CardTitle>
+            <div className="min-w-0 sm:flex-1">
+              <p className="text-[0.66rem] font-bold uppercase tracking-[0.18em] text-white/70">
+                Area de trabalho Admin
+              </p>
+              <CardTitle className="mt-1 px-0 text-center text-xl text-white sm:text-left sm:text-2xl">
+                {task.title}
+              </CardTitle>
+            </div>
+            <span className="rounded-full border border-white/25 bg-white/16 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm">
+              Candy AVA
+            </span>
           </div>
         </CardHeader>
-        <CardContent className="py-6">
+        <CardContent className="bg-[linear-gradient(180deg,#ffffff_0%,#fff8fc_48%,#f7fdff_100%)] px-4 py-6 sm:px-6">
           {activeTask === "usuarios" ? (
             <div className="flex flex-col gap-6">
               <CandyXpCard

@@ -33,12 +33,16 @@ export function UserSummaryPanel({
     : 0;
 
   return (
-    <section className="ava-profile-summary-card rounded-2xl border p-4 shadow-sm sm:p-5">
+    <section className="ava-profile-summary-card rounded-xl border p-4 shadow-[0_22px_54px_rgba(65,42,76,0.12)] sm:p-5">
+      <span
+        aria-hidden="true"
+        className="absolute inset-x-0 top-0 h-1.5 bg-[linear-gradient(90deg,#7c3aed,#ec4899,#f59e0b,#10b981,#06b6d4)]"
+      />
       <div className="relative z-10 flex min-w-0 flex-col gap-4">
         <div className="flex min-w-0 items-start gap-3.5 sm:gap-4">
           <UserAvatar
             avatarPath={avatarPath}
-            className="size-14 rounded-2xl shadow-md shadow-primary/15 ring-2 ring-white/80 sm:size-16"
+            className="size-14 rounded-xl shadow-lg shadow-primary/20 ring-2 ring-white/90 sm:size-16"
             iconClassName="size-6"
             userId={userId}
           />
@@ -48,7 +52,7 @@ export function UserSummaryPanel({
               <p className="text-[0.66rem] font-bold uppercase tracking-[0.2em] text-primary/60">
                 Meu perfil
               </p>
-              <span className="inline-flex items-center gap-1 rounded-full bg-secondary/90 px-2.5 py-1 text-[0.68rem] font-bold text-secondary-foreground shadow-sm shadow-primary/5">
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-[linear-gradient(90deg,#fff7cc,#ffe8fb)] px-2.5 py-1 text-[0.68rem] font-bold text-amber-900 shadow-sm shadow-primary/5">
                 <Sparkles aria-hidden="true" className="size-3" />
                 Candy
               </span>
@@ -69,10 +73,10 @@ export function UserSummaryPanel({
         </div>
 
         {xp ? (
-          <div className="ava-user-xp-panel rounded-2xl border border-amber-300/70 p-3.5 sm:p-4">
+          <div className="ava-user-xp-panel rounded-xl border border-amber-300/80 p-3.5 shadow-[0_18px_34px_rgba(180,83,9,0.12)] sm:p-4">
             <div className="relative z-10 flex items-start justify-between gap-3">
               <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md shadow-primary/20">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md shadow-primary/20">
                   <Trophy aria-hidden="true" className="size-4" />
                 </span>
                 <span className="min-w-0">
@@ -188,7 +192,7 @@ export function UserSummaryPanel({
         ) : null}
 
         <div className="grid gap-2 border-t border-primary/10 pt-3 sm:grid-cols-[1fr_auto]">
-          <span className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-primary/15 bg-primary/8 px-3 py-2 text-sm font-semibold text-primary shadow-sm sm:justify-start">
+          <span className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-primary/15 bg-[linear-gradient(90deg,rgba(65,42,76,0.1),rgba(236,72,153,0.08))] px-3 py-2 text-sm font-semibold text-primary shadow-sm sm:justify-start">
             <ShieldCheck aria-hidden="true" className="size-4" />
             {ROLE_LABELS[role]}
           </span>
