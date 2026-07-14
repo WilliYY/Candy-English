@@ -31,6 +31,16 @@ function buildUrl(path: string) {
   return new URL(path, baseUrl).toString();
 }
 
+function assertNoServerException(path: string, response: Response, text: string) {
+  if (text.includes("server-side exception") || text.includes("Application error")) {
+    throw new Error(`${path} renderizou erro server-side.`);
+  }
+
+  if (response.status >= 500) {
+    throw new Error(`${path} retornou HTTP ${response.status}.`);
+  }
+}
+
 function getSetCookies(headers: Headers) {
   const headerWithCookies = headers as Headers & {
     getSetCookie?: () => string[];
@@ -175,6 +185,7 @@ async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
   }
 
   const text = await response.text();
+  assertNoServerException("/ava/secretaria", response, text);
 
   if (role === "ADMIN") {
     const requiredAdminLinks = [
@@ -228,6 +239,7 @@ async function assertAreaChoiceShell(role: SmokeRole, cookie: string) {
   }
 
   const text = await response.text();
+  assertNoServerException("/ava/escolha", response, text);
   const forbiddenShellText = [
     "Area de trabalho",
     "Admin AVA",
@@ -267,6 +279,7 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
   }
 
   const text = await response.text();
+  assertNoServerException(path, response, text);
 
   if (role === "ADMIN") {
     if (
@@ -274,6 +287,18 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
       text.includes("/ava/admin?task=financeiro")
     ) {
       throw new Error("Sidebar do AVA Admin veio incompleta ou misturada.");
+    }
+
+    const forbiddenAdminAvaLinks = [
+      "/ava/admin?task=agenda",
+      "/ava/admin?task=apis-senhas",
+      "/ava/admin?task=financeiro",
+    ];
+
+    for (const link of forbiddenAdminAvaLinks) {
+      if (text.includes(link)) {
+        throw new Error(`AVA Admin vazou link de Secretaria: ${link}`);
+      }
     }
   }
 
@@ -284,6 +309,20 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
     ) {
       throw new Error("Sidebar do AVA Teacher veio incompleta ou misturada.");
     }
+
+    const forbiddenTeacherAvaFragments = [
+      "/ava/admin?task=agenda",
+      "/ava/admin?task=apis-senhas",
+      "/ava/admin?task=financeiro",
+      "Agenda interna",
+      "Financeiro",
+    ];
+
+    for (const fragment of forbiddenTeacherAvaFragments) {
+      if (text.includes(fragment)) {
+        throw new Error(`AVA Teacher vazou item administrativo: ${fragment}`);
+      }
+    }
   }
 
   if (role === "STUDENT" && text.includes("Secretaria")) {
@@ -291,6 +330,221 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
   }
 
   console.log(`OK workspace pedagogico ${role.toLowerCase()}`);
+}
+
+async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
+  if (role !== "ADMIN") {
+    return;
+  }
+
+  const paths = [
+    "/ava/admin?task=usuarios",
+    "/ava/admin?task=aceitar-alunos",
+    "/ava/admin?task=financeiro",
+    "/ava/admin?task=financeiro&unit=all",
+    "/ava/admin?task=financeiro&unit=IVATE",
+    "/ava/admin?task=financeiro&unit=DOURADINA",
+    "/ava/admin?task=agenda",
+    "/ava/admin?task=agenda&unit=IVATE",
+    "/ava/admin?task=agenda&unit=DOURADINA",
+  ];
+
+  for (const path of paths) {
+    const response = await fetch(buildUrl(path), {
+      headers: { cookie },
+      redirect: "manual",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Admin esperava acessar ${path}, recebeu ${response.status}`);
+    }
+
+    const text = await response.text();
+    assertNoServerException(path, response, text);
+  }
+
+  console.log("OK admin task routes");
+}
+
+async function assertTeacherAvaTaskRoutes(role: SmokeRole, cookie: string) {
+  if (role !== "TEACHER") {
+    return;
+  }
+
+  const paths = [
+    "/ava/teacher?task=resumo",
+    "/ava/teacher?task=aceitar-alunos",
+    "/ava/teacher?task=aceitar-alunos&unit=IVATE",
+    "/ava/teacher?task=aceitar-alunos&unit=DOURADINA",
+  ];
+
+  for (const path of paths) {
+    const response = await fetch(buildUrl(path), {
+      headers: { cookie },
+      redirect: "manual",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Teacher esperava acessar ${path}, recebeu ${response.status}`,
+      );
+    }
+
+    const text = await response.text();
+    assertNoServerException(path, response, text);
+
+    if (
+      path.includes("aceitar-alunos") &&
+      (text.includes("/ava/admin?task=financeiro") ||
+        text.includes("/ava/admin?task=agenda") ||
+        text.includes("/ava/admin?task=apis-senhas"))
+    ) {
+      throw new Error(`Teacher Secretaria vazou link admin em ${path}.`);
+    }
+  }
+
+  console.log("OK teacher task routes");
+}
+
+async function assertStudentRoutes(role: SmokeRole, cookie: string) {
+  if (role !== "STUDENT") {
+    return;
+  }
+
+  const studentResponse = await fetch(buildUrl("/ava/student?task=resumo"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+
+  if (!studentResponse.ok) {
+    throw new Error(
+      `Student esperava acessar /ava/student?task=resumo, recebeu ${studentResponse.status}`,
+    );
+  }
+
+  const studentText = await studentResponse.text();
+  assertNoServerException(
+    "/ava/student?task=resumo",
+    studentResponse,
+    studentText,
+  );
+
+  const escolhaResponse = await fetch(buildUrl("/ava/escolha"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const location = escolhaResponse.headers.get("location");
+
+  if (
+    ![302, 303, 307, 308].includes(escolhaResponse.status) ||
+    !location?.includes("/ava/student")
+  ) {
+    throw new Error(
+      `Student nao deve ver escolha, recebeu ${escolhaResponse.status} ${location ?? ""}`,
+    );
+  }
+
+  console.log("OK student routes");
+}
+
+async function assertSecretariaUnitLinks(role: SmokeRole, cookie: string) {
+  if (role === "STUDENT") {
+    return;
+  }
+
+  const unitPaths = [
+    { label: "todos", path: "/ava/secretaria" },
+    { label: "ivate", path: "/ava/secretaria?unit=IVATE" },
+    { label: "douradina", path: "/ava/secretaria?unit=DOURADINA" },
+  ];
+
+  for (const unitPath of unitPaths) {
+    const response = await fetch(buildUrl(unitPath.path), {
+      headers: { cookie },
+      redirect: "manual",
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `${role} esperava acessar ${unitPath.path}, recebeu ${response.status}`,
+      );
+    }
+
+    const text = await response.text();
+    assertNoServerException(unitPath.path, response, text);
+
+    if (text.includes("Admin AVA") || text.includes("Teacher AVA")) {
+      throw new Error(`Secretaria misturou menu pedagogico em ${unitPath.path}.`);
+    }
+
+    if (role === "ADMIN") {
+      const suffix = unitPath.path.includes("unit=")
+        ? `&unit=${unitPath.path.split("unit=")[1]}`
+        : "";
+      const expectedLinks = [
+        `/ava/admin?task=aceitar-alunos${suffix}`,
+        `/ava/admin?task=financeiro${suffix}`,
+        `/ava/admin?task=agenda${suffix}`,
+      ];
+
+      for (const link of expectedLinks) {
+        if (!text.includes(link)) {
+          throw new Error(`Secretaria admin sem link ${link} em ${unitPath.label}.`);
+        }
+      }
+    }
+
+    if (role === "TEACHER") {
+      const suffix = unitPath.path.includes("unit=")
+        ? `&unit=${unitPath.path.split("unit=")[1]}`
+        : "";
+      const expectedLink = `/ava/teacher?task=aceitar-alunos${suffix}`;
+
+      if (!text.includes(expectedLink)) {
+        throw new Error(`Secretaria teacher sem link ${expectedLink}.`);
+      }
+
+      for (const forbiddenLink of [
+        "/ava/admin?task=financeiro",
+        "/ava/admin?task=agenda",
+        "/ava/admin?task=apis-senhas",
+      ]) {
+        if (text.includes(forbiddenLink)) {
+          throw new Error(`Secretaria teacher vazou ${forbiddenLink}.`);
+        }
+      }
+    }
+  }
+
+  console.log(`OK secretaria unit links ${role.toLowerCase()}`);
+}
+
+async function assertAnonymousProtectedRoutes() {
+  const protectedPaths = [
+    "/ava/admin",
+    "/ava/teacher",
+    "/ava/student",
+    "/ava/escolha",
+    "/ava/secretaria",
+  ];
+
+  for (const path of protectedPaths) {
+    const response = await fetch(buildUrl(path), {
+      redirect: "manual",
+    });
+    const location = response.headers.get("location");
+
+    if (
+      ![302, 303, 307, 308].includes(response.status) ||
+      !location?.includes("/ava/login")
+    ) {
+      throw new Error(
+        `Usuario sem login nao deve acessar ${path}, recebeu ${response.status} ${location ?? ""}`,
+      );
+    }
+  }
+
+  console.log("OK anonymous protected routes");
 }
 
 async function assertAdminOnlySecretariaTasks(role: SmokeRole, cookie: string) {
@@ -360,6 +614,7 @@ async function cleanup() {
 }
 
 async function main() {
+  await assertAnonymousProtectedRoutes();
   await cleanup();
 
   for (const [index, role] of roles.entries()) {
@@ -371,6 +626,10 @@ async function main() {
     await assertAreaChoiceShell(role, cookie);
     await assertPedagogicalWorkspace(role, cookie);
     await assertSecretariaPermissions(role, cookie);
+    await assertSecretariaUnitLinks(role, cookie);
+    await assertAdminAvaTaskRoutes(role, cookie);
+    await assertTeacherAvaTaskRoutes(role, cookie);
+    await assertStudentRoutes(role, cookie);
     await assertAdminOnlySecretariaTasks(role, cookie);
   }
 
