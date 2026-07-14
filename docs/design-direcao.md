@@ -74,6 +74,7 @@ Cuidados:
 - Catty aparece nos paineis logados do AVA por pedido explicito; revisar posicionamento se cobrir botoes, formularios, contratos ou tarefas.
 - WhatsApp tambem nao aparece nos paineis logados do AVA, para nao disputar espaco com a operacao.
 - Teacher e student devem abrir uma tarefa por vez com `?task=`, como o admin.
+- Admin e Teacher devem passar por uma escolha visual simples entre `AVA` e `Secretaria` no fluxo normal de entrada; os dois blocos precisam ser grandes, legiveis e responsivos. A sidebar deve separar `AVA` pedagogico de `Secretaria` administrativa sem remover links profundos antigos.
 - Resumo do usuario no AVA usa card glass compacto com respiro extra no topo dos paineis, email truncado, acoes dentro da propria caixa e microbarra Candy XP animada com metricas curtas quando houver snapshot de progresso da role logada; em mobile/tablet o topo deve empilhar sem cortes, os headers de tarefa devem centralizar icone/titulo e os cards de metricas so devem virar colunas quando houver largura real.
 - Perfil interno do AVA usa cards suaves com fundo glass claro, hierarquia por icones, painel de completude student com barra amarela/roxa, marcos visuais verdes conforme campos sao preenchidos e recompensa de ate 350 XP dividida entre dados principais (150 XP) e aluno/responsavel (200 XP), mais foto do perfil como bonus separado de 500 XP concedido uma unica vez, resumo superior de campos/XP, chips de XP em cada campo que conta para o bonus e chip `Opcional` nos campos extras, formulario separado por dados principais e dados do aluno, alem de foto em lateral com borda/ring discreto para dar acabamento sem perder leitura operacional.
 - Student sem foto no perfil ve um popup visual diario apos entrar no AVA, usando video em loop leve como conteudo clicavel, com `public/brand/profile-photo-popup.mp4` no desktop/tablet e `public/brand/profile-photo-popup-mobile.mp4` no mobile, borda Candy discreta e botao de fechar; clicar no video vai para `/ava/student?task=perfil`. O popup nao aparece dentro da propria tarefa `Meu perfil`, marca o dia como visto por `localStorage` apenas quando aparece e evita `backdrop-filter` pesado para nao causar travamento em desktop/mobile fraco.
@@ -141,9 +142,10 @@ flowchart TD
 flowchart TD
   A["Login visual e responsivo"] --> B["Auth.js valida email e senha"]
   B --> C{"Role do usuario"}
-  C --> D["ADMIN: admin, teacher e student"]
-  C --> E["TEACHER: teacher e student"]
-  C --> F["STUDENT: student"]
+  C --> D["ADMIN/TEACHER: escolha AVA ou Secretaria"]
+  D --> E["AVA pedagogico"]
+  D --> F["Secretaria interna"]
+  C --> G["STUDENT: student"]
 ```
 
 ## Regras Para Proximas Telas

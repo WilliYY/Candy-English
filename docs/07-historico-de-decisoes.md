@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-07-14 - Escolha AVA ou Secretaria apos login
+
+- Decisao: adicionar `/ava/escolha` para Admin/Teacher escolherem entre `AVA` e `Secretaria`, criar `/ava/secretaria` como painel protegido de atalhos e reorganizar a sidebar por area sem remover os links antigos por `?task=`.
+- Motivo: separar visualmente rotina pedagogica de controle interno, deixando financeiro, agenda e pre-cadastros agrupados na Secretaria.
+- Impacto: `src/lib/roles.ts`, `src/app/ava/escolha/page.tsx`, `src/app/ava/secretaria/page.tsx`, `src/app/ava/layout.tsx`, `scripts/auth-smoke.ts`, README e docs oficiais.
+- Riscos/cuidados: a Secretaria nao cria permissoes novas; Student continua fora dela e cada rota antiga segue validando role/dados no servidor.
+
 ### 2026-07-14 - Financeiro com pagamentos internos mais escaneaveis
 
 - Decisao: refinar a aba `Pagamentos` do financeiro com resumo mensal proprio, totais por unidade, formulario compacto e lista em tabela no desktop; corrigir a edicao de alunos para remontar o formulario selecionado e reativar meses que continuam dentro do plano novo.

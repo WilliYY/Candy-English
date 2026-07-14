@@ -23,8 +23,7 @@ const testEmails = roles.map(
 );
 
 function getDefaultAvaPath(role: SmokeRole) {
-  if (role === "ADMIN") return "/ava/admin";
-  if (role === "TEACHER") return "/ava/teacher";
+  if (role === "ADMIN" || role === "TEACHER") return "/ava/escolha";
   return "/ava/student";
 }
 

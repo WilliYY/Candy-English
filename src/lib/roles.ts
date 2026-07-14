@@ -9,8 +9,18 @@ export const ROLE_LABELS: Record<Role, string> = {
 };
 
 export function getDefaultAvaPath(role: Role) {
-  if (role === "ADMIN") return "/ava/admin";
-  if (role === "TEACHER") return "/ava/teacher";
+  if (role === "ADMIN" || role === "TEACHER") return "/ava/escolha";
+  return "/ava/student";
+}
+
+export function getPedagogicalAvaPath(role: Role) {
+  if (role === "ADMIN") return "/ava/admin?task=usuarios";
+  if (role === "TEACHER") return "/ava/teacher?task=resumo";
+  return "/ava/student";
+}
+
+export function getSecretariaPath(role: Role) {
+  if (role === "ADMIN" || role === "TEACHER") return "/ava/secretaria";
   return "/ava/student";
 }
 

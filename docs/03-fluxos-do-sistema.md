@@ -9,6 +9,8 @@ Este documento registra os fluxos principais de uso do Candy English. Ele deve s
 Rotas:
 
 - `/ava/login`
+- `/ava/escolha`
+- `/ava/secretaria`
 - `/ava/admin?task=...`
 - `/ava/teacher?task=...`
 - `/ava/student?task=...`
@@ -83,7 +85,17 @@ Helpers:
 1. Usuario entra em `/ava/login`.
 2. Auth.js valida email, senha, usuario ativo e manutencao.
 3. Sessao JWT recebe `id` e `role`.
-4. Usuario vai para `/ava/admin`, `/ava/teacher` ou `/ava/student`.
+4. `ADMIN` e `TEACHER` vao para `/ava/escolha`, onde escolhem entre `AVA` e `Secretaria`.
+5. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.
+
+### Escolha AVA ou Secretaria
+
+1. Admin ou Teacher autenticado abre `/ava` ou `/ava/escolha`.
+2. A tela mostra dois blocos grandes: `AVA`, para rotina pedagogica, e `Secretaria`, para controle interno.
+3. Clicar em `AVA` leva Admin para `/ava/admin?task=usuarios` e Teacher para `/ava/teacher?task=resumo`.
+4. Clicar em `Secretaria` leva para `/ava/secretaria`, um painel protegido de atalhos.
+5. Teacher ve somente atalhos permitidos, como pre-cadastros e contratos; financeiro, agenda, APIs e manutencao seguem exclusivos de Admin.
+6. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
 
 ### Pre-cadastro de interessado
 
@@ -101,7 +113,8 @@ Helpers:
 
 1. Admin abre `/ava/admin`.
 2. A tarefa padrao e `usuarios`.
-3. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
+3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
+4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
 5. Admin revisa pre-cadastros em `Aceitar alunos`, com filtros por pendente, em analise, convertido e recusado.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
@@ -120,8 +133,9 @@ Helpers:
 
 ### Teacher
 
-1. Teacher entra em `/ava/teacher`.
-2. No resumo, ve o card Teacher XP com nivel, fontes pedagogicas, trilha infinita e proximas metas de rotina.
+1. Teacher entra pelo fluxo normal em `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
+2. Ao clicar em `AVA`, abre `/ava/teacher?task=resumo`.
+3. No resumo, ve o card Teacher XP com nivel, fontes pedagogicas, trilha infinita e proximas metas de rotina.
 3. Ve alunos vinculados.
 4. Cria aula interativa e homework interativo por arquivo do Canva, podendo selecionar um aluno, varios alunos ou todos os disponiveis no formulario; ao marcar todos, o seletor usa um resumo curto com total e acao separada para limpar, sem comprimir os controles.
 5. Corrige respostas e envia feedback.
@@ -283,6 +297,14 @@ Helpers:
 12. Exporta PDF/Excel com a unidade de cada aluno e acompanha log em card separado.
 13. Na aba `Pagamentos`, admin registra gastos internos da loja com unidade, insumo, data, valor e quem fez a compra; esses registros sao separados dos alunos financeiros.
 
+### Secretaria
+
+1. Admin ou Teacher abre `/ava/secretaria` depois da escolha pos-login ou pela sidebar.
+2. A pagina agrupa atalhos administrativos, sem substituir as rotas antigas por `?task=`.
+3. Admin ve pre-cadastros, financeiro, agenda, contratos, administracao e sistema.
+4. Teacher ve somente pre-cadastros e contratos permitidos por role/vinculo.
+5. Student nao acessa `/ava/secretaria`; ao tentar, a autorizacao o redireciona para o AVA Student.
+
 ### Agenda
 
 1. Admin abre `/ava/admin?task=agenda`.
@@ -306,6 +328,8 @@ Helpers:
 ## Regras de negocio que precisam ser preservadas
 
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
+- `/ava/escolha` separa visualmente `AVA` e `Secretaria` para Admin/Teacher; Student nunca deve ver Secretaria.
+- `/ava/secretaria` e um painel de atalhos protegidos, nao uma permissao nova nem substituto das validacoes server-side das tarefas existentes.
 - Pre-cadastro publico nunca deve liberar login automaticamente; ele apenas cria solicitacao pendente para analise.
 - O modulo `Aceitar alunos` deve converter pre-cadastro somente por action protegida com role `ADMIN` ou `TEACHER`, sempre criando `STUDENT` e nunca `ADMIN`/`TEACHER`.
 - Sidebar deve ser indice operacional, sem caixa interna de rolagem no desktop. Em mobile e tablet abaixo de `1280px`, ela abre como drawer sobre o conteudo, fecha ao escolher um atalho, tocar fora ou pressionar `Esc` e devolve imediatamente a area util da tarefa.
@@ -340,6 +364,7 @@ Helpers:
 ## Decisoes tecnicas tomadas
 
 - O fluxo `/ava` nao exibe cards publicos; ele redireciona.
+- O fluxo `/ava` redireciona Admin/Teacher para `/ava/escolha` e Student direto para `/ava/student`.
 - Login Google esta desativado nesta fase; o AVA usa email/senha pelo Credentials Provider.
 - Alertas visuais da sidebar usam assinaturas por modulo e localStorage no navegador.
 - Financeiro usa estrutura recorrente por aluno com snapshots mensais para preservar historico fechado.

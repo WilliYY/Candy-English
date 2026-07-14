@@ -26,7 +26,12 @@ import {
   WalletCards,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
-import { canAccessRole, isRole, ROLE_LABELS } from "@/lib/roles";
+import {
+  canAccessRole,
+  getPedagogicalAvaPath,
+  isRole,
+  ROLE_LABELS,
+} from "@/lib/roles";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { Button } from "@/components/ui/button";
 import { AvaStudentBackdrop } from "@/components/ava/ava-student-backdrop";
@@ -39,137 +44,61 @@ import { getPrisma } from "@/lib/prisma";
 const navGroups = [
   {
     allowedRoles: ["ADMIN"] as const,
+    areaLabel: "AVA",
     href: "/ava/admin?task=usuarios",
     icon: Settings,
-    label: "Admin",
+    label: "Admin AVA",
     links: [
       {
         href: "/ava/admin?task=usuarios",
         icon: UsersRound,
         label: "Usuarios",
-        section: "Gestao",
-      },
-      {
-        href: "/ava/admin?task=criar-admin",
-        icon: UserPlus,
-        label: "Criar admin",
-        section: "Gestao",
+        section: "Alunos do AVA",
       },
       {
         href: "/ava/admin?task=criar-teacher",
         icon: GraduationCap,
         label: "Criar teacher",
-        section: "Gestao",
+        section: "Alunos do AVA",
       },
       {
         href: "/ava/admin?task=criar-aluno",
         icon: UserRound,
         label: "Criar aluno",
-        section: "Gestao",
-      },
-      {
-        href: "/ava/admin?task=aceitar-alunos",
-        icon: UserCheck,
-        label: "Aceitar alunos",
-        section: "Gestao",
+        section: "Alunos do AVA",
       },
       {
         href: "/ava/admin?task=vincular-aluno",
         icon: Link2,
         label: "Vincular aluno",
-        section: "Gestao",
-      },
-      {
-        href: "/ava/teacher?task=aula-ao-vivo",
-        icon: Radio,
-        label: "Aula ao vivo",
-        section: "Aulas",
-      },
-      {
-        href: "/ava/teacher?task=criar-aula",
-        icon: BookOpen,
-        label: "Criar/Ver Aulas",
-        section: "Aulas",
-      },
-      {
-        href: "/ava/teacher?task=criar-homework",
-        icon: ClipboardCheck,
-        label: "Criar/Ver Homework",
-        section: "Aulas",
+        section: "Alunos do AVA",
       },
       {
         href: "/ava/admin?task=candy-xp",
         icon: Sparkles,
         label: "Candy XP",
-        section: "Aulas",
-      },
-      {
-        href: "/ava/teacher?task=corrigir-respostas",
-        icon: ClipboardCheck,
-        label: "Corrigir homework",
-        section: "Aulas",
-      },
-      {
-        href: "/ava/teacher?task=aceitar-alunos",
-        icon: UserCheck,
-        label: "Aceitar alunos",
-        section: "Comunicacao",
-      },
-      {
-        href: "/ava/teacher?task=mensagens",
-        icon: MessageSquareText,
-        label: "Mensagens",
-        section: "Comunicacao",
-      },
-      {
-        href: "/ava/admin?task=contratos",
-        icon: FileText,
-        label: "Contratos PDF",
-        section: "Arquivos",
-      },
-      {
-        href: "/ava/admin?task=financeiro",
-        icon: WalletCards,
-        label: "Financeiro",
-        section: "Financeiro",
-      },
-      {
-        href: "/ava/admin?task=agenda",
-        icon: CalendarCheck2,
-        label: "Agenda",
-        section: "Financeiro",
-      },
-      {
-        href: "/ava/admin?task=apis-senhas",
-        icon: KeyRound,
-        label: "APIs e senhas",
-        section: "Sistema",
+        section: "Gamificacao",
       },
       {
         href: "/ava/admin?task=catty-learning",
         icon: BrainCircuit,
         label: "Treinar Catty",
-        section: "Sistema",
+        section: "Catty",
       },
       {
         href: "/ava/admin?task=catty-artifacts",
         icon: Palette,
         label: "Catty dos alunos",
-        section: "Sistema",
-      },
-      {
-        href: "/ava/admin?task=editar-site",
-        icon: PencilLine,
-        label: "Manutencao",
-        section: "Sistema",
+        section: "Catty",
       },
     ],
   },
   {
     allowedRoles: ["ADMIN", "TEACHER"] as const,
+    areaLabel: "AVA",
     href: "/ava/teacher?task=resumo",
     icon: GraduationCap,
-    label: "Teacher",
+    label: "Teacher AVA",
     links: [
       {
         href: "/ava/teacher?task=aula-ao-vivo",
@@ -194,12 +123,6 @@ const navGroups = [
         icon: ClipboardCheck,
         label: "Corrigir homework",
         section: "Aulas",
-      },
-      {
-        href: "/ava/teacher?task=aceitar-alunos",
-        icon: UserCheck,
-        label: "Aceitar alunos",
-        section: "Comunicacao",
       },
       {
         href: "/ava/teacher?task=mensagens",
@@ -219,6 +142,72 @@ const navGroups = [
         label: "Catty dos alunos",
         section: "Comunicacao",
       },
+    ],
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    areaLabel: "Secretaria",
+    href: "/ava/secretaria",
+    icon: WalletCards,
+    label: "Secretaria",
+    links: [
+      {
+        href: "/ava/admin?task=aceitar-alunos",
+        icon: UserCheck,
+        label: "Pre-cadastros",
+        section: "Entrada",
+      },
+      {
+        href: "/ava/admin?task=contratos",
+        icon: FileText,
+        label: "Contratos PDF",
+        section: "Arquivos",
+      },
+      {
+        href: "/ava/admin?task=financeiro",
+        icon: WalletCards,
+        label: "Financeiro",
+        section: "Controle interno",
+      },
+      {
+        href: "/ava/admin?task=agenda",
+        icon: CalendarCheck2,
+        label: "Agenda",
+        section: "Controle interno",
+      },
+      {
+        href: "/ava/admin?task=criar-admin",
+        icon: UserPlus,
+        label: "Criar admin",
+        section: "Sistema",
+      },
+      {
+        href: "/ava/admin?task=apis-senhas",
+        icon: KeyRound,
+        label: "APIs e senhas",
+        section: "Sistema",
+      },
+      {
+        href: "/ava/admin?task=editar-site",
+        icon: PencilLine,
+        label: "Manutencao",
+        section: "Sistema",
+      },
+    ],
+  },
+  {
+    allowedRoles: ["TEACHER"] as const,
+    areaLabel: "Secretaria",
+    href: "/ava/secretaria",
+    icon: WalletCards,
+    label: "Secretaria",
+    links: [
+      {
+        href: "/ava/teacher?task=aceitar-alunos",
+        icon: UserCheck,
+        label: "Pre-cadastros",
+        section: "Entrada",
+      },
       {
         href: "/ava/teacher?task=contratos",
         icon: FileText,
@@ -229,6 +218,7 @@ const navGroups = [
   },
   {
     allowedRoles: ["ADMIN", "TEACHER", "STUDENT"] as const,
+    areaLabel: "AVA",
     href: "/ava/student?task=resumo",
     icon: UserRound,
     label: "Student",
@@ -373,6 +363,47 @@ export default async function AvaLayout({
               ) : null}
             </div>
 
+            {role !== "STUDENT" ? (
+              <div className="rounded-[1.15rem] border border-primary/16 bg-white/78 p-2.5 shadow-[0_10px_26px_rgb(44_19_56_/_0.06)] backdrop-blur-xl">
+                <p className="px-2 pb-2 text-[0.66rem] font-extrabold uppercase tracking-[0.17em] text-primary/58">
+                  Escolha de area
+                </p>
+                <div className="grid gap-2">
+                  <AvaNavAlertLink
+                    href="/ava/escolha"
+                    className={navItemLinkClassName}
+                    activeClassName={navItemActiveClassName}
+                  >
+                    <span
+                      data-nav-icon
+                      className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
+                    >
+                      <Settings aria-hidden="true" className="size-4" />
+                    </span>
+                    <span className="min-w-0 truncate">Escolha sua area</span>
+                  </AvaNavAlertLink>
+                  <div className="grid grid-cols-2 gap-2">
+                    <AvaNavAlertLink
+                      href={getPedagogicalAvaPath(role)}
+                      className="relative flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-primary/10 bg-[#fbf7ff] px-2.5 py-2 text-sm font-bold text-primary shadow-sm transition-all hover:border-primary/25 hover:bg-white"
+                      activeClassName={navItemActiveClassName}
+                    >
+                      <BookOpen aria-hidden="true" className="size-4" />
+                      AVA
+                    </AvaNavAlertLink>
+                    <AvaNavAlertLink
+                      href="/ava/secretaria"
+                      className="relative flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-primary/10 bg-[#fff7fb] px-2.5 py-2 text-sm font-bold text-primary shadow-sm transition-all hover:border-primary/25 hover:bg-white"
+                      activeClassName={navItemActiveClassName}
+                    >
+                      <WalletCards aria-hidden="true" className="size-4" />
+                      Secretaria
+                    </AvaNavAlertLink>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-primary/60">
               Area de trabalho
             </div>
@@ -381,136 +412,55 @@ export default async function AvaLayout({
               className="flex flex-col gap-3 rounded-[1.35rem] border border-primary/18 bg-white/72 p-2.5 shadow-[0_20px_44px_rgb(44_19_56_/_0.1)]"
               aria-label="Navegacao do AVA"
             >
-              {visibleGroups.map((group) => {
+              {visibleGroups.map((group, groupIndex) => {
+                const previousGroup = visibleGroups[groupIndex - 1];
+                const shouldShowAreaHeading =
+                  !previousGroup || previousGroup.areaLabel !== group.areaLabel;
+
                 if (role === "STUDENT" && group.label === "Student") {
                   return (
-                    <div
-                      key={group.href}
-                      className="ava-sidebar-student-nav rounded-[1.15rem] border border-primary/15 bg-white/75 p-3 shadow-sm backdrop-blur-xl lg:p-4"
-                    >
-                      <div className="relative z-10 mb-3 flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/70 px-3 py-2.5 text-sm font-bold text-primary shadow-sm">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-                            <group.icon aria-hidden="true" className="size-4" />
-                          </span>
-                          <span className="min-w-0">
-                            <span className="block truncate">Trilha Candy</span>
-                            <span className="block text-[0.64rem] font-bold uppercase tracking-[0.16em] text-primary/50">
-                              Student
-                            </span>
-                          </span>
+                    <Fragment key={`${group.areaLabel}-${group.href}`}>
+                      {shouldShowAreaHeading ? (
+                        <span className="mt-1 flex items-center gap-2 px-2 text-[0.66rem] font-extrabold uppercase tracking-[0.17em] text-primary/58 first:mt-0">
+                          <span className="size-1.5 rounded-full bg-accent shadow-[0_0_0_3px_rgb(229_124_216_/_0.14)]" />
+                          {group.areaLabel}
                         </span>
-                        <span className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[0.68rem] font-bold text-secondary-foreground">
-                          {group.links.length + 1} mod
-                        </span>
-                      </div>
-                      <div className="relative z-10 flex flex-col gap-2">
-                        <AvaNavAlertLink
-                          href={group.href}
-                          signature={navAlertSignatures[group.href]}
-                          className={navPanelLinkClassName}
-                          activeClassName={navPanelActiveClassName}
-                        >
-                          <group.icon aria-hidden="true" className="size-4" />
-                          Painel Student
-                        </AvaNavAlertLink>
-                        {group.links.map((link) => (
-                          <AvaNavAlertLink
-                            key={`${group.href}-${link.href}-${link.label}`}
-                            href={link.href}
-                            signature={navAlertSignatures[link.href]}
-                            className={navItemLinkClassName}
-                            activeClassName={navItemActiveClassName}
-                          >
-                            <span
-                              data-nav-icon
-                              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
-                            >
-                              <link.icon
+                      ) : null}
+                      <div className="ava-sidebar-student-nav rounded-[1.15rem] border border-primary/15 bg-white/75 p-3 shadow-sm backdrop-blur-xl lg:p-4">
+                        <div className="relative z-10 mb-3 flex items-center justify-between gap-3 rounded-xl border border-primary/10 bg-white/70 px-3 py-2.5 text-sm font-bold text-primary shadow-sm">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                              <group.icon
                                 aria-hidden="true"
                                 className="size-4"
                               />
                             </span>
-                            <span className="min-w-0 truncate">
-                              {link.label}
-                            </span>
-                          </AvaNavAlertLink>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                }
-
-                let currentSection: string | undefined;
-                const panelHasTaskLink = group.links.some(
-                  (link) => link.href === group.href,
-                );
-
-                return (
-                  <details
-                    key={group.href}
-                    open={
-                      (group.label === "Admin" && role === "ADMIN") ||
-                      (group.label === "Student" && role === "STUDENT")
-                    }
-                    className="group rounded-[1.15rem] border border-primary/16 bg-white/78 p-2 shadow-[0_10px_26px_rgb(44_19_56_/_0.06)] backdrop-blur-xl transition-colors open:border-primary/32 open:bg-white/92"
-                  >
-                    <summary className="flex cursor-pointer touch-manipulation list-none items-center justify-between gap-3 rounded-xl border border-primary/10 bg-gradient-to-r from-white via-white to-secondary/45 px-3 py-3 text-sm font-bold text-primary outline-none shadow-sm transition-colors hover:border-primary/18 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10 transition-colors group-open:bg-primary group-open:text-primary-foreground">
-                          <group.icon aria-hidden="true" className="size-4" />
-                        </span>
-                        <span className="min-w-0">
-                          <span className="block truncate">{group.label}</span>
-                          <span className="block text-[0.62rem] font-bold uppercase tracking-[0.14em] text-primary/48">
-                            {group.links.length + 1} atalhos
-                          </span>
-                        </span>
-                      </span>
-                      <ChevronDown
-                        aria-hidden="true"
-                        className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
-                      />
-                    </summary>
-
-                    <div className="mt-2 flex flex-col gap-1.5 border-l border-primary/18 pl-3">
-                      <AvaNavAlertLink
-                        href={group.href}
-                        signature={navAlertSignatures[group.href]}
-                        className={navPanelLinkClassName}
-                        activeClassName={
-                          panelHasTaskLink ? undefined : navPanelActiveClassName
-                        }
-                      >
-                        <span
-                          data-nav-icon
-                          className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
-                        >
-                          <group.icon aria-hidden="true" className="size-4" />
-                        </span>
-                        Painel {group.label}
-                      </AvaNavAlertLink>
-                      {group.links.map((link) => {
-                        const shouldShowSection =
-                          "section" in link &&
-                          link.section &&
-                          link.section !== currentSection;
-                        if ("section" in link) {
-                          currentSection = link.section;
-                        }
-
-                        return (
-                          <Fragment
-                            key={`${group.href}-${link.href}-${link.label}`}
-                          >
-                            {shouldShowSection ? (
-                              <span className="mt-3 flex items-center gap-2 px-2 text-[0.66rem] font-extrabold uppercase tracking-[0.17em] text-primary/58 first:mt-2">
-                                <span className="size-1.5 rounded-full bg-accent shadow-[0_0_0_3px_rgb(229_124_216_/_0.14)]" />
-                                <span className="shrink-0">{link.section}</span>
-                                <span className="h-px min-w-4 flex-1 bg-primary/12" />
+                            <span className="min-w-0">
+                              <span className="block truncate">
+                                Trilha Candy
                               </span>
-                            ) : null}
+                              <span className="block text-[0.64rem] font-bold uppercase tracking-[0.16em] text-primary/50">
+                                Student
+                              </span>
+                            </span>
+                          </span>
+                          <span className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[0.68rem] font-bold text-secondary-foreground">
+                            {group.links.length + 1} mod
+                          </span>
+                        </div>
+                        <div className="relative z-10 flex flex-col gap-2">
+                          <AvaNavAlertLink
+                            href={group.href}
+                            signature={navAlertSignatures[group.href]}
+                            className={navPanelLinkClassName}
+                            activeClassName={navPanelActiveClassName}
+                          >
+                            <group.icon aria-hidden="true" className="size-4" />
+                            Painel Student
+                          </AvaNavAlertLink>
+                          {group.links.map((link) => (
                             <AvaNavAlertLink
+                              key={`${group.href}-${link.href}-${link.label}`}
                               href={link.href}
                               signature={navAlertSignatures[link.href]}
                               className={navItemLinkClassName}
@@ -529,11 +479,120 @@ export default async function AvaLayout({
                                 {link.label}
                               </span>
                             </AvaNavAlertLink>
-                          </Fragment>
-                        );
-                      })}
-                    </div>
-                  </details>
+                          ))}
+                        </div>
+                      </div>
+                    </Fragment>
+                  );
+                }
+
+                let currentSection: string | undefined;
+                const panelHasTaskLink = group.links.some(
+                  (link) => link.href === group.href,
+                );
+
+                return (
+                  <Fragment key={`${group.areaLabel}-${group.href}`}>
+                    {shouldShowAreaHeading ? (
+                      <span className="mt-1 flex items-center gap-2 px-2 text-[0.66rem] font-extrabold uppercase tracking-[0.17em] text-primary/58 first:mt-0">
+                        <span className="size-1.5 rounded-full bg-accent shadow-[0_0_0_3px_rgb(229_124_216_/_0.14)]" />
+                        {group.areaLabel}
+                      </span>
+                    ) : null}
+                    <details
+                      open={
+                        (group.label === "Admin AVA" && role === "ADMIN") ||
+                        (group.label === "Teacher AVA" && role === "TEACHER") ||
+                        (group.label === "Secretaria" && role === "TEACHER")
+                      }
+                      className="group rounded-[1.15rem] border border-primary/16 bg-white/78 p-2 shadow-[0_10px_26px_rgb(44_19_56_/_0.06)] backdrop-blur-xl transition-colors open:border-primary/32 open:bg-white/92"
+                    >
+                      <summary className="flex cursor-pointer touch-manipulation list-none items-center justify-between gap-3 rounded-xl border border-primary/10 bg-gradient-to-r from-white via-white to-secondary/45 px-3 py-3 text-sm font-bold text-primary outline-none shadow-sm transition-colors hover:border-primary/18 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-sm ring-1 ring-primary/10 transition-colors group-open:bg-primary group-open:text-primary-foreground">
+                            <group.icon aria-hidden="true" className="size-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate">
+                              {group.label}
+                            </span>
+                            <span className="block text-[0.62rem] font-bold uppercase tracking-[0.14em] text-primary/48">
+                              {group.links.length + 1} atalhos
+                            </span>
+                          </span>
+                        </span>
+                        <ChevronDown
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"
+                        />
+                      </summary>
+
+                      <div className="mt-2 flex flex-col gap-1.5 border-l border-primary/18 pl-3">
+                        <AvaNavAlertLink
+                          href={group.href}
+                          signature={navAlertSignatures[group.href]}
+                          className={navPanelLinkClassName}
+                          activeClassName={
+                            panelHasTaskLink
+                              ? undefined
+                              : navPanelActiveClassName
+                          }
+                        >
+                          <span
+                            data-nav-icon
+                            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
+                          >
+                            <group.icon aria-hidden="true" className="size-4" />
+                          </span>
+                          Painel {group.label}
+                        </AvaNavAlertLink>
+                        {group.links.map((link) => {
+                          const shouldShowSection =
+                            "section" in link &&
+                            link.section &&
+                            link.section !== currentSection;
+                          if ("section" in link) {
+                            currentSection = link.section;
+                          }
+
+                          return (
+                            <Fragment
+                              key={`${group.href}-${link.href}-${link.label}`}
+                            >
+                              {shouldShowSection ? (
+                                <span className="mt-3 flex items-center gap-2 px-2 text-[0.66rem] font-extrabold uppercase tracking-[0.17em] text-primary/58 first:mt-2">
+                                  <span className="size-1.5 rounded-full bg-accent shadow-[0_0_0_3px_rgb(229_124_216_/_0.14)]" />
+                                  <span className="shrink-0">
+                                    {link.section}
+                                  </span>
+                                  <span className="h-px min-w-4 flex-1 bg-primary/12" />
+                                </span>
+                              ) : null}
+                              <AvaNavAlertLink
+                                href={link.href}
+                                signature={navAlertSignatures[link.href]}
+                                className={navItemLinkClassName}
+                                activeClassName={navItemActiveClassName}
+                              >
+                                <span
+                                  data-nav-icon
+                                  className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/8 text-primary"
+                                >
+                                  <link.icon
+                                    aria-hidden="true"
+                                    className="size-4"
+                                  />
+                                </span>
+                                <span className="min-w-0 truncate">
+                                  {link.label}
+                                </span>
+                              </AvaNavAlertLink>
+                            </Fragment>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  </Fragment>
                 );
               })}
               {!role ? (

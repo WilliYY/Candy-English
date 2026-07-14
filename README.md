@@ -17,6 +17,7 @@ Ja existe:
 - login real com Auth.js/NextAuth v5, JWT, Credentials Provider, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
+- escolha pos-login para `ADMIN` e `TEACHER` separando `AVA` pedagogico e `Secretaria`; `STUDENT` entra direto no AVA Student;
 - admin com cadastro de usuarios, aceite/recusa de pre-cadastros, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva e areas interativas sobre o arquivo;
 - teacher com aceite de pre-cadastros como alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, resposta no PDF/imagem, progresso e envio;

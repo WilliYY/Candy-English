@@ -66,6 +66,8 @@ Tabelas:
 Rotas protegidas:
 
 - `/ava/admin`
+- `/ava/escolha`
+- `/ava/secretaria`
 - `/ava/admin?task=apis-senhas`
 - `/ava/teacher`
 - `/ava/student`
@@ -80,6 +82,9 @@ Rotas protegidas:
 - `ADMIN` acessa admin e pode supervisionar teacher/student.
 - `TEACHER` acessa teacher e student, mas dados editaveis dependem de vinculo.
 - `STUDENT` acessa student e apenas os proprios dados.
+- Depois do login, `ADMIN` e `TEACHER` entram em `/ava/escolha`; `STUDENT` entra direto em `/ava/student`.
+- `/ava/secretaria` aceita apenas `ADMIN` e `TEACHER`; Student nao ve nem acessa a Secretaria.
+- A Secretaria e apenas painel de atalhos/agrupamento visual; cada destino continua validando role e permissao por dado no servidor.
 - `/ava/avatar/[userId]` exige sessao; student le apenas o proprio avatar, admin le todos e teacher le avatar de aluno vinculado.
 - Usuario inativo nao entra.
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
@@ -131,6 +136,8 @@ Rotas protegidas:
 
 - Auth.js/NextAuth v5 usa JWT.
 - Credentials Provider e o login principal.
+- `getDefaultAvaPath` direciona `ADMIN` e `TEACHER` para `/ava/escolha`; `STUDENT` continua indo para `/ava/student`.
+- A escolha pos-login e a Secretaria usam `requireAvaRole` em Server Component, sem criar nova role.
 - Google Provider foi removido temporariamente; o provider ativo e Credentials.
 - `StudentPreRegistration` guarda interessados como solicitacao pendente fora do fluxo de Auth.js.
 - `StudentPreRegistration` tambem guarda metadados de revisao/conversao; `APPROVED` e usado como status tecnico para `Convertido em aluno` na UI.
