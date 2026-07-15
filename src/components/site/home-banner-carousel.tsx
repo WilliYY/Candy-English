@@ -54,6 +54,14 @@ const slides: HomeBannerSlide[] = [
     type: "image",
   },
   {
+    description: "Turma Candy praticando ingles com jogo, conversa e leveza.",
+    id: "aula-candy-2026-07-15",
+    label: "Turma Candy English em atividade",
+    src: "/brand/home-banner-aula-2026-07-15.jpeg",
+    title: "Turma Candy",
+    type: "image",
+  },
+  {
     description: "Teacher Milena mostrando como estudar com a Candy.",
     id: "intro-2",
     label: "Intro Candy English 2",
