@@ -218,8 +218,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
                     muted={videoMutedState[slide.id]}
                     playsInline
                     preload="metadata"
-                    style={{ aspectRatio: "478 / 850" }}
-                    className="relative z-10 block h-[88%] max-h-[88%] w-auto max-w-[calc(100%-1.5rem)] rounded-[0.9rem] border border-[#9d74aa]/80 bg-[#2c1338] object-contain object-center shadow-[0_1rem_2.5rem_rgba(20,7,27,0.34)] ring-1 ring-[#2c1338]/40 sm:max-w-[calc(100%-2.5rem)] sm:rounded-[1.1rem]"
+                    className="absolute inset-0 z-10 h-full w-full bg-[#4c245e] object-contain object-center"
                     onPlay={() => {
                       setIsAutoPaused(true);
                       setPlayingVideoId(slide.id);
