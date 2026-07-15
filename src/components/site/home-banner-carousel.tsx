@@ -199,41 +199,47 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
               ) : (
                 <button
                   type="button"
-                  className="relative z-10 h-full w-full cursor-pointer"
+                  className="relative z-10 flex h-full w-full cursor-pointer items-center justify-center p-3 sm:p-5"
                   aria-label={`${playingVideoId === slide.id ? "Pausar" : "Reproduzir"} ${slide.label}`}
                   onClick={() => {
                     void toggleVideo(slide);
                   }}
                 >
-                  <video
-                    ref={(node) => {
-                      videoRefs.current[slide.id] = node;
-                    }}
-                    aria-label={slide.label}
-                    loop
-                    muted={videoMutedState[slide.id]}
-                    playsInline
-                    preload="metadata"
-                    className="block h-full w-full object-contain object-center"
-                    onPlay={() => {
-                      setIsAutoPaused(true);
-                      setPlayingVideoId(slide.id);
-                    }}
-                    onPause={() => {
-                      setPlayingVideoId((current) =>
-                        current === slide.id ? null : current,
-                      );
-                    }}
-                  >
-                    <source src={slide.src} type="video/mp4" />
-                  </video>
-                  {playingVideoId !== slide.id ? (
-                    <span className="absolute inset-0 grid place-items-center bg-black/10 text-white transition group-hover:bg-black/5">
-                      <span className="inline-flex size-16 items-center justify-center rounded-full border border-white/80 bg-white/92 text-primary shadow-2xl shadow-black/20">
-                        <Play aria-hidden="true" className="size-7" />
+                  <span className="relative flex h-full max-h-full w-auto max-w-full aspect-[9/16] items-center justify-center overflow-hidden rounded-[0.9rem] border border-white/35 bg-[#2c1338] shadow-[0_1rem_2.5rem_rgba(20,7,27,0.34)] sm:rounded-[1.1rem]">
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(229,124,216,0.18),transparent_22%,transparent_78%,rgba(229,124,216,0.18))]"
+                    />
+                    <video
+                      ref={(node) => {
+                        videoRefs.current[slide.id] = node;
+                      }}
+                      aria-label={slide.label}
+                      loop
+                      muted={videoMutedState[slide.id]}
+                      playsInline
+                      preload="metadata"
+                      className="relative z-10 block h-full w-full object-contain object-center"
+                      onPlay={() => {
+                        setIsAutoPaused(true);
+                        setPlayingVideoId(slide.id);
+                      }}
+                      onPause={() => {
+                        setPlayingVideoId((current) =>
+                          current === slide.id ? null : current,
+                        );
+                      }}
+                    >
+                      <source src={slide.src} type="video/mp4" />
+                    </video>
+                    {playingVideoId !== slide.id ? (
+                      <span className="absolute inset-0 z-20 grid place-items-center bg-black/10 text-white transition group-hover:bg-black/5">
+                        <span className="inline-flex size-16 items-center justify-center rounded-full border border-white/80 bg-white/92 text-primary shadow-2xl shadow-black/20">
+                          <Play aria-hidden="true" className="size-7" />
+                        </span>
                       </span>
-                    </span>
-                  ) : null}
+                    ) : null}
+                  </span>
                 </button>
               )}
             </div>
