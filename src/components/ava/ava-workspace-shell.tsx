@@ -531,6 +531,11 @@ export async function AvaWorkspaceShell({
                 const panelHasTaskLink = group.links.some(
                   (link) => link.href === group.href,
                 );
+                const shouldKeepGroupOpen =
+                  (area === "SECRETARIA" && group.label === "Secretaria") ||
+                  (area === "AVA" &&
+                    ((group.label === "Admin AVA" && role === "ADMIN") ||
+                      (group.label === "Teacher AVA" && role === "TEACHER")));
 
                 return (
                   <Fragment key={`${group.areaLabel}-${group.href}`}>
@@ -541,11 +546,7 @@ export async function AvaWorkspaceShell({
                       </span>
                     ) : null}
                     <details
-                      open={
-                        (group.label === "Admin AVA" && role === "ADMIN") ||
-                        (group.label === "Teacher AVA" && role === "TEACHER") ||
-                        (group.label === "Secretaria" && role === "TEACHER")
-                      }
+                      open={shouldKeepGroupOpen}
                       className="group rounded-[1.15rem] border border-primary/16 bg-white/78 p-2 shadow-[0_10px_26px_rgb(44_19_56_/_0.06)] backdrop-blur-xl transition-colors open:border-primary/32 open:bg-white/92"
                     >
                       <summary className="flex cursor-pointer touch-manipulation list-none items-center justify-between gap-3 rounded-xl border border-primary/10 bg-gradient-to-r from-white via-white to-secondary/45 px-3 py-3 text-sm font-bold text-primary outline-none shadow-sm transition-colors hover:border-primary/18 hover:bg-primary/10 focus-visible:ring-2 focus-visible:ring-ring/60 [&::-webkit-details-marker]:hidden">
