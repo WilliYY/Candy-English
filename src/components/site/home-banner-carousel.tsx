@@ -205,7 +205,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
                     void toggleVideo(slide);
                   }}
                 >
-                  <span className="relative flex h-full max-h-full w-auto max-w-full aspect-[9/16] items-center justify-center overflow-hidden rounded-[0.9rem] border border-white/35 bg-[#2c1338] shadow-[0_1rem_2.5rem_rgba(20,7,27,0.34)] sm:rounded-[1.1rem]">
+                  <span className="relative flex h-[92%] max-h-[92%] w-auto max-w-[calc(100%-1.5rem)] aspect-[9/16] items-center justify-center overflow-hidden rounded-[0.9rem] border border-[#9d74aa]/80 bg-[#2c1338] shadow-[0_1rem_2.5rem_rgba(20,7,27,0.34)] ring-1 ring-[#2c1338]/40 sm:max-w-[calc(100%-2.5rem)] sm:rounded-[1.1rem]">
                     <span
                       aria-hidden="true"
                       className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(229,124,216,0.18),transparent_22%,transparent_78%,rgba(229,124,216,0.18))]"
