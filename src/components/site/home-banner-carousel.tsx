@@ -208,6 +208,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
     const maxOffset = stageWidth * DRAG_LIMIT_RATIO;
     const limitedOffset = Math.max(Math.min(deltaX, maxOffset), -maxOffset);
 
+    event.preventDefault();
     dragState.hasMoved = true;
     setIsDragging(true);
     setDragOffset(limitedOffset);
@@ -298,6 +299,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
         )}
         onPointerCancel={resetDrag}
         onClickCapture={handleCarouselClickCapture}
+        onDragStart={(event) => event.preventDefault()}
         onPointerDown={handleCarouselPointerDown}
         onPointerMove={handleCarouselPointerMove}
         onPointerUp={handleCarouselPointerUp}
@@ -331,6 +333,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
                   src={slide.src}
                   alt={slide.label}
                   fill
+                  draggable={false}
                   sizes="(max-width: 767px) 23rem, 64rem"
                   className="relative z-10 object-contain object-center"
                 />
