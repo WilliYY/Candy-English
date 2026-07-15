@@ -29,6 +29,11 @@ import {
 import { pickCattyLoggedInBalloon } from "@/lib/catty-artifact-balloons";
 import type { CattyArtifactCustomItem } from "@/lib/catty-artifacts";
 import {
+  canUseLoggedInCattyChat,
+  isLoggedInCattyChatArea,
+  isPublicCattyArea,
+} from "@/lib/catty-client-access";
+import {
   CATTY_AUTH_REQUIRED_REPLY,
   CATTY_INITIAL_MESSAGE,
   CATTY_PUBLIC_BALLOON_TEMPLATES,
@@ -444,18 +449,6 @@ function isCompactCattyBalloonViewport() {
   return window.innerWidth < CATTY_COMPACT_BALLOON_BREAKPOINT_PX;
 }
 
-function isLoggedInAvaArea(context: CattyPageContext) {
-  return (
-    context.area === "admin" ||
-    context.area === "teacher" ||
-    context.area === "student"
-  );
-}
-
-function isPublicCattyArea(context: CattyPageContext) {
-  return context.area === "site" || context.area === "login";
-}
-
 export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -496,7 +489,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     [sessionUser?.artifacts],
   );
   const hasSessionUser = Boolean(sessionUser);
-  const canUseCattyChat = Boolean(hasSessionUser && isLoggedInAvaArea(context));
+  const canUseCattyChat = canUseLoggedInCattyChat({
+    context,
+    hasSessionUser,
+  });
   const showLoggedInBalloons = canUseCattyChat;
   const hidePublicBalloonOnMobileLogin =
     context.area === "login" && isCompactBalloonViewport;
@@ -843,7 +839,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
     setContext(currentContext);
 
-    if (!sessionUser || !isLoggedInAvaArea(currentContext)) {
+    if (!sessionUser || !isLoggedInCattyChatArea(currentContext)) {
       setOpen(false);
       setPublicNoticeVisible(true);
       return;

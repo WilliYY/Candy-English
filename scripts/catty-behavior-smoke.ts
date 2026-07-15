@@ -17,6 +17,11 @@ import {
   hasTooManyCattyCatchphrases,
 } from "../src/lib/catty-personality";
 import {
+  canUseLoggedInCattyChat,
+  isLoggedInCattyChatArea,
+  isPublicCattyArea,
+} from "../src/lib/catty-client-access";
+import {
   formatCattyLearningPromptContext,
   pickCattyLearningFallbackReply,
 } from "../src/lib/catty-learning";
@@ -124,6 +129,62 @@ function assertPromptContext(input: string, id: string) {
       `${id}: contexto da Catty nao contem ${required}`,
     );
   }
+}
+
+function assertCattyClientAccessRules() {
+  const loggedChatAreas: NonNullable<CattyPageContext["area"]>[] = [
+    "site",
+    "admin",
+    "teacher",
+    "student",
+  ];
+  const blockedLoggedAreas: NonNullable<CattyPageContext["area"]>[] = [
+    "login",
+    "unknown",
+  ];
+
+  for (const area of loggedChatAreas) {
+    const context: CattyPageContext = { area };
+
+    assertCondition(
+      isLoggedInCattyChatArea(context),
+      `Catty deveria abrir chat para usuario logado em ${area}.`,
+    );
+    assertCondition(
+      canUseLoggedInCattyChat({ context, hasSessionUser: true }),
+      `Catty deveria responder usuario logado em ${area}.`,
+    );
+    assertCondition(
+      !canUseLoggedInCattyChat({ context, hasSessionUser: false }),
+      `Catty nao deve abrir chat real sem sessao em ${area}.`,
+    );
+  }
+
+  for (const area of blockedLoggedAreas) {
+    const context: CattyPageContext = { area };
+
+    assertCondition(
+      !isLoggedInCattyChatArea(context),
+      `Catty nao deveria abrir chat logado em ${area}.`,
+    );
+    assertCondition(
+      !canUseLoggedInCattyChat({ context, hasSessionUser: true }),
+      `Catty nao deveria responder em ${area}.`,
+    );
+  }
+
+  assertCondition(
+    isPublicCattyArea({ area: "site" }),
+    "Catty deveria manter baloes publicos no site sem login.",
+  );
+  assertCondition(
+    isPublicCattyArea({ area: "login" }),
+    "Catty deveria manter baloes publicos no login sem login.",
+  );
+  assertCondition(
+    !isPublicCattyArea({ area: "admin" }),
+    "Catty nao deve tratar area admin como publica.",
+  );
 }
 
 function getExampleRole(area?: string) {
@@ -639,6 +700,7 @@ function main() {
     CATTY_BEHAVIOR_EXAMPLES.length === expectedExampleCount,
     `Esperava ${expectedExampleCount} exemplos, recebeu ${CATTY_BEHAVIOR_EXAMPLES.length}.`,
   );
+  assertCattyClientAccessRules();
   assertCattyScenarioBase();
   assertShortFollowUpScenarioTraining();
   assertAdvancedWordMeaningCommand();

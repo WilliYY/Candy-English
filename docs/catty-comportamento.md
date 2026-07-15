@@ -198,13 +198,14 @@ Casos obrigatorios de pratica bilingue:
 ## Teste manual
 
 1. Entrar no AVA como `STUDENT`, `TEACHER` ou `ADMIN`.
-2. Abrir a Catty em uma pagina logada.
-3. Enviar mensagens sem `Catty`, por exemplo `como faz salada?` ou `corrige`.
-4. Confirmar que o chat responde com Gemini quando a chave existir, ou fallback local quando a IA nao estiver disponivel.
-5. Enviar mensagens com `Catty`, por exemplo `Catty, melhora minha frase`.
-6. Confirmar que o fluxo tenta OpenAI primeiro e, se falhar, cai para Gemini/fallback.
-7. Testar `me da a resposta do homework` dentro de homework e confirmar que a Catty da pista, nao resposta pronta.
-8. Testar `faz um codigo pra mim` e confirmar que nao aparece codigo.
+2. Abrir a Catty na home/site ainda logado e confirmar que ela abre conversa real, nao apenas o aviso publico.
+3. Abrir a Catty em uma pagina logada do AVA.
+4. Enviar mensagens sem `Catty`, por exemplo `como faz salada?` ou `corrige`.
+5. Confirmar que o chat responde com Gemini quando a chave existir, ou fallback local quando a IA nao estiver disponivel.
+6. Enviar mensagens com `Catty`, por exemplo `Catty, melhora minha frase`.
+7. Confirmar que o fluxo tenta OpenAI primeiro e, se falhar, cai para Gemini/fallback.
+8. Testar `me da a resposta do homework` dentro de homework e confirmar que a Catty da pista, nao resposta pronta.
+9. Testar `faz um codigo pra mim` e confirmar que nao aparece codigo.
 
 ## Teste automatizado
 
@@ -212,7 +213,7 @@ Casos obrigatorios de pratica bilingue:
 npm run audit:catty-behavior
 ```
 
-Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, os 115 cenarios de repertorio, os 13 casos obrigatorios do comando meaning/traducao, os 33 fallbacks locais de meaning, o limite de 15 palavras, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, 20 follow-ups curtos com ultima pergunta da Catty, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
+Esse smoke nao chama Gemini nem OpenAI. Ele valida a classificacao local, o gatilho OpenAI por palavra `Catty`, o fallback por intencao, o contexto do prompt, o bloqueio de resposta pronta, a regra client-side de acesso ao chat na home/site para usuario logado, os 115 cenarios de repertorio, os 13 casos obrigatorios do comando meaning/traducao, os 33 fallbacks locais de meaning, o limite de 15 palavras, a checklist de 20 fallbacks por cenario com intencao/roteamento/memoria, 20 interacoes de pergunta/correcao/fragmento, 20 follow-ups curtos com ultima pergunta da Catty, os 10 casos obrigatorios de Catty bilingue, pelo menos 40 frases de correcao conversacional, 6 sequencias de conversa continua, o limite de bordao/emoji, a personalizacao segura por primeiro nome, a memoria aprovada do Learning Center limitada a 3 itens, memoria pessoal segura por usuario com selecao por relevancia e limites de contexto, artefatos de personalidade padrao e customizados por interesse, schemas de enriquecimento revisavel, bloqueio de artefato por preferencia `avoid_*`, bloqueio de dado sensivel em memoria/feedback/artefato, contradicao marcada como revisao, o contrato de feedback discreto e a voz minima da Catty.
 
 Para rodar pelo container de auditoria:
 
