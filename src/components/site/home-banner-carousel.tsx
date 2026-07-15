@@ -9,6 +9,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import Image from "next/image";
+import type { MouseEvent, PointerEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,9 @@ type HomeBannerSlide =
     };
 
 const AUTO_ROTATE_MS = 8_000;
+const DRAG_LIMIT_RATIO = 0.28;
+const DRAG_MOVE_GUARD_PX = 8;
+const DRAG_THRESHOLD_PX = 48;
 
 const slides: HomeBannerSlide[] = [
   {
@@ -70,10 +74,20 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
   const [isAutoPaused, setIsAutoPaused] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const [mutedVideoIds, setMutedVideoIds] = useState<Record<string, boolean>>(
     {},
   );
+  const stageRef = useRef<HTMLDivElement | null>(null);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const dragStateRef = useRef({
+    hasMoved: false,
+    pointerId: null as number | null,
+    startX: 0,
+    startY: 0,
+  });
+  const suppressNextClickRef = useRef(false);
   const activeSlide = slides[activeIndex] ?? slides[0];
   const activeNumber = activeIndex + 1;
 
@@ -101,7 +115,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
-    if (prefersReducedMotion || isAutoPaused) {
+    if (prefersReducedMotion || isAutoPaused || isDragging) {
       return;
     }
 
@@ -112,7 +126,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [activeIndex, isAutoPaused, prefersReducedMotion]);
+  }, [activeIndex, isAutoPaused, isDragging, prefersReducedMotion]);
 
   useEffect(() => {
     for (const [slideId, video] of Object.entries(videoRefs.current)) {
@@ -126,6 +140,111 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
 
   function showSlide(index: number) {
     setActiveIndex((index + slides.length) % slides.length);
+  }
+
+  function resetDrag(event?: PointerEvent<HTMLDivElement>) {
+    const pointerId = dragStateRef.current.pointerId;
+
+    if (event && pointerId !== null && event.currentTarget.hasPointerCapture(pointerId)) {
+      event.currentTarget.releasePointerCapture(pointerId);
+    }
+
+    dragStateRef.current = {
+      hasMoved: false,
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+    };
+    setDragOffset(0);
+    setIsDragging(false);
+  }
+
+  function handleCarouselPointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    const target = event.target;
+
+    if (
+      target instanceof Element &&
+      target.closest("[data-carousel-control='true']")
+    ) {
+      return;
+    }
+
+    dragStateRef.current = {
+      hasMoved: false,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleCarouselPointerMove(event: PointerEvent<HTMLDivElement>) {
+    const dragState = dragStateRef.current;
+
+    if (dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+
+    if (
+      !dragState.hasMoved &&
+      Math.abs(deltaX) < DRAG_MOVE_GUARD_PX &&
+      Math.abs(deltaY) < DRAG_MOVE_GUARD_PX
+    ) {
+      return;
+    }
+
+    if (Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+
+    const stageWidth = stageRef.current?.clientWidth ?? 1;
+    const maxOffset = stageWidth * DRAG_LIMIT_RATIO;
+    const limitedOffset = Math.max(Math.min(deltaX, maxOffset), -maxOffset);
+
+    dragState.hasMoved = true;
+    setIsDragging(true);
+    setDragOffset(limitedOffset);
+  }
+
+  function handleCarouselPointerUp(event: PointerEvent<HTMLDivElement>) {
+    const dragState = dragStateRef.current;
+
+    if (dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+    const shouldChangeSlide =
+      Math.abs(deltaX) >= DRAG_THRESHOLD_PX &&
+      Math.abs(deltaX) > Math.abs(deltaY);
+
+    if (dragState.hasMoved) {
+      suppressNextClickRef.current = true;
+    }
+
+    if (shouldChangeSlide) {
+      showSlide(deltaX < 0 ? activeIndex + 1 : activeIndex - 1);
+    }
+
+    resetDrag(event);
+  }
+
+  function handleCarouselClickCapture(event: MouseEvent<HTMLDivElement>) {
+    if (!suppressNextClickRef.current) {
+      return;
+    }
+
+    suppressNextClickRef.current = false;
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   async function toggleVideo(slide: Extract<HomeBannerSlide, { type: "video" }>) {
@@ -171,7 +290,18 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
       )}
       aria-label="Banners Candy English"
     >
-      <div className="relative aspect-[4/3] overflow-hidden rounded-[1rem] bg-[#2c1338] sm:aspect-[16/10] sm:rounded-[1.25rem] lg:aspect-[16/9]">
+      <div
+        ref={stageRef}
+        className={cn(
+          "relative aspect-[4/3] touch-pan-y select-none overflow-hidden rounded-[1rem] bg-[#2c1338] sm:aspect-[16/10] sm:rounded-[1.25rem] lg:aspect-[16/9]",
+          isDragging ? "cursor-grabbing" : "cursor-grab",
+        )}
+        onPointerCancel={resetDrag}
+        onClickCapture={handleCarouselClickCapture}
+        onPointerDown={handleCarouselPointerDown}
+        onPointerMove={handleCarouselPointerMove}
+        onPointerUp={handleCarouselPointerUp}
+      >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(229,124,216,0.42),transparent_32%),linear-gradient(135deg,#2c1338_0%,#412a4c_48%,#6b3a76_100%)]" />
 
         {slides.map((slide, index) => {
@@ -181,11 +311,19 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
             <div
               key={slide.id}
               className={cn(
-                "absolute inset-0 grid place-items-center transition duration-500",
+                "absolute inset-0 grid place-items-center",
+                isDragging && isActive
+                  ? "transition-none"
+                  : "transition duration-500",
                 isActive
                   ? "pointer-events-auto opacity-100"
                   : "pointer-events-none opacity-0",
               )}
+              style={
+                isActive && dragOffset !== 0
+                  ? { transform: `translate3d(${dragOffset}px, 0, 0)` }
+                  : undefined
+              }
               aria-hidden={!isActive}
             >
               {slide.type === "image" ? (
@@ -247,6 +385,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
         <button
           type="button"
           aria-label="Banner anterior"
+          data-carousel-control="true"
           className={cn(arrowButtonClass, "left-3 sm:left-4")}
           onClick={() => showSlide(activeIndex - 1)}
         >
@@ -255,6 +394,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
         <button
           type="button"
           aria-label="Proximo banner"
+          data-carousel-control="true"
           className={cn(arrowButtonClass, "right-3 sm:right-4")}
           onClick={() => showSlide(activeIndex + 1)}
         >
@@ -265,6 +405,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
           <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 sm:bottom-4 sm:right-4">
             <button
               type="button"
+              data-carousel-control="true"
               aria-label={
                 playingVideoId === activeSlide.id
                   ? `Pausar ${activeSlide.label}`
@@ -284,6 +425,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
             </button>
             <button
               type="button"
+              data-carousel-control="true"
               aria-label={
                 videoMutedState[activeSlide.id]
                   ? `Ligar som de ${activeSlide.label}`
