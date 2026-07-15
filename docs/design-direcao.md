@@ -38,7 +38,8 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 - Video principal do contato final da home: `public/brand/home.mp4`
 - Video de fundo do hero da home: `public/brand/home-candy.mp4`
 - Video principal atual do hero da home: `public/brand/home-candy-2.mp4`
-- Videos dos cards de intro da home: `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4`
+- Videos do banner/carrossel da home: `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4`
+- Foto do banner/carrossel da home: `public/brand/home-banner-aula-julho-2026.jpeg`
 - Video de paginas informativas: `public/brand/informacoes.mp4`
 - Video do AVA student: `public/brand/ava-student.mp4`
 - Videos do popup de foto do perfil: `public/brand/profile-photo-popup.mp4` para desktop/tablet e `public/brand/profile-photo-popup-mobile.mp4` para mobile.
@@ -49,7 +50,7 @@ Os assets de marca ficam em arquivos estaticos. Nao colocar logos dentro de codi
 
 Movimentos permitidos nesta fase:
 
-- hero da home com video local leve `public/brand/home-candy-2.mp4` em loop, muted/autoplay, como fundo do primeiro card dominante com fundo branco reduzido, proporcao mais fechada e zoom leve para aproveitar melhor a arte em tablet/desktop; no mobile, o fundo Canva do palco sai e `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` aparecem como videos empilhados, diretos e em proporcao vertical, tambem em loop mudo e com botoes visiveis para pausar/retomar e ligar/desligar som;
+- hero da home com video local leve `public/brand/home-candy-2.mp4` em loop, muted/autoplay, como fundo do primeiro card dominante com fundo branco reduzido, proporcao mais fechada e zoom leve para aproveitar melhor a arte em tablet/desktop; o conteudo embutido virou um banner/carrossel padronizado com `intro-1.mp4`, `home-banner-aula-julho-2026.jpeg` e `intro-2.mp4`, setas, indicadores, troca automatica a cada 8 segundos, pausa da troca quando o usuario reproduz um video e fundo roxo nas laterais para midias verticais;
 - video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa, linha divisoria dura ou degradê de transicao;
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura; o video deve ser lazy/condicional, montar apenas quando o navegador estiver ocioso, tocar apenas em telas a partir de tablet quando `prefers-reduced-motion` permitir, pausar fora da viewport e manter fallback estatico para reduzir lag;
@@ -97,7 +98,7 @@ Cuidados:
 - Nas paginas informativas (`/sobre`, `/metodologia`, `/contato`), o footer deve invadir menos e o grid de cards deve reservar respiro inferior suficiente para nao esconder conteudo.
 - Home pode usar navbar glass apenas na rota `/`; demais paginas mantem leitura clara com header normal.
 - O item ativo da navegacao institucional deve ter contraste forte em roxo solido para deixar claro onde a pessoa esta.
-- O hero da home usa `public/brand/home-candy-2.mp4` como fundo em loop leve do primeiro card em tablet/desktop, com `object-contain`, palco mais alto e zoom minimo para preservar a arte e evitar cortes na marca. `public/brand/intro-1.mp4` e `public/brand/intro-2.mp4` ficam dentro desse mesmo card como videos embutidos no espaco livre, maiores, mais altos no desktop e com `object-contain` para mostrar a pessoa sem cortar o video, nao em coluna externa, com borda roxa suave, autoplay mudo, loop e controles visiveis de pausa/play e som. No mobile, os intros aparecem empilhados em cards verticais proprios e o fundo Canva do palco nao aparece. O video local `public/brand/home.mp4` continua no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degrade de transicao antes do rodape.
+- O hero da home usa `public/brand/home-candy-2.mp4` como fundo em loop leve do primeiro card em tablet/desktop, com `object-contain`, palco mais alto e zoom minimo para preservar a arte e evitar cortes na marca. `public/brand/intro-1.mp4`, `public/brand/home-banner-aula-julho-2026.jpeg` e `public/brand/intro-2.mp4` ficam no mesmo espaco como banner/carrossel unico, com dimensao fixa por viewport, `object-contain`, fundo roxo nas laterais, setas, bolinhas indicadoras e troca automatica em 8 segundos enquanto o usuario nao reproduzir video. No mobile, o mesmo carrossel substitui os videos empilhados para manter o banner padronizado. O video local `public/brand/home.mp4` continua no bloco final de contato como apoio visual leve, com o footer entrando por cima do modulo por animacao gooey, sem degrade de transicao antes do rodape.
 - Quando houver usuario logado, o header institucional pode exibir um selo compacto de sessao perto do botao AVA.
 - O selo de sessao e informativo; a navegacao deve ficar no botao AVA.
 - `Planos` nao aparece na navegacao principal; a rota pode continuar existindo para compatibilidade.

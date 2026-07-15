@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { HomeBannerCarousel } from "@/components/site/home-banner-carousel";
 import { HomeHeroLoopVideo } from "@/components/site/home-hero-loop-video";
-import { HomeVideoCard } from "@/components/site/home-video-card";
 import { Button } from "@/components/ui/button";
 
 export const homeMethodVideoUrl =
@@ -35,22 +35,7 @@ export function HomeHero({ content }: HomeHeroProps) {
         <p className="sr-only">{description}</p>
 
         <div className="mx-auto w-full max-w-[23rem] md:hidden">
-          <div className="animate-fade-rise flex flex-col gap-4">
-            <HomeVideoCard
-              label="Intro Candy English 1"
-              media="(max-width: 767px)"
-              src="/brand/intro-1.mp4"
-              title="Intro 1"
-              variant="mobileStack"
-            />
-            <HomeVideoCard
-              label="Intro Candy English 2"
-              media="(max-width: 767px)"
-              src="/brand/intro-2.mp4"
-              title="Intro 2"
-              variant="mobileStack"
-            />
-          </div>
+          <HomeBannerCarousel className="animate-fade-rise" />
         </div>
 
         <div className="mx-auto hidden w-full max-w-[82rem] md:block">
@@ -66,21 +51,8 @@ export function HomeHero({ content }: HomeHeroProps) {
 
             <div className="pointer-events-none absolute inset-2 z-[1] rounded-[1.5rem] bg-[linear-gradient(90deg,rgba(255,255,255,0.14),transparent_35%,rgba(255,255,255,0.18))]" />
 
-            <div className="animate-fade-rise-delay relative z-10 grid min-h-[32rem] content-end gap-3 p-3 pt-44 sm:min-h-[41rem] sm:grid-cols-2 sm:p-5 sm:pt-56 lg:absolute lg:bottom-[6.5%] lg:left-[6%] lg:min-h-0 lg:w-[70%] lg:max-w-[64rem] lg:gap-4 lg:p-0 xl:bottom-[7%] xl:left-[6%] xl:w-[69%]">
-              <HomeVideoCard
-                label="Intro Candy English 1"
-                media="(min-width: 768px)"
-                src="/brand/intro-1.mp4"
-                title="Intro 1"
-                variant="embedded"
-              />
-              <HomeVideoCard
-                label="Intro Candy English 2"
-                media="(min-width: 768px)"
-                src="/brand/intro-2.mp4"
-                title="Intro 2"
-                variant="embedded"
-              />
+            <div className="animate-fade-rise-delay relative z-10 min-h-[32rem] p-3 pt-44 sm:min-h-[41rem] sm:p-5 sm:pt-56 lg:absolute lg:bottom-[6.5%] lg:left-[6%] lg:min-h-0 lg:w-[70%] lg:max-w-[64rem] lg:p-0 xl:bottom-[7%] xl:left-[6%] xl:w-[69%]">
+              <HomeBannerCarousel />
             </div>
           </div>
         </div>
