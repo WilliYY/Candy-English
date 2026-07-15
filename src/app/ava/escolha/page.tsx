@@ -84,7 +84,7 @@ export default async function AvaAreaChoicePage() {
       label: "Area pedagogica",
       labelStyle: "border-cyan-200 bg-cyan-50 text-cyan-900",
       pulse: "Aulas, tarefas e progresso",
-      stats: ["Pedagogico", isAdmin ? "Admin AVA" : "Meus alunos"],
+      stats: ["Pedagogico", isAdmin ? "Visao admin" : "Meus alunos"],
       title: "AVA",
     },
     {
