@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
-  BrainCircuit,
   Building2,
   CalendarCheck2,
   CheckCircle2,
@@ -16,7 +15,6 @@ import {
   ShieldCheck,
   Sparkles,
   UserCheck,
-  UsersRound,
   WalletCards,
 } from "lucide-react";
 import { BrandLogo } from "@/components/site/brand-logo";
@@ -36,11 +34,9 @@ export const runtime = "nodejs";
 
 const avaItems = [
   { icon: BookOpen, label: "Aulas e materiais" },
-  { icon: ClipboardCheck, label: "Homework e correcoes" },
-  { icon: MessageSquareText, label: "Mensagens pedagogicas" },
-  { icon: Sparkles, label: "Candy XP" },
-  { icon: BrainCircuit, label: "Catty" },
-  { icon: UsersRound, label: "Alunos do AVA" },
+  { icon: ClipboardCheck, label: "Homework" },
+  { icon: MessageSquareText, label: "Mensagens" },
+  { icon: Sparkles, label: "Catty e Candy XP" },
 ];
 
 const secretariaItems = [
@@ -71,19 +67,16 @@ export default async function AvaAreaChoicePage() {
         "Rotina pedagogica para aulas, materiais, homework, feedback e progresso dos alunos.",
       details: isAdmin
         ? [
-            "Administrar usuarios, teachers e alunos do AVA.",
-            "Acompanhar aulas, homework, mensagens e Candy XP.",
-            "Cuidar da Catty pedagogica sem entrar no financeiro.",
+            "Usuarios, teachers, alunos, aulas e progresso no mesmo fluxo.",
+            "Catty, mensagens e Candy XP ficam junto da rotina pedagogica.",
           ]
         : [
-            "Criar aulas, materiais e homework dos seus alunos.",
-            "Corrigir atividades e enviar feedback pedagogico.",
-            "Usar mensagens, Catty e Candy XP no acompanhamento.",
+            "Aulas, homework, feedback e mensagens dos seus alunos.",
+            "Catty e Candy XP acompanham o progresso pedagogico.",
           ],
       feature:
         "border-cyan-200/70 bg-white/86 text-cyan-950 shadow-[0_8px_20px_rgba(14,116,144,0.06)]",
       href: getPedagogicalAvaPath(session.user.role),
-      highlight: "Sala pedagogica",
       icon: BookOpen,
       iconStyle:
         "bg-[#155e75] text-white shadow-[0_18px_30px_rgba(21,94,117,0.28)]",
@@ -91,7 +84,7 @@ export default async function AvaAreaChoicePage() {
       label: "Area pedagogica",
       labelStyle: "border-cyan-200 bg-cyan-50 text-cyan-900",
       pulse: "Aulas, tarefas e progresso",
-      stats: ["6 atalhos", "Foco pedagogico", isAdmin ? "Visao admin" : "Meus alunos"],
+      stats: ["Pedagogico", isAdmin ? "Admin AVA" : "Meus alunos"],
       title: "AVA",
     },
     {
@@ -102,19 +95,16 @@ export default async function AvaAreaChoicePage() {
         "Controle interno para pre-cadastros, agenda, contratos e rotina administrativa permitida.",
       details: isAdmin
         ? [
-            "Ver pre-cadastros de todos os polos e converter alunos.",
-            "Abrir financeiro, agenda interna, gastos e contratos.",
-            "Acessar administracao, unidades, relatorios e cofre.",
+            "Pre-cadastros, financeiro, agenda e contratos administrativos.",
+            "Controle por polos sem misturar a rotina pedagogica.",
           ]
         : [
-            "Criar e acompanhar pre-cadastros proprios ou atribuidos.",
-            "Converter interessados vinculados para o seu AVA.",
-            "Acessar somente contratos e dados permitidos para teacher.",
+            "Pre-cadastros proprios ou atribuidos, com conversao segura.",
+            "Acesso limitado para proteger financeiro geral e outros polos.",
           ],
       feature:
         "border-rose-200/70 bg-white/86 text-[#4b244e] shadow-[0_8px_20px_rgba(224,82,141,0.06)]",
       href: getSecretariaPath(session.user.role),
-      highlight: isAdmin ? "Controle completo" : "Secretaria limitada",
       icon: Building2,
       iconStyle:
         "bg-[#4b244e] text-white shadow-[0_18px_30px_rgba(75,36,78,0.28)]",
@@ -122,7 +112,7 @@ export default async function AvaAreaChoicePage() {
       label: "Area administrativa",
       labelStyle: "border-rose-200 bg-rose-50 text-rose-900",
       pulse: "Controle, polos e financeiro",
-      stats: ["4 modulos", isAdmin ? "Todos os polos" : "Meus registros", "Controle interno"],
+      stats: ["Interno", isAdmin ? "Todos os polos" : "Limitado"],
       title: "Secretaria",
     },
   ];
@@ -132,9 +122,9 @@ export default async function AvaAreaChoicePage() {
       <div className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-6xl flex-col justify-center gap-4 sm:gap-5">
         <div className="flex justify-center">
           <BrandLogo
-            className="h-24 w-[17rem] justify-center overflow-hidden rounded-2xl border border-primary/10 bg-white/78 shadow-[0_22px_60px_rgba(65,42,76,0.12)] backdrop-blur-sm"
-            imageClassName="w-[250px]"
-            markClassName="overflow-hidden rounded-2xl"
+            className="h-20 w-[16rem] justify-center overflow-visible rounded-none"
+            imageClassName="w-[250px] drop-shadow-[0_18px_32px_rgba(65,42,76,0.18)]"
+            markClassName="overflow-visible"
           />
         </div>
 
@@ -180,7 +170,7 @@ export default async function AvaAreaChoicePage() {
             <Link
               key={area.title}
               href={area.href}
-              className="group relative flex min-h-[390px] overflow-hidden rounded-xl border border-primary/15 bg-white shadow-[0_20px_58px_rgba(65,42,76,0.12)] transition hover:-translate-y-1 hover:border-primary/35 hover:shadow-[0_30px_70px_rgba(65,42,76,0.17)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+              className="group relative flex min-h-[350px] overflow-hidden rounded-xl border border-primary/15 bg-white shadow-[0_18px_48px_rgba(65,42,76,0.11)] transition hover:-translate-y-1 hover:border-primary/35 hover:shadow-[0_28px_64px_rgba(65,42,76,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
             >
               <div
                 className={`absolute inset-x-0 top-0 h-2 bg-gradient-to-r ${area.bar}`}
@@ -191,9 +181,9 @@ export default async function AvaAreaChoicePage() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <span
-                    className={`flex size-14 shrink-0 items-center justify-center rounded-xl ${area.iconStyle}`}
+                    className={`flex size-12 shrink-0 items-center justify-center rounded-xl ${area.iconStyle}`}
                   >
-                    <area.icon aria-hidden="true" className="size-7" />
+                    <area.icon aria-hidden="true" className="size-6" />
                   </span>
                   <span
                     className={`rounded-full border px-3 py-1 text-xs font-bold uppercase ${area.labelStyle}`}
@@ -202,17 +192,14 @@ export default async function AvaAreaChoicePage() {
                   </span>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-5">
                   <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary/55">
                     {area.pulse}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-end gap-3">
+                  <div className="mt-2">
                     <h2 className="text-3xl font-semibold tracking-normal text-primary sm:text-4xl">
                       {area.title}
                     </h2>
-                    <span className="mb-1 rounded-full border border-primary/10 bg-white/72 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-primary/62">
-                      {area.highlight}
-                    </span>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
                     {area.description}
@@ -234,7 +221,7 @@ export default async function AvaAreaChoicePage() {
                   ))}
                 </div>
 
-                <div className="mt-4 space-y-2 rounded-xl border border-primary/10 bg-white/62 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+                <div className="mt-4 grid gap-2 rounded-lg border border-primary/10 bg-white/58 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
                   {area.details.map((detail) => (
                     <span
                       key={detail}
@@ -250,7 +237,7 @@ export default async function AvaAreaChoicePage() {
                 </div>
 
                 <div className="mt-auto flex flex-col gap-3 pt-5 sm:flex-row sm:items-end sm:justify-between">
-                  <div className="grid gap-2 sm:grid-cols-3">
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {area.stats.map((stat) => (
                       <span
                         key={stat}
