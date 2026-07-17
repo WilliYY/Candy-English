@@ -21,6 +21,7 @@ import {
   Users,
   XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -312,7 +313,7 @@ function getStatusMeta(status: AdminAgendaLessonStatus) {
     return {
       accentClassName: "bg-emerald-500",
       cardClassName:
-        "border-emerald-200 bg-white text-emerald-950",
+        "border-emerald-200 bg-gradient-to-br from-white via-white to-emerald-50/80 text-emerald-950",
       dotClassName: "bg-emerald-500",
       iconClassName: "bg-emerald-600 text-white shadow-emerald-200",
       label: status === "MAKEUP_ATTENDED" ? "Reposicao feita" : "Veio",
@@ -325,7 +326,7 @@ function getStatusMeta(status: AdminAgendaLessonStatus) {
     return {
       accentClassName: "bg-red-500",
       cardClassName:
-        "border-red-200 bg-white text-red-950",
+        "border-red-200 bg-gradient-to-br from-white via-white to-rose-50/85 text-red-950",
       dotClassName: "bg-red-500",
       iconClassName: "bg-red-600 text-white shadow-red-200",
       label: "Nao veio",
@@ -338,7 +339,7 @@ function getStatusMeta(status: AdminAgendaLessonStatus) {
     return {
       accentClassName: "bg-amber-500",
       cardClassName:
-        "border-amber-200 bg-white text-amber-950",
+        "border-amber-200 bg-gradient-to-br from-white via-white to-amber-50/85 text-amber-950",
       dotClassName: "bg-amber-500",
       iconClassName: "bg-amber-500 text-white shadow-amber-200",
       label: "Reposicao",
@@ -350,7 +351,7 @@ function getStatusMeta(status: AdminAgendaLessonStatus) {
   return {
     accentClassName: "bg-primary",
     cardClassName:
-      "border-primary/20 bg-white text-primary",
+      "border-primary/20 bg-gradient-to-br from-white via-white to-violet-50/80 text-primary",
     dotClassName: "bg-primary",
     iconClassName: "bg-primary text-primary-foreground shadow-primary/20",
     label: "Previsto",
@@ -406,21 +407,52 @@ function buildEditValues(
 
 function AgendaMetric({
   className,
+  helper,
+  icon: Icon,
+  iconClassName,
   label,
   value,
+  valueClassName,
 }: {
   className?: string;
+  helper: string;
+  icon: LucideIcon;
+  iconClassName?: string;
   label: string;
   value: number | string;
+  valueClassName?: string;
 }) {
   return (
-    <div className={cn("rounded-lg border p-3 shadow-sm", className)}>
-      <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">
-        {label}
-      </span>
-      <strong className="mt-1 block text-2xl leading-none text-primary">
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-lg border p-3.5 shadow-[0_8px_22px_rgba(58,29,75,0.07)]",
+        className,
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </span>
+        <span
+          className={cn(
+            "grid size-8 shrink-0 place-items-center rounded-lg border bg-white/80 shadow-sm",
+            iconClassName,
+          )}
+        >
+          <Icon aria-hidden="true" className="size-4" />
+        </span>
+      </div>
+      <strong
+        className={cn(
+          "mt-1 block text-3xl leading-none text-primary",
+          valueClassName,
+        )}
+      >
         {value}
       </strong>
+      <span className="mt-2 block text-xs font-medium text-muted-foreground">
+        {helper}
+      </span>
     </div>
   );
 }
@@ -709,6 +741,9 @@ export function AdminAgendaPanel({
   function prepareFormForSelectedDay() {
     form.setValue("weekdays", [selectedWeekday], { shouldValidate: true });
     form.setValue("month", activeMonth);
+    document
+      .getElementById("agenda-new-student")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function openStudent(studentId: string) {
@@ -850,8 +885,12 @@ export function AdminAgendaPanel({
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:pr-20">
-      <section className="overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_20px_56px_rgba(65,42,76,0.1)] ring-1 ring-white/70">
-        <div className="border-b border-primary/15 bg-white/82 p-4">
+      <section className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_22px_60px_rgba(65,42,76,0.11)] ring-1 ring-white/70">
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 z-10 h-1 bg-gradient-to-r from-violet-600 via-fuchsia-500 to-cyan-500"
+        />
+        <div className="border-b border-primary/15 bg-white/85 p-4 pt-5 md:p-5 md:pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-[0_12px_28px_rgba(65,42,76,0.2)]">
@@ -867,21 +906,33 @@ export function AdminAgendaPanel({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              <NativeSelect
+                aria-label="Selecionar mes da agenda"
+                className="h-9 min-w-36 border-primary/20 bg-white font-semibold text-primary shadow-sm"
+                value={activeMonth}
+                onChange={(event) => changeMonth(Number(event.target.value))}
+              >
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </NativeSelect>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="border-primary/25 text-primary"
+                className="border-primary/25 bg-white text-primary shadow-sm"
                 onClick={() => changeMonth(activeMonth - 1)}
                 disabled={activeMonth <= 1}
               >
                 <ChevronLeft data-icon="inline-start" />
-                Mes anterior
+                <span className="hidden sm:inline">Mes anterior</span>
               </Button>
               <Button
                 type="button"
                 size="sm"
-                className="bg-primary text-primary-foreground"
+                className="bg-primary text-primary-foreground shadow-sm"
                 onClick={() => changeMonth(todayMonth)}
               >
                 Hoje
@@ -890,38 +941,54 @@ export function AdminAgendaPanel({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="border-primary/25 text-primary"
+                className="border-primary/25 bg-white text-primary shadow-sm"
                 onClick={() => changeMonth(activeMonth + 1)}
                 disabled={activeMonth >= 12}
               >
-                Proximo mes
+                <span className="hidden sm:inline">Proximo mes</span>
                 <ChevronRight data-icon="inline-end" />
               </Button>
             </div>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <AgendaMetric
+              helper="Aguardando confirmacao"
+              icon={CalendarDays}
               label="Previstos"
               value={scheduledCount}
-              className="border-primary/20 bg-gradient-to-br from-white via-[#fbf7ff] to-white"
+              className="border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50"
+              iconClassName="border-violet-200 text-violet-700"
+              valueClassName="text-violet-800"
             />
             <AgendaMetric
+              helper="Presencas registradas"
+              icon={CheckCircle2}
               label="Vieram"
               value={attendedCount}
               className="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/75"
+              iconClassName="border-emerald-200 text-emerald-700"
+              valueClassName="text-emerald-800"
             />
             <AgendaMetric
+              helper="Faltas no mes"
+              icon={XCircle}
               label="Nao vieram"
               value={missedCount}
               className="border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/70"
+              iconClassName="border-red-200 text-red-700"
+              valueClassName="text-red-800"
             />
             <AgendaMetric
+              helper="Na agenda interna"
+              icon={Users}
               label="Alunos ativos"
               value={activeStudentsCount}
               className="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-100/70"
+              iconClassName="border-amber-200 text-amber-700"
+              valueClassName="text-amber-800"
             />
           </div>
-          <div className="mt-4 rounded-lg border border-primary/12 bg-white/78 p-3 shadow-sm">
+          <div className="mt-4 rounded-lg border border-primary/12 bg-gradient-to-r from-white via-white to-cyan-50/55 p-3.5 shadow-sm">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <span>
                 <span className="block text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/60">
@@ -940,7 +1007,7 @@ export function AdminAgendaPanel({
                 Nenhuma aula ativa nessa janela.
               </p>
             ) : (
-              <div className="grid gap-2 md:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-2.5 md:grid-cols-2 2xl:grid-cols-3">
                 {upcomingLessons.map((lesson) => {
                   const meta = getStatusMeta(lesson.status);
 
@@ -948,16 +1015,26 @@ export function AdminAgendaPanel({
                     <button
                       key={lesson.id}
                       type="button"
-                      className="min-w-0 rounded-lg border border-primary/12 bg-white px-3 py-2 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+                      className="group relative min-w-0 overflow-hidden rounded-lg border border-primary/12 bg-white px-3 py-3 pl-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
                       onClick={() => {
                         setActiveMonth(lesson.month);
                         setSelectedDayKey(getLessonDayKey(lesson));
                         openStudent(lesson.studentId);
                       }}
                     >
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "absolute inset-y-0 left-0 w-1",
+                          meta.accentClassName,
+                        )}
+                      />
                       <span className="flex items-center justify-between gap-2">
-                        <span className="min-w-0 truncate text-xs font-bold text-primary">
-                          {formatShortDate(lesson.date)} as {lesson.time}
+                        <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-bold text-primary">
+                          <Clock aria-hidden="true" className="size-3.5 shrink-0" />
+                          <span className="truncate">
+                            {formatShortDate(lesson.date)} as {lesson.time}
+                          </span>
                         </span>
                         <span
                           className={cn(
@@ -968,8 +1045,11 @@ export function AdminAgendaPanel({
                           {meta.label}
                         </span>
                       </span>
-                      <span className="mt-1 block truncate text-sm font-semibold text-primary">
+                      <span className="mt-1.5 block truncate text-sm font-semibold text-primary">
                         {lesson.studentName}
+                      </span>
+                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-primary/65">
+                        {unitLabels[lesson.studentUnit]}
                       </span>
                     </button>
                   );
@@ -980,13 +1060,36 @@ export function AdminAgendaPanel({
         </div>
 
         <div className="grid gap-4 p-3 md:p-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
-          <div className="rounded-lg border border-primary/15 bg-white/82 p-3 shadow-sm">
-            <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
-              {weekdays.map((weekday) => (
-                <span key={weekday.value}>{weekday.label}</span>
-              ))}
+          <div className="min-w-0 rounded-lg border border-primary/15 bg-white/88 p-3 shadow-sm md:p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-primary/10 pb-3">
+              <div>
+                <span className="text-[0.68rem] font-bold uppercase tracking-[0.15em] text-primary/55">
+                  Visao mensal
+                </span>
+                <h3 className="mt-0.5 text-base font-semibold text-primary">
+                  Calendario de {activeMonthLabel}
+                </h3>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[0.68rem] font-semibold text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-emerald-500" /> Presenca
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-red-500" /> Falta
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-2 rounded-full bg-amber-500" /> Movimento
+                </span>
+              </div>
             </div>
-            <div className="grid grid-cols-7 gap-1.5">
+            <div className="overflow-x-auto pb-1">
+              <div className="min-w-[620px]">
+                <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                  {weekdays.map((weekday) => (
+                    <span key={weekday.value}>{weekday.label}</span>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1.5">
               {getCalendarCells(activeMonth).map((cell) => {
                 if (!("day" in cell)) {
                   return <span key={cell.key} aria-hidden="true" />;
@@ -1014,7 +1117,7 @@ export function AdminAgendaPanel({
                       setSelectedStudentId(null);
                     }}
                     className={cn(
-                      "min-h-[92px] rounded-lg border bg-white p-2 text-left transition-all",
+                      "min-h-[104px] rounded-lg border bg-white p-2.5 text-left transition-all",
                       "hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-sm",
                       isSelected
                         ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
@@ -1085,11 +1188,13 @@ export function AdminAgendaPanel({
                   </button>
                 );
               })}
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="flex min-w-0 flex-col gap-3">
-            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+            <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-white via-white to-violet-50/70 p-3.5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -1104,7 +1209,7 @@ export function AdminAgendaPanel({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="border-primary/25 text-primary"
+                  className="border-primary/25 bg-white text-primary shadow-sm"
                   onClick={prepareFormForSelectedDay}
                 >
                   <CalendarPlus data-icon="inline-start" />
@@ -1137,13 +1242,13 @@ export function AdminAgendaPanel({
                   </strong>
                 </span>
               </div>
-              <div className="mt-3 flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2">
+              <div className="mt-3 flex h-11 items-center gap-2 rounded-lg border border-primary/20 bg-white px-3 shadow-sm focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/10">
                 <Search aria-hidden="true" className="size-4 text-primary" />
                 <input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  className="h-8 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  placeholder="Buscar aluno interno"
+                  className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  placeholder="Buscar por aluno ou telefone"
                   type="search"
                 />
               </div>
@@ -1164,7 +1269,7 @@ export function AdminAgendaPanel({
                     <article
                       key={lesson.id}
                       className={cn(
-                        "relative overflow-hidden rounded-lg border p-3 pt-4 shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)]",
+                        "relative overflow-hidden rounded-lg border p-3.5 pt-5 shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)]",
                         meta.cardClassName,
                       )}
                     >
@@ -1196,7 +1301,7 @@ export function AdminAgendaPanel({
                               />
                               {lesson.isMakeup ? "Reposicao" : "Aula prevista"}
                             </span>
-                            <strong className="mt-1 block truncate text-lg leading-6 text-primary">
+                            <strong className="mt-1 block break-words text-lg leading-6 text-primary">
                               {lesson.studentName}
                             </strong>
                             <span className="mt-1 inline-flex rounded-full border border-primary/10 bg-white px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-primary/65">
@@ -1248,10 +1353,15 @@ export function AdminAgendaPanel({
       </section>
 
       <form
+        id="agenda-new-student"
         onSubmit={onSubmit}
-        className="rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4"
+        className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-white to-amber-50/55 p-3 shadow-[0_16px_40px_rgba(58,29,75,0.08)] md:p-4"
         noValidate
       >
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-400 via-fuchsia-500 to-violet-600"
+        />
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -1279,6 +1389,7 @@ export function AdminAgendaPanel({
               <FieldLabel htmlFor="agenda-name">Nome do aluno</FieldLabel>
               <Input
                 id="agenda-name"
+                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                 disabled={isPending}
                 placeholder="Nome do aluno"
                 {...form.register("name")}
@@ -1289,6 +1400,7 @@ export function AdminAgendaPanel({
               <FieldLabel htmlFor="agenda-phone">Telefone</FieldLabel>
               <Input
                 id="agenda-phone"
+                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                 disabled={isPending}
                 placeholder="Opcional"
                 {...form.register("phone")}
@@ -1299,6 +1411,7 @@ export function AdminAgendaPanel({
               <FieldLabel htmlFor="agenda-unit">Unidade</FieldLabel>
               <NativeSelect
                 id="agenda-unit"
+                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                 disabled={isPending}
                 {...form.register("unit")}
               >
@@ -1314,13 +1427,18 @@ export function AdminAgendaPanel({
               <FieldLabel htmlFor="agenda-time">Horario</FieldLabel>
               <Input
                 id="agenda-time"
+                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                 type="time"
                 disabled={isPending}
                 {...form.register("time")}
               />
               <FieldError errors={[form.formState.errors.time]} />
             </Field>
-            <Button type="submit" className="lg:mt-6" disabled={isPending}>
+            <Button
+              type="submit"
+              className="h-11 shadow-sm lg:mt-6"
+              disabled={isPending}
+            >
               {isPending ? (
                 <LoaderCircle
                   data-icon="inline-start"
@@ -1362,7 +1480,7 @@ export function AdminAgendaPanel({
             <FieldLabel htmlFor="agenda-notes">Observacao opcional</FieldLabel>
             <Textarea
               id="agenda-notes"
-              className="min-h-20 resize-y"
+              className="min-h-24 resize-y border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
               disabled={isPending}
               placeholder="Observacao interna para a rotina."
               {...form.register("notes")}
@@ -1378,7 +1496,7 @@ export function AdminAgendaPanel({
       </form>
 
       {selectedStudent ? (
-        <section className="order-[30] rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
+        <section className="order-[30] rounded-lg border border-primary/20 bg-gradient-to-br from-white via-white to-cyan-50/45 p-3 shadow-[0_16px_40px_rgba(58,29,75,0.08)] md:p-4">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -1409,7 +1527,7 @@ export function AdminAgendaPanel({
           <div className="grid gap-4 xl:grid-cols-[minmax(320px,0.82fr)_minmax(0,1.18fr)]">
             <form
               onSubmit={onEditSubmit}
-              className="rounded-lg border border-primary/15 bg-[#fefbff] p-3"
+              className="rounded-lg border border-primary/15 bg-gradient-to-br from-violet-50/65 via-white to-white p-3 shadow-sm"
               noValidate
             >
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -1436,6 +1554,7 @@ export function AdminAgendaPanel({
                   <FieldLabel htmlFor="agenda-edit-name">Nome</FieldLabel>
                   <Input
                     id="agenda-edit-name"
+                    className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                     disabled={isEditPending}
                     {...editForm.register("name")}
                   />
@@ -1448,6 +1567,7 @@ export function AdminAgendaPanel({
                     <FieldLabel htmlFor="agenda-edit-phone">Telefone</FieldLabel>
                     <Input
                       id="agenda-edit-phone"
+                      className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                       disabled={isEditPending}
                       placeholder="Opcional"
                       {...editForm.register("phone")}
@@ -1458,6 +1578,7 @@ export function AdminAgendaPanel({
                     <FieldLabel htmlFor="agenda-edit-unit">Unidade</FieldLabel>
                     <NativeSelect
                       id="agenda-edit-unit"
+                      className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                       disabled={isEditPending}
                       {...editForm.register("unit")}
                     >
@@ -1473,6 +1594,7 @@ export function AdminAgendaPanel({
                     <FieldLabel htmlFor="agenda-edit-time">Horario</FieldLabel>
                     <Input
                       id="agenda-edit-time"
+                      className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                       type="time"
                       disabled={isEditPending}
                       {...editForm.register("time")}
@@ -1516,7 +1638,7 @@ export function AdminAgendaPanel({
                   </FieldLabel>
                   <Textarea
                     id="agenda-edit-notes"
-                    className="min-h-20 resize-y"
+                    className="min-h-24 resize-y border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
                     disabled={isEditPending}
                     {...editForm.register("notes")}
                   />
@@ -1621,7 +1743,7 @@ export function AdminAgendaPanel({
         </section>
       ) : null}
 
-      <section className="order-[20] rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
+      <section className="order-[20] rounded-lg border border-primary/20 bg-gradient-to-br from-white via-white to-violet-50/45 p-3 shadow-[0_16px_40px_rgba(58,29,75,0.08)] md:p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
@@ -1682,7 +1804,9 @@ export function AdminAgendaPanel({
                     isSelected
                       ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/35 ring-offset-2 ring-offset-white"
                       : student.isActive
-                        ? "border-primary/15 bg-white text-primary"
+                        ? student.unit === "IVATE"
+                          ? "border-cyan-200 bg-gradient-to-br from-white via-white to-cyan-50 text-primary"
+                          : "border-fuchsia-200 bg-gradient-to-br from-white via-white to-fuchsia-50 text-primary"
                         : "border-muted bg-muted/35 text-muted-foreground",
                   )}
                 >
@@ -1690,7 +1814,11 @@ export function AdminAgendaPanel({
                     aria-hidden="true"
                     className={cn(
                       "absolute inset-x-0 top-0 h-1",
-                      student.isActive ? "bg-primary" : "bg-muted-foreground/40",
+                      student.isActive
+                        ? student.unit === "IVATE"
+                          ? "bg-gradient-to-r from-cyan-500 to-violet-500"
+                          : "bg-gradient-to-r from-fuchsia-500 to-amber-400"
+                        : "bg-muted-foreground/40",
                     )}
                   />
                   <span className="flex min-w-0 items-start gap-3">
@@ -1699,14 +1827,16 @@ export function AdminAgendaPanel({
                         "grid size-10 shrink-0 place-items-center rounded-lg text-xs font-bold uppercase shadow-sm",
                         isSelected
                           ? "bg-white/15 text-white"
-                          : "bg-primary text-primary-foreground",
+                          : student.unit === "IVATE"
+                            ? "bg-cyan-700 text-white"
+                            : "bg-fuchsia-700 text-white",
                       )}
                     >
                       {getAgendaInitials(student.name)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center justify-between gap-2">
-                        <strong className="truncate text-base leading-5">
+                        <strong className="line-clamp-2 text-base leading-5">
                           {student.name}
                         </strong>
                         <span
@@ -1760,9 +1890,15 @@ export function AdminAgendaPanel({
                       </span>
                     </span>
                     <span className="grid grid-cols-3 gap-1 text-center font-bold">
-                      <span>{studentMonthLessons.length} no mes</span>
-                      <span>{studentAttended} veio</span>
-                      <span>{studentMissed} falta</span>
+                      <span className={cn("rounded-md px-1 py-1", !isSelected && "bg-violet-50 text-violet-800")}>
+                        {studentMonthLessons.length} no mes
+                      </span>
+                      <span className={cn("rounded-md px-1 py-1", !isSelected && "bg-emerald-50 text-emerald-800")}>
+                        {studentAttended} veio
+                      </span>
+                      <span className={cn("rounded-md px-1 py-1", !isSelected && "bg-red-50 text-red-800")}>
+                        {studentMissed} falta
+                      </span>
                     </span>
                   </span>
                 </button>

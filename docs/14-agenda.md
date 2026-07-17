@@ -77,6 +77,9 @@ Rota:
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
 - A tela da Agenda usa hierarquia operacional simples: cabecalho do mes, metricas, calendario mensal, lista do dia selecionado, cadastro rapido, detalhe/historico do aluno e log recolhido.
 - A tela da Agenda prioriza leitura rapida: fila de hoje/proximos 7 dias no topo, calendario mensal com primeiro horario/aluno por dia, totais do dia selecionado, cards de aula com status/horario/telefone/observacao e cards de alunos internos com rotina, proxima aula e contadores de presenca/falta.
+- O cabecalho mensal inclui seletor direto de mes, navegacao anterior/proximo e metricas com icones, cores semanticas e descricao curta; a fila operacional identifica status e unidade antes de abrir o detalhe.
+- No mobile, o calendario preserva sete colunas com largura estavel e rolagem horizontal, evitando comprimir nomes, horarios e contadores. A legenda explica presenca, falta e dias com maior movimento.
+- Os cards de alunos internos usam tonalidades discretas por unidade, nomes em ate duas linhas e contadores separados por cor; formularios de cadastro/edicao usam campos mais altos, borda visivel e foco reforcado.
 - O painel evita tabela grande e usa cards empilhados no mobile para facilitar toque em `Veio` e `Nao veio`.
 - A busca e o detalhe trabalham apenas com `AgendaStudent`, sem consultar `User`/`StudentProfile`.
 - A migration `20260714170000_linked_pre_registration_conversion` adiciona `AgendaStudent.unit` e o vinculo de conversao entre `StudentPreRegistration` e `AgendaStudent`.
