@@ -24,7 +24,13 @@ export async function GET(
     select: {
       avatarMimeType: true,
       avatarPath: true,
+      candyXpProfile: {
+        select: {
+          totalXp: true,
+        },
+      },
       id: true,
+      isActive: true,
       role: true,
       studentProfile: {
         select: {
@@ -39,6 +45,10 @@ export async function GET(
   }
 
   if (session.user.role !== "ADMIN" && session.user.id !== user.id) {
+    const canReadRankingAvatar =
+      user.isActive &&
+      (user.role === "STUDENT" || user.role === "TEACHER") &&
+      (user.candyXpProfile?.totalXp ?? 0) > 0;
     let canReadAssignedStudentAvatar = false;
 
     if (session.user.role === "TEACHER" && user.role === "STUDENT") {
@@ -62,7 +72,7 @@ export async function GET(
       }
     }
 
-    if (!canReadAssignedStudentAvatar) {
+    if (!canReadAssignedStudentAvatar && !canReadRankingAvatar) {
       return new NextResponse("Nao autorizado.", { status: 403 });
     }
   }

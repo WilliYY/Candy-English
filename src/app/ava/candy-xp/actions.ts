@@ -3,6 +3,7 @@
 import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { Prisma } from "@/generated/prisma/client";
 import { evaluateCandyXpActivityAnswers } from "@/lib/candy-xp-activities";
 import {
   recordCandyXpEventsForUser,
@@ -176,14 +177,20 @@ async function getStudentActor() {
   return studentProfile;
 }
 
-async function awardCandyXpActivity(input: {
+type CandyXpActivityAwardInput = {
   activityId: string;
   sourceKey: string;
   studentUserId: string;
   submissionId: string;
   xpReward: number;
-}) {
-  const event: CandyXpEventInput = {
+};
+
+const EDITABLE_CANDY_XP_SUBMISSION_STATUSES = ["DRAFT", "RETURNED"] as const;
+
+function buildCandyXpActivityEvent(
+  input: CandyXpActivityAwardInput,
+): CandyXpEventInput {
+  return {
     kind: "CANDY_XP_ACTIVITY_COMPLETED",
     metadata: {
       activityId: input.activityId,
@@ -193,34 +200,94 @@ async function awardCandyXpActivity(input: {
     sourceLabel: "Candy XP",
     xp: input.xpReward,
   };
+}
 
-  await recordCandyXpEventsForUser({
-    events: [event],
-    role: "STUDENT",
-    userId: input.studentUserId,
+async function lockCandyXpActivitySubmission(
+  tx: Prisma.TransactionClient,
+  activityId: string,
+  studentProfileId: string,
+) {
+  const lockKey = `candy-xp-submission:${activityId}:${studentProfileId}`;
+
+  await tx.$executeRaw`
+    SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0::bigint))
+  `;
+}
+
+async function awardCandyXpActivityInTransaction(
+  tx: Prisma.TransactionClient,
+  input: CandyXpActivityAwardInput,
+) {
+  const event = buildCandyXpActivityEvent(input);
+
+  await tx.candyXpProfile.upsert({
+    where: {
+      userId: input.studentUserId,
+    },
+    create: {
+      role: "STUDENT",
+      userId: input.studentUserId,
+    },
+    update: {
+      role: "STUDENT",
+    },
   });
+  await tx.$queryRaw<Array<{ id: string }>>`
+    SELECT "id"
+    FROM "CandyXpProfile"
+    WHERE "userId" = ${input.studentUserId}
+    FOR UPDATE
+  `;
 
-  const prisma = getPrisma();
-  const xpEvent = await prisma.candyXpEvent.findUnique({
+  const xpEvent = await tx.candyXpEvent.upsert({
     where: {
       userId_sourceKey: {
         sourceKey: input.sourceKey,
         userId: input.studentUserId,
       },
     },
+    create: {
+      kind: event.kind,
+      metadata: event.metadata,
+      role: "STUDENT",
+      sourceKey: event.sourceKey,
+      sourceLabel: event.sourceLabel,
+      userId: input.studentUserId,
+      xp: event.xp,
+    },
+    update: {
+      kind: event.kind,
+      metadata: event.metadata,
+      role: "STUDENT",
+      sourceLabel: event.sourceLabel,
+      xp: event.xp,
+    },
     select: {
       id: true,
     },
   });
 
-  await prisma.candyXpActivitySubmission.update({
+  await tx.candyXpActivitySubmission.update({
     where: {
       id: input.submissionId,
     },
     data: {
       awardedXp: input.xpReward,
-      xpEventId: xpEvent?.id ?? null,
+      xpEventId: xpEvent.id,
     },
+  });
+
+  return event;
+}
+
+async function refreshCandyXpActivityAward(
+  event: CandyXpEventInput,
+  studentUserId: string,
+) {
+  await recordCandyXpEventsForUser({
+    events: [event],
+    role: "STUDENT",
+    userId: studentUserId,
   });
 }
 
@@ -263,16 +330,6 @@ async function getVisibleActivityForStudent(
         },
       },
       status: true,
-      submissions: {
-        where: {
-          studentProfileId,
-        },
-        select: {
-          id: true,
-          status: true,
-        },
-        take: 1,
-      },
       xpReward: true,
     },
   });
@@ -885,18 +942,6 @@ export async function saveCandyXpActivityDraft(
     };
   }
 
-  const existingSubmission = activity.submissions[0];
-
-  if (
-    existingSubmission?.status === "SUBMITTED" ||
-    existingSubmission?.status === "REVIEWED"
-  ) {
-    return {
-      ok: false,
-      message: "Esta atividade ja foi enviada.",
-    };
-  }
-
   const prisma = getPrisma();
   const allowedAnswerIds = new Set(
     [
@@ -915,25 +960,84 @@ export async function saveCandyXpActivityDraft(
     tinyTextFieldIds,
   );
 
-  await prisma.candyXpActivitySubmission.upsert({
-    where: {
-      activityId_studentProfileId: {
+  const saveResult = await prisma.$transaction(async (tx) => {
+    await lockCandyXpActivitySubmission(tx, activity.id, studentProfile.id);
+
+    const existingSubmission = await tx.candyXpActivitySubmission.findUnique({
+      where: {
+        activityId_studentProfileId: {
+          activityId: activity.id,
+          studentProfileId: studentProfile.id,
+        },
+      },
+      select: {
+        awardedXp: true,
+        id: true,
+        status: true,
+        xpEventId: true,
+      },
+    });
+
+    if (
+      existingSubmission &&
+      (existingSubmission.status === "SUBMITTED" ||
+        existingSubmission.status === "REVIEWED" ||
+        existingSubmission.awardedXp !== null ||
+        existingSubmission.xpEventId !== null)
+    ) {
+      return {
+        saved: false as const,
+        status: existingSubmission.status,
+      };
+    }
+
+    if (existingSubmission) {
+      const updateResult = await tx.candyXpActivitySubmission.updateMany({
+        where: {
+          awardedXp: null,
+          id: existingSubmission.id,
+          status: {
+            in: [...EDITABLE_CANDY_XP_SUBMISSION_STATUSES],
+          },
+          xpEventId: null,
+        },
+        data: {
+          answers,
+          feedback: null,
+          status: "DRAFT",
+        },
+      });
+
+      return {
+        saved: updateResult.count === 1,
+        status: existingSubmission.status,
+      };
+    }
+
+    await tx.candyXpActivitySubmission.create({
+      data: {
         activityId: activity.id,
+        answers,
+        status: "DRAFT",
         studentProfileId: studentProfile.id,
       },
-    },
-    create: {
-      activityId: activity.id,
-      answers,
-      status: "DRAFT",
-      studentProfileId: studentProfile.id,
-    },
-    update: {
-      answers,
-      feedback: null,
-      status: "DRAFT",
-    },
+    });
+
+    return {
+      saved: true as const,
+      status: "DRAFT" as const,
+    };
   });
+
+  if (!saveResult.saved) {
+    return {
+      ok: false,
+      message:
+        saveResult.status === "SUBMITTED"
+          ? "Esta atividade esta aguardando correcao."
+          : "Esta atividade ja foi concluida.",
+    };
+  }
 
   revalidatePath("/ava/student");
 
@@ -974,22 +1078,6 @@ export async function submitCandyXpActivity(
     return {
       ok: false,
       message: "Atividade Candy XP indisponivel.",
-    };
-  }
-
-  const existingSubmission = activity.submissions[0];
-
-  if (existingSubmission?.status === "REVIEWED") {
-    return {
-      ok: false,
-      message: "Esta atividade ja foi concluida.",
-    };
-  }
-
-  if (existingSubmission?.status === "SUBMITTED") {
-    return {
-      ok: false,
-      message: "Esta atividade esta aguardando correcao.",
     };
   }
 
@@ -1048,45 +1136,122 @@ export async function submitCandyXpActivity(
     : autoCompleted
       ? `Concluido automaticamente. +${activity.xpReward} XP.`
       : "Revise as respostas objetivas e tente novamente.";
-  const submission = await prisma.candyXpActivitySubmission.upsert({
-    where: {
-      activityId_studentProfileId: {
-        activityId: activity.id,
-        studentProfileId: studentProfile.id,
+  const submitResult = await prisma.$transaction(async (tx) => {
+    await lockCandyXpActivitySubmission(tx, activity.id, studentProfile.id);
+
+    const existingSubmission = await tx.candyXpActivitySubmission.findUnique({
+      where: {
+        activityId_studentProfileId: {
+          activityId: activity.id,
+          studentProfileId: studentProfile.id,
+        },
       },
-    },
-    create: {
-      activityId: activity.id,
-      answers,
-      autoScorePercent: evaluation.autoScorePercent,
-      feedback,
-      reviewedAt: status === "REVIEWED" || status === "RETURNED" ? now : null,
+      select: {
+        awardedXp: true,
+        id: true,
+        status: true,
+        xpEventId: true,
+      },
+    });
+
+    if (
+      existingSubmission &&
+      (existingSubmission.status === "SUBMITTED" ||
+        existingSubmission.status === "REVIEWED" ||
+        existingSubmission.awardedXp !== null ||
+        existingSubmission.xpEventId !== null)
+    ) {
+      return {
+        submitted: false as const,
+        status: existingSubmission.status,
+      };
+    }
+
+    let submissionId: string;
+
+    if (existingSubmission) {
+      const updateResult = await tx.candyXpActivitySubmission.updateMany({
+        where: {
+          awardedXp: null,
+          id: existingSubmission.id,
+          status: {
+            in: [...EDITABLE_CANDY_XP_SUBMISSION_STATUSES],
+          },
+          xpEventId: null,
+        },
+        data: {
+          answers,
+          autoScorePercent: evaluation.autoScorePercent,
+          feedback,
+          reviewedAt:
+            status === "REVIEWED" || status === "RETURNED" ? now : null,
+          reviewedByUserId: null,
+          status,
+          submittedAt: now,
+        },
+      });
+
+      if (updateResult.count !== 1) {
+        return {
+          submitted: false as const,
+          status: existingSubmission.status,
+        };
+      }
+
+      submissionId = existingSubmission.id;
+    } else {
+      const submission = await tx.candyXpActivitySubmission.create({
+        data: {
+          activityId: activity.id,
+          answers,
+          autoScorePercent: evaluation.autoScorePercent,
+          feedback,
+          reviewedAt:
+            status === "REVIEWED" || status === "RETURNED" ? now : null,
+          status,
+          studentProfileId: studentProfile.id,
+          submittedAt: now,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      submissionId = submission.id;
+    }
+
+    const awardEvent = autoCompleted
+      ? await awardCandyXpActivityInTransaction(tx, {
+          activityId: activity.id,
+          sourceKey: `student:candy-xp-activity:${submissionId}`,
+          studentUserId: studentProfile.userId,
+          submissionId,
+          xpReward: activity.xpReward,
+        })
+      : null;
+
+    return {
+      awardEvent,
+      submitted: true as const,
       status,
-      studentProfileId: studentProfile.id,
-      submittedAt: now,
-    },
-    update: {
-      answers,
-      autoScorePercent: evaluation.autoScorePercent,
-      feedback,
-      reviewedAt: status === "REVIEWED" || status === "RETURNED" ? now : null,
-      reviewedByUserId: null,
-      status,
-      submittedAt: now,
-    },
-    select: {
-      id: true,
-    },
+    };
   });
 
-  if (autoCompleted) {
-    await awardCandyXpActivity({
-      activityId: activity.id,
-      sourceKey: `student:candy-xp-activity:${submission.id}`,
-      studentUserId: studentProfile.userId,
-      submissionId: submission.id,
-      xpReward: activity.xpReward,
-    });
+  if (!submitResult.submitted) {
+    return {
+      ok: false,
+      message:
+        submitResult.status === "SUBMITTED"
+          ? "Esta atividade esta aguardando correcao."
+          : "Esta atividade ja foi concluida.",
+    };
+  }
+
+  if (submitResult.awardEvent) {
+    await refreshCandyXpActivityAward(
+      submitResult.awardEvent,
+      studentProfile.userId,
+    );
   }
 
   revalidatePath("/ava/student");
@@ -1125,28 +1290,17 @@ export async function reviewCandyXpActivitySubmission(
   }
 
   const prisma = getPrisma();
-  const submission = await prisma.candyXpActivitySubmission.findUnique({
+  const submissionLocator = await prisma.candyXpActivitySubmission.findUnique({
     where: {
       id: parsed.data.submissionId,
     },
     select: {
-      activity: {
-        select: {
-          id: true,
-          xpReward: true,
-        },
-      },
-      awardedXp: true,
-      id: true,
-      studentProfile: {
-        select: {
-          userId: true,
-        },
-      },
+      activityId: true,
+      studentProfileId: true,
     },
   });
 
-  if (!submission) {
+  if (!submissionLocator) {
     return {
       ok: false,
       message: "Envio Candy XP nao encontrado.",
@@ -1155,31 +1309,126 @@ export async function reviewCandyXpActivitySubmission(
 
   const isApproved = parsed.data.outcome === "APPROVE";
   const now = new Date();
+  const reviewResult = await prisma.$transaction(async (tx) => {
+    await lockCandyXpActivitySubmission(
+      tx,
+      submissionLocator.activityId,
+      submissionLocator.studentProfileId,
+    );
 
-  await prisma.candyXpActivitySubmission.update({
-    where: {
-      id: submission.id,
-    },
-    data: {
-      feedback:
-        parsed.data.feedback ??
-        (isApproved
-          ? `Concluido. +${submission.activity.xpReward} XP.`
-          : "Revise e envie novamente."),
-      reviewedAt: now,
-      reviewedByUserId: session.user.id,
-      status: isApproved ? "REVIEWED" : "RETURNED",
-    },
+    const submission = await tx.candyXpActivitySubmission.findUnique({
+      where: {
+        id: parsed.data.submissionId,
+      },
+      select: {
+        activity: {
+          select: {
+            id: true,
+            xpReward: true,
+          },
+        },
+        awardedXp: true,
+        id: true,
+        status: true,
+        studentProfile: {
+          select: {
+            userId: true,
+          },
+        },
+        xpEventId: true,
+      },
+    });
+
+    if (!submission) {
+      return {
+        reviewed: false as const,
+        state: "MISSING" as const,
+      };
+    }
+
+    if (submission.status !== "SUBMITTED") {
+      return {
+        reviewed: false as const,
+        state: submission.status,
+      };
+    }
+
+    if (
+      !isApproved &&
+      (submission.awardedXp !== null || submission.xpEventId !== null)
+    ) {
+      return {
+        reviewed: false as const,
+        state: "AWARDED" as const,
+      };
+    }
+
+    const updateResult = await tx.candyXpActivitySubmission.updateMany({
+      where: {
+        id: submission.id,
+        status: "SUBMITTED",
+        ...(!isApproved
+          ? {
+              awardedXp: null,
+              xpEventId: null,
+            }
+          : {}),
+      },
+      data: {
+        feedback:
+          parsed.data.feedback ??
+          (isApproved
+            ? `Concluido. +${submission.activity.xpReward} XP.`
+            : "Revise e envie novamente."),
+        reviewedAt: now,
+        reviewedByUserId: session.user.id,
+        status: isApproved ? "REVIEWED" : "RETURNED",
+      },
+    });
+
+    if (updateResult.count !== 1) {
+      return {
+        reviewed: false as const,
+        state: "CHANGED" as const,
+      };
+    }
+
+    const awardEvent = isApproved
+      ? await awardCandyXpActivityInTransaction(tx, {
+          activityId: submission.activity.id,
+          sourceKey: `student:candy-xp-activity:${submission.id}`,
+          studentUserId: submission.studentProfile.userId,
+          submissionId: submission.id,
+          xpReward: submission.activity.xpReward,
+        })
+      : null;
+
+    return {
+      awardEvent,
+      reviewed: true as const,
+      state: isApproved ? ("REVIEWED" as const) : ("RETURNED" as const),
+      studentUserId: submission.studentProfile.userId,
+    };
   });
 
-  if (isApproved && !submission.awardedXp) {
-    await awardCandyXpActivity({
-      activityId: submission.activity.id,
-      sourceKey: `student:candy-xp-activity:${submission.id}`,
-      studentUserId: submission.studentProfile.userId,
-      submissionId: submission.id,
-      xpReward: submission.activity.xpReward,
-    });
+  if (!reviewResult.reviewed) {
+    return {
+      ok: false,
+      message:
+        reviewResult.state === "MISSING"
+          ? "Envio Candy XP nao encontrado."
+          : reviewResult.state === "AWARDED" ||
+              reviewResult.state === "REVIEWED"
+            ? "Esta atividade ja foi concluida e o XP foi preservado."
+            : "Este envio ja foi alterado. Atualize a tela antes de corrigir.",
+    };
+  }
+
+  if (reviewResult.awardEvent) {
+    await refreshCandyXpActivityAward(
+      reviewResult.awardEvent,
+      reviewResult.studentUserId,
+    );
   }
 
   revalidatePath("/ava/admin");

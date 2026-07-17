@@ -90,7 +90,7 @@ Rotas protegidas:
   - `ADMIN`: todas as unidades, todos os pre-cadastros, conversao de qualquer pre-cadastro com escolha de teacher, financeiro completo, agenda completa, gastos/pagamentos, relatorios simples, administracao e credenciais.
   - `TEACHER`: Secretaria limitada; cria pre-cadastro, ve/atualiza/converte apenas registros criados por ela ou atribuidos a sua `TeacherProfile`, converte para a propria teacher, acessa contratos permitidos e nao ve financeiro geral, gastos da loja, agenda completa, administracao, credenciais nem pre-cadastros de outras teachers.
   - `STUDENT`: nao acessa Secretaria.
-- `/ava/avatar/[userId]` exige sessao; student le apenas o proprio avatar, admin le todos e teacher le avatar de aluno vinculado.
+- `/ava/avatar/[userId]` exige sessao; admin le todos, o dono le o proprio avatar, teacher le avatar de aluno vinculado e qualquer usuario autenticado do AVA pode ler somente o avatar de participante ativo que ja aparece no ranking interno Candy XP. Perfis inativos, sem XP e fora de vinculo continuam protegidos.
 - Usuario inativo nao entra.
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
@@ -117,6 +117,7 @@ Rotas protegidas:
 - Contratos PDF podem ser embutidos apenas em paginas do proprio AVA (`SAMEORIGIN`); a rota continua exigindo sessao e permissao por aluno.
 - Candy XP e gravado apenas no servidor a partir de dados ja autorizados para a role atual; student nao pode gravar XP para outro usuario e teacher nao pode pontuar aluno fora do vinculo.
 - O ranking Candy XP e interno do AVA e so renderiza em paginas protegidas por `requireAvaRole`; ele usa `CandyXpProfile` no servidor, inclui apenas usuarios ativos `STUDENT` e `TEACHER`, exibe teacher como `Prof`, calcula a posicao pessoal por categoria para o proprio usuario logado e nunca envia email, telefone, documento, contrato, pagamento ou credencial para os componentes de ranking.
+- A leitura do ranking usa snapshot transacional e desempate final por `userId`; a atualizacao do cache `CandyXpProfile` e serializada por usuario para impedir totais antigos de sobrescreverem eventos mais novos quando varias requisicoes rodam ao mesmo tempo.
 - Apenas `ADMIN` cria, edita, publica, arquiva, exclui e corrige atividades Candy XP.
 - Apenas `ADMIN` salva ou remove areas interativas de `CandyXpActivityInteractiveField` no editor do PDF Candy XP.
 - `STUDENT` salva/envia apenas a propria submissao Candy XP e apenas em atividade publicada/liberada para seu perfil.

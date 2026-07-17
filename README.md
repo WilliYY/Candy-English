@@ -198,11 +198,15 @@ npm run prisma:seed
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run audit:avatar-smoke
+npm run audit:candy-xp-concurrency
+npm run audit:candy-xp-submission-concurrency
 npm run audit:candy-xp-visibility
 npm run audit:catty-behavior
 npm run verify:server-smoke
 npm run verify:auth-smoke
 npm run verify:avatar-smoke
+npm run verify:candy-xp-concurrency
+npm run verify:candy-xp-submission-concurrency
 npm run verify:candy-xp-visibility
 npm run verify:catty-behavior
 ```

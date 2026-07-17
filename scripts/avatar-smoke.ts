@@ -10,8 +10,11 @@ const baseUrl = process.env.AUDIT_BASE_URL ?? "http://localhost:3000";
 const databaseUrl = process.env.DATABASE_URL;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const testEmail = `codex-avatar-smoke-${runId}@example.com`;
+const rankedEmail = `codex-avatar-ranked-${runId}@example.com`;
+const privateEmail = `codex-avatar-private-${runId}@example.com`;
 const testPassword = `CandyAvatar-${runId}`;
-let savedAvatarPath: string | undefined;
+const testEmails = [testEmail, rankedEmail, privateEmail];
+const savedAvatarPaths = new Set<string>();
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL precisa estar definido para avatar-smoke.");
@@ -46,7 +49,7 @@ function cookieHeaderFrom(headers: Headers) {
     .join("; ");
 }
 
-async function signInWithCredentials() {
+async function signInWithCredentials(email = testEmail) {
   const csrfResponse = await fetch(buildUrl("/api/auth/csrf"));
 
   if (!csrfResponse.ok) {
@@ -63,7 +66,7 @@ async function signInWithCredentials() {
   const csrfCookies = cookieHeaderFrom(csrfResponse.headers);
   const body = new URLSearchParams({
     csrfToken,
-    email: testEmail,
+    email,
     json: "true",
     password: testPassword,
   });
@@ -88,7 +91,11 @@ async function signInWithCredentials() {
   return cookie;
 }
 
-async function createStudentWithAvatar() {
+async function createStudentWithAvatar(input: {
+  email: string;
+  name: string;
+  totalXp?: number;
+}) {
   const imageBuffer = await readFile("public/brand/catty.png");
   const avatar = await saveAvatarImage(
     new NodeFile([imageBuffer], "catty.png", {
@@ -96,17 +103,27 @@ async function createStudentWithAvatar() {
     }) as unknown as globalThis.File,
   );
 
-  savedAvatarPath = avatar.relativePath;
+  savedAvatarPaths.add(avatar.relativePath);
 
   const user = await prisma.user.create({
     data: {
       avatarMimeType: avatar.mimeType,
       avatarPath: avatar.relativePath,
-      email: testEmail,
+      email: input.email,
       isActive: true,
-      name: "Codex Avatar Smoke",
+      name: input.name,
       passwordHash: await hash(testPassword, 12),
       role: "STUDENT",
+      candyXpProfile:
+        input.totalXp && input.totalXp > 0
+          ? {
+              create: {
+                progressXp: input.totalXp,
+                role: "STUDENT",
+                totalXp: input.totalXp,
+              },
+            }
+          : undefined,
       studentProfile: {
         create: {
           level: "Teste",
@@ -119,24 +136,51 @@ async function createStudentWithAvatar() {
     },
   });
 
-  return user.id;
+  return {
+    avatarPath: avatar.relativePath,
+    id: user.id,
+  };
 }
 
 async function cleanup() {
-  await prisma.loginAttempt.deleteMany({ where: { email: testEmail } });
-  await prisma.user.deleteMany({ where: { email: testEmail } });
+  await prisma.loginAttempt.deleteMany({
+    where: {
+      email: {
+        in: testEmails,
+      },
+    },
+  });
+  await prisma.user.deleteMany({
+    where: {
+      email: {
+        in: testEmails,
+      },
+    },
+  });
 
-  if (savedAvatarPath) {
-    await unlink(getStoragePath(savedAvatarPath)).catch(() => undefined);
+  for (const avatarPath of savedAvatarPaths) {
+    await unlink(getStoragePath(avatarPath)).catch(() => undefined);
   }
 }
 
 async function main() {
   await cleanup();
 
-  const userId = await createStudentWithAvatar();
+  const viewer = await createStudentWithAvatar({
+    email: testEmail,
+    name: "Codex Avatar Viewer",
+  });
+  const rankedTarget = await createStudentWithAvatar({
+    email: rankedEmail,
+    name: "Codex Avatar Ranked",
+    totalXp: 25,
+  });
+  const privateTarget = await createStudentWithAvatar({
+    email: privateEmail,
+    name: "Codex Avatar Private",
+  });
   const cookie = await signInWithCredentials();
-  const avatarResponse = await fetch(buildUrl(`/ava/avatar/${userId}`), {
+  const avatarResponse = await fetch(buildUrl(`/ava/avatar/${viewer.id}`), {
     headers: { cookie },
   });
 
@@ -154,6 +198,38 @@ async function main() {
 
   if (body.byteLength < 1000) {
     throw new Error("Avatar retornou arquivo pequeno demais para a imagem de teste.");
+  }
+
+  const rankedAvatarResponse = await fetch(
+    buildUrl(`/ava/avatar/${rankedTarget.id}`),
+    {
+      headers: { cookie },
+    },
+  );
+
+  if (!rankedAvatarResponse.ok) {
+    throw new Error(
+      `Avatar de participante do ranking retornou HTTP ${rankedAvatarResponse.status}`,
+    );
+  }
+
+  const cacheControl = rankedAvatarResponse.headers.get("cache-control") ?? "";
+
+  if (!cacheControl.includes("private") || !cacheControl.includes("no-store")) {
+    throw new Error(`Cache-Control inesperado no avatar: ${cacheControl}`);
+  }
+
+  const privateAvatarResponse = await fetch(
+    buildUrl(`/ava/avatar/${privateTarget.id}`),
+    {
+      headers: { cookie },
+    },
+  );
+
+  if (privateAvatarResponse.status !== 403) {
+    throw new Error(
+      `Avatar fora do ranking deveria retornar 403, recebeu ${privateAvatarResponse.status}`,
+    );
   }
 
   const uploadImageBuffer = await readFile("public/brand/catty.png");
@@ -183,6 +259,38 @@ async function main() {
     throw new Error("Upload de avatar nao retornou ok=true.");
   }
 
+  const updatedViewer = await prisma.user.findUniqueOrThrow({
+    where: { id: viewer.id },
+    select: { avatarPath: true },
+  });
+
+  if (!updatedViewer.avatarPath || updatedViewer.avatarPath === viewer.avatarPath) {
+    throw new Error("Upload nao atualizou o caminho do avatar no banco.");
+  }
+
+  savedAvatarPaths.add(updatedViewer.avatarPath);
+
+  try {
+    await readFile(getStoragePath(viewer.avatarPath));
+    throw new Error("Arquivo do avatar anterior nao foi removido.");
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Arquivo do avatar anterior nao foi removido."
+    ) {
+      throw error;
+    }
+
+    if (
+      typeof error !== "object" ||
+      error === null ||
+      !("code" in error) ||
+      (error as { code?: string }).code !== "ENOENT"
+    ) {
+      throw error;
+    }
+  }
+
   const profileResponse = await fetch(buildUrl("/ava/student?task=perfil"), {
     headers: { cookie },
   });
@@ -197,7 +305,9 @@ async function main() {
     throw new Error("Perfil student renderizou erro de aplicacao.");
   }
 
-  console.log("OK avatar upload storage, protected route and student profile page");
+  console.log(
+    "OK avatar ranking visibility, private isolation, replacement cleanup and profile page",
+  );
 }
 
 main()

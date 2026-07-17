@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Dirent } from "node:fs";
-import { mkdir, readdir, stat, writeFile } from "node:fs/promises";
+import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   estimatePdfPageCount,
@@ -70,6 +70,34 @@ async function getDirectorySize(directory: string): Promise<number> {
 
 export async function getStorageUsageBytes() {
   return getDirectorySize(STORAGE_ROOT);
+}
+
+export async function deleteAvatarImage(relativePath?: string | null) {
+  if (!relativePath) {
+    return;
+  }
+
+  const normalized = path.normalize(relativePath);
+  const avatarPrefix = `avatars${path.sep}`;
+
+  if (!normalized.startsWith(avatarPrefix)) {
+    throw new Error("Caminho de avatar invalido.");
+  }
+
+  try {
+    await unlink(getStoragePath(normalized));
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "ENOENT"
+    ) {
+      return;
+    }
+
+    throw error;
+  }
 }
 
 async function saveFileBuffer(directory: string, extension: string, buffer: Buffer) {

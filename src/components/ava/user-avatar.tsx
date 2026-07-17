@@ -1,4 +1,7 @@
+"use client";
+
 import { UserRound } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 type UserAvatarProps = {
@@ -18,6 +21,8 @@ export function UserAvatar({
     avatarPath && userId
       ? `/ava/avatar/${userId}?v=${encodeURIComponent(avatarPath)}`
       : null;
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const canShowAvatar = avatarUrl && failedAvatarUrl !== avatarUrl;
 
   return (
     <span
@@ -26,12 +31,13 @@ export function UserAvatar({
         className,
       )}
     >
-      {avatarUrl ? (
+      {canShowAvatar ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={avatarUrl}
           alt="Foto do perfil"
           className="h-full w-full object-cover"
+          onError={() => setFailedAvatarUrl(avatarUrl)}
         />
       ) : (
         <UserRound aria-hidden="true" className={cn("size-5", iconClassName)} />

@@ -70,8 +70,11 @@ Rotas das atividades:
 - Admin recebe XP por indicadores operacionais globais permitidos no painel admin.
 - Nao existe ranking publico.
 - Existe ranking interno do AVA apenas para usuarios logados, exibindo alunos e teachers/profs com nome, foto/avatar, role, nivel, XP total e XP restante, sem email, telefone, documento, pagamento, contrato ou outro dado sensivel.
+- A rota protegida de avatar permite que usuarios autenticados vejam a foto somente de participantes ativos que ja estao visiveis no ranking com XP; perfis sem XP, inativos ou fora das demais regras de vinculo continuam bloqueados.
 - O ranking usa `CandyXpProfile` como cache/resumo e `CandyXpEvent` continua sendo a fonte da verdade do XP; a posicao geral e a posicao pessoal por categoria devem refletir o perfil recalculado apos cada sincronizacao de XP no servidor.
+- Gravacoes e recalculos do mesmo usuario bloqueiam a linha de `CandyXpProfile` durante a operacao. Eventos mutaveis com a mesma `sourceKey` respeitam `occurredAt`, impedindo uma requisicao antiga de rebaixar um estado mais novo.
 - A ordenacao do ranking e: maior XP total, maior nivel, XP mais recente por `lastXpEventAt` e nome em ordem alfabetica.
+- Empates completos terminam em `userId` crescente, e todas as consultas de uma resposta do ranking usam o mesmo snapshot de leitura para manter top, totais e posicoes coerentes.
 - O ranking e paginado de 10 em 10 quando houver mais participantes; a primeira pagina destaca os tres primeiros em podium e as seguintes continuam a lista por posicao.
 - O mini card de perfil/XP mostra a posicao do proprio usuario somente para `STUDENT` e `TEACHER`: student entra na categoria `alunos`, teacher entra em `teachers`, e quem ainda tem 0 XP recebe incentivo para comecar uma missao em vez de uma colocacao.
 - Streak usa dias de atividade com XP e e calculado por data em `America/Sao_Paulo`.
@@ -137,6 +140,9 @@ Admin:
 - A criacao nova nao exige perguntas separadas; o admin pode editar dados principais da atividade e desenhar areas diretamente no PDF/imagem, preservando perguntas antigas apenas por compatibilidade.
 - A exclusao de atividade Candy XP remove arquivo, perguntas, liberacoes, progresso e respostas operacionais, mas nao remove `CandyXpEvent`; XP ja conquistado continua como historico do aluno.
 - O ranking interno nao agrega `CandyXpEvent` a cada renderizacao. Ele le o top de `CandyXpProfile`, seleciona apenas campos minimos de `User`, conta participantes com query simples, calcula a posicao geral do usuario logado fora do top quando necessario e calcula a posicao pessoal por categoria (`alunos` ou `teachers`) a partir do mesmo criterio de ordenacao, usando `lastXpEventAt` ja recalculado pelo sync de XP para desempate recente.
+- O smoke `scripts/candy-xp-concurrency-smoke.ts` dispara eventos simultaneos, repeticao da mesma `sourceKey`, uma atualizacao velha contra uma nova e empate completo no ranking; o total materializado precisa terminar igual a soma do ledger.
+- O smoke `scripts/candy-xp-submission-concurrency-smoke.ts` valida autosave atrasado contra conclusao, revisoes opostas simultaneas, concessao atomica de XP e continuidade do fluxo `RETURNED` para `DRAFT`.
+- O smoke `scripts/avatar-smoke.ts` valida leitura da propria foto, leitura cruzada de participante do ranking, bloqueio de perfil fora do ranking, `Cache-Control` privado e remocao do arquivo anterior depois de trocar o avatar.
 
 ## Riscos ao alterar esta parte
 

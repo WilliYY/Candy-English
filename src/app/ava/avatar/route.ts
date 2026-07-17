@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { saveAvatarImage } from "@/lib/storage";
+import { deleteAvatarImage, saveAvatarImage } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -27,17 +27,41 @@ export async function POST(request: Request) {
     );
   }
 
+  let savedAvatarPath: string | null = null;
+  let persisted = false;
+
   try {
     const avatar = await saveAvatarImage(file);
+    savedAvatarPath = avatar.relativePath;
     const prisma = getPrisma();
+    const previousAvatarPath = await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<Array<{ avatarPath: string | null }>>`
+        SELECT "avatarPath"
+        FROM "User"
+        WHERE "id" = ${session.user.id}
+        FOR UPDATE
+      `;
+      const currentUser = rows[0];
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        avatarMimeType: avatar.mimeType,
-        avatarPath: avatar.relativePath,
-      },
+      if (!currentUser) {
+        throw new Error("Usuario nao encontrado.");
+      }
+
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: {
+          avatarMimeType: avatar.mimeType,
+          avatarPath: avatar.relativePath,
+        },
+      });
+
+      return currentUser.avatarPath;
     });
+    persisted = true;
+
+    if (previousAvatarPath && previousAvatarPath !== avatar.relativePath) {
+      await deleteAvatarImage(previousAvatarPath).catch(() => undefined);
+    }
 
     revalidatePath("/ava", "layout");
     revalidatePath("/ava/student");
@@ -52,6 +76,10 @@ export async function POST(request: Request) {
       ok: true,
     });
   } catch (error) {
+    if (savedAvatarPath && !persisted) {
+      await deleteAvatarImage(savedAvatarPath).catch(() => undefined);
+    }
+
     return NextResponse.json(
       {
         message:

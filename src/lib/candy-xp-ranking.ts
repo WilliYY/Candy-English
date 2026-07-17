@@ -170,6 +170,35 @@ function getMoreRecentLastXpFilter(lastXpEventAt: Date | null) {
     : { lastXpEventAt: { not: null } };
 }
 
+function getAlphabeticalTieUserFilter({
+  name,
+  role,
+  userId,
+}: {
+  name: string;
+  role?: CandyXpRankingRole;
+  userId: string;
+}) {
+  return {
+    is: {
+      ...getRankableUserFilter(role),
+      OR: [
+        {
+          name: {
+            lt: name,
+          },
+        },
+        {
+          id: {
+            lt: userId,
+          },
+          name,
+        },
+      ],
+    },
+  };
+}
+
 export async function getCandyXpRankingSnapshot({
   currentUserId,
   limit = 10,
@@ -182,180 +211,192 @@ export async function getCandyXpRankingSnapshot({
     MAX_RANKING_LIMIT,
     Math.max(MIN_RANKING_LIMIT, Math.floor(limit)),
   );
-  const rankingProfileWhere = getRankableProfileWhere({ withXpOnly: true });
-  const rankableProfileWhere = getRankableProfileWhere();
-  const [topProfiles, totalRanked, currentUserProfile] = await Promise.all([
-    prisma.candyXpProfile.findMany({
-      where: rankingProfileWhere,
-      take: normalizedLimit,
-      orderBy: [
-        {
-          totalXp: "desc",
-        },
-        {
-          level: "desc",
-        },
-        {
-          lastXpEventAt: {
-            nulls: "last",
-            sort: "desc",
-          },
-        },
-        {
-          user: {
-            name: "asc",
-          },
-        },
-      ],
-      select: rankingProfileSelect,
-    }),
-    prisma.candyXpProfile.count({
-      where: rankingProfileWhere,
-    }),
-    prisma.candyXpProfile.findFirst({
-      where: {
-        userId: currentUserId,
-        ...rankableProfileWhere,
-      },
-      select: rankingProfileSelect,
-    }),
-  ]);
-
-  const topEntries = topProfiles.map((profile, index) =>
-    buildEntry({
-      currentUserId,
-      position: index + 1,
-      profile,
-    }),
-  );
-  const currentUserIsInTop = topEntries.some(
-    (entry) => entry.userId === currentUserId,
-  );
-  let currentUserEntry: CandyXpRankingEntry | null = null;
-  let currentUserRanking: CandyXpCurrentUserRanking | null = null;
-
-  if (currentUserProfile) {
-    const currentUserRole = currentUserProfile.user.role as CandyXpRankingRole;
-    const categoryProfileWhere = getRankableProfileWhere({
-      role: currentUserRole,
-      withXpOnly: true,
-    });
-    const shouldRankCurrentUser = currentUserProfile.totalXp > 0;
-    const [totalInCategory, entriesAhead] = await Promise.all([
-      prisma.candyXpProfile.count({
-        where: categoryProfileWhere,
-      }),
-      shouldRankCurrentUser
-        ? prisma.candyXpProfile.count({
-            where: {
-              ...categoryProfileWhere,
-              OR: [
-                {
-                  totalXp: {
-                    gt: currentUserProfile.totalXp,
-                  },
-                },
-                {
-                  level: {
-                    gt: currentUserProfile.level,
-                  },
-                  totalXp: currentUserProfile.totalXp,
-                },
-                {
-                  ...getMoreRecentLastXpFilter(currentUserProfile.lastXpEventAt),
-                  level: currentUserProfile.level,
-                  totalXp: currentUserProfile.totalXp,
-                },
-                {
-                  ...getSameLastXpFilter(currentUserProfile.lastXpEventAt),
-                  level: currentUserProfile.level,
-                  totalXp: currentUserProfile.totalXp,
-                  user: {
-                    is: {
-                      ...getRankableUserFilter(currentUserRole),
-                      name: {
-                        lt: currentUserProfile.user.name,
-                      },
-                    },
-                  },
-                },
-              ],
+  return prisma.$transaction(
+    async (tx) => {
+      const rankingProfileWhere = getRankableProfileWhere({ withXpOnly: true });
+      const rankableProfileWhere = getRankableProfileWhere();
+      const [topProfiles, totalRanked, currentUserProfile] = await Promise.all([
+        tx.candyXpProfile.findMany({
+          where: rankingProfileWhere,
+          take: normalizedLimit,
+          orderBy: [
+            {
+              totalXp: "desc",
             },
-          })
-        : Promise.resolve(null),
-    ]);
-
-    currentUserRanking = {
-      categoryLabel: getCategoryLabel(currentUserRole),
-      categoryTitle: getCategoryTitle(currentUserRole),
-      hasXp: shouldRankCurrentUser,
-      position: entriesAhead === null ? null : entriesAhead + 1,
-      totalInCategory,
-      totalXp: currentUserProfile.totalXp,
-      xpToNextLevel: Math.max(
-        0,
-        currentUserProfile.requiredXp - currentUserProfile.progressXp,
-      ),
-    };
-  }
-
-  if (
-    currentUserProfile &&
-    currentUserProfile.totalXp > 0 &&
-    !currentUserIsInTop
-  ) {
-    const entriesAhead = await prisma.candyXpProfile.count({
-      where: {
-        ...rankableProfileWhere,
-        totalXp: {
-          gt: 0,
-        },
-        OR: [
-          {
-            totalXp: {
-              gt: currentUserProfile.totalXp,
+            {
+              level: "desc",
             },
-          },
-          {
-            level: {
-              gt: currentUserProfile.level,
-            },
-            totalXp: currentUserProfile.totalXp,
-          },
-          {
-            ...getMoreRecentLastXpFilter(currentUserProfile.lastXpEventAt),
-            level: currentUserProfile.level,
-            totalXp: currentUserProfile.totalXp,
-          },
-          {
-            ...getSameLastXpFilter(currentUserProfile.lastXpEventAt),
-            level: currentUserProfile.level,
-            totalXp: currentUserProfile.totalXp,
-            user: {
-              is: {
-                ...getRankableUserFilter(),
-                name: {
-                  lt: currentUserProfile.user.name,
-                },
+            {
+              lastXpEventAt: {
+                nulls: "last",
+                sort: "desc",
               },
             },
+            {
+              user: {
+                name: "asc",
+              },
+            },
+            {
+              user: {
+                id: "asc",
+              },
+            },
+          ],
+          select: rankingProfileSelect,
+        }),
+        tx.candyXpProfile.count({
+          where: rankingProfileWhere,
+        }),
+        tx.candyXpProfile.findFirst({
+          where: {
+            userId: currentUserId,
+            ...rankableProfileWhere,
           },
-        ],
-      },
-    });
+          select: rankingProfileSelect,
+        }),
+      ]);
 
-    currentUserEntry = buildEntry({
-      currentUserId,
-      position: entriesAhead + 1,
-      profile: currentUserProfile,
-    });
-  }
+      const topEntries = topProfiles.map((profile, index) =>
+        buildEntry({
+          currentUserId,
+          position: index + 1,
+          profile,
+        }),
+      );
+      const currentUserIsInTop = topEntries.some(
+        (entry) => entry.userId === currentUserId,
+      );
+      let currentUserEntry: CandyXpRankingEntry | null = null;
+      let currentUserRanking: CandyXpCurrentUserRanking | null = null;
 
-  return {
-    currentUserRanking,
-    currentUserEntry,
-    generatedAt: new Date().toISOString(),
-    topEntries,
-    totalRanked,
-  };
+      if (currentUserProfile) {
+        const currentUserRole = currentUserProfile.user
+          .role as CandyXpRankingRole;
+        const categoryProfileWhere = getRankableProfileWhere({
+          role: currentUserRole,
+          withXpOnly: true,
+        });
+        const shouldRankCurrentUser = currentUserProfile.totalXp > 0;
+        const [totalInCategory, entriesAhead] = await Promise.all([
+          tx.candyXpProfile.count({
+            where: categoryProfileWhere,
+          }),
+          shouldRankCurrentUser
+            ? tx.candyXpProfile.count({
+                where: {
+                  ...categoryProfileWhere,
+                  OR: [
+                    {
+                      totalXp: {
+                        gt: currentUserProfile.totalXp,
+                      },
+                    },
+                    {
+                      level: {
+                        gt: currentUserProfile.level,
+                      },
+                      totalXp: currentUserProfile.totalXp,
+                    },
+                    {
+                      ...getMoreRecentLastXpFilter(
+                        currentUserProfile.lastXpEventAt,
+                      ),
+                      level: currentUserProfile.level,
+                      totalXp: currentUserProfile.totalXp,
+                    },
+                    {
+                      ...getSameLastXpFilter(
+                        currentUserProfile.lastXpEventAt,
+                      ),
+                      level: currentUserProfile.level,
+                      totalXp: currentUserProfile.totalXp,
+                      user: getAlphabeticalTieUserFilter({
+                        name: currentUserProfile.user.name,
+                        role: currentUserRole,
+                        userId: currentUserProfile.userId,
+                      }),
+                    },
+                  ],
+                },
+              })
+            : Promise.resolve(null),
+        ]);
+
+        currentUserRanking = {
+          categoryLabel: getCategoryLabel(currentUserRole),
+          categoryTitle: getCategoryTitle(currentUserRole),
+          hasXp: shouldRankCurrentUser,
+          position: entriesAhead === null ? null : entriesAhead + 1,
+          totalInCategory,
+          totalXp: currentUserProfile.totalXp,
+          xpToNextLevel: Math.max(
+            0,
+            currentUserProfile.requiredXp - currentUserProfile.progressXp,
+          ),
+        };
+      }
+
+      if (
+        currentUserProfile &&
+        currentUserProfile.totalXp > 0 &&
+        !currentUserIsInTop
+      ) {
+        const entriesAhead = await tx.candyXpProfile.count({
+          where: {
+            ...rankableProfileWhere,
+            totalXp: {
+              gt: 0,
+            },
+            OR: [
+              {
+                totalXp: {
+                  gt: currentUserProfile.totalXp,
+                },
+              },
+              {
+                level: {
+                  gt: currentUserProfile.level,
+                },
+                totalXp: currentUserProfile.totalXp,
+              },
+              {
+                ...getMoreRecentLastXpFilter(
+                  currentUserProfile.lastXpEventAt,
+                ),
+                level: currentUserProfile.level,
+                totalXp: currentUserProfile.totalXp,
+              },
+              {
+                ...getSameLastXpFilter(currentUserProfile.lastXpEventAt),
+                level: currentUserProfile.level,
+                totalXp: currentUserProfile.totalXp,
+                user: getAlphabeticalTieUserFilter({
+                  name: currentUserProfile.user.name,
+                  userId: currentUserProfile.userId,
+                }),
+              },
+            ],
+          },
+        });
+
+        currentUserEntry = buildEntry({
+          currentUserId,
+          position: entriesAhead + 1,
+          profile: currentUserProfile,
+        });
+      }
+
+      return {
+        currentUserRanking,
+        currentUserEntry,
+        generatedAt: new Date().toISOString(),
+        topEntries,
+        totalRanked,
+      };
+    },
+    {
+      isolationLevel: "RepeatableRead",
+    },
+  );
 }

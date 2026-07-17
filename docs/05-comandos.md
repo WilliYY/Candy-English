@@ -14,6 +14,8 @@ Este documento centraliza comandos de desenvolvimento, validacao, Docker e deplo
 - `scripts/server-smoke.ts`
 - `scripts/auth-smoke.ts`
 - `scripts/avatar-smoke.ts`
+- `scripts/candy-xp-concurrency-smoke.ts`
+- `scripts/candy-xp-submission-concurrency-smoke.ts`
 - `scripts/candy-xp-visibility-smoke.ts`
 - `scripts/catty-behavior-smoke.ts`
 
@@ -45,6 +47,8 @@ npm run build
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run audit:avatar-smoke
+npm run audit:candy-xp-concurrency
+npm run audit:candy-xp-submission-concurrency
 npm run audit:candy-xp-visibility
 npm run audit:catty-behavior
 ```
@@ -65,6 +69,8 @@ docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-concurrency
+docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-submission-concurrency
 docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-visibility
 docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior
 ```

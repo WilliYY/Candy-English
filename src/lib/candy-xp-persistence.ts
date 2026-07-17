@@ -471,104 +471,112 @@ async function refreshCandyXpProfile(
   role: Role,
 ): Promise<CandyXpPersistenceSnapshot> {
   const prisma = getPrisma();
-  const [xpAggregate, eventDates, recentEvents, sourceStats] =
-    await Promise.all([
-      prisma.candyXpEvent.aggregate({
-        where: {
-          userId,
-        },
-        _max: {
-          occurredAt: true,
-        },
-        _sum: {
-          xp: true,
-        },
-      }),
-      prisma.candyXpEvent.findMany({
-        where: {
-          userId,
-          xp: {
-            gt: 0,
-          },
-        },
-        select: {
-          occurredAt: true,
-        },
-        orderBy: {
-          occurredAt: "asc",
-        },
-      }),
-      prisma.candyXpEvent.findMany({
-        where: {
-          userId,
-          xp: {
-            gt: 0,
-          },
-        },
-        select: {
-          occurredAt: true,
-          sourceLabel: true,
-          xp: true,
-        },
-        orderBy: {
-          occurredAt: "desc",
-        },
-        take: 5,
-      }),
-      prisma.candyXpEvent.groupBy({
-        by: ["sourceLabel"],
-        where: {
-          userId,
-        },
-        _count: {
-          _all: true,
-        },
-        _sum: {
-          xp: true,
-        },
-      }),
-    ]);
-  const totalXp = xpAggregate._sum.xp ?? 0;
-  const progress = progressFromCandyXp(totalXp);
-  const streakStats = calculateStreakStats(
-    eventDates.map((event) => event.occurredAt),
-  );
+  const refreshed = await prisma.$transaction(async (tx) => {
+    const lockedProfiles = await tx.$queryRaw<Array<{ id: string }>>`
+      SELECT "id"
+      FROM "CandyXpProfile"
+      WHERE "userId" = ${userId}
+      FOR UPDATE
+    `;
 
-  await prisma.candyXpProfile.upsert({
-    where: {
-      userId,
-    },
-    create: {
-      lastActivityDate: xpAggregate._max.occurredAt,
-      lastXpEventAt: xpAggregate._max.occurredAt,
-      level: progress.level,
-      levelStartXp: progress.levelStartXp,
-      longestStreakDays: streakStats.longestStreakDays,
-      progressXp: progress.progressXp,
-      requiredXp: progress.requiredXp,
-      role,
-      streakDays: streakStats.streakDays,
+    if (lockedProfiles.length === 0) {
+      throw new Error("Perfil Candy XP nao encontrado.");
+    }
+
+    const [xpAggregate, eventDates, recentEvents, sourceStats] =
+      await Promise.all([
+        tx.candyXpEvent.aggregate({
+          where: {
+            userId,
+          },
+          _max: {
+            occurredAt: true,
+          },
+          _sum: {
+            xp: true,
+          },
+        }),
+        tx.candyXpEvent.findMany({
+          where: {
+            userId,
+            xp: {
+              gt: 0,
+            },
+          },
+          select: {
+            occurredAt: true,
+          },
+          orderBy: {
+            occurredAt: "asc",
+          },
+        }),
+        tx.candyXpEvent.findMany({
+          where: {
+            userId,
+            xp: {
+              gt: 0,
+            },
+          },
+          select: {
+            occurredAt: true,
+            sourceLabel: true,
+            xp: true,
+          },
+          orderBy: {
+            occurredAt: "desc",
+          },
+          take: 5,
+        }),
+        tx.candyXpEvent.groupBy({
+          by: ["sourceLabel"],
+          where: {
+            userId,
+          },
+          _count: {
+            _all: true,
+          },
+          _sum: {
+            xp: true,
+          },
+        }),
+      ]);
+    const totalXp = xpAggregate._sum.xp ?? 0;
+    const progress = progressFromCandyXp(totalXp);
+    const streakStats = calculateStreakStats(
+      eventDates.map((event) => event.occurredAt),
+    );
+
+    await tx.candyXpProfile.update({
+      where: {
+        userId,
+      },
+      data: {
+        lastActivityDate: xpAggregate._max.occurredAt,
+        lastXpEventAt: xpAggregate._max.occurredAt,
+        level: progress.level,
+        levelStartXp: progress.levelStartXp,
+        longestStreakDays: streakStats.longestStreakDays,
+        progressXp: progress.progressXp,
+        requiredXp: progress.requiredXp,
+        role,
+        streakDays: streakStats.streakDays,
+        totalXp,
+      },
+    });
+
+    return {
+      progress,
+      recentEvents,
+      sourceStats,
+      streakStats,
       totalXp,
-      userId,
-    },
-    update: {
-      lastActivityDate: xpAggregate._max.occurredAt,
-      lastXpEventAt: xpAggregate._max.occurredAt,
-      level: progress.level,
-      levelStartXp: progress.levelStartXp,
-      longestStreakDays: streakStats.longestStreakDays,
-      progressXp: progress.progressXp,
-      requiredXp: progress.requiredXp,
-      role,
-      streakDays: streakStats.streakDays,
-      totalXp,
-    },
+    };
   });
 
   await awardCandyBadges({
-    level: progress.level,
+    level: refreshed.progress.level,
     role,
-    streakDays: streakStats.streakDays,
+    streakDays: refreshed.streakStats.streakDays,
     userId,
   });
 
@@ -580,14 +588,14 @@ async function refreshCandyXpProfile(
 
   return {
     badgeCount,
-    longestStreakDays: streakStats.longestStreakDays,
-    recentEvents: recentEvents.map((event) => ({
+    longestStreakDays: refreshed.streakStats.longestStreakDays,
+    recentEvents: refreshed.recentEvents.map((event) => ({
       occurredAt: event.occurredAt.toISOString(),
       sourceLabel: event.sourceLabel,
       xp: event.xp,
     })),
     sourceStats: Object.fromEntries(
-      sourceStats.map((source) => [
+      refreshed.sourceStats.map((source) => [
         source.sourceLabel,
         {
           value: source._count._all,
@@ -595,8 +603,8 @@ async function refreshCandyXpProfile(
         },
       ]),
     ),
-    streakDays: streakStats.streakDays,
-    totalXp,
+    streakDays: refreshed.streakStats.streakDays,
+    totalXp: refreshed.totalXp,
   };
 }
 
@@ -605,6 +613,7 @@ export async function recordCandyXpEventsForUser(input: {
   role: Role;
   userId: string;
 }): Promise<CandyXpPersistenceSnapshot> {
+  const observedAt = new Date();
   await ensureCandyXpCatalog();
 
   const events = normalizeEvents(input.events);
@@ -624,35 +633,79 @@ export async function recordCandyXpEventsForUser(input: {
   });
 
   if (events.length > 0) {
-    await prisma.$transaction(
-      events.map((event) =>
-        prisma.candyXpEvent.upsert({
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw<Array<{ id: string }>>`
+        SELECT "id"
+        FROM "CandyXpProfile"
+        WHERE "userId" = ${input.userId}
+        FOR UPDATE
+      `;
+
+      for (const event of events) {
+        const occurredAt = event.occurredAt ?? observedAt;
+        const existing = await tx.candyXpEvent.findUnique({
           where: {
             userId_sourceKey: {
               sourceKey: event.sourceKey,
               userId: input.userId,
             },
           },
-          create: {
-            kind: event.kind,
-            metadata: event.metadata ?? undefined,
-            occurredAt: event.occurredAt ?? new Date(),
-            role: input.role,
-            sourceKey: event.sourceKey,
-            sourceLabel: event.sourceLabel,
-            userId: input.userId,
-            xp: event.xp,
+          select: {
+            kind: true,
+            metadata: true,
+            occurredAt: true,
+            role: true,
+            sourceLabel: true,
+            xp: true,
           },
-          update: {
-            kind: event.kind,
-            metadata: event.metadata ?? undefined,
-            role: input.role,
-            sourceLabel: event.sourceLabel,
-            xp: event.xp,
-          },
-        }),
-      ),
-    );
+        });
+
+        if (!existing) {
+          await tx.candyXpEvent.create({
+            data: {
+              kind: event.kind,
+              metadata: event.metadata ?? undefined,
+              occurredAt,
+              role: input.role,
+              sourceKey: event.sourceKey,
+              sourceLabel: event.sourceLabel,
+              userId: input.userId,
+              xp: event.xp,
+            },
+          });
+          continue;
+        }
+
+        const metadataChanged =
+          JSON.stringify(existing.metadata) !==
+          JSON.stringify(event.metadata ?? null);
+        const eventChanged =
+          existing.kind !== event.kind ||
+          metadataChanged ||
+          existing.role !== input.role ||
+          existing.sourceLabel !== event.sourceLabel ||
+          existing.xp !== event.xp;
+
+        if (eventChanged && occurredAt >= existing.occurredAt) {
+          await tx.candyXpEvent.update({
+            where: {
+              userId_sourceKey: {
+                sourceKey: event.sourceKey,
+                userId: input.userId,
+              },
+            },
+            data: {
+              kind: event.kind,
+              metadata: event.metadata ?? undefined,
+              occurredAt,
+              role: input.role,
+              sourceLabel: event.sourceLabel,
+              xp: event.xp,
+            },
+          });
+        }
+      }
+    });
   }
 
   return refreshCandyXpProfile(input.userId, input.role);
