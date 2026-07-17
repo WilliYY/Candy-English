@@ -711,7 +711,6 @@ export function TeacherWorkspace({
           {activeTask === "aceitar-alunos" ? (
             <StudentPreRegistrationReviewPanel
               activeStatus={preRegistrationStatus}
-              basePath="/ava/teacher"
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
               unitFilter={secretariaUnitFilter}

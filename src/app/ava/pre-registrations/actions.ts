@@ -396,7 +396,7 @@ export async function createStudentPreRegistration(
         paymentMethod: parsed.data.paymentMethod ?? null,
         phone: parsed.data.phone,
         phoneNormalized,
-        status: parsed.data.status,
+        status: "PENDING",
         tuitionCents: parsed.data.tuitionAmount ?? null,
         unit: parsed.data.unit,
       },

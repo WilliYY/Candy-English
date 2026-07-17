@@ -1693,7 +1693,6 @@ export function AdminUsersPanel({
           {activeTask === "aceitar-alunos" ? (
             <StudentPreRegistrationReviewPanel
               activeStatus={preRegistrationStatus}
-              basePath="/ava/admin"
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
               unitFilter={secretariaUnitFilter}

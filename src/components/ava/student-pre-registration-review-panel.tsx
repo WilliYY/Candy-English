@@ -2,7 +2,6 @@
 
 import {
   AlertCircle,
-  ArrowRight,
   Banknote,
   BrainCircuit,
   CalendarClock,
@@ -10,9 +9,11 @@ import {
   Clock3,
   ClipboardCheck,
   CreditCard,
+  ListChecks,
   LoaderCircle,
   Mail,
   MapPin,
+  MessageCircle,
   MessageSquareText,
   Phone,
   Search,
@@ -27,7 +28,6 @@ import {
   X,
   XCircle,
 } from "lucide-react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   type FormEvent,
@@ -45,10 +45,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  type SecretariaUnitFilter,
-  withSecretariaUnitParam,
-} from "@/lib/secretaria-unit-filter";
+import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 import type { SecretariaPreRegistrationInput } from "@/lib/validations/pre-registration";
 import { cn } from "@/lib/utils";
 
@@ -61,7 +58,6 @@ export type PreRegistrationStatus =
   | "REJECTED";
 
 type ReviewableStatus = Exclude<PreRegistrationStatus, "PENDING" | "APPROVED">;
-type CreateStatus = Exclude<PreRegistrationStatus, "APPROVED">;
 type FinancialUnit = "IVATE" | "DOURADINA";
 type PaymentMethod = "PIX" | "DINHEIRO" | "CARTAO" | "OUTRO";
 
@@ -114,7 +110,6 @@ export type StudentPreRegistrationReviewRow = {
 
 type StudentPreRegistrationReviewPanelProps = {
   activeStatus: PreRegistrationStatus;
-  basePath: "/ava/admin" | "/ava/teacher";
   requests: StudentPreRegistrationReviewRow[];
   statusCounts: Record<PreRegistrationStatus, number>;
   teacherOptions: PreRegistrationTeacherOption[];
@@ -138,7 +133,6 @@ type CreateFormState = {
   paymentDay: string;
   paymentMethod: PaymentMethod;
   phone: string;
-  status: CreateStatus;
   tuitionAmount: string;
   unit: FinancialUnit;
 };
@@ -149,14 +143,6 @@ const allStatusOptions: readonly PreRegistrationStatus[] = [
   "WAITING_PAYMENT",
   "READY_TO_CONVERT",
   "APPROVED",
-  "REJECTED",
-];
-
-const createStatusOptions: readonly CreateStatus[] = [
-  "PENDING",
-  "CONTACTED",
-  "WAITING_PAYMENT",
-  "READY_TO_CONVERT",
   "REJECTED",
 ];
 
@@ -274,22 +260,21 @@ const defaultCreateState: CreateFormState = {
   paymentDay: "",
   paymentMethod: "PIX",
   phone: "",
-  status: "PENDING",
   tuitionAmount: "",
   unit: "IVATE",
 };
 
 const preRegistrationFieldClassName =
-  "grid gap-1.5 rounded-xl border border-primary/10 bg-white/88 p-3 text-sm font-semibold text-primary shadow-sm shadow-primary/5 transition focus-within:border-primary/35 focus-within:bg-white focus-within:shadow-md focus-within:shadow-primary/10";
+  "grid min-w-0 gap-1.5 overflow-hidden rounded-xl border border-primary/10 bg-white/88 p-3 text-sm font-semibold text-primary shadow-sm shadow-primary/5 transition focus-within:border-primary/35 focus-within:bg-white focus-within:shadow-md focus-within:shadow-primary/10";
 
 const preRegistrationInputClassName =
-  "h-11 border-primary/15 bg-white text-sm font-semibold text-primary shadow-inner shadow-primary/[0.03] placeholder:text-muted-foreground/65 focus-visible:border-primary/35 focus-visible:ring-primary/20";
+  "h-11 w-full min-w-0 max-w-full border-primary/15 bg-white text-sm font-semibold text-primary shadow-inner shadow-primary/[0.03] placeholder:text-muted-foreground/65 focus-visible:border-primary/35 focus-visible:ring-primary/20";
 
 const preRegistrationSelectClassName =
-  "h-11 rounded-md border border-primary/15 bg-white px-3 py-2 text-sm font-semibold text-primary shadow-inner shadow-primary/[0.03] outline-none transition focus-visible:border-primary/35 focus-visible:ring-[3px] focus-visible:ring-primary/20";
+  "h-11 w-full min-w-0 max-w-full rounded-md border border-primary/15 bg-white px-3 py-2 text-sm font-semibold text-primary shadow-inner shadow-primary/[0.03] outline-none transition focus-visible:border-primary/35 focus-visible:ring-[3px] focus-visible:ring-primary/20";
 
 const preRegistrationTextareaClassName =
-  "border-primary/15 bg-white text-sm font-semibold text-primary shadow-inner shadow-primary/[0.03] placeholder:text-muted-foreground/65 focus-visible:border-primary/35 focus-visible:ring-primary/20";
+  "w-full min-w-0 max-w-full border-primary/15 bg-white text-sm font-semibold text-primary shadow-inner shadow-primary/[0.03] placeholder:text-muted-foreground/65 focus-visible:border-primary/35 focus-visible:ring-primary/20";
 
 const preRegistrationHelpClassName =
   "text-xs font-medium leading-5 text-muted-foreground";
@@ -408,6 +393,11 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
+const timeFormatter = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
   style: "currency",
@@ -421,6 +411,16 @@ function formatDate(value: string | null) {
   if (Number.isNaN(date.getTime())) return null;
 
   return dateFormatter.format(date);
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return null;
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return null;
+
+  return `${dateFormatter.format(date)} as ${timeFormatter.format(date)}`;
 }
 
 function formatCurrency(cents: number | null) {
@@ -453,6 +453,20 @@ function normalizeCompactSearchText(value: string | null | undefined) {
 
 function normalizeDigits(value: string | null | undefined) {
   return (value ?? "").replace(/\D/g, "");
+}
+
+function buildWhatsAppContactHref(phone: string, fullName: string) {
+  const phoneDigits = normalizeDigits(phone);
+
+  if (phoneDigits.length < 10) return null;
+
+  const internationalPhone = phoneDigits.startsWith("55")
+    ? phoneDigits
+    : `55${phoneDigits}`;
+  const firstName = fullName.trim().split(/\s+/)[0] || "tudo bem";
+  const message = `Ola, ${firstName}! Aqui e da Candy English. Podemos continuar sua conversa sobre as aulas?`;
+
+  return `https://wa.me/${internationalPhone}?text=${encodeURIComponent(message)}`;
 }
 
 function getSimplifiedNameTokens(value: string) {
@@ -1851,10 +1865,12 @@ function AcceptForm({
 
 function CreatePreRegistrationForm({
   initialUnit,
+  onCreated,
   teacherOptions,
   viewerRole,
 }: {
   initialUnit: FinancialUnit;
+  onCreated?: (message: string) => void;
   teacherOptions: PreRegistrationTeacherOption[];
   viewerRole: "ADMIN" | "TEACHER";
 }) {
@@ -1904,7 +1920,7 @@ function CreatePreRegistrationForm({
       paymentDay: form.paymentDay,
       paymentMethod: form.paymentMethod,
       phone: form.phone,
-      status: form.status,
+      status: "PENDING",
       tuitionAmount: form.tuitionAmount,
       unit: form.unit,
     };
@@ -1921,6 +1937,7 @@ function CreatePreRegistrationForm({
       setForm(createDefaultCreateState(initialUnit));
       setMessage(result.message);
       router.refresh();
+      onCreated?.(result.message);
     });
   }
 
@@ -2124,10 +2141,10 @@ function CreatePreRegistrationForm({
         </FormSectionCard>
 
         <FormSectionCard
-          description="Resumo da conversa para a equipe saber o que o aluno busca e em que ponto ele esta."
+          description="Resumo da conversa para a equipe saber o que o interessado busca. Todo novo registro entra na fila como Novo."
           eyebrow="Conversa"
           icon={Sparkles}
-          title="Objetivo, nivel e status"
+          title="Objetivo e nivel"
           tone="sky"
         >
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
@@ -2153,7 +2170,7 @@ function CreatePreRegistrationForm({
               ) : null}
             </label>
 
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-1">
+            <div className="grid content-start gap-3">
               <label className={preRegistrationFieldClassName}>
                 <span>Nivel estimado</span>
                 <Input
@@ -2173,29 +2190,20 @@ function CreatePreRegistrationForm({
                 ) : null}
               </label>
 
-              <label className={preRegistrationFieldClassName}>
-                <span>Status inicial</span>
-                <select
-                  value={form.status}
-                  onChange={(event) =>
-                    setField("status", event.target.value as CreateStatus)
-                  }
-                  disabled={isPending}
-                  aria-invalid={Boolean(errors.status)}
-                  className={preRegistrationSelectClassName}
-                >
-                  {createStatusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {statusMeta[status].label}
-                    </option>
-                  ))}
-                </select>
-                {errors.status ? (
-                  <span className={preRegistrationErrorClassName}>
-                    {errors.status}
-                  </span>
-                ) : null}
-              </label>
+              <div className="flex min-w-0 items-start gap-3 rounded-xl border border-primary/15 bg-primary/8 p-3 text-primary shadow-sm shadow-primary/5">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <UserRound aria-hidden="true" className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-primary/60">
+                    Status ao salvar
+                  </p>
+                  <p className="mt-1 text-sm font-black">Novo</p>
+                  <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
+                    A situacao pode ser atualizada depois, dentro do cadastro.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </FormSectionCard>
@@ -2427,25 +2435,37 @@ function CreatePreRegistrationForm({
 
 export function StudentPreRegistrationReviewPanel({
   activeStatus,
-  basePath,
   requests,
   statusCounts,
   teacherOptions,
   unitFilter = "all",
   viewerRole,
 }: StudentPreRegistrationReviewPanelProps) {
+  const [activeView, setActiveView] = useState<"create" | "list">(() =>
+    activeStatus === "PENDING" ? "create" : "list",
+  );
+  const [listStatus, setListStatus] = useState<
+    "ALL" | PreRegistrationStatus
+  >(() => (activeStatus === "PENDING" ? "ALL" : activeStatus));
   const [searchTerm, setSearchTerm] = useState("");
-  const statusOptions = useMemo(() => allStatusOptions, []);
-  const activeMeta = statusMeta[activeStatus];
-  const ActiveIcon = activeMeta.icon;
+  const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const trimmedSearchTerm = searchTerm.trim();
   const isSearching = trimmedSearchTerm.length > 0;
   const visibleRequests = useMemo(() => {
+    const requestsInStatus =
+      listStatus === "ALL"
+        ? requests
+        : requests.filter((request) => request.status === listStatus);
+
     if (!isSearching) {
-      return requests.filter((request) => request.status === activeStatus);
+      return [...requestsInStatus].sort(
+        (left, right) =>
+          new Date(right.createdAt).getTime() -
+          new Date(left.createdAt).getTime(),
+      );
     }
 
-    return requests
+    return requestsInStatus
       .map((request) => ({
         match: scoreRequestForSearch(request, trimmedSearchTerm),
         request,
@@ -2466,26 +2486,15 @@ export function StudentPreRegistrationReviewPanel({
         );
       })
       .map(({ request }) => request);
-  }, [activeStatus, isSearching, requests, trimmedSearchTerm]);
+  }, [isSearching, listStatus, requests, trimmedSearchTerm]);
   const visibleRequestsLabel =
     visibleRequests.length === 1
       ? "1 pre-cadastro encontrado"
       : `${visibleRequests.length} pre-cadastros encontrados`;
-  const totalActive =
-    statusCounts.PENDING +
-    statusCounts.CONTACTED +
-    statusCounts.WAITING_PAYMENT +
-    statusCounts.READY_TO_CONVERT;
-  const reviewSteps = [
-    { icon: UserPlus, label: "Cadastrar interessado" },
-    { icon: MessageSquareText, label: "Acompanhar conversa" },
-    { icon: UserCheck, label: "Tornar aluno" },
-  ];
-  const getStatusHref = (status: PreRegistrationStatus) =>
-    withSecretariaUnitParam(
-      `${basePath}?task=aceitar-alunos&preStatus=${status}`,
-      unitFilter,
-    );
+  const totalSaved = allStatusOptions.reduce(
+    (total, status) => total + statusCounts[status],
+    0,
+  );
   const initialCreateUnit = unitFilter === "all" ? "IVATE" : unitFilter;
 
   return (
@@ -2517,158 +2526,170 @@ export function StudentPreRegistrationReviewPanel({
               <div className="relative overflow-hidden rounded-xl border border-primary/15 bg-white/90 p-3 shadow-sm shadow-primary/5">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#412a4c,#e57cd8,#f97316)]" />
                 <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-muted-foreground">
-                  Fila ativa
+                  Cadastros salvos
                 </p>
                 <strong className="mt-2 block text-2xl font-black leading-none text-primary">
-                  {totalActive}
+                  {totalSaved}
                 </strong>
                 <span className="mt-2 block text-xs text-muted-foreground">
-                  sem criar acesso Student
+                  historico autorizado neste polo
                 </span>
               </div>
-              <SummaryMetric status="READY_TO_CONVERT" value={statusCounts.READY_TO_CONVERT} />
+              <SummaryMetric status="PENDING" value={statusCounts.PENDING} />
             </div>
           </div>
 
-          <div className="mt-5 grid gap-2 md:grid-cols-3">
-            {reviewSteps.map((step, index) => {
-              const Icon = step.icon;
+          <nav
+            aria-label="Escolher modo do pre-cadastro"
+            className="mt-5 grid gap-2 sm:grid-cols-2"
+          >
+            <button
+              type="button"
+              aria-pressed={activeView === "create"}
+              onClick={() => setActiveView("create")}
+              className={cn(
+                "group flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition hover:-translate-y-0.5",
+                activeView === "create"
+                  ? "border-primary bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                  : "border-primary/12 bg-white/88 text-primary hover:border-primary/25 hover:bg-white hover:shadow-md",
+              )}
+            >
+              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", activeView === "create" ? "bg-white/15" : "bg-primary/10")}>
+                <UserPlus aria-hidden="true" className="size-4" />
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-sm font-black">Novo pre-cadastro</strong>
+                <span className={cn("mt-0.5 block text-xs", activeView === "create" ? "text-white/75" : "text-muted-foreground")}>
+                  Registrar um novo contato como Novo
+                </span>
+              </span>
+            </button>
 
-              return (
-                <div
-                  key={step.label}
-                  className="group flex items-center gap-3 rounded-xl border border-primary/10 bg-white/82 px-3 py-2.5 text-sm font-bold text-primary/85 shadow-sm shadow-primary/5 transition hover:-translate-y-0.5 hover:border-primary/25 hover:bg-white hover:shadow-md hover:shadow-primary/10"
-                >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Icon aria-hidden="true" className="size-4" />
+            <button
+              type="button"
+              aria-pressed={activeView === "list"}
+              onClick={() => setActiveView("list")}
+              className={cn(
+                "group flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition hover:-translate-y-0.5",
+                activeView === "list"
+                  ? "border-sky-700 bg-sky-700 text-white shadow-lg shadow-sky-700/20"
+                  : "border-primary/12 bg-white/88 text-primary hover:border-sky-300 hover:bg-sky-50/60 hover:shadow-md",
+              )}
+            >
+              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", activeView === "list" ? "bg-white/15" : "bg-sky-100 text-sky-800")}>
+                <ListChecks aria-hidden="true" className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="flex items-center justify-between gap-2 text-sm font-black">
+                  Cadastros salvos
+                  <span className={cn("rounded-full px-2 py-0.5 text-xs", activeView === "list" ? "bg-white/15" : "bg-sky-100 text-sky-800")}>
+                    {totalSaved}
                   </span>
-                  <span className="min-w-0 truncate">{step.label}</span>
-                  {index < reviewSteps.length - 1 ? (
-                    <ArrowRight
-                      aria-hidden="true"
-                      className="ml-auto hidden size-4 text-primary/35 md:block"
-                    />
-                  ) : null}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-5 rounded-xl border border-primary/12 bg-white/90 p-3 shadow-sm shadow-primary/5">
-            <label className="grid gap-2 text-sm font-semibold text-primary">
-              <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-primary/70">
-                <Search aria-hidden="true" className="size-3.5" />
-                Busca inteligente
+                </strong>
+                <span className={cn("mt-0.5 block text-xs", activeView === "list" ? "text-white/75" : "text-muted-foreground")}>
+                  Localizar, chamar e acompanhar interessados
+                </span>
               </span>
-              <span className="relative">
-                <Search
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  type="search"
-                  value={searchTerm}
-                  onChange={(event) => setSearchTerm(event.target.value)}
-                  placeholder="Buscar por nome, telefone, email ou documento..."
-                  className={cn(preRegistrationInputClassName, "pl-10")}
-                />
-              </span>
-            </label>
-            <div className="mt-2 flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-              <span>{visibleRequestsLabel}</span>
-              <span>
-                {isSearching
-                  ? "Busca em todos os status autorizados, com exatos primeiro."
-                  : `Mostrando status: ${activeMeta.label}.`}
-              </span>
-            </div>
-          </div>
+            </button>
+          </nav>
+          {savedMessage ? (
+            <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800" role="status">
+              {savedMessage}
+            </p>
+          ) : null}
         </div>
-
-        <nav
-          aria-label="Filtrar pre-cadastros por status"
-          className="grid gap-2 bg-white/78 p-2 sm:grid-cols-2 xl:grid-cols-6"
-        >
-          {statusOptions.map((status) => {
-            const meta = statusMeta[status];
-            const Icon = meta.icon;
-            const isActive = activeStatus === status;
-
-            return (
-              <Button
-                key={status}
-                asChild
-                variant={isActive ? "default" : "ghost"}
-                size="sm"
-                className={cn(
-                  "h-auto min-h-11 w-full justify-between rounded-xl border px-3 py-2 text-left font-bold transition",
-                  isActive
-                    ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                    : "border-primary/10 bg-white/82 text-muted-foreground hover:-translate-y-0.5 hover:bg-primary/8 hover:text-primary",
-                )}
-              >
-                <Link
-                  href={getStatusHref(status)}
-                >
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    <Icon aria-hidden="true" className="size-4 shrink-0" />
-                    <span className="truncate">{meta.label}</span>
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[0.68rem] font-bold",
-                      isActive ? "bg-white/20 text-white" : "bg-primary/8 text-primary",
-                    )}
-                  >
-                    {statusCounts[status]}
-                  </span>
-                </Link>
-              </Button>
-            );
-          })}
-        </nav>
       </section>
 
-      <CreatePreRegistrationForm
-        initialUnit={initialCreateUnit}
-        teacherOptions={teacherOptions}
-        viewerRole={viewerRole}
-      />
+      {activeView === "create" ? (
+        <CreatePreRegistrationForm
+          initialUnit={initialCreateUnit}
+          onCreated={(message) => {
+            setSavedMessage(message);
+            setListStatus("ALL");
+            setActiveView("list");
+          }}
+          teacherOptions={teacherOptions}
+          viewerRole={viewerRole}
+        />
+      ) : (
+        <>
+          <section className="ava-soft-card overflow-hidden rounded-2xl border border-sky-200/80 bg-white/94 shadow-lg shadow-sky-900/5">
+            <div className="flex flex-col gap-4 border-b border-sky-100 bg-[linear-gradient(135deg,rgba(240,249,255,0.96),rgba(255,255,255,0.96),rgba(250,245,255,0.9))] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-700 text-white shadow-md shadow-sky-700/20">
+                  <ListChecks aria-hidden="true" className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black text-primary">Cadastros salvos</h3>
+                  <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                    Os mais recentes aparecem primeiro, com polo, cidade e horario do registro.
+                  </p>
+                </div>
+              </div>
+              <span className="w-fit rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-black text-sky-800">
+                {visibleRequestsLabel}
+              </span>
+            </div>
+            <div className="grid min-w-0 gap-3 p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_240px]">
+              <label className="grid min-w-0 gap-2 text-sm font-semibold text-primary">
+                <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-primary/65">
+                  <Search aria-hidden="true" className="size-3.5" />
+                  Busca inteligente
+                </span>
+                <span className="relative min-w-0">
+                  <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    value={searchTerm}
+                    onChange={(event) => setSearchTerm(event.target.value)}
+                    placeholder="Buscar por nome, telefone, email ou documento..."
+                    className={cn(preRegistrationInputClassName, "pl-10")}
+                  />
+                </span>
+              </label>
+              <label className="grid min-w-0 gap-2 text-sm font-semibold text-primary">
+                <span className="text-xs font-black uppercase tracking-[0.14em] text-primary/65">
+                  Situacao
+                </span>
+                <NativeSelect
+                  value={listStatus}
+                  onChange={(event) => setListStatus(event.target.value as "ALL" | PreRegistrationStatus)}
+                  className="h-11 w-full min-w-0 border-primary/15 bg-white font-semibold text-primary"
+                >
+                  <option value="ALL">Todos os cadastros</option>
+                  {allStatusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {statusMeta[status].label} ({statusCounts[status]})
+                    </option>
+                  ))}
+                </NativeSelect>
+              </label>
+            </div>
+          </section>
 
       {visibleRequests.length === 0 ? (
         <div className="ava-soft-card flex min-h-60 flex-col items-center justify-center gap-4 rounded-2xl border border-dashed p-6 text-center">
-          <span
-            className={cn(
-              "flex size-12 items-center justify-center rounded-xl border",
-              activeMeta.accentClassName,
-            )}
-          >
-            <ActiveIcon aria-hidden="true" className="size-5" />
+          <span className="flex size-12 items-center justify-center rounded-xl border border-sky-200 bg-sky-50 text-sky-800">
+            <ListChecks aria-hidden="true" className="size-5" />
           </span>
           <div className="max-w-md">
             <h3 className="text-lg font-semibold text-primary">
-              {isSearching
-                ? "Nenhum pr\u00e9-cadastro encontrado."
-                : activeMeta.emptyTitle}
+              Nenhum pre-cadastro encontrado.
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {isSearching
                 ? "Tente parte do nome, telefone sem mascara, email, documento, cidade, unidade ou status."
-                : activeMeta.emptyDescription}
+                : "Altere o filtro de situacao ou crie um novo pre-cadastro."}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
             <UsersRound aria-hidden="true" className="size-3.5" />
             {visibleRequestsLabel}
           </div>
-          {activeStatus !== "PENDING" && statusCounts.PENDING > 0 ? (
-            <Button asChild variant="outline" size="sm">
-              <Link href={getStatusHref("PENDING")}>
-                Ver novos
-                <ArrowRight data-icon="inline-end" />
-              </Link>
-            </Button>
-          ) : null}
+          <Button type="button" variant="outline" size="sm" onClick={() => setActiveView("create")}>
+            <UserPlus data-icon="inline-start" />
+            Criar pre-cadastro
+          </Button>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -2684,7 +2705,11 @@ export function StudentPreRegistrationReviewPanel({
             const canReject =
               !isConverted && request.status !== "REJECTED";
             const receivedDate =
-              formatDate(request.createdAt) ?? "Data nao informada";
+              formatDateTime(request.createdAt) ?? "Data nao informada";
+            const whatsAppHref = buildWhatsAppContactHref(
+              request.phone,
+              request.fullName,
+            );
             const personInitial =
               request.fullName.trim().charAt(0).toUpperCase() || "A";
             const schedule = [
@@ -2710,7 +2735,7 @@ export function StudentPreRegistrationReviewPanel({
             return (
               <article
                 key={request.id}
-                className="group ava-soft-card overflow-hidden rounded-2xl border border-primary/12 bg-white/92 shadow-md shadow-primary/5 transition hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/10"
+                className="group ava-soft-card min-w-0 overflow-hidden rounded-2xl border border-primary/12 bg-white/92 shadow-md shadow-primary/5 transition hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/10"
               >
                 <div className="border-b border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.08),rgba(229,124,216,0.08),rgba(255,246,236,0.95))] p-5">
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -2725,12 +2750,18 @@ export function StudentPreRegistrationReviewPanel({
                             <Store aria-hidden="true" className="size-3.5" />
                             {unitLabels[request.unit]}
                           </span>
+                          {request.city ? (
+                            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-bold text-sky-800">
+                              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                              <span className="truncate">{request.city}</span>
+                            </span>
+                          ) : null}
                           <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             <CalendarClock
                               aria-hidden="true"
                               className="size-3.5"
                             />
-                            Recebido em {receivedDate}
+                            Criado em {receivedDate}
                           </span>
                         </div>
                         <h3 className="mt-3 text-xl font-black text-primary">
@@ -2742,15 +2773,29 @@ export function StudentPreRegistrationReviewPanel({
                       </div>
                     </div>
 
-                    <div className="grid gap-2 sm:grid-cols-2 xl:min-w-80">
-                      <ContactCard icon={Phone} label="Telefone" value={request.phone} />
-                      <ContactCard icon={Mail} label="Email" value={request.email} />
+                    <div className="flex min-w-0 flex-col gap-2 xl:min-w-80">
+                      {whatsAppHref ? (
+                        <Button
+                          asChild
+                          size="sm"
+                          className="w-full bg-emerald-600 text-white shadow-md shadow-emerald-600/15 hover:bg-emerald-700"
+                        >
+                          <a href={whatsAppHref} target="_blank" rel="noreferrer">
+                            <MessageCircle data-icon="inline-start" />
+                            Chamar no WhatsApp
+                          </a>
+                        </Button>
+                      ) : null}
+                      <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+                        <ContactCard icon={Phone} label="Telefone" value={request.phone} />
+                        <ContactCard icon={Mail} label="Email" value={request.email} />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
-                  <div className="flex flex-col gap-4">
+                <div className="grid min-w-0 gap-5 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
+                  <div className="flex min-w-0 flex-col gap-4">
                     <section className="rounded-xl border border-sky-200/70 bg-sky-50/55 p-4 shadow-sm shadow-sky-500/5">
                       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-primary">
                         <Sparkles aria-hidden="true" className="size-4" />
@@ -2856,6 +2901,11 @@ export function StudentPreRegistrationReviewPanel({
                       </div>
                       <dl className="grid gap-3 md:grid-cols-2">
                         <DetailItem
+                          icon={CalendarClock}
+                          label="Criado em"
+                          value={formatDateTime(request.createdAt)}
+                        />
+                        <DetailItem
                           icon={UserRound}
                           label="Criado por"
                           value={
@@ -2914,7 +2964,7 @@ export function StudentPreRegistrationReviewPanel({
                     </section>
                   </div>
 
-                  <aside className="flex flex-col gap-4 rounded-xl border border-primary/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(251,245,255,0.9),rgba(255,244,236,0.78))] p-4 shadow-sm shadow-primary/5">
+                  <aside className="flex min-w-0 flex-col gap-4 rounded-xl border border-primary/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(251,245,255,0.9),rgba(255,244,236,0.78))] p-4 shadow-sm shadow-primary/5">
                     <div className="flex items-start gap-3">
                       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
                         <UserPlus aria-hidden="true" className="size-4" />
@@ -2984,6 +3034,8 @@ export function StudentPreRegistrationReviewPanel({
             );
           })}
         </div>
+      )}
+        </>
       )}
     </div>
   );
