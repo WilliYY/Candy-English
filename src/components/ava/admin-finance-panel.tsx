@@ -3,6 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertTriangle,
+  ArrowRight,
+  Banknote,
+  Building2,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -24,10 +27,12 @@ import {
   Search,
   ShoppingCart,
   SlidersHorizontal,
+  TrendingUp,
   Trash2,
   UserRound,
   WalletCards,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
@@ -225,6 +230,95 @@ const financialUnitToneClasses: Record<
     stripe: "bg-fuchsia-500",
   },
 };
+
+const financeSummaryToneClasses = {
+  amber: {
+    accent: "bg-amber-500",
+    icon: "bg-amber-100 text-amber-800 ring-amber-200/80",
+    panel:
+      "border-amber-200/90 bg-gradient-to-br from-amber-50 via-white to-amber-100/65",
+    value: "text-amber-900",
+  },
+  emerald: {
+    accent: "bg-emerald-500",
+    icon: "bg-emerald-100 text-emerald-800 ring-emerald-200/80",
+    panel:
+      "border-emerald-200/90 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/70",
+    value: "text-emerald-800",
+  },
+  rose: {
+    accent: "bg-rose-500",
+    icon: "bg-rose-100 text-rose-800 ring-rose-200/80",
+    panel:
+      "border-rose-200/90 bg-gradient-to-br from-rose-50 via-white to-rose-100/70",
+    value: "text-rose-800",
+  },
+  sky: {
+    accent: "bg-sky-500",
+    icon: "bg-sky-100 text-sky-800 ring-sky-200/80",
+    panel:
+      "border-sky-200/90 bg-gradient-to-br from-sky-50 via-white to-sky-100/70",
+    value: "text-sky-800",
+  },
+} as const;
+
+type FinanceSummaryTone = keyof typeof financeSummaryToneClasses;
+
+function FinanceSummaryCard({
+  detail,
+  icon: Icon,
+  label,
+  tone,
+  value,
+}: {
+  detail: string;
+  icon: LucideIcon;
+  label: string;
+  tone: FinanceSummaryTone;
+  value: string;
+}) {
+  const classes = financeSummaryToneClasses[tone];
+
+  return (
+    <article
+      className={cn(
+        "group relative min-w-0 overflow-hidden rounded-lg border p-4 shadow-[0_12px_30px_rgba(65,42,76,0.07)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_38px_rgba(65,42,76,0.11)]",
+        classes.panel,
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn("absolute inset-y-0 left-0 w-1", classes.accent)}
+      />
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <span className="min-w-0">
+          <span className="block text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-primary/62">
+            {label}
+          </span>
+          <strong
+            className={cn(
+              "mt-2 block min-w-0 text-[1.7rem] font-extrabold leading-none tabular-nums tracking-normal",
+              classes.value,
+            )}
+          >
+            {value}
+          </strong>
+        </span>
+        <span
+          className={cn(
+            "flex size-10 shrink-0 items-center justify-center rounded-lg ring-1 transition-transform duration-200 group-hover:scale-105",
+            classes.icon,
+          )}
+        >
+          <Icon aria-hidden="true" className="size-4.5" />
+        </span>
+      </div>
+      <span className="mt-3 block text-xs font-semibold leading-5 text-primary/64">
+        {detail}
+      </span>
+    </article>
+  );
+}
 
 function normalizeInitialUnitFilter(
   filter: SecretariaUnitFilter | undefined,
@@ -507,7 +601,8 @@ function getStatusClasses(status: FinanceStatus) {
       amount: "text-emerald-800",
       badge:
         "border-emerald-200 bg-emerald-50 text-emerald-800 ring-emerald-200/80",
-      card: "border-emerald-200 bg-white text-emerald-950",
+      card:
+        "border-emerald-200 bg-gradient-to-br from-emerald-50/90 via-white to-white text-emerald-950",
       icon: "bg-emerald-600 text-white shadow-emerald-200",
       timeline:
         "border-emerald-200 bg-emerald-50 text-emerald-800 ring-emerald-100",
@@ -519,7 +614,8 @@ function getStatusClasses(status: FinanceStatus) {
       accent: "bg-red-500",
       amount: "text-red-800",
       badge: "border-red-200 bg-red-50 text-red-800 ring-red-200/80",
-      card: "border-red-200 bg-white text-red-950",
+      card:
+        "border-red-200 bg-gradient-to-br from-red-50/90 via-white to-white text-red-950",
       icon: "bg-red-600 text-white shadow-red-200",
       timeline: "border-red-200 bg-red-50 text-red-800 ring-red-100",
     };
@@ -530,7 +626,8 @@ function getStatusClasses(status: FinanceStatus) {
       accent: "bg-slate-400",
       amount: "text-slate-700",
       badge: "border-slate-200 bg-slate-50 text-slate-600 ring-slate-200/80",
-      card: "border-slate-200 bg-slate-50 text-slate-600",
+      card:
+        "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 text-slate-600",
       icon: "bg-slate-500 text-white shadow-slate-200",
       timeline: "border-slate-200 bg-slate-50 text-slate-600 ring-slate-100",
     };
@@ -540,7 +637,8 @@ function getStatusClasses(status: FinanceStatus) {
     accent: "bg-amber-500",
     amount: "text-primary",
     badge: "border-amber-200 bg-amber-50 text-amber-900 ring-amber-200/80",
-    card: "border-amber-200 bg-white text-primary",
+    card:
+      "border-amber-200 bg-gradient-to-br from-amber-50/90 via-white to-white text-primary",
     icon: "bg-amber-500 text-white shadow-amber-200",
     timeline: "border-amber-200 bg-amber-50 text-amber-900 ring-amber-100",
   };
@@ -1619,10 +1717,11 @@ export function AdminFinancePanel({
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:pr-20">
-      <section className="overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_20px_56px_rgba(65,42,76,0.1)] ring-1 ring-white/70">
-        <div className="flex flex-col gap-4 border-b border-primary/10 bg-white/82 p-4 xl:flex-row xl:items-center xl:justify-between">
+      <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_64px_rgba(65,42,76,0.11)] ring-1 ring-white/80">
+        <div className="relative flex flex-col gap-4 overflow-hidden border-b border-primary/10 bg-gradient-to-r from-[#f8efff] via-white to-[#eaf8fb] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
+          <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1d9bb6] via-[#74409a] to-[#ee6b8d]" />
           <span className="flex min-w-0 items-center gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_12px_28px_rgba(65,42,76,0.2)]">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-[#70418a] text-primary-foreground shadow-[0_12px_28px_rgba(65,42,76,0.24)] ring-1 ring-white/70">
               <WalletCards aria-hidden="true" className="size-5" />
             </span>
             <span className="min-w-0">
@@ -1631,7 +1730,7 @@ export function AdminFinancePanel({
                   ? "Financeiro simples"
                   : "Controle interno"}
               </span>
-              <strong className="mt-1 block text-xl text-primary">
+              <strong className="mt-1 block text-xl font-extrabold text-primary sm:text-2xl">
                 {financeView === "STUDENTS"
                   ? `${activeMonthLabel} de 2026`
                   : `Pagamentos da loja - ${activeMonthLabel}`}
@@ -1658,22 +1757,32 @@ export function AdminFinancePanel({
           )}
         </div>
 
-        <div className="grid gap-3 border-b border-primary/10 bg-white/60 p-4 md:grid-cols-2">
+        <div className="grid gap-3 border-b border-primary/10 bg-[#fcfaff] p-4 sm:p-5 md:grid-cols-2">
           {[
             {
+              activeClass:
+                "border-primary bg-gradient-to-br from-primary via-[#603574] to-[#7e4f96] text-white shadow-[0_18px_38px_rgba(65,42,76,0.2)]",
               description:
                 "Mensalidades, parcelas, status, historico e cadastro financeiro.",
               detail: "Controle de alunos",
+              eyebrow: "Entradas mensais",
               icon: UserRound,
+              inactiveClass:
+                "border-primary/15 bg-gradient-to-br from-[#f8efff] via-white to-white text-primary hover:border-primary/40",
               label: "Alunos",
               metric: `${unitMonthRows.length} aluno(s)`,
               value: "STUDENTS" as const,
             },
             {
+              activeClass:
+                "border-teal-700 bg-gradient-to-br from-[#0f6673] via-[#147f8c] to-[#36a7a6] text-white shadow-[0_18px_38px_rgba(15,102,115,0.2)]",
               description:
                 "Insumos e compras internas salvos no mes selecionado.",
               detail: "Controle interno",
+              eyebrow: "Saidas da loja",
               icon: ShoppingCart,
+              inactiveClass:
+                "border-teal-200 bg-gradient-to-br from-teal-50 via-white to-white text-primary hover:border-teal-400",
               label: "Pagamentos",
               metric: formatCurrency(expenseSummary.total),
               value: "EXPENSES" as const,
@@ -1689,10 +1798,8 @@ export function AdminFinancePanel({
                 type="button"
                 onClick={() => setFinanceView(item.value)}
                 className={cn(
-                  "group flex min-h-[8.5rem] min-w-0 flex-col items-start justify-between rounded-lg border p-4 text-left transition-all hover:-translate-y-0.5",
-                  isActive
-                    ? "border-primary bg-primary text-primary-foreground shadow-[0_18px_38px_rgba(65,42,76,0.18)]"
-                    : "border-primary/15 bg-white text-primary shadow-sm hover:border-primary/40 hover:bg-[#fbf7ff]",
+                  "group flex min-h-[9rem] min-w-0 flex-col items-start justify-between rounded-lg border p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5",
+                  isActive ? item.activeClass : item.inactiveClass,
                 )}
               >
                 <span className="flex w-full min-w-0 items-start justify-between gap-3">
@@ -1718,6 +1825,14 @@ export function AdminFinancePanel({
                   </span>
                 </span>
                 <span className="mt-4 block min-w-0">
+                  <span
+                    className={cn(
+                      "mb-1.5 block text-[0.65rem] font-extrabold uppercase tracking-[0.12em]",
+                      isActive ? "text-white/68" : "text-primary/52",
+                    )}
+                  >
+                    {item.eyebrow}
+                  </span>
                   <strong className="block text-lg leading-5">
                     {item.label}
                   </strong>
@@ -1730,47 +1845,54 @@ export function AdminFinancePanel({
                     {item.description}
                   </span>
                 </span>
-                <span
-                  className={cn(
-                    "mt-4 inline-flex rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
-                    isActive
-                      ? "bg-white text-primary"
-                      : "bg-[#fbf7ff] text-primary",
-                  )}
-                >
-                  {item.detail}
+                <span className="mt-4 flex w-full items-center justify-between gap-3">
+                  <span
+                    className={cn(
+                      "inline-flex rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
+                      isActive
+                        ? "bg-white text-primary"
+                        : "bg-white text-primary shadow-sm ring-1 ring-primary/10",
+                    )}
+                  >
+                    {item.detail}
+                  </span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="size-4 transition-transform duration-200 group-hover:translate-x-1"
+                  />
                 </span>
               </button>
             );
           })}
         </div>
 
-        <div className="border-b border-primary/10 bg-white/72 p-4">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_240px] xl:items-end">
+        <div className="border-b border-primary/10 bg-white p-4 sm:p-5">
+          <div className="grid gap-4 rounded-lg border border-primary/12 bg-gradient-to-r from-[#f8efff] via-white to-[#eef9ff] p-3 shadow-sm xl:grid-cols-[minmax(0,1fr)_240px] xl:items-end">
             <div className="min-w-0">
-              <span className="flex items-center gap-2 text-sm font-bold text-primary">
-                <MapPin aria-hidden="true" className="size-4" />
-                Filtro de polo
+              <span className="flex items-center gap-2 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-primary/62">
+                <Building2 aria-hidden="true" className="size-4" />
+                Visao por polo
               </span>
               <UnitFilterChips
                 value={unitFilter}
                 onChange={handleFinanceUnitFilterChange}
               />
-              <p className="mt-1 text-xs font-semibold text-primary/60">
-                Filtro atual: {formatUnitFilterDisplay(unitFilter)}
+              <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-primary/60">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
+                Exibindo {formatUnitFilterDisplay(unitFilter)}
               </p>
             </div>
-            <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
-              <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
+            <div className="rounded-lg border border-primary/15 bg-white/90 p-3 shadow-sm">
+              <span className="flex items-center gap-2 text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-primary/62">
                 <CalendarDays aria-hidden="true" className="size-4" />
-                Mes do financeiro
+                Competencia
               </span>
               <NativeSelect
                 value={activeMonth}
                 onChange={(event) =>
                   handleMonthChange(Number(event.target.value))
                 }
-                className="mt-2"
+                className="mt-2 h-11 border-primary/20 bg-white font-bold text-primary shadow-sm focus:border-primary/50"
               >
                 {months.map((month) => (
                   <option key={month.value} value={month.value}>
@@ -1784,115 +1906,92 @@ export function AdminFinancePanel({
 
         {financeView === "STUDENTS" ? (
           <>
-            <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-[1.15fr_1.15fr_1fr_1fr_1.15fr]">
-              <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/80 p-3 shadow-sm">
-                <span className="flex items-center gap-2 text-sm font-semibold text-sky-950">
-                  <ReceiptText aria-hidden="true" className="size-4" />
-                  Total previsto
-                </span>
-                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-sky-800">
-                  {formatCurrency(monthSummary.total)}
-                </strong>
-                <span className="mt-1 block text-xs text-sky-900/75">
-                  {unitMonthRows.length} aluno(s) ativo(s)
-                </span>
-              </div>
-              <div className="rounded-lg border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/80 p-3 shadow-sm">
-                <span className="flex items-center gap-2 text-sm font-semibold text-emerald-950">
-                  <CheckCircle2 aria-hidden="true" className="size-4" />
-                  Recebido
-                </span>
-                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-emerald-700">
-                  {formatCurrency(monthSummary.paid)}
-                </strong>
-                <span className="mt-1 block text-xs text-emerald-900/75">
-                  {monthSummary.paidCount} pago(s) no mes
-                </span>
-              </div>
-              <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-amber-100/75 p-3 shadow-sm">
-                <span className="flex items-center gap-2 text-sm font-semibold text-amber-950">
-                  <Clock3 aria-hidden="true" className="size-4" />
-                  Pendentes
-                </span>
-                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-amber-800">
-                  {monthSummary.pendingCount}
-                </strong>
-                <span className="mt-1 block text-xs text-amber-900/75">
-                  {formatCurrency(monthSummary.pending)} em aberto
-                </span>
-              </div>
-              <div className="rounded-lg border border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-100/75 p-3 shadow-sm">
-                <span className="flex items-center gap-2 text-sm font-semibold text-red-950">
-                  <AlertTriangle aria-hidden="true" className="size-4" />
-                  Atrasados
-                </span>
-                <strong className="mt-2 block text-2xl font-semibold tabular-nums text-red-700">
-                  {monthSummary.overdueCount}
-                </strong>
-                <span className="mt-1 block text-xs text-red-900/75">
-                  {formatCurrency(monthSummary.overdue)} vencido(s)
-                </span>
-              </div>
-              <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
-                <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
-                  <MapPin aria-hidden="true" className="size-4" />
-                  Polo atual
-                </span>
-                <strong className="mt-2 block truncate text-lg text-primary">
-                  {unitFilter === "ALL"
-                    ? "Todos"
-                    : formatFinancialUnitPolo(unitFilter)}
-                </strong>
-                <span className="mt-1 block truncate text-xs text-primary/60">
-                  {formatUnitFilterDisplay(unitFilter)}
-                </span>
-                <div className="mt-3">
-                  <div className="flex items-center justify-between gap-2 text-xs font-semibold text-primary/70">
-                    <span>Recebimento</span>
-                    <span>{formatPercent(collectionRate)}</span>
+            <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
+              <FinanceSummaryCard
+                detail={`${unitMonthRows.length} aluno(s) ativo(s)`}
+                icon={ReceiptText}
+                label="Total previsto"
+                tone="sky"
+                value={formatCurrency(monthSummary.total)}
+              />
+              <FinanceSummaryCard
+                detail={`${monthSummary.paidCount} pagamento(s) confirmado(s)`}
+                icon={CheckCircle2}
+                label="Recebido"
+                tone="emerald"
+                value={formatCurrency(monthSummary.paid)}
+              />
+              <FinanceSummaryCard
+                detail={`${monthSummary.pendingCount} aluno(s) ainda em aberto`}
+                icon={Clock3}
+                label="A receber"
+                tone="amber"
+                value={formatCurrency(Math.max(visiblePendingAmount, 0))}
+              />
+              <FinanceSummaryCard
+                detail={`${monthSummary.overdueCount} pagamento(s) vencido(s)`}
+                icon={AlertTriangle}
+                label="Atrasados"
+                tone="rose"
+                value={formatCurrency(monthSummary.overdue)}
+              />
+            </div>
+
+            <div className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-r from-primary via-[#68407c] to-[#245f70] p-4 text-white shadow-[0_16px_34px_rgba(65,42,76,0.16)] sm:mx-5 sm:mb-5">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                <div className="min-w-0">
+                  <div className="flex items-center justify-between gap-3 text-sm font-bold">
+                    <span className="inline-flex items-center gap-2">
+                      <TrendingUp aria-hidden="true" className="size-4" />
+                      Recebimento de {activeMonthLabel}
+                    </span>
+                    <span className="rounded-full bg-white/14 px-2.5 py-1 tabular-nums ring-1 ring-white/20">
+                      {formatPercent(collectionRate)}
+                    </span>
                   </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-primary/10">
+                  <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-white/15 ring-1 ring-white/10">
                     <span
-                      className="block h-full rounded-full bg-emerald-500"
+                      className="block h-full rounded-full bg-gradient-to-r from-emerald-300 to-emerald-400 transition-[width] duration-500"
                       style={{ width: `${Math.min(collectionRate, 100)}%` }}
                     />
                   </div>
                 </div>
+                <div className="grid gap-2 text-xs font-bold sm:grid-cols-3 lg:min-w-[29rem]">
+                  <span className="rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/15">
+                    <span className="block text-white/65">Recebido</span>
+                    <span className="mt-0.5 block text-sm tabular-nums">
+                      {formatCurrency(monthSummary.paid)}
+                    </span>
+                  </span>
+                  <span className="rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/15">
+                    <span className="block text-white/65">Em aberto</span>
+                    <span className="mt-0.5 block text-sm tabular-nums">
+                      {formatCurrency(Math.max(visiblePendingAmount, 0))}
+                    </span>
+                  </span>
+                  <span className="rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/15">
+                    <span className="block text-white/65">Escopo</span>
+                    <span className="mt-0.5 block truncate text-sm">
+                      {unitFilter === "ALL"
+                        ? "Todos os polos"
+                        : formatFinancialUnitPolo(unitFilter)}
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="mx-4 mb-4 grid gap-2 rounded-lg border border-primary/12 bg-white/78 p-3 text-sm text-primary shadow-sm sm:grid-cols-2 xl:grid-cols-4">
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="size-2 rounded-full bg-emerald-500" />
-                <span className="truncate">
-                  Recebido: {formatCurrency(monthSummary.paid)}
+            <div className="border-t border-primary/10 bg-[#fcfaff] p-4 sm:p-5">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-bold text-primary">
+                  <CalendarDays aria-hidden="true" className="size-4" />
+                  Navegue pelos meses
                 </span>
-              </span>
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="size-2 rounded-full bg-amber-500" />
-                <span className="truncate">
-                  A receber: {formatCurrency(Math.max(visiblePendingAmount, 0))}
+                <span className="rounded-full border border-primary/12 bg-white px-2.5 py-1 text-xs font-bold text-primary/65 shadow-sm">
+                  {activeMonthLabel} selecionado
                 </span>
-              </span>
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <span className="size-2 rounded-full bg-red-500" />
-                <span className="truncate">
-                  Vencido: {formatCurrency(monthSummary.overdue)}
-                </span>
-              </span>
-              <span className="inline-flex min-w-0 items-center gap-2">
-                <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
-                <span className="truncate">
-                  Polo:{" "}
-                  {unitFilter === "ALL"
-                    ? "Todos"
-                    : formatFinancialUnitWithPolo(unitFilter)}
-                </span>
-              </span>
-            </div>
-
-            <div className="border-t border-primary/10 bg-white/45 p-4">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6 2xl:grid-cols-12">
+              </div>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 2xl:grid 2xl:grid-cols-12 2xl:overflow-visible 2xl:pb-0">
                 {months.map((month) => {
                   const counts = monthCounts[month.value] ?? {
                     all: 0,
@@ -1905,14 +2004,14 @@ export function AdminFinancePanel({
                       type="button"
                       onClick={() => handleMonthChange(month.value)}
                       className={cn(
-                        "min-w-0 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all",
+                        "min-h-[4.7rem] min-w-[5.2rem] flex-1 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all duration-200 2xl:min-w-0",
                         activeMonth === month.value
-                          ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
-                          : "border-primary/15 bg-white/90 text-primary hover:-translate-y-0.5 hover:border-primary/45 hover:bg-primary/10",
+                          ? "border-primary bg-gradient-to-br from-primary to-[#714587] text-primary-foreground shadow-md shadow-primary/20"
+                          : "border-primary/15 bg-white text-primary shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/[0.06]",
                       )}
                     >
                       <span className="block">{month.shortLabel}</span>
-                      <span className="mt-1 block text-xs opacity-85">
+                      <span className="mt-1 block whitespace-nowrap text-xs opacity-80">
                         {counts.all} aluno(s)
                       </span>
                       {counts.overdue > 0 ? (
@@ -1940,7 +2039,7 @@ export function AdminFinancePanel({
         <>
       <form
         onSubmit={onSubmit}
-        className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_16px_44px_rgba(65,42,76,0.08)]"
+        className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.09)]"
         noValidate
       >
         <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#fce5d8]/65 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1961,12 +2060,13 @@ export function AdminFinancePanel({
             Rapido
           </span>
         </div>
-        <FieldGroup className="gap-3 p-4">
+        <FieldGroup className="gap-3 bg-gradient-to-br from-white via-[#fcfaff] to-[#f3fbfd] p-4 sm:p-5">
           <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(150px,0.85fr)_minmax(120px,0.65fr)_90px_minmax(150px,0.8fr)_110px_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>
               <Input
                 id="finance-student-name"
+                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/55 focus-visible:ring-primary/15"
                 aria-invalid={Boolean(form.formState.errors.name)}
                 disabled={isPending}
                 placeholder="Nome do aluno"
@@ -1978,6 +2078,7 @@ export function AdminFinancePanel({
               <FieldLabel htmlFor="finance-unit">Unidade</FieldLabel>
               <NativeSelect
                 id="finance-unit"
+                className="h-11 border-primary/20 bg-white shadow-sm focus:border-primary/55"
                 aria-invalid={Boolean(form.formState.errors.unit)}
                 disabled={isPending}
                 {...form.register("unit")}
@@ -1994,6 +2095,7 @@ export function AdminFinancePanel({
               <FieldLabel htmlFor="finance-amount">Valor mensal</FieldLabel>
               <Input
                 id="finance-amount"
+                className="h-11 border-primary/20 bg-white font-bold tabular-nums shadow-sm focus-visible:border-primary/55 focus-visible:ring-primary/15"
                 inputMode="decimal"
                 aria-invalid={Boolean(form.formState.errors.amount)}
                 disabled={isPending}
@@ -2006,6 +2108,7 @@ export function AdminFinancePanel({
               <FieldLabel htmlFor="finance-payment-day">Dia</FieldLabel>
               <NativeSelect
                 id="finance-payment-day"
+                className="h-11 border-primary/20 bg-white shadow-sm focus:border-primary/55"
                 aria-invalid={Boolean(form.formState.errors.paymentDay)}
                 disabled={isPending}
                 {...form.register("paymentDay", { valueAsNumber: true })}
@@ -2022,6 +2125,7 @@ export function AdminFinancePanel({
               <FieldLabel htmlFor="finance-payment-method">Forma</FieldLabel>
               <NativeSelect
                 id="finance-payment-method"
+                className="h-11 border-primary/20 bg-white shadow-sm focus:border-primary/55"
                 aria-invalid={Boolean(form.formState.errors.paymentMethod)}
                 disabled={isPending}
                 {...form.register("paymentMethod")}
@@ -2038,6 +2142,7 @@ export function AdminFinancePanel({
               <FieldLabel htmlFor="finance-installments">Parcelas</FieldLabel>
               <Input
                 id="finance-installments"
+                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/55 focus-visible:ring-primary/15"
                 type="number"
                 min={1}
                 max={60}
@@ -2050,7 +2155,7 @@ export function AdminFinancePanel({
             </Field>
             <Button
               type="submit"
-              className="h-10 shadow-sm lg:mt-6 lg:w-full xl:w-auto"
+              className="h-11 shadow-md shadow-primary/15 lg:mt-6 lg:w-full xl:w-auto"
               disabled={isPending}
             >
               {isPending ? (
@@ -2065,7 +2170,7 @@ export function AdminFinancePanel({
             </Button>
           </div>
 
-          <details className="group rounded-lg border border-primary/15 bg-gradient-to-r from-primary/[0.04] via-white to-[#fce5d8]/45 p-3">
+          <details className="group rounded-lg border border-primary/15 bg-gradient-to-r from-[#f8efff] via-white to-[#eaf8fb] p-3 shadow-sm">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
               <span className="flex min-w-0 flex-col">
                 <span>Contato e observacao</span>
@@ -2161,7 +2266,7 @@ export function AdminFinancePanel({
       </form>
 
       <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.12)]">
-        <div className="flex flex-col gap-4 bg-gradient-to-r from-primary via-[#7c3fa1] to-[#d86f9d] px-4 py-4 text-white xl:flex-row xl:items-center xl:justify-between">
+        <div className="relative flex flex-col gap-4 overflow-hidden bg-gradient-to-r from-primary via-[#70418a] to-[#167b87] px-4 py-4 text-white sm:px-5 xl:flex-row xl:items-center xl:justify-between">
           <span className="flex min-w-0 items-center gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white ring-1 ring-white/25">
               <UserRound aria-hidden="true" className="size-5" />
@@ -2184,7 +2289,7 @@ export function AdminFinancePanel({
               <Input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                className="h-10 border-white/40 bg-white pl-9 text-primary placeholder:text-primary/45"
+                className="h-11 border-white/45 bg-white pl-9 text-primary shadow-sm placeholder:text-primary/45 focus-visible:ring-white/60"
                 placeholder="Buscar aluno ou telefone"
               />
             </label>
@@ -2193,7 +2298,7 @@ export function AdminFinancePanel({
               onChange={(event) =>
                 setStatusFilter(event.target.value as "ALL" | FinanceStatus)
               }
-              className="h-10 border-white/40 bg-white text-primary"
+              className="h-11 border-white/45 bg-white text-primary shadow-sm"
             >
               <option value="ALL">Todos</option>
               <option value="paid">Pagos</option>
@@ -2203,7 +2308,7 @@ export function AdminFinancePanel({
           </div>
         </div>
 
-        <div className="grid gap-4 bg-[#fbf7ff] p-4 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.64fr)]">
+        <div className="grid gap-4 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.64fr)]">
           <div className="grid content-start gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/12 bg-white/78 p-3 text-xs font-semibold text-muted-foreground shadow-sm">
               <span className="inline-flex items-center gap-1.5 text-primary">
@@ -2218,7 +2323,7 @@ export function AdminFinancePanel({
             </div>
 
             {filteredRows.length === 0 ? (
-              <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-white text-center">
+              <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-white/85 text-center shadow-sm">
                 <CircleDollarSign aria-hidden="true" className="text-primary" />
                 <p className="max-w-sm text-sm text-muted-foreground">
                   Nenhum aluno financeiro encontrado para este filtro.
@@ -2234,7 +2339,7 @@ export function AdminFinancePanel({
                     <article
                       key={`${row.id}-${activeMonth}-${row.payment.updatedAt}`}
                       className={cn(
-                        "group relative flex min-h-[17rem] min-w-0 flex-col overflow-hidden rounded-lg border p-3 pt-4 text-left shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)]",
+                        "group relative flex min-h-[17rem] min-w-0 flex-col overflow-hidden rounded-lg border p-4 pt-5 text-left shadow-[0_12px_28px_rgba(58,29,75,0.09)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(58,29,75,0.14)]",
                         classes.card,
                         isSelected
                           ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-[#fbf7ff]"
@@ -2253,14 +2358,14 @@ export function AdminFinancePanel({
                         <span className="flex min-w-0 flex-1 items-center gap-2">
                           <span
                             className={cn(
-                              "flex size-11 shrink-0 items-center justify-center rounded-lg text-xs font-bold uppercase shadow-sm",
+                              "flex size-12 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold uppercase shadow-md",
                               classes.icon,
                             )}
                           >
                             {getFinanceInitials(row.name)}
                           </span>
                           <span className="min-w-0 flex-1">
-                            <strong className="line-clamp-2 block break-words text-base leading-5">
+                            <strong className="line-clamp-2 block break-words text-base font-extrabold leading-5">
                               {row.name}
                             </strong>
                             <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-75">
@@ -2292,14 +2397,14 @@ export function AdminFinancePanel({
                         {getPaymentTimelineLabel(row)}
                       </span>
 
-                      <div className="mt-3 rounded-lg border border-primary/10 bg-[#fbf7ff] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+                      <div className="mt-3 rounded-lg border border-white/80 bg-white/78 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_18px_rgba(65,42,76,0.06)] backdrop-blur-sm">
                         <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] opacity-60">
                           Valor do mes
                         </span>
                         <span className="mt-2 grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                           <strong
                             className={cn(
-                              "min-w-0 text-[1.65rem] font-extrabold leading-none tabular-nums tracking-normal",
+                              "min-w-0 text-[1.72rem] font-extrabold leading-none tabular-nums tracking-normal",
                               classes.amount,
                             )}
                           >
@@ -2341,7 +2446,7 @@ export function AdminFinancePanel({
             )}
           </div>
 
-          <aside className="min-w-0 rounded-lg border border-primary/15 bg-white shadow-sm">
+          <aside className="min-w-0 rounded-lg border border-primary/15 bg-white shadow-[0_14px_34px_rgba(65,42,76,0.09)] xl:sticky xl:top-4 xl:self-start">
             {selectedRow ? (
               <div className="grid gap-4">
                 <div className="border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4">
@@ -2529,7 +2634,8 @@ export function AdminFinancePanel({
         </>
       ) : (
         <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.1)]">
-          <div className="border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4">
+          <div className="relative overflow-hidden border-b border-primary/10 bg-gradient-to-r from-[#f5fbfc] via-white to-[#fff3f7] p-4 sm:p-5">
+            <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-500 via-sky-500 to-rose-400" />
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <span className="flex min-w-0 items-center gap-3">
                 <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -2558,7 +2664,7 @@ export function AdminFinancePanel({
                   <div
                     key={unit}
                     className={cn(
-                      "grid min-w-0 gap-1 rounded-lg border px-3 py-2 shadow-sm",
+                      "grid min-w-0 gap-1 rounded-lg border px-4 py-3 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
                       tone.panel,
                     )}
                   >
@@ -2581,9 +2687,9 @@ export function AdminFinancePanel({
           </div>
 
           <div className="grid gap-3 p-4 xl:grid-cols-[minmax(240px,1.15fr)_minmax(0,2fr)]">
-            <div className="rounded-lg border border-primary bg-primary p-4 text-primary-foreground shadow-[0_16px_34px_rgba(65,42,76,0.18)]">
+            <div className="rounded-lg border border-teal-700 bg-gradient-to-br from-[#0d5968] via-[#147b88] to-[#289a9b] p-4 text-white shadow-[0_16px_34px_rgba(15,102,115,0.2)]">
               <span className="flex items-center gap-2 text-sm font-bold text-white/82">
-                <ReceiptText aria-hidden="true" className="size-4" />
+                <Banknote aria-hidden="true" className="size-4" />
                 {expenseUnitFilter === "ALL"
                   ? "Total geral"
                   : `Total ${formatFinancialUnitPolo(expenseUnitFilter)}`}
@@ -2616,7 +2722,7 @@ export function AdminFinancePanel({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-              <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-3 shadow-sm">
+              <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-[#f8efff] via-white to-[#eef9ff] p-4 shadow-sm">
                 <span className="flex items-center gap-2 text-sm font-semibold text-primary">
                   <ShoppingCart aria-hidden="true" className="size-4" />
                   Registros
@@ -2628,7 +2734,7 @@ export function AdminFinancePanel({
                   compra(s) no filtro
                 </span>
               </div>
-              <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/75 p-3 shadow-sm">
+              <div className="rounded-lg border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-sky-100/75 p-4 shadow-sm">
                 <span className="flex items-center gap-2 text-sm font-semibold text-primary">
                   <CircleDollarSign aria-hidden="true" className="size-4" />
                   Media
@@ -2640,7 +2746,7 @@ export function AdminFinancePanel({
                   por compra
                 </span>
               </div>
-              <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+              <div className="rounded-lg border border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 via-white to-white p-4 shadow-sm">
                 <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
                   <MapPin aria-hidden="true" className="size-4" />
                   Polo
@@ -2656,7 +2762,7 @@ export function AdminFinancePanel({
                   {expenseScopeLabel}
                 </span>
               </div>
-              <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+              <div className="rounded-lg border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white p-4 shadow-sm">
                 <span className="flex items-center gap-2 text-sm font-semibold text-primary/80">
                   <CalendarDays aria-hidden="true" className="size-4" />
                   Mes
@@ -2684,16 +2790,21 @@ export function AdminFinancePanel({
 
           <form
             onSubmit={onExpenseSubmit}
-            className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_12px_30px_rgba(65,42,76,0.08)]"
+            className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_14px_34px_rgba(65,42,76,0.09)] sm:mx-5 sm:mb-5"
             noValidate
           >
             <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4 xl:flex-row xl:items-center xl:justify-between">
-              <span className="min-w-0">
-                <strong className="block text-base text-primary">
-                  Novo pagamento
-                </strong>
-                <span className="mt-1 block text-sm text-muted-foreground">
-                  Registre uma compra interna sem misturar com mensalidades.
+              <span className="flex min-w-0 items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-teal-700 text-white shadow-sm">
+                  <Plus aria-hidden="true" className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <strong className="block text-base text-primary">
+                    Novo pagamento interno
+                  </strong>
+                  <span className="mt-1 block text-sm text-muted-foreground">
+                    Registre uma compra sem misturar com mensalidades.
+                  </span>
                 </span>
               </span>
               <span className="flex flex-wrap items-center gap-2 text-xs font-bold text-primary">
@@ -2705,7 +2816,7 @@ export function AdminFinancePanel({
                 </span>
               </span>
             </div>
-            <FieldGroup className="gap-4 bg-[#fbf7ff] p-4">
+            <FieldGroup className="gap-4 bg-gradient-to-br from-[#f5fbfc] via-white to-[#fff7fa] p-4 sm:p-5">
               <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.25fr)_minmax(110px,0.56fr)_145px_150px_minmax(170px,0.9fr)_auto] xl:items-start">
                 <Field
                   data-invalid={Boolean(expenseForm.formState.errors.itemName)}
@@ -2715,6 +2826,7 @@ export function AdminFinancePanel({
                   </FieldLabel>
                   <Input
                     id="finance-expense-item"
+                    className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-teal-600 focus-visible:ring-teal-100"
                     aria-invalid={Boolean(
                       expenseForm.formState.errors.itemName,
                     )}
@@ -2732,6 +2844,7 @@ export function AdminFinancePanel({
                   <FieldLabel htmlFor="finance-expense-amount">Valor</FieldLabel>
                   <Input
                     id="finance-expense-amount"
+                    className="h-11 border-primary/20 bg-white font-bold tabular-nums shadow-sm focus-visible:border-teal-600 focus-visible:ring-teal-100"
                     inputMode="decimal"
                     aria-invalid={Boolean(expenseForm.formState.errors.amount)}
                     disabled={isExpensePending}
@@ -2746,6 +2859,7 @@ export function AdminFinancePanel({
                   <FieldLabel htmlFor="finance-expense-date">Data</FieldLabel>
                   <Input
                     id="finance-expense-date"
+                    className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-teal-600 focus-visible:ring-teal-100"
                     type="date"
                     aria-invalid={Boolean(
                       expenseForm.formState.errors.purchasedAt,
@@ -2763,6 +2877,7 @@ export function AdminFinancePanel({
                   </FieldLabel>
                   <NativeSelect
                     id="finance-expense-unit"
+                    className="h-11 border-primary/20 bg-white shadow-sm focus:border-teal-600"
                     aria-invalid={Boolean(expenseForm.formState.errors.unit)}
                     disabled={isExpensePending}
                     {...expenseForm.register("unit")}
@@ -2783,6 +2898,7 @@ export function AdminFinancePanel({
                   </FieldLabel>
                   <Input
                     id="finance-expense-actor"
+                    className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-teal-600 focus-visible:ring-teal-100"
                     aria-invalid={Boolean(
                       expenseForm.formState.errors.actorName,
                     )}
@@ -2796,7 +2912,7 @@ export function AdminFinancePanel({
                 </Field>
                 <Button
                   type="submit"
-                  className="h-10 shadow-sm lg:mt-6 xl:w-full"
+                  className="h-11 bg-teal-700 text-white shadow-md shadow-teal-700/15 hover:bg-teal-800 lg:mt-6 xl:w-full"
                   disabled={isExpensePending}
                 >
                   {isExpensePending ? (
