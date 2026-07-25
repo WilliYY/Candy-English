@@ -1230,7 +1230,9 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       {!open && showLoggedInBalloons && loggedInBalloon ? (
         <div
-          className="catty-speech catty-speech--logged pointer-events-none mr-1 mb-16 sm:mb-0"
+          className={`catty-speech catty-speech--logged catty-speech--mobile-side pointer-events-none mr-1 ${
+            hasWhatsAppWidget ? "catty-speech--with-whatsapp" : ""
+          }`}
           role="status"
           aria-live="polite"
         >
@@ -1248,7 +1250,9 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       (showPublicBalloons || publicNoticeVisible) &&
       visiblePublicBalloon ? (
         <div
-          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1 mb-16 sm:mb-0`}
+          className={`catty-speech ${publicBalloonTone} catty-speech--mobile-side pointer-events-none mr-1 ${
+            hasWhatsAppWidget ? "catty-speech--with-whatsapp" : ""
+          }`}
           role="status"
           aria-live="polite"
         >

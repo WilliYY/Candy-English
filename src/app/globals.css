@@ -1040,6 +1040,18 @@ main:has(.site-institutional-page) + .candy-footer {
     padding: 0.68rem 0.78rem 0.76rem;
   }
 
+  .catty-speech.catty-speech--mobile-side {
+    bottom: 0;
+    max-width: min(16.5rem, calc(100vw - 7rem));
+    position: absolute;
+    right: 5.5rem;
+    width: max-content;
+  }
+
+  .catty-speech.catty-speech--mobile-side.catty-speech--with-whatsapp {
+    bottom: -1.5rem;
+  }
+
   .catty-speech::before {
     left: 0.78rem;
     right: 2rem;
