@@ -55,6 +55,9 @@ Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gem
 - Usar gestao humana para corrigir, arquivar, aprovar, marcar erro, remover dado sensivel e limpar historico pesado sem colocar `FLAGGED`, `ARCHIVED` ou `PENDING` no prompt.
 - Usar feedback do widget apenas como fila de revisao; Teacher sugere, Admin aprova globalmente.
 - Usar auto-sugestao apenas como fila pendente; nunca aprender conteudo automaticamente direto do usuario.
+- Impedir envio duplicado enquanto uma resposta estiver em andamento, inclusive em dois toques muito rapidos no mobile.
+- Aplicar o limite de mensagens por usuario autenticado e IP, sem fazer alunos diferentes da mesma escola dividirem a mesma cota.
+- No mobile, manter o balao temporario acima do launcher e afastado dos botoes principais; o painel usa altura dinamica do viewport e rolagem interna.
 
 ## Continuidade conversacional
 

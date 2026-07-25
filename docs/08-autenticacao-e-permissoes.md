@@ -129,6 +129,7 @@ Rotas protegidas:
 - Catty pode receber do layout apenas o nome do usuario logado para baloes visuais locais; esse nome nao autoriza leitura de dados internos nem deve ser usado para enviar contratos, respostas, pagamentos ou credenciais para IA.
 - `/api/catty/chat` deve responder apenas para sessao ativa com role `ADMIN`, `TEACHER` ou `STUDENT`; usuario sem sessao recebe 401 amigavel e nao aciona Gemini, OpenAI ou fallback.
 - Historico da Catty deve ser carregado e gravado apenas para o `User.id` autenticado; visitante sem login nao grava historico e nao pode acessar mensagens por chamada direta de API.
+- O rate limit da Catty combina `session.user.id` e IP: usuarios diferentes na mesma rede nao compartilham a mesma cota, e a sessao continua obrigatoria antes da verificacao.
 - `TEACHER` pode sugerir aprendizados para o Catty Learning Center, mas apenas `ADMIN` aprova, rejeita, arquiva ou reativa aprendizado global.
 - `STUDENT` pode enviar feedback discreto sobre respostas da propria Catty, mas nao cria nem aprova memoria global da Catty.
 - `TEACHER` pode revisar feedback proprio ou de alunos vinculados e transformar em sugestao pendente; nao pode aprovar globalmente.
@@ -200,7 +201,7 @@ Rotas protegidas:
 
 ## Pendencias
 
-- Politica mais forte de rate limit por IP.
+- Rate limit compartilhado entre replicas/processos, caso a Catty deixe de rodar em uma unica instancia.
 - Registro/auditoria ampliada de acoes administrativas.
 - Auditoria especifica para revelacao/copia de credenciais administrativas.
 

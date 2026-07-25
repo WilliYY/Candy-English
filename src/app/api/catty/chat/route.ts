@@ -848,7 +848,7 @@ export async function POST(request: NextRequest) {
 
   const { context, history, message } = parsed.data;
 
-  if (isRateLimited(getClientIp(request))) {
+  if (isRateLimited(`${session.user.id}:${getClientIp(request)}`)) {
     return NextResponse.json(
       {
         ok: false,

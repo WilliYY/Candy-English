@@ -478,6 +478,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const loggedInBalloonCount = useRef(0);
   const publicBalloonCount = useRef(0);
+  const requestInFlightRef = useRef(false);
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
   const displayName = useMemo(
@@ -852,7 +853,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   async function sendMessage(text: string) {
     const clean = text.trim();
 
-    if (!clean || isThinking) return;
+    if (!clean || isThinking || requestInFlightRef.current) return;
 
     const currentContext = getCurrentPageContext();
 
@@ -886,6 +887,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     setContext(currentContext);
     setMessages((current) => [...current, userMessage]);
     setDraft("");
+    requestInFlightRef.current = true;
     setIsThinking(true);
 
     try {
@@ -924,6 +926,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         },
       ]);
     } finally {
+      requestInFlightRef.current = false;
       setIsThinking(false);
     }
   }
@@ -971,7 +974,11 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       }`}
     >
       {open && canUseCattyChat ? (
-        <section className="catty-chat-panel pointer-events-auto grid h-[min(590px,calc(100dvh-6.75rem))] w-[min(430px,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[1.35rem] border border-primary/15 bg-card shadow-2xl shadow-primary/20 sm:h-[min(620px,calc(100dvh-7.25rem))] sm:w-[min(430px,calc(100vw-2rem))]">
+        <section
+          aria-label="Conversa com a Catty"
+          role="region"
+          className="catty-chat-panel pointer-events-auto grid h-[min(590px,calc(100dvh-6.75rem))] w-[min(430px,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[1.35rem] border border-primary/15 bg-card shadow-2xl shadow-primary/20 sm:h-[min(620px,calc(100dvh-7.25rem))] sm:w-[min(430px,calc(100vw-2rem))]"
+        >
           <header className="relative overflow-hidden bg-[linear-gradient(135deg,#412a4c_0%,#55315f_58%,#6d3971_100%)] px-4 py-3 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
@@ -1223,7 +1230,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
       {!open && showLoggedInBalloons && loggedInBalloon ? (
         <div
-          className="catty-speech catty-speech--logged pointer-events-none mr-1 mb-12 sm:mb-0"
+          className="catty-speech catty-speech--logged pointer-events-none mr-1 mb-16 sm:mb-0"
           role="status"
           aria-live="polite"
         >
@@ -1241,7 +1248,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       (showPublicBalloons || publicNoticeVisible) &&
       visiblePublicBalloon ? (
         <div
-          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1 mb-12 sm:mb-0`}
+          className={`catty-speech ${publicBalloonTone} pointer-events-none mr-1 mb-16 sm:mb-0`}
           role="status"
           aria-live="polite"
         >

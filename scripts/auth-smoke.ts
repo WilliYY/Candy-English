@@ -69,7 +69,7 @@ function cookieHeaderFrom(headers: Headers) {
 async function createSmokeUser(role: SmokeRole, email: string) {
   const passwordHash = await hash(testPassword, 12);
 
-  await prisma.user.create({
+  return prisma.user.create({
     data: {
       email,
       isActive: true,
@@ -97,6 +97,55 @@ async function createSmokeUser(role: SmokeRole, email: string) {
         : {}),
     },
   });
+}
+
+async function assertCattyChatAccess(
+  role: SmokeRole,
+  cookie: string,
+  userId: string,
+) {
+  const area = role.toLowerCase();
+  const marker = `codex-catty-smoke-${runId}-${area}`;
+
+  await prisma.cattyConversation.create({
+    data: {
+      area,
+      contextKey: `${area}:default`,
+      userId,
+      messages: {
+        create: {
+          role: "CATTY",
+          source: "FALLBACK",
+          text: marker,
+        },
+      },
+    },
+  });
+
+  const response = await fetch(buildUrl(`/api/catty/chat?area=${area}`), {
+    headers: { cookie },
+  });
+  const payload = (await response.json().catch(() => null)) as {
+    messages?: { text?: string }[];
+    ok?: boolean;
+  } | null;
+  const texts = payload?.messages?.map((message) => message.text ?? "") ?? [];
+
+  if (
+    response.status !== 200 ||
+    payload?.ok !== true ||
+    !texts.includes(marker) ||
+    texts.some(
+      (text) =>
+        text.startsWith(`codex-catty-smoke-${runId}-`) && text !== marker,
+    )
+  ) {
+    throw new Error(
+      `Catty ${role} nao preservou historico isolado, recebeu HTTP ${response.status}.`,
+    );
+  }
+
+  console.log(`OK catty history isolated ${role.toLowerCase()}`);
 }
 
 async function signInWithCredentials(email: string) {
@@ -552,6 +601,16 @@ async function assertAnonymousProtectedRoutes() {
     }
   }
 
+  const cattyResponse = await fetch(
+    buildUrl("/api/catty/chat?area=site"),
+  );
+
+  if (cattyResponse.status !== 401) {
+    throw new Error(
+      `Usuario sem login nao deve acessar a Catty, recebeu HTTP ${cattyResponse.status}.`,
+    );
+  }
+
   console.log("OK anonymous protected routes");
 }
 
@@ -612,6 +671,15 @@ async function cleanup() {
       },
     },
   });
+  await prisma.cattyConversation.deleteMany({
+    where: {
+      user: {
+        email: {
+          in: testEmails,
+        },
+      },
+    },
+  });
   await prisma.user.deleteMany({
     where: {
       email: {
@@ -628,7 +696,7 @@ async function main() {
   for (const [index, role] of roles.entries()) {
     const email = testEmails[index];
 
-    await createSmokeUser(role, email);
+    const user = await createSmokeUser(role, email);
     const cookie = await signInWithCredentials(email);
     await assertRoleRedirect(role, cookie);
     await assertAreaChoiceShell(role, cookie);
@@ -639,6 +707,7 @@ async function main() {
     await assertTeacherAvaTaskRoutes(role, cookie);
     await assertStudentRoutes(role, cookie);
     await assertAdminOnlySecretariaTasks(role, cookie);
+    await assertCattyChatAccess(role, cookie, user.id);
   }
 
   await reportGoogleProvider();
