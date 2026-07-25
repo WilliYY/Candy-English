@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
+import { isOpenPreRegistrationStatus } from "@/lib/pre-registration-queue";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
@@ -12,9 +13,11 @@ import {
   preRegistrationAcceptSchema,
   preRegistrationReviewSchema,
   secretariaPreRegistrationSchema,
+  secretariaPreRegistrationUpdateSchema,
   type PreRegistrationAcceptInput,
   type PreRegistrationReviewInput,
   type SecretariaPreRegistrationInput,
+  type SecretariaPreRegistrationUpdateInput,
 } from "@/lib/validations/pre-registration";
 
 export type PreRegistrationActionResult<TInput extends Record<string, unknown>> = {
@@ -423,6 +426,213 @@ export async function createStudentPreRegistration(
   return {
     ok: true,
     message: "Pre-cadastro salvo na Secretaria.",
+  };
+}
+
+export async function updateStudentPreRegistration(
+  input: SecretariaPreRegistrationUpdateInput,
+): Promise<
+  PreRegistrationActionResult<SecretariaPreRegistrationUpdateInput>
+> {
+  const context = await requirePreRegistrationReviewer();
+
+  if (!context) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para editar pre-cadastros.",
+    };
+  }
+
+  const parsed = secretariaPreRegistrationUpdateSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<SecretariaPreRegistrationUpdateInput>(
+        parsed.error.issues,
+      ),
+      ok: false,
+      message: "Revise os dados do pre-cadastro.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const request = await prisma.studentPreRegistration.findUnique({
+    where: { id: parsed.data.requestId },
+    select: {
+      assignedTeacherProfileId: true,
+      convertedAgendaStudentId: true,
+      convertedFinancialStudentId: true,
+      convertedStudentProfileId: true,
+      convertedUserId: true,
+      createdByUserId: true,
+      id: true,
+      status: true,
+    },
+  });
+
+  if (!request) {
+    return {
+      ok: false,
+      message: "Pre-cadastro nao encontrado.",
+    };
+  }
+
+  if (!canUsePreRegistration(context, request)) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para editar este pre-cadastro.",
+    };
+  }
+
+  if (
+    !isOpenPreRegistrationStatus(request.status) ||
+    request.convertedUserId ||
+    request.convertedStudentProfileId ||
+    request.convertedFinancialStudentId ||
+    request.convertedAgendaStudentId
+  ) {
+    return {
+      ok: false,
+      message:
+        "Este pre-cadastro ja saiu da fila Novo e nao pode mais ser editado.",
+    };
+  }
+
+  let assignedTeacherProfileId =
+    parsed.data.assignedTeacherProfileId ?? null;
+
+  if (context.session.user.role === "TEACHER") {
+    if (!context.teacherProfileId) {
+      return {
+        ok: false,
+        message: "Perfil teacher nao encontrado para editar pre-cadastro.",
+      };
+    }
+
+    if (
+      assignedTeacherProfileId &&
+      assignedTeacherProfileId !== context.teacherProfileId
+    ) {
+      return {
+        errors: {
+          assignedTeacherProfileId:
+            "Teacher so pode assumir os proprios pre-cadastros.",
+        },
+        ok: false,
+        message: "Revise a teacher responsavel.",
+      };
+    }
+
+    assignedTeacherProfileId = context.teacherProfileId;
+  }
+
+  if (assignedTeacherProfileId) {
+    const teacherProfile = await prisma.teacherProfile.findUnique({
+      where: { id: assignedTeacherProfileId },
+      select: { id: true },
+    });
+
+    if (!teacherProfile) {
+      return {
+        errors: {
+          assignedTeacherProfileId: "Teacher responsavel nao encontrada.",
+        },
+        ok: false,
+        message: "Revise a teacher responsavel.",
+      };
+    }
+  }
+
+  const phoneNormalized = normalizePhoneDigits(parsed.data.phone);
+  const duplicateFilters = [
+    { phoneNormalized },
+    { phone: parsed.data.phone },
+    ...(parsed.data.email ? [{ email: parsed.data.email }] : []),
+  ];
+  const [existingRequest, existingUser] = await Promise.all([
+    prisma.studentPreRegistration.findFirst({
+      where: {
+        id: { not: request.id },
+        OR: duplicateFilters,
+      },
+      select: { fullName: true },
+    }),
+    parsed.data.email
+      ? prisma.user.findUnique({
+          where: { email: parsed.data.email },
+          select: { id: true },
+        })
+      : null,
+  ]);
+
+  if (existingUser) {
+    return {
+      errors: {
+        email: "Ja existe um usuario com este email.",
+      },
+      ok: false,
+      message: "Ja existe um usuario com este email no AVA.",
+    };
+  }
+
+  if (existingRequest) {
+    return {
+      errors: {
+        phone: "Ja existe outro pre-cadastro com este telefone ou email.",
+      },
+      ok: false,
+      message: `Ja existe um pre-cadastro para ${existingRequest.fullName}.`,
+    };
+  }
+
+  try {
+    await prisma.studentPreRegistration.update({
+      where: { id: request.id },
+      data: {
+        assignedTeacherProfileId,
+        birthDate: parsed.data.birthDate ?? null,
+        city: parsed.data.city ?? null,
+        email: parsed.data.email ?? null,
+        englishGoal: parsed.data.englishGoal,
+        estimatedLevel: parsed.data.estimatedLevel ?? null,
+        fullName: parsed.data.fullName,
+        guardianName: parsed.data.guardianName ?? null,
+        installmentsTotal: parsed.data.installmentsTotal ?? null,
+        intendedTime: parsed.data.intendedTime ?? null,
+        intendedWeekdayMask: parsed.data.intendedWeekdayMask,
+        notes: parsed.data.notes ?? null,
+        paymentDay: parsed.data.paymentDay ?? null,
+        paymentMethod: parsed.data.paymentMethod ?? null,
+        phone: parsed.data.phone,
+        phoneNormalized,
+        reviewedAt: new Date(),
+        reviewedByUserId: context.session.user.id,
+        tuitionCents: parsed.data.tuitionAmount ?? null,
+        unit: parsed.data.unit,
+      },
+    });
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        errors: {
+          phone: "Telefone ou email ja cadastrado.",
+        },
+        ok: false,
+        message: "Este interessado ja esta cadastrado.",
+      };
+    }
+
+    return {
+      ok: false,
+      message: "Nao foi possivel atualizar o pre-cadastro agora.",
+    };
+  }
+
+  revalidatePreRegistrationPaths();
+
+  return {
+    ok: true,
+    message: "Pre-cadastro atualizado com sucesso.",
   };
 }
 

@@ -15,6 +15,7 @@ import {
   MapPin,
   MessageCircle,
   MessageSquareText,
+  Pencil,
   Phone,
   Search,
   ShieldCheck,
@@ -32,21 +33,27 @@ import { useRouter } from "next/navigation";
 import {
   type FormEvent,
   type ReactNode,
+  useEffect,
   useMemo,
   useState,
   useTransition,
 } from "react";
+import { createPortal } from "react-dom";
 import {
   acceptStudentPreRegistration,
   createStudentPreRegistration,
-  updateStudentPreRegistrationStatus,
+  updateStudentPreRegistration,
 } from "@/app/ava/pre-registrations/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import { isOpenPreRegistrationStatus } from "@/lib/pre-registration-queue";
 import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
-import type { SecretariaPreRegistrationInput } from "@/lib/validations/pre-registration";
+import type {
+  SecretariaPreRegistrationInput,
+  SecretariaPreRegistrationUpdateInput,
+} from "@/lib/validations/pre-registration";
 import { cn } from "@/lib/utils";
 
 export type PreRegistrationStatus =
@@ -57,7 +64,6 @@ export type PreRegistrationStatus =
   | "APPROVED"
   | "REJECTED";
 
-type ReviewableStatus = Exclude<PreRegistrationStatus, "PENDING" | "APPROVED">;
 type FinancialUnit = "IVATE" | "DOURADINA";
 type PaymentMethod = "PIX" | "DINHEIRO" | "CARTAO" | "OUTRO";
 
@@ -136,15 +142,6 @@ type CreateFormState = {
   tuitionAmount: string;
   unit: FinancialUnit;
 };
-
-const allStatusOptions: readonly PreRegistrationStatus[] = [
-  "PENDING",
-  "CONTACTED",
-  "WAITING_PAYMENT",
-  "READY_TO_CONVERT",
-  "APPROVED",
-  "REJECTED",
-];
 
 const weekdays = [
   { label: "Dom", value: 0 },
@@ -384,6 +381,40 @@ function createDefaultCreateState(unit: FinancialUnit = "IVATE"): CreateFormStat
   return {
     ...defaultCreateState,
     unit,
+  };
+}
+
+function createFormStateFromRequest(
+  request: StudentPreRegistrationReviewRow,
+): CreateFormState {
+  const paymentMethod = Object.hasOwn(
+    paymentMethodLabels,
+    request.paymentMethod ?? "",
+  )
+    ? (request.paymentMethod as PaymentMethod)
+    : "PIX";
+
+  return {
+    assignedTeacherProfileId: request.assignedTeacherId ?? "",
+    birthDate: request.birthDate?.slice(0, 10) ?? "",
+    city: request.city ?? "",
+    email: request.email ?? "",
+    englishGoal: request.englishGoal,
+    estimatedLevel: request.estimatedLevel ?? "",
+    fullName: request.fullName,
+    guardianName: request.guardianName ?? "",
+    installmentsTotal: request.installmentsTotal?.toString() ?? "",
+    intendedTime: request.intendedTime ?? "",
+    intendedWeekdayMask: request.intendedWeekdayMask,
+    notes: request.notes ?? "",
+    paymentDay: request.paymentDay?.toString() ?? "",
+    paymentMethod,
+    phone: request.phone,
+    tuitionAmount:
+      request.tuitionCents === null
+        ? ""
+        : (request.tuitionCents / 100).toFixed(2).replace(".", ","),
+    unit: request.unit,
   };
 }
 
@@ -686,6 +717,59 @@ function scoreRequestForSearch(
   );
 }
 
+function ModalPortal({
+  children,
+  closeDisabled = false,
+  labelledBy,
+  onClose,
+}: {
+  children: ReactNode;
+  closeDisabled?: boolean;
+  labelledBy: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !closeDisabled) {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [closeDisabled, onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-primary/50 p-2 backdrop-blur-[2px] sm:items-center sm:p-4"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !closeDisabled) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        aria-labelledby={labelledBy}
+        aria-modal="true"
+        role="dialog"
+        className="flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-primary/15 bg-[#fefbfa] shadow-[0_24px_80px_rgba(44,19,56,0.28)] sm:max-h-[calc(100dvh-2rem)]"
+      >
+        {children}
+      </section>
+    </div>,
+    document.body,
+  );
+}
+
 function DetailItem({
   icon: Icon,
   label,
@@ -802,116 +886,6 @@ function ContactCard({
         </p>
       </div>
     </div>
-  );
-}
-
-function StatusButton({
-  requestId,
-  status,
-}: {
-  requestId: string;
-  status: Exclude<ReviewableStatus, "REJECTED">;
-}) {
-  const router = useRouter();
-  const [message, setMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const meta = statusMeta[status];
-  const Icon = meta.icon;
-
-  function handleClick() {
-    setMessage(null);
-
-    startTransition(async () => {
-      const result = await updateStudentPreRegistrationStatus({
-        requestId,
-        status,
-      });
-
-      setMessage(result.message);
-
-      if (result.ok) {
-        router.refresh();
-      }
-    });
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className={cn("w-full justify-start", meta.className)}
-        disabled={isPending}
-        onClick={handleClick}
-      >
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : (
-          <Icon data-icon="inline-start" />
-        )}
-        {meta.label}
-      </Button>
-      {message ? (
-        <p className="text-xs leading-5 text-muted-foreground">{message}</p>
-      ) : null}
-    </div>
-  );
-}
-
-function RejectForm({ requestId }: { requestId: string }) {
-  const router = useRouter();
-  const [message, setMessage] = useState<string | null>(null);
-  const [note, setNote] = useState("");
-  const [isPending, startTransition] = useTransition();
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage(null);
-
-    startTransition(async () => {
-      const result = await updateStudentPreRegistrationStatus({
-        requestId,
-        status: "REJECTED",
-        statusNote: note,
-      });
-
-      setMessage(result.message);
-
-      if (result.ok) {
-        setNote("");
-        router.refresh();
-      }
-    });
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <Textarea
-        value={note}
-        onChange={(event) => setNote(event.target.value)}
-        disabled={isPending}
-        placeholder="Observacao opcional para controle interno"
-        className="min-h-20 resize-y text-sm"
-      />
-      <Button
-        type="submit"
-        variant="outline"
-        size="sm"
-        className="w-full justify-start border-rose-200 bg-rose-50/75 text-rose-800 hover:bg-rose-100 hover:text-rose-900"
-        disabled={isPending}
-      >
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : (
-          <XCircle data-icon="inline-start" />
-        )}
-        Recusar
-      </Button>
-      {message ? (
-        <p className="text-xs leading-5 text-muted-foreground">{message}</p>
-      ) : null}
-    </form>
   );
 }
 
@@ -1309,18 +1283,16 @@ function AcceptForm({
           onClick={() => setIsPanelOpen(true)}
         >
           <ClipboardCheck data-icon="inline-start" />
-          {hasConverted ? "Ver resultado" : "Abrir painel"}
+          {hasConverted ? "Ver resultado" : "Tornar aluno"}
         </Button>
       </div>
 
       {isPanelOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-primary/45 p-2 sm:items-center sm:p-4">
-          <section
-            aria-modal="true"
-            role="dialog"
-            aria-labelledby={`conversion-title-${request.id}`}
-            className="flex max-h-[calc(100vh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-primary/15 bg-[#fefbfa] shadow-[0_24px_80px_rgba(44,19,56,0.28)] sm:max-h-[calc(100vh-2rem)]"
-          >
+        <ModalPortal
+          closeDisabled={isPending}
+          labelledBy={`conversion-title-${request.id}`}
+          onClose={handleClosePanel}
+        >
             <header className="border-b border-primary/10 bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/85 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -1394,7 +1366,7 @@ function AcceptForm({
                         <ConversionInfoTile
                           icon={ClipboardCheck}
                           label="Status"
-                          value={statusMeta[request.status].label}
+                          value={statusMeta.PENDING.label}
                         />
                         <ConversionInfoTile
                           icon={Mail}
@@ -1856,8 +1828,7 @@ function AcceptForm({
                 </div>
               </footer>
             </form>
-          </section>
-        </div>
+        </ModalPortal>
       ) : null}
     </>
   );
@@ -1866,20 +1837,32 @@ function AcceptForm({
 function CreatePreRegistrationForm({
   initialUnit,
   onCreated,
+  onUpdated,
+  request,
   teacherOptions,
   viewerRole,
 }: {
   initialUnit: FinancialUnit;
   onCreated?: (message: string) => void;
+  onUpdated?: (message: string) => void;
+  request?: StudentPreRegistrationReviewRow;
   teacherOptions: PreRegistrationTeacherOption[];
   viewerRole: "ADMIN" | "TEACHER";
 }) {
   const router = useRouter();
+  const isEditing = Boolean(request);
   const [form, setForm] = useState<CreateFormState>(() =>
-    createDefaultCreateState(initialUnit),
+    request
+      ? createFormStateFromRequest(request)
+      : createDefaultCreateState(initialUnit),
   );
   const [errors, setErrors] = useState<
-    Partial<Record<keyof SecretariaPreRegistrationInput, string>>
+    Partial<
+      Record<
+        keyof SecretariaPreRegistrationInput | "requestId",
+        string
+      >
+    >
   >({});
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -1926,11 +1909,22 @@ function CreatePreRegistrationForm({
     };
 
     startTransition(async () => {
-      const result = await createStudentPreRegistration(payload);
+      const result = request
+        ? await updateStudentPreRegistration({
+            ...payload,
+            requestId: request.id,
+          } satisfies SecretariaPreRegistrationUpdateInput)
+        : await createStudentPreRegistration(payload);
 
       if (!result.ok) {
         setErrors(result.errors ?? {});
         setMessage(result.message);
+        return;
+      }
+
+      if (request) {
+        setMessage(result.message);
+        onUpdated?.(result.message);
         return;
       }
 
@@ -1954,11 +1948,12 @@ function CreatePreRegistrationForm({
                 Secretaria
               </p>
               <h3 className="mt-1 text-2xl font-black text-primary">
-                Novo pre-cadastro
+                {isEditing ? "Editar pre-cadastro" : "Novo pre-cadastro"}
               </h3>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Cadastre o interessado depois do contato pelo WhatsApp. Isso
-                ainda nao cria login, financeiro ou agenda.
+                {isEditing
+                  ? "Atualize os dados antes de transformar o interessado em aluno."
+                  : "Cadastre o interessado depois do contato pelo WhatsApp. Isso ainda nao cria login, financeiro ou agenda."}
               </p>
             </div>
           </div>
@@ -2425,7 +2420,7 @@ function CreatePreRegistrationForm({
             ) : (
               <ClipboardCheck data-icon="inline-start" />
             )}
-            Salvar pre-cadastro
+            {isEditing ? "Salvar alteracoes" : "Salvar pre-cadastro"}
           </Button>
         </div>
       </form>
@@ -2434,38 +2429,36 @@ function CreatePreRegistrationForm({
 }
 
 export function StudentPreRegistrationReviewPanel({
-  activeStatus,
   requests,
-  statusCounts,
   teacherOptions,
   unitFilter = "all",
   viewerRole,
 }: StudentPreRegistrationReviewPanelProps) {
-  const [activeView, setActiveView] = useState<"create" | "list">(() =>
-    activeStatus === "PENDING" ? "create" : "list",
-  );
-  const [listStatus, setListStatus] = useState<
-    "ALL" | PreRegistrationStatus
-  >(() => (activeStatus === "PENDING" ? "ALL" : activeStatus));
+  const router = useRouter();
+  const [activeView, setActiveView] = useState<"create" | "list">("create");
+  const [editingRequest, setEditingRequest] =
+    useState<StudentPreRegistrationReviewRow | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const trimmedSearchTerm = searchTerm.trim();
   const isSearching = trimmedSearchTerm.length > 0;
+  const openRequests = useMemo(
+    () =>
+      requests.filter((request) =>
+        isOpenPreRegistrationStatus(request.status),
+      ),
+    [requests],
+  );
   const visibleRequests = useMemo(() => {
-    const requestsInStatus =
-      listStatus === "ALL"
-        ? requests
-        : requests.filter((request) => request.status === listStatus);
-
     if (!isSearching) {
-      return [...requestsInStatus].sort(
+      return [...openRequests].sort(
         (left, right) =>
           new Date(right.createdAt).getTime() -
           new Date(left.createdAt).getTime(),
       );
     }
 
-    return requestsInStatus
+    return openRequests
       .map((request) => ({
         match: scoreRequestForSearch(request, trimmedSearchTerm),
         request,
@@ -2486,15 +2479,12 @@ export function StudentPreRegistrationReviewPanel({
         );
       })
       .map(({ request }) => request);
-  }, [isSearching, listStatus, requests, trimmedSearchTerm]);
+  }, [isSearching, openRequests, trimmedSearchTerm]);
   const visibleRequestsLabel =
     visibleRequests.length === 1
       ? "1 pre-cadastro encontrado"
       : `${visibleRequests.length} pre-cadastros encontrados`;
-  const totalSaved = allStatusOptions.reduce(
-    (total, status) => total + statusCounts[status],
-    0,
-  );
+  const totalSaved = openRequests.length;
   const initialCreateUnit = unitFilter === "all" ? "IVATE" : unitFilter;
 
   return (
@@ -2535,7 +2525,7 @@ export function StudentPreRegistrationReviewPanel({
                   historico autorizado neste polo
                 </span>
               </div>
-              <SummaryMetric status="PENDING" value={statusCounts.PENDING} />
+              <SummaryMetric status="PENDING" value={totalSaved} />
             </div>
           </div>
 
@@ -2605,7 +2595,6 @@ export function StudentPreRegistrationReviewPanel({
           initialUnit={initialCreateUnit}
           onCreated={(message) => {
             setSavedMessage(message);
-            setListStatus("ALL");
             setActiveView("list");
           }}
           teacherOptions={teacherOptions}
@@ -2630,7 +2619,7 @@ export function StudentPreRegistrationReviewPanel({
                 {visibleRequestsLabel}
               </span>
             </div>
-            <div className="grid min-w-0 gap-3 p-4 sm:p-5 md:grid-cols-[minmax(0,1fr)_240px]">
+            <div className="grid min-w-0 gap-3 p-4 sm:p-5">
               <label className="grid min-w-0 gap-2 text-sm font-semibold text-primary">
                 <span className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-primary/65">
                   <Search aria-hidden="true" className="size-3.5" />
@@ -2647,23 +2636,6 @@ export function StudentPreRegistrationReviewPanel({
                   />
                 </span>
               </label>
-              <label className="grid min-w-0 gap-2 text-sm font-semibold text-primary">
-                <span className="text-xs font-black uppercase tracking-[0.14em] text-primary/65">
-                  Situacao
-                </span>
-                <NativeSelect
-                  value={listStatus}
-                  onChange={(event) => setListStatus(event.target.value as "ALL" | PreRegistrationStatus)}
-                  className="h-11 w-full min-w-0 border-primary/15 bg-white font-semibold text-primary"
-                >
-                  <option value="ALL">Todos os cadastros</option>
-                  {allStatusOptions.map((status) => (
-                    <option key={status} value={status}>
-                      {statusMeta[status].label} ({statusCounts[status]})
-                    </option>
-                  ))}
-                </NativeSelect>
-              </label>
             </div>
           </section>
 
@@ -2678,8 +2650,8 @@ export function StudentPreRegistrationReviewPanel({
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {isSearching
-                ? "Tente parte do nome, telefone sem mascara, email, documento, cidade, unidade ou status."
-                : "Altere o filtro de situacao ou crie um novo pre-cadastro."}
+                ? "Tente parte do nome, telefone sem mascara, email, documento, cidade ou unidade."
+                : "Crie um novo pre-cadastro para iniciar a fila."}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
@@ -2702,8 +2674,6 @@ export function StudentPreRegistrationReviewPanel({
                 request.status === "APPROVED",
             );
             const canAccept = !isConverted && request.status !== "REJECTED";
-            const canReject =
-              !isConverted && request.status !== "REJECTED";
             const receivedDate =
               formatDateTime(request.createdAt) ?? "Data nao informada";
             const whatsAppHref = buildWhatsAppContactHref(
@@ -2745,7 +2715,7 @@ export function StudentPreRegistrationReviewPanel({
                       </span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <StatusBadge status={request.status} />
+                          <StatusBadge status="PENDING" />
                           <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/12 bg-white/88 px-2.5 py-1 text-xs font-black text-primary/80 shadow-sm">
                             <Store aria-hidden="true" className="size-3.5" />
                             {unitLabels[request.unit]}
@@ -2981,11 +2951,22 @@ export function StudentPreRegistrationReviewPanel({
                     </div>
 
                     {canAccept ? (
-                      <AcceptForm
-                        request={request}
-                        teacherOptions={teacherOptions}
-                        viewerRole={viewerRole}
-                      />
+                      <div className="grid gap-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-11 w-full justify-center border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100"
+                          onClick={() => setEditingRequest(request)}
+                        >
+                          <Pencil data-icon="inline-start" />
+                          Editar cadastro
+                        </Button>
+                        <AcceptForm
+                          request={request}
+                          teacherOptions={teacherOptions}
+                          viewerRole={viewerRole}
+                        />
+                      </div>
                     ) : (
                       <p className="rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground">
                         Este pre-cadastro ja saiu da fila de conversao.
@@ -2995,39 +2976,6 @@ export function StudentPreRegistrationReviewPanel({
                       </p>
                     )}
 
-                    <div className="grid gap-3 border-t border-primary/10 pt-4">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-primary">
-                        <ClipboardCheck aria-hidden="true" className="size-4" />
-                        Acompanhamento
-                      </div>
-                      {request.status !== "CONTACTED" &&
-                      request.status !== "APPROVED" &&
-                      request.status !== "REJECTED" ? (
-                        <StatusButton requestId={request.id} status="CONTACTED" />
-                      ) : null}
-                      {request.status !== "WAITING_PAYMENT" &&
-                      request.status !== "APPROVED" &&
-                      request.status !== "REJECTED" ? (
-                        <StatusButton
-                          requestId={request.id}
-                          status="WAITING_PAYMENT"
-                        />
-                      ) : null}
-                      {request.status !== "READY_TO_CONVERT" &&
-                      request.status !== "APPROVED" &&
-                      request.status !== "REJECTED" ? (
-                        <StatusButton
-                          requestId={request.id}
-                          status="READY_TO_CONVERT"
-                        />
-                      ) : null}
-                      {canReject ? <RejectForm requestId={request.id} /> : null}
-                      {!canAccept && !canReject ? (
-                        <p className="rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                          Sem acoes pendentes para este status.
-                        </p>
-                      ) : null}
-                    </div>
                   </aside>
                 </div>
               </article>
@@ -3037,6 +2985,53 @@ export function StudentPreRegistrationReviewPanel({
       )}
         </>
       )}
+      {editingRequest ? (
+        <ModalPortal
+          labelledBy={`edit-pre-registration-${editingRequest.id}`}
+          onClose={() => setEditingRequest(null)}
+        >
+          <header className="flex items-start justify-between gap-3 border-b border-primary/10 bg-gradient-to-r from-sky-50 via-white to-violet-50 p-4 sm:p-5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-sky-800">
+                <Pencil aria-hidden="true" className="size-3.5" />
+                Edicao segura
+              </div>
+              <h3
+                id={`edit-pre-registration-${editingRequest.id}`}
+                className="mt-2 text-xl font-black text-primary sm:text-2xl"
+              >
+                {editingRequest.fullName}
+              </h3>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Corrija os dados antes de transformar este pre-cadastro em aluno.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setEditingRequest(null)}
+              aria-label="Fechar edicao do pre-cadastro"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </Button>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto p-2 sm:p-4">
+            <CreatePreRegistrationForm
+              key={editingRequest.id}
+              initialUnit={editingRequest.unit}
+              onUpdated={(message) => {
+                setSavedMessage(message);
+                setEditingRequest(null);
+                router.refresh();
+              }}
+              request={editingRequest}
+              teacherOptions={teacherOptions}
+              viewerRole={viewerRole}
+            />
+          </div>
+        </ModalPortal>
+      ) : null}
     </div>
   );
 }

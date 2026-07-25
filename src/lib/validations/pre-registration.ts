@@ -303,6 +303,11 @@ export const secretariaPreRegistrationSchema = z.object({
   }),
 });
 
+export const secretariaPreRegistrationUpdateSchema =
+  secretariaPreRegistrationSchema.omit({ status: true }).extend({
+    requestId: z.string().min(1, "Pre-cadastro invalido."),
+  });
+
 export type StudentPreRegistrationInput = z.input<
   typeof studentPreRegistrationSchema
 >;
@@ -314,6 +319,9 @@ export type SecretariaPreRegistrationInput = z.input<
 >;
 export type SecretariaPreRegistrationData = z.output<
   typeof secretariaPreRegistrationSchema
+>;
+export type SecretariaPreRegistrationUpdateInput = z.input<
+  typeof secretariaPreRegistrationUpdateSchema
 >;
 
 export const studentPreRegistrationStatusSchema = z.enum(
