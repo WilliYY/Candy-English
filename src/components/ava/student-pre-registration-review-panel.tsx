@@ -137,7 +137,7 @@ type CreateFormState = {
   intendedWeekdayMask: number;
   notes: string;
   paymentDay: string;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod | "";
   phone: string;
   tuitionAmount: string;
   unit: FinancialUnit;
@@ -392,7 +392,7 @@ function createFormStateFromRequest(
     request.paymentMethod ?? "",
   )
     ? (request.paymentMethod as PaymentMethod)
-    : "PIX";
+    : "";
 
   return {
     assignedTeacherProfileId: request.assignedTeacherId ?? "",
@@ -1901,7 +1901,7 @@ function CreatePreRegistrationForm({
       intendedWeekdayMask: form.intendedWeekdayMask,
       notes: form.notes,
       paymentDay: form.paymentDay,
-      paymentMethod: form.paymentMethod,
+      paymentMethod: form.paymentMethod || undefined,
       phone: form.phone,
       status: "PENDING",
       tuitionAmount: form.tuitionAmount,
@@ -2320,13 +2320,14 @@ function CreatePreRegistrationForm({
                   onChange={(event) =>
                     setField(
                       "paymentMethod",
-                      event.target.value as PaymentMethod,
+                      event.target.value as PaymentMethod | "",
                     )
                   }
                   disabled={isPending}
                   aria-invalid={Boolean(errors.paymentMethod)}
                   className={preRegistrationSelectClassName}
                 >
+                  <option value="">Nao informada</option>
                   {Object.entries(paymentMethodLabels).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}

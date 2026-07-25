@@ -5,7 +5,10 @@ import { revalidatePath } from "next/cache";
 import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
-import { isOpenPreRegistrationStatus } from "@/lib/pre-registration-queue";
+import {
+  isOpenPreRegistrationStatus,
+  OPEN_PRE_REGISTRATION_STATUSES,
+} from "@/lib/pre-registration-queue";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
@@ -586,8 +589,15 @@ export async function updateStudentPreRegistration(
   }
 
   try {
-    await prisma.studentPreRegistration.update({
-      where: { id: request.id },
+    const updateResult = await prisma.studentPreRegistration.updateMany({
+      where: {
+        convertedAgendaStudentId: null,
+        convertedFinancialStudentId: null,
+        convertedStudentProfileId: null,
+        convertedUserId: null,
+        id: request.id,
+        status: { in: [...OPEN_PRE_REGISTRATION_STATUSES] },
+      },
       data: {
         assignedTeacherProfileId,
         birthDate: parsed.data.birthDate ?? null,
@@ -611,6 +621,14 @@ export async function updateStudentPreRegistration(
         unit: parsed.data.unit,
       },
     });
+
+    if (updateResult.count !== 1) {
+      return {
+        ok: false,
+        message:
+          "Este pre-cadastro foi convertido ou atualizado por outra pessoa. Recarregue a pagina antes de continuar.",
+      };
+    }
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       return {

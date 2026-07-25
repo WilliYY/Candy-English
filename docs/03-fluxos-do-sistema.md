@@ -402,6 +402,7 @@ Helpers:
 - Atividades Candy XP usam modelos proprios para historia/PDF/envio/progresso, preservam perguntas antigas quando existirem e reaproveitam o ledger Candy XP para pontuar conclusoes.
 - Areas Candy XP usam `CandyXpActivityInteractiveField` e respostas em `CandyXpActivitySubmission.answers` para manter a mesma submissao por aluno/atividade.
 - Pre-cadastros usam a mesma tabela `StudentPreRegistration`; a fila operacional agrupa como `Novo` todos os status ainda conversiveis, sem apagar os estados historicos ja gravados.
+- A edicao da fila `Novo` usa atualizacao condicional no servidor: se outra sessao converter o registro primeiro, a edicao e recusada e precisa ser recarregada, evitando divergencia entre pre-cadastro, AVA, financeiro e agenda.
 
 ## Riscos ao alterar esta parte
 
