@@ -150,8 +150,17 @@ type AdminFinancePanelProps = {
   initialMonth: number;
   initialUnitFilter?: SecretariaUnitFilter;
   logs: AdminFinanceLogRow[];
+  nowIso: string;
   students: AdminFinanceStudentRow[];
 };
+
+type SaoPauloDateParts = {
+  day: number;
+  month: number;
+  year: number;
+};
+
+const SAO_PAULO_TIME_ZONE = "America/Sao_Paulo";
 
 const months = [
   { label: "Janeiro", shortLabel: "Jan", value: 1 },
@@ -178,7 +187,7 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
-  timeZone: "UTC",
+  timeZone: SAO_PAULO_TIME_ZONE,
   year: "numeric",
 });
 
@@ -187,6 +196,14 @@ const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   hour: "2-digit",
   minute: "2-digit",
   month: "2-digit",
+  timeZone: SAO_PAULO_TIME_ZONE,
+  year: "numeric",
+});
+
+const saoPauloDatePartsFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "numeric",
+  timeZone: SAO_PAULO_TIME_ZONE,
   year: "numeric",
 });
 
@@ -354,19 +371,25 @@ function padDatePart(value: number) {
   return String(value).padStart(2, "0");
 }
 
-function formatInputDate(date: Date) {
-  return [
-    date.getFullYear(),
-    padDatePart(date.getMonth() + 1),
-    padDatePart(date.getDate()),
-  ].join("-");
+function getSaoPauloDateParts(date: Date): SaoPauloDateParts {
+  const parts = saoPauloDatePartsFormatter.formatToParts(date);
+  const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value);
+
+  return {
+    day: getPart("day"),
+    month: getPart("month"),
+    year: getPart("year"),
+  };
 }
 
-function getDefaultExpenseDate(month: number) {
-  const today = new Date();
-
-  if (today.getFullYear() === 2026 && today.getMonth() + 1 === month) {
-    return formatInputDate(today);
+function getDefaultExpenseDate(month: number, today: SaoPauloDateParts) {
+  if (today.year === 2026 && today.month === month) {
+    return [
+      today.year,
+      padDatePart(today.month),
+      padDatePart(today.day),
+    ].join("-");
   }
 
   return `2026-${padDatePart(month)}-01`;
@@ -375,13 +398,14 @@ function getDefaultExpenseDate(month: number) {
 const createExpenseDefaultValues = (
   month: number,
   unit: FinancialUnit = "IVATE",
+  today: SaoPauloDateParts,
 ): AdminFinanceExpenseCreateInput => ({
   actorName: "",
   amount: "",
   itemName: "",
   month,
   note: "",
-  purchasedAt: getDefaultExpenseDate(month),
+  purchasedAt: getDefaultExpenseDate(month, today),
   unit,
   year: 2026,
 });
@@ -407,7 +431,22 @@ function formatDate(value: string | null) {
     return "Sem data";
   }
 
-  return dateFormatter.format(new Date(value));
+  const date = new Date(value);
+  const displayDate =
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0
+      ? new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            12,
+          ),
+        )
+      : date;
+
+  return dateFormatter.format(displayDate);
 }
 
 function formatDateTime(value: string) {
@@ -533,18 +572,30 @@ function UnitFilterChips({
   );
 }
 
-function getDueDate(month: number, paymentDay: number) {
-  const lastDayOfMonth = new Date(2026, month, 0).getDate();
+function toComparableDate(year: number, month: number, day: number) {
+  return year * 10_000 + month * 100 + day;
+}
+
+function isOverduePayment(
+  paymentDay: number,
+  isPaid: boolean,
+  month: number,
+  today: SaoPauloDateParts,
+) {
+  const lastDayOfMonth = new Date(Date.UTC(2026, month, 0)).getUTCDate();
   const safeDay = Math.min(paymentDay, lastDayOfMonth);
 
-  return new Date(2026, month - 1, safeDay, 23, 59, 59, 999);
+  return (
+    !isPaid &&
+    toComparableDate(today.year, today.month, today.day) >
+      toComparableDate(2026, month, safeDay)
+  );
 }
 
-function isOverduePayment(paymentDay: number, isPaid: boolean, month: number) {
-  return !isPaid && new Date() > getDueDate(month, paymentDay);
-}
-
-function getPaymentStatus(payment: AdminFinancePaymentRow): FinanceStatus {
+function getPaymentStatus(
+  payment: AdminFinancePaymentRow,
+  today: SaoPauloDateParts,
+): FinanceStatus {
   if (!payment.isActive) {
     return "inactive";
   }
@@ -553,7 +604,12 @@ function getPaymentStatus(payment: AdminFinancePaymentRow): FinanceStatus {
     return "paid";
   }
 
-  return isOverduePayment(payment.snapshotPaymentDay, payment.isPaid, payment.month)
+  return isOverduePayment(
+    payment.snapshotPaymentDay,
+    payment.isPaid,
+    payment.month,
+    today,
+  )
     ? "overdue"
     : "pending";
 }
@@ -647,6 +703,7 @@ function getStatusClasses(status: FinanceStatus) {
 function buildFinanceMonthRows(
   students: AdminFinanceStudentRow[],
   activeMonth: number,
+  today: SaoPauloDateParts,
 ) {
   return students
     .map((student) => {
@@ -659,7 +716,7 @@ function buildFinanceMonthRows(
         return null;
       }
 
-      const status = getPaymentStatus(payment);
+      const status = getPaymentStatus(payment, today);
 
       if (status === "inactive") {
         return null;
@@ -1415,9 +1472,14 @@ export function AdminFinancePanel({
   initialMonth,
   initialUnitFilter,
   logs,
+  nowIso,
   students,
 }: AdminFinancePanelProps) {
   const router = useRouter();
+  const today = useMemo(
+    () => getSaoPauloDateParts(new Date(nowIso)),
+    [nowIso],
+  );
   const initialPanelUnitFilter = normalizeInitialUnitFilter(initialUnitFilter);
   const initialFormUnit = getDefaultUnitForFilter(initialPanelUnitFilter);
   const [activeMonth, setActiveMonth] = useState(initialMonth);
@@ -1442,12 +1504,16 @@ export function AdminFinancePanel({
     resolver: zodResolver(adminFinanceExpenseCreateSchema, undefined, {
       raw: true,
     }),
-    defaultValues: createExpenseDefaultValues(initialMonth, initialFormUnit),
+    defaultValues: createExpenseDefaultValues(
+      initialMonth,
+      initialFormUnit,
+      today,
+    ),
   });
 
   const monthRows = useMemo(
-    () => buildFinanceMonthRows(students, activeMonth),
-    [activeMonth, students],
+    () => buildFinanceMonthRows(students, activeMonth, today),
+    [activeMonth, students, today],
   );
 
   const unitMonthRows = useMemo(
@@ -1496,7 +1562,7 @@ export function AdminFinancePanel({
     () =>
       months.reduce<Record<number, { all: number; overdue: number }>>(
         (accumulator, month) => {
-          const rows = buildFinanceMonthRows(students, month.value).filter(
+          const rows = buildFinanceMonthRows(students, month.value, today).filter(
             (row) => unitFilter === "ALL" || row.unit === unitFilter,
           );
 
@@ -1509,7 +1575,7 @@ export function AdminFinancePanel({
         },
         {},
       ),
-    [students, unitFilter],
+    [students, today, unitFilter],
   );
 
   const monthExpenses = useMemo(
@@ -1631,7 +1697,7 @@ export function AdminFinancePanel({
     setSelectedStudentId(null);
     form.setValue("month", month);
     expenseForm.setValue("month", month);
-    expenseForm.setValue("purchasedAt", getDefaultExpenseDate(month));
+    expenseForm.setValue("purchasedAt", getDefaultExpenseDate(month, today));
     form.setValue("unit", unitFilter === "ALL" ? "IVATE" : unitFilter);
     expenseForm.setValue(
       "unit",
@@ -1707,7 +1773,7 @@ export function AdminFinancePanel({
       }
 
       expenseForm.reset({
-        ...createExpenseDefaultValues(activeMonth),
+        ...createExpenseDefaultValues(activeMonth, "IVATE", today),
         unit: expenseUnitFilter === "ALL" ? "IVATE" : expenseUnitFilter,
       });
       setExpenseMessage(result.message);
@@ -2549,7 +2615,7 @@ export function AdminFinancePanel({
 
                   <div className="grid gap-2">
                     {buildHistoryRows(selectedRow).map((payment) => {
-                      const status = getPaymentStatus(payment);
+                      const status = getPaymentStatus(payment, today);
                       const statusClasses = getStatusClasses(status);
 
                       return (

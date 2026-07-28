@@ -54,7 +54,7 @@ ADMIN_RESET_PASSWORD=true docker compose run --rm seed
 - `candy-english-postgres` saudavel.
 - `candy-english-app` saudavel.
 - Logs do app sem falha de boot.
-- `/api/health` retorna status 200.
+- `/api/health` retorna status 200 com `checks.database=true` e `checks.storage=true`.
 - `/ava/login` carrega.
 - `/ava/admin` sem sessao redireciona para `/ava/login`.
 - Smoke test termina com `Candy English server smoke OK`.

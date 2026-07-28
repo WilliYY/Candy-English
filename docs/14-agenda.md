@@ -42,12 +42,14 @@ Rota:
 - Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `AgendaStudent` e suas `AgendaLesson` futuras dentro da transaction de `Tornar aluno`, sem acessar a agenda completa. Se dias ou horario ainda nao foram definidos, a conversao so continua com confirmacao explicita; nesse caso cria `AgendaStudent` linkado sem ocorrencias e registra a pendencia no log.
 - Agenda e separada dos alunos do AVA; cadastro manual da agenda nao cria login, usuario ou perfil de aluno.
 - A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje quando o navegador esta em 2026.
+- O dia atual e as comparacoes de ocorrencias usam uma referencia unica em `America/Sao_Paulo`, passada pelo servidor para evitar mudanca de dia durante a hidratacao.
+- Alteracoes ainda nao salvas da rotina permanecem ao atualizar presenca ou trocar o dia selecionado; trocar aluno ou mes pede confirmacao antes de descartar o formulario.
 - O admin ve calendario mensal, botao `Hoje`, navegacao de mes, dia atual destacado, dia selecionado destacado e contagem visual de aulas por dia.
 - Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, unidade, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando a conversao foi confirmada sem dias/horario.
 - Quando a Secretaria abre a agenda com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega somente `AgendaStudent` daquela unidade e ocorrencias de `AgendaLesson` ligadas a alunos daquele polo. Sem `unit`, ou com `unit=all`, mostra todos os polos.
 - O sistema cria ocorrencias do mes escolhido ate dezembro de 2026.
 - `AgendaStudent.isActive`, `AgendaStudent.defaultTime` e `AgendaStudent.weekdayMask` guardam o estado atual da rotina para edicao rapida; `AgendaLesson` continua guardando as ocorrencias reais e o historico.
-- A action de cadastro recusa duplicidade quando o mesmo nome ja tem agenda ativa no mesmo dia/horario.
+- A action de cadastro recusa duplicidade quando o mesmo nome ja tem agenda ativa no mesmo dia/horario. A verificacao roda dentro da mesma transaction e usa lock por aluno/unidade/ano/horario para impedir cadastros duplicados por cliques ou usuarios simultaneos.
 - Ao editar a rotina, o sistema desativa ocorrencias recorrentes futuras do mes selecionado em diante e cria/reativa as novas ocorrencias, preservando historico antigo.
 - Inativar aluno marca `AgendaStudent.isActive=false`, limpa horario/dias padrao e inativa ocorrencias recorrentes do mes selecionado em diante; registros antigos permanecem no historico.
 - Excluir aluno da agenda e uma acao definitiva de `ADMIN`: remove o `AgendaStudent` e suas ocorrencias por cascade, mantendo um log textual da exclusao. Para preservar historico, usar `Inativar`.

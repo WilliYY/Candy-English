@@ -7,6 +7,7 @@ import {
 } from "@/components/ava/student-workspace";
 import { StudentMaintenanceScreen } from "@/components/ava/student-maintenance-screen";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
+import { buildAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { requireAvaRole } from "@/lib/authorization";
 import { CANDY_XP_REWARDS } from "@/lib/candy-xp";
 import {
@@ -31,11 +32,11 @@ type StudentPageProps = {
 };
 
 export default async function StudentPage({ searchParams }: StudentPageProps) {
+  const params = searchParams ? await searchParams : undefined;
   const session = await requireAvaRole(
     ["ADMIN", "TEACHER", "STUDENT"],
-    "/ava/student",
+    buildAvaCallbackUrl("/ava/student", params, ["task"]),
   );
-  const params = searchParams ? await searchParams : undefined;
   const requestedTask = Array.isArray(params?.task)
     ? params?.task[0]
     : params?.task;

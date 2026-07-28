@@ -56,6 +56,7 @@ Rota:
 - Ao retirar aluno em um mes, a UI permite inativar apenas o mes selecionado ou encerrar a partir daquele mes, sempre por soft remove em `FinancialPayment.isActive=false`.
 - Alunos ativos no mes aparecem ordenados por dia de pagamento crescente.
 - Status padrao e pendente; se o dia previsto passou, o card fica atrasado. Ao marcar como pago, o card fica verde e recebe data paga.
+- A decisao de vencido, o mes inicial, a data padrao de gasto e os horarios do log usam uma referencia unica em `America/Sao_Paulo`, passada pelo servidor para evitar divergencia entre SSR e navegador perto da meia-noite.
 - Indicador de devedores conta alunos pendentes cujo dia previsto ja passou no mes selecionado.
 - `FinancialLog` registra criacao, edicao, status, exclusao e exportacao.
 - O log financeiro fica recolhido por padrao em um card separado abaixo da lista para nao alongar a tela de cobranca.

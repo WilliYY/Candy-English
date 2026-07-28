@@ -47,6 +47,7 @@ npm run build
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run audit:avatar-smoke
+npm run audit:pre-registration
 npm run audit:candy-xp-concurrency
 npm run audit:candy-xp-submission-concurrency
 npm run audit:candy-xp-visibility
@@ -69,6 +70,7 @@ docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:pre-registration
 docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-concurrency
 docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-submission-concurrency
 docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-visibility
@@ -89,6 +91,7 @@ docker compose ps
 docker compose --profile tools run --rm audit-server-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke
 docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:pre-registration
 ```
 
 ## Deploy Oracle com migration

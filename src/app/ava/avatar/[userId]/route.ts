@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { getStoragePath } from "@/lib/storage";
+import {
+  getStoragePath,
+  isMissingStorageFileError,
+} from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -85,8 +88,13 @@ export async function GET(
 
   try {
     file = await readFile(getStoragePath(user.avatarPath));
-  } catch {
-    return new NextResponse("Foto nao encontrada.", { status: 404 });
+  } catch (error) {
+    return new NextResponse(
+      isMissingStorageFileError(error)
+        ? "Foto nao encontrada."
+        : "Nao foi possivel carregar a foto.",
+      { status: isMissingStorageFileError(error) ? 404 : 500 },
+    );
   }
 
   const body = file.buffer.slice(

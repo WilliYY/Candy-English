@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { deleteAvatarImage, saveAvatarImage } from "@/lib/storage";
+import {
+  deleteAvatarImage,
+  saveAvatarImage,
+  StorageValidationError,
+} from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -80,15 +84,16 @@ export async function POST(request: Request) {
       await deleteAvatarImage(savedAvatarPath).catch(() => undefined);
     }
 
+    const isValidationError = error instanceof StorageValidationError;
+
     return NextResponse.json(
       {
-        message:
-          error instanceof Error
-            ? error.message
-            : "Nao foi possivel enviar a foto.",
+        message: isValidationError
+          ? error.message
+          : "Nao foi possivel enviar a foto agora.",
         ok: false,
       },
-      { status: 400 },
+      { status: isValidationError ? 400 : 500 },
     );
   }
 }

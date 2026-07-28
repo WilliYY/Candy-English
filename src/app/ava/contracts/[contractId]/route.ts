@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { getStoragePath } from "@/lib/storage";
+import {
+  getStoragePath,
+  isMissingStorageFileError,
+} from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -75,8 +78,13 @@ export async function GET(
 
   try {
     file = await readFile(getStoragePath(contract.storagePath));
-  } catch {
-    return new NextResponse("Contrato nao encontrado.", { status: 404 });
+  } catch (error) {
+    return new NextResponse(
+      isMissingStorageFileError(error)
+        ? "Contrato nao encontrado."
+        : "Nao foi possivel carregar o contrato.",
+      { status: isMissingStorageFileError(error) ? 404 : 500 },
+    );
   }
 
   const body = file.buffer.slice(

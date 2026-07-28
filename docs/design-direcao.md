@@ -51,6 +51,8 @@ Os assets de marca ficam em arquivos estaticos. Nao colocar logos dentro de codi
 Movimentos permitidos nesta fase:
 
 - hero da home com video local leve `public/brand/home-candy-2.mp4` em loop, muted/autoplay, como fundo do primeiro card dominante com fundo branco reduzido, proporcao mais fechada e zoom leve para aproveitar melhor a arte em tablet/desktop; o conteudo embutido virou um banner/carrossel padronizado com `intro-1.mp4`, `home-banner-aula-julho-2026.jpeg` e `intro-2.mp4`, setas, indicadores, troca automatica a cada 8 segundos, pausa da troca quando o usuario reproduz um video e fundo roxo nas laterais para midias verticais;
+- no mobile, o header reduz logo, espacamentos e CTA para nao criar overflow em 360 px e oferece menu lateral acessivel com as mesmas rotas do desktop, trap de foco, `Escape` e retorno ao acionador;
+- slides inativos do carrossel ficam fora da ordem de foco; teclado e leitor de tela interagem apenas com a midia ativa, sem alterar swipe, autoplay ou reproducao de video;
 - video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa, linha divisoria dura ou degradê de transicao;
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura; o video deve ser lazy/condicional, montar apenas quando o navegador estiver ocioso, tocar apenas em telas a partir de tablet quando `prefers-reduced-motion` permitir, pausar fora da viewport e manter fallback estatico para reduzir lag;

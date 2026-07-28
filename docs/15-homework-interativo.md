@@ -103,6 +103,7 @@ Tabelas e enums:
 - `ADMIN` ou a `TEACHER` dona da homework pode excluir uma homework interativa pela lista de criacao.
 - Excluir homework interativa remove campos, perguntas e respostas por cascade; tambem remove a aula interna automatica quando ela ficou vazia.
 - `DRAFT` e apenas rascunho/autosave e nao entra na fila de correcao.
+- Autosave, entrega e reabertura do mesmo aluno/homework devem usar a mesma chave de lock transacional; um autosave atrasado nunca pode rebaixar `SUBMITTED` ou `REVIEWED` para `DRAFT`.
 - No aluno, o autosave de `DRAFT` grava em segundo plano sem revalidar a pagina inteira, para nao fechar o card aberto nem sobrescrever texto digitado com dados antigos. A tela tambem mantem uma copia local temporaria do rascunho no navegador enquanto a atividade nao foi entregue/corrigida, como protecao contra falha de rede ou refresh acidental. Se uma aba antiga chamar uma Server Action de outro deploy ou a conexao falhar, o erro tecnico e capturado no card, o rascunho local permanece e o aluno recebe a acao `Atualizar atividade`.
 - `SUBMITTED` e entrega oficial e gera evento para teacher/admin.
 - `RETURNED` libera o aluno para refazer.

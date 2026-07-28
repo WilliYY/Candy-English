@@ -83,6 +83,7 @@ Rotas protegidas:
 - `TEACHER` acessa teacher e student, mas dados editaveis dependem de vinculo.
 - `STUDENT` acessa student e apenas os proprios dados.
 - Depois do login, `ADMIN` e `TEACHER` entram em `/ava/escolha`; `STUDENT` entra direto em `/ava/student`.
+- Deep links protegidos preservam apenas os query params conhecidos de cada area (`task`, `unit` e `preStatus`) no `callbackUrl`; o login aceita retorno somente para rotas AVA existentes da lista segura.
 - `/ava/escolha` usa layout limpo sem sidebar de trabalho; a sidebar protegida aparece apenas depois que Admin/Teacher entram em `AVA` ou `Secretaria`.
 - `/ava/secretaria` aceita apenas `ADMIN` e `TEACHER`; Student nao ve nem acessa a Secretaria.
 - A Secretaria possui matriz central em `SECRETARIA_PERMISSION_MATRIX` (`src/lib/roles.ts`) para documentar e renderizar o escopo por role; cada destino continua validando role e permissao por dado no servidor.
@@ -92,7 +93,7 @@ Rotas protegidas:
   - `STUDENT`: nao acessa Secretaria.
 - `/ava/avatar/[userId]` exige sessao; admin le todos, o dono le o proprio avatar, teacher le avatar de aluno vinculado e qualquer usuario autenticado do AVA pode ler somente o avatar de participante ativo que ja aparece no ranking interno Candy XP. Perfis inativos, sem XP e fora de vinculo continuam protegidos.
 - Usuario inativo nao entra.
-- Muitas falhas de login bloqueiam novas tentativas na janela configurada.
+- Muitas falhas de login bloqueiam novas tentativas na janela configurada. A contagem e a gravacao sao serializadas por email com lock transacional para que tentativas paralelas nao burlem o limite; registros com mais de 24 horas sao limpos independentemente de um login bem-sucedido.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Login Google esta desativado nesta fase; o login ativo e por email/senha com Credentials Provider.
 - O botao publico `Quero ser aluno Candy` no login abre WhatsApp e nao cria `StudentPreRegistration`.
@@ -104,7 +105,7 @@ Rotas protegidas:
 - A normalizacao da busca remove acentos, ignora maiusculas/minusculas e compara telefone/documento tambem por digitos, sem espacos, pontos, tracos ou parenteses; resultados exatos ficam antes dos parciais/proximos.
 - A conversao `Tornar aluno` sempre exige `emailForLogin` e `initialPassword` no formulario. O email do pre-cadastro pode preencher o campo, mas o Admin/Teacher precisa revisar; sem email, a UI mostra sugestao baseada no nome e mantem o campo vazio ate alguem confirmar ou editar.
 - A senha inicial aparece visivel/editavel antes da conversao, gerada por nome simplificado + `candy`, e precisa ter no minimo 8 caracteres. O servidor recebe apenas para gerar `passwordHash` com `bcryptjs`; a senha em texto puro nao e persistida nem exibida depois da conversao.
-- Ao converter, o servidor cria `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction.
+- Ao converter, o servidor cria `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction. Um lock transacional por pre-cadastro impede duas conversoes simultaneas e garante que a segunda chamada encontre o registro ja convertido.
 - `TEACHER` so converte pre-cadastro criado por ela ou atribuido a sua `TeacherProfile`; se o registro tiver outra teacher responsavel, a conversao e bloqueada. Essa escrita cria apenas os dados linkados daquele interessado e nao libera acesso ao financeiro completo nem a agenda interna.
 - `ADMIN` pode escolher a teacher no momento da conversao e converter qualquer pre-cadastro.
 - O fluxo de aceite nunca cria `ADMIN` ou `TEACHER`, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, e nunca retorna/loga a senha inicial em texto puro.

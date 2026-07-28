@@ -335,6 +335,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
                   : undefined
               }
               aria-hidden={!isActive}
+              inert={!isActive}
             >
               {slide.type === "image" ? (
                 <Image
@@ -348,6 +349,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
               ) : (
                 <button
                   type="button"
+                  tabIndex={isActive ? 0 : -1}
                   className="absolute inset-0 z-10 grid cursor-pointer place-items-center p-3 sm:p-5"
                   aria-label={`${playingVideoId === slide.id ? "Pausar" : "Reproduzir"} ${slide.label}`}
                   onClick={() => {

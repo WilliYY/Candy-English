@@ -2,6 +2,10 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from "bcryptjs";
 import { Pool } from "pg";
 import { PrismaClient } from "../src/generated/prisma/client";
+import {
+  buildAvaCallbackUrl,
+  getSafeAvaCallbackUrl,
+} from "../src/lib/ava-callback-url";
 
 type SmokeRole = "ADMIN" | "TEACHER" | "STUDENT";
 
@@ -599,6 +603,51 @@ async function assertAnonymousProtectedRoutes() {
         `Usuario sem login nao deve acessar ${path}, recebeu ${response.status} ${location ?? ""}`,
       );
     }
+  }
+
+  const deepLinks = [
+    "/ava/admin?task=financeiro&unit=DOURADINA",
+    "/ava/teacher?task=aceitar-alunos&unit=IVATE&preStatus=PENDING",
+    "/ava/student?task=homeworks",
+    "/ava/secretaria?unit=DOURADINA",
+  ];
+
+  for (const path of deepLinks) {
+    const response = await fetch(buildUrl(path), {
+      redirect: "manual",
+    });
+    const location = response.headers.get("location");
+    const loginUrl = location ? new URL(location, baseUrl) : null;
+
+    if (
+      ![302, 303, 307, 308].includes(response.status) ||
+      loginUrl?.pathname !== "/ava/login" ||
+      loginUrl.searchParams.get("callbackUrl") !== path
+    ) {
+      throw new Error(
+        `Deep link anonimo perdeu callback ${path}: ${response.status} ${location ?? ""}`,
+      );
+    }
+  }
+
+  const builtCallback = buildAvaCallbackUrl(
+    "/ava/admin",
+    {
+      preStatus: "PENDING",
+      task: "financeiro",
+      unit: "DOURADINA",
+    },
+    ["task", "unit", "preStatus"],
+  );
+
+  if (
+    builtCallback !==
+      "/ava/admin?task=financeiro&unit=DOURADINA&preStatus=PENDING" ||
+    getSafeAvaCallbackUrl(builtCallback) !== builtCallback ||
+    getSafeAvaCallbackUrl("/ava/nao-existe") !== "/ava" ||
+    getSafeAvaCallbackUrl("https://example.com/ava/admin") !== "/ava"
+  ) {
+    throw new Error("Validacao de callback seguro do AVA falhou.");
   }
 
   const cattyResponse = await fetch(

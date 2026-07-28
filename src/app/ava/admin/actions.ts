@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin-credentials";
 import { setMaintenanceMode } from "@/lib/app-settings";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
+import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 import {
@@ -1671,36 +1672,45 @@ export async function createAgendaSchedule(
   }
 
   const prisma = getPrisma();
-  const duplicateLesson = await prisma.agendaLesson.findFirst({
-    where: {
-      isActive: true,
-      isMakeup: false,
-      time: parsed.data.time,
-      weekday: {
-        in: parsed.data.weekdays,
-      },
-      year: parsed.data.year,
-      student: {
-        name: {
-          equals: parsed.data.name,
-          mode: "insensitive",
+  const normalizedName = parsed.data.name.trim().toLocaleLowerCase("pt-BR");
+  const scheduleKey = [
+    normalizedName,
+    parsed.data.unit,
+    parsed.data.year,
+    parsed.data.time,
+  ].join(":");
+  const created = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `agenda-schedule:${scheduleKey}`,
+    );
+
+    const duplicateLesson = await tx.agendaLesson.findFirst({
+      where: {
+        isActive: true,
+        isMakeup: false,
+        time: parsed.data.time,
+        weekday: {
+          in: parsed.data.weekdays,
         },
-        unit: parsed.data.unit,
+        year: parsed.data.year,
+        student: {
+          name: {
+            equals: parsed.data.name,
+            mode: "insensitive",
+          },
+          unit: parsed.data.unit,
+        },
       },
-    },
-    select: {
-      id: true,
-    },
-  });
+      select: {
+        id: true,
+      },
+    });
 
-  if (duplicateLesson) {
-    return {
-      ok: false,
-      message: "Esse aluno ja tem agenda ativa nesse dia e horario.",
-    };
-  }
+    if (duplicateLesson) {
+      return false;
+    }
 
-  await prisma.$transaction(async (tx) => {
     const student = await tx.agendaStudent.create({
       data: {
         defaultTime: parsed.data.time,
@@ -1739,7 +1749,16 @@ export async function createAgendaSchedule(
         studentId: student.id,
       },
     });
+
+    return true;
   });
+
+  if (!created) {
+    return {
+      ok: false,
+      message: "Esse aluno ja tem agenda ativa nesse dia e horario.",
+    };
+  }
 
   revalidatePath("/ava/admin");
 

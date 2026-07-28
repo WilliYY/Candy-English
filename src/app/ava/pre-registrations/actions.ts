@@ -9,6 +9,7 @@ import {
   isOpenPreRegistrationStatus,
   OPEN_PRE_REGISTRATION_STATUSES,
 } from "@/lib/pre-registration-queue";
+import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
@@ -762,6 +763,11 @@ export async function acceptStudentPreRegistration(
 
   try {
     await prisma.$transaction(async (tx) => {
+      await acquireTransactionAdvisoryLock(
+        tx,
+        `pre-registration-conversion:${parsed.data.requestId}`,
+      );
+
       const request = await tx.studentPreRegistration.findUnique({
         where: { id: parsed.data.requestId },
         select: {

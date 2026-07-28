@@ -4,6 +4,7 @@ import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { Prisma } from "@/generated/prisma/client";
+import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
@@ -1399,6 +1400,9 @@ export async function reviewHomeworkSubmission(
         },
       },
       id: true,
+      homeworkId: true,
+      status: true,
+      studentProfileId: true,
     },
   });
 
@@ -1419,17 +1423,45 @@ export async function reviewHomeworkSubmission(
     };
   }
 
-  await prisma.homeworkSubmission.update({
-    where: { id: submission.id },
-    data: {
-      feedback: parsed.data.feedback,
-      reviewedAt: new Date(),
-      reviewedByTeacherProfileId: actor.isAdmin
-        ? submission.homework.teacherProfileId
-        : actor.teacherProfileId,
-      status: "REVIEWED",
-    },
+  const reviewed = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `homework-submission:${submission.homeworkId}:${submission.studentProfileId}`,
+    );
+
+    const currentSubmission = await tx.homeworkSubmission.findUnique({
+      where: { id: submission.id },
+      select: { status: true },
+    });
+
+    if (
+      currentSubmission?.status !== "SUBMITTED" &&
+      currentSubmission?.status !== "REVIEWED"
+    ) {
+      return false;
+    }
+
+    await tx.homeworkSubmission.update({
+      where: { id: submission.id },
+      data: {
+        feedback: parsed.data.feedback,
+        reviewedAt: new Date(),
+        reviewedByTeacherProfileId: actor.isAdmin
+          ? submission.homework.teacherProfileId
+          : actor.teacherProfileId,
+        status: "REVIEWED",
+      },
+    });
+
+    return true;
   });
+
+  if (!reviewed) {
+    return {
+      ok: false,
+      message: "Esta resposta nao esta pronta para correcao.",
+    };
+  }
 
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");
@@ -1479,7 +1511,9 @@ export async function saveHomeworkReviewAnnotations(
         },
       },
       id: true,
+      homeworkId: true,
       status: true,
+      studentProfileId: true,
     },
   });
 
@@ -1512,16 +1546,41 @@ export async function saveHomeworkReviewAnnotations(
       ? parsed.data.annotations
       : null;
 
-  await prisma.homeworkSubmission.update({
-    where: { id: submission.id },
-    data: {
-      teacherAnnotations: annotations ?? Prisma.DbNull,
-    },
+  const saved = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `homework-submission:${submission.homeworkId}:${submission.studentProfileId}`,
+    );
+
+    const currentSubmission = await tx.homeworkSubmission.findUnique({
+      where: { id: submission.id },
+      select: { status: true },
+    });
+
+    if (!currentSubmission || currentSubmission.status === "DRAFT") {
+      return null;
+    }
+
+    await tx.homeworkSubmission.update({
+      where: { id: submission.id },
+      data: {
+        teacherAnnotations: annotations ?? Prisma.DbNull,
+      },
+    });
+
+    return currentSubmission.status;
   });
+
+  if (!saved) {
+    return {
+      ok: false,
+      message: "O aluno esta editando esta homework.",
+    };
+  }
 
   revalidatePath("/ava/teacher");
 
-  if (submission.status === "RETURNED" || submission.status === "REVIEWED") {
+  if (saved === "RETURNED" || saved === "REVIEWED") {
     revalidatePath("/ava/student");
   }
 
@@ -1565,7 +1624,9 @@ export async function allowHomeworkRedo(
       },
       id: true,
       feedback: true,
+      homeworkId: true,
       status: true,
+      studentProfileId: true,
     },
   });
 
@@ -1593,15 +1654,43 @@ export async function allowHomeworkRedo(
     };
   }
 
-  await prisma.homeworkSubmission.update({
-    where: { id: submission.id },
-    data: {
-      feedback: parsed.data.feedback ?? submission.feedback ?? null,
-      reviewedAt: null,
-      reviewedByTeacherProfileId: null,
-      status: "RETURNED",
-    },
+  const returned = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `homework-submission:${submission.homeworkId}:${submission.studentProfileId}`,
+    );
+
+    const currentSubmission = await tx.homeworkSubmission.findUnique({
+      where: { id: submission.id },
+      select: { status: true },
+    });
+
+    if (
+      currentSubmission?.status !== "SUBMITTED" &&
+      currentSubmission?.status !== "REVIEWED"
+    ) {
+      return false;
+    }
+
+    await tx.homeworkSubmission.update({
+      where: { id: submission.id },
+      data: {
+        feedback: parsed.data.feedback ?? submission.feedback ?? null,
+        reviewedAt: null,
+        reviewedByTeacherProfileId: null,
+        status: "RETURNED",
+      },
+    });
+
+    return true;
   });
+
+  if (!returned) {
+    return {
+      ok: false,
+      message: "Esta resposta nao esta pronta para ser devolvida.",
+    };
+  }
 
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");

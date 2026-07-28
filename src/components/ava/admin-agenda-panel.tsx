@@ -103,6 +103,7 @@ type AdminAgendaPanelProps = {
   initialUnitFilter?: SecretariaUnitFilter;
   lessons: AdminAgendaLessonRow[];
   logs: AdminAgendaLogRow[];
+  nowIso: string;
   students: AdminAgendaStudentRow[];
 };
 
@@ -118,6 +119,7 @@ type CalendarBlankCell = {
 };
 
 const AGENDA_YEAR = 2026;
+const SAO_PAULO_TIME_ZONE = "America/Sao_Paulo";
 
 const months = [
   { label: "Janeiro", shortLabel: "Jan", value: 1 },
@@ -152,12 +154,21 @@ const unitLabels: Record<FinancialUnit, string> = {
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
+  timeZone: SAO_PAULO_TIME_ZONE,
   year: "numeric",
 });
 
 const shortDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
+  timeZone: SAO_PAULO_TIME_ZONE,
+});
+
+const saoPauloDatePartsFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "numeric",
+  timeZone: SAO_PAULO_TIME_ZONE,
+  year: "numeric",
 });
 
 function clampMonth(month: number) {
@@ -209,8 +220,22 @@ function getDayKey(year: number, month: number, day: number) {
   return `${year}-${pad(month)}-${pad(day)}`;
 }
 
+function getSaoPauloDateParts(date: Date) {
+  const parts = saoPauloDatePartsFormatter.formatToParts(date);
+  const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value);
+
+  return {
+    day: getPart("day"),
+    month: getPart("month"),
+    year: getPart("year"),
+  };
+}
+
 function toDayKey(date: Date) {
-  return getDayKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  const parts = getSaoPauloDateParts(date);
+
+  return getDayKey(parts.year, parts.month, parts.day);
 }
 
 function parseDayKey(key: string) {
@@ -218,7 +243,7 @@ function parseDayKey(key: string) {
     .split("-")
     .map(Number);
 
-  return new Date(year, month - 1, day);
+  return new Date(Date.UTC(year, month - 1, day, 12));
 }
 
 function parseLessonDate(value: string) {
@@ -238,19 +263,31 @@ function formatShortDate(value: string) {
 }
 
 function getMonthDays(month: number): CalendarDayCell[] {
-  const lastDay = new Date(AGENDA_YEAR, month, 0).getDate();
+  const lastDay = new Date(Date.UTC(AGENDA_YEAR, month, 0)).getUTCDate();
 
   return Array.from({ length: lastDay }, (_, index) => {
     const day = index + 1;
-    const date = new Date(AGENDA_YEAR, month - 1, day);
+    const date = new Date(Date.UTC(AGENDA_YEAR, month - 1, day, 12));
 
     return {
       date,
       day,
       key: getDayKey(AGENDA_YEAR, month, day),
-      weekday: date.getDay(),
+      weekday: date.getUTCDay(),
     };
   });
+}
+
+function addDaysToDayKey(key: string, amount: number) {
+  const date = parseDayKey(key);
+
+  date.setUTCDate(date.getUTCDate() + amount);
+
+  return getDayKey(
+    date.getUTCFullYear(),
+    date.getUTCMonth() + 1,
+    date.getUTCDate(),
+  );
 }
 
 function getCalendarCells(month: number): (CalendarDayCell | CalendarBlankCell)[] {
@@ -522,17 +559,21 @@ export function AdminAgendaPanel({
   initialUnitFilter,
   lessons,
   logs,
+  nowIso,
   students,
 }: AdminAgendaPanelProps) {
   const router = useRouter();
   const initialFormUnit = getDefaultUnitForFilter(initialUnitFilter);
-  const today = useMemo(() => new Date(), []);
-  const todayIsAgendaYear = today.getFullYear() === AGENDA_YEAR;
+  const today = useMemo(
+    () => getSaoPauloDateParts(new Date(nowIso)),
+    [nowIso],
+  );
+  const todayIsAgendaYear = today.year === AGENDA_YEAR;
   const todayMonth = todayIsAgendaYear
-    ? today.getMonth() + 1
+    ? today.month
     : clampMonth(initialMonth);
   const todayKey = todayIsAgendaYear
-    ? toDayKey(today)
+    ? getDayKey(today.year, today.month, today.day)
     : getDayKey(AGENDA_YEAR, todayMonth, 1);
   const [activeMonth, setActiveMonth] = useState(todayMonth);
   const [selectedDayKey, setSelectedDayKey] = useState(todayKey);
@@ -546,7 +587,7 @@ export function AdminAgendaPanel({
   const [isPending, startTransition] = useTransition();
   const [isEditPending, startEditTransition] = useTransition();
   const selectedDate = parseDayKey(selectedDayKey);
-  const selectedWeekday = selectedDate.getDay();
+  const selectedWeekday = selectedDate.getUTCDay();
   const activeMonthLabel = getMonthLabel(activeMonth);
 
   const form = useForm<AdminAgendaScheduleCreateInput>({
@@ -585,16 +626,6 @@ export function AdminAgendaPanel({
   useEffect(() => {
     form.setValue("month", activeMonth);
   }, [activeMonth, form]);
-
-  useEffect(() => {
-    if (!selectedStudent) {
-      return;
-    }
-
-    editForm.reset(
-      buildEditValues(selectedStudent, lessons, activeMonth, selectedWeekday),
-    );
-  }, [activeMonth, editForm, lessons, selectedStudent, selectedWeekday]);
 
   const monthLessons = useMemo(
     () =>
@@ -647,12 +678,7 @@ export function AdminAgendaPanel({
       lesson.status === "SCHEDULED" || lesson.status === "MAKEUP_SCHEDULED",
   ).length;
   const upcomingLessons = useMemo(() => {
-    const start = parseDayKey(todayKey);
-    const end = parseDayKey(todayKey);
-
-    start.setHours(0, 0, 0, 0);
-    end.setDate(end.getDate() + 7);
-    end.setHours(23, 59, 59, 999);
+    const endKey = addDaysToDayKey(todayKey, 7);
 
     return lessons
       .filter((lesson) => {
@@ -660,9 +686,9 @@ export function AdminAgendaPanel({
           return false;
         }
 
-        const date = parseLessonDate(lesson.date);
+        const lessonKey = getLessonDayKey(lesson);
 
-        return date >= start && date <= end;
+        return lessonKey >= todayKey && lessonKey <= endKey;
       })
       .sort(sortLessons)
       .slice(0, 6);
@@ -716,6 +742,14 @@ export function AdminAgendaPanel({
   }
 
   function changeMonth(month: number) {
+    if (
+      selectedStudentId &&
+      editForm.formState.isDirty &&
+      !window.confirm("Descartar as alteracoes nao salvas da rotina?")
+    ) {
+      return;
+    }
+
     const nextMonth = clampMonth(month);
 
     setActiveMonth(nextMonth);
@@ -735,7 +769,10 @@ export function AdminAgendaPanel({
       ? selectedEditWeekdays.filter((item) => item !== weekday)
       : [...selectedEditWeekdays, weekday].sort((left, right) => left - right);
 
-    editForm.setValue("weekdays", nextWeekdays, { shouldValidate: true });
+    editForm.setValue("weekdays", nextWeekdays, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   }
 
   function prepareFormForSelectedDay() {
@@ -746,10 +783,22 @@ export function AdminAgendaPanel({
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function openStudent(studentId: string) {
+  function openStudent(
+    studentId: string,
+    targetMonth = activeMonth,
+    targetWeekday = selectedWeekday,
+  ) {
     const student = students.find((item) => item.id === studentId);
 
     if (!student) {
+      return;
+    }
+
+    if (
+      selectedStudentId &&
+      editForm.formState.isDirty &&
+      !window.confirm("Descartar as alteracoes nao salvas da rotina?")
+    ) {
       return;
     }
 
@@ -757,7 +806,7 @@ export function AdminAgendaPanel({
     setEditMessage(null);
     setListMessage(null);
     editForm.reset(
-      buildEditValues(student, lessons, activeMonth, selectedWeekday),
+      buildEditValues(student, lessons, targetMonth, targetWeekday),
     );
   }
 
@@ -794,13 +843,14 @@ export function AdminAgendaPanel({
 
   const onEditSubmit = editForm.handleSubmit((values) => {
     setEditMessage(null);
+    const submittedValues: AdminAgendaStudentUpdateInput = {
+      ...values,
+      month: activeMonth,
+      year: AGENDA_YEAR,
+    };
 
     startEditTransition(async () => {
-      const result = await updateAgendaStudentSchedule({
-        ...values,
-        month: activeMonth,
-        year: AGENDA_YEAR,
-      });
+      const result = await updateAgendaStudentSchedule(submittedValues);
 
       if (!result.ok) {
         if (result.errors) {
@@ -817,6 +867,7 @@ export function AdminAgendaPanel({
         return;
       }
 
+      editForm.reset(submittedValues);
       setEditMessage(result.message);
       router.refresh();
     });
@@ -835,19 +886,22 @@ export function AdminAgendaPanel({
       return;
     }
 
-    editForm.setValue("isActive", false);
+    editForm.setValue("isActive", false, { shouldDirty: true });
     editForm.handleSubmit((values) => {
+      const submittedValues: AdminAgendaStudentUpdateInput = {
+        ...values,
+        isActive: false,
+        month: activeMonth,
+        year: AGENDA_YEAR,
+      };
+
       startEditTransition(async () => {
-        const result = await updateAgendaStudentSchedule({
-          ...values,
-          isActive: false,
-          month: activeMonth,
-          year: AGENDA_YEAR,
-        });
+        const result = await updateAgendaStudentSchedule(submittedValues);
 
         setEditMessage(result.message);
 
         if (result.ok) {
+          editForm.reset(submittedValues);
           router.refresh();
         }
       });
@@ -1019,7 +1073,11 @@ export function AdminAgendaPanel({
                       onClick={() => {
                         setActiveMonth(lesson.month);
                         setSelectedDayKey(getLessonDayKey(lesson));
-                        openStudent(lesson.studentId);
+                        openStudent(
+                          lesson.studentId,
+                          lesson.month,
+                          lesson.weekday,
+                        );
                       }}
                     >
                       <span
@@ -1281,7 +1339,13 @@ export function AdminAgendaPanel({
                         <button
                           type="button"
                           className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          onClick={() => openStudent(lesson.studentId)}
+                          onClick={() =>
+                            openStudent(
+                              lesson.studentId,
+                              lesson.month,
+                              lesson.weekday,
+                            )
+                          }
                         >
                           <span
                             className={cn(

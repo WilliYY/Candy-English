@@ -6,6 +6,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { getSafeAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { CANDY_STUDENT_WHATSAPP_URL } from "@/lib/whatsapp";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
@@ -17,18 +18,6 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-
-function getSafeCallbackUrl(callbackUrl: string | null) {
-  if (
-    callbackUrl &&
-    (callbackUrl === "/ava" || callbackUrl.startsWith("/ava/")) &&
-    !callbackUrl.startsWith("/ava/login")
-  ) {
-    return callbackUrl;
-  }
-
-  return "/ava";
-}
 
 export function LoginForm({
   maintenanceMode,
@@ -66,7 +55,7 @@ export function LoginForm({
         return;
       }
 
-      router.replace(getSafeCallbackUrl(searchParams.get("callbackUrl")));
+      router.replace(getSafeAvaCallbackUrl(searchParams.get("callbackUrl")));
       router.refresh();
     } catch {
       setAuthError("Nao foi possivel entrar agora.");

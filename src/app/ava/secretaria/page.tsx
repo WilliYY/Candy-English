@@ -17,6 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
+import { buildAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { requireAvaRole } from "@/lib/authorization";
 import {
   canAccessSecretariaFeature,
@@ -177,11 +178,11 @@ function getUnitFilterClassName(value: string, isActive: boolean) {
 }
 
 export default async function SecretariaPage({ searchParams }: SecretariaPageProps) {
+  const params = searchParams ? await searchParams : undefined;
   const session = await requireAvaRole(
     ["ADMIN", "TEACHER"],
-    "/ava/secretaria",
+    buildAvaCallbackUrl("/ava/secretaria", params, ["unit"]),
   );
-  const params = searchParams ? await searchParams : undefined;
   const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
   const unitLabel = SECRETARIA_UNIT_LABELS[unitFilter];
   const permission = SECRETARIA_PERMISSION_MATRIX[session.user.role];

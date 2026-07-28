@@ -7,6 +7,7 @@ import {
 import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import { syncEnvironmentAdminCredentials } from "@/lib/admin-credentials";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
+import { buildAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { requireAvaRole } from "@/lib/authorization";
 import { CANDY_XP_REWARDS } from "@/lib/candy-xp";
 import {
@@ -58,9 +59,16 @@ const secretariaAdminTasks = new Set<AdminTask>([
 ]);
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
-  const session = await requireAvaRole(["ADMIN"], "/ava/admin");
-  const prisma = getPrisma();
   const params = searchParams ? await searchParams : undefined;
+  const session = await requireAvaRole(
+    ["ADMIN"],
+    buildAvaCallbackUrl("/ava/admin", params, [
+      "task",
+      "unit",
+      "preStatus",
+    ]),
+  );
+  const prisma = getPrisma();
   const requestedTask = Array.isArray(params?.task)
     ? params?.task[0]
     : params?.task;

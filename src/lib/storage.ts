@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
-import type { Dirent } from "node:fs";
-import { mkdir, readdir, stat, unlink, writeFile } from "node:fs/promises";
+import { constants, type Dirent } from "node:fs";
+import {
+  access,
+  mkdir,
+  readdir,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import path from "node:path";
 import {
   estimatePdfPageCount,
@@ -20,6 +27,22 @@ const allowedHomeworkAssetTypes = new Set([
   "image/png",
   "image/webp",
 ]);
+
+export class StorageValidationError extends Error {}
+
+export function isMissingStorageFileError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: string }).code === "ENOENT"
+  );
+}
+
+export async function assertStorageAvailable() {
+  await mkdir(STORAGE_ROOT, { recursive: true });
+  await access(STORAGE_ROOT, constants.R_OK | constants.W_OK);
+}
 
 export function getStoragePath(relativePath: string) {
   const normalized = path.normalize(relativePath);
@@ -215,11 +238,11 @@ export async function saveContractPdf(file: File) {
 
 export async function saveAvatarImage(file: File) {
   if (!allowedAvatarTypes.has(file.type)) {
-    throw new Error("Envie uma imagem PNG, JPG ou WebP.");
+    throw new StorageValidationError("Envie uma imagem PNG, JPG ou WebP.");
   }
 
   if (file.size <= 0 || file.size > AVATAR_MAX_BYTES) {
-    throw new Error("A foto precisa ter ate 2 MB.");
+    throw new StorageValidationError("A foto precisa ter ate 2 MB.");
   }
 
   const extension = file.type === "image/png" ? ".png" : file.type === "image/webp" ? ".webp" : ".jpg";

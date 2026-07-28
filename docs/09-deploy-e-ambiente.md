@@ -63,7 +63,7 @@ Operacao por agente:
 
 - O app publica porta em `APP_HOST_BIND`, por padrao `127.0.0.1`.
 - `HOSTNAME=0.0.0.0` dentro do container permite healthcheck e acesso pela rede Docker.
-- Docker usa healthcheck em `/api/health`.
+- Docker usa healthcheck em `/api/health`; a rota so retorna `200` quando a aplicacao consegue consultar PostgreSQL e possui leitura/escrita no storage persistente. Falha em qualquer dependencia retorna `503` sem expor detalhes internos.
 - Logs Docker usam rotacao `max-size=10m` e `max-file=3`.
 - Containers possuem limites/reservas de memoria.
 - `next.config.ts` define Server Actions com limite de 15 MB para upload de homework interativo.

@@ -217,8 +217,53 @@ a {
   animation: catty-pop 420ms ease-out both;
 }
 
+.catty-widget {
+  --catty-widget-bottom: 1rem;
+  --catty-widget-gap: 1rem;
+  --catty-widget-open-launcher: 3.5rem;
+  bottom: calc(
+    var(--catty-widget-bottom) + env(safe-area-inset-bottom, 0px)
+  );
+  gap: var(--catty-widget-gap);
+}
+
+.catty-widget--with-whatsapp {
+  --catty-widget-bottom: 5rem;
+}
+
 .catty-chat-panel {
+  height: min(
+    590px,
+    calc(
+      100dvh - var(--catty-widget-bottom) -
+        env(safe-area-inset-bottom, 0px) - var(--catty-widget-gap) -
+        var(--catty-widget-open-launcher) - 0.5rem
+    )
+  );
   isolation: isolate;
+}
+
+@media (min-width: 640px) {
+  .catty-widget {
+    --catty-widget-bottom: 1.25rem;
+    --catty-widget-gap: 1.5rem;
+    --catty-widget-open-launcher: 4rem;
+  }
+
+  .catty-widget--with-whatsapp {
+    --catty-widget-bottom: 6rem;
+  }
+
+  .catty-chat-panel {
+    height: min(
+      620px,
+      calc(
+        100dvh - var(--catty-widget-bottom) -
+          env(safe-area-inset-bottom, 0px) - var(--catty-widget-gap) -
+          var(--catty-widget-open-launcher) - 0.75rem
+      )
+    );
+  }
 }
 
 .catty-quick-replies {

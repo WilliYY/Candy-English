@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { Prisma } from "@/generated/prisma/client";
+import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { normalizeTinyTextAnswer } from "@/lib/interactive-homework-fields";
@@ -405,24 +406,61 @@ export async function saveInteractiveHomeworkDraft(
     allowedFields,
   );
 
-  await prisma.homeworkSubmission.upsert({
-    where: {
-      homeworkId_studentProfileId: {
+  const saved = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `homework-submission:${homework.id}:${studentProfile.id}`,
+    );
+
+    const currentSubmission = await tx.homeworkSubmission.findUnique({
+      where: {
+        homeworkId_studentProfileId: {
+          homeworkId: homework.id,
+          studentProfileId: studentProfile.id,
+        },
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    if (
+      currentSubmission?.status === "SUBMITTED" ||
+      currentSubmission?.status === "REVIEWED"
+    ) {
+      return false;
+    }
+
+    await tx.homeworkSubmission.upsert({
+      where: {
+        homeworkId_studentProfileId: {
+          homeworkId: homework.id,
+          studentProfileId: studentProfile.id,
+        },
+      },
+      create: {
+        answers,
         homeworkId: homework.id,
+        status: "DRAFT",
         studentProfileId: studentProfile.id,
       },
-    },
-    create: {
-      answers,
-      homeworkId: homework.id,
-      status: "DRAFT",
-      studentProfileId: studentProfile.id,
-    },
-    update: {
-      answers,
-      status: "DRAFT",
-    },
+      update: {
+        answers,
+        status: "DRAFT",
+      },
+    });
+
+    return true;
   });
+
+  if (!saved) {
+    return {
+      ok: false,
+      message: isLessonEntity
+        ? "Esta aula ja foi concluida."
+        : `Esta ${entityLabel} ja foi entregue.`,
+    };
+  }
 
   return {
     ok: true,
@@ -534,29 +572,62 @@ export async function submitInteractiveHomework(
     };
   }
 
-  await prisma.homeworkSubmission.upsert({
-    where: {
-      homeworkId_studentProfileId: {
-        homeworkId: homework.id,
-        studentProfileId: studentProfile.id,
+  const submitted = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `homework-submission:${homework.id}:${studentProfile.id}`,
+    );
+
+    const currentSubmission = await tx.homeworkSubmission.findUnique({
+      where: {
+        homeworkId_studentProfileId: {
+          homeworkId: homework.id,
+          studentProfileId: studentProfile.id,
+        },
       },
-    },
-    create: {
-      answers,
-      homeworkId: homework.id,
-      status: "SUBMITTED",
-      studentProfileId: studentProfile.id,
-    },
-    update: {
-      answers,
-      feedback: null,
-      reviewedAt: null,
-      reviewedByTeacherProfileId: null,
-      status: "SUBMITTED",
-      submittedAt: new Date(),
-      teacherAnnotations: Prisma.DbNull,
-    },
+      select: {
+        status: true,
+      },
+    });
+
+    if (currentSubmission?.status === "REVIEWED") {
+      return false;
+    }
+
+    await tx.homeworkSubmission.upsert({
+      where: {
+        homeworkId_studentProfileId: {
+          homeworkId: homework.id,
+          studentProfileId: studentProfile.id,
+        },
+      },
+      create: {
+        answers,
+        homeworkId: homework.id,
+        status: "SUBMITTED",
+        studentProfileId: studentProfile.id,
+        submittedAt: new Date(),
+      },
+      update: {
+        answers,
+        feedback: null,
+        reviewedAt: null,
+        reviewedByTeacherProfileId: null,
+        status: "SUBMITTED",
+        submittedAt: new Date(),
+        teacherAnnotations: Prisma.DbNull,
+      },
+    });
+
+    return true;
   });
+
+  if (!submitted) {
+    return {
+      ok: false,
+      message: `Esta ${entityLabel} ja foi corrigida.`,
+    };
+  }
 
   revalidatePath("/ava/student");
   revalidatePath("/ava/teacher");
@@ -615,14 +686,43 @@ export async function reopenInteractiveHomeworkDraft(input: {
     };
   }
 
-  await prisma.homeworkSubmission.update({
-    where: {
-      id: existingSubmission.id,
-    },
-    data: {
-      status: "DRAFT",
-    },
+  const reopened = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(
+      tx,
+      `homework-submission:${homework.id}:${studentProfile.id}`,
+    );
+
+    const currentSubmission = await tx.homeworkSubmission.findUnique({
+      where: {
+        id: existingSubmission.id,
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    if (currentSubmission?.status !== "SUBMITTED") {
+      return false;
+    }
+
+    await tx.homeworkSubmission.update({
+      where: {
+        id: existingSubmission.id,
+      },
+      data: {
+        status: "DRAFT",
+      },
+    });
+
+    return true;
   });
+
+  if (!reopened) {
+    return {
+      ok: false,
+      message: `Esta ${entityLabel} nao pode ser reaberta.`,
+    };
+  }
 
   revalidatePath("/ava/student");
   revalidatePath("/ava/teacher");

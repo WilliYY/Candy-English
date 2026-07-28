@@ -229,6 +229,24 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
+const saoPauloDatePartsFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "numeric",
+  month: "numeric",
+  timeZone: "America/Sao_Paulo",
+  year: "numeric",
+});
+
+function getSaoPauloYearMonth(date: Date) {
+  const parts = saoPauloDatePartsFormatter.formatToParts(date);
+  const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value);
+
+  return {
+    month: getPart("month"),
+    year: getPart("year"),
+  };
+}
+
 const roleStyles: Record<Role, string> = {
   ADMIN: "border-amber-200 bg-amber-50 text-amber-900",
   TEACHER: "border-pink-200 bg-pink-50 text-pink-800",
@@ -1420,6 +1438,13 @@ export function AdminUsersPanel({
   teachers,
   users,
 }: AdminUsersPanelProps) {
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const saoPauloNow = getSaoPauloYearMonth(now);
+  const initialAgendaPanelMonth =
+    saoPauloNow.year === 2026 ? saoPauloNow.month : initialAgendaMonth;
+  const initialFinancePanelMonth =
+    saoPauloNow.year === 2026 ? saoPauloNow.month : initialFinanceMonth;
   const totals = users.reduce(
     (accumulator, user) => {
       accumulator.total += 1;
@@ -1731,16 +1756,18 @@ export function AdminUsersPanel({
               initialUnitFilter={secretariaUnitFilter}
               logs={financeLogs}
               students={financeStudents}
-              initialMonth={initialFinanceMonth}
+              initialMonth={initialFinancePanelMonth}
+              nowIso={nowIso}
             />
           ) : null}
 
           {activeTask === "agenda" ? (
             <AdminAgendaPanel
-              initialMonth={initialAgendaMonth}
+              initialMonth={initialAgendaPanelMonth}
               initialUnitFilter={secretariaUnitFilter}
               lessons={agendaLessons}
               logs={agendaLogs}
+              nowIso={nowIso}
               students={agendaStudents}
             />
           ) : null}

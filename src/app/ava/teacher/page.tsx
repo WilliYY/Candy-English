@@ -5,6 +5,7 @@ import {
   TeacherWorkspace,
 } from "@/components/ava/teacher-workspace";
 import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
+import { buildAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { requireAvaRole } from "@/lib/authorization";
 import {
   CANDY_XP_REWARDS,
@@ -53,9 +54,16 @@ const secretariaTeacherTasks = new Set<TeacherTask>([
 ]);
 
 export default async function TeacherPage({ searchParams }: TeacherPageProps) {
-  const session = await requireAvaRole(["ADMIN", "TEACHER"], "/ava/teacher");
-  const prisma = getPrisma();
   const params = searchParams ? await searchParams : undefined;
+  const session = await requireAvaRole(
+    ["ADMIN", "TEACHER"],
+    buildAvaCallbackUrl("/ava/teacher", params, [
+      "task",
+      "unit",
+      "preStatus",
+    ]),
+  );
+  const prisma = getPrisma();
   const requestedTask = Array.isArray(params?.task)
     ? params?.task[0]
     : params?.task;

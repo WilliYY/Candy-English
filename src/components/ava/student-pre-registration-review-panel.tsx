@@ -35,6 +35,7 @@ import {
   type ReactNode,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -421,12 +422,14 @@ function createFormStateFromRequest(
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
+  timeZone: "America/Sao_Paulo",
   year: "numeric",
 });
 
 const timeFormatter = new Intl.DateTimeFormat("pt-BR", {
   hour: "2-digit",
   minute: "2-digit",
+  timeZone: "America/Sao_Paulo",
 });
 
 const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -441,7 +444,21 @@ function formatDate(value: string | null) {
 
   if (Number.isNaN(date.getTime())) return null;
 
-  return dateFormatter.format(date);
+  const displayDate =
+    date.getUTCHours() === 0 &&
+    date.getUTCMinutes() === 0 &&
+    date.getUTCSeconds() === 0
+      ? new Date(
+          Date.UTC(
+            date.getUTCFullYear(),
+            date.getUTCMonth(),
+            date.getUTCDate(),
+            12,
+          ),
+        )
+      : date;
+
+  return dateFormatter.format(displayDate);
 }
 
 function formatDateTime(value: string | null) {
@@ -728,24 +745,76 @@ function ModalPortal({
   labelledBy: string;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => {
+      dialogRef.current?.focus();
+    });
 
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
+      restoreFocusRef.current?.focus();
     };
   }, []);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape" && !closeDisabled) {
+        event.preventDefault();
+        event.stopPropagation();
         onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) {
+        return;
+      }
+
+      const dialog = dialogRef.current;
+      const focusableElements = Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (
+        event.shiftKey &&
+        (activeElement === firstElement ||
+          activeElement === dialog ||
+          !dialog.contains(activeElement))
+      ) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (
+        !event.shiftKey &&
+        (activeElement === lastElement || !dialog.contains(activeElement))
+      ) {
+        event.preventDefault();
+        firstElement.focus();
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [closeDisabled, onClose]);
 
   return createPortal(
@@ -758,9 +827,11 @@ function ModalPortal({
       }}
     >
       <section
+        ref={dialogRef}
         aria-labelledby={labelledBy}
         aria-modal="true"
         role="dialog"
+        tabIndex={-1}
         className="flex max-h-[calc(100dvh-1rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-primary/15 bg-[#fefbfa] shadow-[0_24px_80px_rgba(44,19,56,0.28)] sm:max-h-[calc(100dvh-2rem)]"
       >
         {children}

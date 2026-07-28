@@ -969,15 +969,15 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   return (
     <div
-      className={`pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end gap-4 sm:right-5 sm:max-w-none sm:gap-6 ${
-        hasWhatsAppWidget ? "bottom-20 sm:bottom-24" : "bottom-4 sm:bottom-5"
+      className={`catty-widget pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end sm:right-5 sm:max-w-none ${
+        hasWhatsAppWidget ? "catty-widget--with-whatsapp" : ""
       }`}
     >
       {open && canUseCattyChat ? (
         <section
           aria-label="Conversa com a Catty"
           role="region"
-          className="catty-chat-panel pointer-events-auto grid h-[min(590px,calc(100dvh-6.75rem))] w-[min(430px,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[1.35rem] border border-primary/15 bg-card shadow-2xl shadow-primary/20 sm:h-[min(620px,calc(100dvh-7.25rem))] sm:w-[min(430px,calc(100vw-2rem))]"
+          className="catty-chat-panel pointer-events-auto grid w-[min(430px,calc(100vw-1rem))] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[1.35rem] border border-primary/15 bg-card shadow-2xl shadow-primary/20 sm:w-[min(430px,calc(100vw-2rem))]"
         >
           <header className="relative overflow-hidden bg-[linear-gradient(135deg,#412a4c_0%,#55315f_58%,#6d3971_100%)] px-4 py-3 text-primary-foreground">
             <div className="relative flex items-center justify-between gap-3">

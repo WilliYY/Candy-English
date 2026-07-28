@@ -1,4 +1,5 @@
 const baseUrl = process.env.AUDIT_BASE_URL ?? "http://localhost:3000";
+const REQUEST_TIMEOUT_MS = 15_000;
 
 type SmokeCheck = {
   expect: (response: Response) => boolean | Promise<boolean>;
@@ -11,7 +12,22 @@ const checks: SmokeCheck[] = [
   {
     name: "health",
     path: "/api/health",
-    expect: (response) => response.ok,
+    expect: async (response) => {
+      const payload = (await response.json().catch(() => null)) as {
+        checks?: {
+          database?: boolean;
+          storage?: boolean;
+        };
+        ok?: boolean;
+      } | null;
+
+      return (
+        response.ok &&
+        payload?.ok === true &&
+        payload.checks?.database === true &&
+        payload.checks?.storage === true
+      );
+    },
   },
   {
     name: "site home",
@@ -37,6 +53,42 @@ const checks: SmokeCheck[] = [
     expect: (response) => response.ok,
   },
   {
+    name: "site sobre",
+    path: "/sobre",
+    expect: (response) => response.ok,
+  },
+  {
+    name: "site metodologia",
+    path: "/metodologia",
+    expect: (response) => response.ok,
+  },
+  {
+    name: "site planos",
+    path: "/planos",
+    expect: (response) => response.ok,
+  },
+  {
+    name: "site contato",
+    path: "/contato",
+    expect: (response) => response.ok,
+  },
+  {
+    name: "site visits",
+    path: "/api/site-visits",
+    expect: async (response) => {
+      const payload = (await response.json().catch(() => null)) as {
+        total?: number | null;
+      } | null;
+
+      return response.ok && typeof payload?.total === "number";
+    },
+  },
+  {
+    name: "unknown route",
+    path: "/rota-que-nao-existe",
+    expect: (response) => response.status === 404,
+  },
+  {
     name: "admin redirects to login",
     path: "/ava/admin",
     redirect: "manual",
@@ -59,6 +111,7 @@ async function main() {
   for (const check of checks) {
     const response = await fetch(buildUrl(check.path), {
       redirect: check.redirect ?? "follow",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     const passed = await check.expect(response);
 
