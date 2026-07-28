@@ -1276,12 +1276,10 @@ main:has(.site-institutional-page) + .candy-footer {
   0%,
   100% {
     box-shadow: 0 18px 34px rgb(65 42 76 / 0.2);
-    transform: translate3d(0, 0, 0);
   }
 
   50% {
     box-shadow: 0 22px 42px rgb(65 42 76 / 0.28);
-    transform: translate3d(0, -2px, 0);
   }
 }
 
