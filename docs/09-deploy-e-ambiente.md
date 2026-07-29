@@ -82,7 +82,7 @@ Operacao por agente:
 - Apagar volumes remove banco ou uploads.
 - Rodar `seed` com `ADMIN_RESET_PASSWORD=true` sem intencao pode trocar senha.
 - Pular migration pode quebrar paginas que dependem de tabelas novas.
-- Ativar Gemini/OpenAI sem revisar custo, privacidade e volume pode gerar despesa; Catty tem limite simples por IP, mas volume alto pede rate limit dedicado.
+- Ativar Gemini/OpenAI sem revisar custo, privacidade e volume pode gerar despesa; Catty tem limite simples por conta autenticada em memoria, mas volume alto ou mais de uma replica pede rate limit compartilhado dedicado.
 - Pular a migration do Catty Learning Center ou do feedback de treino quebra admin/teacher e a rota/widget da Catty quando consultam memoria aprovada ou salvam feedback.
 - Configurar `PDF_OPTIMIZATION_PRESET=screen` pode reduzir mais, mas tambem pode prejudicar leitura em materiais do Canva; manter `ebook` salvo motivo claro.
 - Aumentar `PDF_MAX_UPLOAD_MB` acima do limite de Server Actions nao funciona sem mudar `next.config.ts`.

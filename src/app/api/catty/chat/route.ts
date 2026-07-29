@@ -99,16 +99,6 @@ const RATE_LIMIT_MAX_REQUESTS = 20;
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 type CattyAiSource = "gemini" | "openai";
 
-function getClientIp(request: NextRequest) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() || "unknown";
-  }
-
-  return request.headers.get("x-real-ip")?.trim() || "unknown";
-}
-
 function isRateLimited(key: string) {
   const now = Date.now();
   const current = rateLimitStore.get(key);
@@ -848,7 +838,7 @@ export async function POST(request: NextRequest) {
 
   const { context, history, message } = parsed.data;
 
-  if (isRateLimited(`${session.user.id}:${getClientIp(request)}`)) {
+  if (isRateLimited(session.user.id)) {
     return NextResponse.json(
       {
         ok: false,

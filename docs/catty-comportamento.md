@@ -56,7 +56,7 @@ Esses cenarios entram no prompt como `Cenarios de repertorio da Catty`, para Gem
 - Usar feedback do widget apenas como fila de revisao; Teacher sugere, Admin aprova globalmente.
 - Usar auto-sugestao apenas como fila pendente; nunca aprender conteudo automaticamente direto do usuario.
 - Impedir envio duplicado enquanto uma resposta estiver em andamento, inclusive em dois toques muito rapidos no mobile.
-- Aplicar o limite de mensagens por usuario autenticado e IP, sem fazer alunos diferentes da mesma escola dividirem a mesma cota.
+- Aplicar o limite de mensagens por usuario autenticado, sem confiar em cabecalhos de IP do proxy e sem fazer alunos diferentes dividirem a mesma cota.
 - No mobile, manter o balao temporario ao lado do launcher e afastado dos botoes principais e do WhatsApp; o painel desconta safe area, launcher, gap e deslocamento do WhatsApp da altura dinamica do viewport, mantendo rolagem interna sem sair pelo topo em telas baixas.
 
 ## Continuidade conversacional
