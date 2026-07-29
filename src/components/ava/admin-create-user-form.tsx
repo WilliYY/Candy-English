@@ -5,6 +5,8 @@ import {
   AtSign,
   BrainCircuit,
   ClipboardCheck,
+  Eye,
+  EyeOff,
   CalendarDays,
   GraduationCap,
   KeyRound,
@@ -108,6 +110,7 @@ const defaultValues: AdminCreateUserInput = {
   bio: "",
   birthDate: "",
   cattyContext: "",
+  confirmPassword: "",
   email: "",
   guardianDocument: "",
   level: "",
@@ -214,6 +217,11 @@ export function AdminCreateUserForm({
 }: AdminCreateUserFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
+  const [messageKind, setMessageKind] = useState<"error" | "success" | null>(
+    null,
+  );
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
   const formDefaultValues = useMemo(
     () => ({
@@ -240,31 +248,51 @@ export function AdminCreateUserForm({
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
+    setMessageKind(null);
 
     startTransition(async () => {
-      const result = await createAvaUser({
-        ...values,
-        role,
-      });
+      try {
+        const result = await createAvaUser({
+          ...values,
+          role,
+        });
 
-      if (!result.ok) {
-        if (result.errors) {
-          Object.entries(result.errors).forEach(([field, fieldMessage]) => {
-            if (fieldMessage) {
-              form.setError(field as keyof AdminCreateUserInput, {
-                message: fieldMessage,
-              });
-            }
-          });
+        if (!result.ok) {
+          if (result.errors) {
+            Object.entries(result.errors).forEach(([field, fieldMessage]) => {
+              if (fieldMessage) {
+                form.setError(field as keyof AdminCreateUserInput, {
+                  message: fieldMessage,
+                });
+              }
+            });
+          }
+
+          setMessageKind("error");
+          setMessage(result.message);
+          return;
         }
 
+        form.reset(formDefaultValues);
+        setShowConfirmPassword(false);
+        setShowPassword(false);
+        setMessageKind("success");
         setMessage(result.message);
-        return;
-      }
+        router.refresh();
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "";
+        const pageWasUpdated =
+          /server action.*not found|failed to find server action|unrecognizedactionerror/i.test(
+            errorMessage,
+          );
 
-      form.reset(formDefaultValues);
-      setMessage(result.message);
-      router.refresh();
+        setMessageKind("error");
+        setMessage(
+          pageWasUpdated
+            ? "O sistema foi atualizado enquanto esta tela estava aberta. Recarregue a pagina e tente novamente."
+            : "Nao foi possivel concluir o cadastro. Seus dados continuam no formulario; tente novamente.",
+        );
+      }
     });
   });
 
@@ -342,7 +370,7 @@ export function AdminCreateUserForm({
             </div>
           ) : null}
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(220px,0.8fr)]">
+          <div className="grid gap-4 md:grid-cols-2">
             <Field
               className={cn("rounded-lg border p-3", roleTone.field)}
               data-invalid={Boolean(form.formState.errors.name)}
@@ -388,17 +416,87 @@ export function AdminCreateUserForm({
               <FieldLabel htmlFor="admin-user-password">
                 Senha provisoria
               </FieldLabel>
-              <Input
-                id="admin-user-password"
-                type="password"
-                autoComplete="new-password"
-                aria-invalid={Boolean(form.formState.errors.password)}
-                disabled={isPending}
-                placeholder="Ex: candy123"
-                {...form.register("password")}
-              />
+              <div className="relative">
+                <Input
+                  id="admin-user-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(form.formState.errors.password)}
+                  className="pr-12"
+                  disabled={isPending}
+                  placeholder="Ex: candy123"
+                  {...form.register("password")}
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                  aria-pressed={showPassword}
+                  className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-primary/62 transition hover:bg-primary/8 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-45"
+                  disabled={isPending}
+                  onClick={() => setShowPassword((current) => !current)}
+                  title={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? (
+                    <EyeOff aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="size-4" />
+                  )}
+                </button>
+              </div>
               <FieldDescription>Envie por um canal seguro.</FieldDescription>
               <FieldError errors={[form.formState.errors.password]} />
+            </Field>
+
+            <Field
+              className={cn("rounded-lg border p-3", roleTone.field)}
+              data-invalid={Boolean(form.formState.errors.confirmPassword)}
+            >
+              <FieldLabel htmlFor="admin-user-confirm-password">
+                Confirmar senha
+              </FieldLabel>
+              <div className="relative">
+                <Input
+                  id="admin-user-confirm-password"
+                  type={showConfirmPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  aria-invalid={Boolean(
+                    form.formState.errors.confirmPassword,
+                  )}
+                  className="pr-12"
+                  disabled={isPending}
+                  placeholder="Digite a mesma senha"
+                  {...form.register("confirmPassword")}
+                />
+                <button
+                  type="button"
+                  aria-label={
+                    showConfirmPassword
+                      ? "Ocultar confirmacao"
+                      : "Mostrar confirmacao"
+                  }
+                  aria-pressed={showConfirmPassword}
+                  className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-primary/62 transition hover:bg-primary/8 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-45"
+                  disabled={isPending}
+                  onClick={() =>
+                    setShowConfirmPassword((current) => !current)
+                  }
+                  title={
+                    showConfirmPassword
+                      ? "Ocultar confirmacao"
+                      : "Mostrar confirmacao"
+                  }
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff aria-hidden="true" className="size-4" />
+                  ) : (
+                    <Eye aria-hidden="true" className="size-4" />
+                  )}
+                </button>
+              </div>
+              <FieldDescription>As duas senhas devem ser iguais.</FieldDescription>
+              <FieldError
+                errors={[form.formState.errors.confirmPassword]}
+              />
             </Field>
           </div>
         </section>
@@ -645,93 +743,17 @@ export function AdminCreateUserForm({
           </section>
         ) : null}
 
-        {role === "TEACHER" ? (
-          <section className="rounded-lg border border-pink-200/85 bg-gradient-to-br from-white via-pink-50/45 to-sky-50/50 p-4 shadow-[0_16px_44px_rgba(190,24,93,0.1)]">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="flex min-w-0 items-center gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-pink-600 text-white shadow-[0_10px_24px_rgba(190,24,93,0.18)]">
-                  <GraduationCap aria-hidden="true" className="size-5" />
-                </span>
-                <span className="min-w-0">
-                  <strong className="block text-base text-primary">
-                    Perfil da teacher
-                  </strong>
-                  <span className="mt-1 block text-sm text-muted-foreground">
-                    Bio interna para organizar o atendimento pedagogico.
-                  </span>
-                </span>
-              </span>
-              <span className="w-fit rounded-full border border-pink-200 bg-pink-50 px-3 py-1 text-xs font-bold uppercase text-pink-950">
-                Pedagogico
-              </span>
-            </div>
-
-            <div className="mb-4 grid gap-3 md:grid-cols-3">
-              {[
-                {
-                  Icon: GraduationCap,
-                  label: "Perfil",
-                  value: "Resumo da teacher",
-                },
-                {
-                  Icon: UsersRound,
-                  label: "Vinculos",
-                  value: "Alunos aparecem depois",
-                },
-                {
-                  Icon: ClipboardCheck,
-                  label: "Rotina",
-                  value: "Aulas, tarefas e feedback",
-                },
-              ].map(({ Icon, label, value }) => (
-                <span
-                  key={label}
-                  className="flex min-w-0 items-start gap-3 rounded-lg border border-pink-200/70 bg-white/82 p-3 text-sm shadow-sm"
-                >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-pink-100 text-pink-900">
-                    <Icon aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[0.68rem] font-bold uppercase tracking-[0.08em] text-pink-900/70">
-                      {label}
-                    </span>
-                    <strong className="mt-0.5 block leading-5 text-primary">
-                      {value}
-                    </strong>
-                  </span>
-                </span>
-              ))}
-            </div>
-
-            <Field
-              className="rounded-lg border border-pink-200/75 bg-white/90 p-3 shadow-sm"
-              data-invalid={Boolean(form.formState.errors.bio)}
-            >
-              <span className="mb-2 flex items-center gap-2 text-primary">
-                <GraduationCap aria-hidden="true" className="size-5" />
-                <FieldLabel htmlFor="admin-user-bio">Bio da teacher</FieldLabel>
-              </span>
-              <Textarea
-                id="admin-user-bio"
-                aria-invalid={Boolean(form.formState.errors.bio)}
-                disabled={isPending}
-                placeholder="Ex: trabalha bem com kids, foco em conversacao e feedback curto."
-                className="min-h-28 bg-white"
-                {...form.register("bio")}
-              />
-              <FieldDescription>
-                Use uma nota curta para a equipe encontrar o perfil certo.
-              </FieldDescription>
-              <FieldError errors={[form.formState.errors.bio]} />
-            </Field>
-          </section>
-        ) : null}
       </FieldGroup>
 
       {message ? (
         <p
-          className="rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground"
-          role="status"
+          className={cn(
+            "rounded-lg border px-4 py-3 text-sm",
+            messageKind === "error"
+              ? "border-red-200 bg-red-50 text-red-800"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800",
+          )}
+          role={messageKind === "error" ? "alert" : "status"}
         >
           {message}
         </p>

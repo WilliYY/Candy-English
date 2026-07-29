@@ -204,6 +204,10 @@ export const adminCreateUserSchema = z
       .string()
       .min(8, "A senha temporaria precisa ter pelo menos 8 caracteres.")
       .max(120, "A senha temporaria pode ter no maximo 120 caracteres."),
+    confirmPassword: z
+      .string()
+      .min(8, "Confirme a senha temporaria.")
+      .max(120, "A confirmacao pode ter no maximo 120 caracteres."),
     role: z.enum(ROLES),
     level: optionalText(80, "O nivel pode ter no maximo 80 caracteres."),
     guardianDocument: optionalText(
@@ -254,6 +258,14 @@ export const adminCreateUserSchema = z
     ),
   })
   .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: "custom",
+        message: "As senhas precisam ser iguais.",
+        path: ["confirmPassword"],
+      });
+    }
+
     if (data.role === "TEACHER" && data.level) {
       ctx.addIssue({
         code: "custom",

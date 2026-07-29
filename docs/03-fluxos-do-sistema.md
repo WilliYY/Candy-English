@@ -134,7 +134,7 @@ Helpers:
 2. A tarefa padrao e `usuarios`.
 3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
-4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
+4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. A criacao direta de usuario exige senha provisoria e confirmacao iguais no cliente e no servidor, com controles independentes para mostrar/ocultar os dois campos. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
 5. Admin cria e acompanha pre-cadastros em `Aceitar alunos`, alternando entre `Novo pre-cadastro` e a fila `Cadastros salvos`; na lista, busca por nome, telefone, email, documento, cidade ou unidade, edita o registro e pode transforma-lo em aluno.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin usa `Catty dos alunos` para escolher aluno, cadastrar gostos, gerar emojis/sons/bordoes e ver um resumo simples das memorias ativas daquele aluno.
