@@ -536,7 +536,7 @@ export function AdminCreateUserForm({
               </span>
             ) : null}
           </section>
-        ) : (
+        ) : !fixedRole ? (
           <FieldSet className="rounded-lg border border-primary/15 bg-white/80 p-4 shadow-sm">
             <FieldLegend>Perfil</FieldLegend>
             <div className="grid gap-3">
@@ -572,7 +572,7 @@ export function AdminCreateUserForm({
             </div>
             <FieldError errors={[form.formState.errors.role]} />
           </FieldSet>
-        )}
+        ) : null}
 
         {role === "STUDENT" ? (
           <section className="rounded-lg border border-primary/15 bg-white/80 p-4 shadow-[0_16px_44px_rgba(65,42,76,0.07)]">
