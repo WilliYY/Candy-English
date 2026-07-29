@@ -986,7 +986,7 @@ const conversionFlowMeta = {
   incomplete: {
     className: "border-amber-200 bg-amber-50 text-amber-900",
     icon: Clock3,
-    label: "Incompleto",
+    label: "Completar",
   },
   ready: {
     className: "border-emerald-200 bg-emerald-50 text-emerald-800",
@@ -1108,8 +1108,6 @@ function AcceptForm({
   const suggestedLogin = buildSuggestedLogin(request.fullName);
   const [cattyContext, setCattyContext] = useState("");
   const [confirmConversion, setConfirmConversion] = useState(false);
-  const [confirmMissingAgendaData, setConfirmMissingAgendaData] =
-    useState(false);
   const [emailForLogin, setEmailForLogin] = useState(request.email ?? "");
   const [hasConverted, setHasConverted] = useState(false);
   const [hasSubmissionError, setHasSubmissionError] = useState(false);
@@ -1123,9 +1121,6 @@ function AcceptForm({
     null,
   );
   const [confirmError, setConfirmError] = useState<string | null>(null);
-  const [missingAgendaError, setMissingAgendaError] = useState<string | null>(
-    null,
-  );
   const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [teacherError, setTeacherError] = useState<string | null>(null);
@@ -1152,9 +1147,15 @@ function AcceptForm({
   ].filter(Boolean) as string[];
   const hasRequiredFinancialData = missingFinancialFields.length === 0;
   const hasCompleteAgendaData = missingAgendaFields.length === 0;
-  const needsAgendaConfirmation = !hasCompleteAgendaData;
   const missingFinancialSummary = missingFinancialFields.join(", ");
   const missingAgendaSummary = missingAgendaFields.join(", ");
+  const pendingAdministrativeItems = [
+    hasRequiredFinancialData
+      ? null
+      : `financeiro: ${missingFinancialSummary}`,
+    hasCompleteAgendaData ? null : `agenda: ${missingAgendaSummary}`,
+  ].filter(Boolean) as string[];
+  const hasAdministrativePendingData = pendingAdministrativeItems.length > 0;
   const teacherSummary =
     viewerRole === "TEACHER"
       ? request.assignedTeacherName ?? "Sua teacher"
@@ -1191,14 +1192,6 @@ function AcceptForm({
       items.push("senha inicial com 8+ caracteres");
     }
 
-    if (!hasRequiredFinancialData) {
-      items.push(`financeiro: ${missingFinancialSummary}`);
-    }
-
-    if (needsAgendaConfirmation && !confirmMissingAgendaData) {
-      items.push(`confirmar agenda pendente: ${missingAgendaSummary}`);
-    }
-
     if (!confirmConversion) {
       items.push("confirmacao final");
     }
@@ -1206,13 +1199,8 @@ function AcceptForm({
     return items;
   }, [
     confirmConversion,
-    confirmMissingAgendaData,
-    hasRequiredFinancialData,
     isEmailForLoginValid,
     isInitialPasswordValid,
-    missingAgendaSummary,
-    missingFinancialSummary,
-    needsAgendaConfirmation,
   ]);
   const isReadyToConvert = missingRequirements.length === 0;
   const conversionState: ConversionFlowState = isPending
@@ -1221,7 +1209,7 @@ function AcceptForm({
       ? "converted"
       : hasSubmissionError
         ? "error"
-        : isReadyToConvert
+        : isReadyToConvert && !hasAdministrativePendingData
           ? "ready"
           : "incomplete";
   const disableConversionButton =
@@ -1239,11 +1227,6 @@ function AcceptForm({
   const confirmValidationMessage =
     confirmError ??
     (!confirmConversion ? "Confirme a criacao antes de converter." : null);
-  const missingAgendaValidationMessage =
-    missingAgendaError ??
-    (needsAgendaConfirmation && !confirmMissingAgendaData
-      ? "Confirme que a agenda sera preenchida depois para liberar a conversao."
-      : null);
   const convertedUserLabel =
     emailForLogin.trim() || request.convertedUserEmail || "login criado";
 
@@ -1274,7 +1257,6 @@ function AcceptForm({
     setRequestError(null);
     setCattyContextError(null);
     setConfirmError(null);
-    setMissingAgendaError(null);
     setEmailError(null);
     setPasswordError(null);
     setTeacherError(null);
@@ -1284,7 +1266,7 @@ function AcceptForm({
       const result = await acceptStudentPreRegistration({
         cattyContext,
         confirmConversion,
-        confirmMissingAgendaData,
+        confirmMissingAgendaData: true,
         emailForLogin,
         initialPassword,
         requestId: request.id,
@@ -1295,7 +1277,6 @@ function AcceptForm({
       if (!result.ok) {
         setCattyContextError(result.errors?.cattyContext ?? null);
         setConfirmError(result.errors?.confirmConversion ?? null);
-        setMissingAgendaError(result.errors?.confirmMissingAgendaData ?? null);
         setEmailError(result.errors?.emailForLogin ?? null);
         setPasswordError(result.errors?.initialPassword ?? null);
         setRequestError(result.errors?.requestId ?? null);
@@ -1307,7 +1288,6 @@ function AcceptForm({
 
       setCattyContext("");
       setConfirmConversion(false);
-      setConfirmMissingAgendaData(false);
       setInitialPassword("");
       setMessage(result.message);
       setHasConverted(true);
@@ -1340,6 +1320,11 @@ function AcceptForm({
         ) : missingRequirements.length > 0 ? (
           <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/75 px-3 py-2 text-xs leading-5 text-amber-900">
             Falta: {missingRequirements.join(", ")}.
+          </div>
+        ) : hasAdministrativePendingData ? (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/75 px-3 py-2 text-xs leading-5 text-amber-900">
+            Pode converter agora. Depois complete:{" "}
+            {pendingAdministrativeItems.join("; ")}.
           </div>
         ) : (
           <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
@@ -1619,9 +1604,9 @@ function AcceptForm({
                                   className="mt-0.5 size-4 shrink-0"
                                 />
                                 <span>
-                                  Complete {missingFinancialSummary} no
-                                  pre-cadastro antes de converter. O financeiro
-                                  e obrigatorio para criar o aluno linkado.
+                                  Faltam {missingFinancialSummary}. O aluno sera
+                                  criado normalmente e o Financeiro ficara com
+                                  status Completar para edicao posterior.
                                 </span>
                               </span>
                             </div>
@@ -1652,37 +1637,23 @@ function AcceptForm({
                             label="Observacao"
                             value={request.notes ?? "Sem observacao"}
                           />
-                          {needsAgendaConfirmation && !hasConverted ? (
-                            <label className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-900">
-                              <input
-                                type="checkbox"
-                                checked={confirmMissingAgendaData}
-                                disabled={isPending}
-                                onChange={(event) => {
-                                  setConfirmMissingAgendaData(
-                                    event.target.checked,
-                                  );
-                                  setMissingAgendaError(null);
-                                  resetSubmissionFeedback();
-                                }}
-                                className="mt-0.5 size-4 rounded border-amber-300 accent-primary"
+                          {!hasCompleteAgendaData && !hasConverted ? (
+                            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-900">
+                              <Clock3
+                                aria-hidden="true"
+                                className="mt-0.5 size-4 shrink-0"
                               />
                               <span>
                                 <span className="block font-semibold">
                                   Agenda incompleta: {missingAgendaSummary}.
                                 </span>
                                 <span className="mt-1 block text-muted-foreground">
-                                  Converter mesmo assim cria o aluno na agenda
-                                  sem ocorrencias; complete dias e horario
-                                  depois.
+                                  A conversao cria o aluno na Agenda com status
+                                  Completar e sem ocorrencias. Edite dias e
+                                  horario depois.
                                 </span>
-                                {missingAgendaValidationMessage ? (
-                                  <span className="mt-1 block font-medium text-destructive">
-                                    {missingAgendaValidationMessage}
-                                  </span>
-                                ) : null}
                               </span>
-                            </label>
+                            </div>
                           ) : null}
                         </div>
                       </ConversionStepCard>
@@ -1726,7 +1697,7 @@ function AcceptForm({
                           description={
                             hasRequiredFinancialData
                               ? "FinancialStudent e snapshots mensais."
-                              : `Bloqueado: falta ${missingFinancialSummary}.`
+                              : `Sera criado como Completar; falta ${missingFinancialSummary}.`
                           }
                         />
                         <ConversionInfoTile
@@ -1741,9 +1712,7 @@ function AcceptForm({
                           description={
                             hasCompleteAgendaData
                               ? "AgendaStudent e ocorrencias futuras."
-                              : confirmMissingAgendaData
-                                ? "Vai criar AgendaStudent sem ocorrencias."
-                                : "Exige confirmacao para converter."
+                              : "Sera criada como Completar, sem ocorrencias."
                           }
                         />
 
@@ -1805,8 +1774,9 @@ function AcceptForm({
                                 Confirmo criar AVA, financeiro e agenda.
                               </span>
                               <span className="mt-1 block text-xs leading-5 text-muted-foreground">
-                                Se algo falhar, a transaction cancela tudo e o
-                                pre-cadastro continua sem conversao.
+                                Dados administrativos ausentes ficarao como
+                                Completar. Se algo falhar, a transaction cancela
+                                tudo.
                               </span>
                               {confirmValidationMessage ? (
                                 <span className="mt-1 block text-xs font-medium text-destructive">
@@ -1825,6 +1795,14 @@ function AcceptForm({
                         {missingRequirements.length > 0 && !hasConverted ? (
                           <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-xs leading-5 text-amber-900">
                             Falta: {missingRequirements.join(", ")}.
+                          </div>
+                        ) : null}
+                        {missingRequirements.length === 0 &&
+                        hasAdministrativePendingData &&
+                        !hasConverted ? (
+                          <div className="rounded-lg border border-sky-200 bg-sky-50/80 p-3 text-xs leading-5 text-sky-900">
+                            Pode converter agora. Depois complete:{" "}
+                            {pendingAdministrativeItems.join("; ")}.
                           </div>
                         ) : null}
 
@@ -1860,7 +1838,9 @@ function AcceptForm({
                       {hasConverted
                         ? "Aluno criado com sucesso."
                         : isReadyToConvert
-                          ? "Tudo pronto para converter."
+                          ? hasAdministrativePendingData
+                            ? "Pode converter; os pendentes ficarao como Completar."
+                            : "Tudo pronto para converter."
                           : "Complete os itens obrigatorios para liberar."}
                     </span>
                   </div>

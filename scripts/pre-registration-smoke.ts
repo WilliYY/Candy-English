@@ -3,7 +3,16 @@ import {
   isOpenPreRegistrationStatus,
   OPEN_PRE_REGISTRATION_STATUSES,
 } from "../src/lib/pre-registration-queue";
-import { secretariaPreRegistrationUpdateSchema } from "../src/lib/validations/pre-registration";
+import {
+  INCOMPLETE_FINANCIAL_PAYMENT_DAY,
+  INCOMPLETE_FINANCIAL_PAYMENT_METHOD,
+  hasCompleteFinancialRegistration,
+  resolveFinancialRegistration,
+} from "../src/lib/financial-completeness";
+import {
+  preRegistrationAcceptSchema,
+  secretariaPreRegistrationUpdateSchema,
+} from "../src/lib/validations/pre-registration";
 
 for (const status of OPEN_PRE_REGISTRATION_STATUSES) {
   assert.equal(
@@ -44,6 +53,57 @@ assert.equal(
     requestId: "",
   }).success,
   false,
+);
+
+assert.equal(
+  preRegistrationAcceptSchema.safeParse({
+    cattyContext: "",
+    confirmConversion: true,
+    confirmMissingAgendaData: false,
+    emailForLogin: "aluno@example.com",
+    initialPassword: "alunocandy",
+    requestId: "pre-registration-test",
+    teacherProfileIdForConversion: "",
+  }).success,
+  true,
+);
+
+const incompleteFinancialRegistration = resolveFinancialRegistration({
+  amountCents: null,
+  paymentDay: null,
+  paymentMethod: null,
+});
+
+assert.deepEqual(incompleteFinancialRegistration, {
+  amountCents: 0,
+  isComplete: false,
+  paymentDay: INCOMPLETE_FINANCIAL_PAYMENT_DAY,
+  paymentMethod: INCOMPLETE_FINANCIAL_PAYMENT_METHOD,
+});
+assert.equal(
+  hasCompleteFinancialRegistration(incompleteFinancialRegistration),
+  false,
+);
+assert.deepEqual(
+  resolveFinancialRegistration({
+    amountCents: 30000,
+    paymentDay: null,
+    paymentMethod: "PIX",
+  }),
+  {
+    amountCents: 30000,
+    isComplete: false,
+    paymentDay: INCOMPLETE_FINANCIAL_PAYMENT_DAY,
+    paymentMethod: INCOMPLETE_FINANCIAL_PAYMENT_METHOD,
+  },
+);
+assert.equal(
+  hasCompleteFinancialRegistration({
+    amountCents: 30000,
+    paymentDay: 5,
+    paymentMethod: "PIX",
+  }),
+  true,
 );
 
 console.log("Pre-registration smoke: OK");

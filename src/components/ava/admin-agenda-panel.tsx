@@ -412,11 +412,14 @@ function getStudentSchedule(
         .map((lesson) => lesson.weekday),
     ),
   ).sort((left, right) => left - right);
+  const scheduleWeekdays =
+    weekdaysFromMask.length > 0 ? weekdaysFromMask : weekdaysFromLessons;
+  const resolvedTime = student.defaultTime ?? activeLessons[0]?.time ?? null;
 
   return {
-    time: student.defaultTime ?? activeLessons[0]?.time ?? "08:00",
-    weekdays:
-      weekdaysFromMask.length > 0 ? weekdaysFromMask : weekdaysFromLessons,
+    isComplete: Boolean(resolvedTime && scheduleWeekdays.length > 0),
+    time: resolvedTime ?? "08:00",
+    weekdays: scheduleWeekdays,
   };
 }
 
@@ -424,7 +427,6 @@ function buildEditValues(
   student: AdminAgendaStudentRow,
   lessons: AdminAgendaLessonRow[],
   month: number,
-  fallbackWeekday: number,
 ): AdminAgendaStudentUpdateInput {
   const schedule = getStudentSchedule(student, lessons);
 
@@ -435,9 +437,9 @@ function buildEditValues(
     notes: student.notes ?? "",
     phone: student.phone ?? "",
     studentId: student.id,
-    time: schedule.time,
+    time: schedule.isComplete ? schedule.time : "",
     unit: student.unit,
-    weekdays: schedule.weekdays.length > 0 ? schedule.weekdays : [fallbackWeekday],
+    weekdays: schedule.isComplete ? schedule.weekdays : [],
     year: AGENDA_YEAR,
   };
 }
@@ -601,7 +603,7 @@ export function AdminAgendaPanel({
   const editForm = useForm<AdminAgendaStudentUpdateInput>({
     defaultValues:
       students[0] !== undefined
-        ? buildEditValues(students[0], lessons, activeMonth, selectedWeekday)
+        ? buildEditValues(students[0], lessons, activeMonth)
         : {
             isActive: true,
             month: activeMonth,
@@ -621,6 +623,11 @@ export function AdminAgendaPanel({
   const selectedStudent = useMemo(
     () => students.find((student) => student.id === selectedStudentId) ?? null,
     [selectedStudentId, students],
+  );
+  const selectedStudentSchedule = useMemo(
+    () =>
+      selectedStudent ? getStudentSchedule(selectedStudent, lessons) : null,
+    [lessons, selectedStudent],
   );
 
   useEffect(() => {
@@ -786,7 +793,6 @@ export function AdminAgendaPanel({
   function openStudent(
     studentId: string,
     targetMonth = activeMonth,
-    targetWeekday = selectedWeekday,
   ) {
     const student = students.find((item) => item.id === studentId);
 
@@ -806,7 +812,7 @@ export function AdminAgendaPanel({
     setEditMessage(null);
     setListMessage(null);
     editForm.reset(
-      buildEditValues(student, lessons, targetMonth, targetWeekday),
+      buildEditValues(student, lessons, targetMonth),
     );
   }
 
@@ -1076,7 +1082,6 @@ export function AdminAgendaPanel({
                         openStudent(
                           lesson.studentId,
                           lesson.month,
-                          lesson.weekday,
                         );
                       }}
                     >
@@ -1343,7 +1348,6 @@ export function AdminAgendaPanel({
                             openStudent(
                               lesson.studentId,
                               lesson.month,
-                              lesson.weekday,
                             )
                           }
                         >
@@ -1579,6 +1583,16 @@ export function AdminAgendaPanel({
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              <span
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-bold",
+                  selectedStudentSchedule?.isComplete
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                    : "border-amber-200 bg-amber-50 text-amber-900",
+                )}
+              >
+                {selectedStudentSchedule?.isComplete ? "Completo" : "Completar"}
+              </span>
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800">
                 {selectedStudentAttended} presenca(s)
               </span>
@@ -1865,24 +1879,28 @@ export function AdminAgendaPanel({
                   onClick={() => openStudent(student.id)}
                   className={cn(
                     "relative min-w-0 overflow-hidden rounded-lg border p-3 pt-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
-                    isSelected
-                      ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/35 ring-offset-2 ring-offset-white"
-                      : student.isActive
-                        ? student.unit === "IVATE"
-                          ? "border-cyan-200 bg-gradient-to-br from-white via-white to-cyan-50 text-primary"
-                          : "border-fuchsia-200 bg-gradient-to-br from-white via-white to-fuchsia-50 text-primary"
-                        : "border-muted bg-muted/35 text-muted-foreground",
+                     isSelected
+                       ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/35 ring-offset-2 ring-offset-white"
+                       : student.isActive
+                         ? schedule.isComplete
+                           ? student.unit === "IVATE"
+                             ? "border-cyan-200 bg-gradient-to-br from-white via-white to-cyan-50 text-primary"
+                             : "border-fuchsia-200 bg-gradient-to-br from-white via-white to-fuchsia-50 text-primary"
+                           : "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white text-primary"
+                         : "border-muted bg-muted/35 text-muted-foreground",
                   )}
                 >
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute inset-x-0 top-0 h-1",
-                      student.isActive
-                        ? student.unit === "IVATE"
-                          ? "bg-gradient-to-r from-cyan-500 to-violet-500"
-                          : "bg-gradient-to-r from-fuchsia-500 to-amber-400"
-                        : "bg-muted-foreground/40",
+                       "absolute inset-x-0 top-0 h-1",
+                       student.isActive
+                         ? schedule.isComplete
+                           ? student.unit === "IVATE"
+                             ? "bg-gradient-to-r from-cyan-500 to-violet-500"
+                             : "bg-gradient-to-r from-fuchsia-500 to-amber-400"
+                           : "bg-amber-500"
+                         : "bg-muted-foreground/40",
                     )}
                   />
                   <span className="flex min-w-0 items-start gap-3">
@@ -1906,18 +1924,24 @@ export function AdminAgendaPanel({
                         <span
                           className={cn(
                             "shrink-0 rounded-full border px-2 py-0.5 text-[0.68rem] font-bold",
-                            isSelected
-                              ? "border-white/25 bg-white/15 text-white"
-                              : student.isActive
+                            student.isActive
+                              ? schedule.isComplete
                                 ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                                : "border-muted bg-white text-muted-foreground",
+                                : "border-amber-200 bg-amber-50 text-amber-900"
+                              : "border-muted bg-white text-muted-foreground",
                           )}
                         >
-                          {student.isActive ? "Ativo" : "Inativo"}
+                          {student.isActive
+                            ? schedule.isComplete
+                              ? "Completo"
+                              : "Completar"
+                            : "Inativo"}
                         </span>
                       </span>
                       <span className="mt-2 block truncate text-xs font-semibold opacity-80">
-                        {formatWeekdayList(schedule.weekdays)} / {schedule.time}
+                        {schedule.isComplete
+                          ? `${formatWeekdayList(schedule.weekdays)} / ${schedule.time}`
+                          : "Dias e horario pendentes"}
                       </span>
                       <span
                         className={cn(

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
+import { resolveFinancialRegistration } from "@/lib/financial-completeness";
 import {
   isOpenPreRegistrationStatus,
   OPEN_PRE_REGISTRATION_STATUSES,
@@ -832,15 +833,13 @@ export async function acceptStudentPreRegistration(
       }
 
       const emailForLogin = parsed.data.emailForLogin;
-
-      if (
-        !request.tuitionCents ||
-        request.tuitionCents <= 0 ||
-        !request.paymentDay ||
-        !request.paymentMethod
-      ) {
-        throw new Error("FINANCE_REQUIRED");
-      }
+      const financialRegistration = resolveFinancialRegistration({
+        amountCents: request.tuitionCents,
+        paymentDay: request.paymentDay,
+        paymentMethod: request.paymentMethod
+          ? mapPreRegistrationPaymentMethod(request.paymentMethod)
+          : null,
+      });
 
       const agendaWeekdays = decodeWeekdayMask(request.intendedWeekdayMask);
       const hasCompleteAgendaData = Boolean(
@@ -848,11 +847,11 @@ export async function acceptStudentPreRegistration(
           request.intendedTime &&
           agendaTimePattern.test(request.intendedTime),
       );
-
-      if (!hasCompleteAgendaData && !parsed.data.confirmMissingAgendaData) {
-        throw new Error("AGENDA_CONFIRMATION_REQUIRED");
-      }
       const intendedTime = hasCompleteAgendaData ? request.intendedTime : null;
+      const pendingAdministrativeModules = [
+        financialRegistration.isComplete ? null : "financeiro",
+        hasCompleteAgendaData ? null : "agenda",
+      ].filter(Boolean) as string[];
 
       let teacherProfileId: string | null = null;
 
@@ -1008,13 +1007,13 @@ export async function acceptStudentPreRegistration(
       const financialStudent = await tx.financialStudent.create({
         data: {
           address: request.address ?? request.city,
-          amountCents: request.tuitionCents,
+          amountCents: financialRegistration.amountCents,
           cpf: null,
           email: emailForLogin,
           installmentsTotal: request.installmentsTotal,
           name: request.fullName,
-          paymentDay: request.paymentDay,
-          paymentMethod: mapPreRegistrationPaymentMethod(request.paymentMethod),
+          paymentDay: financialRegistration.paymentDay,
+          paymentMethod: financialRegistration.paymentMethod,
           phone: contactPhone,
           unit: request.unit,
         },
@@ -1040,7 +1039,9 @@ export async function acceptStudentPreRegistration(
           month,
           note:
             month === conversionMonth
-              ? "Criado a partir do pre-cadastro da Secretaria."
+              ? financialRegistration.isComplete
+                ? "Criado a partir do pre-cadastro da Secretaria."
+                : "Criado a partir do pre-cadastro com cadastro financeiro incompleto; preencher valor, dia e forma de pagamento."
               : null,
           paidAt: null,
           studentId: financialStudent.id,
@@ -1063,7 +1064,9 @@ export async function acceptStudentPreRegistration(
         data: {
           action: "CREATE_FROM_PRE_REGISTRATION",
           createdByUserId: context.session.user.id,
-          description: `Aluno financeiro criado a partir do pre-cadastro: ${financialStudent.name}.`,
+          description: financialRegistration.isComplete
+            ? `Aluno financeiro criado a partir do pre-cadastro: ${financialStudent.name}.`
+            : `Aluno financeiro criado como incompleto a partir do pre-cadastro: ${financialStudent.name}; preencher valor, dia e forma de pagamento.`,
           paymentId: firstPayment?.id,
           studentId: financialStudent.id,
         },
@@ -1074,14 +1077,10 @@ export async function acceptStudentPreRegistration(
           ? getAgendaRecurringDates(conversionMonth, agendaWeekdays)
           : [];
 
-      if (hasCompleteAgendaData && agendaDates.length === 0) {
-        throw new Error("AGENDA_REQUIRED");
-      }
-
       const agendaPendingNote =
         hasCompleteAgendaData
           ? null
-          : "Agenda convertida sem ocorrencias por confirmacao da Secretaria; preencher dias e horario depois.";
+          : "Agenda convertida sem ocorrencias; preencher dias e horario depois.";
       const agendaStudentNotes = [request.notes, agendaPendingNote]
         .filter(Boolean)
         .join("\n\n");
@@ -1129,9 +1128,12 @@ export async function acceptStudentPreRegistration(
           studentId: agendaStudent.id,
         },
       });
-      postConversionMessage = hasCompleteAgendaData
-        ? "Aluno convertido com AVA, financeiro e agenda criados."
-        : "Aluno convertido com AVA e financeiro. Agenda criada sem ocorrencias; preencha dias e horario depois.";
+      postConversionMessage =
+        pendingAdministrativeModules.length === 0
+          ? "Aluno convertido com AVA, financeiro e agenda criados."
+          : `Aluno convertido com AVA. ${pendingAdministrativeModules.join(
+              " e ",
+            )} criado(s) como Completar para preenchimento posterior.`;
 
       await tx.studentPreRegistration.update({
         where: { id: request.id },
@@ -1145,9 +1147,12 @@ export async function acceptStudentPreRegistration(
           reviewedAt: new Date(),
           reviewedByUserId: context.session.user.id,
           status: "APPROVED",
-          statusNote: hasCompleteAgendaData
-            ? "Convertido em aluno com AVA, financeiro e agenda."
-            : "Convertido em aluno com AVA, financeiro e agenda pendente de dias/horario.",
+          statusNote:
+            pendingAdministrativeModules.length === 0
+              ? "Convertido em aluno com AVA, financeiro e agenda."
+              : `Convertido em aluno com AVA; completar ${pendingAdministrativeModules.join(
+                  " e ",
+                )}.`,
         },
       });
     });
@@ -1184,40 +1189,6 @@ export async function acceptStudentPreRegistration(
         },
         ok: false,
         message: "Para criar login STUDENT, o pre-cadastro precisa ter email.",
-      };
-    }
-
-    if (errorMessage === "FINANCE_REQUIRED") {
-      return {
-        errors: {
-          requestId:
-            "Preencha mensalidade, dia de pagamento e forma antes de converter.",
-        },
-        ok: false,
-        message:
-          "Preencha o combinado financeiro antes de tornar aluno.",
-      };
-    }
-
-    if (errorMessage === "AGENDA_REQUIRED") {
-      return {
-        errors: {
-          requestId: "Preencha dias e horario de aula antes de converter.",
-        },
-        ok: false,
-        message: "Preencha a agenda pretendida antes de tornar aluno.",
-      };
-    }
-
-    if (errorMessage === "AGENDA_CONFIRMATION_REQUIRED") {
-      return {
-        errors: {
-          confirmMissingAgendaData:
-            "Confirme que a agenda sera preenchida depois.",
-        },
-        ok: false,
-        message:
-          "A agenda esta incompleta. Confirme o preenchimento posterior antes de converter.",
       };
     }
 

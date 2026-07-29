@@ -349,7 +349,7 @@ export const preRegistrationAcceptSchema = z
       "O contexto Catty pode ter no maximo 160 caracteres.",
     ),
     confirmConversion: z.boolean().refine((value) => value, {
-      message: "Confirme a conversao completa do pre-cadastro.",
+      message: "Confirme a conversao do pre-cadastro.",
     }),
     confirmMissingAgendaData: z.boolean().optional().default(false),
     emailForLogin: requiredEmail(),

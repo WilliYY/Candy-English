@@ -46,6 +46,10 @@ import {
   updateFinancialStudent,
 } from "@/app/ava/admin/actions";
 import {
+  INCOMPLETE_FINANCIAL_PAYMENT_METHOD,
+  hasCompleteFinancialRegistration,
+} from "@/lib/financial-completeness";
+import {
   FINANCIAL_PAYMENT_METHODS,
   FINANCIAL_UNITS,
   adminFinanceExpenseCreateSchema,
@@ -74,7 +78,12 @@ import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 
 type PaymentMethod = (typeof FINANCIAL_PAYMENT_METHODS)[number];
 type FinancialUnit = (typeof FINANCIAL_UNITS)[number];
-type FinanceStatus = "paid" | "pending" | "overdue" | "inactive";
+type FinanceStatus =
+  | "paid"
+  | "pending"
+  | "overdue"
+  | "incomplete"
+  | "inactive";
 type FinanceView = "STUDENTS" | "EXPENSES";
 type UnitFilter = "ALL" | FinancialUnit;
 
@@ -474,6 +483,10 @@ function normalizePaymentMethod(value: string): PaymentMethod {
 }
 
 function formatPaymentMethod(value: string) {
+  if (value === INCOMPLETE_FINANCIAL_PAYMENT_METHOD) {
+    return "A definir";
+  }
+
   return paymentMethodLabels[normalizePaymentMethod(value)];
 }
 
@@ -600,6 +613,16 @@ function getPaymentStatus(
     return "inactive";
   }
 
+  if (
+    !hasCompleteFinancialRegistration({
+      amountCents: payment.snapshotAmountCents,
+      paymentDay: payment.snapshotPaymentDay,
+      paymentMethod: payment.snapshotPaymentMethod,
+    })
+  ) {
+    return "incomplete";
+  }
+
   if (payment.isPaid) {
     return "paid";
   }
@@ -627,6 +650,10 @@ function getStatusLabel(status: FinanceStatus) {
     return "Inativo";
   }
 
+  if (status === "incomplete") {
+    return "Completar";
+  }
+
   return "Pendente";
 }
 
@@ -639,6 +666,10 @@ function getInstallmentLabel(payment: AdminFinancePaymentRow) {
 }
 
 function getPaymentTimelineLabel(row: FinanceMonthRow) {
+  if (row.status === "incomplete") {
+    return "Complete os dados financeiros";
+  }
+
   if (row.isPaid) {
     return row.paidAt ? `Pago em ${formatDate(row.paidAt)}` : "Pago sem data";
   }
@@ -686,6 +717,20 @@ function getStatusClasses(status: FinanceStatus) {
         "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 text-slate-600",
       icon: "bg-slate-500 text-white shadow-slate-200",
       timeline: "border-slate-200 bg-slate-50 text-slate-600 ring-slate-100",
+    };
+  }
+
+  if (status === "incomplete") {
+    return {
+      accent: "bg-violet-500",
+      amount: "text-violet-800",
+      badge:
+        "border-violet-200 bg-violet-50 text-violet-800 ring-violet-200/80",
+      card:
+        "border-violet-200 bg-gradient-to-br from-violet-50/90 via-white to-white text-violet-950",
+      icon: "bg-violet-600 text-white shadow-violet-200",
+      timeline:
+        "border-violet-200 bg-violet-50 text-violet-800 ring-violet-100",
     };
   }
 
@@ -899,6 +944,28 @@ function StatusPill({ status }: { status: FinanceStatus }) {
     >
       <Icon aria-hidden="true" className="size-3.5" />
       {getStatusLabel(status)}
+    </span>
+  );
+}
+
+function RegistrationCompletenessPill({
+  isComplete,
+}: {
+  isComplete: boolean;
+}) {
+  const Icon = isComplete ? CheckCircle2 : AlertTriangle;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.68rem] font-bold shadow-sm",
+        isComplete
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-amber-200 bg-amber-50 text-amber-900",
+      )}
+    >
+      <Icon aria-hidden="true" className="size-3.5" />
+      {isComplete ? "Completo" : "Completar"}
     </span>
   );
 }
@@ -1119,8 +1186,14 @@ function FinanceStudentEditForm({
       installmentsTotal: row.installmentsTotal ? String(row.installmentsTotal) : "",
       month,
       name: row.name,
-      paymentDay: row.paymentDay,
-      paymentMethod: normalizePaymentMethod(row.paymentMethod),
+      paymentDay:
+        row.status === "incomplete"
+          ? ("" as unknown as number)
+          : row.paymentDay,
+      paymentMethod:
+        row.status === "incomplete"
+          ? ("" as PaymentMethod)
+          : normalizePaymentMethod(row.paymentMethod),
       phone: row.phone ?? "",
       studentId: row.id,
       unit: row.unit,
@@ -1199,6 +1272,11 @@ function FinanceStudentEditForm({
             disabled={isPending}
             {...form.register("paymentDay", { valueAsNumber: true })}
           >
+            {row.status === "incomplete" ? (
+              <option value="" disabled>
+                Selecione o dia
+              </option>
+            ) : null}
             {days.map((day) => (
               <option key={day} value={day}>
                 {day}
@@ -1217,6 +1295,11 @@ function FinanceStudentEditForm({
             disabled={isPending}
             {...form.register("paymentMethod")}
           >
+            {row.status === "incomplete" ? (
+              <option value="" disabled>
+                Selecione a forma
+              </option>
+            ) : null}
             {FINANCIAL_PAYMENT_METHODS.map((method) => (
               <option key={method} value={method}>
                 {paymentMethodLabels[method]}
@@ -1528,6 +1611,11 @@ export function AdminFinancePanel({
     () =>
       unitMonthRows.reduce(
         (accumulator, row) => {
+          if (row.status === "incomplete") {
+            accumulator.incompleteCount += 1;
+            return accumulator;
+          }
+
           accumulator.total += row.amountCents;
 
           if (row.isPaid) {
@@ -1546,6 +1634,7 @@ export function AdminFinancePanel({
           return accumulator;
         },
         {
+          incompleteCount: 0,
           overdue: 0,
           overdueCount: 0,
           paid: 0,
@@ -1663,9 +1752,7 @@ export function AdminFinancePanel({
         (row.phone ?? "").toLowerCase().includes(normalizedSearch);
 
       const matchesStatus =
-        statusFilter === "ALL" ||
-        row.status === statusFilter ||
-        (statusFilter === "pending" && row.status === "pending");
+        statusFilter === "ALL" || row.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -1974,7 +2061,11 @@ export function AdminFinancePanel({
           <>
             <div className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">
               <FinanceSummaryCard
-                detail={`${unitMonthRows.length} aluno(s) ativo(s)`}
+                detail={
+                  monthSummary.incompleteCount > 0
+                    ? `${unitMonthRows.length - monthSummary.incompleteCount} completo(s) / ${monthSummary.incompleteCount} a completar`
+                    : `${unitMonthRows.length} aluno(s) ativo(s)`
+                }
                 icon={ReceiptText}
                 label="Total previsto"
                 tone="sky"
@@ -2370,6 +2461,7 @@ export function AdminFinancePanel({
               <option value="paid">Pagos</option>
               <option value="pending">Pendentes</option>
               <option value="overdue">Atrasados</option>
+              <option value="incomplete">Completar cadastro</option>
             </NativeSelect>
           </div>
         </div>
@@ -2385,6 +2477,7 @@ export function AdminFinancePanel({
                 <StatusPill status="paid" />
                 <StatusPill status="pending" />
                 <StatusPill status="overdue" />
+                <StatusPill status="incomplete" />
               </span>
             </div>
 
@@ -2450,7 +2543,14 @@ export function AdminFinancePanel({
                             </span>
                           </span>
                         </span>
-                        <StatusPill status={row.status} />
+                        <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                          <RegistrationCompletenessPill
+                            isComplete={row.status !== "incomplete"}
+                          />
+                          {row.status !== "incomplete" ? (
+                            <StatusPill status={row.status} />
+                          ) : null}
+                        </span>
                       </button>
 
                       <span
@@ -2499,11 +2599,22 @@ export function AdminFinancePanel({
                       </span>
 
                       <span className="mt-auto grid gap-2 pt-4">
-                        <FinanceStatusButton
-                          isPaid={row.isPaid}
-                          month={activeMonth}
-                          studentId={row.id}
-                        />
+                        {row.status === "incomplete" ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setSelectedStudentId(row.id)}
+                          >
+                            <Pencil data-icon="inline-start" />
+                            Completar cadastro
+                          </Button>
+                        ) : (
+                          <FinanceStatusButton
+                            isPaid={row.isPaid}
+                            month={activeMonth}
+                            studentId={row.id}
+                          />
+                        )}
                       </span>
                     </article>
                   );
@@ -2525,7 +2636,14 @@ export function AdminFinancePanel({
                         {selectedRow.name}
                       </strong>
                     </span>
-                    <StatusPill status={selectedRow.status} />
+                    <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                      <RegistrationCompletenessPill
+                        isComplete={selectedRow.status !== "incomplete"}
+                      />
+                      {selectedRow.status !== "incomplete" ? (
+                        <StatusPill status={selectedRow.status} />
+                      ) : null}
+                    </span>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                     <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2">
@@ -2569,7 +2687,13 @@ export function AdminFinancePanel({
                 </div>
 
                 <div className="grid gap-4 px-4">
-                  <details className="group rounded-lg border border-primary/15 bg-[#fbf7ff] p-3">
+                  <details
+                    key={`${selectedRow.id}-fixed-data`}
+                    className="group rounded-lg border border-primary/15 bg-[#fbf7ff] p-3"
+                    open={
+                      selectedRow.status === "incomplete" ? true : undefined
+                    }
+                  >
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-primary [&::-webkit-details-marker]:hidden">
                       <span className="inline-flex items-center gap-2">
                         <Pencil aria-hidden="true" className="size-4" />
@@ -2649,18 +2773,25 @@ export function AdminFinancePanel({
                           </summary>
                           <div className="border-t border-white/70 bg-white/75 p-3">
                             {payment.isActive ? (
-                              <div className="grid gap-3">
-                                <FinanceStatusButton
-                                  isPaid={payment.isPaid}
-                                  month={payment.month}
-                                  size="sm"
-                                  studentId={selectedRow.id}
-                                />
-                                <FinancePaymentDetailForm
-                                  payment={payment}
-                                  studentId={selectedRow.id}
-                                />
-                              </div>
+                              status === "incomplete" ? (
+                                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">
+                                  Complete os dados fixos antes de registrar ou
+                                  editar o pagamento mensal.
+                                </p>
+                              ) : (
+                                <div className="grid gap-3">
+                                  <FinanceStatusButton
+                                    isPaid={payment.isPaid}
+                                    month={payment.month}
+                                    size="sm"
+                                    studentId={selectedRow.id}
+                                  />
+                                  <FinancePaymentDetailForm
+                                    payment={payment}
+                                    studentId={selectedRow.id}
+                                  />
+                                </div>
+                              )
                             ) : (
                               <p className="text-sm text-muted-foreground">
                                 Este mes esta inativo para o aluno.

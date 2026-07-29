@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin-credentials";
 import { setMaintenanceMode } from "@/lib/app-settings";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
+import { hasCompleteFinancialRegistration } from "@/lib/financial-completeness";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
@@ -1283,6 +1284,36 @@ export async function updateFinancialPaymentDetails(
     };
   }
 
+  const paymentForValidation = await prisma.financialPayment.findUnique({
+    where: {
+      studentId_year_month: {
+        month: parsed.data.month,
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+    },
+    select: {
+      snapshotAmountCents: true,
+      snapshotPaymentDay: true,
+      snapshotPaymentMethod: true,
+    },
+  });
+  const completionSource = paymentForValidation
+    ? {
+        amountCents: paymentForValidation.snapshotAmountCents,
+        paymentDay: paymentForValidation.snapshotPaymentDay,
+        paymentMethod: paymentForValidation.snapshotPaymentMethod,
+      }
+    : student;
+
+  if (!hasCompleteFinancialRegistration(completionSource)) {
+    return {
+      ok: false,
+      message:
+        "Complete os dados fixos do aluno antes de atualizar o pagamento.",
+    };
+  }
+
   await prisma.$transaction(async (tx) => {
     const currentPayment = await tx.financialPayment.findUnique({
       where: {
@@ -1396,6 +1427,36 @@ export async function toggleFinancialPaymentStatus(
     return {
       ok: false,
       message: "Aluno financeiro nao encontrado.",
+    };
+  }
+
+  const paymentForValidation = await prisma.financialPayment.findUnique({
+    where: {
+      studentId_year_month: {
+        month: parsed.data.month,
+        studentId: student.id,
+        year: parsed.data.year,
+      },
+    },
+    select: {
+      snapshotAmountCents: true,
+      snapshotPaymentDay: true,
+      snapshotPaymentMethod: true,
+    },
+  });
+  const completionSource = paymentForValidation
+    ? {
+        amountCents: paymentForValidation.snapshotAmountCents,
+        paymentDay: paymentForValidation.snapshotPaymentDay,
+        paymentMethod: paymentForValidation.snapshotPaymentMethod,
+      }
+    : student;
+
+  if (!hasCompleteFinancialRegistration(completionSource)) {
+    return {
+      ok: false,
+      message:
+        "Complete os dados fixos do aluno antes de alterar o status do pagamento.",
     };
   }
 

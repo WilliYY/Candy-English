@@ -39,13 +39,13 @@ Rota:
 ## Regras de negocio que precisam ser preservadas
 
 - Apenas `ADMIN` visualiza e escreve na tela da agenda.
-- Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `AgendaStudent` e suas `AgendaLesson` futuras dentro da transaction de `Tornar aluno`, sem acessar a agenda completa. Se dias ou horario ainda nao foram definidos, a conversao so continua com confirmacao explicita; nesse caso cria `AgendaStudent` linkado sem ocorrencias e registra a pendencia no log.
+- Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `AgendaStudent` e suas `AgendaLesson` futuras dentro da transaction de `Tornar aluno`, sem acessar a agenda completa. Se dias ou horario ainda nao foram definidos, a conversao continua, cria `AgendaStudent` linkado sem ocorrencias e registra a pendencia no log.
 - Agenda e separada dos alunos do AVA; cadastro manual da agenda nao cria login, usuario ou perfil de aluno.
 - A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje quando o navegador esta em 2026.
 - O dia atual e as comparacoes de ocorrencias usam uma referencia unica em `America/Sao_Paulo`, passada pelo servidor para evitar mudanca de dia durante a hidratacao.
 - Alteracoes ainda nao salvas da rotina permanecem ao atualizar presenca ou trocar o dia selecionado; trocar aluno ou mes pede confirmacao antes de descartar o formulario.
 - O admin ve calendario mensal, botao `Hoje`, navegacao de mes, dia atual destacado, dia selecionado destacado e contagem visual de aulas por dia.
-- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, unidade, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando a conversao foi confirmada sem dias/horario.
+- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, unidade, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando foram convertidos sem dias/horario. A lista mostra `Completar` em amarelo enquanto faltarem dias ou horario e muda para `Completo` em verde depois que a rotina valida for salva.
 - Quando a Secretaria abre a agenda com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega somente `AgendaStudent` daquela unidade e ocorrencias de `AgendaLesson` ligadas a alunos daquele polo. Sem `unit`, ou com `unit=all`, mostra todos os polos.
 - O sistema cria ocorrencias do mes escolhido ate dezembro de 2026.
 - `AgendaStudent.isActive`, `AgendaStudent.defaultTime` e `AgendaStudent.weekdayMask` guardam o estado atual da rotina para edicao rapida; `AgendaLesson` continua guardando as ocorrencias reais e o historico.
