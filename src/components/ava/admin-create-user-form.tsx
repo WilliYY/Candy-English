@@ -243,7 +243,6 @@ export function AdminCreateUserForm({
   const finalSubmitLabel = submitLabel ?? "Cadastrar usuario";
   const roleTone = roleCreateTone[role];
   const isAdminProfile = role === "ADMIN";
-  const isTeacherProfile = role === "TEACHER";
   const accessHighlights = getRoleAccessHighlights(role);
 
   const onSubmit = form.handleSubmit((values) => {
@@ -501,7 +500,7 @@ export function AdminCreateUserForm({
           </div>
         </section>
 
-        {fixedRole && FixedIcon ? (
+        {fixedRole && FixedIcon && fixedRole !== "TEACHER" ? (
           <section
             className={cn(
               "flex flex-col gap-4 rounded-lg border p-4 text-sm text-muted-foreground shadow-sm sm:flex-row sm:items-center sm:justify-between",
@@ -533,16 +532,6 @@ export function AdminCreateUserForm({
                 </span>
                 <span className="leading-5 text-amber-900/80">
                   Use para equipe que gerencia dados sensiveis.
-                </span>
-              </span>
-            ) : null}
-            {isTeacherProfile ? (
-              <span className="grid gap-2 rounded-lg border border-pink-200/80 bg-white/80 p-3 text-xs text-pink-950 shadow-sm sm:min-w-52">
-                <span className="font-bold uppercase tracking-[0.08em]">
-                  Foco pedagogico
-                </span>
-                <span className="leading-5 text-pink-900/80">
-                  Use para equipe que cria aulas, corrige e acompanha alunos.
                 </span>
               </span>
             ) : null}
