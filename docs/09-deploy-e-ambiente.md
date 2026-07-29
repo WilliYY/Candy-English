@@ -87,7 +87,7 @@ Operacao por agente:
 - Configurar `PDF_OPTIMIZATION_PRESET=screen` pode reduzir mais, mas tambem pode prejudicar leitura em materiais do Canva; manter `ebook` salvo motivo claro.
 - Aumentar `PDF_MAX_UPLOAD_MB` acima do limite de Server Actions nao funciona sem mudar `next.config.ts`.
 - Perder ou trocar `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` pode impedir leitura de credenciais ja criptografadas.
-- Alterar headers pode afetar Jitsi ou seguranca basica.
+- O app envia `Strict-Transport-Security: max-age=31536000` junto dos headers de seguranca basicos; alterar headers pode afetar Jitsi ou seguranca basica.
 - Usar `meet.jit.si` publico em embed pode exigir login do criador e limitar a chamada; para producao sem conta externa, configurar Jitsi dedicado/JaaS e atualizar o dominio no ambiente.
 
 ## Pendencias

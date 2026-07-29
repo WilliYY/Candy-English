@@ -28,6 +28,10 @@ const nextConfig: NextConfig = {
             value: "strict-origin-when-cross-origin",
           },
           {
+            key: "Strict-Transport-Security",
+            value: "max-age=31536000",
+          },
+          {
             key: "Permissions-Policy",
             value:
               `camera=(self ${liveClassJitsiPermissionOrigins}), microphone=(self ${liveClassJitsiPermissionOrigins}), display-capture=(self ${liveClassJitsiPermissionOrigins}), geolocation=()`,

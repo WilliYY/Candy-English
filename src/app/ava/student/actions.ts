@@ -7,6 +7,7 @@ import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { normalizeTinyTextAnswer } from "@/lib/interactive-homework-fields";
+import { canSubmitInteractiveHomework } from "@/lib/homework-submission-state";
 import {
   interactiveHomeworkAnswerSchema,
   submitHomeworkSchema,
@@ -519,10 +520,15 @@ export async function submitInteractiveHomework(
 
   const existingSubmission = homework.submissions[0];
 
-  if (existingSubmission?.status === "REVIEWED") {
+  if (!canSubmitInteractiveHomework(existingSubmission?.status)) {
     return {
       ok: false,
-      message: `Esta ${entityLabel} ja foi corrigida.`,
+      message:
+        existingSubmission?.status === "REVIEWED"
+          ? `Esta ${entityLabel} ja foi corrigida.`
+          : isLessonEntity
+            ? "Esta aula ja foi concluida."
+            : `Esta ${entityLabel} ja foi entregue.`,
     };
   }
 
@@ -590,7 +596,7 @@ export async function submitInteractiveHomework(
       },
     });
 
-    if (currentSubmission?.status === "REVIEWED") {
+    if (!canSubmitInteractiveHomework(currentSubmission?.status)) {
       return false;
     }
 
@@ -625,7 +631,9 @@ export async function submitInteractiveHomework(
   if (!submitted) {
     return {
       ok: false,
-      message: `Esta ${entityLabel} ja foi corrigida.`,
+      message: isLessonEntity
+        ? "Esta aula ja foi concluida ou corrigida."
+        : `Esta ${entityLabel} ja foi entregue ou corrigida.`,
     };
   }
 

@@ -20,6 +20,7 @@
     "audit:pre-registration": "tsx scripts/pre-registration-smoke.ts",
     "audit:candy-xp-concurrency": "tsx scripts/candy-xp-concurrency-smoke.ts",
     "audit:candy-xp-submission-concurrency": "tsx scripts/candy-xp-submission-concurrency-smoke.ts",
+    "audit:homework-concurrency": "tsx scripts/homework-concurrency-smoke.ts",
     "audit:candy-xp-visibility": "tsx scripts/candy-xp-visibility-smoke.ts",
     "audit:catty-behavior": "tsx scripts/catty-behavior-smoke.ts",
     "verify:server-smoke": "docker compose --profile tools run --rm audit-server-smoke",
@@ -28,6 +29,7 @@
     "verify:pre-registration": "docker compose --profile tools run --rm audit-server-smoke npm run audit:pre-registration",
     "verify:candy-xp-concurrency": "docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-concurrency",
     "verify:candy-xp-submission-concurrency": "docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-submission-concurrency",
+    "verify:homework-concurrency": "docker compose --profile tools run --rm audit-server-smoke npm run audit:homework-concurrency",
     "verify:candy-xp-visibility": "docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-visibility",
     "verify:catty-behavior": "docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior"
   },

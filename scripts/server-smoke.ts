@@ -32,7 +32,12 @@ const checks: SmokeCheck[] = [
   {
     name: "site home",
     path: "/",
-    expect: (response) => response.ok,
+    expect: (response) =>
+      response.ok &&
+      response.headers.get("strict-transport-security") ===
+        "max-age=31536000" &&
+      response.headers.get("x-content-type-options") === "nosniff" &&
+      response.headers.get("x-frame-options") === "SAMEORIGIN",
   },
   {
     name: "ava login whatsapp cta",
