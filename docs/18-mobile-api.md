@@ -41,6 +41,9 @@ Controles:
   feedback da homework autorizada do aluno.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/submit` envia homework `TEXT`
   pelo mesmo serviço de domínio usado no AVA web.
+- `GET /api/mobile/v1/lessons/[lessonId]` entrega somente a aula `PUBLISHED`
+  vinculada ao aluno, com materiais, vocabulário e homeworks. Materiais externos
+  são expostos ao app somente quando usam HTTPS e não contêm credenciais na URL.
 - `PUT /api/mobile/v1/homeworks/[homeworkId]/interactive` salva o rascunho
   interativo de forma idempotente.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/interactive` entrega a atividade

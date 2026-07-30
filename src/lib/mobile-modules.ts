@@ -1,4 +1,5 @@
 import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
+import { getMobileStudentLessonScope } from "@/lib/mobile-lesson";
 import { getPrisma } from "@/lib/prisma";
 
 export type MobileModuleItem = {
@@ -74,7 +75,7 @@ async function getStudentModule(user: MobileAuthUser, slug: string) {
 
   if (slug === "lessons") {
     const lessons = await prisma.lesson.findMany({
-      where: { studentProfileId: profile.id },
+      where: getMobileStudentLessonScope(profile.id),
       orderBy: [{ scheduledAt: "desc" }, { updatedAt: "desc" }],
       take: 50,
       select: {
