@@ -53,6 +53,13 @@ Controles:
 - `GET /api/mobile/v1/contracts/[contractId]` entrega somente PDF geral ou do
   próprio aluno por bearer token, com limite de 8 MB, assinatura validada,
   headers `no-store`/`nosniff` e nome de download sem injeção de cabeçalhos.
+- `GET /api/mobile/v1/profile` entrega somente o perfil do aluno autenticado.
+- `PATCH /api/mobile/v1/profile` atualiza nome, contato e dados do aluno pelo
+  mesmo serviço de domínio usado no AVA web.
+- `GET /api/mobile/v1/profile/avatar` entrega somente a foto do aluno
+  autenticado, sem expor o caminho interno do arquivo.
+- `POST /api/mobile/v1/profile/avatar` recebe JPEG, PNG ou WebP de até 2 MB,
+  confere a assinatura real do arquivo e substitui a foto de forma transacional.
 
 Escopos atuais:
 

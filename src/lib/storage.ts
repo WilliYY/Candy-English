@@ -20,7 +20,13 @@ export const CONTRACT_MAX_BYTES = 8 * 1024 * 1024;
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 export const HOMEWORK_ASSET_MAX_BYTES = 14 * 1024 * 1024;
 
-const allowedAvatarTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+export type AvatarMimeType = "image/jpeg" | "image/png" | "image/webp";
+
+const allowedAvatarTypes = new Set<AvatarMimeType>([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 const allowedHomeworkAssetTypes = new Set([
   "application/pdf",
   "image/jpeg",
@@ -29,6 +35,49 @@ const allowedHomeworkAssetTypes = new Set([
 ]);
 
 export class StorageValidationError extends Error {}
+
+export function detectAvatarMimeType(
+  buffer: Uint8Array,
+): AvatarMimeType | null {
+  if (
+    buffer.byteLength >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+
+  if (
+    buffer.byteLength >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
+    return "image/jpeg";
+  }
+
+  if (
+    buffer.byteLength >= 12 &&
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return "image/webp";
+  }
+
+  return null;
+}
 
 export function isMissingStorageFileError(error: unknown) {
   return (
@@ -237,7 +286,7 @@ export async function saveContractPdf(file: File) {
 }
 
 export async function saveAvatarImage(file: File) {
-  if (!allowedAvatarTypes.has(file.type)) {
+  if (!allowedAvatarTypes.has(file.type as AvatarMimeType)) {
     throw new StorageValidationError("Envie uma imagem PNG, JPG ou WebP.");
   }
 
@@ -245,12 +294,21 @@ export async function saveAvatarImage(file: File) {
     throw new StorageValidationError("A foto precisa ter ate 2 MB.");
   }
 
-  const extension = file.type === "image/png" ? ".png" : file.type === "image/webp" ? ".webp" : ".jpg";
   const buffer = Buffer.from(await file.arrayBuffer());
+  const mimeType = detectAvatarMimeType(buffer);
+
+  if (!mimeType || mimeType !== file.type) {
+    throw new StorageValidationError(
+      "O conteudo da imagem nao corresponde ao tipo enviado.",
+    );
+  }
+
+  const extension =
+    mimeType === "image/png" ? ".png" : mimeType === "image/webp" ? ".webp" : ".jpg";
   const relativePath = await saveFileBuffer("avatars", extension, buffer);
 
   return {
-    mimeType: file.type,
+    mimeType,
     relativePath,
   };
 }

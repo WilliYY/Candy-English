@@ -1,13 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { replaceUserAvatar } from "@/lib/avatar-service";
 import { auth } from "@/lib/auth";
-import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import {
-  deleteAvatarImage,
-  saveAvatarImage,
-  StorageValidationError,
-} from "@/lib/storage";
+import { StorageValidationError } from "@/lib/storage";
 
 export const runtime = "nodejs";
 
@@ -31,41 +27,8 @@ export async function POST(request: Request) {
     );
   }
 
-  let savedAvatarPath: string | null = null;
-  let persisted = false;
-
   try {
-    const avatar = await saveAvatarImage(file);
-    savedAvatarPath = avatar.relativePath;
-    const prisma = getPrisma();
-    const previousAvatarPath = await prisma.$transaction(async (tx) => {
-      const rows = await tx.$queryRaw<Array<{ avatarPath: string | null }>>`
-        SELECT "avatarPath"
-        FROM "User"
-        WHERE "id" = ${session.user.id}
-        FOR UPDATE
-      `;
-      const currentUser = rows[0];
-
-      if (!currentUser) {
-        throw new Error("Usuario nao encontrado.");
-      }
-
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: {
-          avatarMimeType: avatar.mimeType,
-          avatarPath: avatar.relativePath,
-        },
-      });
-
-      return currentUser.avatarPath;
-    });
-    persisted = true;
-
-    if (previousAvatarPath && previousAvatarPath !== avatar.relativePath) {
-      await deleteAvatarImage(previousAvatarPath).catch(() => undefined);
-    }
+    const avatar = await replaceUserAvatar(session.user.id, file);
 
     revalidatePath("/ava", "layout");
     revalidatePath("/ava/student");
@@ -80,10 +43,6 @@ export async function POST(request: Request) {
       ok: true,
     });
   } catch (error) {
-    if (savedAvatarPath && !persisted) {
-      await deleteAvatarImage(savedAvatarPath).catch(() => undefined);
-    }
-
     const isValidationError = error instanceof StorageValidationError;
 
     return NextResponse.json(

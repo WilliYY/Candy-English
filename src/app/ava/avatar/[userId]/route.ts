@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {
+  AVATAR_MAX_BYTES,
+  detectAvatarMimeType,
   getStoragePath,
   isMissingStorageFileError,
 } from "@/lib/storage";
@@ -97,6 +99,17 @@ export async function GET(
     );
   }
 
+  const detectedMimeType = detectAvatarMimeType(file);
+
+  if (
+    file.byteLength <= 0 ||
+    file.byteLength > AVATAR_MAX_BYTES ||
+    !detectedMimeType ||
+    detectedMimeType !== user.avatarMimeType
+  ) {
+    return new NextResponse("Foto invalida.", { status: 422 });
+  }
+
   const body = file.buffer.slice(
     file.byteOffset,
     file.byteOffset + file.byteLength,
@@ -105,7 +118,8 @@ export async function GET(
   return new NextResponse(body, {
     headers: {
       "Cache-Control": "private, no-store",
-      "Content-Type": user.avatarMimeType,
+      "Content-Length": String(file.byteLength),
+      "Content-Type": detectedMimeType,
       "X-Content-Type-Options": "nosniff",
     },
   });

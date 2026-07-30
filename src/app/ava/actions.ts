@@ -9,6 +9,7 @@ import {
   LIVE_CLASS_MAINTENANCE_ENABLED,
   LIVE_CLASS_MAINTENANCE_MESSAGE,
 } from "@/lib/live-class";
+import { persistOwnProfile } from "@/lib/profile-service";
 import { getPrisma } from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
 import { saveContractPdf } from "@/lib/storage";
@@ -129,10 +130,6 @@ function createJitsiMeetUrl(title: string) {
   return `${getLiveClassJitsiOrigin()}/CandyEnglish-${slug || "aula"}-${suffix}`;
 }
 
-function toNullable<TValue>(value: TValue | undefined) {
-  return value ?? null;
-}
-
 export async function updateMyProfile(
   input: UpdateProfileInput,
 ): Promise<ActionResult<UpdateProfileInput>> {
@@ -155,58 +152,7 @@ export async function updateMyProfile(
     };
   }
 
-  const prisma = getPrisma();
-  const {
-    address,
-    birthDate,
-    gender,
-    guardianDocument,
-    motherName,
-    motherPhone,
-    name,
-    notes,
-    phone,
-    studentPhone,
-    studentPhoneAlt,
-  } = parsed.data;
-
-  await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { id: actor.userId },
-      data: {
-        address: toNullable(address),
-        name,
-        phone: toNullable(phone),
-      },
-    });
-
-    if (actor.role === "STUDENT") {
-      await tx.studentProfile.upsert({
-        where: { userId: actor.userId },
-        create: {
-          birthDate: toNullable(birthDate),
-          gender: toNullable(gender),
-          guardianDocument: toNullable(guardianDocument),
-          motherName: toNullable(motherName),
-          motherPhone: toNullable(motherPhone),
-          notes: toNullable(notes),
-          studentPhone: toNullable(studentPhone),
-          studentPhoneAlt: toNullable(studentPhoneAlt),
-          userId: actor.userId,
-        },
-        update: {
-          birthDate: toNullable(birthDate),
-          gender: toNullable(gender),
-          guardianDocument: toNullable(guardianDocument),
-          motherName: toNullable(motherName),
-          motherPhone: toNullable(motherPhone),
-          notes: toNullable(notes),
-          studentPhone: toNullable(studentPhone),
-          studentPhoneAlt: toNullable(studentPhoneAlt),
-        },
-      });
-    }
-  });
+  await persistOwnProfile(actor, parsed.data);
 
   revalidatePath("/ava/student");
   revalidatePath("/ava/teacher");
