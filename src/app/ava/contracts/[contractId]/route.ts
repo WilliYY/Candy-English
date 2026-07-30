@@ -1,9 +1,14 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { getPrisma } from "@/lib/prisma";
+import {
+  getAuthorizedContractDocument,
+  getContractContentDisposition,
+  hasPdfSignature,
+} from "@/lib/contract-documents";
 import { isRole } from "@/lib/roles";
 import {
+  CONTRACT_MAX_BYTES,
   getStoragePath,
   isMissingStorageFileError,
 } from "@/lib/storage";
@@ -21,57 +26,13 @@ export async function GET(
   }
 
   const { contractId } = await params;
-  const prisma = getPrisma();
-  const contract = await prisma.contractDocument.findUnique({
-    where: { id: contractId },
-    select: {
-      fileName: true,
-      mimeType: true,
-      storagePath: true,
-      studentProfileId: true,
-    },
-  });
+  const contract = await getAuthorizedContractDocument({
+    id: session.user.id,
+    role: session.user.role,
+  }, contractId);
 
   if (!contract) {
     return new NextResponse("Contrato nao encontrado.", { status: 404 });
-  }
-
-  if (session.user.role === "STUDENT") {
-    const studentProfile = await prisma.studentProfile.findUnique({
-      where: { userId: session.user.id },
-      select: { id: true },
-    });
-
-    if (
-      !studentProfile ||
-      (contract.studentProfileId &&
-        contract.studentProfileId !== studentProfile.id)
-    ) {
-      return new NextResponse("Nao autorizado.", { status: 403 });
-    }
-  }
-
-  if (session.user.role === "TEACHER" && contract.studentProfileId) {
-    const teacherProfile = await prisma.teacherProfile.findUnique({
-      where: { userId: session.user.id },
-      select: { id: true },
-    });
-
-    const assignment =
-      teacherProfile &&
-      (await prisma.studentTeacherAssignment.findUnique({
-        where: {
-          teacherProfileId_studentProfileId: {
-            studentProfileId: contract.studentProfileId,
-            teacherProfileId: teacherProfile.id,
-          },
-        },
-        select: { id: true },
-      }));
-
-    if (!assignment) {
-      return new NextResponse("Nao autorizado.", { status: 403 });
-    }
   }
 
   let file: Buffer;
@@ -87,6 +48,14 @@ export async function GET(
     );
   }
 
+  if (
+    file.byteLength <= 0 ||
+    file.byteLength > CONTRACT_MAX_BYTES ||
+    !hasPdfSignature(file)
+  ) {
+    return new NextResponse("Arquivo de contrato invalido.", { status: 422 });
+  }
+
   const body = file.buffer.slice(
     file.byteOffset,
     file.byteOffset + file.byteLength,
@@ -94,8 +63,13 @@ export async function GET(
 
   return new NextResponse(body, {
     headers: {
-      "Content-Disposition": `inline; filename="${encodeURIComponent(contract.fileName)}"`,
-      "Content-Type": contract.mimeType,
+      "Cache-Control": "private, no-store",
+      "Content-Disposition": getContractContentDisposition(
+        contract.fileName,
+        "inline",
+      ),
+      "Content-Length": String(file.byteLength),
+      "Content-Type": "application/pdf",
       "X-Content-Type-Options": "nosniff",
     },
   });

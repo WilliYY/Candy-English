@@ -1,12 +1,16 @@
 import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { getMobileStudentLessonScope } from "@/lib/mobile-lesson";
+import { getContractDocumentAccessScope } from "@/lib/contract-documents";
 import { getPrisma } from "@/lib/prisma";
 
 export type MobileModuleItem = {
   amountCents?: number;
   detail?: string;
+  fileName?: string;
   id: string;
+  mimeType?: string;
   occurredAt?: string;
+  sizeBytes?: number;
   status?: string;
   subtitle?: string;
   title: string;
@@ -171,15 +175,15 @@ async function getStudentModule(user: MobileAuthUser, slug: string) {
 
   if (slug === "contracts") {
     const contracts = await prisma.contractDocument.findMany({
-      where: {
-        OR: [{ studentProfileId: null }, { studentProfileId: profile.id }],
-      },
+      where: getContractDocumentAccessScope(user),
       orderBy: { createdAt: "desc" },
       take: 50,
       select: {
         createdAt: true,
         fileName: true,
         id: true,
+        mimeType: true,
+        sizeBytes: true,
         title: true,
       },
     });
@@ -189,8 +193,11 @@ async function getStudentModule(user: MobileAuthUser, slug: string) {
       "Contratos",
       "Nenhum contrato disponível.",
       contracts.map((contract) => ({
+        fileName: contract.fileName,
         id: contract.id,
+        mimeType: contract.mimeType,
         occurredAt: contract.createdAt.toISOString(),
+        sizeBytes: contract.sizeBytes,
         subtitle: contract.fileName,
         title: contract.title,
       })),

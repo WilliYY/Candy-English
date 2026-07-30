@@ -50,6 +50,9 @@ Controles:
   interativa e bloqueia reenvio divergente.
 - `GET /api/mobile/v1/homeworks/[homeworkId]/listening/[fieldId]` gera o áudio
   protegido normal ou lento sem expor a frase configurada.
+- `GET /api/mobile/v1/contracts/[contractId]` entrega somente PDF geral ou do
+  próprio aluno por bearer token, com limite de 8 MB, assinatura validada,
+  headers `no-store`/`nosniff` e nome de download sem injeção de cabeçalhos.
 
 Escopos atuais:
 
@@ -62,6 +65,10 @@ Escopos atuais:
 
 O servidor valida role e vínculo antes da consulta. Escolher outro slug no app
 não amplia a permissão.
+
+O site e a API móvel compartilham `getAuthorizedContractDocument` para contratos.
+O app mantém o bearer token somente no cabeçalho, valida tipo, tamanho e
+assinatura do PDF, usa cache temporário limitado a 64 MB e o remove no logout.
 
 O chat web e o móvel chamam `sendAuthorizedChatMessage`; a regra de vínculo não
 fica duplicada nos dois clientes.
