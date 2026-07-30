@@ -41,6 +41,12 @@ Controles:
   feedback da homework autorizada do aluno.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/submit` envia homework `TEXT`
   pelo mesmo serviço de domínio usado no AVA web.
+- `PUT /api/mobile/v1/homeworks/[homeworkId]/interactive` salva o rascunho
+  interativo de forma idempotente.
+- `POST /api/mobile/v1/homeworks/[homeworkId]/interactive` entrega a atividade
+  interativa e bloqueia reenvio divergente.
+- `GET /api/mobile/v1/homeworks/[homeworkId]/listening/[fieldId]` gera o áudio
+  protegido normal ou lento sem expor a frase configurada.
 
 Escopos atuais:
 
@@ -62,6 +68,17 @@ O envio de homework `TEXT` no site e no app chama
 homework/aluno, aceita vínculo direto ou atribuição explícita, oculta
 homeworks não publicadas, não sobrescreve correções e trata a repetição da mesma
 resposta enviada como idempotente.
+
+Rascunho e entrega interativa no site e no app chamam
+`saveStudentInteractiveHomeworkDraft` e
+`submitStudentInteractiveHomework`. O serviço normaliza campos, valida
+obrigatórios, usa o mesmo lock transacional e aceita somente o aluno vinculado.
+O listening web e móvel usa `synthesizeListeningSpeech`; a chave OpenAI e a
+frase do exercício permanecem somente no servidor. Replays usam cache em
+memória com tamanho e validade limitados. Novas gerações aceitam no máximo 10
+solicitações por usuário a cada minuto em cada instância do servidor; uma
+implantação horizontal deve substituir esse limite local por armazenamento
+compartilhado.
 
 ## Persistência
 

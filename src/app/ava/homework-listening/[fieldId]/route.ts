@@ -1,71 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { normalizeListeningSentence } from "@/lib/interactive-homework-fields";
+import {
+  getListeningSpeedMode,
+  synthesizeListeningSpeech,
+} from "@/lib/listening-tts";
+import { canStudentAccessHomework } from "@/lib/homework-submission-service";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 
 export const runtime = "nodejs";
-
-type ListeningSpeedMode = "normal" | "slow";
-
-const OPENAI_TTS_VOICES = new Set([
-  "alloy",
-  "ash",
-  "ballad",
-  "coral",
-  "echo",
-  "fable",
-  "marin",
-  "nova",
-  "onyx",
-  "sage",
-  "shimmer",
-  "verse",
-  "cedar",
-]);
-const DEFAULT_OPENAI_TTS_VOICE = "coral";
-
-function getListeningSpeedMode(request: Request): ListeningSpeedMode {
-  const speed = new URL(request.url).searchParams.get("speed");
-
-  return speed === "slow" ? "slow" : "normal";
-}
-
-function getOpenAiVoice() {
-  const voice =
-    process.env.OPENAI_LISTENING_TTS_VOICE?.trim() || DEFAULT_OPENAI_TTS_VOICE;
-
-  return OPENAI_TTS_VOICES.has(voice) ? voice : DEFAULT_OPENAI_TTS_VOICE;
-}
-
-function getOpenAiSpeechBody(input: string, mode: ListeningSpeedMode) {
-  const model =
-    process.env.OPENAI_LISTENING_TTS_MODEL?.trim() || "gpt-4o-mini-tts";
-  const speed = mode === "slow" ? 0.72 : 1;
-  const body: {
-    input: string;
-    instructions?: string;
-    model: string;
-    response_format: "mp3";
-    speed: number;
-    voice: string;
-  } = {
-    input,
-    model,
-    response_format: "mp3",
-    speed,
-    voice: getOpenAiVoice(),
-  };
-
-  if (model.includes("gpt-4o")) {
-    body.instructions =
-      mode === "slow"
-        ? "Speak the English sentence with a warm, smiling, cheerful female English teacher tone, a little slower for a beginner student. Keep pronunciation clear, friendly, and encouraging."
-        : "Speak the English sentence with a warm, smiling, cheerful female English teacher tone. Keep pronunciation clear, natural, friendly, and encouraging.";
-  }
-
-  return body;
-}
 
 export async function GET(
   request: Request,
@@ -93,6 +36,9 @@ export async function GET(
             },
           },
           status: true,
+          studentAssignments: {
+            select: { studentProfileId: true },
+          },
           teacherProfileId: true,
         },
       },
@@ -116,7 +62,7 @@ export async function GET(
     if (
       field.homework.status !== "PUBLISHED" ||
       !studentProfile ||
-      field.homework.lesson.studentProfileId !== studentProfile.id
+      !canStudentAccessHomework(field.homework, studentProfile.id)
     ) {
       return new NextResponse("Nao autorizado.", { status: 403 });
     }
@@ -136,49 +82,22 @@ export async function GET(
     }
   }
 
-  const input = normalizeListeningSentence(field.placeholder ?? "");
+  const speech = await synthesizeListeningSpeech(
+    field.placeholder,
+    getListeningSpeedMode(request),
+    `user:${session.user.id}`,
+  );
 
-  if (!input) {
-    return new NextResponse("Texto do listening nao configurado.", {
-      status: 400,
-    });
+  if (!speech.ok) {
+    return new NextResponse(speech.message, { status: speech.status });
   }
 
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-
-  if (!apiKey) {
-    return new NextResponse("Audio OpenAI indisponivel.", { status: 503 });
-  }
-
-  const mode = getListeningSpeedMode(request);
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/audio/speech", {
-      body: JSON.stringify(getOpenAiSpeechBody(input, mode)),
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      signal: AbortSignal.timeout(15_000),
-    });
-
-    if (!response.ok) {
-      console.warn(`Listening OpenAI TTS failed: status ${response.status}`);
-
-      return new NextResponse("Audio indisponivel.", { status: 502 });
-    }
-
-    const audio = await response.arrayBuffer();
-
-    return new NextResponse(audio, {
-      headers: {
-        "Cache-Control": "private, max-age=604800",
-        "Content-Type": response.headers.get("Content-Type") ?? "audio/mpeg",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  } catch {
-    return new NextResponse("Audio indisponivel.", { status: 502 });
-  }
+  return new NextResponse(speech.audio, {
+    headers: {
+      "Cache-Control": "private, max-age=604800",
+      "Content-Type": speech.contentType,
+      Vary: "Cookie",
+      "X-Content-Type-Options": "nosniff",
+    },
+  });
 }
