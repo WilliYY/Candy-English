@@ -2,6 +2,8 @@ import {
   canStudentAccessHomework,
   readTextHomeworkAnswer,
 } from "@/lib/homework-submission-service";
+import { canSubmitInteractiveHomework } from "@/lib/homework-submission-state";
+import { readInteractiveAnswers } from "@/lib/interactive-homework-service";
 import { getPrisma } from "@/lib/prisma";
 
 type HomeworkResult<T = undefined> = {
@@ -39,7 +41,9 @@ export async function getMobileStudentHomework(
         select: {
           id: true,
           label: true,
+          placeholder: true,
           required: true,
+          sortOrder: true,
           type: true,
         },
       },
@@ -88,12 +92,22 @@ export async function getMobileStudentHomework(
         homework.kind === "TEXT" && submission
           ? readTextHomeworkAnswer(submission.answers)
           : "",
-      canSubmit: submission?.status !== "REVIEWED",
+      canSubmit:
+        homework.kind === "INTERACTIVE"
+          ? canSubmitInteractiveHomework(submission?.status)
+          : submission?.status !== "REVIEWED",
       dueDate: homework.dueDate?.toISOString() ?? null,
       feedback: submission?.feedback ?? null,
       id: homework.id,
       instructions: homework.instructions,
-      interactiveFields: homework.interactiveFields,
+      interactiveAnswers:
+        homework.kind === "INTERACTIVE" && submission
+          ? readInteractiveAnswers(submission.answers)
+          : [],
+      interactiveFields: homework.interactiveFields.map((field) => ({
+        ...field,
+        placeholder: field.type === "LISTENING" ? null : field.placeholder,
+      })),
       kind: homework.kind,
       lessonTitle: homework.lesson.title,
       questions: homework.questions,
