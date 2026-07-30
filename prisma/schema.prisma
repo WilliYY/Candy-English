@@ -259,6 +259,8 @@ model User {
   sentChatMessages                 ChatMessage[]
   uploadedContracts                ContractDocument[]          @relation("UploadedContracts")
   createdFinancialExpenses         FinancialExpense[]          @relation("FinancialExpenseCreatedBy")
+  mobileDevices                    MobileDevice[]
+  mobileSessions                   MobileSession[]
   createdAt                        DateTime                    @default(now())
   updatedAt                        DateTime                    @updatedAt
 
@@ -1251,4 +1253,56 @@ model LoginAttempt {
 
   @@index([email, createdAt])
   @@index([success, createdAt])
+}
+
+model MobileDevice {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  installationId String
+  platform       String
+  name           String?
+  appVersion     String?
+  lastSeenAt     DateTime        @default(now())
+  sessions       MobileSession[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([userId, installationId])
+  @@index([userId, lastSeenAt])
+}
+
+model MobileSession {
+  id              String               @id @default(cuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId        String
+  device          MobileDevice         @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  accessTokenHash String               @unique @db.Char(64)
+  accessExpiresAt DateTime
+  sessionVersion  Int
+  lastUsedAt      DateTime             @default(now())
+  revokedAt       DateTime?
+  revokeReason    String?              @db.VarChar(64)
+  refreshTokens   MobileRefreshToken[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([userId, revokedAt])
+  @@index([deviceId, revokedAt])
+  @@index([accessExpiresAt])
+}
+
+model MobileRefreshToken {
+  id                String        @id @default(cuid())
+  sessionId         String
+  session           MobileSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  tokenHash         String        @unique @db.Char(64)
+  expiresAt         DateTime
+  consumedAt        DateTime?
+  replacedByTokenId String?
+  createdAt         DateTime      @default(now())
+
+  @@index([sessionId, createdAt])
+  @@index([expiresAt])
 }

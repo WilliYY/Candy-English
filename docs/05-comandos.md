@@ -13,6 +13,7 @@ Este documento centraliza comandos de desenvolvimento, validacao, Docker e deplo
 - `prisma/migrations/`
 - `scripts/server-smoke.ts`
 - `scripts/auth-smoke.ts`
+- `scripts/mobile-auth-smoke.ts`
 - `scripts/avatar-smoke.ts`
 - `scripts/candy-xp-concurrency-smoke.ts`
 - `scripts/candy-xp-submission-concurrency-smoke.ts`
@@ -47,6 +48,8 @@ npm run typecheck
 npm run build
 npm run audit:server-smoke
 npm run audit:auth-smoke
+npm run test:mobile-auth
+npm run audit:mobile-auth
 npm run audit:avatar-smoke
 npm run audit:pre-registration
 npm run audit:candy-xp-concurrency

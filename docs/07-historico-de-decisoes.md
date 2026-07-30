@@ -661,6 +661,13 @@ Cada decisao deve conter:
 - Impacto: `teacher-forms.tsx`, `interactive-homework-student.tsx`, `interactive-homework-document.tsx`, rotas protegidas de assets de homework/Candy XP e documentacao do fluxo.
 - Riscos/cuidados: manter a selecao enviada inalterada, continuar validando aluno/teacher no servidor, nao apagar o rascunho em falha, preservar a leitura inline usada pelo PDF.js e aplicar download apenas quando a query explicita estiver presente.
 
+### 2026-07-30 - Aplicativo nativo com sessao movel propria
+
+- Decisao: manter o Next.js e o PostgreSQL atuais como fonte unica para site e app, criando `/api/mobile/v1` com access token curto, refresh rotativo vinculado a instalacao e autorizacao server-side por role/dado.
+- Motivo: permitir Android/iOS nativos com o mesmo login e atualizacao de dados do site, sem WebView, sem cookie Auth.js no celular e sem duplicar banco ou regra de senha.
+- Impacto: `prisma/schema.prisma`, migration `20260730121000_mobile_sessions`, `src/lib/password-auth.ts`, `src/lib/mobile-auth/`, `src/lib/mobile-overview.ts`, `src/lib/mobile-modules.ts`, `src/app/api/mobile/`, `scripts/mobile-auth-smoke.ts` e `docs/18-mobile-api.md`.
+- Riscos/cuidados: aplicar migration antes do deploy, executar smoke integrado com PostgreSQL, nunca registrar tokens/senha, manter o cofre administrativo fora do app e extrair escritas para servicos de dominio compartilhados.
+
 ## Regras de negocio que precisam ser preservadas
 
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.

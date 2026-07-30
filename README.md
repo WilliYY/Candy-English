@@ -71,6 +71,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
+- `docs/18-mobile-api.md`: autenticacao movel, sessoes revogaveis, overview e modulos nativos por role.
 - `docs/catty-comportamento.md`: exemplos bons/ruins e smoke de comportamento da Catty.
 - `docs/99-contexto-rapido-codex.md`: prompt minimo e memoria curta para continuar o projeto em outro chat.
 

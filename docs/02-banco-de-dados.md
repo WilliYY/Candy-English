@@ -31,6 +31,9 @@ Perfis e auth:
 - `StudentPreRegistration`
 - `TeacherProfile`
 - `LoginAttempt`
+- `MobileDevice`
+- `MobileSession`
+- `MobileRefreshToken`
 
 Relacionamentos escolares:
 
@@ -217,6 +220,7 @@ Enums:
 - Migration `20260619120000_site_visit_counter` adiciona `SiteVisitCounter` para exibir total agregado de visitas no footer publico sem rastrear dados pessoais.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
+- Migration `20260730121000_mobile_sessions` adiciona dispositivos, sessoes e refresh tokens moveis com hashes, rotacao e revogacao.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
 - Migration `20260601193000_candy_xp_activities` adiciona atividades Candy XP com PDF/imagem, perguntas, liberacao por aluno, progresso/submissao e evento de XP por atividade concluida.
 - Migration `20260609110000_candy_xp_interactive_fields` adiciona `CandyXpActivityInteractiveField` para editar areas diretamente sobre o PDF/imagem da missao.

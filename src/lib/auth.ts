@@ -1,15 +1,11 @@
-import { compare } from "bcryptjs";
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
-import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
+import { authenticatePasswordCredentials } from "@/lib/password-auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { loginSchema } from "@/lib/validations/auth";
-
-const LOGIN_WINDOW_MINUTES = 15;
-const LOGIN_MAX_FAILURES = 8;
 
 async function getActiveUserByEmail(email: string) {
   const prisma = getPrisma();
@@ -62,70 +58,7 @@ const providers: NextAuthConfig["providers"] = [
         return null;
       }
 
-      const { email, password } = parsed.data;
-      const prisma = getPrisma();
-
-      return prisma.$transaction(async (tx) => {
-        await acquireTransactionAdvisoryLock(tx, `login:${email}`);
-
-        const now = Date.now();
-        const windowStart = new Date(
-          now - LOGIN_WINDOW_MINUTES * 60 * 1000,
-        );
-
-        await tx.loginAttempt.deleteMany({
-          where: {
-            createdAt: {
-              lt: new Date(now - 24 * 60 * 60 * 1000),
-            },
-          },
-        });
-
-        const failures = await tx.loginAttempt.count({
-          where: {
-            createdAt: {
-              gte: windowStart,
-            },
-            email,
-            success: false,
-          },
-        });
-
-        if (failures >= LOGIN_MAX_FAILURES) {
-          return null;
-        }
-
-        const user = await tx.user.findUnique({
-          where: { email },
-        });
-        const passwordMatches = user
-          ? await compare(password, user.passwordHash)
-          : false;
-        const blockedByMaintenance =
-          user?.role === "STUDENT" && (await isMaintenanceModeEnabled());
-        const success = Boolean(
-          user?.isActive && passwordMatches && !blockedByMaintenance,
-        );
-
-        await tx.loginAttempt.create({
-          data: {
-            email,
-            success,
-          },
-        });
-
-        if (!success || !user) {
-          return null;
-        }
-
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          sessionVersion: user.sessionVersion,
-        };
-      });
+      return authenticatePasswordCredentials(parsed.data);
     },
   }),
 ];

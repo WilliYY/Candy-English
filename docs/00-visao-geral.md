@@ -82,6 +82,7 @@ Rotas principais:
 - `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave para homework/aula interativa.
 - `16-candy-xp.md`: fundacao de gamificacao persistente no estilo Duolingo.
 - `17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, areas interativas, perguntas antigas, progresso, correcao e XP.
+- `18-mobile-api.md`: autenticacao movel, sessoes revogaveis e dados nativos autorizados por role.
 - `99-contexto-rapido-codex.md`: prompt minimo e contexto curto para retomar o projeto em outro chat.
 
 ## Riscos ao alterar esta parte
