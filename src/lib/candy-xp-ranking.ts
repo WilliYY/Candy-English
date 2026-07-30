@@ -202,9 +202,11 @@ function getAlphabeticalTieUserFilter({
 export async function getCandyXpRankingSnapshot({
   currentUserId,
   limit = 10,
+  rankingRole,
 }: {
   currentUserId: string;
   limit?: number;
+  rankingRole?: CandyXpRankingRole;
 }): Promise<CandyXpRankingSnapshot> {
   const prisma = getPrisma();
   const normalizedLimit = Math.min(
@@ -213,8 +215,13 @@ export async function getCandyXpRankingSnapshot({
   );
   return prisma.$transaction(
     async (tx) => {
-      const rankingProfileWhere = getRankableProfileWhere({ withXpOnly: true });
-      const rankableProfileWhere = getRankableProfileWhere();
+      const rankingProfileWhere = getRankableProfileWhere({
+        role: rankingRole,
+        withXpOnly: true,
+      });
+      const rankableProfileWhere = getRankableProfileWhere({
+        role: rankingRole,
+      });
       const [topProfiles, totalRanked, currentUserProfile] = await Promise.all([
         tx.candyXpProfile.findMany({
           where: rankingProfileWhere,

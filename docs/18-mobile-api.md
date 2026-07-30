@@ -60,6 +60,11 @@ Controles:
   autenticado, sem expor o caminho interno do arquivo.
 - `POST /api/mobile/v1/profile/avatar` recebe JPEG, PNG ou WebP de até 2 MB,
   confere a assinatura real do arquivo e substitui a foto de forma transacional.
+- `GET /api/mobile/v1/candy-xp` sincroniza de forma idempotente o XP do perfil e
+  entrega progresso, streak, badges, eventos recentes, ranking interno de alunos
+  e atividades `PUBLISHED` gerais ou atribuídas ao próprio aluno.
+  A resposta não inclui e-mail, `userId`, `avatarPath`, respostas corretas ou
+  qualquer caminho interno de arquivo.
 
 Escopos atuais:
 
