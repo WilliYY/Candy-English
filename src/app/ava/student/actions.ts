@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { Prisma } from "@/generated/prisma/client";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
-import { normalizeTinyTextAnswer } from "@/lib/interactive-homework-fields";
-import { canSubmitInteractiveHomework } from "@/lib/homework-submission-state";
 import { submitStudentTextHomework } from "@/lib/homework-submission-service";
+import {
+  saveStudentInteractiveHomeworkDraft,
+  submitStudentInteractiveHomework,
+} from "@/lib/interactive-homework-service";
 import {
   interactiveHomeworkAnswerSchema,
   submitHomeworkSchema,
@@ -138,44 +139,6 @@ function isInteractiveLessonEntity(homework: {
   return homework.fieldDetectionSource === "lesson-manual";
 }
 
-function normalizeInteractiveAnswers(
-  answers: InteractiveHomeworkAnswerInput["answers"],
-  allowedFields: Map<string, { type: string }>,
-) {
-  return answers
-    .filter((answer) => {
-      const field = allowedFields.get(answer.fieldId);
-
-      return Boolean(field && field.type !== "LISTENING");
-    })
-    .map((answer) => {
-      const field = allowedFields.get(answer.fieldId);
-
-      return {
-        fieldId: answer.fieldId,
-        value:
-          field?.type === "TINY_TEXT"
-            ? normalizeTinyTextAnswer(answer.value)
-            : answer.value,
-      };
-    });
-}
-
-function hasDrawingContent(value: string) {
-  try {
-    const parsed = JSON.parse(value) as { strokes?: unknown };
-
-    return (
-      Array.isArray(parsed.strokes) &&
-      parsed.strokes.some(
-        (stroke) => Array.isArray(stroke) && stroke.length > 0,
-      )
-    );
-  } catch {
-    return false;
-  }
-}
-
 export async function submitHomework(
   input: SubmitHomeworkInput,
 ): Promise<SubmitHomeworkResult> {
@@ -239,9 +202,9 @@ export async function submitHomework(
 export async function saveInteractiveHomeworkDraft(
   input: InteractiveHomeworkAnswerInput,
 ): Promise<InteractiveHomeworkResult> {
-  const studentProfile = await getStudentActor();
+  const session = await auth();
 
-  if (!studentProfile) {
+  if (session?.user?.role !== "STUDENT") {
     return {
       ok: false,
       message: "Use uma conta de aluno para salvar a atividade.",
@@ -258,123 +221,15 @@ export async function saveInteractiveHomeworkDraft(
     };
   }
 
-  const prisma = getPrisma();
-  const homework = await getInteractiveHomeworkForStudent(
-    parsed.data.homeworkId,
-    studentProfile.id,
-  );
-
-  if (
-    !homework ||
-    homework.status !== "PUBLISHED" ||
-    homework.kind !== "INTERACTIVE"
-  ) {
-    return {
-      ok: false,
-      message: "Atividade interativa indisponivel.",
-    };
-  }
-
-  const entityLabel = interactiveEntityLabel(homework);
-  const isLessonEntity = isInteractiveLessonEntity(homework);
-
-  if (!canStudentAccessHomework(homework, studentProfile.id)) {
-    return {
-      ok: false,
-      message: `Esta ${entityLabel} nao esta vinculada ao seu perfil.`,
-    };
-  }
-
-  const existingSubmission = homework.submissions[0];
-
-  if (
-    existingSubmission?.status === "SUBMITTED" ||
-    existingSubmission?.status === "REVIEWED"
-  ) {
-    return {
-      ok: false,
-      message: isLessonEntity
-        ? "Esta aula ja foi concluida."
-        : `Esta ${entityLabel} ja foi entregue.`,
-    };
-  }
-
-  const allowedFields = new Map(
-    homework.interactiveFields.map((field) => [field.id, { type: field.type }]),
-  );
-  const answers = normalizeInteractiveAnswers(
-    parsed.data.answers,
-    allowedFields,
-  );
-
-  const saved = await prisma.$transaction(async (tx) => {
-    await acquireTransactionAdvisoryLock(
-      tx,
-      `homework-submission:${homework.id}:${studentProfile.id}`,
-    );
-
-    const currentSubmission = await tx.homeworkSubmission.findUnique({
-      where: {
-        homeworkId_studentProfileId: {
-          homeworkId: homework.id,
-          studentProfileId: studentProfile.id,
-        },
-      },
-      select: {
-        status: true,
-      },
-    });
-
-    if (
-      currentSubmission?.status === "SUBMITTED" ||
-      currentSubmission?.status === "REVIEWED"
-    ) {
-      return false;
-    }
-
-    await tx.homeworkSubmission.upsert({
-      where: {
-        homeworkId_studentProfileId: {
-          homeworkId: homework.id,
-          studentProfileId: studentProfile.id,
-        },
-      },
-      create: {
-        answers,
-        homeworkId: homework.id,
-        status: "DRAFT",
-        studentProfileId: studentProfile.id,
-      },
-      update: {
-        answers,
-        status: "DRAFT",
-      },
-    });
-
-    return true;
-  });
-
-  if (!saved) {
-    return {
-      ok: false,
-      message: isLessonEntity
-        ? "Esta aula ja foi concluida."
-        : `Esta ${entityLabel} ja foi entregue.`,
-    };
-  }
-
-  return {
-    ok: true,
-    message: "Rascunho salvo.",
-  };
+  return saveStudentInteractiveHomeworkDraft(session.user.id, parsed.data);
 }
 
 export async function submitInteractiveHomework(
   input: InteractiveHomeworkAnswerInput,
 ): Promise<InteractiveHomeworkResult> {
-  const studentProfile = await getStudentActor();
+  const session = await auth();
 
-  if (!studentProfile) {
+  if (session?.user?.role !== "STUDENT") {
     return {
       ok: false,
       message: "Use uma conta de aluno para entregar a atividade.",
@@ -391,162 +246,20 @@ export async function submitInteractiveHomework(
     };
   }
 
-  const prisma = getPrisma();
-  const homework = await getInteractiveHomeworkForStudent(
-    parsed.data.homeworkId,
-    studentProfile.id,
+  const result = await submitStudentInteractiveHomework(
+    session.user.id,
+    parsed.data,
   );
 
-  if (
-    !homework ||
-    homework.status !== "PUBLISHED" ||
-    homework.kind !== "INTERACTIVE"
-  ) {
-    return {
-      ok: false,
-      message: "Atividade interativa indisponivel.",
-    };
-  }
-
-  const entityLabel = interactiveEntityLabel(homework);
-  const isLessonEntity = isInteractiveLessonEntity(homework);
-
-  if (!canStudentAccessHomework(homework, studentProfile.id)) {
-    return {
-      ok: false,
-      message: `Esta ${entityLabel} nao esta vinculada ao seu perfil.`,
-    };
-  }
-
-  const existingSubmission = homework.submissions[0];
-
-  if (!canSubmitInteractiveHomework(existingSubmission?.status)) {
-    return {
-      ok: false,
-      message:
-        existingSubmission?.status === "REVIEWED"
-          ? `Esta ${entityLabel} ja foi corrigida.`
-          : isLessonEntity
-            ? "Esta aula ja foi concluida."
-            : `Esta ${entityLabel} ja foi entregue.`,
-    };
-  }
-
-  const allowedFields = new Map(
-    homework.interactiveFields.map((field) => [field.id, { type: field.type }]),
-  );
-  const answers = normalizeInteractiveAnswers(
-    parsed.data.answers,
-    allowedFields,
-  );
-  const answerMap = new Map(
-    answers.map((answer) => [answer.fieldId, answer.value]),
-  );
-  const hasMissingRequired = homework.interactiveFields.some((field) => {
-    if (!field.required) {
-      return false;
-    }
-
-    const value = answerMap.get(field.id) ?? "";
-
-    if (field.type === "CHECKBOX") {
-      return value !== "true";
-    }
-
-    if (field.type === "DRAWING") {
-      return !hasDrawingContent(value);
-    }
-
-    if (field.type === "LISTENING") {
-      return false;
-    }
-
-    return !value.trim();
-  });
-
-  if (hasMissingRequired) {
-    return {
-      errors: {
-        answers: isLessonEntity
-          ? "Preencha os campos obrigatorios antes de concluir."
-          : "Preencha os campos obrigatorios antes de entregar.",
-      },
-      ok: false,
-      message: isLessonEntity
-        ? "Preencha os campos obrigatorios antes de concluir."
-        : "Preencha os campos obrigatorios antes de entregar.",
-    };
-  }
-
-  const submitted = await prisma.$transaction(async (tx) => {
-    await acquireTransactionAdvisoryLock(
-      tx,
-      `homework-submission:${homework.id}:${studentProfile.id}`,
-    );
-
-    const currentSubmission = await tx.homeworkSubmission.findUnique({
-      where: {
-        homeworkId_studentProfileId: {
-          homeworkId: homework.id,
-          studentProfileId: studentProfile.id,
-        },
-      },
-      select: {
-        status: true,
-      },
-    });
-
-    if (!canSubmitInteractiveHomework(currentSubmission?.status)) {
-      return false;
-    }
-
-    await tx.homeworkSubmission.upsert({
-      where: {
-        homeworkId_studentProfileId: {
-          homeworkId: homework.id,
-          studentProfileId: studentProfile.id,
-        },
-      },
-      create: {
-        answers,
-        homeworkId: homework.id,
-        status: "SUBMITTED",
-        studentProfileId: studentProfile.id,
-        submittedAt: new Date(),
-      },
-      update: {
-        answers,
-        feedback: null,
-        reviewedAt: null,
-        reviewedByTeacherProfileId: null,
-        status: "SUBMITTED",
-        submittedAt: new Date(),
-        teacherAnnotations: Prisma.DbNull,
-      },
-    });
-
-    return true;
-  });
-
-  if (!submitted) {
-    return {
-      ok: false,
-      message: isLessonEntity
-        ? "Esta aula ja foi concluida ou corrigida."
-        : `Esta ${entityLabel} ja foi entregue ou corrigida.`,
-    };
+  if (!result.ok) {
+    return result;
   }
 
   revalidatePath("/ava/student");
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/admin");
 
-  return {
-    ok: true,
-    message: isLessonEntity
-      ? "Aula concluida com sucesso."
-      : "Homework entregue com sucesso.",
-  };
+  return result;
 }
 
 export async function reopenInteractiveHomeworkDraft(input: {

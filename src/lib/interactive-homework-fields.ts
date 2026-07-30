@@ -26,3 +26,32 @@ export function normalizeListeningSentence(value: string) {
     .trim()
     .slice(0, LISTENING_SENTENCE_MAX_LENGTH);
 }
+
+export function hasInteractiveHomeworkDrawingContent(value: string) {
+  try {
+    const parsed = JSON.parse(value) as { strokes?: unknown };
+
+    return (
+      Array.isArray(parsed.strokes) &&
+      parsed.strokes.some(
+        (stroke) =>
+          Array.isArray(stroke) &&
+          stroke.some(
+            (point) =>
+              Array.isArray(point) &&
+              point.length >= 2 &&
+              typeof point[0] === "number" &&
+              Number.isFinite(point[0]) &&
+              point[0] >= 0 &&
+              point[0] <= 100 &&
+              typeof point[1] === "number" &&
+              Number.isFinite(point[1]) &&
+              point[1] >= 0 &&
+              point[1] <= 100,
+          ),
+      )
+    );
+  } catch {
+    return false;
+  }
+}
