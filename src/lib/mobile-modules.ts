@@ -107,6 +107,7 @@ async function getStudentModule(user: MobileAuthUser, slug: string) {
           { lesson: { studentProfileId: profile.id } },
           { studentAssignments: { some: { studentProfileId: profile.id } } },
         ],
+        status: "PUBLISHED",
       },
       orderBy: [{ dueDate: "desc" }, { updatedAt: "desc" }],
       take: 50,

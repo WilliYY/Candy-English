@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { getPrisma } from "@/lib/prisma";
 
@@ -49,7 +50,8 @@ async function getStudentOverview(
       { lesson: { studentProfileId: profile.id } },
       { studentAssignments: { some: { studentProfileId: profile.id } } },
     ],
-  };
+    status: "PUBLISHED",
+  } satisfies Prisma.HomeworkWhereInput;
   const [
     lessons,
     homeworks,

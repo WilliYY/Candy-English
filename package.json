@@ -18,6 +18,7 @@
     "audit:auth-smoke": "tsx scripts/auth-smoke.ts",
     "audit:mobile-auth": "tsx scripts/mobile-auth-smoke.ts",
     "test:mobile-auth": "tsx --test src/lib/mobile-auth/__tests__/*.test.ts",
+    "test:mobile-homework": "tsx --test src/lib/__tests__/mobile-homework.test.ts",
     "audit:avatar-smoke": "tsx scripts/avatar-smoke.ts",
     "audit:pre-registration": "tsx scripts/pre-registration-smoke.ts",
     "audit:candy-xp-concurrency": "tsx scripts/candy-xp-concurrency-smoke.ts",

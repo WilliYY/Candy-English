@@ -8,6 +8,7 @@ import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import { normalizeTinyTextAnswer } from "@/lib/interactive-homework-fields";
 import { canSubmitInteractiveHomework } from "@/lib/homework-submission-state";
+import { submitStudentTextHomework } from "@/lib/homework-submission-service";
 import {
   interactiveHomeworkAnswerSchema,
   submitHomeworkSchema,
@@ -216,116 +217,15 @@ export async function submitHomework(
     };
   }
 
-  const prisma = getPrisma();
-  const studentProfile = await prisma.studentProfile.findUnique({
-    where: {
-      userId: session.user.id,
-    },
-    select: {
-      id: true,
-    },
-  });
+  const result = await submitStudentTextHomework(
+    session.user.id,
+    parsed.data.homeworkId,
+    parsed.data.answer,
+  );
 
-  if (!studentProfile) {
-    return {
-      ok: false,
-      message: "Perfil de aluno nao encontrado.",
-    };
+  if (!result.ok) {
+    return result;
   }
-
-  const homework = await prisma.homework.findUnique({
-    where: {
-      id: parsed.data.homeworkId,
-    },
-    select: {
-      id: true,
-      lesson: {
-        select: {
-          studentProfileId: true,
-        },
-      },
-      questions: {
-        orderBy: {
-          sortOrder: "asc",
-        },
-        select: {
-          id: true,
-          prompt: true,
-        },
-        take: 1,
-      },
-      status: true,
-      submissions: {
-        where: {
-          studentProfileId: studentProfile.id,
-        },
-        select: {
-          status: true,
-        },
-        take: 1,
-      },
-    },
-  });
-
-  if (!homework || homework.status !== "PUBLISHED") {
-    return {
-      ok: false,
-      message: "Homework nao encontrada ou indisponivel.",
-    };
-  }
-
-  if (!canStudentAccessHomework(homework, studentProfile.id)) {
-    return {
-      ok: false,
-      message: "Esta homework nao esta vinculada ao seu perfil.",
-    };
-  }
-
-  const existingSubmission = homework.submissions[0];
-
-  if (existingSubmission?.status === "REVIEWED") {
-    return {
-      ok: false,
-      message: "Esta homework ja foi corrigida e nao pode ser reenviada.",
-    };
-  }
-
-  const question = homework.questions[0];
-
-  await prisma.homeworkSubmission.upsert({
-    where: {
-      homeworkId_studentProfileId: {
-        homeworkId: homework.id,
-        studentProfileId: studentProfile.id,
-      },
-    },
-    create: {
-      answers: [
-        {
-          answer: parsed.data.answer,
-          prompt: question?.prompt ?? "Resposta livre",
-          questionId: question?.id ?? null,
-        },
-      ],
-      homeworkId: homework.id,
-      studentProfileId: studentProfile.id,
-    },
-    update: {
-      answers: [
-        {
-          answer: parsed.data.answer,
-          prompt: question?.prompt ?? "Resposta livre",
-          questionId: question?.id ?? null,
-        },
-      ],
-      feedback: null,
-      reviewedAt: null,
-      reviewedByTeacherProfileId: null,
-      status: "SUBMITTED",
-      submittedAt: new Date(),
-      teacherAnnotations: Prisma.DbNull,
-    },
-  });
 
   revalidatePath("/ava/student");
   revalidatePath("/ava/teacher");

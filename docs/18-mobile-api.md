@@ -37,6 +37,10 @@ Controles:
 - `GET /api/mobile/v1/chat/messages` carrega a conversa do vínculo.
 - `POST /api/mobile/v1/chat/messages` envia mensagem pelo serviço de domínio
   compartilhado com o site.
+- `GET /api/mobile/v1/homeworks/[homeworkId]` carrega detalhe, entrega e
+  feedback da homework autorizada do aluno.
+- `POST /api/mobile/v1/homeworks/[homeworkId]/submit` envia homework `TEXT`
+  pelo mesmo serviço de domínio usado no AVA web.
 
 Escopos atuais:
 
@@ -53,6 +57,12 @@ não amplia a permissão.
 O chat web e o móvel chamam `sendAuthorizedChatMessage`; a regra de vínculo não
 fica duplicada nos dois clientes.
 
+O envio de homework `TEXT` no site e no app chama
+`submitStudentTextHomework`. A operação usa lock transacional por
+homework/aluno, aceita vínculo direto ou atribuição explícita, oculta
+homeworks não publicadas, não sobrescreve correções e trata a repetição da mesma
+resposta enviada como idempotente.
+
 ## Persistência
 
 A migration `20260730121000_mobile_sessions` adiciona:
@@ -68,6 +78,7 @@ móvel em produção.
 
 ```bash
 npm run test:mobile-auth
+npm run test:mobile-homework
 npm run typecheck
 npm run lint
 npm run prisma:validate
