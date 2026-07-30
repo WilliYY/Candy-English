@@ -33,6 +33,10 @@ Controles:
 
 - `GET /api/mobile/v1/overview` devolve indicadores e próximo item autorizados.
 - `GET /api/mobile/v1/modules/[module]` devolve listas nativas normalizadas.
+- `GET /api/mobile/v1/chat/threads` lista somente vínculos autorizados.
+- `GET /api/mobile/v1/chat/messages` carrega a conversa do vínculo.
+- `POST /api/mobile/v1/chat/messages` envia mensagem pelo serviço de domínio
+  compartilhado com o site.
 
 Escopos atuais:
 
@@ -45,6 +49,9 @@ Escopos atuais:
 
 O servidor valida role e vínculo antes da consulta. Escolher outro slug no app
 não amplia a permissão.
+
+O chat web e o móvel chamam `sendAuthorizedChatMessage`; a regra de vínculo não
+fica duplicada nos dois clientes.
 
 ## Persistência
 

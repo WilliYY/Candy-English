@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { sendAuthorizedChatMessage } from "@/lib/chat-service";
 import {
   getLiveClassJitsiOrigin,
   LIVE_CLASS_MAINTENANCE_ENABLED,
@@ -568,88 +569,15 @@ export async function sendChatMessage(
     };
   }
 
-  const prisma = getPrisma();
   const { body, studentProfileId, teacherProfileId } = parsed.data;
-  const assignment = await prisma.studentTeacherAssignment.findUnique({
-    where: {
-      teacherProfileId_studentProfileId: {
-        studentProfileId,
-        teacherProfileId,
-      },
-    },
-    select: { id: true },
-  });
+  const result = await sendAuthorizedChatMessage(
+    { role: actor.role, userId: actor.userId },
+    { body, studentProfileId, teacherProfileId },
+  );
 
-  if (!assignment) {
-    return {
-      ok: false,
-      message: "Vincule este aluno a esta teacher antes de iniciar a conversa.",
-    };
+  if (!result.ok) {
+    return result;
   }
-
-  if (actor.role === "TEACHER") {
-    const teacherProfile = await prisma.teacherProfile.findUnique({
-      where: { userId: actor.userId },
-      select: { id: true },
-    });
-
-    if (!teacherProfile || teacherProfile.id !== teacherProfileId) {
-      return {
-        ok: false,
-        message: "Voce so pode enviar mensagens como sua propria teacher.",
-      };
-    }
-  }
-
-  if (actor.role === "STUDENT") {
-    const studentProfile = await prisma.studentProfile.findUnique({
-      where: { userId: actor.userId },
-      select: { id: true },
-    });
-
-    if (!studentProfile || studentProfile.id !== studentProfileId) {
-      return {
-        ok: false,
-        message: "Voce so pode enviar mensagens do seu proprio perfil.",
-      };
-    }
-  }
-
-  if (
-    actor.role !== "ADMIN" &&
-    actor.role !== "TEACHER" &&
-    actor.role !== "STUDENT"
-  ) {
-    return {
-      ok: false,
-      message: "Voce nao tem permissao para enviar mensagens.",
-    };
-  }
-
-  const thread = await prisma.chatThread.upsert({
-    where: {
-      teacherProfileId_studentProfileId: {
-        studentProfileId,
-        teacherProfileId,
-      },
-    },
-    create: {
-      studentProfileId,
-      teacherProfileId,
-    },
-    update: {
-      updatedAt: new Date(),
-    },
-    select: { id: true },
-  });
-
-  await prisma.chatMessage.create({
-    data: {
-      body,
-      senderUserId: actor.userId,
-      threadId: thread.id,
-    },
-  });
 
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");
@@ -657,6 +585,6 @@ export async function sendChatMessage(
 
   return {
     ok: true,
-    message: "Mensagem enviada.",
+    message: result.message,
   };
 }
