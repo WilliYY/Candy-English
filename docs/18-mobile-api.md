@@ -83,11 +83,17 @@ Controles:
   salas ativas gerais ou próprias, a teacher apenas suas salas e o admin a visão
   operacional. Links de entrada são limitados a HTTPS e nenhum campo interno de
   perfil é exposto.
+- `GET /api/mobile/v1/notifications` monta a caixa de avisos do aluno com aulas
+  liberadas, homework pendente, correções e conquistas de XP. A consulta usa os
+  mesmos registros do site, aceita apenas `STUDENT`, limita a resposta a 50
+  itens e não inclui feedback privado, respostas, dados financeiros ou campos
+  internos de perfil.
 
 Escopos atuais:
 
 - `STUDENT`: aulas próprias, homework liberado, Candy XP, Catty, aula ao vivo,
-  mensagens dos próprios vínculos e contratos gerais/próprios.
+  avisos derivados dos próprios dados, mensagens dos próprios vínculos e
+  contratos gerais/próprios.
 - `TEACHER`: alunos vinculados, aulas/homeworks próprios, submissões desses
   homeworks, mensagens vinculadas e pré-cadastros próprios/atribuídos.
 - `ADMIN`: usuários, Secretaria, financeiro, agenda, supervisão do AVA e
