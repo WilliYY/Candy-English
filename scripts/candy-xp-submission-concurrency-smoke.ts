@@ -4,8 +4,8 @@ import { Pool } from "pg";
 import {
   Prisma,
   PrismaClient,
-  type CandyXpSubmissionStatus,
 } from "../src/generated/prisma/client";
+import { saveStudentCandyXpDraft } from "../src/lib/candy-xp-submission-service";
 
 const databaseUrl = process.env.DATABASE_URL;
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -22,8 +22,6 @@ if (!databaseUrl) {
 const pool = new Pool({ connectionString: databaseUrl });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
-const editableStatuses: CandyXpSubmissionStatus[] = ["DRAFT", "RETURNED"];
-
 type Answer = {
   questionId: string;
   value: string;
@@ -126,66 +124,14 @@ async function awardInTransaction(
 async function autosave(input: {
   activityId: string;
   answers: Answer[];
-  studentProfileId: string;
+  studentUserId: string;
 }) {
-  return prisma.$transaction(async (tx) => {
-    await lockSubmission(tx, input.activityId, input.studentProfileId);
-
-    const existing = await tx.candyXpActivitySubmission.findUnique({
-      where: {
-        activityId_studentProfileId: {
-          activityId: input.activityId,
-          studentProfileId: input.studentProfileId,
-        },
-      },
-      select: {
-        awardedXp: true,
-        id: true,
-        status: true,
-        xpEventId: true,
-      },
-    });
-
-    if (
-      existing &&
-      (existing.status === "SUBMITTED" ||
-        existing.status === "REVIEWED" ||
-        existing.awardedXp !== null ||
-        existing.xpEventId !== null)
-    ) {
-      return false;
-    }
-
-    if (!existing) {
-      await tx.candyXpActivitySubmission.create({
-        data: {
-          activityId: input.activityId,
-          answers: input.answers,
-          status: "DRAFT",
-          studentProfileId: input.studentProfileId,
-        },
-      });
-      return true;
-    }
-
-    const updateResult = await tx.candyXpActivitySubmission.updateMany({
-      where: {
-        awardedXp: null,
-        id: existing.id,
-        status: {
-          in: editableStatuses,
-        },
-        xpEventId: null,
-      },
-      data: {
-        answers: input.answers,
-        feedback: null,
-        status: "DRAFT",
-      },
-    });
-
-    return updateResult.count === 1;
+  const result = await saveStudentCandyXpDraft(input.studentUserId, {
+    activityId: input.activityId,
+    answers: input.answers,
   });
+
+  return result.ok;
 }
 
 async function review(input: {
@@ -375,7 +321,7 @@ async function main() {
   const lateAutosavePromise = autosave({
     activityId: completionActivity.id,
     answers: [{ questionId: "field", value: "autosave atrasado" }],
-    studentProfileId,
+    studentUserId: student.id,
   }).finally(() => {
     autosaveSettled = true;
   });
@@ -474,7 +420,7 @@ async function main() {
   const draftSaved = await autosave({
     activityId: editableActivity.id,
     answers: [{ questionId: "field", value: "draft salvo" }],
-    studentProfileId,
+    studentUserId: student.id,
   });
   assert(draftSaved, "Autosave nao criou DRAFT.");
   await prisma.candyXpActivitySubmission.update({
@@ -492,7 +438,7 @@ async function main() {
   const returnedSaved = await autosave({
     activityId: editableActivity.id,
     answers: [{ questionId: "field", value: "returned salvo" }],
-    studentProfileId,
+    studentUserId: student.id,
   });
   const editableSubmission =
     await prisma.candyXpActivitySubmission.findUniqueOrThrow({

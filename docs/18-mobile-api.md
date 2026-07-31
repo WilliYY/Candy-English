@@ -65,6 +65,15 @@ Controles:
   e atividades `PUBLISHED` gerais ou atribuídas ao próprio aluno.
   A resposta não inclui e-mail, `userId`, `avatarPath`, respostas corretas ou
   qualquer caminho interno de arquivo.
+- `GET /api/mobile/v1/candy-xp/:activityId` entrega perguntas, alternativas,
+  campos interativos e somente o envio do aluno autenticado. Respostas corretas
+  e caminhos de storage permanecem no servidor.
+- `PUT /api/mobile/v1/candy-xp/:activityId/submission` salva rascunho e
+  `POST /api/mobile/v1/candy-xp/:activityId/submission` envia a missão. Os dois
+  fluxos usam lock transacional; repetição do mesmo envio é idempotente e XP
+  automático possui `sourceKey` único.
+- `GET /api/mobile/v1/candy-xp/:activityId/asset` entrega PDF ou imagem somente
+  ao aluno no escopo da atividade, com validação de tamanho e assinatura.
 
 Escopos atuais:
 
