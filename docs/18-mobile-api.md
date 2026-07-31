@@ -78,11 +78,16 @@ Controles:
   usuário do bearer token e `POST /api/mobile/v1/catty/chat` continua a conversa.
   Site e app usam o mesmo handler, histórico, memória pedagógica, limites,
   provedores de IA e fallback; nenhuma chave de IA é enviada ao celular.
+- `GET /api/mobile/v1/live-class` entrega o mesmo estado de manutenção da aula
+  ao vivo usado pelo site. Quando o recurso for reativado, o aluno recebe apenas
+  salas ativas gerais ou próprias, a teacher apenas suas salas e o admin a visão
+  operacional. Links de entrada são limitados a HTTPS e nenhum campo interno de
+  perfil é exposto.
 
 Escopos atuais:
 
-- `STUDENT`: aulas próprias, homework liberado, Candy XP, Catty, mensagens dos
-  próprios vínculos e contratos gerais/próprios.
+- `STUDENT`: aulas próprias, homework liberado, Candy XP, Catty, aula ao vivo,
+  mensagens dos próprios vínculos e contratos gerais/próprios.
 - `TEACHER`: alunos vinculados, aulas/homeworks próprios, submissões desses
   homeworks, mensagens vinculadas e pré-cadastros próprios/atribuídos.
 - `ADMIN`: usuários, Secretaria, financeiro, agenda, supervisão do AVA e
