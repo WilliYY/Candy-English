@@ -208,6 +208,7 @@ Enums:
 - Migration `20260625120000_simple_finance_installments` adiciona metadados opcionais de parcelas ao financeiro simples, preservando linhas antigas como mensalidade recorrente.
 - Migration `20260713120000_financial_expenses` adiciona `FinancialExpense` para gastos/insumos mensais da loja, separado dos pagamentos dos alunos.
 - Migration `20260713133000_financial_units` adiciona `FinancialUnit`, unidade no cadastro financeiro, snapshot mensal da unidade e unidade nos gastos internos; registros antigos recebem `IVATE` por padrao.
+- Migration `20260801210000_mobile_admin_finance_operations` adiciona chaves unicas de idempotencia para alteracoes de pagamentos e criacao de gastos pela API mobile ADMIN.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.

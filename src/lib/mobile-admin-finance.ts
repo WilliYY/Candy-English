@@ -30,7 +30,7 @@ const inputSchema = z
   })
   .strict();
 
-const paymentSelect = {
+export const mobileAdminFinancePaymentSelect = {
   id: true,
   isActive: true,
   isPaid: true,
@@ -49,10 +49,9 @@ const paymentSelect = {
   year: true,
 } satisfies Prisma.FinancialPaymentSelect;
 
-type PaymentRow = Prisma.FinancialPaymentGetPayload<{
-  select: typeof paymentSelect;
+export type MobileAdminFinancePaymentRow = Prisma.FinancialPaymentGetPayload<{
+  select: typeof mobileAdminFinancePaymentSelect;
 }>;
-type FinancialUnit = (typeof financialUnits)[number];
 
 export type MobileAdminFinanceStore = Pick<
   ReturnType<typeof getPrisma>,
@@ -71,7 +70,7 @@ export class MobileAdminFinanceError extends Error {
   }
 }
 
-function saoPauloDateParts(date: Date) {
+export function getMobileFinanceDateParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     day: "2-digit",
     month: "2-digit",
@@ -91,7 +90,10 @@ function comparableDate(year: number, month: number, day: number) {
   return year * 10_000 + month * 100 + day;
 }
 
-function paymentStatus(row: PaymentRow, today: ReturnType<typeof saoPauloDateParts>) {
+function paymentStatus(
+  row: MobileAdminFinancePaymentRow,
+  today: ReturnType<typeof getMobileFinanceDateParts>,
+) {
   if (
     !hasCompleteFinancialRegistration({
       amountCents: row.snapshotAmountCents,
@@ -124,7 +126,10 @@ function positiveInteger(value: number | null) {
   return value && value > 0 ? value : null;
 }
 
-function item(row: PaymentRow, today: ReturnType<typeof saoPauloDateParts>) {
+export function serializeMobileAdminFinancePayment(
+  row: MobileAdminFinancePaymentRow,
+  today: ReturnType<typeof getMobileFinanceDateParts>,
+) {
   return {
     amountCents: Math.max(0, row.snapshotAmountCents),
     id: row.id,
@@ -146,7 +151,7 @@ function item(row: PaymentRow, today: ReturnType<typeof saoPauloDateParts>) {
   };
 }
 
-type FinanceItem = ReturnType<typeof item>;
+type FinanceItem = ReturnType<typeof serializeMobileAdminFinancePayment>;
 
 function summary(rows: FinanceItem[]) {
   return rows.reduce(
@@ -199,7 +204,7 @@ export async function getMobileAdminFinance(
   }
 
   const now = options.now?.() ?? new Date();
-  const today = saoPauloDateParts(now);
+  const today = getMobileFinanceDateParts(now);
   const month = parsed.data.month ?? today.month;
   const year = parsed.data.year ?? today.year;
   const store = options.store ?? getPrisma();
@@ -209,11 +214,11 @@ export async function getMobileAdminFinance(
       { snapshotName: "asc" },
       { id: "asc" },
     ],
-    select: paymentSelect,
+    select: mobileAdminFinancePaymentSelect,
     where: { isActive: true, month, year },
   });
   const allItems = rows
-    .map((row) => item(row, today))
+    .map((row) => serializeMobileAdminFinancePayment(row, today))
     .sort(
       (left, right) =>
         left.paymentDay - right.paymentDay ||
