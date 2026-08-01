@@ -565,17 +565,18 @@ model LiveSession {
 }
 
 model ContractDocument {
-  id               String          @id @default(cuid())
-  title            String
-  fileName         String
-  storagePath      String
-  mimeType         String
-  sizeBytes        Int
-  studentProfileId String?
-  studentProfile   StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
-  uploadedByUserId String
-  uploadedByUser   User            @relation("UploadedContracts", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
-  createdAt        DateTime        @default(now())
+  id                         String          @id @default(cuid())
+  title                      String
+  fileName                   String
+  storagePath                String
+  mimeType                   String
+  sizeBytes                  Int
+  studentProfileId           String?
+  studentProfile             StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  uploadedByUserId           String
+  uploadedByUser             User            @relation("UploadedContracts", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  createdByMobileOperationId String?          @unique
+  createdAt                  DateTime         @default(now())
 
   @@index([studentProfileId])
   @@index([uploadedByUserId])

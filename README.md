@@ -23,6 +23,7 @@ Ja existe:
 - API mobile ADMIN para consultar todos os pre-cadastros com busca, filtro por etapa/unidade, paginacao, detalhe administrativo completo e conversao transacional em aluno STUDENT, protegida pela role autenticada, confirmacao explicita de dados incompletos, idempotencia, controle de concorrencia e sem expor senha ou identificadores internos;
 - API mobile ADMIN para consultar o resumo financeiro mensal por unidade, detalhar e atualizar pagamentos, registrar gastos e consultar historico recente, com confirmacao explicita, versao otimista, idempotencia, bloqueio transacional e sem executar cobranca ou expor CPF/endereco no painel movel;
 - API mobile ADMIN para consultar a agenda interna mensal por unidade e a fila do dia por nome/telefone, abrir o detalhe e historico do aluno, registrar presenca/falta/reset e criar uma unica reposicao ativa por aula original, com confirmacao explicita, versao otimista, idempotencia, bloqueio transacional, limite de volume e sem misturar a agenda administrativa com contas ou aulas pedagogicas do AVA;
+- API mobile ADMIN para buscar, filtrar, paginar, detalhar e enviar contratos PDF gerais ou vinculados a aluno, com confirmacao explicita, idempotencia, validacao de assinatura e limite de 8 MB; o caminho privado nunca sai do servidor e o download autenticado respeita o escopo de `ADMIN`, `TEACHER` e `STUDENT`;
 - teacher com pre-cadastros proprios da Secretaria, conversao protegida para alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, resposta no PDF/imagem, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
@@ -76,6 +77,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
 - `docs/18-mobile-api.md`: autenticacao movel, sessoes revogaveis, overview e modulos nativos por role.
+- `docs/19-mobile-admin-contracts.md`: catalogo, upload idempotente e download protegido de contratos no app ADMIN.
 - `docs/catty-comportamento.md`: exemplos bons/ruins e smoke de comportamento da Catty.
 - `docs/99-contexto-rapido-codex.md`: prompt minimo e memoria curta para continuar o projeto em outro chat.
 

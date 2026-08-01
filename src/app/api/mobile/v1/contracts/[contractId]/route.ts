@@ -40,15 +40,6 @@ export async function GET(request: Request, context: RouteContext) {
       );
     }
 
-    if (session.user.role !== "STUDENT") {
-      return mobileError(
-        "ROLE_FORBIDDEN",
-        "Use uma conta de aluno para baixar este contrato.",
-        403,
-        requestId,
-      );
-    }
-
     const { contractId } = await context.params;
     const contract = await getAuthorizedContractDocument(
       session.user,
