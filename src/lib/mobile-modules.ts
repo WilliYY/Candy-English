@@ -2,6 +2,7 @@ import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { getMobileStudentLessonScope } from "@/lib/mobile-lesson";
 import { getContractDocumentAccessScope } from "@/lib/contract-documents";
 import { getPrisma } from "@/lib/prisma";
+import { getMobileTeacherContracts } from "@/lib/mobile-teacher-contracts";
 
 export type MobileModuleItem = {
   amountCents?: number;
@@ -32,13 +33,17 @@ const roleModules = {
     "submissions",
     "homeworks",
     "messages",
+    "contracts",
     "secretary",
   ],
 } as const;
 
 export class MobileModuleError extends Error {
   constructor(
-    readonly code: "MODULE_FORBIDDEN" | "MODULE_NOT_FOUND",
+    readonly code:
+      | "MODULE_FORBIDDEN"
+      | "MODULE_LIMIT_EXCEEDED"
+      | "MODULE_NOT_FOUND",
   ) {
     super(code);
     this.name = "MobileModuleError";
@@ -232,6 +237,21 @@ async function getStudentModule(user: MobileAuthUser, slug: string) {
 }
 
 async function getTeacherModule(user: MobileAuthUser, slug: string) {
+  if (slug === "contracts") {
+    const contracts = await getMobileTeacherContracts(user.id);
+    if (!contracts.ok || !contracts.data) {
+      throw new MobileModuleError("MODULE_LIMIT_EXCEEDED");
+    }
+    return data(
+      slug,
+      "Contratos",
+      contracts.data.profileFound
+        ? "Nenhum contrato permitido para seus alunos."
+        : "Perfil de teacher não vinculado.",
+      contracts.data.items,
+    );
+  }
+
   const prisma = getPrisma();
   const profile = await prisma.teacherProfile.findUnique({
     where: { userId: user.id },

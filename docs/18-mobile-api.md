@@ -93,9 +93,13 @@ Controles:
   interativa e bloqueia reenvio divergente.
 - `GET /api/mobile/v1/homeworks/[homeworkId]/listening/[fieldId]` gera o áudio
   protegido normal ou lento sem expor a frase configurada.
-- `GET /api/mobile/v1/contracts/[contractId]` entrega somente PDF geral ou do
-  próprio aluno por bearer token, com limite de 8 MB, assinatura validada,
-  headers `no-store`/`nosniff` e nome de download sem injeção de cabeçalhos.
+- `GET /api/mobile/v1/modules/contracts` lista somente contratos gerais ou
+  permitidos pelo papel: o aluno vê os próprios e a teacher vê os de alunos
+  vinculados. A resposta não contém caminho de storage e recusa mais de 50
+  itens em vez de truncar silenciosamente para a teacher.
+- `GET /api/mobile/v1/contracts/[contractId]` entrega o PDF dentro do mesmo
+  escopo por bearer token, com limite de 8 MB, assinatura validada, headers
+  `no-store`/`nosniff` e nome de download sem injeção de cabeçalhos.
 - `GET /api/mobile/v1/profile` entrega somente o perfil do aluno autenticado.
 - `PATCH /api/mobile/v1/profile` atualiza nome, contato e dados do aluno pelo
   mesmo serviço de domínio usado no AVA web.

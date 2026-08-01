@@ -47,6 +47,14 @@ export async function GET(request: Request, context: RouteContext) {
     return mobileJson({ data, ok: true }, 200, requestId);
   } catch (error) {
     if (error instanceof MobileModuleError) {
+      if (error.code === "MODULE_LIMIT_EXCEEDED") {
+        return mobileError(
+          error.code,
+          "Este módulo excede o limite seguro do app.",
+          413,
+          requestId,
+        );
+      }
       return mobileError(
         error.code,
         error.code === "MODULE_NOT_FOUND"
