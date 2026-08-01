@@ -143,6 +143,15 @@ Controles:
   usuário do bearer token e `POST /api/mobile/v1/catty/chat` continua a conversa.
   Site e app usam o mesmo handler, histórico, memória pedagógica, limites,
   provedores de IA e fallback; nenhuma chave de IA é enviada ao celular.
+- `GET /api/mobile/v1/teacher/catty/management` entrega somente as sugestões
+  criadas pela teacher autenticada e os artefatos dos alunos vinculados ativos,
+  sem e-mail, mensagens, memórias internas ou dados de outras teachers. As
+  fontes são limitadas e o servidor recusa excesso em vez de truncar.
+- `POST /api/mobile/v1/teacher/catty/learning` cria uma sugestão sempre
+  `PENDING`; categorias globais de personalidade e contexto Candy continuam
+  reservadas ao Admin. `PUT /api/mobile/v1/teacher/catty/artifacts` e
+  `PATCH /api/mobile/v1/teacher/catty/artifacts/:artifactId` reutilizam a mesma
+  validação e autorização do site e aceitam somente alunos vinculados.
 - `GET /api/mobile/v1/live-class` entrega o mesmo estado de manutenção da aula
   ao vivo usado pelo site. Quando o recurso for reativado, o aluno recebe apenas
   salas ativas gerais ou próprias, a teacher apenas suas salas e o admin a visão
@@ -161,7 +170,8 @@ Escopos atuais:
   contratos gerais/próprios.
 - `TEACHER`: alunos vinculados, detalhes e planejamento das próprias aulas,
   homeworks próprios, submissões desses homeworks, mensagens vinculadas,
-  Candy XP pedagógico próprio e pré-cadastros próprios/atribuídos.
+  Candy XP pedagógico próprio, Catty Learning pendente para aprovação,
+  artefatos dos alunos vinculados e pré-cadastros próprios/atribuídos.
 - `ADMIN`: usuários, Secretaria, financeiro, agenda, supervisão do AVA e
   indicadores gerais.
 
