@@ -19,6 +19,7 @@
     "audit:mobile-auth": "tsx scripts/mobile-auth-smoke.ts",
     "test:mobile-auth": "tsx --test src/lib/mobile-auth/__tests__/*.test.ts",
     "test:mobile-homework": "tsx --test src/lib/__tests__/*.test.ts",
+    "verify:mobile-teacher": "npm run test:mobile-homework && npm run test:mobile-auth && npm run typecheck && npm run lint && npm run prisma:validate && npm run build",
     "audit:avatar-smoke": "tsx scripts/avatar-smoke.ts",
     "audit:pre-registration": "tsx scripts/pre-registration-smoke.ts",
     "audit:candy-xp-concurrency": "tsx scripts/candy-xp-concurrency-smoke.ts",
