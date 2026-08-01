@@ -19,6 +19,7 @@ Ja existe:
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - escolha pos-login limpa para `ADMIN` e `TEACHER`, separando `AVA` pedagogico e `Secretaria` antes de carregar a sidebar de trabalho; `STUDENT` entra direto no AVA Student;
 - admin com cadastro de usuarios, pre-cadastros internos da Secretaria, aceite/recusa/conversao de interessados, redefinicao de senha, status ativo/inativo, vinculo aluno-teacher, contratos, manutencao, financeiro, agenda, cofre de APIs/senhas, card Admin XP persistente e modulo Candy XP para criar historias/atividades com PDF do Canva e areas interativas sobre o arquivo;
+- API mobile ADMIN read-only para listar, buscar, filtrar, paginar e detalhar usuarios, protegida pela role autenticada e sem expor senha, versao de sessao ou caminhos internos;
 - teacher com pre-cadastros proprios da Secretaria, conversao protegida para alunos STUDENT, aulas interativas por upload do Canva, materiais, vocabulario, homework interativo, feedback, area de aula ao vivo em manutencao temporaria, contratos, mensagens e card Teacher XP persistente;
 - student com aulas, homework interativo com autosave, feedback, mensagens, contratos, perfil, avatar, area de aula ao vivo em manutencao temporaria, card Student XP persistente no resumo e area Candy XP com missoes de historia, resposta no PDF/imagem, progresso e envio;
 - chat interno teacher/aluno validado por vinculo;
