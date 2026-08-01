@@ -111,7 +111,8 @@ Rotas protegidas:
 - `ADMIN` pode escolher a teacher no momento da conversao e converter qualquer pre-cadastro.
 - O fluxo de aceite nunca cria `ADMIN` ou `TEACHER`, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, e nunca retorna/loga a senha inicial em texto puro.
 - Apenas `ADMIN` pode redefinir senha de usuarios pela interface admin.
-- Redefinicao de senha deve validar dados com Zod, gravar somente hash `bcryptjs` e nunca registrar a senha em logs, docs ou resposta.
+- A senha atual nunca pode ser exibida na interface porque somente `User.passwordHash` e persistido. O Admin substitui a senha por uma nova usando dois campos com confirmacao, controles de mostrar/ocultar e opcao local de gerar/copiar uma senha provisoria; o valor em texto puro e limpo da tela depois do sucesso.
+- Redefinicao de senha deve validar correspondencia e tamanho com Zod, gravar somente hash `bcryptjs`, incrementar `sessionVersion` e nunca registrar a senha em logs, docs ou resposta.
 - Apenas `ADMIN` pode editar nome, email e telefone principal de usuarios `STUDENT` pela tela `Usuarios`; a server action valida role `ADMIN`, confirma que o alvo e aluno e incrementa `sessionVersion` quando o email muda.
 - Apenas `ADMIN` pode criar, editar, excluir ou revelar APIs/senhas em `AdminCredential`.
 - Valores de `AdminCredential` devem ser criptografados no servidor e revelados somente por server action protegida; nunca retornar valores para teacher/student.

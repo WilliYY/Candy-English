@@ -359,6 +359,15 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
         throw new Error(`AVA Admin vazou link de Secretaria: ${link}`);
       }
     }
+
+    if (
+      !normalizedText.includes("A senha atual nao pode ser exibida") ||
+      !normalizedText.includes("Confirmar nova senha")
+    ) {
+      throw new Error(
+        "Painel Admin nao renderizou a redefinicao segura de senha.",
+      );
+    }
   }
 
   if (role === "TEACHER") {

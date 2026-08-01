@@ -321,13 +321,22 @@ export const adminToggleUserStatusSchema = z.object({
   userId: z.string().min(1, "Usuario invalido."),
 });
 
-export const adminResetUserPasswordSchema = z.object({
-  newPassword: z
-    .string()
-    .min(8, "A nova senha precisa ter pelo menos 8 caracteres.")
-    .max(120, "A nova senha pode ter no maximo 120 caracteres."),
-  userId: z.string().min(1, "Usuario invalido."),
-});
+export const adminResetUserPasswordSchema = z
+  .object({
+    confirmPassword: z
+      .string()
+      .min(8, "Confirme a nova senha.")
+      .max(120, "A confirmacao pode ter no maximo 120 caracteres."),
+    newPassword: z
+      .string()
+      .min(8, "A nova senha precisa ter pelo menos 8 caracteres.")
+      .max(120, "A nova senha pode ter no maximo 120 caracteres."),
+    userId: z.string().min(1, "Usuario invalido."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "As senhas precisam ser iguais.",
+    path: ["confirmPassword"],
+  });
 
 export const adminUpdateStudentContactSchema = z.object({
   email: z

@@ -3,6 +3,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowRight,
+  Copy,
+  Eye,
+  EyeOff,
   GraduationCap,
   KeyRound,
   Link2,
@@ -11,7 +14,9 @@ import {
   PenLine,
   Power,
   PowerOff,
+  RefreshCw,
   Save,
+  ShieldCheck,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -66,6 +71,22 @@ type AssignmentOption = {
   isActive: boolean;
   label: string;
 };
+
+const TEMPORARY_PASSWORD_CHARACTERS =
+  "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+
+function generateTemporaryPassword() {
+  const randomValues = new Uint32Array(8);
+  crypto.getRandomValues(randomValues);
+
+  return `Candy!${Array.from(
+    randomValues,
+    (value) =>
+      TEMPORARY_PASSWORD_CHARACTERS[
+        value % TEMPORARY_PASSWORD_CHARACTERS.length
+      ],
+  ).join("")}`;
+}
 
 type AdminAssignTeacherFormProps = {
   students: AssignmentOption[];
@@ -285,14 +306,49 @@ export function AdminUserPasswordResetForm({
 }: AdminUserPasswordResetFormProps) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
   const form = useForm<AdminResetUserPasswordInput>({
     resolver: zodResolver(adminResetUserPasswordSchema),
     defaultValues: {
+      confirmPassword: "",
       newPassword: "",
       userId,
     },
   });
+
+  function handleGeneratePassword() {
+    const temporaryPassword = generateTemporaryPassword();
+
+    form.setValue("newPassword", temporaryPassword, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("confirmPassword", temporaryPassword, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setShowPassword(true);
+    setShowConfirmPassword(true);
+    setMessage("Senha provisoria gerada. Revise e envie por um canal seguro.");
+  }
+
+  async function handleCopyPassword() {
+    const newPassword = form.getValues("newPassword");
+
+    if (!newPassword) {
+      setMessage("Digite ou gere uma nova senha antes de copiar.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(newPassword);
+      setMessage("Nova senha copiada com seguranca.");
+    } catch {
+      setMessage("Nao foi possivel copiar. Mostre a senha e copie manualmente.");
+    }
+  }
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
@@ -319,9 +375,12 @@ export function AdminUserPasswordResetForm({
       }
 
       form.reset({
+        confirmPassword: "",
         newPassword: "",
         userId,
       });
+      setShowConfirmPassword(false);
+      setShowPassword(false);
       setMessage(result.message);
       router.refresh();
     });
@@ -348,23 +407,119 @@ export function AdminUserPasswordResetForm({
           defaultValue={userId}
           {...form.register("userId")}
         />
+        <div className="rounded-lg border border-amber-200/80 bg-amber-50/80 p-3 text-xs leading-5 text-amber-950">
+          <span className="flex items-start gap-2">
+            <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>
+              A senha atual nao pode ser exibida: ela e protegida por hash. Defina
+              uma nova senha para substituir a anterior.
+            </span>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-w-0 justify-center"
+            disabled={isPending}
+            onClick={handleGeneratePassword}
+          >
+            <RefreshCw data-icon="inline-start" />
+            Gerar
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="min-w-0 justify-center"
+            disabled={isPending}
+            onClick={handleCopyPassword}
+          >
+            <Copy data-icon="inline-start" />
+            Copiar
+          </Button>
+        </div>
+
         <Field data-invalid={Boolean(form.formState.errors.newPassword)}>
           <FieldLabel htmlFor={`reset-password-${userId}`}>
             Nova senha de {userName}
           </FieldLabel>
-          <Input
-            id={`reset-password-${userId}`}
-            type="password"
-            autoComplete="new-password"
-            aria-invalid={Boolean(form.formState.errors.newPassword)}
-            disabled={isPending}
-            placeholder="Digite a nova senha"
-            {...form.register("newPassword")}
-          />
+          <div className="relative">
+            <Input
+              id={`reset-password-${userId}`}
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              aria-invalid={Boolean(form.formState.errors.newPassword)}
+              className="pr-11"
+              disabled={isPending}
+              placeholder="Minimo de 8 caracteres"
+              {...form.register("newPassword")}
+            />
+            <button
+              type="button"
+              aria-label={showPassword ? "Ocultar nova senha" : "Mostrar nova senha"}
+              aria-pressed={showPassword}
+              className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-primary/65 transition hover:bg-primary/8 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-45"
+              disabled={isPending}
+              onClick={() => setShowPassword((current) => !current)}
+              title={showPassword ? "Ocultar nova senha" : "Mostrar nova senha"}
+            >
+              {showPassword ? (
+                <EyeOff aria-hidden="true" className="size-4" />
+              ) : (
+                <Eye aria-hidden="true" className="size-4" />
+              )}
+            </button>
+          </div>
           <FieldDescription>
-            Envie a senha ao usuario por um canal seguro.
+            Ela substitui a senha anterior e encerra as sessoes antigas.
           </FieldDescription>
           <FieldError errors={[form.formState.errors.newPassword]} />
+        </Field>
+
+        <Field data-invalid={Boolean(form.formState.errors.confirmPassword)}>
+          <FieldLabel htmlFor={`reset-confirm-password-${userId}`}>
+            Confirmar nova senha
+          </FieldLabel>
+          <div className="relative">
+            <Input
+              id={`reset-confirm-password-${userId}`}
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              aria-invalid={Boolean(form.formState.errors.confirmPassword)}
+              className="pr-11"
+              disabled={isPending}
+              placeholder="Digite a mesma senha"
+              {...form.register("confirmPassword")}
+            />
+            <button
+              type="button"
+              aria-label={
+                showConfirmPassword
+                  ? "Ocultar confirmacao da senha"
+                  : "Mostrar confirmacao da senha"
+              }
+              aria-pressed={showConfirmPassword}
+              className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-primary/65 transition hover:bg-primary/8 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-45"
+              disabled={isPending}
+              onClick={() => setShowConfirmPassword((current) => !current)}
+              title={
+                showConfirmPassword
+                  ? "Ocultar confirmacao da senha"
+                  : "Mostrar confirmacao da senha"
+              }
+            >
+              {showConfirmPassword ? (
+                <EyeOff aria-hidden="true" className="size-4" />
+              ) : (
+                <Eye aria-hidden="true" className="size-4" />
+              )}
+            </button>
+          </div>
+          <FieldDescription>As duas senhas precisam ser iguais.</FieldDescription>
+          <FieldError errors={[form.formState.errors.confirmPassword]} />
         </Field>
 
         {message ? (
