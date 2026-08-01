@@ -755,6 +755,7 @@ export async function acceptStudentPreRegistrationWithMobileSession(
   accessToken: string,
   input: PreRegistrationAcceptInput,
   operationId: string,
+  mobileOptions: { expectedUpdatedAt?: string } = {},
 ): Promise<PreRegistrationActionResult<PreRegistrationAcceptInput>> {
   if (!z.string().uuid().safeParse(operationId).success) {
     return {
@@ -763,32 +764,47 @@ export async function acceptStudentPreRegistrationWithMobileSession(
     };
   }
   const authorization = await authorizeMobileAccess(accessToken);
-  if (!authorization.ok || authorization.user.role !== "TEACHER") {
+  if (!authorization.ok) {
     return {
       ok: false,
       message: "Voce nao tem permissao para aceitar alunos.",
     };
   }
-  const teacherProfile = await getPrisma().teacherProfile.findUnique({
-    where: { userId: authorization.user.id },
-    select: { id: true },
-  });
+  if (
+    authorization.user.role !== "ADMIN" &&
+    authorization.user.role !== "TEACHER"
+  ) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para aceitar alunos.",
+    };
+  }
+  const teacherProfile =
+    authorization.user.role === "TEACHER"
+      ? await getPrisma().teacherProfile.findUnique({
+          where: { userId: authorization.user.id },
+          select: { id: true },
+        })
+      : null;
   return acceptStudentPreRegistrationWithContext(
     {
       session: {
-        user: { id: authorization.user.id, role: "TEACHER" },
+        user: { id: authorization.user.id, role: authorization.user.role },
       },
       teacherProfileId: teacherProfile?.id ?? null,
     },
     input,
-    { mobileOperationKey: `pre-registration:convert:${operationId}` },
+    {
+      expectedUpdatedAt: mobileOptions.expectedUpdatedAt,
+      mobileOperationKey: `pre-registration:convert:${operationId}`,
+    },
   );
 }
 
 async function acceptStudentPreRegistrationWithContext(
   context: ReviewerContext,
   input: PreRegistrationAcceptInput,
-  options: { mobileOperationKey?: string } = {},
+  options: { expectedUpdatedAt?: string; mobileOperationKey?: string } = {},
 ): Promise<PreRegistrationActionResult<PreRegistrationAcceptInput>> {
 
   const parsed = preRegistrationAcceptSchema.safeParse(input);
@@ -847,6 +863,7 @@ async function acceptStudentPreRegistrationWithContext(
           studentPhone: true,
           tuitionCents: true,
           unit: true,
+          updatedAt: true,
         },
       });
 
@@ -870,6 +887,13 @@ async function acceptStudentPreRegistrationWithContext(
         replayed = true;
         postConversionMessage = "Aluno ja convertido por esta operacao.";
         return;
+      }
+
+      if (
+        options.expectedUpdatedAt &&
+        request.updatedAt.toISOString() !== options.expectedUpdatedAt
+      ) {
+        throw new Error("REQUEST_EDIT_CONFLICT");
       }
 
       if (
@@ -1316,6 +1340,14 @@ async function acceptStudentPreRegistrationWithContext(
       return {
         ok: false,
         message: "Este pre-cadastro ja foi convertido.",
+      };
+    }
+
+    if (errorMessage === "REQUEST_EDIT_CONFLICT") {
+      return {
+        ok: false,
+        message:
+          "Este pre-cadastro mudou em outro aparelho. Recarregue antes de converter.",
       };
     }
 
