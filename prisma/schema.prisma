@@ -357,6 +357,7 @@ model TeacherProfile {
   chatThreads                     ChatThread[]
   lessons                         Lesson[]
   homeworks                       Homework[]
+  mobileHomeworkDeletions         MobileTeacherHomeworkDeletion[]
   sharedHomeworks                 HomeworkStudentAssignment[]
   reviewedSubmissions             HomeworkSubmission[]
   liveSessions                    LiveSession[]
@@ -446,6 +447,8 @@ model Homework {
   replicatedFromHomeworkId String?
   replicatedFromHomework   Homework?                   @relation("HomeworkReplicas", fields: [replicatedFromHomeworkId], references: [id], onDelete: SetNull)
   homeworkReplicas         Homework[]                  @relation("HomeworkReplicas")
+  createdByMobileOperationId String?                   @unique
+  lastMobileOperationId      String?                   @unique
   interactiveFields        HomeworkInteractiveField[]
   studentAssignments       HomeworkStudentAssignment[]
   status                   HomeworkStatus              @default(PUBLISHED)
@@ -459,6 +462,17 @@ model Homework {
   @@index([kind])
   @@index([status])
   @@index([replicatedFromHomeworkId])
+}
+
+model MobileTeacherHomeworkDeletion {
+  operationId     String         @id
+  teacherProfileId String
+  teacherProfile  TeacherProfile @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  homeworkId      String
+  deletedAt       DateTime       @default(now())
+
+  @@index([teacherProfileId, homeworkId])
+  @@index([deletedAt])
 }
 
 model HomeworkStudentAssignment {

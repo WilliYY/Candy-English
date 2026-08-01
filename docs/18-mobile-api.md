@@ -56,6 +56,20 @@ Controles:
   na mesma transação; o editor recusa aulas acima dos limites em vez de truncar.
   Criação usa UUID de operação idempotente e edição exige `expectedUpdatedAt`,
   retornando conflito quando site ou outro aparelho já salvou uma versão nova.
+- `GET /api/mobile/v1/teacher/homeworks/options` lista somente aulas próprias e
+  alunos ativos vinculados, sem email ou dados financeiros. `POST
+  /api/mobile/v1/teacher/homeworks` cria homework `TEXT` com perguntas e
+  atribuições na mesma transação.
+- `GET|PUT|DELETE
+  /api/mobile/v1/teacher/homeworks/[homeworkId]/editor` carrega, atualiza ou
+  exclui somente homework da teacher autenticada. Edição e exclusão exigem
+  `expectedUpdatedAt`; atribuições ficam bloqueadas depois da primeira entrega,
+  exclusão tem registro idempotente durável e o editor recusa listas acima dos
+  limites em vez de truncar silenciosamente.
+- `POST /api/mobile/v1/teacher/homeworks/[homeworkId]/duplicate` replica texto,
+  perguntas, campos interativos e a referência segura do arquivo somente para
+  alunos vinculados. Cada destino usa uma chave idempotente própria, evitando
+  cópias repetidas por toque duplo ou repetição da requisição.
 - `PUT /api/mobile/v1/homeworks/[homeworkId]/interactive` salva o rascunho
   interativo de forma idempotente.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/interactive` entrega a atividade
