@@ -66,6 +66,12 @@ Controles:
   `expectedUpdatedAt`; atribuições ficam bloqueadas depois da primeira entrega,
   exclusão tem registro idempotente durável e o editor recusa listas acima dos
   limites em vez de truncar silenciosamente.
+- `GET|PUT /api/mobile/v1/teacher/homeworks/[homeworkId]/fields` carrega e salva
+  até 120 campos da homework interativa da própria teacher. O app preserva
+  página, posição e tamanho usados pelo site, normaliza os limites de cada tipo
+  e nunca expõe o caminho interno do arquivo. A gravação exige UUID idempotente
+  e `expectedUpdatedAt`; campos ficam somente para leitura depois da primeira
+  entrega e uma versão mais nova gera conflito em vez de ser sobrescrita.
 - `POST /api/mobile/v1/teacher/homeworks/[homeworkId]/duplicate` replica texto,
   perguntas, campos interativos e a referência segura do arquivo somente para
   alunos vinculados. Cada destino usa uma chave idempotente própria, evitando

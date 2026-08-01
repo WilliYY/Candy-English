@@ -135,6 +135,7 @@ async function getInteractiveHomeworkContext(
         },
         take: 1,
       },
+      updatedAt: true,
     },
   });
 
@@ -188,6 +189,20 @@ export async function saveStudentInteractiveHomeworkDraft(
   const saved = await getPrisma().$transaction(async (tx) => {
     await acquireTransactionAdvisoryLock(
       tx,
+      `homework-structure:${homework.id}`,
+    );
+    const currentHomework = await tx.homework.findUnique({
+      where: { id: homework.id },
+      select: { updatedAt: true },
+    });
+    if (
+      !currentHomework ||
+      currentHomework.updatedAt.getTime() !== homework.updatedAt.getTime()
+    ) {
+      return "structure-changed" as const;
+    }
+    await acquireTransactionAdvisoryLock(
+      tx,
       `homework-submission:${homework.id}:${studentProfileId}`,
     );
     const current = await tx.homeworkSubmission.findUnique({
@@ -228,6 +243,12 @@ export async function saveStudentInteractiveHomeworkDraft(
     return true;
   });
 
+  if (saved === "structure-changed") {
+    return {
+      message: "A atividade mudou. Reabra-a antes de continuar.",
+      ok: false,
+    };
+  }
   if (!saved) {
     return {
       message: `Esta ${label} já foi entregue ou corrigida.`,
@@ -325,6 +346,20 @@ export async function submitStudentInteractiveHomework(
   const transactionResult = await getPrisma().$transaction(async (tx) => {
     await acquireTransactionAdvisoryLock(
       tx,
+      `homework-structure:${homework.id}`,
+    );
+    const currentHomework = await tx.homework.findUnique({
+      where: { id: homework.id },
+      select: { updatedAt: true },
+    });
+    if (
+      !currentHomework ||
+      currentHomework.updatedAt.getTime() !== homework.updatedAt.getTime()
+    ) {
+      return { kind: "structure-changed" as const };
+    }
+    await acquireTransactionAdvisoryLock(
+      tx,
       `homework-submission:${homework.id}:${studentProfileId}`,
     );
     const current = await tx.homeworkSubmission.findUnique({
@@ -346,7 +381,7 @@ export async function submitStudentInteractiveHomework(
         current?.status === "SUBMITTED" &&
         answersAreEqual(current.answers, answers)
       ) {
-        return { submittedAt: current.submittedAt };
+        return { kind: "submitted" as const, submittedAt: current.submittedAt };
       }
 
       return null;
@@ -379,9 +414,15 @@ export async function submitStudentInteractiveHomework(
       },
     });
 
-    return { submittedAt: requestedSubmittedAt };
+    return { kind: "submitted" as const, submittedAt: requestedSubmittedAt };
   });
 
+  if (transactionResult?.kind === "structure-changed") {
+    return {
+      message: "A atividade mudou. Reabra-a antes de entregar.",
+      ok: false,
+    };
+  }
   if (!transactionResult) {
     return {
       message: `Esta ${label} já foi entregue ou corrigida.`,
