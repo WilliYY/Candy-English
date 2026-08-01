@@ -100,6 +100,18 @@ Controles:
 - `GET /api/mobile/v1/contracts/[contractId]` entrega o PDF dentro do mesmo
   escopo por bearer token, com limite de 8 MB, assinatura validada, headers
   `no-store`/`nosniff` e nome de download sem injeção de cabeçalhos.
+- `GET /api/mobile/v1/teacher/pre-registrations/[requestId]` entrega à teacher
+  somente pré-cadastro próprio ou atribuído, com dados de contato e prontidão
+  administrativa. A resposta não expõe endereço, documentos, mensalidade,
+  storage ou registros financeiros.
+- `POST /api/mobile/v1/teacher/pre-registrations/[requestId]/convert` converte o
+  pré-cadastro autorizado pelo mesmo núcleo transacional usado no site. Exige
+  confirmação explícita, email, senha inicial e UUID de operação; o UUID fica
+  persistido para tornar repetições idempotentes. Agenda incompleta exige uma
+  segunda confirmação e não cria ocorrências falsas. Dados financeiros
+  incompletos ficam marcados como `Completar` e não entram no fluxo de
+  pagamento até serem regularizados. A senha é usada somente para gerar o hash
+  e nunca é devolvida ou registrada.
 - `GET /api/mobile/v1/profile` entrega somente o perfil do aluno autenticado.
 - `PATCH /api/mobile/v1/profile` atualiza nome, contato e dados do aluno pelo
   mesmo serviço de domínio usado no AVA web.
@@ -184,6 +196,11 @@ A migration `20260730121000_mobile_sessions` adiciona:
 
 Ela deve ser aplicada com `prisma migrate deploy` antes de liberar o login
 móvel em produção.
+
+A migration
+`20260801193000_mobile_pre_registration_conversion_idempotency` adiciona a
+chave idempotente durável da conversão móvel. Ela também deve ser aplicada antes
+de liberar essa operação no app.
 
 ## Validação
 

@@ -326,6 +326,7 @@ model StudentPreRegistration {
   convertedFinancialStudent   FinancialStudent?            @relation("StudentPreRegistrationConvertedFinancialStudent", fields: [convertedFinancialStudentId], references: [id], onDelete: SetNull)
   convertedAgendaStudentId    String?                      @unique
   convertedAgendaStudent      AgendaStudent?               @relation("StudentPreRegistrationConvertedAgendaStudent", fields: [convertedAgendaStudentId], references: [id], onDelete: SetNull)
+  lastMobileConversionOperationId String?                  @unique
   statusNote                  String?
   intendedWeekdayMask         Int                          @default(0)
   intendedTime                String?

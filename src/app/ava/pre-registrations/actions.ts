@@ -2,7 +2,7 @@
 
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
-import type { Session } from "next-auth";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
 import { resolveFinancialRegistration } from "@/lib/financial-completeness";
@@ -13,6 +13,7 @@ import {
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
+import { authorizeMobileAccess } from "@/lib/mobile-auth/access-session";
 import {
   normalizePhoneDigits,
   preRegistrationAcceptSchema,
@@ -32,8 +33,8 @@ export type PreRegistrationActionResult<TInput extends Record<string, unknown>> 
 };
 
 type ReviewerContext = {
-  session: Session & {
-    user: NonNullable<Session["user"]> & {
+  session: {
+    user: {
       id: string;
       role: "ADMIN" | "TEACHER";
     };
@@ -85,7 +86,7 @@ function isUniqueConstraintError(error: unknown) {
 }
 
 async function requirePreRegistrationReviewer(): Promise<ReviewerContext | null> {
-  const session = (await auth()) as Session | null;
+  const session = await auth();
 
   if (
     !session?.user?.id ||
@@ -747,6 +748,49 @@ export async function acceptStudentPreRegistration(
     };
   }
 
+  return acceptStudentPreRegistrationWithContext(context, input);
+}
+
+export async function acceptStudentPreRegistrationWithMobileSession(
+  accessToken: string,
+  input: PreRegistrationAcceptInput,
+  operationId: string,
+): Promise<PreRegistrationActionResult<PreRegistrationAcceptInput>> {
+  if (!z.string().uuid().safeParse(operationId).success) {
+    return {
+      ok: false,
+      message: "Operacao de conversao invalida.",
+    };
+  }
+  const authorization = await authorizeMobileAccess(accessToken);
+  if (!authorization.ok || authorization.user.role !== "TEACHER") {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para aceitar alunos.",
+    };
+  }
+  const teacherProfile = await getPrisma().teacherProfile.findUnique({
+    where: { userId: authorization.user.id },
+    select: { id: true },
+  });
+  return acceptStudentPreRegistrationWithContext(
+    {
+      session: {
+        user: { id: authorization.user.id, role: "TEACHER" },
+      },
+      teacherProfileId: teacherProfile?.id ?? null,
+    },
+    input,
+    { mobileOperationKey: `pre-registration:convert:${operationId}` },
+  );
+}
+
+async function acceptStudentPreRegistrationWithContext(
+  context: ReviewerContext,
+  input: PreRegistrationAcceptInput,
+  options: { mobileOperationKey?: string } = {},
+): Promise<PreRegistrationActionResult<PreRegistrationAcceptInput>> {
+
   const parsed = preRegistrationAcceptSchema.safeParse(input);
 
   if (!parsed.success) {
@@ -760,6 +804,7 @@ export async function acceptStudentPreRegistration(
   const prisma = getPrisma();
   const passwordHash = await hash(parsed.data.initialPassword, 12);
   let createdUserId: string | null = null;
+  let replayed = false;
   let postConversionMessage = "Aluno convertido com AVA, financeiro e agenda criados.";
 
   try {
@@ -792,6 +837,7 @@ export async function acceptStudentPreRegistration(
           installmentsTotal: true,
           intendedTime: true,
           intendedWeekdayMask: true,
+          lastMobileConversionOperationId: true,
           notes: true,
           paymentDay: true,
           paymentMethod: true,
@@ -810,6 +856,20 @@ export async function acceptStudentPreRegistration(
 
       if (!canUsePreRegistration(context, request)) {
         throw new Error("REQUEST_FORBIDDEN");
+      }
+
+      if (
+        options.mobileOperationKey &&
+        request.lastMobileConversionOperationId === options.mobileOperationKey &&
+        request.convertedUserId &&
+        request.convertedStudentProfileId &&
+        request.convertedFinancialStudentId &&
+        request.convertedAgendaStudentId
+      ) {
+        createdUserId = request.convertedUserId;
+        replayed = true;
+        postConversionMessage = "Aluno ja convertido por esta operacao.";
+        return;
       }
 
       if (
@@ -847,6 +907,9 @@ export async function acceptStudentPreRegistration(
           request.intendedTime &&
           agendaTimePattern.test(request.intendedTime),
       );
+      if (!hasCompleteAgendaData && !parsed.data.confirmMissingAgendaData) {
+        throw new Error("MISSING_AGENDA_CONFIRMATION");
+      }
       const intendedTime = hasCompleteAgendaData ? request.intendedTime : null;
       const pendingAdministrativeModules = [
         financialRegistration.isComplete ? null : "financeiro",
@@ -1144,6 +1207,8 @@ export async function acceptStudentPreRegistration(
           convertedStudentProfileId: studentProfile.id,
           convertedUserId: user.id,
           email: request.email ?? emailForLogin,
+          lastMobileConversionOperationId:
+            options.mobileOperationKey ?? undefined,
           reviewedAt: new Date(),
           reviewedByUserId: context.session.user.id,
           status: "APPROVED",
@@ -1158,6 +1223,40 @@ export async function acceptStudentPreRegistration(
     });
   } catch (error) {
     const errorMessage = (error as Error).message;
+
+    if (options.mobileOperationKey && isUniqueConstraintError(error)) {
+      const operationOwner = await prisma.studentPreRegistration.findUnique({
+        where: {
+          lastMobileConversionOperationId: options.mobileOperationKey,
+        },
+        select: {
+          convertedAgendaStudentId: true,
+          convertedFinancialStudentId: true,
+          convertedStudentProfileId: true,
+          convertedUserId: true,
+          id: true,
+        },
+      });
+      if (
+        operationOwner?.id === parsed.data.requestId &&
+        operationOwner.convertedUserId &&
+        operationOwner.convertedStudentProfileId &&
+        operationOwner.convertedFinancialStudentId &&
+        operationOwner.convertedAgendaStudentId
+      ) {
+        revalidatePreRegistrationPaths();
+        return {
+          ok: true,
+          message: "Aluno ja convertido por esta operacao.",
+        };
+      }
+      if (operationOwner) {
+        return {
+          ok: false,
+          message: "Esta operacao de conversao ja foi usada.",
+        };
+      }
+    }
 
     if (
       isUniqueConstraintError(error) ||
@@ -1220,6 +1319,18 @@ export async function acceptStudentPreRegistration(
       };
     }
 
+    if (errorMessage === "MISSING_AGENDA_CONFIRMATION") {
+      return {
+        errors: {
+          confirmMissingAgendaData:
+            "Confirme que a agenda sera completada depois.",
+        },
+        ok: false,
+        message:
+          "Confirme a conversao sem dias e horario completos antes de continuar.",
+      };
+    }
+
     if (errorMessage === "TEACHER_PROFILE_REQUIRED") {
       return {
         ok: false,
@@ -1277,7 +1388,7 @@ export async function acceptStudentPreRegistration(
 
   let message = postConversionMessage;
 
-  if (parsed.data.cattyContext && createdUserId) {
+  if (parsed.data.cattyContext && createdUserId && !replayed) {
     const source =
       context.session.user.role === "ADMIN" ? "ADMIN_NOTE" : "TEACHER_NOTE";
     const memoryResult = await upsertCattyUserMemory({
