@@ -5,6 +5,7 @@ import {
   changeMobileAdminUserStatus,
   createMobileAdminUser,
   MobileAdminUserMutationError,
+  resetMobileAdminUserPassword,
   updateMobileAdminUser,
 } from "../mobile-admin-user-mutations";
 
@@ -276,4 +277,162 @@ test("keeps at least one active administrator", async () => {
       error instanceof MobileAdminUserMutationError &&
       error.code === "LAST_ACTIVE_ADMIN",
   );
+});
+
+test("rejects password reset by a non-admin before hashing or opening a transaction", async () => {
+  let touched = false;
+
+  await assert.rejects(
+    () =>
+      resetMobileAdminUserPassword(
+        { ...admin, role: "TEACHER" },
+        "user-1",
+        {
+          confirmNewPassword: "NewStrongPass123",
+          confirmPasswordReset: true,
+          expectedUpdatedAt: "2026-08-01T12:00:00.000Z",
+          newPassword: "NewStrongPass123",
+        },
+        {
+          hashPassword: async () => (touched = true, "hash"),
+          store: { $transaction: async () => (touched = true) } as never,
+        },
+      ),
+    (error: unknown) =>
+      error instanceof MobileAdminUserMutationError &&
+      error.code === "ROLE_FORBIDDEN",
+  );
+
+  assert.equal(touched, false);
+});
+
+test("rejects mismatched password confirmation before hashing", async () => {
+  let touched = false;
+
+  await assert.rejects(
+    () =>
+      resetMobileAdminUserPassword(
+        admin,
+        "user-1",
+        {
+          confirmNewPassword: "DifferentPass123",
+          confirmPasswordReset: true,
+          expectedUpdatedAt: "2026-08-01T12:00:00.000Z",
+          newPassword: "NewStrongPass123",
+        },
+        {
+          hashPassword: async () => (touched = true, "hash"),
+          store: { $transaction: async () => (touched = true) } as never,
+        },
+      ),
+    (error: unknown) =>
+      error instanceof MobileAdminUserMutationError &&
+      error.code === "INVALID_INPUT",
+  );
+
+  assert.equal(touched, false);
+});
+
+test("password reset hashes the new password and revokes all mobile sessions atomically", async () => {
+  const updatedAt = new Date("2026-08-01T12:00:00.000Z");
+  const writes: Array<{ input: unknown; model: string }> = [];
+  const tx = {
+    mobileSession: {
+      updateMany: async (input: unknown) =>
+        writes.push({ input, model: "mobileSession" }),
+    },
+    user: {
+      findUnique: async () => ({ id: "user-1" }),
+      updateMany: async (input: unknown) =>
+        (writes.push({ input, model: "user" }), { count: 1 }),
+    },
+  };
+
+  const result = await resetMobileAdminUserPassword(
+    admin,
+    "user-1",
+    {
+      confirmNewPassword: "NewStrongPass123",
+      confirmPasswordReset: true,
+      expectedUpdatedAt: updatedAt.toISOString(),
+      newPassword: "NewStrongPass123",
+    },
+    {
+      hashPassword: async (password) => {
+        assert.equal(password, "NewStrongPass123");
+        return "new-secure-hash";
+      },
+      now: () => new Date("2026-08-01T13:00:00.000Z"),
+      store: {
+        $transaction: async (operation: (value: typeof tx) => unknown) =>
+          operation(tx),
+      } as never,
+    },
+  );
+
+  assert.deepEqual(result, {
+    message: "Senha redefinida e sessoes encerradas com sucesso.",
+    userId: "user-1",
+  });
+  assert.deepEqual(writes, [
+    {
+      input: {
+        data: {
+          passwordHash: "new-secure-hash",
+          sessionVersion: { increment: 1 },
+        },
+        where: { id: "user-1", updatedAt },
+      },
+      model: "user",
+    },
+    {
+      input: {
+        data: {
+          revokedAt: new Date("2026-08-01T13:00:00.000Z"),
+          revokeReason: "PASSWORD_RESET",
+        },
+        where: { revokedAt: null, userId: "user-1" },
+      },
+      model: "mobileSession",
+    },
+  ]);
+  assert.equal(JSON.stringify(result).includes("NewStrongPass123"), false);
+});
+
+test("password reset refuses a stale user version without revoking sessions", async () => {
+  let sessionsTouched = false;
+
+  await assert.rejects(
+    () =>
+      resetMobileAdminUserPassword(
+        admin,
+        "user-1",
+        {
+          confirmNewPassword: "NewStrongPass123",
+          confirmPasswordReset: true,
+          expectedUpdatedAt: "2026-08-01T12:00:00.000Z",
+          newPassword: "NewStrongPass123",
+        },
+        {
+          hashPassword: async () => "new-secure-hash",
+          store: {
+            $transaction: async (operation: (value: unknown) => unknown) =>
+              operation({
+                mobileSession: {
+                  updateMany: async () => (sessionsTouched = true),
+                },
+                user: {
+                  findUnique: async () => ({ id: "user-1" }),
+                  updateMany: async () => ({ count: 0 }),
+                },
+              }),
+          } as never,
+        },
+      ),
+    (error: unknown) =>
+      error instanceof MobileAdminUserMutationError &&
+      error.code === "EDIT_CONFLICT",
+  );
+
+  assert.equal(sessionsTouched, false);
 });

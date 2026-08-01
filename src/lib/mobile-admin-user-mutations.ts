@@ -71,6 +71,19 @@ const statusInputSchema = z
   })
   .strict();
 
+const passwordResetInputSchema = z
+  .object({
+    confirmNewPassword: z.string().min(8).max(120),
+    confirmPasswordReset: z.literal(true),
+    expectedUpdatedAt: z.string().datetime(),
+    newPassword: z.string().min(8).max(120),
+  })
+  .strict()
+  .refine((value) => value.newPassword === value.confirmNewPassword, {
+    message: "As senhas precisam ser iguais.",
+    path: ["confirmNewPassword"],
+  });
+
 const userIdSchema = z.string().trim().min(1).max(200);
 
 export type MobileAdminUserMutationStore = Pick<
@@ -325,6 +338,57 @@ export async function changeMobileAdminUserStatus(
         ? "Usuario reativado com sucesso."
         : "Usuario desativado com sucesso.",
       userId: user.id,
+    };
+  });
+}
+
+export async function resetMobileAdminUserPassword(
+  actor: MobileAuthUser,
+  userId: unknown,
+  input: unknown,
+  options: Options = {},
+) {
+  requireAdmin(actor);
+  const parsedUserId = userIdSchema.safeParse(userId);
+  const parsed = passwordResetInputSchema.safeParse(input);
+  if (!parsedUserId.success || !parsed.success) throw invalidInput();
+
+  const passwordHash = await (options.hashPassword ?? ((password) => hash(password, 12)))(
+    parsed.data.newPassword,
+  );
+  const store = options.store ?? getPrisma();
+  const now = options.now?.() ?? new Date();
+
+  return store.$transaction(async (transaction) => {
+    const update = await transaction.user.updateMany({
+      where: {
+        id: parsedUserId.data,
+        updatedAt: new Date(parsed.data.expectedUpdatedAt),
+      },
+      data: {
+        passwordHash,
+        sessionVersion: { increment: 1 },
+      },
+    });
+
+    if (update.count !== 1) {
+      const user = await transaction.user.findUnique({
+        where: { id: parsedUserId.data },
+        select: { id: true },
+      });
+      throw new MobileAdminUserMutationError(
+        user ? "EDIT_CONFLICT" : "USER_NOT_FOUND",
+      );
+    }
+
+    await transaction.mobileSession.updateMany({
+      where: { revokedAt: null, userId: parsedUserId.data },
+      data: { revokedAt: now, revokeReason: "PASSWORD_RESET" },
+    });
+
+    return {
+      message: "Senha redefinida e sessoes encerradas com sucesso.",
+      userId: parsedUserId.data,
     };
   });
 }
