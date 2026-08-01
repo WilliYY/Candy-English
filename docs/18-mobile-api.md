@@ -48,6 +48,14 @@ Controles:
   aula pertencente ao próprio perfil, inclusive `DRAFT` e `ARCHIVED`, com
   materiais seguros, vocabulário e o estado de planejamento das homeworks. A
   resposta não inclui entregas, respostas ou identificadores internos de perfil.
+- `GET /api/mobile/v1/teacher/lessons/options` lista até 100 alunos vinculados,
+  sem email ou dados financeiros, para o seletor nativo da aula.
+- `POST /api/mobile/v1/teacher/lessons` cria uma aula da teacher autenticada e
+  `GET|PUT /api/mobile/v1/teacher/lessons/[lessonId]/editor` carrega ou atualiza
+  somente uma aula própria. Materiais e vocabulário são validados e substituídos
+  na mesma transação; o editor recusa aulas acima dos limites em vez de truncar.
+  Criação usa UUID de operação idempotente e edição exige `expectedUpdatedAt`,
+  retornando conflito quando site ou outro aparelho já salvou uma versão nova.
 - `PUT /api/mobile/v1/homeworks/[homeworkId]/interactive` salva o rascunho
   interativo de forma idempotente.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/interactive` entrega a atividade

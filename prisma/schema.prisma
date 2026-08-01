@@ -376,20 +376,22 @@ model StudentTeacherAssignment {
 }
 
 model Lesson {
-  id               String           @id @default(cuid())
-  title            String
-  description      String?
-  scheduledAt      DateTime?
-  status           LessonStatus     @default(PUBLISHED)
-  teacherProfileId String
-  teacherProfile   TeacherProfile   @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
-  studentProfileId String?
-  studentProfile   StudentProfile?  @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
-  materials        LessonMaterial[]
-  vocabularyItems  VocabularyItem[]
-  homeworks        Homework[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id                         String           @id @default(cuid())
+  title                      String
+  description                String?
+  scheduledAt                DateTime?
+  status                     LessonStatus     @default(PUBLISHED)
+  teacherProfileId           String
+  teacherProfile             TeacherProfile   @relation(fields: [teacherProfileId], references: [id], onDelete: Cascade)
+  studentProfileId           String?
+  studentProfile             StudentProfile?  @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
+  createdByMobileOperationId String?          @unique
+  lastMobileOperationId      String?          @unique
+  materials                  LessonMaterial[]
+  vocabularyItems            VocabularyItem[]
+  homeworks                  Homework[]
+  createdAt                  DateTime         @default(now())
+  updatedAt                  DateTime         @updatedAt
 
   @@index([teacherProfileId])
   @@index([studentProfileId])
