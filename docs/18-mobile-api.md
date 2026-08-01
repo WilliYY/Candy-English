@@ -44,6 +44,10 @@ Controles:
 - `GET /api/mobile/v1/lessons/[lessonId]` entrega somente a aula `PUBLISHED`
   vinculada ao aluno, com materiais, vocabulário e homeworks. Materiais externos
   são expostos ao app somente quando usam HTTPS e não contêm credenciais na URL.
+- `GET /api/mobile/v1/teacher/lessons/[lessonId]` entrega à teacher somente uma
+  aula pertencente ao próprio perfil, inclusive `DRAFT` e `ARCHIVED`, com
+  materiais seguros, vocabulário e o estado de planejamento das homeworks. A
+  resposta não inclui entregas, respostas ou identificadores internos de perfil.
 - `PUT /api/mobile/v1/homeworks/[homeworkId]/interactive` salva o rascunho
   interativo de forma idempotente.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/interactive` entrega a atividade
@@ -94,8 +98,9 @@ Escopos atuais:
 - `STUDENT`: aulas próprias, homework liberado, Candy XP, Catty, aula ao vivo,
   avisos derivados dos próprios dados, mensagens dos próprios vínculos e
   contratos gerais/próprios.
-- `TEACHER`: alunos vinculados, aulas/homeworks próprios, submissões desses
-  homeworks, mensagens vinculadas e pré-cadastros próprios/atribuídos.
+- `TEACHER`: alunos vinculados, detalhes e planejamento das próprias aulas,
+  homeworks próprios, submissões desses homeworks, mensagens vinculadas e
+  pré-cadastros próprios/atribuídos.
 - `ADMIN`: usuários, Secretaria, financeiro, agenda, supervisão do AVA e
   indicadores gerais.
 
