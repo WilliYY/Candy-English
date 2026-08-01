@@ -7,18 +7,15 @@ import {
 import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import { buildAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { requireAvaRole } from "@/lib/authorization";
-import {
-  CANDY_XP_REWARDS,
-  type CandyXpPersistenceSnapshot,
-} from "@/lib/candy-xp";
+import { type CandyXpPersistenceSnapshot } from "@/lib/candy-xp";
 import {
   recordCandyXpEventsForUser,
-  type CandyXpEventInput,
 } from "@/lib/candy-xp-persistence";
 import { getCandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
+import { buildTeacherCandyXpEvents } from "@/lib/mobile-teacher-candy-xp";
 import type {
   CattyLearningCategoryInput,
   CattyLearningFeedbackKindInput,
@@ -710,63 +707,19 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   let candyXpPersistence: CandyXpPersistenceSnapshot | null = null;
 
   if (session.user.role === "TEACHER" && currentTeacherProfile && currentUser) {
-    const teacherXpEvents: CandyXpEventInput[] = [];
-
-    if (currentUser.avatarPath || currentUser.phone) {
-      teacherXpEvents.push({
-        kind: "PROFILE_READY",
-        sourceKey: `teacher:profile-ready:${currentTeacherProfile.id}`,
-        sourceLabel: "Perfil preparado",
-        xp: CANDY_XP_REWARDS.teacher.profileReady,
-      });
-    }
-
-    for (const student of students) {
-      teacherXpEvents.push({
-        kind: "TEACHER_ROUTINE",
-        sourceKey: `teacher:student-linked:${currentTeacherProfile.id}:${student.id}`,
-        sourceLabel: "Alunos vinculados",
-        xp: CANDY_XP_REWARDS.teacher.studentLinked,
-      });
-    }
-
-    for (const lesson of lessons) {
-      teacherXpEvents.push({
-        kind: "TEACHER_ROUTINE",
-        sourceKey: `teacher:lesson-created:${lesson.id}`,
-        sourceLabel: "Aulas criadas",
-        xp: CANDY_XP_REWARDS.teacher.lessonCreated,
-      });
-
-      for (const homework of lesson.homeworks) {
-        teacherXpEvents.push({
-          kind: "TEACHER_ROUTINE",
-          sourceKey: `teacher:homework-created:${homework.id}`,
-          sourceLabel: "Homeworks criadas",
-          xp: CANDY_XP_REWARDS.teacher.homeworkCreated,
-        });
-      }
-    }
-
-    for (const submission of submissions) {
-      if (submission.status === "REVIEWED") {
-        teacherXpEvents.push({
-          kind: "FEEDBACK_REVIEWED",
-          sourceKey: `teacher:feedback-reviewed:${submission.id}`,
-          sourceLabel: "Feedbacks dados",
-          xp: CANDY_XP_REWARDS.teacher.feedbackReviewed,
-        });
-      }
-    }
-
-    for (const liveSession of liveSessions) {
-      teacherXpEvents.push({
-        kind: "TEACHER_ROUTINE",
-        sourceKey: `teacher:live-session:${liveSession.id}`,
-        sourceLabel: "Aulas ao vivo",
-        xp: CANDY_XP_REWARDS.teacher.liveSession,
-      });
-    }
+    const teacherXpEvents = buildTeacherCandyXpEvents({
+      homeworkIds: lessons.flatMap((lesson) =>
+        lesson.homeworks.map((homework) => homework.id),
+      ),
+      lessonIds: lessons.map((lesson) => lesson.id),
+      liveSessionIds: liveSessions.map((liveSession) => liveSession.id),
+      profileReady: Boolean(currentUser.avatarPath || currentUser.phone),
+      reviewedSubmissionIds: submissions
+        .filter((submission) => submission.status === "REVIEWED")
+        .map((submission) => submission.id),
+      studentProfileIds: students.map((student) => student.id),
+      teacherProfileId: currentTeacherProfile.id,
+    });
 
     candyXpPersistence = await recordCandyXpEventsForUser({
       events: teacherXpEvents,

@@ -133,6 +133,12 @@ Controles:
   automático possui `sourceKey` único.
 - `GET /api/mobile/v1/candy-xp/:activityId/asset` entrega PDF ou imagem somente
   ao aluno no escopo da atividade, com validação de tamanho e assinatura.
+- `GET /api/mobile/v1/teacher/candy-xp` sincroniza a jornada pedagógica da
+  teacher pelas mesmas chaves idempotentes usadas no site: perfil, alunos
+  vinculados, aulas, homeworks, feedbacks revisados e aulas ao vivo. O ranking
+  inclui somente teachers e a resposta remove `userId`, caminhos de avatar,
+  respostas corretas, atividades privadas de alunos e campos de storage. Cada
+  fonte é limitada; o servidor recusa excesso em vez de truncar XP.
 - `GET /api/mobile/v1/catty/chat` entrega o histórico privado da Catty para o
   usuário do bearer token e `POST /api/mobile/v1/catty/chat` continua a conversa.
   Site e app usam o mesmo handler, histórico, memória pedagógica, limites,
@@ -154,8 +160,8 @@ Escopos atuais:
   avisos derivados dos próprios dados, mensagens dos próprios vínculos e
   contratos gerais/próprios.
 - `TEACHER`: alunos vinculados, detalhes e planejamento das próprias aulas,
-  homeworks próprios, submissões desses homeworks, mensagens vinculadas e
-  pré-cadastros próprios/atribuídos.
+  homeworks próprios, submissões desses homeworks, mensagens vinculadas,
+  Candy XP pedagógico próprio e pré-cadastros próprios/atribuídos.
 - `ADMIN`: usuários, Secretaria, financeiro, agenda, supervisão do AVA e
   indicadores gerais.
 

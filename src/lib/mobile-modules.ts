@@ -3,6 +3,7 @@ import { getMobileStudentLessonScope } from "@/lib/mobile-lesson";
 import { getContractDocumentAccessScope } from "@/lib/contract-documents";
 import { getPrisma } from "@/lib/prisma";
 import { getMobileTeacherContracts } from "@/lib/mobile-teacher-contracts";
+import { getMobileTeacherCandyXpOverview } from "@/lib/mobile-teacher-candy-xp";
 
 export type MobileModuleItem = {
   amountCents?: number;
@@ -35,6 +36,7 @@ const roleModules = {
     "messages",
     "contracts",
     "secretary",
+    "xp",
   ],
 } as const;
 
@@ -249,6 +251,21 @@ async function getTeacherModule(user: MobileAuthUser, slug: string) {
         ? "Nenhum contrato permitido para seus alunos."
         : "Perfil de teacher não vinculado.",
       contracts.data.items,
+    );
+  }
+
+  if (slug === "xp") {
+    const candyXp = await getMobileTeacherCandyXpOverview(user.id);
+    return data(
+      slug,
+      "Candy XP",
+      candyXp ? "Nenhum XP registrado ainda." : "Perfil de teacher não vinculado.",
+      candyXp?.recentEvents.map((event, index) => ({
+        detail: `+${event.xp} XP`,
+        id: `${event.occurredAt}:${index}`,
+        occurredAt: event.occurredAt,
+        title: event.sourceLabel,
+      })) ?? [],
     );
   }
 
