@@ -70,6 +70,17 @@ Controles:
   perguntas, campos interativos e a referência segura do arquivo somente para
   alunos vinculados. Cada destino usa uma chave idempotente própria, evitando
   cópias repetidas por toque duplo ou repetição da requisição.
+- `GET /api/mobile/v1/teacher/submissions` lista até 100 entregas não rascunho
+  dos homeworks da própria teacher, sem email ou identificadores de usuário.
+  `GET /api/mobile/v1/teacher/submissions/[submissionId]` entrega respostas,
+  perguntas e referências necessárias para a correção, recusando conteúdo acima
+  dos limites seguros em vez de truncar silenciosamente.
+- `POST /api/mobile/v1/teacher/submissions/[submissionId]/review` envia feedback
+  e `POST /api/mobile/v1/teacher/submissions/[submissionId]/redo` libera uma nova
+  tentativa. As duas operações usam UUID idempotente, lock transacional e a
+  versão esperada de `status`, `submittedAt` e `reviewedAt`; uma correção feita
+  no site ou em outro aparelho gera conflito em vez de ser sobrescrita. Nenhuma
+  dessas rotas envia email.
 - `PUT /api/mobile/v1/homeworks/[homeworkId]/interactive` salva o rascunho
   interativo de forma idempotente.
 - `POST /api/mobile/v1/homeworks/[homeworkId]/interactive` entrega a atividade

@@ -536,6 +536,8 @@ model HomeworkSubmission {
   reviewedAt                 DateTime?
   reviewedByTeacherProfileId String?
   reviewedByTeacherProfile   TeacherProfile?  @relation(fields: [reviewedByTeacherProfileId], references: [id], onDelete: SetNull)
+  lastMobileReviewOperationId String?          @unique
+  lastMobileRedoOperationId   String?          @unique
 
   @@unique([homeworkId, studentProfileId])
   @@index([studentProfileId])

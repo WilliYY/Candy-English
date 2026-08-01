@@ -219,6 +219,8 @@ export async function saveStudentInteractiveHomeworkDraft(
       },
       update: {
         answers,
+        lastMobileRedoOperationId: null,
+        lastMobileReviewOperationId: null,
         status: "DRAFT",
       },
     });
@@ -367,6 +369,8 @@ export async function submitStudentInteractiveHomework(
       update: {
         answers,
         feedback: null,
+        lastMobileRedoOperationId: null,
+        lastMobileReviewOperationId: null,
         reviewedAt: null,
         reviewedByTeacherProfileId: null,
         status: "SUBMITTED",

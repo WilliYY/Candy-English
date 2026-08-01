@@ -147,6 +147,8 @@ export async function submitStudentTextHomework(
       update: {
         answers,
         feedback: null,
+        lastMobileRedoOperationId: null,
+        lastMobileReviewOperationId: null,
         reviewedAt: null,
         reviewedByTeacherProfileId: null,
         status: "SUBMITTED",
