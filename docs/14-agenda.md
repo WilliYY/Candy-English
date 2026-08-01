@@ -86,6 +86,16 @@ Rota:
 - A busca e o detalhe trabalham apenas com `AgendaStudent`, sem consultar `User`/`StudentProfile`.
 - A migration `20260714170000_linked_pre_registration_conversion` adiciona `AgendaStudent.unit` e o vinculo de conversao entre `StudentPreRegistration` e `AgendaStudent`.
 
+## Operacoes no aplicativo ADMIN
+
+- `GET /api/mobile/v1/admin/agenda` entrega o calendario mensal e a fila diaria.
+- `GET /api/mobile/v1/admin/agenda/[lessonId]` entrega a ocorrencia e ate 100 logs recentes do aluno, sem expor IDs de autor ou campos de autenticacao.
+- `PATCH /api/mobile/v1/admin/agenda/[lessonId]` registra presenca, falta ou reset. Exige `confirmChange=true`, `expectedUpdatedAt` e `operationId` UUID.
+- `POST /api/mobile/v1/admin/agenda/[lessonId]/makeups` cria reposicao e marca a aula original como falta. Exige `confirmCreate=true`, versao atual e operacao UUID.
+- `AgendaLesson.lastMobileOperationId` e `AgendaLesson.createdByMobileOperationId` impedem repeticao de efeito; locks transacionais e `updatedAt` impedem concorrencia silenciosa.
+- Uma aula original pode ter somente uma reposicao ativa. Reposicao nao pode ser usada como origem de outra reposicao.
+- Toda escrita cria `AgendaLog` com o ADMIN responsavel; o app recebe somente o nome seguro do autor no historico.
+
 ## Riscos ao alterar esta parte
 
 - Apagar fisicamente `AgendaStudent` remove ocorrencias por cascade.

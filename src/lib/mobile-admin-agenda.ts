@@ -18,7 +18,7 @@ const inputSchema = z
   })
   .strict();
 
-const lessonSelect = {
+export const mobileAdminAgendaLessonSelect = {
   date: true,
   id: true,
   isMakeup: true,
@@ -37,8 +37,8 @@ const lessonSelect = {
   updatedAt: true,
 } satisfies Prisma.AgendaLessonSelect;
 
-type LessonRow = Prisma.AgendaLessonGetPayload<{
-  select: typeof lessonSelect;
+export type MobileAdminAgendaLessonRow = Prisma.AgendaLessonGetPayload<{
+  select: typeof mobileAdminAgendaLessonSelect;
 }>;
 export type MobileAdminAgendaStore = Pick<
   ReturnType<typeof getPrisma>,
@@ -61,7 +61,7 @@ export class MobileAdminAgendaError extends Error {
   }
 }
 
-function dateParts(date: Date) {
+export function getMobileAgendaDateParts(date: Date) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     day: "2-digit",
     month: "2-digit",
@@ -76,11 +76,14 @@ function dateParts(date: Date) {
   };
 }
 
-function safeText(value: string, maximum: number) {
+export function safeMobileAgendaText(value: string, maximum: number) {
   return value.trim().slice(0, maximum);
 }
 
-function safeNullableText(value: string | null, maximum: number) {
+export function safeNullableMobileAgendaText(
+  value: string | null,
+  maximum: number,
+) {
   const normalized = value?.trim().slice(0, maximum);
   return normalized || null;
 }
@@ -92,15 +95,15 @@ function normalizedSearch(value: string) {
     .toLocaleLowerCase("pt-BR");
 }
 
-function isAttended(row: LessonRow) {
+function isAttended(row: MobileAdminAgendaLessonRow) {
   return row.status === "ATTENDED" || row.status === "MAKEUP_ATTENDED";
 }
 
-function isScheduled(row: LessonRow) {
+function isScheduled(row: MobileAdminAgendaLessonRow) {
   return row.status === "SCHEDULED" || row.status === "MAKEUP_SCHEDULED";
 }
 
-function counts(rows: LessonRow[]) {
+function counts(rows: MobileAdminAgendaLessonRow[]) {
   return rows.reduce(
     (summary, row) => {
       summary.count += 1;
@@ -120,19 +123,21 @@ function counts(rows: LessonRow[]) {
   );
 }
 
-function serializeLesson(row: LessonRow) {
+export function serializeMobileAdminAgendaLesson(
+  row: MobileAdminAgendaLessonRow,
+) {
   return {
-    date: dateParts(row.date).date,
+    date: getMobileAgendaDateParts(row.date).date,
     id: row.id,
     isMakeup: row.isMakeup,
-    lessonNote: safeNullableText(row.notes, 500),
+    lessonNote: safeNullableMobileAgendaText(row.notes, 500),
     status: row.status,
     studentId: row.student.id,
-    studentName: safeText(row.student.name, 120),
-    studentNote: safeNullableText(row.student.notes, 500),
-    studentPhone: safeNullableText(row.student.phone, 40),
+    studentName: safeMobileAgendaText(row.student.name, 120),
+    studentNote: safeNullableMobileAgendaText(row.student.notes, 500),
+    studentPhone: safeNullableMobileAgendaText(row.student.phone, 40),
     studentUnit: row.student.unit,
-    time: safeText(row.time, 10),
+    time: safeMobileAgendaText(row.time, 10),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -150,7 +155,7 @@ export async function getMobileAdminAgenda(
     throw new MobileAdminAgendaError("INVALID_QUERY");
   }
   const now = options.now?.() ?? new Date();
-  const today = dateParts(now);
+  const today = getMobileAgendaDateParts(now);
   const year = parsed.data.year ?? today.year;
   const month = parsed.data.month ?? today.month;
   const fallbackDate =
@@ -165,7 +170,7 @@ export async function getMobileAdminAgenda(
   const store = options.store ?? getPrisma();
   const rows = await store.agendaLesson.findMany({
     orderBy: [{ date: "asc" }, { time: "asc" }, { id: "asc" }],
-    select: lessonSelect,
+    select: mobileAdminAgendaLessonSelect,
     take: 2_001,
     where: {
       isActive: true,
@@ -181,9 +186,9 @@ export async function getMobileAdminAgenda(
     throw new MobileAdminAgendaError("RESULT_LIMIT");
   }
 
-  const byDate = new Map<string, LessonRow[]>();
+  const byDate = new Map<string, MobileAdminAgendaLessonRow[]>();
   for (const row of rows) {
-    const key = dateParts(row.date).date;
+    const key = getMobileAgendaDateParts(row.date).date;
     const current = byDate.get(key) ?? [];
     current.push(row);
     byDate.set(key, current);
@@ -207,7 +212,7 @@ export async function getMobileAdminAgenda(
         left.student.name.localeCompare(right.student.name, "pt-BR") ||
         left.id.localeCompare(right.id),
     )
-    .map(serializeLesson);
+    .map(serializeMobileAdminAgendaLesson);
 
   return {
     dailyLessons,
