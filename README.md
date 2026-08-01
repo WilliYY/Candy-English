@@ -78,6 +78,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
 - `docs/18-mobile-api.md`: autenticacao movel, sessoes revogaveis, overview e modulos nativos por role.
 - `docs/19-mobile-admin-contracts.md`: catalogo, upload idempotente e download protegido de contratos no app ADMIN.
+- `docs/20-mobile-admin-operations.md`: manutencao compartilhada, status agregado e controles moveis seguros do ADMIN.
 - `docs/catty-comportamento.md`: exemplos bons/ruins e smoke de comportamento da Catty.
 - `docs/99-contexto-rapido-codex.md`: prompt minimo e memoria curta para continuar o projeto em outro chat.
 

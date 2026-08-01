@@ -1,11 +1,11 @@
 import { getPrisma } from "@/lib/prisma";
 
-const MAINTENANCE_KEY = "maintenanceMode";
+export const MAINTENANCE_SETTING_KEY = "maintenanceMode";
 
 export async function isMaintenanceModeEnabled() {
   const prisma = getPrisma();
   const setting = await prisma.appSetting.findUnique({
-    where: { key: MAINTENANCE_KEY },
+    where: { key: MAINTENANCE_SETTING_KEY },
     select: { value: true },
   });
 
@@ -16,9 +16,9 @@ export async function setMaintenanceMode(enabled: boolean) {
   const prisma = getPrisma();
 
   await prisma.appSetting.upsert({
-    where: { key: MAINTENANCE_KEY },
+    where: { key: MAINTENANCE_SETTING_KEY },
     create: {
-      key: MAINTENANCE_KEY,
+      key: MAINTENANCE_SETTING_KEY,
       value: enabled ? "on" : "off",
     },
     update: {

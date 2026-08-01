@@ -575,8 +575,8 @@ model ContractDocument {
   studentProfile             StudentProfile? @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
   uploadedByUserId           String
   uploadedByUser             User            @relation("UploadedContracts", fields: [uploadedByUserId], references: [id], onDelete: Cascade)
-  createdByMobileOperationId String?          @unique
-  createdAt                  DateTime         @default(now())
+  createdByMobileOperationId String?         @unique
+  createdAt                  DateTime        @default(now())
 
   @@index([studentProfileId])
   @@index([uploadedByUserId])
@@ -763,6 +763,18 @@ model AppSetting {
   value     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model MobileAdminMaintenanceOperation {
+  operationId       String    @id
+  enabled           Boolean
+  actorUserId       String
+  expectedUpdatedAt DateTime?
+  resultUpdatedAt   DateTime?
+  createdAt         DateTime  @default(now())
+
+  @@index([actorUserId])
+  @@index([createdAt])
 }
 
 model AdminCredential {
