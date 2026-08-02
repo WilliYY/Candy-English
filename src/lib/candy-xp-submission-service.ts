@@ -86,7 +86,7 @@ type StudentCandyXpMutationResult = {
   reason?: "CONFLICT" | "INVALID" | "NOT_FOUND";
 };
 
-type CandyXpActivityAwardInput = {
+export type CandyXpActivityAwardInput = {
   activityId: string;
   sourceKey: string;
   studentUserId: string;
@@ -364,7 +364,7 @@ function buildCandyXpActivityEvent(
   };
 }
 
-async function awardCandyXpActivityInTransaction(
+export async function awardCandyXpActivityInTransaction(
   tx: Prisma.TransactionClient,
   input: CandyXpActivityAwardInput,
 ) {
@@ -422,7 +422,7 @@ async function awardCandyXpActivityInTransaction(
   return event;
 }
 
-async function refreshCandyXpActivityAward(
+export async function refreshCandyXpActivityAward(
   event: CandyXpEventInput,
   studentUserId: string,
 ) {

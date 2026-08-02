@@ -777,6 +777,19 @@ model MobileAdminMaintenanceOperation {
   @@index([createdAt])
 }
 
+model MobileAdminCandyXpOperation {
+  operationId   String   @id
+  kind          String
+  targetId      String
+  actorUserId   String
+  payloadDigest String
+  createdAt     DateTime @default(now())
+
+  @@index([targetId, kind])
+  @@index([actorUserId])
+  @@index([createdAt])
+}
+
 model AdminCredential {
   id               String                @id @default(cuid())
   label            String
