@@ -632,23 +632,27 @@ function InteractiveAssetUploadForm({
       }}
       className={cn(
         "overflow-hidden rounded-lg border bg-gradient-to-br from-white via-primary/[0.018] to-secondary/35 shadow-[0_18px_45px_rgba(65,42,76,0.09)]",
-        isLessonMode ? "border-sky-200/75" : "border-primary/15",
+        isLessonMode
+          ? "border-primary/20 bg-[#fcfbfd] shadow-[0_24px_60px_rgba(65,42,76,0.14)]"
+          : "border-primary/15",
       )}
       noValidate
     >
       <div
         className={cn(
-          "grid gap-4 border-b px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center",
+          "grid gap-4 border-b px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center sm:px-5",
           isLessonMode
-            ? "border-sky-200/70 bg-[linear-gradient(135deg,rgba(14,165,233,0.11),rgba(65,42,76,0.07),rgba(252,229,216,0.24))]"
+            ? "border-primary/35 bg-[linear-gradient(110deg,#2f183b_0%,#4d285b_48%,#075b68_100%)] text-white"
             : "border-primary/10 bg-[linear-gradient(135deg,rgba(65,42,76,0.1),rgba(229,124,216,0.09),rgba(252,229,216,0.28))]",
         )}
       >
         <div className="flex min-w-0 items-center gap-3">
           <span
             className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-lg text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]",
-              isLessonMode ? "bg-sky-600" : "bg-primary",
+              "flex size-11 shrink-0 items-center justify-center rounded-lg text-primary-foreground shadow-[0_10px_24px_rgba(65,42,76,0.18)]",
+              isLessonMode
+                ? "bg-white/14 text-white ring-1 ring-white/25"
+                : "bg-primary",
             )}
           >
             {isLessonMode ? (
@@ -658,10 +662,22 @@ function InteractiveAssetUploadForm({
             )}
           </span>
           <div className="min-w-0">
-            <div className="truncate text-base font-semibold text-primary">
+            <div
+              className={cn(
+                "truncate text-base font-semibold",
+                isLessonMode ? "text-white" : "text-primary",
+              )}
+            >
               {copy.formTitle}
             </div>
-            <p className="text-sm text-muted-foreground">{formDescription}</p>
+            <p
+              className={cn(
+                "text-sm",
+                isLessonMode ? "text-white/75" : "text-muted-foreground",
+              )}
+            >
+              {formDescription}
+            </p>
           </div>
         </div>
         <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[24rem]">
@@ -669,16 +685,24 @@ function InteractiveAssetUploadForm({
             <span
               key={step}
               className={cn(
-                "rounded-lg border bg-white/78 px-3 py-2 text-xs font-semibold shadow-sm",
+                "rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md motion-reduce:transform-none",
                 isLessonMode
-                  ? "border-sky-200/70 text-sky-900"
+                  ? [
+                      "border-sky-300/30 bg-sky-300/15 text-sky-50",
+                      "border-violet-300/30 bg-violet-300/15 text-violet-50",
+                      "border-emerald-300/30 bg-emerald-300/15 text-emerald-50",
+                    ][index]
                   : "border-primary/10 text-primary",
               )}
             >
               <span
                 className={cn(
-                  "mr-2 inline-flex size-5 items-center justify-center rounded-md text-[0.68rem] text-white",
-                  isLessonMode ? "bg-sky-600" : "bg-primary",
+                  "mr-2 inline-flex size-5 items-center justify-center rounded-md text-[0.68rem] text-white shadow-sm",
+                  isLessonMode
+                    ? ["bg-sky-500", "bg-violet-500", "bg-emerald-500"][
+                        index
+                      ]
+                    : "bg-primary",
                 )}
               >
                 {index + 1}
@@ -689,18 +713,18 @@ function InteractiveAssetUploadForm({
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="bg-[#faf9fb] p-4 sm:p-5">
         <div
           className={cn(
-            "grid gap-3 rounded-lg border p-3 shadow-sm",
+            "grid gap-4 rounded-lg border p-3 shadow-sm",
             isLessonMode
-              ? "border-sky-200/70 bg-white/88 p-4 lg:grid-cols-12"
+              ? "relative overflow-hidden border-sky-200 bg-white p-4 shadow-[0_14px_34px_rgba(14,165,233,0.09)] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-sky-500 lg:grid-cols-12 lg:p-5"
               : "border-primary/10 bg-white/72 lg:grid-cols-[0.75fr_minmax(320px,1.45fr)_minmax(240px,1fr)_0.65fr]",
           )}
         >
           {isLessonMode ? (
-            <div className="flex min-w-0 items-start gap-3 border-b border-sky-100 pb-3 lg:col-span-12">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+            <div className="flex min-w-0 items-start gap-3 rounded-lg border border-sky-100 bg-sky-50/85 px-3 py-3 lg:col-span-12">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-[0_8px_18px_rgba(2,132,199,0.2)]">
                 <UsersRound aria-hidden="true" className="size-4.5" />
               </span>
               <div className="min-w-0">
@@ -724,6 +748,10 @@ function InteractiveAssetUploadForm({
               name="teacherProfileId"
               aria-invalid={Boolean(errors.teacherProfileId)}
               disabled={isPending || teachers.length === 0}
+              className={cn(
+                isLessonMode &&
+                  "h-11 border-sky-200 bg-sky-50/35 shadow-sm focus:border-sky-400",
+              )}
             >
               {teachers.length === 0 ? (
                 <option value="">Cadastre uma teacher</option>
@@ -746,8 +774,8 @@ function InteractiveAssetUploadForm({
             students={students}
           />
           {isLessonMode ? (
-            <div className="mt-1 flex min-w-0 items-start gap-3 border-t border-sky-100 pt-4 lg:col-span-12">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+            <div className="mt-1 flex min-w-0 items-start gap-3 rounded-lg border border-violet-100 bg-violet-50/80 px-3 py-3 lg:col-span-12">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-600 text-white shadow-[0_8px_18px_rgba(124,58,237,0.2)]">
                 <BookOpen aria-hidden="true" className="size-4.5" />
               </span>
               <div className="min-w-0">
@@ -771,6 +799,10 @@ function InteractiveAssetUploadForm({
               aria-invalid={Boolean(errors.title)}
               disabled={isPending}
               placeholder={`${copy.titlePlaceholder} ou use o nome do arquivo`}
+              className={cn(
+                isLessonMode &&
+                  "h-11 border-violet-200 bg-violet-50/25 shadow-sm focus-visible:border-violet-400",
+              )}
             />
             <FieldError errors={[{ message: errors.title }]} />
           </Field>
@@ -795,6 +827,10 @@ function InteractiveAssetUploadForm({
                   : errors.scheduledAt,
               )}
               disabled={isPending}
+              className={cn(
+                isLessonMode &&
+                  "h-11 border-violet-200 bg-violet-50/25 shadow-sm focus-visible:border-violet-400",
+              )}
             />
             <FieldError
               errors={[
@@ -811,7 +847,7 @@ function InteractiveAssetUploadForm({
 
         <div
           className={cn(
-            "mt-3 grid gap-3 xl:items-stretch",
+            "mt-4 grid gap-4 xl:items-stretch",
             isLessonMode
               ? "xl:grid-cols-[minmax(300px,0.82fr)_minmax(430px,1.18fr)]"
               : "xl:grid-cols-[minmax(320px,1fr)_minmax(300px,0.9fr)]",
@@ -821,14 +857,14 @@ function InteractiveAssetUploadForm({
             className={cn(
               "rounded-lg border p-4 shadow-sm",
               isLessonMode
-                ? "border-violet-200/70 bg-violet-50/35"
+                ? "border-amber-200 bg-amber-50/55 shadow-[0_14px_34px_rgba(245,158,11,0.09)]"
                 : "border-primary/10 bg-white/86",
             )}
             data-invalid={Boolean(errors.instructions)}
           >
             {isLessonMode ? (
               <div className="mb-3 flex items-start gap-3">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-[0_8px_18px_rgba(245,158,11,0.2)]">
                   <Layers2 aria-hidden="true" className="size-4.5" />
                 </span>
                 <div className="min-w-0">
@@ -846,7 +882,11 @@ function InteractiveAssetUploadForm({
               id={`interactive-${mode}-instructions`}
               name="instructions"
               aria-invalid={Boolean(errors.instructions)}
-              className="min-h-24 resize-y bg-white/95"
+              className={cn(
+                "min-h-28 resize-y bg-white/95",
+                isLessonMode &&
+                  "border-amber-200 shadow-sm focus-visible:border-amber-400",
+              )}
               disabled={isPending}
               placeholder={copy.instructionsPlaceholder}
             />
@@ -855,15 +895,15 @@ function InteractiveAssetUploadForm({
 
           <div
             className={cn(
-              "grid gap-3 rounded-lg border border-dashed p-4 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end",
+              "grid gap-3 rounded-lg border p-4 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end",
               isLessonMode
-                ? "border-emerald-300/80 bg-emerald-50/35"
+                ? "border-emerald-200 bg-emerald-50/55 shadow-[0_14px_34px_rgba(16,185,129,0.1)]"
                 : "border-primary/20 bg-white/88",
             )}
           >
             {isLessonMode ? (
               <div className="flex min-w-0 items-start gap-3 border-b border-emerald-200/70 pb-3 sm:col-span-2">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-[0_8px_18px_rgba(5,150,105,0.2)]">
                   <FileUp aria-hidden="true" className="size-4.5" />
                 </span>
                 <div className="min-w-0">
@@ -890,7 +930,11 @@ function InteractiveAssetUploadForm({
                 type="file"
                 accept="application/pdf,image/png,image/jpeg,image/webp"
                 aria-invalid={Boolean(errors.asset)}
-                className="bg-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary"
+                className={cn(
+                  "bg-white file:mr-3 file:rounded-md file:border-0 file:bg-primary/10 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary",
+                  isLessonMode &&
+                    "h-11 border-emerald-200 shadow-sm file:bg-emerald-100 file:text-emerald-800",
+                )}
                 disabled={isPending}
                 multiple
               />
@@ -903,7 +947,11 @@ function InteractiveAssetUploadForm({
             </Field>
 
             <Button
-              className="h-11 w-full px-5 sm:w-auto"
+              className={cn(
+                "h-11 w-full px-5 transition duration-200 hover:-translate-y-0.5 motion-reduce:transform-none sm:w-auto",
+                isLessonMode &&
+                  "bg-primary shadow-[0_10px_24px_rgba(65,42,76,0.24)] hover:bg-primary/92 hover:shadow-[0_14px_30px_rgba(65,42,76,0.3)]",
+              )}
               type="submit"
               disabled={
                 isPending ||
@@ -1005,17 +1053,17 @@ export function CreateLessonForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="overflow-hidden rounded-lg border border-sky-200/70 bg-[linear-gradient(135deg,rgba(239,248,255,0.96),rgba(255,255,255,0.98)_48%,rgba(250,245,255,0.92))] p-4 shadow-[0_18px_42px_rgba(14,165,233,0.1)] sm:p-5">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+      <section className="relative overflow-hidden rounded-lg border border-primary/15 bg-[linear-gradient(125deg,rgba(236,248,255,0.98)_0%,rgba(255,255,255,1)_46%,rgba(255,247,238,0.98)_100%)] p-4 shadow-[0_22px_50px_rgba(65,42,76,0.12)] before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#0ea5e9,#8b5cf6,#f59e0b,#10b981)] sm:p-5">
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(27rem,0.92fr)] lg:items-center">
           <div className="flex min-w-0 gap-3">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-[0_12px_24px_rgba(14,165,233,0.22)]">
+            <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-[linear-gradient(145deg,#0284c7,#0f766e)] text-white shadow-[0_12px_26px_rgba(14,165,233,0.24)]">
               <BookOpen aria-hidden="true" className="size-5" />
             </span>
             <div className="min-w-0">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-sky-700">
                 Aulas
               </p>
-              <h2 className="mt-1 text-lg font-semibold text-primary">
+              <h2 className="mt-1 max-w-xl text-xl font-semibold leading-snug text-primary">
                 Crie, organize e acompanhe suas aulas em um so lugar.
               </h2>
               <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
@@ -1025,37 +1073,37 @@ export function CreateLessonForm({
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[25rem]">
-            <div className="flex min-h-24 flex-col justify-between rounded-lg border border-sky-200 bg-sky-50/80 p-3 text-sky-900 shadow-sm">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="flex min-h-28 flex-col justify-between rounded-lg border border-sky-200 bg-white p-3 text-sky-900 shadow-[0_10px_24px_rgba(14,165,233,0.1)] transition duration-200 hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-[0_14px_30px_rgba(14,165,233,0.16)] motion-reduce:transform-none">
               <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
                 <BookOpen aria-hidden="true" className="size-3.5" />
                 Aulas
               </span>
-              <strong className="mt-1 block text-2xl leading-none">
+              <strong className="mt-2 block text-3xl leading-none">
                 {interactiveLessons.length}
               </strong>
               <span className="mt-1 text-xs font-medium text-sky-700">
                 criadas no total
               </span>
             </div>
-            <div className="flex min-h-24 flex-col justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
+            <div className="flex min-h-28 flex-col justify-between rounded-lg border border-emerald-200 bg-white p-3 text-emerald-900 shadow-[0_10px_24px_rgba(16,185,129,0.1)] transition duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-[0_14px_30px_rgba(16,185,129,0.16)] motion-reduce:transform-none">
               <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
                 <Layers2 aria-hidden="true" className="size-3.5" />
                 Areas interativas
               </span>
-              <strong className="mt-1 block text-2xl leading-none">
+              <strong className="mt-2 block text-3xl leading-none">
                 {totalFields}
               </strong>
               <span className="mt-1 text-xs font-medium text-emerald-700">
                 configuradas nas aulas
               </span>
             </div>
-            <div className="flex min-h-24 flex-col justify-between rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 shadow-sm">
+            <div className="flex min-h-28 flex-col justify-between rounded-lg border border-amber-200 bg-white p-3 text-amber-900 shadow-[0_10px_24px_rgba(245,158,11,0.1)] transition duration-200 hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_14px_30px_rgba(245,158,11,0.16)] motion-reduce:transform-none">
               <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
                 <UserRound aria-hidden="true" className="size-3.5" />
                 Alunos alcancados
               </span>
-              <strong className="mt-1 block text-2xl leading-none">
+              <strong className="mt-2 block text-3xl leading-none">
                 {studentsWithLessons}
               </strong>
               <span className="mt-1 block text-xs font-semibold">
