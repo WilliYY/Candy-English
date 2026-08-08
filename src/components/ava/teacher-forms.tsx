@@ -121,10 +121,10 @@ const interactiveAssetCopy = {
     titlePlaceholder: "Ex: Canva unit 4",
   },
   lesson: {
-    buttonLabel: "Criar aula interativa",
+    buttonLabel: "Criar aula",
     dateField: "scheduledAt",
     dateLabel: "Data da aula",
-    formTitle: "Aula do Canva",
+    formTitle: "Nova aula",
     instructionsLabel: "Resumo",
     instructionsPlaceholder: "Objetivo da aula e pontos trabalhados.",
     invalidMessage: "Revise os campos destacados para criar a aula.",
@@ -197,6 +197,7 @@ function wait(milliseconds: number) {
 }
 
 function StudentMultiSelectField({
+  className,
   disabled,
   error,
   id,
@@ -205,6 +206,7 @@ function StudentMultiSelectField({
   selectedIds,
   students,
 }: {
+  className?: string;
   disabled: boolean;
   error?: string;
   id: string;
@@ -241,7 +243,7 @@ function StudentMultiSelectField({
   }
 
   return (
-    <Field data-invalid={Boolean(error)}>
+    <Field className={className} data-invalid={Boolean(error)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <FieldLabel id={`${id}-label`}>{label}</FieldLabel>
         <span
@@ -411,10 +413,10 @@ function InteractiveAssetUploadForm({
   const copy = interactiveAssetCopy[mode];
   const isLessonMode = mode === "lesson";
   const flowSteps = isLessonMode
-    ? ["Teacher", "Alunos", "Aula"]
+    ? ["Participantes", "Detalhes", "Material"]
     : ["Alunos", "Arquivo", "Editor"];
   const formDescription = isLessonMode
-    ? "Escolha teacher e um ou mais alunos, envie o material e abra o editor da aula."
+    ? "Defina quem participa, descreva a aula e envie o material interativo."
     : "Escolha um ou mais alunos, envie PDF/imagem e abra o editor para marcar as areas.";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [errors, setErrors] = useState<InteractiveAssetFormErrors>({});
@@ -649,7 +651,11 @@ function InteractiveAssetUploadForm({
               isLessonMode ? "bg-sky-600" : "bg-primary",
             )}
           >
-            <FileUp aria-hidden="true" className="size-5" />
+            {isLessonMode ? (
+              <BookOpen aria-hidden="true" className="size-5" />
+            ) : (
+              <FileUp aria-hidden="true" className="size-5" />
+            )}
           </span>
           <div className="min-w-0">
             <div className="truncate text-base font-semibold text-primary">
@@ -684,8 +690,32 @@ function InteractiveAssetUploadForm({
       </div>
 
       <div className="p-4">
-        <div className="grid gap-3 rounded-lg border border-primary/10 bg-white/72 p-3 shadow-sm lg:grid-cols-[0.75fr_minmax(320px,1.45fr)_minmax(240px,1fr)_0.65fr]">
-          <Field data-invalid={Boolean(errors.teacherProfileId)}>
+        <div
+          className={cn(
+            "grid gap-3 rounded-lg border p-3 shadow-sm",
+            isLessonMode
+              ? "border-sky-200/70 bg-white/88 p-4 lg:grid-cols-12"
+              : "border-primary/10 bg-white/72 lg:grid-cols-[0.75fr_minmax(320px,1.45fr)_minmax(240px,1fr)_0.65fr]",
+          )}
+        >
+          {isLessonMode ? (
+            <div className="flex min-w-0 items-start gap-3 border-b border-sky-100 pb-3 lg:col-span-12">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-700">
+                <UsersRound aria-hidden="true" className="size-4.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-primary">1. Participantes</p>
+                <p className="text-xs text-muted-foreground">
+                  Escolha a teacher responsavel e os alunos que receberao a aula.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <Field
+            className={cn(isLessonMode && "lg:col-span-4")}
+            data-invalid={Boolean(errors.teacherProfileId)}
+          >
             <FieldLabel htmlFor={`interactive-${mode}-teacher`}>
               Teacher
             </FieldLabel>
@@ -707,6 +737,7 @@ function InteractiveAssetUploadForm({
             <FieldError errors={[{ message: errors.teacherProfileId }]} />
           </Field>
           <StudentMultiSelectField
+            className={cn(isLessonMode && "lg:col-span-8")}
             disabled={isPending || students.length === 0}
             error={errors.studentProfileIds}
             id={`interactive-${mode}-students`}
@@ -714,7 +745,23 @@ function InteractiveAssetUploadForm({
             selectedIds={selectedStudentIds}
             students={students}
           />
-          <Field data-invalid={Boolean(errors.title)}>
+          {isLessonMode ? (
+            <div className="mt-1 flex min-w-0 items-start gap-3 border-t border-sky-100 pt-4 lg:col-span-12">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                <BookOpen aria-hidden="true" className="size-4.5" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-primary">2. Detalhes da aula</p>
+                <p className="text-xs text-muted-foreground">
+                  De um nome claro e informe quando essa aula sera aplicada.
+                </p>
+              </div>
+            </div>
+          ) : null}
+          <Field
+            className={cn(isLessonMode && "lg:col-span-8")}
+            data-invalid={Boolean(errors.title)}
+          >
             <FieldLabel htmlFor={`interactive-${mode}-title`}>
               {copy.titleLabel}
             </FieldLabel>
@@ -728,6 +775,7 @@ function InteractiveAssetUploadForm({
             <FieldError errors={[{ message: errors.title }]} />
           </Field>
           <Field
+            className={cn(isLessonMode && "lg:col-span-4")}
             data-invalid={Boolean(
               copy.dateField === "dueDate"
                 ? errors.dueDate
@@ -761,11 +809,36 @@ function InteractiveAssetUploadForm({
           </Field>
         </div>
 
-        <div className="mt-3 grid gap-3 xl:grid-cols-[minmax(320px,1fr)_minmax(300px,0.9fr)] xl:items-stretch">
+        <div
+          className={cn(
+            "mt-3 grid gap-3 xl:items-stretch",
+            isLessonMode
+              ? "xl:grid-cols-[minmax(300px,0.82fr)_minmax(430px,1.18fr)]"
+              : "xl:grid-cols-[minmax(320px,1fr)_minmax(300px,0.9fr)]",
+          )}
+        >
           <Field
-            className="rounded-lg border border-primary/10 bg-white/86 p-3 shadow-sm"
+            className={cn(
+              "rounded-lg border p-4 shadow-sm",
+              isLessonMode
+                ? "border-violet-200/70 bg-violet-50/35"
+                : "border-primary/10 bg-white/86",
+            )}
             data-invalid={Boolean(errors.instructions)}
           >
+            {isLessonMode ? (
+              <div className="mb-3 flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                  <Layers2 aria-hidden="true" className="size-4.5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-semibold text-primary">Resumo da aula</p>
+                  <p className="text-xs text-muted-foreground">
+                    Registre o objetivo e os pontos que serao trabalhados.
+                  </p>
+                </div>
+              </div>
+            ) : null}
             <FieldLabel htmlFor={`interactive-${mode}-instructions`}>
               {copy.instructionsLabel}
             </FieldLabel>
@@ -780,7 +853,27 @@ function InteractiveAssetUploadForm({
             <FieldError errors={[{ message: errors.instructions }]} />
           </Field>
 
-          <div className="grid gap-3 rounded-lg border border-dashed border-primary/20 bg-white/88 p-3 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end">
+          <div
+            className={cn(
+              "grid gap-3 rounded-lg border border-dashed p-4 shadow-sm sm:grid-cols-[1fr_auto] sm:items-end",
+              isLessonMode
+                ? "border-emerald-300/80 bg-emerald-50/35"
+                : "border-primary/20 bg-white/88",
+            )}
+          >
+            {isLessonMode ? (
+              <div className="flex min-w-0 items-start gap-3 border-b border-emerald-200/70 pb-3 sm:col-span-2">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                  <FileUp aria-hidden="true" className="size-4.5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-semibold text-primary">3. Material da aula</p>
+                  <p className="text-xs text-muted-foreground">
+                    Envie PDF ou imagens; depois marque as areas interativas no editor.
+                  </p>
+                </div>
+              </div>
+            ) : null}
             <Field data-invalid={Boolean(errors.asset)}>
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <FieldLabel htmlFor={`interactive-${mode}-asset`}>
@@ -802,8 +895,9 @@ function InteractiveAssetUploadForm({
                 multiple
               />
               <p className="text-xs text-muted-foreground">
-                Cada arquivo vira uma atividade separada e aparece na lista
-                abaixo.
+                {isLessonMode
+                  ? "Cada arquivo cria uma aula separada para os alunos selecionados."
+                  : "Cada arquivo vira uma atividade separada e aparece na lista abaixo."}
               </p>
               <FieldError errors={[{ message: errors.asset }]} />
             </Field>
@@ -911,7 +1005,7 @@ export function CreateLessonForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="overflow-hidden rounded-lg border border-sky-200/70 bg-gradient-to-br from-white via-sky-50/70 to-secondary/35 p-4 shadow-[0_18px_42px_rgba(14,165,233,0.08)]">
+      <section className="overflow-hidden rounded-lg border border-sky-200/70 bg-[linear-gradient(135deg,rgba(239,248,255,0.96),rgba(255,255,255,0.98)_48%,rgba(250,245,255,0.92))] p-4 shadow-[0_18px_42px_rgba(14,165,233,0.1)] sm:p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="flex min-w-0 gap-3">
             <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-[0_12px_24px_rgba(14,165,233,0.22)]">
@@ -919,21 +1013,20 @@ export function CreateLessonForm({
             </span>
             <div className="min-w-0">
               <p className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-sky-700">
-                Aulas do Canva
+                Aulas
               </p>
               <h2 className="mt-1 text-lg font-semibold text-primary">
-                Crie aula, envie o PDF/imagem e marque as areas interativas.
+                Crie, organize e acompanhe suas aulas em um so lugar.
               </h2>
               <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-                Cada arquivo vira uma aula para o aluno em Aulas e Materiais,
-                com editor manual para texto, letra, marcar, desenho e
-                listening.
+                Escolha os participantes, envie PDF ou imagens e prepare areas
+                de texto, marcar, desenho e listening para os alunos.
               </p>
             </div>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:min-w-[25rem]">
-            <div className="rounded-lg border border-sky-200 bg-white/82 p-3 text-sky-900 shadow-sm">
+            <div className="flex min-h-24 flex-col justify-between rounded-lg border border-sky-200 bg-sky-50/80 p-3 text-sky-900 shadow-sm">
               <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
                 <BookOpen aria-hidden="true" className="size-3.5" />
                 Aulas
@@ -941,26 +1034,32 @@ export function CreateLessonForm({
               <strong className="mt-1 block text-2xl leading-none">
                 {interactiveLessons.length}
               </strong>
+              <span className="mt-1 text-xs font-medium text-sky-700">
+                criadas no total
+              </span>
             </div>
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
+            <div className="flex min-h-24 flex-col justify-between rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900 shadow-sm">
               <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
                 <Layers2 aria-hidden="true" className="size-3.5" />
-                Areas
+                Areas interativas
               </span>
               <strong className="mt-1 block text-2xl leading-none">
                 {totalFields}
               </strong>
+              <span className="mt-1 text-xs font-medium text-emerald-700">
+                configuradas nas aulas
+              </span>
             </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 shadow-sm">
+            <div className="flex min-h-24 flex-col justify-between rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 shadow-sm">
               <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
                 <UserRound aria-hidden="true" className="size-3.5" />
-                Alunos
+                Alunos alcancados
               </span>
               <strong className="mt-1 block text-2xl leading-none">
                 {studentsWithLessons}
               </strong>
               <span className="mt-1 block text-xs font-semibold">
-                {readyLessons} com area(s)
+                {readyLessons} aula(s) pronta(s)
               </span>
             </div>
           </div>
@@ -973,7 +1072,7 @@ export function CreateLessonForm({
         teachers={teachers}
       />
       <InteractiveHomeworkEditor
-        heading="Aulas interativas"
+        heading="Aulas criadas"
         homeworks={interactiveLessons}
       />
     </div>

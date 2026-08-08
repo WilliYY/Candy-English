@@ -114,7 +114,7 @@ const navGroups = [
       {
         href: "/ava/teacher?task=criar-aula",
         icon: BookOpen,
-        label: "Criar/Ver Aulas",
+        label: "Aulas",
         section: "Aulas",
       },
       {
