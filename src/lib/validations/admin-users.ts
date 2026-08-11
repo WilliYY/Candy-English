@@ -209,6 +209,7 @@ export const adminCreateUserSchema = z
       .min(8, "Confirme a senha temporaria.")
       .max(120, "A confirmacao pode ter no maximo 120 caracteres."),
     role: z.enum(ROLES),
+    unit: financialUnitSchema.default("IVATE"),
     level: optionalText(80, "O nivel pode ter no maximo 80 caracteres."),
     guardianDocument: optionalText(
       180,
@@ -351,6 +352,7 @@ export const adminUpdateStudentContactSchema = z.object({
     .min(2, "Informe o nome com pelo menos 2 caracteres.")
     .max(120, "O nome pode ter no maximo 120 caracteres."),
   phone: optionalText(40, "O telefone pode ter no maximo 40 caracteres."),
+  unit: financialUnitSchema,
   userId: z.string().min(1, "Aluno invalido."),
 });
 

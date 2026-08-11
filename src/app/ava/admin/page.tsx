@@ -180,8 +180,29 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                 teacherAssignments: true,
               },
             },
+            convertedStudentPreRegistration: {
+              select: {
+                convertedAgendaStudentId: true,
+                convertedFinancialStudentId: true,
+              },
+            },
+            id: true,
             level: true,
             studentPhone: true,
+            teacherAssignments: {
+              select: {
+                teacherProfile: {
+                  select: {
+                    user: {
+                      select: {
+                        name: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            unit: true,
           },
         },
         teacherProfile: {
@@ -1056,6 +1077,39 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           studentPreRegistrationStatusCounts[index] ?? 0,
         ]),
       ) as Record<(typeof preRegistrationStatuses)[number], number>}
+      registeredStudents={users.flatMap((user) => {
+        const profile = user.studentProfile;
+
+        if (
+          user.role !== "STUDENT" ||
+          !profile ||
+          (selectedUnit && profile.unit !== selectedUnit)
+        ) {
+          return [];
+        }
+
+        const registration = profile.convertedStudentPreRegistration;
+
+        return [
+          {
+            email: user.email,
+            hasAgendaRecord: Boolean(registration?.convertedAgendaStudentId),
+            hasFinancialRecord: Boolean(
+              registration?.convertedFinancialStudentId,
+            ),
+            isActive: user.isActive,
+            level: profile.level,
+            name: user.name,
+            origin: registration ? ("PRE_REGISTRATION" as const) : ("DIRECT" as const),
+            phone: profile.studentPhone ?? user.phone,
+            teacherNames: profile.teacherAssignments.map(
+              (assignment) => assignment.teacherProfile.user.name,
+            ),
+            unit: profile.unit,
+            userId: user.id,
+          },
+        ];
+      })}
       secretariaUnitFilter={unitFilter}
       students={students.map((student) => ({
         email: student.user.email,

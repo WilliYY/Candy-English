@@ -66,6 +66,7 @@ import {
   type PreRegistrationStatus,
   type StudentPreRegistrationReviewRow,
 } from "@/components/ava/student-pre-registration-review-panel";
+import type { SecretariaRegisteredStudentRow } from "@/components/ava/secretaria-registered-students-panel";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -121,8 +122,21 @@ type AdminUserRow = {
       submissions: number;
       teacherAssignments: number;
     };
+    convertedStudentPreRegistration: {
+      convertedAgendaStudentId: string | null;
+      convertedFinancialStudentId: string | null;
+    } | null;
+    id: string;
     level: string | null;
     studentPhone: string | null;
+    teacherAssignments: {
+      teacherProfile: {
+        user: {
+          name: string;
+        };
+      };
+    }[];
+    unit: "IVATE" | "DOURADINA";
   } | null;
   teacherProfile: {
     _count: {
@@ -210,6 +224,7 @@ type AdminUsersPanelProps = {
   maintenanceMode: boolean;
   preRegistrationStatus: PreRegistrationStatus;
   preRegistrationStatusCounts: Record<PreRegistrationStatus, number>;
+  registeredStudents: SecretariaRegisteredStudentRow[];
   secretariaUnitFilter?: SecretariaUnitFilter;
   students: CandyXpStudentOption[];
   storageUsageBytes: number;
@@ -1158,6 +1173,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                               <AdminStudentContactEditForm
                                 email={user.email}
                                 phone={phone}
+                                unit={user.studentProfile?.unit ?? "IVATE"}
                                 userId={user.id}
                                 userName={user.name}
                               />
@@ -1431,6 +1447,7 @@ export function AdminUsersPanel({
   maintenanceMode,
   preRegistrationStatus,
   preRegistrationStatusCounts,
+  registeredStudents,
   secretariaUnitFilter = "all",
   students,
   storageUsageBytes,
@@ -1718,6 +1735,7 @@ export function AdminUsersPanel({
           {activeTask === "aceitar-alunos" ? (
             <StudentPreRegistrationReviewPanel
               activeStatus={preRegistrationStatus}
+              registeredStudents={registeredStudents}
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
               unitFilter={secretariaUnitFilter}

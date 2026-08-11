@@ -134,6 +134,8 @@ Enums:
 - `StudentPreRegistrationStatus` preserva os status antigos e adiciona `WAITING_PAYMENT` e `READY_TO_CONVERT`; na UI da Secretaria eles aparecem como `Aguardando pagamento` e `Pronto para virar aluno`.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
+- `StudentProfile.unit` guarda o polo operacional do aluno do AVA. Alunos antigos recebem `IVATE` por compatibilidade; alunos convertidos recuperam a unidade confiavel do `StudentPreRegistration` durante a migration.
+- A origem continua auditavel por `StudentPreRegistration.convertedStudentProfileId`. Aluno criado diretamente pelo Admin nao recebe pre-cadastro artificial.
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
 - `HomeworkSubmission` possui chave unica por homework/aluno.
 - `Homework.kind=TEXT` preserva homework simples; `Homework.kind=INTERACTIVE` habilita arquivo e campos sobre o arquivo.
@@ -230,6 +232,7 @@ Enums:
 - Migration `20260714143000_secretaria_pre_registration` move o pre-cadastro para o controle interno da Secretaria, torna email opcional, adiciona telefone normalizado unico, unidade, teacher responsavel, criador, agenda pretendida, combinado de pagamento e os status `WAITING_PAYMENT`/`READY_TO_CONVERT`.
 - Migration `20260714170000_linked_pre_registration_conversion` adiciona os ids linkados de conversao em `StudentPreRegistration`, relacoes para `StudentProfile`, `FinancialStudent` e `AgendaStudent`, alem de `AgendaStudent.unit`.
 - Migration `20260714193000_repair_agenda_student_unit` repara de forma idempotente bancos onde `AgendaStudent.unit` ficou ausente apesar da migration de conversao linkada estar registrada como aplicada.
+- Migration `20260811143000_link_student_profile_to_secretaria` adiciona `StudentProfile.unit`, preserva registros antigos como Ivaté e recupera o polo real dos perfis convertidos a partir do pre-cadastro.
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 - Migration `20260605210000_catty_learning_center` adiciona Catty Learning Center com itens aprovaveis e feedback/sugestoes.
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.

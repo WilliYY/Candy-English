@@ -1071,6 +1071,7 @@ async function acceptStudentPreRegistrationWithContext(
           notes: buildStudentNotes(request),
           studentPhone: request.studentPhone ?? request.phone,
           studentPhoneAlt: request.secondaryContact,
+          unit: request.unit,
           userId: user.id,
         },
       });

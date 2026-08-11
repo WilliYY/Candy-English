@@ -46,6 +46,10 @@ import {
   updateStudentPreRegistration,
 } from "@/app/ava/pre-registrations/actions";
 import { Button } from "@/components/ui/button";
+import {
+  SecretariaRegisteredStudentsPanel,
+  type SecretariaRegisteredStudentRow,
+} from "@/components/ava/secretaria-registered-students-panel";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
@@ -117,6 +121,7 @@ export type StudentPreRegistrationReviewRow = {
 
 type StudentPreRegistrationReviewPanelProps = {
   activeStatus: PreRegistrationStatus;
+  registeredStudents: SecretariaRegisteredStudentRow[];
   requests: StudentPreRegistrationReviewRow[];
   statusCounts: Record<PreRegistrationStatus, number>;
   teacherOptions: PreRegistrationTeacherOption[];
@@ -2481,13 +2486,16 @@ function CreatePreRegistrationForm({
 }
 
 export function StudentPreRegistrationReviewPanel({
+  registeredStudents,
   requests,
   teacherOptions,
   unitFilter = "all",
   viewerRole,
 }: StudentPreRegistrationReviewPanelProps) {
   const router = useRouter();
-  const [activeView, setActiveView] = useState<"create" | "list">("create");
+  const [activeView, setActiveView] = useState<
+    "create" | "list" | "students"
+  >("create");
   const [editingRequest, setEditingRequest] =
     useState<StudentPreRegistrationReviewRow | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -2554,12 +2562,11 @@ export function StudentPreRegistrationReviewPanel({
                   Secretaria
                 </div>
                 <h2 className="mt-3 text-3xl font-black tracking-normal text-primary">
-                  Pre-cadastros
+                  Entrada de alunos
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Cadastre interessados manualmente, salve unidade, agenda
-                  pretendida e combinado de pagamento sem criar aluno no AVA ate
-                  clicar em Tornar aluno.
+                  Cadastre interessados e consulte todos os alunos do AVA no
+                  mesmo lugar, com polo e integracoes operacionais visiveis.
                 </p>
               </div>
             </div>
@@ -2583,7 +2590,7 @@ export function StudentPreRegistrationReviewPanel({
 
           <nav
             aria-label="Escolher modo do pre-cadastro"
-            className="mt-5 grid gap-2 sm:grid-cols-2"
+            className="mt-5 grid gap-2 sm:grid-cols-3"
           >
             <button
               type="button"
@@ -2633,6 +2640,54 @@ export function StudentPreRegistrationReviewPanel({
                 </span>
               </span>
             </button>
+
+            <button
+              type="button"
+              aria-pressed={activeView === "students"}
+              onClick={() => setActiveView("students")}
+              className={cn(
+                "group flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 text-left transition hover:-translate-y-0.5",
+                activeView === "students"
+                  ? "border-violet-700 bg-violet-700 text-white shadow-lg shadow-violet-700/20"
+                  : "border-primary/12 bg-white/88 text-primary hover:border-violet-300 hover:bg-violet-50/60 hover:shadow-md",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                  activeView === "students"
+                    ? "bg-white/15"
+                    : "bg-violet-100 text-violet-800",
+                )}
+              >
+                <UsersRound aria-hidden="true" className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="flex items-center justify-between gap-2 text-sm font-black">
+                  Alunos cadastrados
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-xs",
+                      activeView === "students"
+                        ? "bg-white/15"
+                        : "bg-violet-100 text-violet-800",
+                    )}
+                  >
+                    {registeredStudents.length}
+                  </span>
+                </strong>
+                <span
+                  className={cn(
+                    "mt-0.5 block text-xs",
+                    activeView === "students"
+                      ? "text-white/75"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  Editar e conferir ligacoes do aluno
+                </span>
+              </span>
+            </button>
           </nav>
           {savedMessage ? (
             <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800" role="status">
@@ -2650,6 +2705,12 @@ export function StudentPreRegistrationReviewPanel({
             setActiveView("list");
           }}
           teacherOptions={teacherOptions}
+          viewerRole={viewerRole}
+        />
+      ) : activeView === "students" ? (
+        <SecretariaRegisteredStudentsPanel
+          students={registeredStudents}
+          unitFilter={unitFilter}
           viewerRole={viewerRole}
         />
       ) : (

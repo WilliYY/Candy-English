@@ -95,16 +95,22 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     session.user.role === "TEACHER"
       ? { id: teacherProfileIdForFiltering }
       : {};
+  const studentUnitWhere = selectedUnit ? { unit: selectedUnit } : {};
   const studentWhere =
     session.user.role === "TEACHER"
       ? {
-          teacherAssignments: {
-            some: {
-              teacherProfileId: teacherProfileIdForFiltering,
+          AND: [
+            studentUnitWhere,
+            {
+              teacherAssignments: {
+                some: {
+                  teacherProfileId: teacherProfileIdForFiltering,
+                },
+              },
             },
-          },
+          ],
         }
-      : {};
+      : studentUnitWhere;
   const lessonWhere =
     session.user.role === "TEACHER"
       ? { teacherProfileId: teacherProfileIdForFiltering }
@@ -201,12 +207,34 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         },
       },
       select: {
+        convertedStudentPreRegistration: {
+          select: {
+            convertedAgendaStudentId: true,
+            convertedFinancialStudentId: true,
+          },
+        },
         id: true,
         level: true,
+        teacherAssignments: {
+          select: {
+            teacherProfile: {
+              select: {
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        unit: true,
         user: {
           select: {
             email: true,
+            isActive: true,
             name: true,
+            phone: true,
           },
         },
       },
@@ -822,6 +850,29 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           studentPreRegistrationStatusCounts[index] ?? 0,
         ]),
       ) as Record<(typeof preRegistrationStatuses)[number], number>}
+      registeredStudents={students.map((student) => {
+        const registration = student.convertedStudentPreRegistration;
+
+        return {
+          email: student.user.email,
+          hasAgendaRecord: Boolean(registration?.convertedAgendaStudentId),
+          hasFinancialRecord: Boolean(
+            registration?.convertedFinancialStudentId,
+          ),
+          isActive: student.user.isActive,
+          level: student.level,
+          name: student.user.name,
+          origin: registration
+            ? ("PRE_REGISTRATION" as const)
+            : ("DIRECT" as const),
+          phone: student.user.phone,
+          teacherNames: student.teacherAssignments.map(
+            (assignment) => assignment.teacherProfile.user.name,
+          ),
+          unit: student.unit,
+          userId: null,
+        };
+      })}
       secretariaUnitFilter={unitFilter}
       studentPreRegistrations={studentPreRegistrations.map((request) => ({
         address: request.address,

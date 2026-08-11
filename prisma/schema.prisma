@@ -272,6 +272,7 @@ model StudentProfile {
   userId                          String                      @unique
   user                            User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
   level                           String?
+  unit                            FinancialUnit               @default(IVATE)
   birthDate                       DateTime?
   guardianDocument                String?
   gender                          String?

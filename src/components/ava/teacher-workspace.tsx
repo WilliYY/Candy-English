@@ -39,6 +39,7 @@ import {
   type PreRegistrationStatus,
   type StudentPreRegistrationReviewRow,
 } from "@/components/ava/student-pre-registration-review-panel";
+import type { SecretariaRegisteredStudentRow } from "@/components/ava/secretaria-registered-students-panel";
 import {
   CattyLearningCenterPanel,
   type CattyLearningFeedbackRow,
@@ -249,6 +250,7 @@ type TeacherWorkspaceProps = {
   liveSessions: LiveSessionRow[];
   preRegistrationStatus: PreRegistrationStatus;
   preRegistrationStatusCounts: Record<PreRegistrationStatus, number>;
+  registeredStudents: SecretariaRegisteredStudentRow[];
   secretariaUnitFilter?: SecretariaUnitFilter;
   students: Option[];
   studentPreRegistrations: StudentPreRegistrationReviewRow[];
@@ -367,6 +369,7 @@ export function TeacherWorkspace({
   liveSessions,
   preRegistrationStatus,
   preRegistrationStatusCounts,
+  registeredStudents,
   secretariaUnitFilter = "all",
   students,
   studentPreRegistrations,
@@ -711,6 +714,7 @@ export function TeacherWorkspace({
           {activeTask === "aceitar-alunos" ? (
             <StudentPreRegistrationReviewPanel
               activeStatus={preRegistrationStatus}
+              registeredStudents={registeredStudents}
               requests={studentPreRegistrations}
               statusCounts={preRegistrationStatusCounts}
               unitFilter={secretariaUnitFilter}

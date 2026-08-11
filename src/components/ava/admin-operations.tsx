@@ -11,6 +11,7 @@ import {
   Link2,
   LoaderCircle,
   Mail,
+  MapPin,
   PenLine,
   Power,
   PowerOff,
@@ -61,6 +62,7 @@ type AdminUserPasswordResetFormProps = {
 type AdminStudentContactEditFormProps = {
   email: string;
   phone?: string | null;
+  unit: "IVATE" | "DOURADINA";
   userId: string;
   userName: string;
 };
@@ -149,6 +151,7 @@ export function AdminUserStatusButton({
 export function AdminStudentContactEditForm({
   email,
   phone,
+  unit,
   userId,
   userName,
 }: AdminStudentContactEditFormProps) {
@@ -163,6 +166,7 @@ export function AdminStudentContactEditForm({
       email,
       name: userName,
       phone: phone ?? "",
+      unit,
       userId,
     },
   });
@@ -195,6 +199,7 @@ export function AdminStudentContactEditForm({
         email: values.email,
         name: values.name,
         phone: values.phone ?? "",
+        unit: values.unit,
         userId,
       });
       setMessage(result.message);
@@ -255,23 +260,46 @@ export function AdminStudentContactEditForm({
           </Field>
         </div>
 
-        <Field data-invalid={Boolean(form.formState.errors.phone)}>
-          <FieldLabel htmlFor={`student-phone-${userId}`}>
-            Telefone principal
-          </FieldLabel>
-          <Input
-            id={`student-phone-${userId}`}
-            autoComplete="off"
-            aria-invalid={Boolean(form.formState.errors.phone)}
-            disabled={isPending}
-            placeholder="(00) 00000-0000"
-            {...form.register("phone")}
-          />
-          <FieldDescription>
-            Atualiza o contato principal do cadastro do aluno.
-          </FieldDescription>
-          <FieldError errors={[form.formState.errors.phone]} />
-        </Field>
+        <div className="grid gap-3 md:grid-cols-2">
+          <Field data-invalid={Boolean(form.formState.errors.phone)}>
+            <FieldLabel htmlFor={`student-phone-${userId}`}>
+              Telefone principal
+            </FieldLabel>
+            <Input
+              id={`student-phone-${userId}`}
+              autoComplete="off"
+              aria-invalid={Boolean(form.formState.errors.phone)}
+              disabled={isPending}
+              placeholder="(00) 00000-0000"
+              {...form.register("phone")}
+            />
+            <FieldError errors={[form.formState.errors.phone]} />
+          </Field>
+
+          <Field data-invalid={Boolean(form.formState.errors.unit)}>
+            <FieldLabel
+              htmlFor={`student-unit-${userId}`}
+              className="inline-flex items-center gap-2"
+            >
+              <MapPin aria-hidden="true" className="size-4" />
+              Polo
+            </FieldLabel>
+            <NativeSelect
+              id={`student-unit-${userId}`}
+              aria-invalid={Boolean(form.formState.errors.unit)}
+              disabled={isPending}
+              {...form.register("unit")}
+            >
+              <option value="IVATE">Polo 1 - Ivate</option>
+              <option value="DOURADINA">Polo 2 - Douradina</option>
+            </NativeSelect>
+            <FieldError errors={[form.formState.errors.unit]} />
+          </Field>
+        </div>
+
+        <FieldDescription>
+          Nome, login, telefone e polo ficam sincronizados com a Secretaria.
+        </FieldDescription>
 
         {message ? (
           <p

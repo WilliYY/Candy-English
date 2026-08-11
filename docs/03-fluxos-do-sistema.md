@@ -127,6 +127,9 @@ Helpers:
 20. A action protegida valida email/login e senha no servidor, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, hash a senha com `bcryptjs` e converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson` quando a agenda estiver completa, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade; dados administrativos pendentes podem ser completados depois sem recriar o aluno.
 21. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
 22. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
+23. A aba `Alunos cadastrados` usa `User.role=STUDENT` e `StudentProfile` como fonte unica: mostra alunos criados diretamente no Admin e alunos convertidos, sem criar pre-cadastro falso.
+24. Admin pode buscar e editar nome, login, telefone e polo no proprio card. Teacher recebe do servidor somente alunos vinculados a sua `TeacherProfile` e usa a lista em modo de consulta.
+25. O card identifica origem, teacher e se Financeiro/Agenda ja foram criados pela conversao. Alterar o polo de aluno convertido atualiza perfil, cadastro financeiro recorrente e cadastro da agenda na mesma transaction; snapshots financeiros antigos nao sao reescritos.
 
 ### Admin
 

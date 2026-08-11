@@ -11,6 +11,7 @@ import {
   GraduationCap,
   KeyRound,
   LoaderCircle,
+  MapPin,
   Phone,
   Plus,
   ShieldCheck,
@@ -37,6 +38,7 @@ import {
   FieldSet,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -122,6 +124,7 @@ const defaultValues: AdminCreateUserInput = {
   role: "STUDENT",
   studentPhone: "",
   studentPhoneAlt: "",
+  unit: "IVATE",
 };
 
 type AdminCreateUserFormProps = {
@@ -626,6 +629,29 @@ export function AdminCreateUserForm({
                   {...form.register("studentPhoneAlt")}
                 />
                 <FieldError errors={[form.formState.errors.studentPhoneAlt]} />
+              </Field>
+
+              <Field data-invalid={Boolean(form.formState.errors.unit)}>
+                <FieldLabel
+                  htmlFor="admin-user-student-unit"
+                  className="inline-flex items-center gap-2"
+                >
+                  <MapPin aria-hidden="true" className="size-4" />
+                  Polo do aluno
+                </FieldLabel>
+                <NativeSelect
+                  id="admin-user-student-unit"
+                  aria-invalid={Boolean(form.formState.errors.unit)}
+                  disabled={isPending}
+                  {...form.register("unit")}
+                >
+                  <option value="IVATE">Polo 1 - Ivate</option>
+                  <option value="DOURADINA">Polo 2 - Douradina</option>
+                </NativeSelect>
+                <FieldDescription>
+                  O aluno aparecera neste polo dentro da Secretaria.
+                </FieldDescription>
+                <FieldError errors={[form.formState.errors.unit]} />
               </Field>
 
               <Field data-invalid={Boolean(form.formState.errors.birthDate)}>

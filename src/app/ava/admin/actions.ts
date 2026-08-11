@@ -493,6 +493,7 @@ export async function createAvaUser(
     role,
     studentPhone,
     studentPhoneAlt,
+    unit,
   } = parsed.data;
   const passwordHash = await hash(password, 12);
   let createdUserId: string | null = null;
@@ -521,6 +522,7 @@ export async function createAvaUser(
             notes,
             studentPhone,
             studentPhoneAlt,
+            unit,
             userId: user.id,
           },
         });
@@ -753,6 +755,12 @@ export async function updateStudentContactByAdmin(
       role: true,
       studentProfile: {
         select: {
+          convertedStudentPreRegistration: {
+            select: {
+              convertedAgendaStudentId: true,
+              convertedFinancialStudentId: true,
+            },
+          },
           id: true,
         },
       },
@@ -771,6 +779,8 @@ export async function updateStudentContactByAdmin(
 
   const emailChanged = parsed.data.email !== user.email;
   const studentProfileId = user.studentProfile.id;
+  const convertedRegistration =
+    user.studentProfile.convertedStudentPreRegistration;
 
   if (emailChanged) {
     const emailOwner = await prisma.user.findUnique({
@@ -813,8 +823,23 @@ export async function updateStudentContactByAdmin(
         where: { id: studentProfileId },
         data: {
           studentPhone: parsed.data.phone ?? null,
+          unit: parsed.data.unit,
         },
       });
+
+      if (convertedRegistration?.convertedFinancialStudentId) {
+        await tx.financialStudent.update({
+          where: { id: convertedRegistration.convertedFinancialStudentId },
+          data: { unit: parsed.data.unit },
+        });
+      }
+
+      if (convertedRegistration?.convertedAgendaStudentId) {
+        await tx.agendaStudent.update({
+          where: { id: convertedRegistration.convertedAgendaStudentId },
+          data: { unit: parsed.data.unit },
+        });
+      }
     });
   } catch (error) {
     if (isUniqueConstraintError(error)) {
@@ -834,6 +859,7 @@ export async function updateStudentContactByAdmin(
   }
 
   revalidatePath("/ava/admin");
+  revalidatePath("/ava/secretaria");
   revalidatePath("/ava/teacher");
   revalidatePath("/ava/student");
 
