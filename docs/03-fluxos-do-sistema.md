@@ -98,7 +98,7 @@ Helpers:
 6. A Secretaria usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada, mas nao mistura o atalho financeiro em seu painel.
 7. Teacher ve somente Secretaria limitada: pre-cadastros proprios/atribuidos e contratos permitidos; financeiro geral, agenda completa, gastos, APIs e administracao seguem exclusivos de Admin.
 8. A Secretaria mostra um filtro geral de polo logo abaixo do titulo: `Todos os polos`, `Polo 1 — Ivaté` e `Polo 2 — Douradina`. O filtro usa `unit=IVATE` ou `unit=DOURADINA` na URL quando ha polo especifico.
-9. Ao abrir pre-cadastros, financeiro ou agenda a partir da Secretaria, o `unit` selecionado e preservado nos links e aplicado nas consultas server-side dos dados sensiveis.
+9. Ao abrir pre-cadastros ou agenda a partir da Secretaria, o `unit` selecionado e preservado nos links e aplicado nas consultas server-side dos dados sensiveis. O Financeiro tambem mantem esse filtro quando e aberto por link direto ou pela troca de area.
 10. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
 11. O shell lateral e renderizado somente dentro das areas escolhidas: tarefas pedagogicas mostram grupos do AVA, tarefas administrativas mostram grupos da Secretaria, e a lateral mantem atalho para `Trocar area`.
 12. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.

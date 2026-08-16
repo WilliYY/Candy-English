@@ -352,17 +352,17 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
   const normalizedText = normalizeHtmlText(text);
 
   if (role === "ADMIN") {
-    if (
-      !text.includes("Admin AVA") ||
-      text.includes("/ava/admin?task=financeiro")
-    ) {
+    if (!text.includes("Admin AVA")) {
       throw new Error("Sidebar do AVA Admin veio incompleta ou misturada.");
+    }
+
+    if (!normalizedText.includes("/ava/admin?task=financeiro")) {
+      throw new Error("AVA Admin ficou sem a troca de area para o Financeiro.");
     }
 
     const forbiddenAdminAvaLinks = [
       "/ava/admin?task=agenda",
       "/ava/admin?task=apis-senhas",
-      "/ava/admin?task=financeiro",
     ];
 
     for (const link of forbiddenAdminAvaLinks) {
