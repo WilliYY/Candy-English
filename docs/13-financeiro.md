@@ -2,7 +2,7 @@
 
 ## O que esta parte do sistema faz
 
-O modulo Financeiro e um controle interno do administrador em `/ava/admin?task=financeiro`. Ele funciona como uma lista simples de alunos pagantes, com cards por aluno no mes selecionado, acao rapida para marcar como pago, filtros por status e um painel de historico ao clicar no aluno.
+O modulo Financeiro e uma area propria e exclusiva do administrador em `/ava/admin?task=financeiro`. A tela principal usa uma lista mensal tipo planilha, com uma linha por aluno, nome, polo, valor, vencimento, situacao e acao rapida para marcar como pago, mantendo filtros e painel de historico.
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
@@ -74,15 +74,15 @@ Rota:
 - Exportacao PDF/Excel acontece no cliente com os dados ja carregados na pagina autorizada.
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
-- A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, filtro de mes, busca por nome/telefone, filtro por status e cards coloridos por aluno.
-- A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido, meses escaneaveis, cards de aluno com valor em destaque, vencimento/status discretos, metadados compactos de forma/parcela e historico preenchido automaticamente pelo primeiro resultado visivel.
+- A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, seletor de mes com setas anterior/proximo, busca por nome/telefone e filtros por status e polo.
+- A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido e linhas compactas tipo planilha com aluno, polo, mensalidade, vencimento, status e acao; no mobile cada linha reorganiza os mesmos dados sem rolagem horizontal da pagina.
 - O resumo mensal usa quatro metricas semanticas de largura estavel (`Total previsto`, `Recebido`, `A receber` e `Atrasados`) e uma unica faixa de progresso para evitar numeros comprimidos ou informacao repetida. A navegacao anual permite rolagem horizontal em telas menores, e os cards de aluno usam tonalidade leve por status com nome, valor, vencimento e unidade em hierarquia clara.
 - O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
 - A area `Pagamentos` e controle interno separado: nao mostra totais de alunos, recebidos, pendentes, atrasados nem saldo baseado em mensalidades.
 - A area `Pagamentos` usa resumo mensal proprio, totais por Polo 1/Polo 2, filtro de polo sincronizado com a aba de alunos, formulario compacto com observacao recolhida e lista em tabela no desktop para facilitar leitura de insumo, data, responsavel, polo e valor.
 - As unidades fixas do financeiro sao `IVATE` (`Unidade 1 Ivaté`) e `DOURADINA` (`Unidade 2 Douradina`); registros antigos entram por padrao como `IVATE`.
 - A UI mostra chips de polo no topo do financeiro, perto do filtro de mes. Os cards/listas exibem badge `Polo 1 - Ivaté` ou `Polo 2 - Douradina`; em `Todos`, os gastos exibem totais separados por polo e total geral.
-- A Secretaria possui um filtro geral de polo antes dos cards principais; os links para `Financeiro` preservam o parametro `unit` e inicializam os filtros internos da tela com o polo selecionado.
+- O Financeiro possui modo proprio na tela de escolha e na sidebar do Admin. O parametro `unit=all|IVATE|DOURADINA` continua inicializando o filtro interno sem alterar snapshots antigos.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.

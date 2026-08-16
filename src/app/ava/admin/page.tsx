@@ -55,7 +55,6 @@ const secretariaAdminTasks = new Set<AdminTask>([
   "contratos",
   "criar-admin",
   "editar-site",
-  "financeiro",
 ]);
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
@@ -73,9 +72,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     ? params?.task[0]
     : params?.task;
   const activeTask = normalizeAdminTask(requestedTask);
-  const workspaceArea = secretariaAdminTasks.has(activeTask)
-    ? "SECRETARIA"
-    : "AVA";
+  const workspaceArea =
+    activeTask === "financeiro"
+      ? "FINANCEIRO"
+      : secretariaAdminTasks.has(activeTask)
+        ? "SECRETARIA"
+        : "AVA";
   const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
   const selectedUnit = getSecretariaSelectedUnit(unitFilter);
   const studentPreRegistrationWhere = selectedUnit

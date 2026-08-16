@@ -70,18 +70,6 @@ const secretariaCards: SecretariaCard[] = [
     title: "Pre-cadastros",
   },
   {
-    adminHref: "/ava/admin?task=financeiro",
-    accentClassName: "from-emerald-50 via-white to-lime-50",
-    barClassName: "from-emerald-500 via-teal-400 to-lime-400",
-    badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-900",
-    description: "Mensalidades, unidades, parcelas, pagamentos e gastos da loja.",
-    feature: "finance",
-    icon: WalletCards,
-    iconClassName: "bg-emerald-600 text-white shadow-emerald-900/20",
-    label: "Controle interno",
-    title: "Financeiro",
-  },
-  {
     adminHref: "/ava/admin?task=agenda",
     accentClassName: "from-amber-50 via-white to-orange-50",
     barClassName: "from-amber-500 via-orange-400 to-rose-400",
@@ -205,7 +193,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
           {
             className: "border-emerald-200 bg-emerald-50 text-emerald-900",
             icon: WalletCards,
-            label: "Financeiro, agenda e gastos",
+            label: "Agenda e gestao interna",
           },
           {
             className: "border-amber-200 bg-amber-50 text-amber-900",
@@ -255,7 +243,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
               </h1>
               <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">
                 Controle interno separado da rotina pedagogica. Use esta area
-                para pre-cadastros, financeiro, agenda, contratos e registros
+                para pre-cadastros, agenda, contratos e registros
                 administrativos permitidos para sua role.
               </p>
             </span>
@@ -292,8 +280,8 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
                   Filtro atual: {unitLabel}
                 </strong>
                 <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                  Use este filtro para abrir pre-cadastros, financeiro e agenda
-                  ja no escopo do polo selecionado.
+                  Use este filtro para abrir pre-cadastros e agenda ja no
+                  escopo do polo selecionado.
                 </span>
               </span>
             </div>
@@ -339,9 +327,9 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
             );
           })}
           <span className="rounded-lg border border-primary/10 bg-[linear-gradient(90deg,#fbf7ff,#ffffff,#f7fdff)] px-3 py-2 text-sm font-semibold text-muted-foreground shadow-sm sm:col-span-2 lg:col-span-4">
-            Escopo: pre-cadastros {scopeLabels[permission.preRegistrations]},
-            financeiro {scopeLabels[permission.finance]}, agenda{" "}
-            {scopeLabels[permission.agenda]}.
+            Escopo: pre-cadastros {scopeLabels[permission.preRegistrations]} e
+            agenda {scopeLabels[permission.agenda]}. O Financeiro fica em uma
+            area propria, exclusiva do Admin.
           </span>
         </div>
 

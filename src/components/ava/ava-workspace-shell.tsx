@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   CalendarCheck2,
   ChevronDown,
+  CircleDollarSign,
   ClipboardCheck,
   FileText,
   GraduationCap,
@@ -169,12 +170,6 @@ const navGroups = [
         section: "Arquivos",
       },
       {
-        href: "/ava/admin?task=financeiro",
-        icon: WalletCards,
-        label: "Financeiro",
-        section: "Controle interno",
-      },
-      {
         href: "/ava/admin?task=agenda",
         icon: CalendarCheck2,
         label: "Agenda",
@@ -197,6 +192,21 @@ const navGroups = [
         icon: PencilLine,
         label: "Manutencao",
         section: "Sistema",
+      },
+    ],
+  },
+  {
+    allowedRoles: ["ADMIN"] as const,
+    areaLabel: "Financeiro",
+    href: "/ava/admin?task=financeiro",
+    icon: CircleDollarSign,
+    label: "Financeiro",
+    links: [
+      {
+        href: "/ava/admin?task=financeiro",
+        icon: WalletCards,
+        label: "Mensalidades e gastos",
+        section: "Controle financeiro",
       },
     ],
   },
@@ -286,10 +296,22 @@ const navItemLinkClassName =
 const navItemActiveClassName =
   "ava-nav-active-glow border-primary/70 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 hover:text-primary-foreground [&_[data-nav-icon]]:bg-white/16 [&_[data-nav-icon]]:text-primary-foreground [&_[data-nav-icon]]:ring-1 [&_[data-nav-icon]]:ring-white/25";
 
-export type AvaWorkspaceArea = "AVA" | "SECRETARIA" | "STUDENT";
+export type AvaWorkspaceArea =
+  | "AVA"
+  | "SECRETARIA"
+  | "FINANCEIRO"
+  | "STUDENT";
 
 function getWorkspaceAreaLabel(area: AvaWorkspaceArea) {
-  return area === "SECRETARIA" ? "Secretaria" : "AVA";
+  if (area === "SECRETARIA") {
+    return "Secretaria";
+  }
+
+  if (area === "FINANCEIRO") {
+    return "Financeiro";
+  }
+
+  return "AVA";
 }
 
 function isVisibleInWorkspaceArea(
@@ -329,7 +351,9 @@ export async function AvaWorkspaceShell({
     : [];
   const areaLabel = getWorkspaceAreaLabel(area);
   const getWorkspaceHref = (href: string) =>
-    area === "SECRETARIA" ? withSecretariaUnitParam(href, unitFilter) : href;
+    area === "SECRETARIA" || area === "FINANCEIRO"
+      ? withSecretariaUnitParam(href, unitFilter)
+      : href;
 
   if (!role || !userId) {
     return <div className="min-h-screen overflow-x-hidden">{children}</div>;
@@ -440,13 +464,33 @@ export async function AvaWorkspaceShell({
                       <WalletCards aria-hidden="true" className="size-4" />
                       Secretaria
                     </AvaNavAlertLink>
+                    {role === "ADMIN" ? (
+                      <AvaNavAlertLink
+                        href={withSecretariaUnitParam(
+                          "/ava/admin?task=financeiro",
+                          unitFilter,
+                        )}
+                        className="relative col-span-2 flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/80 px-2.5 py-2 text-sm font-bold text-emerald-950 shadow-sm transition-all hover:border-emerald-400 hover:bg-white"
+                        activeClassName={navItemActiveClassName}
+                      >
+                        <CircleDollarSign
+                          aria-hidden="true"
+                          className="size-4"
+                        />
+                        Financeiro
+                      </AvaNavAlertLink>
+                    ) : null}
                   </div>
                 </div>
               </div>
             ) : null}
 
             <div className="px-2 text-[0.66rem] font-bold uppercase tracking-[0.22em] text-primary/60">
-              {area === "SECRETARIA" ? "Secretaria" : "Area de trabalho"}
+              {area === "SECRETARIA"
+                ? "Secretaria"
+                : area === "FINANCEIRO"
+                  ? "Financeiro"
+                  : "Area de trabalho"}
             </div>
 
             <nav

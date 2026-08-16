@@ -85,17 +85,17 @@ Helpers:
 1. Usuario entra em `/ava/login`.
 2. Auth.js valida email, senha, usuario ativo e manutencao.
 3. Sessao JWT recebe `id` e `role`.
-4. `ADMIN` e `TEACHER` vao para `/ava/escolha`, onde escolhem entre `AVA` e `Secretaria`.
+4. `ADMIN` e `TEACHER` vao para `/ava/escolha`; Admin escolhe entre `AVA`, `Secretaria` e `Financeiro`, enquanto Teacher ve apenas `AVA` e `Secretaria`.
 5. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.
 
-### Escolha AVA ou Secretaria
+### Escolha da area de trabalho
 
 1. Admin ou Teacher autenticado abre `/ava` ou `/ava/escolha`.
-2. A tela mostra dois blocos grandes: `AVA`, para rotina pedagogica, e `Secretaria`, para controle interno, sem carregar nem renderizar a sidebar completa da area de trabalho.
+2. A tela limpa mostra somente os blocos de area: `AVA`, para rotina pedagogica; `Secretaria`, para pre-cadastros, agenda e contratos; e, apenas para Admin, `Financeiro`, para mensalidades e gastos.
 3. Clicar em `AVA` leva Admin para `/ava/admin?task=usuarios` e Teacher para `/ava/teacher?task=resumo`.
 4. Clicar em `Secretaria` leva para `/ava/secretaria`, um painel protegido de atalhos.
-5. A tela usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada.
-6. Admin ve atalhos completos: pre-cadastros, financeiro, agenda, contratos, administracao, APIs/senhas, unidades/gastos e relatorios simples vinculados ao financeiro.
+5. Clicar em `Financeiro` leva Admin para `/ava/admin?task=financeiro`; o bloco e o modo de sidebar nao sao renderizados para Teacher.
+6. A Secretaria usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada, mas nao mistura o atalho financeiro em seu painel.
 7. Teacher ve somente Secretaria limitada: pre-cadastros proprios/atribuidos e contratos permitidos; financeiro geral, agenda completa, gastos, APIs e administracao seguem exclusivos de Admin.
 8. A Secretaria mostra um filtro geral de polo logo abaixo do titulo: `Todos os polos`, `Polo 1 — Ivaté` e `Polo 2 — Douradina`. O filtro usa `unit=IVATE` ou `unit=DOURADINA` na URL quando ha polo especifico.
 9. Ao abrir pre-cadastros, financeiro ou agenda a partir da Secretaria, o `unit` selecionado e preservado nos links e aplicado nas consultas server-side dos dados sensiveis.
@@ -135,7 +135,7 @@ Helpers:
 
 1. Admin abre `/ava/admin`.
 2. A tarefa padrao e `usuarios`.
-3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
+3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA`, `Secretaria` ou `Financeiro`.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. A criacao direta de usuario exige senha provisoria e confirmacao iguais no cliente e no servidor, com controles independentes para mostrar/ocultar os dois campos. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
 5. Admin cria e acompanha pre-cadastros em `Aceitar alunos`, alternando entre `Novo pre-cadastro` e a fila `Cadastros salvos`; na lista, busca por nome, telefone, email, documento, cidade ou unidade, edita o registro e pode transforma-lo em aluno.
@@ -350,7 +350,7 @@ Helpers:
 ## Regras de negocio que precisam ser preservadas
 
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
-- `/ava/escolha` separa visualmente `AVA` e `Secretaria` para Admin/Teacher; Student nunca deve ver Secretaria.
+- `/ava/escolha` separa visualmente `AVA`, `Secretaria` e `Financeiro` para Admin; Teacher ve somente AVA/Secretaria e Student nao ve a escolha.
 - `/ava/secretaria` e um painel de atalhos protegidos, nao uma permissao nova nem substituto das validacoes server-side das tarefas existentes.
 - O botao publico `Quero ser aluno Candy` abre WhatsApp e nao cria pre-cadastro sozinho.
 - Pre-cadastro nunca deve liberar login automaticamente; quando existir solicitacao, ela deve ser criada/revisada pela equipe antes de virar aluno.

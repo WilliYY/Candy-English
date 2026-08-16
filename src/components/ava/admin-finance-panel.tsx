@@ -9,6 +9,8 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   CircleDollarSign,
   Clock3,
   Download,
@@ -691,8 +693,6 @@ function getStatusClasses(status: FinanceStatus) {
       card:
         "border-emerald-200 bg-gradient-to-br from-emerald-50/90 via-white to-white text-emerald-950",
       icon: "bg-emerald-600 text-white shadow-emerald-200",
-      timeline:
-        "border-emerald-200 bg-emerald-50 text-emerald-800 ring-emerald-100",
     };
   }
 
@@ -704,7 +704,6 @@ function getStatusClasses(status: FinanceStatus) {
       card:
         "border-red-200 bg-gradient-to-br from-red-50/90 via-white to-white text-red-950",
       icon: "bg-red-600 text-white shadow-red-200",
-      timeline: "border-red-200 bg-red-50 text-red-800 ring-red-100",
     };
   }
 
@@ -716,7 +715,6 @@ function getStatusClasses(status: FinanceStatus) {
       card:
         "border-slate-200 bg-gradient-to-br from-slate-50 via-white to-slate-50 text-slate-600",
       icon: "bg-slate-500 text-white shadow-slate-200",
-      timeline: "border-slate-200 bg-slate-50 text-slate-600 ring-slate-100",
     };
   }
 
@@ -729,8 +727,6 @@ function getStatusClasses(status: FinanceStatus) {
       card:
         "border-violet-200 bg-gradient-to-br from-violet-50/90 via-white to-white text-violet-950",
       icon: "bg-violet-600 text-white shadow-violet-200",
-      timeline:
-        "border-violet-200 bg-violet-50 text-violet-800 ring-violet-100",
     };
   }
 
@@ -741,7 +737,6 @@ function getStatusClasses(status: FinanceStatus) {
     card:
       "border-amber-200 bg-gradient-to-br from-amber-50/90 via-white to-white text-primary",
     icon: "bg-amber-500 text-white shadow-amber-200",
-    timeline: "border-amber-200 bg-amber-50 text-amber-900 ring-amber-100",
   };
 }
 
@@ -967,6 +962,121 @@ function RegistrationCompletenessPill({
       <Icon aria-hidden="true" className="size-3.5" />
       {isComplete ? "Completo" : "Completar"}
     </span>
+  );
+}
+
+function FinanceStudentSheetRow({
+  activeMonth,
+  isSelected,
+  onSelect,
+  row,
+}: {
+  activeMonth: number;
+  isSelected: boolean;
+  onSelect: () => void;
+  row: FinanceMonthRow;
+}) {
+  const classes = getStatusClasses(row.status);
+
+  return (
+    <article
+      onClick={onSelect}
+      className={cn(
+        "group relative grid min-w-0 cursor-pointer grid-cols-2 items-center gap-x-3 gap-y-3 border-b border-primary/10 bg-white p-3 text-left transition-colors last:border-b-0 hover:bg-primary/[0.035] lg:grid-cols-[minmax(150px,1.45fr)_minmax(90px,0.75fr)_minmax(100px,0.8fr)_minmax(110px,0.9fr)_minmax(110px,0.85fr)] lg:gap-2 lg:px-3 lg:py-2.5",
+        isSelected
+          ? "z-10 bg-primary/[0.065] ring-2 ring-inset ring-primary/35"
+          : "",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn("absolute inset-y-0 left-0 w-1", classes.accent)}
+      />
+      <button
+        type="button"
+        onClick={onSelect}
+        className="col-span-2 flex w-full min-w-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:col-span-1"
+      >
+        <span
+          className={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-extrabold uppercase shadow-sm",
+            classes.icon,
+          )}
+        >
+          {getFinanceInitials(row.name)}
+        </span>
+        <span className="min-w-0 flex-1">
+          <strong className="block truncate text-sm font-extrabold text-primary">
+            {row.name}
+          </strong>
+          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+            {row.phone || formatPaymentMethod(row.paymentMethod)}
+          </span>
+        </span>
+      </button>
+
+      <span className="min-w-0">
+        <span className="mb-1 block text-[0.64rem] font-bold uppercase text-primary/50 lg:hidden">
+          Polo
+        </span>
+        <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/10 bg-white px-2 py-1 text-xs font-bold text-primary shadow-sm">
+          <MapPin aria-hidden="true" className="size-3 shrink-0" />
+          <span className="truncate">
+            {formatFinancialUnitWithPolo(row.unit)}
+          </span>
+        </span>
+      </span>
+
+      <span className="min-w-0">
+        <span className="mb-1 block text-[0.64rem] font-bold uppercase text-primary/50 lg:hidden">
+          Mensalidade
+        </span>
+        <strong
+          className={cn(
+            "block truncate text-sm font-extrabold tabular-nums",
+            classes.amount,
+          )}
+        >
+          {formatCurrency(row.amountCents)}
+        </strong>
+        <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+          Dia {row.paymentDay} · {getInstallmentLabel(row.payment)}
+        </span>
+      </span>
+
+      <span className="min-w-0">
+        <span className="mb-1 block text-[0.64rem] font-bold uppercase text-primary/50 lg:hidden">
+          Situacao
+        </span>
+        <span className="flex flex-wrap gap-1.5">
+          <RegistrationCompletenessPill
+            isComplete={row.status !== "incomplete"}
+          />
+          {row.status !== "incomplete" ? (
+            <StatusPill status={row.status} />
+          ) : null}
+        </span>
+        <span className="mt-1 block truncate text-[0.7rem] font-semibold text-muted-foreground">
+          {getPaymentTimelineLabel(row)}
+        </span>
+      </span>
+
+      <span className="col-span-2 grid gap-2 lg:col-span-1">
+        {row.status === "incomplete" ? (
+          <Button type="button" size="sm" variant="outline" onClick={onSelect}>
+            <Pencil data-icon="inline-start" />
+            Completar
+          </Button>
+        ) : (
+          <FinanceStatusButton
+            isPaid={row.isPaid}
+            month={activeMonth}
+            size="sm"
+            studentId={row.id}
+          />
+        )}
+      </span>
+    </article>
   );
 }
 
@@ -2040,19 +2150,41 @@ export function AdminFinancePanel({
                 <CalendarDays aria-hidden="true" className="size-4" />
                 Competencia
               </span>
-              <NativeSelect
-                value={activeMonth}
-                onChange={(event) =>
-                  handleMonthChange(Number(event.target.value))
-                }
-                className="mt-2 h-11 border-primary/20 bg-white font-bold text-primary shadow-sm focus:border-primary/50"
-              >
-                {months.map((month) => (
-                  <option key={month.value} value={month.value}>
-                    {month.label}
-                  </option>
-                ))}
-              </NativeSelect>
+              <div className="mt-2 grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] gap-2">
+                <button
+                  type="button"
+                  aria-label="Abrir mes anterior"
+                  title="Mes anterior"
+                  disabled={activeMonth === 1}
+                  onClick={() => handleMonthChange(activeMonth - 1)}
+                  className="flex h-11 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary shadow-sm transition hover:border-primary/35 hover:bg-primary/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronLeft aria-hidden="true" className="size-4" />
+                </button>
+                <NativeSelect
+                  value={activeMonth}
+                  onChange={(event) =>
+                    handleMonthChange(Number(event.target.value))
+                  }
+                  className="h-11 min-w-0 border-primary/20 bg-white font-bold text-primary shadow-sm focus:border-primary/50"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <button
+                  type="button"
+                  aria-label="Abrir proximo mes"
+                  title="Proximo mes"
+                  disabled={activeMonth === 12}
+                  onClick={() => handleMonthChange(activeMonth + 1)}
+                  className="flex h-11 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary shadow-sm transition hover:border-primary/35 hover:bg-primary/[0.06] disabled:cursor-not-allowed disabled:opacity-35"
+                >
+                  <ChevronRight aria-hidden="true" className="size-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -2430,10 +2562,10 @@ export function AdminFinancePanel({
             </span>
             <span className="min-w-0">
               <strong className="block truncate text-lg">
-                Alunos pagantes - {activeMonthLabel}
+                Controle mensal - {activeMonthLabel}
               </strong>
               <span className="mt-1 block text-sm text-white/80">
-                Clique no card para abrir historico, parcelas e observacoes.
+                Uma linha por aluno, com valor, polo e situacao do pagamento.
               </span>
             </span>
           </span>
@@ -2489,136 +2621,23 @@ export function AdminFinancePanel({
                 </p>
               </div>
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {filteredRows.map((row) => {
-                  const classes = getStatusClasses(row.status);
-                  const isSelected = selectedRowId === row.id;
-
-                  return (
-                    <article
-                      key={`${row.id}-${activeMonth}-${row.payment.updatedAt}`}
-                      className={cn(
-                        "group relative flex min-h-[17rem] min-w-0 flex-col overflow-hidden rounded-lg border p-4 pt-5 text-left shadow-[0_12px_28px_rgba(58,29,75,0.09)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(58,29,75,0.14)]",
-                        classes.card,
-                        isSelected
-                          ? "ring-2 ring-primary/50 ring-offset-2 ring-offset-[#fbf7ff]"
-                          : "",
-                      )}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn("absolute inset-x-0 top-0 h-1", classes.accent)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setSelectedStudentId(row.id)}
-                        className="flex w-full min-w-0 items-start justify-between gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                      >
-                        <span className="flex min-w-0 flex-1 items-center gap-2">
-                          <span
-                            className={cn(
-                              "flex size-12 shrink-0 items-center justify-center rounded-lg text-sm font-extrabold uppercase shadow-md",
-                              classes.icon,
-                            )}
-                          >
-                            {getFinanceInitials(row.name)}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <strong className="line-clamp-2 block break-words text-base font-extrabold leading-5">
-                              {row.name}
-                            </strong>
-                            <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs opacity-75">
-                              {row.phone ? (
-                                <span className="min-w-0 truncate">
-                                  {row.phone}
-                                </span>
-                              ) : null}
-                              <span className="inline-flex min-w-0 items-center gap-1 rounded-full border border-white/70 bg-white/70 px-2 py-0.5 font-bold text-primary shadow-sm">
-                                <MapPin
-                                  aria-hidden="true"
-                                  className="size-3 shrink-0"
-                                />
-                                {formatFinancialUnitWithPolo(row.unit)}
-                              </span>
-                            </span>
-                          </span>
-                        </span>
-                        <span className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                          <RegistrationCompletenessPill
-                            isComplete={row.status !== "incomplete"}
-                          />
-                          {row.status !== "incomplete" ? (
-                            <StatusPill status={row.status} />
-                          ) : null}
-                        </span>
-                      </button>
-
-                      <span
-                        className={cn(
-                          "mt-3 inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-bold ring-1",
-                          classes.timeline,
-                        )}
-                      >
-                        <CalendarDays aria-hidden="true" className="size-3.5" />
-                        {getPaymentTimelineLabel(row)}
-                      </span>
-
-                      <div className="mt-3 rounded-lg border border-white/80 bg-white/78 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_18px_rgba(65,42,76,0.06)] backdrop-blur-sm">
-                        <span className="block text-[0.65rem] font-bold uppercase tracking-[0.12em] opacity-60">
-                          Valor do mes
-                        </span>
-                        <span className="mt-2 grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-                          <strong
-                            className={cn(
-                              "min-w-0 text-[1.72rem] font-extrabold leading-none tabular-nums tracking-normal",
-                              classes.amount,
-                            )}
-                          >
-                            {formatCurrency(row.amountCents)}
-                          </strong>
-                          <span className="shrink-0 rounded-full border border-primary/10 bg-white px-2.5 py-1 text-xs font-bold text-primary shadow-sm">
-                            Dia {row.paymentDay}
-                          </span>
-                        </span>
-                      </div>
-
-                      <span className="mt-3 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-primary/75">
-                        <WalletCards
-                          aria-hidden="true"
-                          className="size-3.5 shrink-0"
-                        />
-                        <span className="truncate">
-                          {formatPaymentMethod(row.paymentMethod)}
-                        </span>
-                        <span aria-hidden="true" className="opacity-45">
-                          /
-                        </span>
-                        <span className="truncate">
-                          {getInstallmentLabel(row.payment)}
-                        </span>
-                      </span>
-
-                      <span className="mt-auto grid gap-2 pt-4">
-                        {row.status === "incomplete" ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setSelectedStudentId(row.id)}
-                          >
-                            <Pencil data-icon="inline-start" />
-                            Completar cadastro
-                          </Button>
-                        ) : (
-                          <FinanceStatusButton
-                            isPaid={row.isPaid}
-                            month={activeMonth}
-                            studentId={row.id}
-                          />
-                        )}
-                      </span>
-                    </article>
-                  );
-                })}
+              <div className="overflow-hidden rounded-lg border border-primary/14 bg-white shadow-sm">
+                <div className="hidden grid-cols-[minmax(150px,1.45fr)_minmax(90px,0.75fr)_minmax(100px,0.8fr)_minmax(110px,0.9fr)_minmax(110px,0.85fr)] items-center gap-2 border-b border-primary/12 bg-primary/[0.055] px-3 py-2.5 text-[0.66rem] font-extrabold uppercase tracking-[0.1em] text-primary/60 lg:grid">
+                  <span>Aluno</span>
+                  <span>Polo</span>
+                  <span>Mensalidade</span>
+                  <span>Situacao</span>
+                  <span className="text-center">Acao</span>
+                </div>
+                {filteredRows.map((row) => (
+                  <FinanceStudentSheetRow
+                    key={`${row.id}-${activeMonth}-${row.payment.updatedAt}`}
+                    activeMonth={activeMonth}
+                    isSelected={selectedRowId === row.id}
+                    onSelect={() => setSelectedStudentId(row.id)}
+                    row={row}
+                  />
+                ))}
               </div>
             )}
           </div>

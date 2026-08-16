@@ -248,7 +248,6 @@ async function assertSecretariaPermissions(role: SmokeRole, cookie: string) {
   if (role === "ADMIN") {
     const requiredAdminLinks = [
       "/ava/admin?task=aceitar-alunos",
-      "/ava/admin?task=financeiro",
       "/ava/admin?task=agenda",
       "/ava/admin?task=apis-senhas",
     ];
@@ -313,8 +312,20 @@ async function assertAreaChoiceShell(role: SmokeRole, cookie: string) {
     }
   }
 
-  if (!text.includes("Entrar no AVA") || !text.includes("Entrar na Secretaria")) {
-    throw new Error("Tela de escolha sem cards AVA e Secretaria.");
+  const normalizedText = normalizeHtmlText(text);
+
+  if (!normalizedText.includes("AVA") || !normalizedText.includes("SECRETARIA")) {
+    throw new Error("Tela de escolha sem areas AVA e Secretaria.");
+  }
+
+  const financeHref = "/ava/admin?task=financeiro";
+
+  if (role === "ADMIN" && !normalizedText.includes(financeHref)) {
+    throw new Error("Tela de escolha admin sem area Financeiro.");
+  }
+
+  if (role === "TEACHER" && normalizedText.includes(financeHref)) {
+    throw new Error("Tela de escolha teacher vazou acesso ao Financeiro.");
   }
 
   console.log(`OK escolha limpa ${role.toLowerCase()}`);
