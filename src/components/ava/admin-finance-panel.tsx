@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AlertTriangle,
-  ArrowRight,
   Banknote,
   Building2,
   CalendarDays,
@@ -241,21 +240,27 @@ const financialUnitToneClasses: Record<
   {
     badge: string;
     dot: string;
+    header: string;
     panel: string;
+    sheet: string;
     stripe: string;
   }
 > = {
   DOURADINA: {
     badge: "border-sky-200 bg-sky-50 text-sky-800",
     dot: "bg-sky-500",
+    header: "border-sky-300 bg-gradient-to-r from-sky-700 to-cyan-600 text-white",
     panel: "border-sky-200 bg-sky-50/80 text-sky-950",
+    sheet: "border-sky-200 bg-sky-50/45",
     stripe: "bg-sky-500",
   },
   IVATE: {
-    badge: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800",
-    dot: "bg-fuchsia-500",
-    panel: "border-fuchsia-200 bg-fuchsia-50/80 text-fuchsia-950",
-    stripe: "bg-fuchsia-500",
+    badge: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    dot: "bg-emerald-500",
+    header: "border-emerald-300 bg-gradient-to-r from-emerald-700 to-teal-600 text-white",
+    panel: "border-emerald-200 bg-emerald-50/80 text-emerald-950",
+    sheet: "border-emerald-200 bg-emerald-50/45",
+    stripe: "bg-emerald-500",
   },
 };
 
@@ -967,11 +972,13 @@ function RegistrationCompletenessPill({
 
 function FinanceStudentSheetRow({
   activeMonth,
+  activeMonthLabel,
   isSelected,
   onSelect,
   row,
 }: {
   activeMonth: number;
+  activeMonthLabel: string;
   isSelected: boolean;
   onSelect: () => void;
   row: FinanceMonthRow;
@@ -982,9 +989,12 @@ function FinanceStudentSheetRow({
     <article
       onClick={onSelect}
       className={cn(
-        "group relative grid min-w-0 cursor-pointer grid-cols-2 items-center gap-x-3 gap-y-3 border-b border-primary/10 bg-white p-3 text-left transition-colors last:border-b-0 hover:bg-primary/[0.035] lg:grid-cols-[minmax(150px,1.45fr)_minmax(90px,0.75fr)_minmax(100px,0.8fr)_minmax(110px,0.9fr)_minmax(110px,0.85fr)] lg:gap-2 lg:px-3 lg:py-2.5",
+        "group relative grid min-w-0 cursor-pointer grid-cols-2 items-center gap-x-3 gap-y-3 border-b border-primary/10 p-3 text-left transition-colors last:border-b-0 lg:grid-cols-[minmax(180px,1.45fr)_minmax(88px,0.58fr)_minmax(110px,0.72fr)_minmax(92px,0.55fr)_minmax(140px,0.9fr)_minmax(112px,0.7fr)] lg:gap-2 lg:px-3 lg:py-2.5",
+        row.isPaid
+          ? "bg-emerald-50/65 hover:bg-emerald-100/65"
+          : "bg-amber-50/70 hover:bg-amber-100/70",
         isSelected
-          ? "z-10 bg-primary/[0.065] ring-2 ring-inset ring-primary/35"
+          ? "z-10 ring-2 ring-inset ring-primary/45"
           : "",
       )}
     >
@@ -994,7 +1004,10 @@ function FinanceStudentSheetRow({
       />
       <button
         type="button"
-        onClick={onSelect}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect();
+        }}
         className="col-span-2 flex w-full min-w-0 items-center gap-2 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:col-span-1"
       >
         <span
@@ -1017,14 +1030,12 @@ function FinanceStudentSheetRow({
 
       <span className="min-w-0">
         <span className="mb-1 block text-[0.64rem] font-bold uppercase text-primary/50 lg:hidden">
-          Polo
+          Mes
         </span>
-        <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-primary/10 bg-white px-2 py-1 text-xs font-bold text-primary shadow-sm">
-          <MapPin aria-hidden="true" className="size-3 shrink-0" />
-          <span className="truncate">
-            {formatFinancialUnitWithPolo(row.unit)}
-          </span>
-        </span>
+        <strong className="block truncate text-sm font-extrabold text-primary">
+          {activeMonthLabel}
+        </strong>
+        <span className="mt-0.5 block text-xs text-muted-foreground">2026</span>
       </span>
 
       <span className="min-w-0">
@@ -1040,21 +1051,32 @@ function FinanceStudentSheetRow({
           {formatCurrency(row.amountCents)}
         </strong>
         <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-          Dia {row.paymentDay} · {getInstallmentLabel(row.payment)}
+          {getInstallmentLabel(row.payment)}
         </span>
       </span>
 
       <span className="min-w-0">
         <span className="mb-1 block text-[0.64rem] font-bold uppercase text-primary/50 lg:hidden">
+          Vencimento
+        </span>
+        <strong className="block text-sm font-extrabold text-primary">
+          Dia {row.paymentDay}
+        </strong>
+        <span className="mt-0.5 block text-xs text-muted-foreground">
+          {formatPaymentMethod(row.paymentMethod)}
+        </span>
+      </span>
+
+      <span className="col-span-2 min-w-0 lg:col-span-1">
+        <span className="mb-1 block text-[0.64rem] font-bold uppercase text-primary/50 lg:hidden">
           Situacao
         </span>
         <span className="flex flex-wrap gap-1.5">
-          <RegistrationCompletenessPill
-            isComplete={row.status !== "incomplete"}
-          />
-          {row.status !== "incomplete" ? (
+          {row.status === "incomplete" ? (
+            <RegistrationCompletenessPill isComplete={false} />
+          ) : (
             <StatusPill status={row.status} />
-          ) : null}
+          )}
         </span>
         <span className="mt-1 block truncate text-[0.7rem] font-semibold text-muted-foreground">
           {getPaymentTimelineLabel(row)}
@@ -1077,6 +1099,92 @@ function FinanceStudentSheetRow({
         )}
       </span>
     </article>
+  );
+}
+
+function FinanceUnitSheet({
+  activeMonth,
+  activeMonthLabel,
+  onSelectStudent,
+  rows,
+  selectedStudentId,
+  unit,
+}: {
+  activeMonth: number;
+  activeMonthLabel: string;
+  onSelectStudent: (studentId: string) => void;
+  rows: FinanceMonthRow[];
+  selectedStudentId: string | null;
+  unit: FinancialUnit;
+}) {
+  const tone = getFinancialUnitTone(unit);
+  const totalAmount = rows.reduce((total, row) => total + row.amountCents, 0);
+  const paidCount = rows.filter((row) => row.isPaid).length;
+
+  return (
+    <section
+      aria-label={`${formatFinancialUnitPolo(unit)} ${formatFinancialUnitShort(unit)}`}
+      className={cn(
+        "overflow-hidden rounded-lg border shadow-[0_12px_28px_rgba(65,42,76,0.07)]",
+        tone.sheet,
+      )}
+    >
+      <header
+        className={cn(
+          "flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between",
+          tone.header,
+        )}
+      >
+        <span className="flex min-w-0 items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/16 ring-1 ring-white/25">
+            <Building2 aria-hidden="true" className="size-4" />
+          </span>
+          <span className="min-w-0">
+            <strong className="block text-base font-extrabold">
+              {formatFinancialUnitPolo(unit)} - {formatFinancialUnitShort(unit)}
+            </strong>
+            <span className="mt-0.5 block text-xs font-semibold text-white/78">
+              {rows.length} aluno(s) exibido(s) em {activeMonthLabel}
+            </span>
+          </span>
+        </span>
+        <span className="flex flex-wrap gap-2 text-xs font-bold">
+          <span className="rounded-full bg-white/14 px-2.5 py-1 ring-1 ring-white/20">
+            {paidCount} pago(s)
+          </span>
+          <span className="rounded-full bg-white px-2.5 py-1 text-primary shadow-sm">
+            {formatCurrency(totalAmount)}
+          </span>
+        </span>
+      </header>
+
+      {rows.length === 0 ? (
+        <div className="flex min-h-24 items-center justify-center bg-white/80 px-4 py-6 text-center text-sm text-muted-foreground">
+          Nenhum aluno deste polo corresponde aos filtros atuais.
+        </div>
+      ) : (
+        <div className="bg-white/80">
+          <div className="hidden grid-cols-[minmax(180px,1.45fr)_minmax(88px,0.58fr)_minmax(110px,0.72fr)_minmax(92px,0.55fr)_minmax(140px,0.9fr)_minmax(112px,0.7fr)] items-center gap-2 border-b border-primary/12 bg-white/75 px-3 py-2.5 text-[0.66rem] font-extrabold uppercase tracking-[0.1em] text-primary/58 lg:grid">
+            <span>Aluno</span>
+            <span>Mes</span>
+            <span>Mensalidade</span>
+            <span>Vencimento</span>
+            <span>Situacao</span>
+            <span className="text-center">Acao</span>
+          </div>
+          {rows.map((row) => (
+            <FinanceStudentSheetRow
+              key={`${row.id}-${activeMonth}-${row.payment.updatedAt}`}
+              activeMonth={activeMonth}
+              activeMonthLabel={activeMonthLabel}
+              isSelected={selectedStudentId === row.id}
+              onSelect={() => onSelectStudent(row.id)}
+              row={row}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1757,26 +1865,6 @@ export function AdminFinancePanel({
     [unitMonthRows],
   );
 
-  const monthCounts = useMemo(
-    () =>
-      months.reduce<Record<number, { all: number; overdue: number }>>(
-        (accumulator, month) => {
-          const rows = buildFinanceMonthRows(students, month.value, today).filter(
-            (row) => unitFilter === "ALL" || row.unit === unitFilter,
-          );
-
-          accumulator[month.value] = {
-            all: rows.length,
-            overdue: rows.filter((row) => row.isOverdue).length,
-          };
-
-          return accumulator;
-        },
-        {},
-      ),
-    [students, today, unitFilter],
-  );
-
   const monthExpenses = useMemo(
     () =>
       expenses
@@ -1868,10 +1956,20 @@ export function AdminFinancePanel({
     });
   }, [searchTerm, statusFilter, unitMonthRows]);
 
-  const selectedRow =
-    filteredRows.find((row) => row.id === selectedStudentId) ??
-    filteredRows[0] ??
-    null;
+  const visibleUnitGroups = useMemo(
+    () =>
+      FINANCIAL_UNITS.filter(
+        (unit) => unitFilter === "ALL" || unit === unitFilter,
+      ).map((unit) => ({
+        rows: filteredRows.filter((row) => row.unit === unit),
+        unit,
+      })),
+    [filteredRows, unitFilter],
+  );
+
+  const selectedRow = selectedStudentId
+    ? (filteredRows.find((row) => row.id === selectedStudentId) ?? null)
+    : null;
   const selectedRowId = selectedRow?.id ?? null;
 
   function handleFinanceUnitFilterChange(nextUnit: UnitFilter) {
@@ -2020,33 +2118,27 @@ export function AdminFinancePanel({
           )}
         </div>
 
-        <div className="grid gap-3 border-b border-primary/10 bg-[#fcfaff] p-4 sm:p-5 md:grid-cols-2">
+        <div className="grid gap-2 border-b border-primary/10 bg-[#fcfaff] p-3 sm:grid-cols-2 sm:px-5">
           {[
             {
               activeClass:
-                "border-primary bg-gradient-to-br from-primary via-[#603574] to-[#7e4f96] text-white shadow-[0_18px_38px_rgba(65,42,76,0.2)]",
-              description:
-                "Mensalidades, parcelas, status, historico e cadastro financeiro.",
-              detail: "Controle de alunos",
-              eyebrow: "Entradas mensais",
+                "border-primary bg-primary text-white shadow-md shadow-primary/15",
+              description: "Mensalidades e situacao por polo",
               icon: UserRound,
               inactiveClass:
-                "border-primary/15 bg-gradient-to-br from-[#f8efff] via-white to-white text-primary hover:border-primary/40",
-              label: "Alunos",
+                "border-primary/15 bg-white text-primary hover:border-primary/40 hover:bg-primary/[0.05]",
+              label: "Alunos e mensalidades",
               metric: `${unitMonthRows.length} aluno(s)`,
               value: "STUDENTS" as const,
             },
             {
               activeClass:
-                "border-teal-700 bg-gradient-to-br from-[#0f6673] via-[#147f8c] to-[#36a7a6] text-white shadow-[0_18px_38px_rgba(15,102,115,0.2)]",
-              description:
-                "Insumos e compras internas salvos no mes selecionado.",
-              detail: "Controle interno",
-              eyebrow: "Saidas da loja",
+                "border-teal-700 bg-teal-700 text-white shadow-md shadow-teal-900/15",
+              description: "Insumos e compras internas",
               icon: ShoppingCart,
               inactiveClass:
-                "border-teal-200 bg-gradient-to-br from-teal-50 via-white to-white text-primary hover:border-teal-400",
-              label: "Pagamentos",
+                "border-teal-200 bg-white text-primary hover:border-teal-400 hover:bg-teal-50",
+              label: "Gastos da loja",
               metric: formatCurrency(expenseSummary.total),
               value: "EXPENSES" as const,
             },
@@ -2061,68 +2153,42 @@ export function AdminFinancePanel({
                 type="button"
                 onClick={() => setFinanceView(item.value)}
                 className={cn(
-                  "group flex min-h-[9rem] min-w-0 flex-col items-start justify-between rounded-lg border p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5",
+                  "group flex min-h-[4.75rem] min-w-0 items-center gap-3 rounded-lg border px-3 py-2.5 text-left shadow-sm transition-colors",
                   isActive ? item.activeClass : item.inactiveClass,
                 )}
               >
-                <span className="flex w-full min-w-0 items-start justify-between gap-3">
-                  <span
-                    className={cn(
-                      "flex size-11 shrink-0 items-center justify-center rounded-lg",
-                      isActive
-                        ? "bg-white/15 text-white ring-1 ring-white/20"
-                        : "bg-primary/10 text-primary",
-                    )}
-                  >
-                    <Icon aria-hidden="true" className="size-5" />
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
-                      isActive
-                        ? "bg-white/15 text-white"
-                        : "bg-primary/[0.08] text-primary",
-                    )}
-                  >
-                    {item.metric}
-                  </span>
+                <span
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-lg",
+                    isActive
+                      ? "bg-white/15 text-white ring-1 ring-white/20"
+                      : "bg-primary/10 text-primary",
+                  )}
+                >
+                  <Icon aria-hidden="true" className="size-4" />
                 </span>
-                <span className="mt-4 block min-w-0">
-                  <span
-                    className={cn(
-                      "mb-1.5 block text-[0.65rem] font-extrabold uppercase tracking-[0.12em]",
-                      isActive ? "text-white/68" : "text-primary/52",
-                    )}
-                  >
-                    {item.eyebrow}
-                  </span>
-                  <strong className="block text-lg leading-5">
+                <span className="min-w-0 flex-1">
+                  <strong className="block truncate text-sm font-extrabold sm:text-base">
                     {item.label}
                   </strong>
                   <span
                     className={cn(
-                      "mt-1.5 block text-sm leading-5",
+                      "mt-0.5 block truncate text-xs",
                       isActive ? "text-white/78" : "text-muted-foreground",
                     )}
                   >
                     {item.description}
                   </span>
                 </span>
-                <span className="mt-4 flex w-full items-center justify-between gap-3">
-                  <span
-                    className={cn(
-                      "inline-flex rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
-                      isActive
-                        ? "bg-white text-primary"
-                        : "bg-white text-primary shadow-sm ring-1 ring-primary/10",
-                    )}
-                  >
-                    {item.detail}
-                  </span>
-                  <ArrowRight
-                    aria-hidden="true"
-                    className="size-4 transition-transform duration-200 group-hover:translate-x-1"
-                  />
+                <span
+                  className={cn(
+                    "shrink-0 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums",
+                    isActive
+                      ? "bg-white/15 text-white"
+                      : "bg-primary/[0.08] text-primary",
+                  )}
+                >
+                  {item.metric}
                 </span>
               </button>
             );
@@ -2270,56 +2336,6 @@ export function AdminFinancePanel({
               </div>
             </div>
 
-            <div className="border-t border-primary/10 bg-[#fcfaff] p-4 sm:p-5">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="flex items-center gap-2 text-sm font-bold text-primary">
-                  <CalendarDays aria-hidden="true" className="size-4" />
-                  Navegue pelos meses
-                </span>
-                <span className="rounded-full border border-primary/12 bg-white px-2.5 py-1 text-xs font-bold text-primary/65 shadow-sm">
-                  {activeMonthLabel} selecionado
-                </span>
-              </div>
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2 2xl:grid 2xl:grid-cols-12 2xl:overflow-visible 2xl:pb-0">
-                {months.map((month) => {
-                  const counts = monthCounts[month.value] ?? {
-                    all: 0,
-                    overdue: 0,
-                  };
-
-                  return (
-                    <button
-                      key={month.value}
-                      type="button"
-                      onClick={() => handleMonthChange(month.value)}
-                      className={cn(
-                        "min-h-[4.7rem] min-w-[5.2rem] flex-1 rounded-lg border px-2.5 py-2.5 text-sm font-semibold transition-all duration-200 2xl:min-w-0",
-                        activeMonth === month.value
-                          ? "border-primary bg-gradient-to-br from-primary to-[#714587] text-primary-foreground shadow-md shadow-primary/20"
-                          : "border-primary/15 bg-white text-primary shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/[0.06]",
-                      )}
-                    >
-                      <span className="block">{month.shortLabel}</span>
-                      <span className="mt-1 block whitespace-nowrap text-xs opacity-80">
-                        {counts.all} aluno(s)
-                      </span>
-                      {counts.overdue > 0 ? (
-                        <span
-                          className={cn(
-                            "mt-2 inline-flex rounded-full px-2 py-0.5 text-[0.68rem]",
-                            activeMonth === month.value
-                              ? "bg-white text-red-700"
-                              : "bg-red-600 text-white",
-                          )}
-                        >
-                          {counts.overdue} venc.
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
           </>
         ) : null}
       </section>
@@ -2331,25 +2347,26 @@ export function AdminFinancePanel({
         className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.09)]"
         noValidate
       >
-        <div className="flex flex-col gap-3 border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#fce5d8]/65 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <span className="flex min-w-0 items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <Plus aria-hidden="true" className="size-5" />
-            </span>
-            <span className="min-w-0">
-              <strong className="block text-base text-primary">
-                Adicionar aluno financeiro
-              </strong>
-              <span className="mt-1 block text-sm text-muted-foreground">
-                Preencha nome, valor, dia e forma. Parcelas sao opcionais.
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-white via-[#fff7fb] to-[#fce5d8]/65 p-4 [&::-webkit-details-marker]:hidden">
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                <Plus aria-hidden="true" className="size-5" />
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-base text-primary">
+                  Adicionar aluno financeiro
+                </strong>
+                <span className="mt-1 block text-sm text-muted-foreground">
+                  Abra somente quando precisar cadastrar uma nova mensalidade.
+                </span>
               </span>
             </span>
-          </span>
-          <span className="w-fit rounded-full border border-primary/15 bg-white/85 px-3 py-1 text-xs font-bold uppercase text-primary">
-            Rapido
-          </span>
-        </div>
-        <FieldGroup className="gap-3 bg-gradient-to-br from-white via-[#fcfaff] to-[#f3fbfd] p-4 sm:p-5">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary shadow-sm">
+              <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
+            </span>
+          </summary>
+          <FieldGroup className="gap-3 border-t border-primary/10 bg-gradient-to-br from-white via-[#fcfaff] to-[#f3fbfd] p-4 sm:p-5">
           <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(150px,0.85fr)_minmax(120px,0.65fr)_90px_minmax(150px,0.8fr)_110px_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>
@@ -2542,16 +2559,17 @@ export function AdminFinancePanel({
               </Field>
             </div>
           </details>
-        </FieldGroup>
+          </FieldGroup>
 
-        {message ? (
-          <p
-            className="mx-4 mb-4 rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground"
-            role="status"
-          >
-            {message}
-          </p>
-        ) : null}
+          {message ? (
+            <p
+              className="mx-4 mb-4 rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground"
+              role="status"
+            >
+              {message}
+            </p>
+          ) : null}
+        </details>
       </form>
 
       <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_60px_rgba(65,42,76,0.12)]">
@@ -2562,10 +2580,10 @@ export function AdminFinancePanel({
             </span>
             <span className="min-w-0">
               <strong className="block truncate text-lg">
-                Controle mensal - {activeMonthLabel}
+                Controle mensal por polo - {activeMonthLabel}
               </strong>
               <span className="mt-1 block text-sm text-white/80">
-                Uma linha por aluno, com valor, polo e situacao do pagamento.
+                Planilha de alunos com valor, vencimento e situacao da mensalidade.
               </span>
             </span>
           </span>
@@ -2598,7 +2616,14 @@ export function AdminFinancePanel({
           </div>
         </div>
 
-        <div className="grid gap-4 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-4 sm:p-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.64fr)]">
+        <div
+          className={cn(
+            "grid gap-4 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-4 sm:p-5",
+            selectedRow
+              ? "xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.64fr)]"
+              : "grid-cols-1",
+          )}
+        >
           <div className="grid content-start gap-3">
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/12 bg-white/78 p-3 text-xs font-semibold text-muted-foreground shadow-sm">
               <span className="inline-flex items-center gap-1.5 text-primary">
@@ -2613,43 +2638,29 @@ export function AdminFinancePanel({
               </span>
             </div>
 
-            {filteredRows.length === 0 ? (
-              <div className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-primary/25 bg-white/85 text-center shadow-sm">
-                <CircleDollarSign aria-hidden="true" className="text-primary" />
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  Nenhum aluno financeiro encontrado para este filtro.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-lg border border-primary/14 bg-white shadow-sm">
-                <div className="hidden grid-cols-[minmax(150px,1.45fr)_minmax(90px,0.75fr)_minmax(100px,0.8fr)_minmax(110px,0.9fr)_minmax(110px,0.85fr)] items-center gap-2 border-b border-primary/12 bg-primary/[0.055] px-3 py-2.5 text-[0.66rem] font-extrabold uppercase tracking-[0.1em] text-primary/60 lg:grid">
-                  <span>Aluno</span>
-                  <span>Polo</span>
-                  <span>Mensalidade</span>
-                  <span>Situacao</span>
-                  <span className="text-center">Acao</span>
-                </div>
-                {filteredRows.map((row) => (
-                  <FinanceStudentSheetRow
-                    key={`${row.id}-${activeMonth}-${row.payment.updatedAt}`}
-                    activeMonth={activeMonth}
-                    isSelected={selectedRowId === row.id}
-                    onSelect={() => setSelectedStudentId(row.id)}
-                    row={row}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="grid gap-4">
+              {visibleUnitGroups.map((group) => (
+                <FinanceUnitSheet
+                  key={group.unit}
+                  activeMonth={activeMonth}
+                  activeMonthLabel={activeMonthLabel}
+                  onSelectStudent={setSelectedStudentId}
+                  rows={group.rows}
+                  selectedStudentId={selectedRowId}
+                  unit={group.unit}
+                />
+              ))}
+            </div>
           </div>
 
-          <aside className="min-w-0 rounded-lg border border-primary/15 bg-white shadow-[0_14px_34px_rgba(65,42,76,0.09)] xl:sticky xl:top-4 xl:self-start">
-            {selectedRow ? (
+          {selectedRow ? (
+            <aside className="min-w-0 rounded-lg border border-primary/15 bg-white shadow-[0_14px_34px_rgba(65,42,76,0.09)] xl:sticky xl:top-4 xl:self-start">
               <div className="grid gap-4">
                 <div className="border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4">
                   <div className="flex min-w-0 items-start justify-between gap-3">
                     <span className="min-w-0">
                       <span className="text-[0.68rem] font-bold uppercase tracking-[0.12em] text-primary/60">
-                        Historico do aluno
+                        Detalhes de {activeMonthLabel}
                       </span>
                       <strong className="mt-1 block break-words text-xl text-primary">
                         {selectedRow.name}
@@ -2662,6 +2673,22 @@ export function AdminFinancePanel({
                       {selectedRow.status !== "incomplete" ? (
                         <StatusPill status={selectedRow.status} />
                       ) : null}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "mt-3 rounded-lg border p-3",
+                      getStatusClasses(selectedRow.status).card,
+                    )}
+                  >
+                    <span className="block text-[0.66rem] font-extrabold uppercase tracking-[0.1em] opacity-70">
+                      Situacao da mensalidade
+                    </span>
+                    <strong className="mt-1 block text-base">
+                      {getPaymentTimelineLabel(selectedRow)}
+                    </strong>
+                    <span className="mt-1 block text-xs opacity-75">
+                      {formatCurrency(selectedRow.amountCents)} com vencimento no dia {selectedRow.paymentDay}.
                     </span>
                   </div>
                   <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
@@ -2827,18 +2854,8 @@ export function AdminFinancePanel({
                   <FinanceInactivateButtons month={activeMonth} row={selectedRow} />
                 </div>
               </div>
-            ) : (
-              <div className="flex min-h-[22rem] flex-col items-center justify-center gap-3 p-6 text-center">
-                <span className="flex size-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <History aria-hidden="true" className="size-5" />
-                </span>
-                <strong className="text-primary">Selecione um aluno</strong>
-                <p className="max-w-xs text-sm text-muted-foreground">
-                  O historico, as parcelas e as observacoes aparecem aqui.
-                </p>
-              </div>
-            )}
-          </aside>
+            </aside>
+          ) : null}
         </div>
 
         <div className="grid gap-2 border-t border-primary/15 bg-gradient-to-r from-[#f6e6ff] via-white to-[#fce5d8]/70 px-4 py-3 text-sm font-bold text-primary sm:grid-cols-3">

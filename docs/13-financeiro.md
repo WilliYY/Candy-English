@@ -2,7 +2,7 @@
 
 ## O que esta parte do sistema faz
 
-O modulo Financeiro e uma area propria e exclusiva do administrador em `/ava/admin?task=financeiro`. A tela principal usa uma lista mensal tipo planilha, com uma linha por aluno, nome, polo, valor, vencimento, situacao e acao rapida para marcar como pago, mantendo filtros e painel de historico.
+O modulo Financeiro e uma area propria e exclusiva do administrador em `/ava/admin?task=financeiro`. A tela principal usa uma planilha mensal separada por polo, com Ivaté primeiro e Douradina depois. Cada linha mostra aluno, mes, valor, vencimento, situacao e acao rapida para marcar como pago; ao clicar no aluno, o painel de detalhes abre com a data de pagamento ou a pendencia daquela competencia.
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
@@ -55,7 +55,7 @@ Rota:
 - Ao editar dados fixos/parcelas, meses existentes que continuam dentro do novo plano voltam a `isActive=true`; meses fora do plano ficam inativos quando houver total de parcelas.
 - Ao retirar aluno em um mes, a UI permite inativar apenas o mes selecionado ou encerrar a partir daquele mes, sempre por soft remove em `FinancialPayment.isActive=false`.
 - Alunos ativos no mes aparecem ordenados por dia de pagamento crescente.
-- Status padrao e pendente; se o dia previsto passou, o card fica atrasado. Ao marcar como pago, o card fica verde e recebe data paga.
+- Status padrao e pendente; linhas ainda nao pagas usam fundo amarelo para leitura rapida e o badge continua distinguindo pendente de atrasado. Ao marcar como pago, a linha fica verde e recebe data paga.
 - A decisao de vencido, o mes inicial, a data padrao de gasto e os horarios do log usam uma referencia unica em `America/Sao_Paulo`, passada pelo servidor para evitar divergencia entre SSR e navegador perto da meia-noite.
 - Indicador de devedores conta alunos pendentes cujo dia previsto ja passou no mes selecionado.
 - `FinancialLog` registra criacao, edicao, status, exclusao e exportacao.
@@ -75,7 +75,9 @@ Rota:
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
 - A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, seletor de mes com setas anterior/proximo, busca por nome/telefone e filtros por status e polo.
-- A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido e linhas compactas tipo planilha com aluno, polo, mensalidade, vencimento, status e acao; no mobile cada linha reorganiza os mesmos dados sem rolagem horizontal da pagina.
+- A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido e linhas compactas tipo planilha com aluno, mes, mensalidade, vencimento, status e acao; no mobile cada linha reorganiza os mesmos dados sem rolagem horizontal da pagina.
+- A planilha mensal e agrupada pelo `snapshotUnit`, com cabecalho verde para `Polo 1 - Ivaté` e azul para `Polo 2 - Douradina`. Cada grupo mostra quantidade, pagos e total exibido. O painel de historico fica fechado ate o Admin selecionar uma linha, preservando a largura total da planilha na leitura inicial.
+- O mes inicial vem da data atual em `America/Sao_Paulo`; setas e seletor no topo trocam a competencia sem alterar os snapshots dos outros meses.
 - O resumo mensal usa quatro metricas semanticas de largura estavel (`Total previsto`, `Recebido`, `A receber` e `Atrasados`) e uma unica faixa de progresso para evitar numeros comprimidos ou informacao repetida. A navegacao anual permite rolagem horizontal em telas menores, e os cards de aluno usam tonalidade leve por status com nome, valor, vencimento e unidade em hierarquia clara.
 - O financeiro abre com dois blocos internos grandes: `Alunos`, para mensalidades/parcelas e historico de cada aluno, e `Pagamentos`, para gastos/insumos da loja no mes selecionado.
 - A area `Pagamentos` e controle interno separado: nao mostra totais de alunos, recebidos, pendentes, atrasados nem saldo baseado em mensalidades.

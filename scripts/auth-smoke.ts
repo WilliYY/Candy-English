@@ -440,6 +440,23 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
 
     const text = await response.text();
     assertNoServerException(path, response, text);
+
+    if (path === "/ava/admin?task=financeiro&unit=all") {
+      const normalizedText = normalizeHtmlText(text);
+      const requiredFinanceText = [
+        "Controle mensal por polo",
+        "Polo 1 - Ivaté",
+        "Polo 2 - Douradina",
+      ];
+
+      for (const expectedText of requiredFinanceText) {
+        if (!normalizedText.includes(expectedText)) {
+          throw new Error(
+            `Financeiro admin sem estrutura mensal esperada: ${expectedText}`,
+          );
+        }
+      }
+    }
   }
 
   console.log("OK admin task routes");
