@@ -35,8 +35,9 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 - `MONTHLY_INVOICE` exige `StudentProfile` ativo, mensalidade ativa ainda nao paga e grava a competencia no fuso `America/Sao_Paulo`.
 - Nome digitado livremente nunca cria divida mensal, pois nao existe identidade confiavel para cobrar depois.
 - Produto inativo, preco alterado ou estoque insuficiente interrompe toda a venda.
-- O cliente envia `updatedAt`, mas preco, estado, permissao e estoque sao relidos no servidor.
-- Baixa de estoque e criacao da venda ocorrem na mesma transaction Prisma.
+- O cliente envia `expectedUpdatedAt` e `expectedSalePriceCents`; preco, estado, permissao e estoque sao relidos no servidor. Se a versao mudou, o checkout para e pede revisao, sem cobrar valor diferente do exibido.
+- Baixa de estoque e criacao da venda ocorrem na mesma transaction Prisma. A linha da fatura mensal e bloqueada com `FOR UPDATE` antes da confirmacao para nao receber venda durante pagamento/fechamento concorrente.
+- `operationId` torna o checkout idempotente: repeticao ou clique simultaneo do mesmo pedido devolve a venda ja registrada sem baixar estoque outra vez.
 
 ## Financeiro e fatura mensal
 
@@ -46,12 +47,13 @@ Nao ha gateway nem cobranca online: a forma de pagamento informa apenas como a v
 
 ## Cancelamento
 
-Venda concluida nao e apagada. O cancelamento exige motivo, registra operador/data e devolve todos os itens ao estoque na mesma transaction. Uma venda cancelada nao pode ser cancelada novamente. Compra mensal vinculada a uma competencia ja paga ou fechada exige que o Admin reabra a competencia antes do cancelamento, evitando alterar silenciosamente uma fatura quitada.
+Venda concluida nao e apagada. O cancelamento exige motivo, registra operador/data e bloqueia venda, fatura e reposicao de estoque na mesma transaction. Uma venda cancelada nao pode ser cancelada novamente. Compra mensal vinculada a uma competencia ja paga ou fechada exige que o Admin reabra a competencia antes do cancelamento, evitando alterar silenciosamente uma fatura quitada.
 
 ## Concorrencia e riscos
 
 - Edicao de produto usa `expectedUpdatedAt`; conflito obriga recarregar em vez de sobrescrever alteracao recente.
 - Checkout faz baixa condicional por estoque e versao do produto; falha em um item reverte todos os itens.
+- Fatura e venda usam locks de linha no PostgreSQL para serializar fechamento, inclusao e cancelamento concorrentes.
 - Excluir produto foi evitado para preservar FKs e auditoria; use `Ativo`/`Inativo`.
 - Custo fica visivel para Admin e Teacher porque ambos foram autorizados a gerenciar o PDV.
 - A migration deve ser aplicada antes de publicar a nova aplicacao.

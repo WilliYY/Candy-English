@@ -170,7 +170,7 @@ function ProductEditor({ product }: { product: ProductRow }) {
       </summary>
       <form action={handleSubmit} className="mt-3 grid gap-2" onClick={(event) => event.stopPropagation()}>
         <Input aria-label="Nome do produto" defaultValue={product.name} name="name" required />
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid gap-2 sm:grid-cols-3">
           <Input aria-label="Custo" defaultValue={(product.costCents / 100).toFixed(2)} min="0" name="cost" step="0.01" type="number" required />
           <Input aria-label="Venda" defaultValue={(product.salePriceCents / 100).toFixed(2)} min="0.01" name="price" step="0.01" type="number" required />
           <Input aria-label="Estoque" defaultValue={product.stockQuantity} min="0" name="stock" type="number" required />
