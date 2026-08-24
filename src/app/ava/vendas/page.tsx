@@ -4,6 +4,7 @@ import { SalesPosPanel } from "@/components/ava/sales-pos-panel";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
 import {
+  getSaoPauloDateKey,
   getSaoPauloYearMonth,
   isMonthlyInvoiceOpen,
 } from "@/lib/sales-domain";
@@ -91,6 +92,7 @@ export default async function SalesPage() {
         createdAt: true,
         id: true,
         invoiceMonth: true,
+        invoiceDueDate: true,
         invoiceYear: true,
         items: {
           select: {
@@ -121,7 +123,7 @@ export default async function SalesPage() {
           isAdmin: session.user.role === "ADMIN",
           name: session.user.name ?? "Equipe Candy",
         }}
-        currentPeriod={period}
+        currentPeriod={{ ...period, dateKey: getSaoPauloDateKey() }}
         products={products.map((product) => ({
           ...product,
           updatedAt: product.updatedAt.toISOString(),
@@ -130,6 +132,7 @@ export default async function SalesPage() {
           ...sale,
           canceledAt: sale.canceledAt?.toISOString() ?? null,
           createdAt: sale.createdAt.toISOString(),
+          invoiceDueDate: sale.invoiceDueDate?.toISOString().slice(0, 10) ?? null,
           paidAt: sale.paidAt?.toISOString() ?? null,
           sellerName: sale.soldByUser?.name ?? "Usuario removido",
         }))}

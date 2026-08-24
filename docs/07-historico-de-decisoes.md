@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-08-24 - Comprador unico e data combinada no PDV
+
+- Decisao: substituir busca, select e nome avulso separados por um unico campo pesquisavel com `Venda livre` primeiro; aluno selecionado define o polo automaticamente. Compras na fatura passam a guardar `Sale.invoiceDueDate`, limitada ao mes financeiro atual e vinculada ao `FinancialPayment` ja existente.
+- Motivo: reduzir campos duplicados no carrinho, mostrar todos os alunos autorizados em um so lugar e permitir combinar outro dia de cobranca sem misturar a venda com a mensalidade.
+- Impacto: schema e migration de `Sale`, dominio/validacao/actions/pagina/componentes de Vendas, testes e documentacao do modulo.
+- Riscos/cuidados: venda livre continua sem identidade financeira e nao pode entrar em fatura; Teacher continua vendo somente alunos vinculados; data fora da competencia atual deve ser recusada no servidor.
+
 ### 2026-08-24 - Financeiro cria novo aluno com acesso real ao AVA
 
 - Decisao: manter a selecao de alunos existentes dos dois polos e transformar o antigo cadastro manual em `Criar novo aluno`, que exige login e senha inicial e cria `User STUDENT`, `StudentProfile`, `FinancialStudent` e snapshots mensais na mesma transaction. A planilha ganha largura ampliada, filtros de situacao com contadores e formulario recolhido por padrao.

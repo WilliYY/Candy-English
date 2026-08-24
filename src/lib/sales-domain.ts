@@ -28,6 +28,41 @@ export function getSaoPauloYearMonth(date = new Date()) {
   return { month, year };
 }
 
+export function getSaoPauloDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: SAO_PAULO_TIME_ZONE,
+    year: "numeric",
+  }).formatToParts(date);
+  const day = parts.find((part) => part.type === "day")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const year = parts.find((part) => part.type === "year")?.value;
+
+  return `${year}-${month}-${day}`;
+}
+
+export function parseSaleInvoiceDate(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return { date, day, month, year };
+}
+
 export function calculateSaleTotals(items: SaleTotalItem[]) {
   return items.reduce(
     (totals, item) => ({

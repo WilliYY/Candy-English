@@ -5,10 +5,12 @@ import {
   ArchiveRestore,
   BadgeDollarSign,
   Boxes,
+  CalendarDays,
   Check,
   ChevronDown,
   CircleDollarSign,
   CreditCard,
+  MapPin,
   Minus,
   PackagePlus,
   Pencil,
@@ -70,6 +72,7 @@ type SaleRow = {
   createdAt: string;
   id: string;
   invoiceMonth: number | null;
+  invoiceDueDate: string | null;
   invoiceYear: number | null;
   items: {
     id: string;
@@ -98,6 +101,11 @@ const currencyFormatter = new Intl.NumberFormat("pt-BR", {
 const dateTimeFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
   timeStyle: "short",
+});
+
+const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+  timeZone: "UTC",
 });
 
 const paymentMethodLabels: Record<string, string> = {
@@ -130,6 +138,18 @@ function formatCurrency(cents: number) {
 
 function formatUnit(unit: FinancialUnit) {
   return unit === "IVATE" ? "Polo 1 - Ivate" : "Polo 2 - Douradina";
+}
+
+function studentBuyerLabel(student: StudentOption) {
+  return `${student.name} - ${student.email}`;
+}
+
+function getMonthDateBoundary(
+  period: { month: number; year: number },
+  boundary: "first" | "last",
+) {
+  const day = boundary === "first" ? 1 : new Date(period.year, period.month, 0).getDate();
+  return `${period.year}-${String(period.month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 function moneyToCents(value: unknown) {
@@ -238,7 +258,7 @@ function RecentSaleCard({ actorId, isAdmin, sale }: { actorId: string; isAdmin: 
           ))}
           <p className="text-xs text-muted-foreground">
             {sale.settlementType === "MONTHLY_INVOICE" && sale.invoiceMonth
-              ? `Fatura de ${monthLabels[sale.invoiceMonth]} de ${sale.invoiceYear}`
+              ? `Fatura de ${monthLabels[sale.invoiceMonth]} de ${sale.invoiceYear}${sale.invoiceDueDate ? ` · cobrar em ${dateFormatter.format(new Date(`${sale.invoiceDueDate}T00:00:00.000Z`))}` : ""}`
               : paymentMethodLabels[sale.paymentMethod ?? ""] ?? "Pagamento registrado"}
           </p>
           {sale.status === "CANCELED" ? <p className="rounded-md bg-slate-100 px-2 py-1.5 text-xs text-slate-600">Motivo: {sale.cancelReason}</p> : null}
@@ -266,7 +286,7 @@ export function SalesPosPanel({
   students,
 }: {
   actor: { id: string; isAdmin: boolean; name: string };
-  currentPeriod: { month: number; year: number };
+  currentPeriod: { dateKey: string; month: number; year: number };
   products: ProductRow[];
   recentSales: SaleRow[];
   students: StudentOption[];
@@ -275,10 +295,11 @@ export function SalesPosPanel({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [isProductFormOpen, setIsProductFormOpen] = useState(false);
-  const [studentSearch, setStudentSearch] = useState("");
+  const [buyerQuery, setBuyerQuery] = useState("Venda livre");
+  const [isBuyerMenuOpen, setIsBuyerMenuOpen] = useState(false);
   const [studentProfileId, setStudentProfileId] = useState("");
-  const [buyerName, setBuyerName] = useState("");
   const [settlementType, setSettlementType] = useState<SettlementType>("PAID_NOW");
+  const [invoiceDueDate, setInvoiceDueDate] = useState(currentPeriod.dateKey);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("PIX");
   const [unit, setUnit] = useState<FinancialUnit>("IVATE");
   const [note, setNote] = useState("");
@@ -297,14 +318,33 @@ export function SalesPosPanel({
     return products.filter((product) => product.isActive && (!search || product.name.toLocaleLowerCase("pt-BR").includes(search)));
   }, [productSearch, products]);
   const filteredStudents = useMemo(() => {
-    const search = studentSearch.trim().toLocaleLowerCase("pt-BR");
+    const search = buyerQuery.trim() === "Venda livre"
+      ? ""
+      : buyerQuery.trim().toLocaleLowerCase("pt-BR");
     return students.filter((student) => !search || `${student.name} ${student.email}`.toLocaleLowerCase("pt-BR").includes(search));
-  }, [studentSearch, students]);
+  }, [buyerQuery, students]);
   const selectedStudent = students.find((student) => student.id === studentProfileId) ?? null;
   const cartTotal = cart.reduce((total, item) => total + item.salePriceCents * item.quantity, 0);
   const stockUnits = products.reduce((total, product) => total + (product.isActive ? product.stockQuantity : 0), 0);
-  const invoiceReady = settlementType !== "MONTHLY_INVOICE" || Boolean(selectedStudent?.canInvoice);
-  const buyerReady = Boolean(selectedStudent || buyerName.trim());
+  const invoiceDateMin = getMonthDateBoundary(currentPeriod, "first");
+  const invoiceDateMax = getMonthDateBoundary(currentPeriod, "last");
+  const invoiceDateReady = invoiceDueDate >= invoiceDateMin && invoiceDueDate <= invoiceDateMax;
+  const invoiceReady = settlementType !== "MONTHLY_INVOICE" || Boolean(selectedStudent?.canInvoice && invoiceDateReady);
+  const buyerReady = Boolean(selectedStudent || buyerQuery.trim());
+
+  function selectBuyerStudent(student: StudentOption) {
+    setStudentProfileId(student.id);
+    setBuyerQuery(studentBuyerLabel(student));
+    setUnit(student.unit);
+    setIsBuyerMenuOpen(false);
+  }
+
+  function selectFreeSale() {
+    setStudentProfileId("");
+    setBuyerQuery("Venda livre");
+    setSettlementType("PAID_NOW");
+    setIsBuyerMenuOpen(false);
+  }
 
   function addToCart(product: ProductRow) {
     if (!product.isActive || product.stockQuantity < 1) return;
@@ -347,7 +387,8 @@ export function SalesPosPanel({
     setCheckoutMessage(null);
     startCheckoutTransition(async () => {
       const result = await createSale({
-        buyerName,
+        buyerName: selectedStudent ? "" : buyerQuery,
+        invoiceDueDate: settlementType === "MONTHLY_INVOICE" ? invoiceDueDate : null,
         items: cart.map((item) => ({
           expectedSalePriceCents: item.salePriceCents,
           expectedUpdatedAt: item.updatedAt,
@@ -364,7 +405,8 @@ export function SalesPosPanel({
       setCheckoutMessage(result.message);
       if (result.ok) {
         setCart([]);
-        setBuyerName("");
+        setBuyerQuery("Venda livre");
+        setStudentProfileId("");
         setNote("");
         setOperationId(crypto.randomUUID());
         router.refresh();
@@ -458,8 +500,8 @@ export function SalesPosPanel({
           </div>
         </section>
 
-        <aside className="overflow-hidden rounded-lg border border-primary/18 bg-white shadow-[0_22px_54px_rgba(65,42,76,0.12)] xl:sticky xl:top-5">
-          <div className="flex items-center justify-between gap-3 bg-primary p-4 text-white">
+        <aside className="rounded-lg border border-primary/18 bg-white shadow-[0_22px_54px_rgba(65,42,76,0.12)] xl:sticky xl:top-5">
+          <div className="flex items-center justify-between gap-3 rounded-t-[7px] bg-primary p-4 text-white">
             <span className="inline-flex items-center gap-2 font-extrabold"><ShoppingCart aria-hidden="true" className="size-5" />Carrinho</span>
             <span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold ring-1 ring-white/20">{cart.reduce((total, item) => total + item.quantity, 0)} item(ns)</span>
           </div>
@@ -474,14 +516,76 @@ export function SalesPosPanel({
           </div>
           <div className="grid gap-3 border-t border-primary/10 p-4">
             <div className="flex items-center justify-between gap-3"><span className="text-sm font-bold text-primary">Total</span><strong className="mr-20 text-2xl tabular-nums text-primary sm:mr-0">{formatCurrency(cartTotal)}</strong></div>
-            <label className="grid gap-1 text-xs font-bold text-primary"><span className="inline-flex items-center gap-1.5"><Search className="size-3.5" />Buscar aluno</span><Input value={studentSearch} onChange={(event) => setStudentSearch(event.target.value)} placeholder="Nome ou email" /></label>
-            <label className="grid gap-1 text-xs font-bold text-primary"><span className="inline-flex items-center gap-1.5"><UserRound className="size-3.5" />Quem vai comprar</span><NativeSelect value={studentProfileId} onChange={(event) => { setStudentProfileId(event.target.value); if (event.target.value) setBuyerName(""); }}><option value="">Outro comprador</option>{filteredStudents.map((student) => <option key={student.id} value={student.id}>{student.name} - {student.canInvoice ? "fatura ativa" : "sem fatura"}</option>)}</NativeSelect></label>
-            {!selectedStudent ? <label className="grid gap-1 text-xs font-bold text-primary">Nome do comprador<Input value={buyerName} onChange={(event) => setBuyerName(event.target.value)} placeholder="Digite o nome" /></label> : <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-2.5 text-xs"><strong className="block text-cyan-950">{selectedStudent.name}</strong><span className="text-cyan-800">{formatUnit(selectedStudent.unit)} · {selectedStudent.canInvoice ? "Fatura ativa" : "Sem fatura ativa"}</span></div>}
+            <div
+              className="relative grid gap-1 text-xs font-bold text-primary"
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                  setIsBuyerMenuOpen(false);
+                }
+              }}
+            >
+              <label className="grid gap-1" htmlFor="sale-buyer-search">
+                <span className="inline-flex items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5"><UserRound className="size-3.5" />Quem vai comprar</span>
+                  <span className="font-semibold text-primary/55">{students.length} aluno(s)</span>
+                </span>
+                <Input
+                  aria-autocomplete="list"
+                  aria-controls="sale-buyer-options"
+                  aria-expanded={isBuyerMenuOpen}
+                  autoComplete="off"
+                  id="sale-buyer-search"
+                  onChange={(event) => {
+                    setBuyerQuery(event.target.value);
+                    setStudentProfileId("");
+                    setSettlementType("PAID_NOW");
+                    setIsBuyerMenuOpen(true);
+                  }}
+                  onFocus={(event) => {
+                    if (buyerQuery === "Venda livre") event.currentTarget.select();
+                    setIsBuyerMenuOpen(true);
+                  }}
+                  placeholder="Venda livre ou busque nome/email"
+                  role="combobox"
+                  value={buyerQuery}
+                />
+              </label>
+              {isBuyerMenuOpen ? (
+                <div className="absolute inset-x-0 top-full z-30 mt-1 max-h-64 overflow-y-auto rounded-lg border border-primary/15 bg-white p-1.5 shadow-xl" id="sale-buyer-options" role="listbox">
+                  <button aria-selected={!selectedStudent} className="flex w-full items-center gap-2 rounded-md border border-violet-200 bg-violet-50 px-2.5 py-2 text-left text-violet-950 transition hover:bg-violet-100" onClick={selectFreeSale} role="option" type="button">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-md bg-violet-600 text-white"><ShoppingBag aria-hidden="true" className="size-4" /></span>
+                    <span className="min-w-0"><strong className="block">Venda livre</strong><span className="block truncate text-[0.68rem] font-medium text-violet-700">Digite qualquer nome ou descricao neste mesmo campo.</span></span>
+                  </button>
+                  <div className="my-1.5 border-t border-primary/10" />
+                  {filteredStudents.map((student) => (
+                    <button aria-selected={student.id === studentProfileId} className="flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left transition hover:bg-cyan-50" key={student.id} onClick={() => selectBuyerStudent(student)} role="option" type="button">
+                      <span className="min-w-0"><strong className="block truncate text-primary">{student.name}</strong><span className="block truncate text-[0.68rem] font-medium text-muted-foreground">{student.email}</span></span>
+                      <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[0.62rem] font-extrabold", student.unit === "IVATE" ? "border-cyan-200 bg-cyan-50 text-cyan-800" : "border-rose-200 bg-rose-50 text-rose-800")}>{student.unit === "IVATE" ? "Polo 1" : "Polo 2"}</span>
+                    </button>
+                  ))}
+                  {filteredStudents.length === 0 ? <p className="px-2.5 py-3 text-center text-xs font-medium text-muted-foreground">Nenhum aluno encontrado. O texto digitado sera usado como venda livre.</p> : null}
+                </div>
+              ) : null}
+            </div>
+            {selectedStudent ? (
+              <div className={cn("rounded-lg border p-2.5 text-xs", selectedStudent.unit === "IVATE" ? "border-cyan-200 bg-cyan-50" : "border-rose-200 bg-rose-50")}>
+                <span className="inline-flex items-center gap-1.5 font-extrabold text-primary"><MapPin aria-hidden="true" className="size-3.5" />Polo automatico: {formatUnit(selectedStudent.unit)}</span>
+                <span className="mt-1 block text-primary/70">{selectedStudent.canInvoice ? "Fatura mensal ativa" : "Sem fatura mensal ativa"}</span>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-violet-200 bg-violet-50 p-2.5 text-xs text-violet-900">
+                <strong className="block">Venda livre</strong>
+                <span>O texto digitado identifica o comprador sem vincular um aluno.</span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2" role="group" aria-label="Forma de acerto"><button type="button" onClick={() => setSettlementType("PAID_NOW")} className={cn("min-h-12 rounded-lg border px-2 text-xs font-extrabold transition", settlementType === "PAID_NOW" ? "border-emerald-500 bg-emerald-600 text-white shadow-md" : "border-primary/15 bg-white text-primary")}><CreditCard className="mx-auto mb-1 size-4" />Pago na hora</button><button type="button" onClick={() => setSettlementType("MONTHLY_INVOICE")} className={cn("min-h-12 rounded-lg border px-2 text-xs font-extrabold transition", settlementType === "MONTHLY_INVOICE" ? "border-amber-500 bg-amber-500 text-amber-950 shadow-md" : "border-primary/15 bg-white text-primary")}><ReceiptText className="mx-auto mb-1 size-4" />Fatura do mes</button></div>
             {settlementType === "PAID_NOW" ? <label className="grid gap-1 text-xs font-bold text-primary">Como foi pago<NativeSelect value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}>{SALE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{paymentMethodLabels[method]}</option>)}</NativeSelect></label> : null}
-            {!selectedStudent ? <label className="grid gap-1 text-xs font-bold text-primary">Polo<NativeSelect value={unit} onChange={(event) => setUnit(event.target.value as FinancialUnit)}><option value="IVATE">Polo 1 - Ivate</option><option value="DOURADINA">Polo 2 - Douradina</option></NativeSelect></label> : null}
+            {settlementType === "MONTHLY_INVOICE" ? <label className="grid gap-1 text-xs font-bold text-primary"><span className="inline-flex items-center gap-1.5"><CalendarDays aria-hidden="true" className="size-3.5" />Data na fatura</span><Input max={invoiceDateMax} min={invoiceDateMin} onChange={(event) => setInvoiceDueDate(event.target.value)} type="date" value={invoiceDueDate} /><span className="font-medium text-primary/55">Escolha o dia combinado dentro da fatura de {monthLabels[currentPeriod.month]}.</span></label> : null}
+            {!selectedStudent ? <label className="grid gap-1 text-xs font-bold text-primary">Polo da venda livre<NativeSelect value={unit} onChange={(event) => setUnit(event.target.value as FinancialUnit)}><option value="IVATE">Polo 1 - Ivate</option><option value="DOURADINA">Polo 2 - Douradina</option></NativeSelect></label> : null}
             <label className="grid gap-1 text-xs font-bold text-primary">Observacao opcional<Textarea className="min-h-16" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Detalhe da venda" /></label>
-            {!invoiceReady ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Este aluno precisa de mensalidade ativa e em aberto em {monthLabels[currentPeriod.month]} para usar a fatura.</p> : null}
+            {settlementType === "MONTHLY_INVOICE" && !selectedStudent ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Selecione um aluno cadastrado para lançar na fatura.</p> : null}
+            {settlementType === "MONTHLY_INVOICE" && selectedStudent && !selectedStudent.canInvoice ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Este aluno precisa de mensalidade ativa e em aberto em {monthLabels[currentPeriod.month]} para usar a fatura.</p> : null}
+            {settlementType === "MONTHLY_INVOICE" && !invoiceDateReady ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Escolha uma data dentro do mes financeiro atual.</p> : null}
             {checkoutMessage ? <p className="rounded-lg border border-primary/15 bg-primary/[0.05] px-3 py-2 text-xs font-semibold text-primary">{checkoutMessage}</p> : null}
             <Button className="h-12" disabled={isCheckoutPending || cart.length === 0 || !buyerReady || !invoiceReady} onClick={submitCheckout} type="button"><BadgeDollarSign aria-hidden="true" />{isCheckoutPending ? "Finalizando..." : settlementType === "MONTHLY_INVOICE" ? "Adicionar a fatura" : "Finalizar venda"}</Button>
           </div>

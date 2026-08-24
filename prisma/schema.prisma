@@ -746,6 +746,7 @@ model Sale {
   paymentMethod         String?
   invoiceYear           Int?
   invoiceMonth          Int?
+  invoiceDueDate        DateTime?           @db.Date
   totalCents            Int
   costTotalCents        Int
   note                  String?

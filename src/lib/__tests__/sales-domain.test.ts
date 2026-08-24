@@ -3,9 +3,11 @@ import test from "node:test";
 import {
   areSaleAmountsDatabaseSafe,
   calculateSaleTotals,
+  getSaoPauloDateKey,
   getSaoPauloYearMonth,
   isMonthlyInvoiceOpen,
   normalizeSaleProductName,
+  parseSaleInvoiceDate,
 } from "../sales-domain";
 
 test("normalizes product names for duplicate detection", () => {
@@ -13,15 +15,25 @@ test("normalizes product names for duplicate detection", () => {
 });
 
 test("uses Sao Paulo time when selecting the monthly invoice", () => {
-  const beforeMidnight = getSaoPauloYearMonth(
-    new Date("2026-09-01T02:30:00.000Z"),
-  );
-  const afterMidnight = getSaoPauloYearMonth(
-    new Date("2026-09-01T03:30:00.000Z"),
-  );
+  const beforeMidnightDate = new Date("2026-09-01T02:30:00.000Z");
+  const afterMidnightDate = new Date("2026-09-01T03:30:00.000Z");
+  const beforeMidnight = getSaoPauloYearMonth(beforeMidnightDate);
+  const afterMidnight = getSaoPauloYearMonth(afterMidnightDate);
 
   assert.deepEqual(beforeMidnight, { month: 8, year: 2026 });
   assert.deepEqual(afterMidnight, { month: 9, year: 2026 });
+  assert.equal(getSaoPauloDateKey(beforeMidnightDate), "2026-08-31");
+  assert.equal(getSaoPauloDateKey(afterMidnightDate), "2026-09-01");
+});
+
+test("parses only real calendar dates for an invoice", () => {
+  const parsed = parseSaleInvoiceDate("2026-08-29");
+
+  assert.deepEqual(
+    parsed && { day: parsed.day, month: parsed.month, year: parsed.year },
+    { day: 29, month: 8, year: 2026 },
+  );
+  assert.equal(parseSaleInvoiceDate("2026-02-30"), null);
 });
 
 test("calculates revenue and frozen cost totals from sale items", () => {

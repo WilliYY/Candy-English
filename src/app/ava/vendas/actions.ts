@@ -11,6 +11,7 @@ import {
   getSaoPauloYearMonth,
   isMonthlyInvoiceOpen,
   normalizeSaleProductName,
+  parseSaleInvoiceDate,
 } from "@/lib/sales-domain";
 import {
   saleCancelSchema,
@@ -244,10 +245,29 @@ export async function createSale(
   }
 
   const prisma = getPrisma();
-  const invoicePeriod =
+  const invoiceDate =
     parsed.data.settlementType === "MONTHLY_INVOICE"
-      ? getSaoPauloYearMonth()
+      ? parseSaleInvoiceDate(parsed.data.invoiceDueDate ?? "")
       : null;
+  const currentPeriod = getSaoPauloYearMonth();
+  const invoicePeriod = invoiceDate
+    ? { month: invoiceDate.month, year: invoiceDate.year }
+    : null;
+
+  if (
+    parsed.data.settlementType === "MONTHLY_INVOICE" &&
+    (!invoiceDate ||
+      invoiceDate.month !== currentPeriod.month ||
+      invoiceDate.year !== currentPeriod.year)
+  ) {
+    return {
+      errors: {
+        invoiceDueDate: "Escolha um dia dentro da fatura do mes atual.",
+      },
+      message: "A data precisa pertencer ao mes financeiro atual.",
+      ok: false,
+    };
+  }
   let student:
     | {
         financialStudent: {
@@ -465,6 +485,7 @@ export async function createSale(
           financialPaymentId: lockedInvoicePayment?.id ?? null,
           financialStudentId: student?.financialStudent?.id ?? null,
           invoiceMonth: invoicePeriod?.month ?? null,
+          invoiceDueDate: invoiceDate?.date ?? null,
           invoiceYear: invoicePeriod?.year ?? null,
           items: {
             create: saleItems.map((item) => ({

@@ -23,10 +23,12 @@ Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao
 
 O cadastro de produto abre em um painel expansivel dentro do fluxo da pagina. O formulario ocupa a largura disponivel, empilha os campos no mobile e nao usa sobreposicao absoluta, evitando que nome, custo, valor de venda, estoque ou botao de salvar sejam cortados pelo card do catalogo.
 
+O carrinho usa um unico campo de comprador. `Venda livre` aparece primeiro e aceita qualquer nome ou descricao digitada; abaixo ficam todos os alunos que a role logada pode acessar, filtrados no mesmo campo por nome ou email. Ao escolher um aluno, o polo vem automaticamente do `StudentProfile`; em venda livre, a equipe escolhe o polo manualmente.
+
 ## Dados
 
 - `SaleProduct` guarda nome normalizado unico, custo, preco, estoque, estado e auditoria de criacao/edicao.
-- `Sale` guarda comprador, snapshots, liquidacao, forma de pagamento, competencia, totais, operador e cancelamento.
+- `Sale` guarda comprador, snapshots, liquidacao, forma de pagamento, competencia, data combinada da fatura, totais, operador e cancelamento.
 - `SaleItem` preserva nome, custo e preco usados no momento da venda, mesmo que o produto seja editado depois.
 
 Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros nao negativos.
@@ -34,7 +36,7 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 ## Regras do checkout
 
 - `PAID_NOW` exige forma de pagamento e aceita aluno cadastrado ou nome avulso.
-- `MONTHLY_INVOICE` exige `StudentProfile` ativo, mensalidade ativa ainda nao paga e grava a competencia no fuso `America/Sao_Paulo`.
+- `MONTHLY_INVOICE` exige `StudentProfile` ativo, mensalidade ativa ainda nao paga e uma `invoiceDueDate` dentro da competencia atual no fuso `America/Sao_Paulo`.
 - Nome digitado livremente nunca cria divida mensal, pois nao existe identidade confiavel para cobrar depois.
 - Produto inativo, preco alterado ou estoque insuficiente interrompe toda a venda.
 - O cliente envia `expectedUpdatedAt` e `expectedSalePriceCents`; preco, estado, permissao e estoque sao relidos no servidor. Se a versao mudou, o checkout para e pede revisao, sem cobrar valor diferente do exibido.
@@ -44,6 +46,8 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 ## Financeiro e fatura mensal
 
 A compra mensal e uma cobranca do ledger `Sale`, identificada por `invoiceYear` e `invoiceMonth` e vinculada ao `FinancialPayment` ativo da competencia. Ela nao modifica `FinancialPayment.snapshotAmountCents`, status ou historico da mensalidade escolar. O Financeiro apresenta mensalidade, produtos e total consolidado, mantendo as duas origens separadas.
+
+`invoiceDueDate` registra o dia combinado para cobrar a compra dentro da fatura atual. Escolher outro dia nao move nem recria a mensalidade: a venda continua ligada ao mesmo `FinancialPayment` do mes. Datas fora do mes financeiro corrente sao recusadas no servidor.
 
 Nao ha gateway nem cobranca online: a forma de pagamento informa apenas como a venda interna foi liquidada.
 

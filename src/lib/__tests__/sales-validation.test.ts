@@ -37,6 +37,7 @@ test("rejects products with negative stock", () => {
 test("requires a registered student for a monthly invoice", () => {
   const result = saleCheckoutSchema.safeParse({
     buyerName: "Aluno digitado",
+    invoiceDueDate: "2026-08-29",
     items: [checkoutItem],
     paymentMethod: null,
     settlementType: "MONTHLY_INVOICE",
@@ -44,6 +45,32 @@ test("requires a registered student for a monthly invoice", () => {
   });
 
   assert.equal(result.success, false);
+});
+
+test("requires a valid billing date for a monthly invoice", () => {
+  const result = saleCheckoutSchema.safeParse({
+    buyerName: "",
+    invoiceDueDate: "2026-02-30",
+    items: [checkoutItem],
+    paymentMethod: null,
+    settlementType: "MONTHLY_INVOICE",
+    studentProfileId: "student-1",
+  });
+
+  assert.equal(result.success, false);
+});
+
+test("accepts a registered student and billing date for a monthly invoice", () => {
+  const result = saleCheckoutSchema.safeParse({
+    buyerName: "",
+    invoiceDueDate: "2026-08-29",
+    items: [checkoutItem],
+    paymentMethod: null,
+    settlementType: "MONTHLY_INVOICE",
+    studentProfileId: "student-1",
+  });
+
+  assert.equal(result.success, true);
 });
 
 test("requires a payment method for an immediate sale", () => {

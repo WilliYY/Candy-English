@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseSaleInvoiceDate } from "@/lib/sales-domain";
 
 export const SALE_PAYMENT_METHODS = [
   "PIX",
@@ -41,6 +42,14 @@ const saleCheckoutItemSchema = z.object({
 export const saleCheckoutSchema = z
   .object({
     buyerName: z.string().trim().max(120).default(""),
+    invoiceDueDate: z
+      .string()
+      .trim()
+      .refine((value) => Boolean(parseSaleInvoiceDate(value)), {
+        message: "Informe uma data de fatura valida.",
+      })
+      .nullable()
+      .optional(),
     items: z.array(saleCheckoutItemSchema).min(1).max(50),
     note: optionalText,
     operationId: z.string().trim().min(8).max(100).optional(),
@@ -58,6 +67,17 @@ export const saleCheckoutSchema = z
         code: "custom",
         message: "Selecione um aluno cadastrado para adicionar a fatura.",
         path: ["studentProfileId"],
+      });
+    }
+
+    if (
+      value.settlementType === "MONTHLY_INVOICE" &&
+      !value.invoiceDueDate
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "Informe o dia em que a compra entra na fatura.",
+        path: ["invoiceDueDate"],
       });
     }
 
