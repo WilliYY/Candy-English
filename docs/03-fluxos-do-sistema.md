@@ -310,16 +310,17 @@ Helpers:
 1. Admin abre `/ava/admin?task=financeiro`.
 2. Seleciona um mes de 2026 no topo ou nos botoes de meses.
 3. Ve contadores de total previsto, recebido, pendentes, atrasados e quantidade de alunos ativos no mes.
-4. Adiciona aluno financeiro com nome, unidade (`Unidade 1 Ivaté` ou `Unidade 2 Douradina`), valor mensal, dia usual, forma padrao, telefone opcional, observacao opcional e quantidade opcional de parcelas.
-5. O aluno aparece em card visual; pago fica verde, atrasado fica vermelho e pendente fica amarelo/roxo.
-6. Admin pode buscar por nome/telefone e filtrar por pago, pendente, atrasado ou unidade.
-7. O botao rapido `Pago hoje` marca o mes como pago; `Desfazer` volta o mes para pendente.
-8. Ao clicar no card, abre o painel de historico do aluno com dados fixos, unidade, meses/parcelas, status, valor, data paga, forma e observacao.
-9. No historico, admin pode marcar/desfazer pagamento, alterar valor daquele mes, data paga e observacao sem recalcular meses anteriores.
-10. Em dados fixos, admin pode editar nome, unidade, valor padrao, dia, forma, parcelas e contato a partir do mes selecionado em diante.
-11. Admin pode inativar somente o mes selecionado ou encerrar o aluno a partir daquele mes, sempre preservando historico antigo.
-12. Exporta PDF/Excel com a unidade de cada aluno e acompanha log em card separado.
-13. Na aba `Pagamentos`, admin registra gastos internos da loja com unidade, insumo, data, valor e quem fez a compra; esses registros sao separados dos alunos financeiros.
+4. Para um aluno que ja usa o AVA, Admin pesquisa todos os `StudentProfile` de Ivaté e Douradina, seleciona o aluno e completa valor mensal, dia usual, forma padrao, observacao e parcelas opcionais.
+5. Para um aluno novo, `Criar novo aluno` sugere email/login `nome.sobrenome@candy.local` e senha inicial editavel. Ao confirmar, a action cria `User STUDENT`, `StudentProfile`, `FinancialStudent` e os snapshots mensais na mesma transaction; a senha aparece somente no cliente depois do sucesso e o banco recebe apenas o hash.
+6. O aluno aparece na planilha do polo; pago fica verde, atrasado fica vermelho e pendente fica amarelo.
+7. Admin pode buscar por nome/telefone e filtrar por pago, pendente, atrasado ou unidade.
+8. O botao rapido `Pago hoje` marca o mes como pago; `Desfazer` volta o mes para pendente.
+9. Ao clicar na linha, abre o painel de historico do aluno com dados fixos, unidade, meses/parcelas, status, valor, data paga, forma e observacao.
+10. No historico, admin pode marcar/desfazer pagamento, alterar valor daquele mes, data paga e observacao sem recalcular meses anteriores.
+11. Em dados fixos, admin pode editar nome, unidade, valor padrao, dia, forma, parcelas e contato a partir do mes selecionado em diante.
+12. Admin pode inativar somente o mes selecionado ou encerrar o aluno a partir daquele mes, sempre preservando historico antigo.
+13. Exporta PDF/Excel com a unidade de cada aluno e acompanha log em card separado.
+14. Na aba `Pagamentos`, admin registra gastos internos da loja com unidade, insumo, data, valor e quem fez a compra; esses registros sao separados dos alunos financeiros.
 
 ### Secretaria
 

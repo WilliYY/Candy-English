@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-08-24 - Financeiro cria novo aluno com acesso real ao AVA
+
+- Decisao: manter a selecao de alunos existentes dos dois polos e transformar o antigo cadastro manual em `Criar novo aluno`, que exige login e senha inicial e cria `User STUDENT`, `StudentProfile`, `FinancialStudent` e snapshots mensais na mesma transaction. A planilha ganha largura ampliada, filtros de situacao com contadores e formulario recolhido por padrao.
+- Motivo: permitir cadastrar um aluno uma unica vez pelo Financeiro e, ao mesmo tempo, facilitar a leitura diaria de quem pagou, esta pendente ou atrasado.
+- Impacto: `src/lib/finance-student-access.ts`, `src/lib/validations/admin-users.ts`, `src/app/ava/admin/actions.ts`, `src/components/ava/admin-finance-panel.tsx`, `src/components/ava/admin-users-panel.tsx`, testes e docs oficiais.
+- Riscos/cuidados: apenas Admin acessa o fluxo; login deve ser unico, a senha pura nao pode ser persistida nem retornada pelo servidor, e qualquer falha precisa reverter usuario, perfil e financeiro juntos.
+
 ### 2026-07-14 - Shell lateral somente depois da escolha de area
 
 - Decisao: manter `/ava/layout.tsx` leve e mover a sidebar completa para `AvaWorkspaceShell`, usado apenas por `/ava/admin`, `/ava/teacher`, `/ava/student` e `/ava/secretaria` com modo `AVA`, `SECRETARIA` ou `STUDENT`.

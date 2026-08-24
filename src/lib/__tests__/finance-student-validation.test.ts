@@ -7,6 +7,7 @@ const validFinancialStudent = {
   amount: "300,00",
   cpf: "",
   email: "aluno@candy.local",
+  initialPassword: "alunocandy",
   installmentsTotal: "",
   month: 8,
   name: "Aluno Candy",
@@ -22,6 +23,7 @@ const validFinancialStudent = {
 test("keeps the selected AVA student link in a financial registration", () => {
   const result = adminFinanceStudentCreateSchema.safeParse({
     ...validFinancialStudent,
+    initialPassword: "",
     studentProfileId: "student-profile-1",
   });
 
@@ -32,10 +34,9 @@ test("keeps the selected AVA student link in a financial registration", () => {
   }
 });
 
-test("allows a manual financial registration without an AVA student", () => {
+test("creates a new AVA login when no student profile is selected", () => {
   const result = adminFinanceStudentCreateSchema.safeParse({
     ...validFinancialStudent,
-    email: "",
     studentProfileId: "",
   });
 
@@ -43,5 +44,24 @@ test("allows a manual financial registration without an AVA student", () => {
 
   if (result.success) {
     assert.equal(result.data.studentProfileId, undefined);
+    assert.equal(result.data.email, "aluno@candy.local");
+    assert.equal(result.data.initialPassword, "alunocandy");
+  }
+});
+
+test("requires a login and initial password for a new student", () => {
+  const result = adminFinanceStudentCreateSchema.safeParse({
+    ...validFinancialStudent,
+    email: "",
+    initialPassword: "curta",
+    studentProfileId: "",
+  });
+
+  assert.equal(result.success, false);
+
+  if (!result.success) {
+    const paths = result.error.issues.map((issue) => issue.path[0]);
+    assert.ok(paths.includes("email"));
+    assert.ok(paths.includes("initialPassword"));
   }
 });

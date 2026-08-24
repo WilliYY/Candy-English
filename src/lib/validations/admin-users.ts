@@ -380,13 +380,40 @@ export const adminMaintenanceSchema = z.object({
   enabled: z.boolean(),
 });
 
-export const adminFinanceStudentCreateSchema = financialStudentBaseSchema.extend({
-  month: financeMonthSchema,
-  note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
-  paidAt: optionalDateSchema,
-  studentProfileId: optionalText(128, "Selecione um aluno valido do AVA."),
-  year: year2026Schema,
-});
+export const adminFinanceStudentCreateSchema = financialStudentBaseSchema
+  .extend({
+    initialPassword: z
+      .string()
+      .max(120, "A senha inicial pode ter no maximo 120 caracteres.")
+      .optional()
+      .transform((value) => (value ? value : undefined)),
+    month: financeMonthSchema,
+    note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
+    paidAt: optionalDateSchema,
+    studentProfileId: optionalText(128, "Selecione um aluno valido do AVA."),
+    year: year2026Schema,
+  })
+  .superRefine((data, ctx) => {
+    if (data.studentProfileId) {
+      return;
+    }
+
+    if (!data.email) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Confirme o email/login do novo aluno.",
+        path: ["email"],
+      });
+    }
+
+    if (!data.initialPassword || data.initialPassword.length < 8) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A senha inicial precisa ter pelo menos 8 caracteres.",
+        path: ["initialPassword"],
+      });
+    }
+  });
 
 export const adminFinanceStudentUpdateSchema = financialStudentBaseSchema.extend({
   month: financeMonthSchema,

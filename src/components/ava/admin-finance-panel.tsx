@@ -13,6 +13,8 @@ import {
   CircleDollarSign,
   Clock3,
   Download,
+  Eye,
+  EyeOff,
   FileSpreadsheet,
   FileText,
   History,
@@ -30,6 +32,7 @@ import {
   SlidersHorizontal,
   TrendingUp,
   Trash2,
+  UserPlus,
   UserRound,
   WalletCards,
 } from "lucide-react";
@@ -64,6 +67,7 @@ import {
   type AdminFinanceStudentDeleteInput,
   type AdminFinanceStudentUpdateInput,
 } from "@/lib/validations/admin-users";
+import { suggestStudentAccess } from "@/lib/finance-student-access";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -394,6 +398,7 @@ const createDefaultValues = (
   amount: "",
   cpf: "",
   email: "",
+  initialPassword: "",
   installmentsTotal: "",
   month,
   name: "",
@@ -1836,6 +1841,11 @@ export function AdminFinancePanel({
   const [expenseUnitFilter, setExpenseUnitFilter] =
     useState<UnitFilter>(initialPanelUnitFilter);
   const [message, setMessage] = useState<string | null>(null);
+  const [createdAccess, setCreatedAccess] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
+  const [showInitialPassword, setShowInitialPassword] = useState(true);
   const [expenseMessage, setExpenseMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isExpensePending, startExpenseTransition] = useTransition();
@@ -2031,6 +2041,28 @@ export function AdminFinancePanel({
     });
   }, [searchTerm, statusFilter, unitMonthRows]);
 
+  const financeStatusCounts = useMemo(
+    () =>
+      unitMonthRows.reduce(
+        (counts, row) => {
+          counts.ALL += 1;
+          counts[row.status] += 1;
+          return counts;
+        },
+        {
+          ALL: 0,
+          incomplete: 0,
+          overdue: 0,
+          paid: 0,
+          pending: 0,
+        } satisfies Record<
+          "ALL" | Exclude<FinanceStatus, "inactive">,
+          number
+        >,
+      ),
+    [unitMonthRows],
+  );
+
   const visibleUnitGroups = useMemo(
     () =>
       FINANCIAL_UNITS.filter(
@@ -2068,6 +2100,7 @@ export function AdminFinancePanel({
     }
 
     setMessage(null);
+    setCreatedAccess(null);
     form.setValue("studentProfileId", student.id, {
       shouldDirty: true,
       shouldValidate: true,
@@ -2075,20 +2108,45 @@ export function AdminFinancePanel({
     form.setValue("name", student.name, { shouldDirty: true });
     form.setValue("email", student.email, { shouldDirty: true });
     form.setValue("phone", student.phone ?? "", { shouldDirty: true });
+    form.setValue("initialPassword", "", { shouldDirty: true });
     form.setValue("unit", student.unit, { shouldDirty: true });
   }
 
   function useManualFinancialRegistration() {
     setMessage(null);
+    setCreatedAccess(null);
     form.setValue("studentProfileId", "", { shouldDirty: true });
     form.setValue("name", "", { shouldDirty: true });
     form.setValue("email", "", { shouldDirty: true });
     form.setValue("phone", "", { shouldDirty: true });
+    form.setValue("initialPassword", "", { shouldDirty: true });
     form.setValue(
       "unit",
       unitFilter === "ALL" ? "IVATE" : unitFilter,
       { shouldDirty: true },
     );
+  }
+
+  function fillSuggestedStudentAccess() {
+    const name = form.getValues("name");
+
+    if (!name.trim()) {
+      form.setError("name", {
+        message: "Informe o nome para gerar o acesso.",
+      });
+      return;
+    }
+
+    const suggestion = suggestStudentAccess(name);
+    form.clearErrors("name");
+    form.setValue("email", suggestion.email, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("initialPassword", suggestion.password, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
   }
 
   function handleMonthChange(month: number) {
@@ -2106,6 +2164,7 @@ export function AdminFinancePanel({
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
+    setCreatedAccess(null);
 
     startTransition(async () => {
       const result = await createFinancialStudent({
@@ -2127,6 +2186,13 @@ export function AdminFinancePanel({
 
         setMessage(result.message);
         return;
+      }
+
+      if (!values.studentProfileId && values.email && values.initialPassword) {
+        setCreatedAccess({
+          email: values.email,
+          password: values.initialPassword,
+        });
       }
 
       form.reset({
@@ -2452,7 +2518,7 @@ export function AdminFinancePanel({
         className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.09)]"
         noValidate
       >
-        <details className="group" open>
+        <details className="group">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-white via-[#fff7fb] to-[#fce5d8]/65 p-4 [&::-webkit-details-marker]:hidden">
             <span className="flex min-w-0 items-center gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -2460,10 +2526,10 @@ export function AdminFinancePanel({
               </span>
               <span className="min-w-0">
                 <strong className="block text-base text-primary">
-                  Adicionar aluno ao financeiro
+                  Adicionar ou criar aluno
                 </strong>
                 <span className="mt-1 block text-sm text-muted-foreground">
-                  Escolha um aluno de Ivaté ou Douradina e complete a mensalidade.
+                  Vincule quem ja usa o AVA ou crie um novo acesso com financeiro.
                 </span>
               </span>
             </span>
@@ -2497,8 +2563,8 @@ export function AdminFinancePanel({
                 onClick={useManualFinancialRegistration}
                 disabled={isPending}
               >
-                <Pencil data-icon="inline-start" />
-                Cadastro manual
+                <UserPlus data-icon="inline-start" />
+                Criar novo aluno
               </Button>
             </div>
 
@@ -2545,7 +2611,7 @@ export function AdminFinancePanel({
                 <span className="min-w-0">
                   <strong className="block truncate">{selectedAvaStudent.name}</strong>
                   <span className="block truncate text-xs text-emerald-800">
-                    Selecionado em {formatFinancialUnitWithPolo(selectedAvaStudent.unit)}. Complete valor, vencimento e forma abaixo.
+                    Login existente em {formatFinancialUnitWithPolo(selectedAvaStudent.unit)}. Nenhuma nova senha sera criada.
                   </span>
                 </span>
                 <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black uppercase">
@@ -2637,6 +2703,93 @@ export function AdminFinancePanel({
               ))}
             </div>
           </section>
+
+          {!selectedAvaStudent ? (
+            <section className="rounded-lg border border-sky-200 bg-gradient-to-r from-sky-50 via-white to-violet-50 p-4 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span className="min-w-0">
+                  <span className="text-[11px] font-black uppercase tracking-[0.14em] text-sky-700">
+                    Acesso real ao AVA
+                  </span>
+                  <strong className="mt-1 block text-base text-primary">
+                    Login do novo aluno
+                  </strong>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    O sistema cria User STUDENT, perfil e financeiro juntos. O email pode ser ficticio e editavel.
+                  </span>
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 shrink-0 border-sky-200 bg-white text-sky-900"
+                  onClick={fillSuggestedStudentAccess}
+                  disabled={isPending}
+                >
+                  <UserPlus data-icon="inline-start" />
+                  Gerar acesso
+                </Button>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <Field data-invalid={Boolean(form.formState.errors.email)}>
+                  <FieldLabel htmlFor="finance-new-student-email">
+                    Email/login
+                  </FieldLabel>
+                  <Input
+                    id="finance-new-student-email"
+                    type="email"
+                    className="h-11 border-sky-200 bg-white font-semibold shadow-sm"
+                    aria-invalid={Boolean(form.formState.errors.email)}
+                    disabled={isPending}
+                    placeholder="nome.sobrenome@candy.local"
+                    {...form.register("email")}
+                  />
+                  <FieldError errors={[form.formState.errors.email]} />
+                </Field>
+                <Field
+                  data-invalid={Boolean(form.formState.errors.initialPassword)}
+                >
+                  <FieldLabel htmlFor="finance-new-student-password">
+                    Senha inicial
+                  </FieldLabel>
+                  <div className="relative">
+                    <Input
+                      id="finance-new-student-password"
+                      type={showInitialPassword ? "text" : "password"}
+                      className="h-11 border-sky-200 bg-white pr-11 font-mono shadow-sm"
+                      aria-invalid={Boolean(
+                        form.formState.errors.initialPassword,
+                      )}
+                      autoComplete="new-password"
+                      disabled={isPending}
+                      placeholder="Minimo de 8 caracteres"
+                      {...form.register("initialPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowInitialPassword((current) => !current)}
+                      className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-primary/60 transition-colors hover:bg-primary/[0.06] hover:text-primary"
+                      aria-label={
+                        showInitialPassword ? "Ocultar senha" : "Mostrar senha"
+                      }
+                      title={
+                        showInitialPassword ? "Ocultar senha" : "Mostrar senha"
+                      }
+                    >
+                      {showInitialPassword ? (
+                        <EyeOff aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Eye aria-hidden="true" className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  <FieldError
+                    errors={[form.formState.errors.initialPassword]}
+                  />
+                </Field>
+              </div>
+            </section>
+          ) : null}
+
           <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(150px,0.85fr)_minmax(120px,0.65fr)_90px_minmax(150px,0.8fr)_110px_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>
@@ -2646,7 +2799,17 @@ export function AdminFinancePanel({
                 aria-invalid={Boolean(form.formState.errors.name)}
                 disabled={isPending}
                 placeholder="Nome do aluno"
-                {...form.register("name")}
+                {...form.register("name", {
+                  onBlur: () => {
+                    if (
+                      !selectedAvaStudent &&
+                      !form.getValues("email") &&
+                      !form.getValues("initialPassword")
+                    ) {
+                      fillSuggestedStudentAccess();
+                    }
+                  },
+                })}
               />
               <FieldError errors={[form.formState.errors.name]} />
             </Field>
@@ -2742,7 +2905,7 @@ export function AdminFinancePanel({
               ) : (
                 <Plus data-icon="inline-start" />
               )}
-              Adicionar
+              {selectedAvaStudent ? "Adicionar" : "Criar aluno"}
             </Button>
           </div>
 
@@ -2767,17 +2930,19 @@ export function AdminFinancePanel({
                 />
                 <FieldError errors={[form.formState.errors.phone]} />
               </Field>
-              <Field data-invalid={Boolean(form.formState.errors.email)}>
-                <FieldLabel htmlFor="finance-email">Email</FieldLabel>
-                <Input
-                  id="finance-email"
-                  type="email"
-                  disabled={isPending}
-                  placeholder="email@exemplo.com"
-                  {...form.register("email")}
-                />
-                <FieldError errors={[form.formState.errors.email]} />
-              </Field>
+              {selectedAvaStudent ? (
+                <Field data-invalid={Boolean(form.formState.errors.email)}>
+                  <FieldLabel htmlFor="finance-email">Email</FieldLabel>
+                  <Input
+                    id="finance-email"
+                    type="email"
+                    disabled={isPending}
+                    placeholder="email@exemplo.com"
+                    {...form.register("email")}
+                  />
+                  <FieldError errors={[form.formState.errors.email]} />
+                </Field>
+              ) : null}
               <Field data-invalid={Boolean(form.formState.errors.cpf)}>
                 <FieldLabel htmlFor="finance-cpf">CPF</FieldLabel>
                 <Input
@@ -2831,6 +2996,43 @@ export function AdminFinancePanel({
           </details>
           </FieldGroup>
 
+          {createdAccess ? (
+            <div
+              className="mx-4 mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 sm:mx-5"
+              role="status"
+            >
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white">
+                  <CheckCircle2 aria-hidden="true" className="size-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <strong className="block">Aluno criado e pronto para entrar no AVA</strong>
+                  <span className="mt-1 block text-xs leading-5 text-emerald-800">
+                    Entregue estes dados ao aluno. A senha aparece somente agora e foi salva apenas como hash seguro.
+                  </span>
+                  <span className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <span className="rounded-md border border-emerald-200 bg-white px-3 py-2">
+                      <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                        Login
+                      </span>
+                      <strong className="mt-1 block break-all text-sm">
+                        {createdAccess.email}
+                      </strong>
+                    </span>
+                    <span className="rounded-md border border-emerald-200 bg-white px-3 py-2">
+                      <span className="block text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700">
+                        Senha inicial
+                      </span>
+                      <strong className="mt-1 block break-all font-mono text-sm">
+                        {createdAccess.password}
+                      </strong>
+                    </span>
+                  </span>
+                </span>
+              </div>
+            </div>
+          ) : null}
+
           {message ? (
             <p
               className="mx-4 mb-4 rounded-lg border bg-muted px-4 py-3 text-sm text-muted-foreground"
@@ -2857,7 +3059,7 @@ export function AdminFinancePanel({
               </span>
             </span>
           </span>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_160px] xl:min-w-[32rem]">
+            <div className="grid gap-2 sm:block xl:min-w-[28rem]">
               <label className="relative min-w-0">
               <Search
                 aria-hidden="true"
@@ -2875,7 +3077,7 @@ export function AdminFinancePanel({
               onChange={(event) =>
                 setStatusFilter(event.target.value as "ALL" | FinanceStatus)
               }
-              className="h-11 border-white/45 bg-white text-primary shadow-sm"
+              className="h-11 border-white/45 bg-white text-primary shadow-sm sm:hidden"
             >
               <option value="ALL">Todos</option>
               <option value="paid">Pagos</option>
@@ -2890,21 +3092,50 @@ export function AdminFinancePanel({
           className={cn(
             "grid gap-4 bg-gradient-to-br from-[#fbf7ff] via-white to-[#eef9ff] p-4 sm:p-5",
             selectedRow
-              ? "xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.64fr)]"
+              ? "2xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.5fr)]"
               : "grid-cols-1",
           )}
         >
           <div className="grid content-start gap-3">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/12 bg-white/78 p-3 text-xs font-semibold text-muted-foreground shadow-sm">
+            <div className="flex flex-col gap-3 rounded-lg border border-primary/12 bg-white/78 p-3 text-xs font-semibold text-muted-foreground shadow-sm lg:flex-row lg:items-center lg:justify-between">
               <span className="inline-flex items-center gap-1.5 text-primary">
                 <SlidersHorizontal aria-hidden="true" className="size-3.5" />
                 Mostrando {filteredRows.length} de {unitMonthRows.length}
               </span>
-              <span className="flex flex-wrap items-center gap-2">
-                <StatusPill status="paid" />
-                <StatusPill status="pending" />
-                <StatusPill status="overdue" />
-                <StatusPill status="incomplete" />
+              <span className="hidden gap-2 overflow-x-auto sm:flex" aria-label="Filtrar por situacao">
+                {(
+                  [
+                    ["ALL", "Todos"],
+                    ["paid", "Pagos"],
+                    ["pending", "Pendentes"],
+                    ["overdue", "Atrasados"],
+                    ["incomplete", "Completar"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setStatusFilter(value)}
+                    className={cn(
+                      "inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border px-3 font-bold transition-colors",
+                      statusFilter === value
+                        ? "border-primary bg-primary text-white shadow-sm"
+                        : "border-primary/12 bg-white text-primary hover:border-primary/35 hover:bg-primary/[0.04]",
+                    )}
+                  >
+                    {label}
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 py-0.5 text-[10px] tabular-nums",
+                        statusFilter === value
+                          ? "bg-white/16 text-white"
+                          : "bg-primary/[0.07] text-primary/70",
+                      )}
+                    >
+                      {financeStatusCounts[value]}
+                    </span>
+                  </button>
+                ))}
               </span>
             </div>
 
@@ -2924,7 +3155,7 @@ export function AdminFinancePanel({
           </div>
 
           {selectedRow ? (
-            <aside className="min-w-0 rounded-lg border border-primary/15 bg-white shadow-[0_14px_34px_rgba(65,42,76,0.09)] xl:sticky xl:top-4 xl:self-start">
+            <aside className="min-w-0 rounded-lg border border-primary/15 bg-white shadow-[0_14px_34px_rgba(65,42,76,0.09)] 2xl:sticky 2xl:top-4 2xl:self-start">
               <div className="grid gap-4">
                 <div className="border-b border-primary/10 bg-gradient-to-r from-white via-[#fff7fb] to-[#eef9ff] p-4">
                   <div className="flex min-w-0 items-start justify-between gap-3">

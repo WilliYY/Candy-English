@@ -1050,6 +1050,10 @@ export async function createFinancialStudent(
   }
 
   const prisma = getPrisma();
+  const createsAvaStudent = !parsed.data.studentProfileId;
+  const initialPasswordHash = parsed.data.initialPassword
+    ? await hash(parsed.data.initialPassword, 12)
+    : null;
   const creationKey =
     parsed.data.studentProfileId ??
     parsed.data.email ??
@@ -1062,7 +1066,7 @@ export async function createFinancialStudent(
         `financial-student-create:${creationKey}`,
       );
 
-      const linkedStudentProfile = parsed.data.studentProfileId
+      const selectedStudentProfile = parsed.data.studentProfileId
         ? await tx.studentProfile.findUnique({
             where: { id: parsed.data.studentProfileId },
             select: {
@@ -1073,26 +1077,13 @@ export async function createFinancialStudent(
               },
             },
           })
-        : parsed.data.email
-          ? await tx.studentProfile.findFirst({
-              where: {
-                user: { email: parsed.data.email },
-              },
-              select: {
-                financialStudent: { select: { id: true } },
-                id: true,
-                user: {
-                  select: { isActive: true, role: true },
-                },
-              },
-            })
-          : null;
+        : null;
 
       if (
         parsed.data.studentProfileId &&
-        (!linkedStudentProfile ||
-          !linkedStudentProfile.user.isActive ||
-          linkedStudentProfile.user.role !== "STUDENT")
+        (!selectedStudentProfile ||
+          !selectedStudentProfile.user.isActive ||
+          selectedStudentProfile.user.role !== "STUDENT")
       ) {
         return {
           message: "O aluno selecionado nao esta ativo no AVA.",
@@ -1100,7 +1091,7 @@ export async function createFinancialStudent(
         };
       }
 
-      if (linkedStudentProfile?.financialStudent) {
+      if (selectedStudentProfile?.financialStudent) {
         return {
           message: "Este aluno ja possui cadastro no financeiro.",
           ok: false as const,
@@ -1121,6 +1112,49 @@ export async function createFinancialStudent(
         }
       }
 
+      let linkedStudentProfileId = selectedStudentProfile?.id;
+
+      if (createsAvaStudent) {
+        if (!parsed.data.email || !initialPasswordHash) {
+          return {
+            message: "Confirme o login e a senha inicial do novo aluno.",
+            ok: false as const,
+          };
+        }
+
+        const existingUser = await tx.user.findUnique({
+          where: { email: parsed.data.email },
+          select: { id: true },
+        });
+
+        if (existingUser) {
+          return {
+            message:
+              "Este login ja existe. Selecione o aluno na lista ou altere o email sugerido.",
+            ok: false as const,
+          };
+        }
+
+        const user = await tx.user.create({
+          data: {
+            email: parsed.data.email,
+            name: parsed.data.name,
+            passwordHash: initialPasswordHash,
+            phone: parsed.data.phone,
+            role: "STUDENT",
+          },
+        });
+        const studentProfile = await tx.studentProfile.create({
+          data: {
+            studentPhone: parsed.data.phone,
+            unit: parsed.data.unit,
+            userId: user.id,
+          },
+        });
+
+        linkedStudentProfileId = studentProfile.id;
+      }
+
       const student = await tx.financialStudent.create({
         data: {
           address: parsed.data.address,
@@ -1132,11 +1166,7 @@ export async function createFinancialStudent(
           paymentDay: parsed.data.paymentDay,
           paymentMethod: parsed.data.paymentMethod,
           phone: parsed.data.phone,
-          studentProfileId:
-            linkedStudentProfile?.user.isActive &&
-            linkedStudentProfile.user.role === "STUDENT"
-              ? linkedStudentProfile.id
-              : undefined,
+          studentProfileId: linkedStudentProfileId,
           unit: parsed.data.unit,
         },
       });
@@ -1182,8 +1212,8 @@ export async function createFinancialStudent(
           action: "CREATE",
           createdByUserId: session.user.id,
           description: student.installmentsTotal
-            ? `Aluno financeiro criado: ${student.name}, em ${student.installmentsTotal} parcela(s).`
-            : `Aluno financeiro criado: ${student.name}.`,
+            ? `${createsAvaStudent ? "Aluno AVA e financeiro criados" : "Aluno financeiro vinculado"}: ${student.name}, em ${student.installmentsTotal} parcela(s).`
+            : `${createsAvaStudent ? "Aluno AVA e financeiro criados" : "Aluno financeiro vinculado"}: ${student.name}.`,
           paymentId: payment?.id,
           studentId: student.id,
         },
@@ -1199,7 +1229,9 @@ export async function createFinancialStudent(
     if (isUniqueConstraintError(error)) {
       return {
         ok: false,
-        message: "Este aluno ja possui cadastro no financeiro.",
+        message: createsAvaStudent
+          ? "O login informado ja existe ou o aluno ja foi cadastrado."
+          : "Este aluno ja possui cadastro no financeiro.",
       };
     }
 
@@ -1210,7 +1242,9 @@ export async function createFinancialStudent(
 
   return {
     ok: true,
-    message: "Lancamento financeiro adicionado.",
+    message: createsAvaStudent
+      ? "Novo aluno criado com acesso ao AVA e cadastro financeiro."
+      : "Aluno do AVA adicionado ao financeiro.",
   };
 }
 

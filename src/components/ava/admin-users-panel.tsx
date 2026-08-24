@@ -1610,7 +1610,12 @@ export function AdminUsersPanel({
   }>;
 
   return (
-    <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8">
+    <section
+      className={cn(
+        "mx-auto flex w-full flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8",
+        activeTask === "financeiro" ? "max-w-[100rem]" : "max-w-7xl",
+      )}
+    >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(460px,560px)]">
         <div className="relative min-w-0 overflow-hidden rounded-xl border border-primary/15 bg-[linear-gradient(115deg,#ffffff_0%,#fff7fb_42%,#effcff_100%)] p-5 shadow-[0_24px_64px_rgba(65,42,76,0.12)] sm:p-7">
           <span
