@@ -13,6 +13,11 @@ import {
   estimatePdfPageCount,
   optimizeFileForStorage,
 } from "@/lib/file-optimization";
+import {
+  convertSaleProductImageToWebp,
+  SALE_PRODUCT_IMAGE_MAX_BYTES,
+  SaleProductImageError,
+} from "@/lib/sale-product-image";
 
 const STORAGE_ROOT = process.env.AVA_STORAGE_DIR ?? path.join(process.cwd(), "storage");
 
@@ -172,6 +177,29 @@ export async function deleteAvatarImage(relativePath?: string | null) {
   }
 }
 
+export async function deleteSaleProductImage(relativePath?: string | null) {
+  if (!relativePath) {
+    return;
+  }
+
+  const normalized = path.normalize(relativePath);
+  const productImagePrefix = `sale-product-images${path.sep}`;
+
+  if (!normalized.startsWith(productImagePrefix)) {
+    throw new Error("Caminho de imagem de produto invalido.");
+  }
+
+  try {
+    await unlink(getStoragePath(normalized));
+  } catch (error) {
+    if (isMissingStorageFileError(error)) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 async function saveFileBuffer(directory: string, extension: string, buffer: Buffer) {
   const fileName = `${randomUUID()}${extension}`;
   const relativePath = path.join(directory, fileName);
@@ -310,6 +338,49 @@ export async function saveAvatarImage(file: File) {
   return {
     mimeType,
     relativePath,
+  };
+}
+
+export async function saveSaleProductImage(file: File) {
+  if (!allowedAvatarTypes.has(file.type as AvatarMimeType)) {
+    throw new StorageValidationError("Envie uma imagem PNG, JPG ou WebP.");
+  }
+
+  if (file.size <= 0 || file.size > SALE_PRODUCT_IMAGE_MAX_BYTES) {
+    throw new StorageValidationError("A foto do produto precisa ter ate 8 MB.");
+  }
+
+  const source = Buffer.from(await file.arrayBuffer());
+  const detectedMimeType = detectAvatarMimeType(source);
+
+  if (!detectedMimeType || detectedMimeType !== file.type) {
+    throw new StorageValidationError(
+      "O conteudo da foto nao corresponde ao tipo enviado.",
+    );
+  }
+
+  let webp: Buffer;
+
+  try {
+    webp = await convertSaleProductImageToWebp(source);
+  } catch (error) {
+    if (error instanceof SaleProductImageError) {
+      throw new StorageValidationError(error.message);
+    }
+
+    throw error;
+  }
+
+  const relativePath = await saveFileBuffer(
+    "sale-product-images",
+    ".webp",
+    webp,
+  );
+
+  return {
+    mimeType: "image/webp" as const,
+    relativePath,
+    sizeBytes: webp.byteLength,
   };
 }
 

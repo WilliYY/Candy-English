@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-08-24 - Fotos WebP recortadas no catalogo de Vendas
+
+- Decisao: permitir foto opcional no cadastro e na edicao de `SaleProduct`, com previa 4:3, recorte central automatico para `1200x900` e armazenamento final somente em WebP.
+- Motivo: tornar os produtos reconheciveis no PDV sem aumentar demais o peso das imagens ou expor caminhos privados do servidor.
+- Impacto: `SaleProduct.imagePath`, migration, armazenamento, rota autenticada, actions, pagina, painel de Vendas, testes e documentacao.
+- Riscos/cuidados: aceitar somente PNG/JPG/WebP de ate 8 MB, validar o conteudo real, limitar pixels no `sharp`, preservar produto sem foto e remover arquivos substituidos apenas depois da persistencia no banco.
+
 ### 2026-08-24 - Comprador unico e data combinada no PDV
 
 - Decisao: substituir busca, select e nome avulso separados por um unico campo pesquisavel com `Venda livre` primeiro; aluno selecionado define o polo automaticamente. Compras na fatura passam a guardar `Sale.invoiceDueDate`, limitada ao mes financeiro atual e vinculada ao `FinancialPayment` ja existente.

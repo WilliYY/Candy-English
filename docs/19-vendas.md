@@ -27,7 +27,7 @@ O carrinho usa um unico campo de comprador. `Venda livre` aparece primeiro e ace
 
 ## Dados
 
-- `SaleProduct` guarda nome normalizado unico, custo, preco, estoque, estado e auditoria de criacao/edicao.
+- `SaleProduct` guarda nome normalizado unico, foto WebP opcional, custo, preco, estoque, estado e auditoria de criacao/edicao.
 - `Sale` guarda comprador, snapshots, liquidacao, forma de pagamento, competencia, data combinada da fatura, totais, operador e cancelamento.
 - `SaleItem` preserva nome, custo e preco usados no momento da venda, mesmo que o produto seja editado depois.
 
@@ -35,6 +35,11 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 
 ## Regras do checkout
 
+- Cadastro e edicao de produto aceitam PNG, JPG ou WebP de ate 8 MB.
+- A previa mostra a linha do recorte 4:3; o servidor centraliza, recorta para `1200x900` e salva somente WebP no volume `storage/sale-product-images`.
+- A foto e opcional. Produtos antigos ou sem foto continuam usando o icone do catalogo.
+- A imagem e servida por rota autenticada somente para `ADMIN` e `TEACHER`; o caminho privado do arquivo nao e enviado ao client.
+- Ao trocar ou remover a foto, o arquivo anterior e limpo depois que a atualizacao do banco termina com sucesso.
 - `PAID_NOW` exige forma de pagamento e aceita aluno cadastrado ou nome avulso.
 - `MONTHLY_INVOICE` exige `StudentProfile` ativo, mensalidade ativa ainda nao paga e uma `invoiceDueDate` dentro da competencia atual no fuso `America/Sao_Paulo`.
 - Nome digitado livremente nunca cria divida mensal, pois nao existe identidade confiavel para cobrar depois.

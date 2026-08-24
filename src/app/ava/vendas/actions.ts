@@ -14,6 +14,11 @@ import {
   parseSaleInvoiceDate,
 } from "@/lib/sales-domain";
 import {
+  deleteSaleProductImage,
+  saveSaleProductImage,
+  StorageValidationError,
+} from "@/lib/storage";
+import {
   saleCancelSchema,
   saleCheckoutSchema,
   saleProductCreateSchema,
@@ -107,8 +112,23 @@ function forbiddenResult<TInput extends Record<string, unknown>>(): SaleActionRe
   };
 }
 
+function saleProductInputFromFormData(formData: FormData) {
+  return {
+    costCents: Number(formData.get("costCents")),
+    name: String(formData.get("name") ?? ""),
+    salePriceCents: Number(formData.get("salePriceCents")),
+    stockQuantity: Number(formData.get("stockQuantity")),
+  };
+}
+
+function optionalProductImage(formData: FormData) {
+  const image = formData.get("image");
+
+  return image instanceof File && image.size > 0 ? image : null;
+}
+
 export async function createSaleProduct(
-  input: SaleProductCreateInput,
+  formData: FormData,
 ): Promise<SaleActionResult<SaleProductCreateInput>> {
   const actor = await getSalesActor();
 
@@ -116,7 +136,9 @@ export async function createSaleProduct(
     return forbiddenResult();
   }
 
-  const parsed = saleProductCreateSchema.safeParse(input);
+  const parsed = saleProductCreateSchema.safeParse(
+    saleProductInputFromFormData(formData),
+  );
 
   if (!parsed.success) {
     return {
@@ -127,17 +149,35 @@ export async function createSaleProduct(
   }
 
   const prisma = getPrisma();
+  const image = optionalProductImage(formData);
+  let savedImagePath: string | null = null;
 
   try {
+    if (image) {
+      savedImagePath = (await saveSaleProductImage(image)).relativePath;
+    }
+
     await prisma.saleProduct.create({
       data: {
         ...parsed.data,
         createdByUserId: actor.userId,
+        imagePath: savedImagePath,
         normalizedName: normalizeSaleProductName(parsed.data.name),
         updatedByUserId: actor.userId,
       },
     });
   } catch (error) {
+    if (savedImagePath) {
+      await deleteSaleProductImage(savedImagePath).catch(() => undefined);
+    }
+
+    if (error instanceof StorageValidationError) {
+      return {
+        message: error.message,
+        ok: false,
+      };
+    }
+
     if (isUniqueConstraintError(error)) {
       return {
         errors: { name: "Ja existe um produto com esse nome." },
@@ -161,7 +201,7 @@ export async function createSaleProduct(
 }
 
 export async function updateSaleProduct(
-  input: SaleProductUpdateInput,
+  formData: FormData,
 ): Promise<SaleActionResult<SaleProductUpdateInput>> {
   const actor = await getSalesActor();
 
@@ -169,7 +209,12 @@ export async function updateSaleProduct(
     return forbiddenResult();
   }
 
-  const parsed = saleProductUpdateSchema.safeParse(input);
+  const parsed = saleProductUpdateSchema.safeParse({
+    ...saleProductInputFromFormData(formData),
+    expectedUpdatedAt: String(formData.get("expectedUpdatedAt") ?? ""),
+    isActive: formData.get("isActive") === "true",
+    productId: String(formData.get("productId") ?? ""),
+  });
 
   if (!parsed.success) {
     return {
@@ -181,28 +226,73 @@ export async function updateSaleProduct(
 
   const { expectedUpdatedAt, productId, ...productData } = parsed.data;
   const prisma = getPrisma();
+  const image = optionalProductImage(formData);
+  const removeImage = formData.get("removeImage") === "true";
+  let savedImagePath: string | null = null;
+  let persisted = false;
+  let previousImagePath: string | null = null;
 
   try {
-    const result = await prisma.saleProduct.updateMany({
-      where: {
-        id: productId,
-        updatedAt: new Date(expectedUpdatedAt),
-      },
-      data: {
-        ...productData,
-        normalizedName: normalizeSaleProductName(productData.name),
-        updatedByUserId: actor.userId,
-      },
-    });
+    if (image) {
+      savedImagePath = (await saveSaleProductImage(image)).relativePath;
+    }
 
-    if (result.count !== 1) {
-      return {
-        message:
+    previousImagePath = await prisma.$transaction(async (tx) => {
+      const rows = await tx.$queryRaw<
+        Array<{ imagePath: string | null; updatedAt: Date }>
+      >`
+        SELECT "imagePath", "updatedAt"
+        FROM "SaleProduct"
+        WHERE "id" = ${productId}
+        FOR UPDATE
+      `;
+      const currentProduct = rows[0];
+
+      if (
+        !currentProduct ||
+        currentProduct.updatedAt.getTime() !== new Date(expectedUpdatedAt).getTime()
+      ) {
+        throw new SaleRuleError(
           "O produto mudou enquanto estava aberto. Recarregue antes de salvar o estoque.",
+        );
+      }
+
+      await tx.saleProduct.update({
+        where: { id: productId },
+        data: {
+          ...productData,
+          ...(savedImagePath
+            ? { imagePath: savedImagePath }
+            : removeImage
+              ? { imagePath: null }
+              : {}),
+          normalizedName: normalizeSaleProductName(productData.name),
+          updatedByUserId: actor.userId,
+        },
+      });
+
+      return currentProduct.imagePath;
+    });
+    persisted = true;
+  } catch (error) {
+    if (savedImagePath && !persisted) {
+      await deleteSaleProductImage(savedImagePath).catch(() => undefined);
+    }
+
+    if (error instanceof SaleRuleError) {
+      return {
+        message: error.message,
         ok: false,
       };
     }
-  } catch (error) {
+
+    if (error instanceof StorageValidationError) {
+      return {
+        message: error.message,
+        ok: false,
+      };
+    }
+
     if (isUniqueConstraintError(error)) {
       return {
         errors: { name: "Ja existe um produto com esse nome." },
@@ -215,6 +305,14 @@ export async function updateSaleProduct(
       message: "Nao foi possivel atualizar o produto.",
       ok: false,
     };
+  }
+
+  if (
+    previousImagePath &&
+    previousImagePath !== savedImagePath &&
+    (savedImagePath || removeImage)
+  ) {
+    await deleteSaleProductImage(previousImagePath).catch(() => undefined);
   }
 
   revalidatePath("/ava/vendas");

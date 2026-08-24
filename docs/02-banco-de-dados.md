@@ -90,7 +90,7 @@ Financeiro:
 
 Vendas:
 
-- `SaleProduct`: catalogo, custo, preco de venda, estoque e estado ativo.
+- `SaleProduct`: catalogo, caminho privado da foto WebP opcional, custo, preco de venda, estoque e estado ativo.
 - `Sale`: cabecalho auditavel da venda, comprador, liquidacao, competencia, data combinada da fatura e cancelamento.
 - `SaleItem`: snapshot imutavel de nome, custo, preco e quantidade de cada item vendido.
 
@@ -230,6 +230,7 @@ Enums:
 - Migration `20260801210000_mobile_admin_finance_operations` adiciona chaves unicas de idempotencia para alteracoes de pagamentos e criacao de gastos pela API mobile ADMIN.
 - Migration `20260823233000_add_sales_pos` adiciona catalogo, estoque, vendas, itens, cobranca mensal separada e auditoria de cancelamento do PDV.
 - Migration `20260824150000_add_sale_invoice_due_date` adiciona `Sale.invoiceDueDate` para guardar o dia combinado da compra na fatura mensal.
+- Migration `20260824163000_add_sale_product_images` adiciona `SaleProduct.imagePath`; a imagem permanece no volume privado e o banco guarda apenas o caminho.
 - Migration `20260824013000_add_time_clock` adiciona perfis autorizados, batidas idempotentes e revisoes imutaveis de correcoes do ponto.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.

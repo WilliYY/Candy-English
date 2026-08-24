@@ -31,6 +31,7 @@ import {
   createSaleProduct,
   updateSaleProduct,
 } from "@/app/ava/vendas/actions";
+import { SaleProductImageField } from "@/components/ava/sale-product-image-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -49,6 +50,7 @@ type PaymentMethod = (typeof SALE_PAYMENT_METHODS)[number];
 type ProductRow = {
   costCents: number;
   id: string;
+  imageUrl: string | null;
   isActive: boolean;
   name: string;
   salePriceCents: number;
@@ -163,17 +165,15 @@ function ProductEditor({ product }: { product: ProductRow }) {
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(formData: FormData) {
+    formData.set("costCents", String(moneyToCents(formData.get("cost"))));
+    formData.set(
+      "salePriceCents",
+      String(moneyToCents(formData.get("price"))),
+    );
+    formData.set("stockQuantity", String(Number(formData.get("stock"))));
     setMessage(null);
     startTransition(async () => {
-      const result = await updateSaleProduct({
-        costCents: moneyToCents(formData.get("cost")),
-        expectedUpdatedAt: product.updatedAt,
-        isActive: formData.get("isActive") === "true",
-        name: String(formData.get("name") ?? ""),
-        productId: product.id,
-        salePriceCents: moneyToCents(formData.get("price")),
-        stockQuantity: Number(formData.get("stock")),
-      });
+      const result = await updateSaleProduct(formData);
       setMessage(result.message);
       if (result.ok) router.refresh();
     });
@@ -189,7 +189,16 @@ function ProductEditor({ product }: { product: ProductRow }) {
         <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
       </summary>
       <form action={handleSubmit} className="mt-3 grid gap-2" onClick={(event) => event.stopPropagation()}>
+        <input name="expectedUpdatedAt" type="hidden" value={product.updatedAt} />
+        <input name="productId" type="hidden" value={product.id} />
         <Input aria-label="Nome do produto" defaultValue={product.name} name="name" required />
+        <SaleProductImageField
+          compact
+          currentImageUrl={product.imageUrl}
+          disabled={isPending}
+          inputId={`sale-product-image-${product.id}`}
+          key={product.imageUrl ?? "no-image"}
+        />
         <div className="grid gap-2 sm:grid-cols-3">
           <Input aria-label="Custo" defaultValue={(product.costCents / 100).toFixed(2)} min="0" name="cost" step="0.01" type="number" required />
           <Input aria-label="Venda" defaultValue={(product.salePriceCents / 100).toFixed(2)} min="0.01" name="price" step="0.01" type="number" required />
@@ -305,6 +314,7 @@ export function SalesPosPanel({
   const [note, setNote] = useState("");
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [productMessage, setProductMessage] = useState<string | null>(null);
+  const [productImageKey, setProductImageKey] = useState(0);
   const [operationId, setOperationId] = useState(() => crypto.randomUUID());
   const [isCheckoutPending, startCheckoutTransition] = useTransition();
   const [isProductPending, startProductTransition] = useTransition();
@@ -365,10 +375,17 @@ export function SalesPosPanel({
     }));
   }
 
-  const submitProduct = productForm.handleSubmit((values) => {
+  const submitProduct = productForm.handleSubmit((values, event) => {
+    const formData = event?.currentTarget instanceof HTMLFormElement
+      ? new FormData(event.currentTarget)
+      : new FormData();
+    formData.set("costCents", String(values.costCents));
+    formData.set("name", values.name);
+    formData.set("salePriceCents", String(values.salePriceCents));
+    formData.set("stockQuantity", String(values.stockQuantity));
     setProductMessage(null);
     startProductTransition(async () => {
-      const result = await createSaleProduct(values);
+      const result = await createSaleProduct(formData);
       setProductMessage(result.message);
       if (!result.ok) {
         if (result.errors) {
@@ -379,6 +396,7 @@ export function SalesPosPanel({
         return;
       }
       productForm.reset();
+      setProductImageKey((current) => current + 1);
       router.refresh();
     });
   });
@@ -466,6 +484,13 @@ export function SalesPosPanel({
                   <strong className="block text-sm text-primary">Novo produto</strong>
                   <span className="text-xs text-muted-foreground">Cadastre os valores e o estoque inicial. Tudo permanece visivel antes de salvar.</span>
                 </div>
+                <div className="sm:col-span-2 xl:col-span-5">
+                  <SaleProductImageField
+                    disabled={isProductPending}
+                    inputId="sale-new-product-image"
+                    key={productImageKey}
+                  />
+                </div>
                 <label className="grid gap-1 text-xs font-bold text-primary sm:col-span-2 xl:col-span-1">Produto<Input placeholder="Ex: Caderno Candy" {...productForm.register("name")} /></label>
                 <label className="grid gap-1 text-xs font-bold text-primary">Custo<Input min="0" placeholder="0,00" step="0.01" type="number" {...productForm.register("costCents", { setValueAs: moneyToCents })} /></label>
                 <label className="grid gap-1 text-xs font-bold text-primary">Valor de venda<Input min="0.01" placeholder="0,00" step="0.01" type="number" {...productForm.register("salePriceCents", { setValueAs: moneyToCents })} /></label>
@@ -482,9 +507,16 @@ export function SalesPosPanel({
               const inCart = cart.find((item) => item.id === product.id)?.quantity ?? 0;
               return (
                 <article className="relative overflow-hidden rounded-lg border border-primary/12 bg-gradient-to-br from-white via-white to-cyan-50/50 p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md" key={product.id}>
+                  {product.imageUrl ? (
+                    <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-md border border-cyan-100 bg-cyan-50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img alt={product.name} className="size-full object-cover object-center" src={product.imageUrl} />
+                      <span className={cn("absolute right-2 top-2 rounded-full border px-2 py-1 text-[0.65rem] font-extrabold shadow-sm", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800")}>{product.stockQuantity} em estoque</span>
+                    </div>
+                  ) : null}
                   <div className="flex items-start justify-between gap-3">
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-800"><ShoppingBag aria-hidden="true" className="size-5" /></span>
-                    <span className={cn("rounded-full border px-2 py-1 text-[0.65rem] font-extrabold", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800")}>{product.stockQuantity} em estoque</span>
+                    {!product.imageUrl ? <span className={cn("rounded-full border px-2 py-1 text-[0.65rem] font-extrabold", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800")}>{product.stockQuantity} em estoque</span> : null}
                   </div>
                   <h2 className="mt-3 min-h-10 text-base font-extrabold leading-5 text-primary">{product.name}</h2>
                   <div className="mt-3 flex items-end justify-between gap-2">

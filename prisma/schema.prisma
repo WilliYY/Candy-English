@@ -715,6 +715,7 @@ model SaleProduct {
   id              String     @id @default(cuid())
   name            String
   normalizedName  String     @unique
+  imagePath       String?
   costCents       Int
   salePriceCents  Int
   stockQuantity   Int        @default(0)

@@ -34,6 +34,7 @@ export default async function SalesPage() {
       select: {
         costCents: true,
         id: true,
+        imagePath: true,
         isActive: true,
         name: true,
         salePriceCents: true,
@@ -124,8 +125,11 @@ export default async function SalesPage() {
           name: session.user.name ?? "Equipe Candy",
         }}
         currentPeriod={{ ...period, dateKey: getSaoPauloDateKey() }}
-        products={products.map((product) => ({
+        products={products.map(({ imagePath, ...product }) => ({
           ...product,
+          imageUrl: imagePath
+            ? `/ava/vendas/produto-imagem/${product.id}?v=${encodeURIComponent(product.updatedAt.toISOString())}`
+            : null,
           updatedAt: product.updatedAt.toISOString(),
         }))}
         recentSales={recentSales.map((sale) => ({
