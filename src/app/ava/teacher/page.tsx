@@ -29,6 +29,12 @@ import {
   getSecretariaSelectedUnit,
   normalizeSecretariaUnitFilter,
 } from "@/lib/secretaria-unit-filter";
+import {
+  getTeacherFinanceDateParts,
+  normalizeTeacherFinanceMonth,
+  projectTeacherFinanceRow,
+  TEACHER_FINANCE_YEAR,
+} from "@/lib/teacher-finance";
 
 export const metadata: Metadata = {
   title: "Teacher AVA",
@@ -39,6 +45,7 @@ export const runtime = "nodejs";
 
 type TeacherPageProps = {
   searchParams?: Promise<{
+    month?: string | string[];
     preStatus?: string | string[];
     task?: string | string[];
     unit?: string | string[];
@@ -58,6 +65,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       "task",
       "unit",
       "preStatus",
+      "month",
     ]),
   );
   const prisma = getPrisma();
@@ -65,9 +73,18 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     ? params?.task[0]
     : params?.task;
   const activeTask = normalizeTeacherTask(requestedTask);
-  const workspaceArea = secretariaTeacherTasks.has(activeTask)
-    ? "SECRETARIA"
-    : "AVA";
+  const workspaceArea =
+    activeTask === "financeiro"
+      ? "FINANCEIRO"
+      : secretariaTeacherTasks.has(activeTask)
+        ? "SECRETARIA"
+        : "AVA";
+  const now = new Date();
+  const today = getTeacherFinanceDateParts(now);
+  const financeMonth = normalizeTeacherFinanceMonth(
+    params?.month,
+    today.year === TEACHER_FINANCE_YEAR ? today.month : 1,
+  );
   const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
   const selectedUnit = getSecretariaSelectedUnit(unitFilter);
   const preRegistrationUnitWhere = selectedUnit ? { unit: selectedUnit } : {};
@@ -211,6 +228,30 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
           select: {
             convertedAgendaStudentId: true,
             convertedFinancialStudentId: true,
+          },
+        },
+        financialStudent: {
+          select: {
+            payments: {
+              orderBy: { createdAt: "desc" },
+              select: {
+                isActive: true,
+                isPaid: true,
+                month: true,
+                paidAt: true,
+                snapshotAmountCents: true,
+                snapshotName: true,
+                snapshotPaymentDay: true,
+                snapshotPaymentMethod: true,
+                snapshotUnit: true,
+                year: true,
+              },
+              take: 1,
+              where: {
+                month: financeMonth,
+                year: TEACHER_FINANCE_YEAR,
+              },
+            },
           },
         },
         id: true,
@@ -874,6 +915,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         };
       })}
       secretariaUnitFilter={unitFilter}
+      teacherFinanceMonth={financeMonth}
+      teacherFinanceRows={students.map((student) =>
+        projectTeacherFinanceRow(student, now),
+      )}
       studentPreRegistrations={studentPreRegistrations.map((request) => ({
         address: request.address,
         assignedTeacherEmail:

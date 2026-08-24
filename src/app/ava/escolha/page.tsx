@@ -63,20 +63,19 @@ export default async function AvaAreaChoicePage() {
       iconStyle: "bg-rose-700 text-white shadow-rose-900/20",
       title: "SECRETARIA",
     },
-    ...(isAdmin
-      ? [
-          {
-            accent: "border-emerald-200 bg-emerald-50/72 text-emerald-950",
-            bar: "bg-emerald-500",
-            description: "Mensalidades e pagamentos por polo.",
-            href: "/ava/admin?task=financeiro",
-            icon: WalletCards,
-            iconStyle:
-              "bg-emerald-700 text-white shadow-emerald-900/20",
-            title: "FINANCEIRO",
-          },
-        ]
-       : []),
+    {
+      accent: "border-emerald-200 bg-emerald-50/72 text-emerald-950",
+      bar: "bg-emerald-500",
+      description: isAdmin
+        ? "Mensalidades e pagamentos por polo."
+        : "Situacao mensal dos seus alunos, sem valores.",
+      href: isAdmin
+        ? "/ava/admin?task=financeiro"
+        : "/ava/teacher?task=financeiro",
+      icon: WalletCards,
+      iconStyle: "bg-emerald-700 text-white shadow-emerald-900/20",
+      title: "FINANCEIRO",
+    },
     {
       accent: "border-sky-200 bg-sky-50/72 text-sky-950",
       bar: "bg-sky-500",

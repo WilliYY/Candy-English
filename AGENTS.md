@@ -73,7 +73,7 @@ Leitura minima recomendada:
 ## Roles
 
 - `ADMIN`: administra usuarios, redefine senhas, vinculos, contratos, manutencao, financeiro e agenda; tambem pode supervisionar areas teacher/student.
-- `TEACHER`: gerencia aulas, materiais, homework, feedback, mensagens, contratos e aula ao vivo para alunos vinculados.
+- `TEACHER`: gerencia aulas, materiais, homework, feedback, mensagens, contratos e aula ao vivo para alunos vinculados; consulta somente a situacao mensal sem valores desses mesmos alunos.
 - `STUDENT`: acessa aulas, homework, mensagens, contratos, perfil e aula ao vivo permitida.
 
 ## Regras criticas de seguranca
@@ -124,9 +124,10 @@ Leitura minima recomendada:
 
 ## Financeiro
 
-O financeiro e controle interno do admin em `/ava/admin?task=financeiro`.
+O financeiro administrativo completo fica em `/ava/admin?task=financeiro`. A Teacher usa `/ava/teacher?task=financeiro` somente para acompanhar pago/pendente/atrasado dos alunos vinculados, sem valores, totais, gastos, vendas, contatos financeiros, observacoes, logs ou exportacoes.
 
 - Nao tratar como pagamento online sem pedido explicito.
+- Toda escrita, valor, gasto, exportacao e relatorio financeiro continua `ADMIN` only. A consulta Teacher deve filtrar `StudentTeacherAssignment` no servidor e projetar apenas campos permitidos antes de renderizar.
 - `FinancialStudent` guarda dados recorrentes.
 - `FinancialPayment` guarda o snapshot mensal do aluno, status, data paga, observacao e se a linha segue ativa naquele mes.
 - `FinancialLog` registra acoes simples.

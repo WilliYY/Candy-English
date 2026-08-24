@@ -67,9 +67,10 @@ export const SECRETARIA_PERMISSION_MATRIX = {
       reports: false,
       units: false,
     },
-    finance: "NONE",
+    finance: "OWN_OR_ASSIGNED",
     preRegistrations: "OWN_OR_ASSIGNED",
-    sensitiveData: "Apenas dados necessarios do interessado/aluno vinculado.",
+    sensitiveData:
+      "Apenas dados necessarios do aluno vinculado; financeiro sem valores, gastos ou exportacoes.",
     units: "NECESSARY_ONLY",
   },
   STUDENT: {

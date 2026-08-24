@@ -2,6 +2,7 @@ import {
   BookOpen,
   BrainCircuit,
   CalendarDays,
+  CircleDollarSign,
   ClipboardCheck,
   FileText,
   GraduationCap,
@@ -50,6 +51,7 @@ import { CattyMemoryPanel } from "@/components/ava/catty-memory-panel";
 import { CandyXpRankingCard } from "@/components/ava/candy-xp-ranking-card";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
 import { UserSummaryPanel } from "@/components/ava/user-summary-panel";
+import { TeacherFinanceStatusPanel } from "@/components/ava/teacher-finance-status-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   applyCandyXpPersistence,
@@ -63,6 +65,7 @@ import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
 import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
+import type { TeacherFinanceRow } from "@/lib/teacher-finance";
 
 export const teacherTaskIds = [
   "resumo",
@@ -77,6 +80,7 @@ export const teacherTaskIds = [
   "mensagens",
   "corrigir-respostas",
   "contratos",
+  "financeiro",
   "perfil",
 ] as const;
 
@@ -255,6 +259,8 @@ type TeacherWorkspaceProps = {
   students: Option[];
   studentPreRegistrations: StudentPreRegistrationReviewRow[];
   submissions: TeacherSubmission[];
+  teacherFinanceMonth: number;
+  teacherFinanceRows: TeacherFinanceRow[];
   teachers: Option[];
 };
 
@@ -315,6 +321,12 @@ const taskMeta = {
     icon: ClipboardCheck,
     title: "Criar/Ver Homework",
   },
+  financeiro: {
+    description:
+      "Acompanhe a situacao mensal dos alunos vinculados sem acessar valores.",
+    icon: CircleDollarSign,
+    title: "Financeiro dos alunos",
+  },
   mensagens: {
     description: "Espaco de conversa com alunos vinculados a teacher.",
     icon: MessageSquareText,
@@ -374,6 +386,8 @@ export function TeacherWorkspace({
   students,
   studentPreRegistrations,
   submissions,
+  teacherFinanceMonth,
+  teacherFinanceRows,
   teachers,
 }: TeacherWorkspaceProps) {
   const interactiveItems = lessons.flatMap((lesson) =>
@@ -720,6 +734,14 @@ export function TeacherWorkspace({
               unitFilter={secretariaUnitFilter}
               teacherOptions={teachers}
               viewerRole="TEACHER"
+            />
+          ) : null}
+
+          {activeTask === "financeiro" ? (
+            <TeacherFinanceStatusPanel
+              month={teacherFinanceMonth}
+              rows={teacherFinanceRows}
+              unitFilter={secretariaUnitFilter}
             />
           ) : null}
 

@@ -2,7 +2,9 @@
 
 ## O que esta parte do sistema faz
 
-O modulo Financeiro e uma area propria e exclusiva do administrador em `/ava/admin?task=financeiro`. A tela principal usa uma planilha mensal separada por polo, com Ivaté primeiro e Douradina depois. Cada linha mostra aluno, mes, valor, vencimento, situacao e acao rapida para marcar como pago; ao clicar no aluno, o painel de detalhes abre com a data de pagamento ou a pendencia daquela competencia.
+O modulo Financeiro possui duas superficies protegidas. O painel administrativo completo fica em `/ava/admin?task=financeiro`; a consulta limitada da Teacher fica em `/ava/teacher?task=financeiro`. A tela Admin usa uma planilha mensal separada por polo, com Ivaté primeiro e Douradina depois. Cada linha mostra aluno, mes, valor, vencimento, situacao e acao rapida para marcar como pago; ao clicar no aluno, o painel de detalhes abre com a data de pagamento ou a pendencia daquela competencia.
+
+A Teacher ve somente alunos vinculados a sua `TeacherProfile` e apenas nome, polo do snapshot, situacao mensal, dia de vencimento e data de confirmacao. A projecao nao envia valor, forma de pagamento, contato, CPF, endereco, observacao, venda, gasto, total, log ou exportacao.
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
@@ -39,10 +41,14 @@ Tabelas:
 Rota:
 
 - `/ava/admin?task=financeiro`
+- `/ava/teacher?task=financeiro`
 
 ## Regras de negocio que precisam ser preservadas
 
-- Apenas `ADMIN` visualiza e escreve no financeiro.
+- Apenas `ADMIN` visualiza o financeiro completo e executa qualquer escrita, exportacao ou consulta de valores/gastos.
+- `TEACHER` recebe somente leitura minimizada de alunos com `StudentTeacherAssignment` para sua `TeacherProfile`. O filtro de vinculo e o `select` de dados acontecem no servidor; esconder campos no cliente nao e usado como barreira de seguranca.
+- A competencia da Teacher usa `FinancialPayment.snapshotName`, `snapshotUnit`, `snapshotPaymentDay`, `isPaid`, `paidAt` e `isActive`. Campos monetarios podem ser lidos apenas no servidor para calcular `Completar`, mas sao removidos pela projecao antes de chegar ao componente.
+- `STUDENT` nao acessa nenhuma superficie financeira.
 - O formulario de entrada carrega todos os `StudentProfile` dos polos Ivaté e Douradina para o Admin, mesmo quando o filtro principal da planilha esta em um polo especifico. A busca e o filtro do seletor acontecem somente sobre esses dados ja autorizados.
 - Ao selecionar um aluno do AVA, a criacao envia `studentProfileId` e grava o vinculo explicito em `FinancialStudent.studentProfileId`; nome, email, telefone e unidade sao apenas o preenchimento inicial revisavel do cadastro financeiro.
 - Um `StudentProfile` ja vinculado, inativo ou sem role `STUDENT` nao pode ser adicionado pelo seletor. A action valida novamente no servidor, usa lock transacional e a restricao unica do banco para bloquear cliques concorrentes e duplicidade.
@@ -93,7 +99,7 @@ Rota:
 - A area `Pagamentos` usa resumo mensal proprio, totais por Polo 1/Polo 2, filtro de polo sincronizado com a aba de alunos, formulario compacto com observacao recolhida e lista em tabela no desktop para facilitar leitura de insumo, data, responsavel, polo e valor.
 - As unidades fixas do financeiro sao `IVATE` (`Unidade 1 Ivaté`) e `DOURADINA` (`Unidade 2 Douradina`); registros antigos entram por padrao como `IVATE`.
 - A UI mostra chips de polo no topo do financeiro, perto do filtro de mes. Os cards/listas exibem badge `Polo 1 - Ivaté` ou `Polo 2 - Douradina`; em `Todos`, os gastos exibem totais separados por polo e total geral.
-- O Financeiro possui modo proprio na tela de escolha e na sidebar do Admin. O parametro `unit=all|IVATE|DOURADINA` continua inicializando o filtro interno sem alterar snapshots antigos.
+- O Financeiro possui modo proprio na tela de escolha e na sidebar de Admin/Teacher. O parametro `unit=all|IVATE|DOURADINA` continua inicializando o filtro sem alterar snapshots antigos; para Teacher, ele nunca amplia o conjunto alem dos alunos vinculados.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.
@@ -129,5 +135,5 @@ Rota:
 - Adicionar busca e filtros.
 - Adicionar importacao CSV/Excel com validacao.
 - Criar relatorio anual por aluno.
-- Adicionar permissao granular se futuramente outras roles precisarem consultar financeiro.
+- Manter testes de regressao para impedir que valores ou atalhos Admin aparecam na consulta Teacher.
 - Integrar pagamento online apenas se houver decisao explicita e revisao de seguranca.

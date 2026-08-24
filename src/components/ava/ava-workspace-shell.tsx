@@ -244,6 +244,21 @@ const navGroups = [
   },
   {
     allowedRoles: ["TEACHER"] as const,
+    areaLabel: "Financeiro",
+    href: "/ava/teacher?task=financeiro",
+    icon: CircleDollarSign,
+    label: "Financeiro",
+    links: [
+      {
+        href: "/ava/teacher?task=financeiro",
+        icon: WalletCards,
+        label: "Situacao dos alunos",
+        section: "Acompanhamento",
+      },
+    ],
+  },
+  {
+    allowedRoles: ["TEACHER"] as const,
     areaLabel: "Secretaria",
     href: "/ava/secretaria",
     icon: WalletCards,
@@ -511,22 +526,22 @@ export async function AvaWorkspaceShell({
                       <WalletCards aria-hidden="true" className="size-4" />
                       Secretaria
                     </AvaNavAlertLink>
-                    {role === "ADMIN" ? (
-                      <AvaNavAlertLink
-                        href={withSecretariaUnitParam(
-                          "/ava/admin?task=financeiro",
-                          unitFilter,
-                        )}
-                        className="relative col-span-2 flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/80 px-2.5 py-2 text-sm font-bold text-emerald-950 shadow-sm transition-all hover:border-emerald-400 hover:bg-white"
-                        activeClassName={navItemActiveClassName}
-                      >
-                        <CircleDollarSign
-                          aria-hidden="true"
-                          className="size-4"
-                        />
-                        Financeiro
-                      </AvaNavAlertLink>
-                    ) : null}
+                    <AvaNavAlertLink
+                      href={withSecretariaUnitParam(
+                        role === "ADMIN"
+                          ? "/ava/admin?task=financeiro"
+                          : "/ava/teacher?task=financeiro",
+                        unitFilter,
+                      )}
+                      className="relative col-span-2 flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50/80 px-2.5 py-2 text-sm font-bold text-emerald-950 shadow-sm transition-all hover:border-emerald-400 hover:bg-white"
+                      activeClassName={navItemActiveClassName}
+                    >
+                      <CircleDollarSign
+                        aria-hidden="true"
+                        className="size-4"
+                      />
+                      Financeiro
+                    </AvaNavAlertLink>
                     <AvaNavAlertLink
                       href="/ava/vendas"
                       className="relative col-span-2 flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-sm font-bold text-sky-950 shadow-sm transition-all hover:border-sky-400 hover:bg-white"
@@ -646,6 +661,7 @@ export async function AvaWorkspaceShell({
                 );
                  const shouldKeepGroupOpen =
                    (area === "SECRETARIA" && group.label === "Secretaria") ||
+                   (area === "FINANCEIRO" && group.label === "Financeiro") ||
                    (area === "VENDAS" && group.label === "Vendas") ||
                    (area === "AVA" &&
                     ((group.label === "Admin AVA" && role === "ADMIN") ||

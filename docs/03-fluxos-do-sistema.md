@@ -87,18 +87,18 @@ Helpers:
 1. Usuario entra em `/ava/login`.
 2. Auth.js valida email, senha, usuario ativo e manutencao.
 3. Sessao JWT recebe `id` e `role`.
-4. `ADMIN` e `TEACHER` vao para `/ava/escolha`; Admin escolhe entre `AVA`, `Secretaria` e `Financeiro`, enquanto Teacher ve apenas `AVA` e `Secretaria`.
+4. `ADMIN` e `TEACHER` vao para `/ava/escolha`; ambos veem `AVA`, `Secretaria` e `Financeiro`, mas a Teacher abre apenas o acompanhamento sem valores dos alunos vinculados.
 5. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.
 
 ### Escolha da area de trabalho
 
 1. Admin ou Teacher autenticado abre `/ava` ou `/ava/escolha`.
-2. A tela limpa mostra somente os blocos de area: `AVA`, para rotina pedagogica; `Secretaria`, para pre-cadastros, agenda e contratos; e, apenas para Admin, `Financeiro`, para mensalidades e gastos.
+2. A tela limpa mostra somente os blocos de area: `AVA`, para rotina pedagogica; `Secretaria`, para cadastros e contratos; e `Financeiro`, completo para Admin e limitado para Teacher.
 3. Clicar em `AVA` leva Admin para `/ava/admin?task=usuarios` e Teacher para `/ava/teacher?task=resumo`.
 4. Clicar em `Secretaria` leva para `/ava/secretaria`, um painel protegido de atalhos.
-5. Clicar em `Financeiro` leva Admin para `/ava/admin?task=financeiro`; o bloco e o modo de sidebar nao sao renderizados para Teacher.
+5. Clicar em `Financeiro` leva Admin para `/ava/admin?task=financeiro` e Teacher para `/ava/teacher?task=financeiro`.
 6. A Secretaria usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada, mas nao mistura o atalho financeiro em seu painel.
-7. Teacher ve somente Secretaria limitada: pre-cadastros proprios/atribuidos e contratos permitidos; financeiro geral, agenda completa, gastos, APIs e administracao seguem exclusivos de Admin.
+7. Teacher ve somente Secretaria limitada e, no Financeiro, situacao mensal dos alunos vinculados. Valores, totais, gastos, vendas, contatos financeiros, observacoes, exportacoes e alteracoes seguem exclusivos de Admin.
 8. A Secretaria mostra um filtro geral de polo logo abaixo do titulo: `Todos os polos`, `Polo 1 — Ivaté` e `Polo 2 — Douradina`. O filtro usa `unit=IVATE` ou `unit=DOURADINA` na URL quando ha polo especifico.
 9. Ao abrir pre-cadastros ou agenda a partir da Secretaria, o `unit` selecionado e preservado nos links e aplicado nas consultas server-side dos dados sensiveis. O Financeiro tambem mantem esse filtro quando e aberto por link direto ou pela troca de area.
 10. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
@@ -126,7 +126,7 @@ Helpers:
 
 1. Admin abre `/ava/admin`.
 2. A tarefa padrao e `usuarios`.
-3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA`, `Secretaria` ou `Financeiro`.
+3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA`, `Secretaria` ou `Financeiro` completo.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. A criacao direta de usuario exige senha provisoria e confirmacao iguais no cliente e no servidor, com controles independentes para mostrar/ocultar os dois campos. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
 5. Admin cadastra alunos em `Cadastro de alunos`, liberando o AVA no mesmo envio, e usa `Cadastros anteriores` apenas para concluir registros do fluxo antigo.
@@ -310,13 +310,14 @@ Helpers:
 12. Admin pode inativar somente o mes selecionado ou encerrar o aluno a partir daquele mes, sempre preservando historico antigo.
 13. Exporta PDF/Excel com a unidade de cada aluno e acompanha log em card separado.
 14. Na aba `Pagamentos`, admin registra gastos internos da loja com unidade, insumo, data, valor e quem fez a compra; esses registros sao separados dos alunos financeiros.
+15. Teacher abre `/ava/teacher?task=financeiro`, escolhe mes e polo e ve apenas nome, polo, situacao, vencimento e data de confirmacao dos alunos vinculados. A consulta usa o snapshot mensal, mas remove valores e demais dados sensiveis antes de renderizar.
 
 ### Secretaria
 
 1. Admin ou Teacher abre `/ava/secretaria` depois da escolha pos-login ou pela sidebar.
 2. A pagina agrupa atalhos administrativos, sem substituir as rotas antigas por `?task=`.
 3. Admin ve pre-cadastros, financeiro, agenda, contratos, administracao e sistema.
-4. Teacher ve somente pre-cadastros proprios/atribuidos e contratos permitidos por role/vinculo.
+4. Teacher ve somente cadastros proprios/atribuidos, contratos permitidos e um atalho para o Financeiro limitado por role/vinculo.
 5. Student nao acessa `/ava/secretaria`; ao tentar, a autorizacao o redireciona para o AVA Student.
 
 ### Agenda
@@ -342,7 +343,7 @@ Helpers:
 ## Regras de negocio que precisam ser preservadas
 
 - Query `?task=` controla a tarefa principal em admin, teacher e student.
-- `/ava/escolha` separa visualmente `AVA`, `Secretaria` e `Financeiro` para Admin; Teacher ve somente AVA/Secretaria e Student nao ve a escolha.
+- `/ava/escolha` separa visualmente `AVA`, `Secretaria` e `Financeiro`; Admin recebe o painel completo, Teacher recebe somente acompanhamento sem valores e Student nao ve a escolha.
 - `/ava/secretaria` e um painel de atalhos protegidos, nao uma permissao nova nem substituto das validacoes server-side das tarefas existentes.
 - O botao publico `Quero ser aluno Candy` abre WhatsApp e nao cria pre-cadastro sozinho.
 - Pre-cadastro nunca deve liberar login automaticamente; quando existir solicitacao, ela deve ser criada/revisada pela equipe antes de virar aluno.
@@ -375,7 +376,7 @@ Helpers:
 - Mensagem teacher/aluno exige vinculo.
 - Contratos e avatar exigem sessao.
 - Edicao rapida de nome/email/telefone de aluno na tela `Usuarios` exige `ADMIN` no servidor e so aceita usuarios `STUDENT`.
-- Agenda e financeiro sao internos do admin.
+- Agenda e a administracao financeira sao internas do Admin; Teacher recebe somente a leitura minimizada da situacao dos alunos vinculados.
 
 ## Decisoes tecnicas tomadas
 

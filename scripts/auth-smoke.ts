@@ -320,14 +320,21 @@ async function assertAreaChoiceShell(role: SmokeRole, cookie: string) {
     throw new Error("Tela de escolha sem areas AVA e Secretaria.");
   }
 
-  const financeHref = "/ava/admin?task=financeiro";
+  const adminFinanceHref = "/ava/admin?task=financeiro";
+  const teacherFinanceHref = "/ava/teacher?task=financeiro";
 
-  if (role === "ADMIN" && !normalizedText.includes(financeHref)) {
+  if (role === "ADMIN" && !normalizedText.includes(adminFinanceHref)) {
     throw new Error("Tela de escolha admin sem area Financeiro.");
   }
 
-  if (role === "TEACHER" && normalizedText.includes(financeHref)) {
-    throw new Error("Tela de escolha teacher vazou acesso ao Financeiro.");
+  if (
+    role === "TEACHER" &&
+    (!normalizedText.includes(teacherFinanceHref) ||
+      normalizedText.includes(adminFinanceHref))
+  ) {
+    throw new Error(
+      "Tela de escolha teacher sem Financeiro limitado ou com link admin.",
+    );
   }
 
   if (!normalizedText.includes("/ava/vendas")) {
@@ -570,7 +577,6 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
       "/ava/admin?task=apis-senhas",
       "/ava/admin?task=financeiro",
       "Agenda interna",
-      "Financeiro",
     ];
 
     for (const fragment of forbiddenTeacherAvaFragments) {
@@ -648,6 +654,9 @@ async function assertTeacherAvaTaskRoutes(role: SmokeRole, cookie: string) {
     "/ava/teacher?task=aceitar-alunos",
     "/ava/teacher?task=aceitar-alunos&unit=IVATE",
     "/ava/teacher?task=aceitar-alunos&unit=DOURADINA",
+    "/ava/teacher?task=financeiro&month=8",
+    "/ava/teacher?task=financeiro&month=8&unit=IVATE",
+    "/ava/teacher?task=financeiro&month=8&unit=DOURADINA",
   ];
 
   for (const path of paths) {
@@ -673,6 +682,37 @@ async function assertTeacherAvaTaskRoutes(role: SmokeRole, cookie: string) {
         normalizedText.includes("/ava/admin?task=apis-senhas"))
     ) {
       throw new Error(`Teacher Secretaria vazou link admin em ${path}.`);
+    }
+
+    if (path.includes("task=financeiro")) {
+      for (const expectedText of [
+        "Visao protegida da teacher",
+        "Acompanhamento de mensalidades",
+        "Dados financeiros restritos",
+      ]) {
+        if (!normalizedText.includes(expectedText)) {
+          throw new Error(
+            `Financeiro teacher sem conteudo esperado: ${expectedText}`,
+          );
+        }
+      }
+
+      for (const forbiddenText of [
+        "/ava/admin?task=financeiro",
+        "R$",
+        "Total previsto",
+        "Gastos da loja",
+        "Valor mensal",
+        "Forma de pagamento",
+        "Baixar PDF",
+        "Excel",
+      ]) {
+        if (normalizedText.includes(forbiddenText)) {
+          throw new Error(
+            `Financeiro teacher vazou dado ou acao sensivel: ${forbiddenText}`,
+          );
+        }
+      }
     }
   }
 
@@ -701,6 +741,24 @@ async function assertStudentRoutes(role: SmokeRole, cookie: string) {
     studentResponse,
     studentText,
   );
+
+  const teacherFinanceResponse = await fetch(
+    buildUrl("/ava/teacher?task=financeiro&month=8"),
+    {
+      headers: { cookie },
+      redirect: "manual",
+    },
+  );
+  const teacherFinanceLocation = teacherFinanceResponse.headers.get("location");
+
+  if (
+    ![302, 303, 307, 308].includes(teacherFinanceResponse.status) ||
+    !teacherFinanceLocation?.includes("/ava/student")
+  ) {
+    throw new Error(
+      `Student nao deve acessar Financeiro teacher, recebeu ${teacherFinanceResponse.status} ${teacherFinanceLocation ?? ""}`,
+    );
+  }
 
   const escolhaResponse = await fetch(buildUrl("/ava/escolha"), {
     headers: { cookie },
@@ -822,6 +880,7 @@ async function assertAnonymousProtectedRoutes() {
 
   const deepLinks = [
     "/ava/admin?task=financeiro&unit=DOURADINA",
+    "/ava/teacher?task=financeiro&unit=IVATE&month=8",
     "/ava/teacher?task=aceitar-alunos&unit=IVATE&preStatus=PENDING",
     "/ava/student?task=homeworks",
     "/ava/secretaria?unit=DOURADINA",
