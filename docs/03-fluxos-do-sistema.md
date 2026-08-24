@@ -407,6 +407,18 @@ Helpers:
 - Pre-cadastros usam a mesma tabela `StudentPreRegistration`; a fila operacional agrupa como `Novo` todos os status ainda conversiveis, sem apagar os estados historicos ja gravados.
 - A edicao da fila `Novo` usa atualizacao condicional no servidor: se outra sessao converter o registro primeiro, a edicao e recusada e precisa ser recarregada, evitando divergencia entre pre-cadastro, AVA, financeiro e agenda.
 
+## Fluxo de Vendas (PDV)
+
+1. Admin ou Teacher entra em `/ava/vendas`; Student e recusado pelo guard server-side.
+2. O operador pesquisa produtos ativos, adiciona quantidades ao carrinho e seleciona um aluno autorizado ou informa um comprador avulso.
+3. Em `Pago na hora`, o servidor exige uma forma de pagamento. Comprador avulso e permitido somente neste fluxo.
+4. Em `Fatura mensal`, o servidor exige um aluno cadastrado e uma competencia ativa ainda nao paga, gravando ano/mes no fuso `America/Sao_Paulo`; Teacher so pode selecionar aluno vinculado.
+5. A transaction rele produto, preco, estado e estoque no servidor, baixa cada quantidade e cria `Sale`/`SaleItem` com snapshots dos valores.
+6. Se qualquer item mudou ou ficou sem estoque, toda a transaction falha sem criar venda e sem baixar estoque parcialmente.
+7. O cancelamento registra operador, data e motivo e devolve as quantidades ao estoque na mesma transaction; a venda nao e apagada e uma competencia ja paga precisa ser reaberta pelo Admin antes do estorno.
+
+A cobranca mensal de produtos fica no ledger de `Sale`, separada de `FinancialPayment`. Assim, uma compra nao altera snapshots nem historico de mensalidades.
+
 ## Riscos ao alterar esta parte
 
 - Mudar task ids quebra links profundos.

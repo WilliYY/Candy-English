@@ -23,7 +23,7 @@ Arquivos centrais:
 Rotas principais:
 
 - `/`, `/sobre`, `/metodologia`, `/planos`, `/contato`
-- `/ava`, `/ava/login`, `/ava/admin`, `/ava/teacher`, `/ava/student`
+- `/ava`, `/ava/login`, `/ava/escolha`, `/ava/admin`, `/ava/teacher`, `/ava/student`, `/ava/secretaria`, `/ava/vendas`
 - `/ava/avatar`, `/ava/avatar/[userId]`
 - `/ava/contracts/[contractId]`
 - `/ava/homework-assets/[homeworkId]`
@@ -44,6 +44,7 @@ Rotas principais:
 - Teacher trabalha com alunos vinculados por `StudentTeacherAssignment`.
 - Contratos e avatares sao protegidos por rotas server-side.
 - Financeiro e modulo interno do admin, sem pagamento online.
+- Vendas e um PDV interno para Admin e Teacher; Student nao acessa. Teacher ve somente alunos vinculados e as proprias vendas.
 - Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
 - Homework e aula interativa devem manter arquivo e campos protegidos por permissao de aluno/teacher/admin.
 - Candy XP e persistido por eventos server-side e continua respeitando role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos. Usuarios logados veem ranking interno de alunos/profs com nome, avatar/foto, role e metricas de XP, paginado de 10 em 10, sem email nem dados sensiveis.

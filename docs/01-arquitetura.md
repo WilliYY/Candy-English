@@ -10,11 +10,13 @@ Camadas principais:
 
 - `src/app/(site)/`: site institucional.
 - `src/app/ava/`: areas logadas do AVA.
+- `src/app/ava/vendas/`: pagina e server actions do PDV interno.
 - `src/app/api/`: Auth.js e healthcheck.
 - `src/app/api/catty/chat/route.ts`: endpoint server-side da Catty protegido por `auth()`, com Gemini padrao, OpenAI acionado por chamada nominal e fallback local apenas para usuario autorizado.
 - `src/app/api/site-visits/route.ts`: endpoint publico leve para ler/incrementar o contador agregado de visitas do site institucional.
 - `src/components/site/`: header, footer, home, paginas institucionais, Catty e WhatsApp.
 - `src/components/ava/`: paineis e formularios do AVA.
+- `src/components/ava/sales-pos-panel.tsx`: PDV, cadastro de produtos e historico de vendas.
 - `src/components/ui/`: componentes base shadcn/ui.
 - `src/lib/auth.ts`: Auth.js e callbacks.
 - `src/lib/authorization.ts`: guard de roles para paginas.
@@ -57,6 +59,7 @@ Servicos Docker:
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
 - Financeiro e agenda sao modulos internos do `ADMIN`.
+- Vendas e um modulo interno de `ADMIN` e `TEACHER`; Teacher opera apenas alunos vinculados e consulta/cancela somente vendas que registrou.
 - APIs e senhas ficam em modulo interno do `ADMIN`, com valor criptografado e revelacao explicita na UI.
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.
 - Catty permanece nos paineis logados; WhatsApp nao aparece nos paineis logados.
@@ -72,12 +75,14 @@ Servicos Docker:
 - Next.js App Router e usado em todo o projeto.
 - Autorizacao de paginas fica em server components com `requireAvaRole`.
 - Escritas sensiveis ficam em server actions.
+- Vendas usa validacao Zod e transaction Prisma para validar precos/estoque no servidor, baixar estoque e criar venda de forma atomica.
 - `src/lib/whatsapp.ts` centraliza o numero publico da Candy e as URLs `wa.me` usadas pelo site e pelo login, com fallback seguro se `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE` nao estiver configurado.
 - `src/app/ava/login/actions.ts` e `src/components/ava/student-pre-registration-form.tsx` ficam como legado do fluxo de pre-cadastro, sem entrada publica no login.
 - `src/app/ava/pre-registrations/actions.ts` contem actions protegidas por `ADMIN`/`TEACHER` para criar pre-cadastro interno na Secretaria, atualizar status, recusar e converter em `User.role=STUDENT` com `StudentProfile`; Teacher so opera registros criados por ela ou atribuidos a sua `TeacherProfile`.
 - Middleware Edge nao e usado para carregar Prisma.
 - UI do AVA usa tarefas por query string `?task=`.
 - Modulos internos grandes do admin usam uma task propria, como `financeiro` e `agenda`.
+- O PDV usa rota propria `/ava/vendas` e area `VENDAS` no `AvaWorkspaceShell`, sem misturar estado ou navegacao com Financeiro.
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
 - O contador de visitas do site usa componente client no footer publico, chama `/api/site-visits` apos o carregamento, aplica cooldown local no navegador e incrementa apenas rotas institucionais (`/`, `/sobre`, `/metodologia`, `/planos`, `/contato`).
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets. Assets de homework/Candy XP usam `Cache-Control: private, no-store`; a leitura interna continua inline para o PDF.js e a query `?download=1` responde como anexo para evitar abrir a interface externa do navegador.

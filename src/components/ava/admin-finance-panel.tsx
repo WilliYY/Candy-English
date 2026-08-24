@@ -119,6 +119,18 @@ export type AdminFinancePaymentRow = {
   snapshotPaymentMethod: string;
   snapshotPhone: string | null;
   snapshotUnit: FinancialUnit;
+  sales: {
+    createdAt: string;
+    id: string;
+    items: {
+      id: string;
+      lineTotalCents: number;
+      productNameSnapshot: string;
+      quantity: number;
+      unitSalePriceCents: number;
+    }[];
+    totalCents: number;
+  }[];
   updatedAt: string;
   year: number;
 };
@@ -672,6 +684,14 @@ function getInstallmentLabel(payment: AdminFinancePaymentRow) {
   return "Mensalidade";
 }
 
+function getSaleChargesTotal(payment: AdminFinancePaymentRow) {
+  return payment.sales.reduce((total, sale) => total + sale.totalCents, 0);
+}
+
+function getInvoiceTotal(payment: AdminFinancePaymentRow) {
+  return payment.snapshotAmountCents + getSaleChargesTotal(payment);
+}
+
 function getPaymentTimelineLabel(row: FinanceMonthRow) {
   if (row.status === "incomplete") {
     return "Complete os dados financeiros";
@@ -770,7 +790,7 @@ function buildFinanceMonthRows(
       return {
         ...student,
         address: payment.snapshotAddress,
-        amountCents: payment.snapshotAmountCents,
+        amountCents: getInvoiceTotal(payment),
         cpf: payment.snapshotCpf,
         email: payment.snapshotEmail,
         installmentsTotal: payment.snapshotInstallmentsTotal,
@@ -2688,9 +2708,37 @@ export function AdminFinancePanel({
                       {getPaymentTimelineLabel(selectedRow)}
                     </strong>
                     <span className="mt-1 block text-xs opacity-75">
-                      {formatCurrency(selectedRow.amountCents)} com vencimento no dia {selectedRow.paymentDay}.
+                      Fatura de {formatCurrency(selectedRow.amountCents)} com vencimento no dia {selectedRow.paymentDay}.
                     </span>
                   </div>
+                  {selectedRow.payment.sales.length > 0 ? (
+                    <div className="mt-3 overflow-hidden rounded-lg border border-cyan-200 bg-cyan-50/65">
+                      <div className="grid grid-cols-3 gap-px bg-cyan-200 text-xs">
+                        <span className="bg-white p-2.5">
+                          <small className="block font-bold uppercase text-primary/50">Mensalidade</small>
+                          <strong className="mt-1 block tabular-nums text-primary">{formatCurrency(selectedRow.payment.snapshotAmountCents)}</strong>
+                        </span>
+                        <span className="bg-cyan-50 p-2.5">
+                          <small className="block font-bold uppercase text-cyan-800/65">Produtos</small>
+                          <strong className="mt-1 block tabular-nums text-cyan-900">{formatCurrency(getSaleChargesTotal(selectedRow.payment))}</strong>
+                        </span>
+                        <span className="bg-primary p-2.5 text-white">
+                          <small className="block font-bold uppercase text-white/65">Total</small>
+                          <strong className="mt-1 block tabular-nums">{formatCurrency(getInvoiceTotal(selectedRow.payment))}</strong>
+                        </span>
+                      </div>
+                      <div className="grid gap-1.5 border-t border-cyan-200 p-2.5">
+                        {selectedRow.payment.sales.flatMap((sale) =>
+                          sale.items.map((item) => (
+                            <span className="flex items-center justify-between gap-3 text-xs text-cyan-950" key={item.id}>
+                              <span className="min-w-0 truncate">{item.quantity}x {item.productNameSnapshot}</span>
+                              <strong className="shrink-0 tabular-nums">{formatCurrency(item.lineTotalCents)}</strong>
+                            </span>
+                          )),
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="mt-3 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                     <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border bg-white px-3 py-2">
                       <CircleDollarSign
@@ -2811,13 +2859,30 @@ export function AdminFinancePanel({
                                 </span>
                               </span>
                               <span className="mt-2 grid gap-1 text-xs opacity-75 sm:grid-cols-2">
-                                <span>{formatCurrency(payment.snapshotAmountCents)}</span>
+                                <span>
+                                  {formatCurrency(getInvoiceTotal(payment))}
+                                  {payment.sales.length > 0
+                                    ? ` (mensalidade ${formatCurrency(payment.snapshotAmountCents)} + produtos ${formatCurrency(getSaleChargesTotal(payment))})`
+                                    : ""}
+                                </span>
                                 <span>Pago em {formatDate(payment.paidAt)}</span>
                               </span>
                             </span>
                             <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
                           </summary>
                           <div className="border-t border-white/70 bg-white/75 p-3">
+                            {payment.sales.length > 0 ? (
+                              <div className="mb-3 grid gap-1.5 rounded-lg border border-cyan-200 bg-cyan-50 p-2.5 text-xs text-cyan-950">
+                                {payment.sales.flatMap((sale) =>
+                                  sale.items.map((item) => (
+                                    <span className="flex items-center justify-between gap-3" key={item.id}>
+                                      <span className="min-w-0 truncate">{item.quantity}x {item.productNameSnapshot}</span>
+                                      <strong className="shrink-0 tabular-nums">{formatCurrency(item.lineTotalCents)}</strong>
+                                    </span>
+                                  )),
+                                )}
+                              </div>
+                            ) : null}
                             {payment.isActive ? (
                               status === "incomplete" ? (
                                 <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-900">

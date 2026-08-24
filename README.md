@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Objetivo
 
-O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional e AVA com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
+O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional, AVA e um PDV interno de vendas com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
 
 O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, materiais, vocabulario, homework online, feedback, contratos PDF protegidos, aula ao vivo em manutencao temporaria, financeiro interno e agenda administrativa.
 
@@ -75,6 +75,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/13-financeiro.md`: modulo financeiro admin.
 - `docs/14-agenda.md`: modulo agenda admin.
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
+- `docs/19-vendas.md`: PDV interno, produtos, estoque e cobrancas de compras.
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
 - `docs/18-mobile-api.md`: autenticacao movel, sessoes revogaveis, overview e modulos nativos por role.

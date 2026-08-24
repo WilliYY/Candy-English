@@ -88,6 +88,12 @@ Financeiro:
 - `FinancialExpense`
 - `FinancialLog`
 
+Vendas:
+
+- `SaleProduct`: catalogo, custo, preco de venda, estoque e estado ativo.
+- `Sale`: cabecalho auditavel da venda, comprador, liquidacao, competencia e cancelamento.
+- `SaleItem`: snapshot imutavel de nome, custo, preco e quantidade de cada item vendido.
+
 Agenda:
 
 - `AgendaStudent`
@@ -118,6 +124,8 @@ Enums:
 - `CattyUserArtifactStatus`
 - `CattyArtifactEnrichmentStatus`
 - `FinancialUnit`
+- `SaleSettlementType`
+- `SaleStatus`
 - `CandyXpEventKind`
 - `CandyMissionKind`
 - `CandyXpActivityStatus`
@@ -211,6 +219,7 @@ Enums:
 - Migration `20260713120000_financial_expenses` adiciona `FinancialExpense` para gastos/insumos mensais da loja, separado dos pagamentos dos alunos.
 - Migration `20260713133000_financial_units` adiciona `FinancialUnit`, unidade no cadastro financeiro, snapshot mensal da unidade e unidade nos gastos internos; registros antigos recebem `IVATE` por padrao.
 - Migration `20260801210000_mobile_admin_finance_operations` adiciona chaves unicas de idempotencia para alteracoes de pagamentos e criacao de gastos pela API mobile ADMIN.
+- Migration `20260823233000_add_sales_pos` adiciona catalogo, estoque, vendas, itens, cobranca mensal separada e auditoria de cancelamento do PDV.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.

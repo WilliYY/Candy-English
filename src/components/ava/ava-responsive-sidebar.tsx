@@ -81,11 +81,11 @@ export function AvaResponsiveSidebar({
   }
 
   const menuTitle =
-    areaLabel === "Secretaria" ? "Menu da Secretaria" : "Menu do AVA";
+    areaLabel === "AVA" ? "Menu do AVA" : `Menu de ${areaLabel}`;
   const navigationLabel =
-    areaLabel === "Secretaria"
-      ? "Navegacao principal da Secretaria"
-      : "Navegacao principal do AVA";
+    areaLabel === "AVA"
+      ? "Navegacao principal do AVA"
+      : `Navegacao principal de ${areaLabel}`;
 
   return (
     <>

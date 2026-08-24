@@ -46,6 +46,7 @@ npm run dev
 npm run lint
 npm run typecheck
 npm run build
+npm run test:sales
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run test:mobile-auth

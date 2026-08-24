@@ -6,6 +6,7 @@ import {
   BookOpen,
   Building2,
   ShieldCheck,
+  Store,
   WalletCards,
 } from "lucide-react";
 import { BrandLogo } from "@/components/site/brand-logo";
@@ -66,7 +67,16 @@ export default async function AvaAreaChoicePage() {
             title: "FINANCEIRO",
           },
         ]
-      : []),
+       : []),
+    {
+      accent: "border-sky-200 bg-sky-50/72 text-sky-950",
+      bar: "bg-sky-500",
+      description: "PDV, produtos, estoque e faturas do mês.",
+      href: "/ava/vendas",
+      icon: Store,
+      iconStyle: "bg-sky-700 text-white shadow-sky-900/20",
+      title: "VENDAS",
+    },
   ];
 
   return (
@@ -91,11 +101,7 @@ export default async function AvaAreaChoicePage() {
         </header>
 
         <div
-          className={`grid gap-4 ${
-            areas.length === 3
-              ? "md:grid-cols-3"
-              : "mx-auto w-full max-w-3xl md:grid-cols-2"
-          }`}
+          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {areas.map((area) => (
             <Link

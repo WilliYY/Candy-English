@@ -670,6 +670,13 @@ Cada decisao deve conter:
 
 ## Regras de negocio que precisam ser preservadas
 
+### 2026-08-23 - PDV separado do Financeiro de mensalidades
+
+- Decisao: criar `/ava/vendas` para Admin e Teacher com catalogo, estoque, venda paga na hora ou lancada na fatura mensal do aluno, mantendo as compras em `Sale`/`SaleItem` e sem alterar `FinancialPayment`.
+- Motivo: estoque e venda precisam de auditoria e concorrencia proprias; somar compras diretamente ao snapshot da mensalidade apagaria a separacao entre valor escolar e consumo.
+- Impacto: novos modelos `SaleProduct`, `Sale` e `SaleItem`, migration `20260823233000_add_sales_pos`, server actions transacionais, painel de Vendas, escolha de area e smoke de permissoes.
+- Riscos/cuidados: fatura mensal exige aluno cadastrado; Teacher so usa alunos vinculados e suas vendas; preco e estoque sempre sao revalidados no servidor; cancelamento preserva o registro e devolve estoque.
+
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
 - Se uma decisao mudar, registrar a substituicao neste arquivo em vez de apagar o passado.
 

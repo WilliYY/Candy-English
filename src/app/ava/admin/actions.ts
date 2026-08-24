@@ -1052,6 +1052,19 @@ export async function createFinancialStudent(
   const prisma = getPrisma();
 
   await prisma.$transaction(async (tx) => {
+    const linkedStudentProfile = parsed.data.email
+      ? await tx.studentProfile.findFirst({
+          where: {
+            financialStudent: null,
+            user: {
+              email: parsed.data.email,
+              isActive: true,
+              role: "STUDENT",
+            },
+          },
+          select: { id: true },
+        })
+      : null;
     const student = await tx.financialStudent.create({
       data: {
         address: parsed.data.address,
@@ -1063,6 +1076,7 @@ export async function createFinancialStudent(
         paymentDay: parsed.data.paymentDay,
         paymentMethod: parsed.data.paymentMethod,
         phone: parsed.data.phone,
+        studentProfileId: linkedStudentProfile?.id,
         unit: parsed.data.unit,
       },
     });

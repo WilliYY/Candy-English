@@ -19,6 +19,7 @@ import {
   Radio,
   Settings,
   Sparkles,
+  Store,
   Trophy,
   UserCheck,
   UserPlus,
@@ -96,6 +97,21 @@ const navGroups = [
         icon: Palette,
         label: "Catty dos alunos",
         section: "Catty",
+      },
+    ],
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    areaLabel: "Vendas",
+    href: "/ava/vendas",
+    icon: Store,
+    label: "Vendas",
+    links: [
+      {
+        href: "/ava/vendas",
+        icon: Store,
+        label: "PDV e estoque",
+        section: "Operacao de vendas",
       },
     ],
   },
@@ -300,6 +316,7 @@ export type AvaWorkspaceArea =
   | "AVA"
   | "SECRETARIA"
   | "FINANCEIRO"
+  | "VENDAS"
   | "STUDENT";
 
 function getWorkspaceAreaLabel(area: AvaWorkspaceArea) {
@@ -309,6 +326,10 @@ function getWorkspaceAreaLabel(area: AvaWorkspaceArea) {
 
   if (area === "FINANCEIRO") {
     return "Financeiro";
+  }
+
+  if (area === "VENDAS") {
+    return "Vendas";
   }
 
   return "AVA";
@@ -480,6 +501,14 @@ export async function AvaWorkspaceShell({
                         Financeiro
                       </AvaNavAlertLink>
                     ) : null}
+                    <AvaNavAlertLink
+                      href="/ava/vendas"
+                      className="relative col-span-2 flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-sky-200 bg-sky-50/80 px-2.5 py-2 text-sm font-bold text-sky-950 shadow-sm transition-all hover:border-sky-400 hover:bg-white"
+                      activeClassName={navItemActiveClassName}
+                    >
+                      <Store aria-hidden="true" className="size-4" />
+                      Vendas
+                    </AvaNavAlertLink>
                   </div>
                 </div>
               </div>
@@ -490,7 +519,9 @@ export async function AvaWorkspaceShell({
                 ? "Secretaria"
                 : area === "FINANCEIRO"
                   ? "Financeiro"
-                  : "Area de trabalho"}
+                  : area === "VENDAS"
+                    ? "Vendas"
+                    : "Area de trabalho"}
             </div>
 
             <nav
@@ -575,9 +606,10 @@ export async function AvaWorkspaceShell({
                 const panelHasTaskLink = group.links.some(
                   (link) => link.href === group.href,
                 );
-                const shouldKeepGroupOpen =
-                  (area === "SECRETARIA" && group.label === "Secretaria") ||
-                  (area === "AVA" &&
+                 const shouldKeepGroupOpen =
+                   (area === "SECRETARIA" && group.label === "Secretaria") ||
+                   (area === "VENDAS" && group.label === "Vendas") ||
+                   (area === "AVA" &&
                     ((group.label === "Admin AVA" && role === "ADMIN") ||
                       (group.label === "Teacher AVA" && role === "TEACHER")));
 

@@ -214,6 +214,16 @@ enum FinancialUnit {
   DOURADINA
 }
 
+enum SaleSettlementType {
+  PAID_NOW
+  MONTHLY_INVOICE
+}
+
+enum SaleStatus {
+  COMPLETED
+  CANCELED
+}
+
 model User {
   id                               String                      @id @default(cuid())
   name                             String
@@ -259,6 +269,10 @@ model User {
   sentChatMessages                 ChatMessage[]
   uploadedContracts                ContractDocument[]          @relation("UploadedContracts")
   createdFinancialExpenses         FinancialExpense[]          @relation("FinancialExpenseCreatedBy")
+  createdSaleProducts              SaleProduct[]                @relation("SaleProductCreatedBy")
+  updatedSaleProducts              SaleProduct[]                @relation("SaleProductUpdatedBy")
+  completedSales                   Sale[]                       @relation("SaleSoldBy")
+  canceledSales                    Sale[]                       @relation("SaleCanceledBy")
   mobileDevices                    MobileDevice[]
   mobileSessions                   MobileSession[]
   createdAt                        DateTime                    @default(now())
@@ -291,6 +305,8 @@ model StudentProfile {
   contracts                       ContractDocument[]
   liveSessions                    LiveSession[]
   convertedStudentPreRegistration StudentPreRegistration?     @relation("StudentPreRegistrationConvertedStudentProfile")
+  financialStudent                FinancialStudent?
+  sales                           Sale[]
 }
 
 model StudentPreRegistration {
@@ -595,7 +611,10 @@ model FinancialStudent {
   cpf                             String?
   email                           String?
   address                         String?
+  studentProfileId                String?                 @unique
+  studentProfile                  StudentProfile?         @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
   payments                        FinancialPayment[]
+  sales                           Sale[]
   logs                            FinancialLog[]
   convertedStudentPreRegistration StudentPreRegistration? @relation("StudentPreRegistrationConvertedFinancialStudent")
   createdAt                       DateTime                @default(now())
@@ -628,6 +647,7 @@ model FinancialPayment {
   note                      String?
   lastMobileOperationId     String?          @unique
   logs                      FinancialLog[]
+  sales                     Sale[]
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
 
@@ -673,6 +693,83 @@ model FinancialExpense {
   @@index([year, month, unit, purchasedAt])
   @@index([year, month, purchasedAt])
   @@index([createdByUserId])
+}
+
+model SaleProduct {
+  id                 String     @id @default(cuid())
+  name               String
+  normalizedName     String     @unique
+  costCents          Int
+  salePriceCents     Int
+  stockQuantity      Int        @default(0)
+  isActive           Boolean    @default(true)
+  createdByUserId    String?
+  createdByUser      User?      @relation("SaleProductCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUserId    String?
+  updatedByUser      User?      @relation("SaleProductUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  saleItems          SaleItem[]
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([isActive, name])
+  @@index([stockQuantity])
+}
+
+model Sale {
+  id                    String             @id @default(cuid())
+  operationId           String             @unique
+  buyerStudentProfileId String?
+  buyerStudentProfile   StudentProfile?    @relation(fields: [buyerStudentProfileId], references: [id], onDelete: SetNull)
+  financialStudentId    String?
+  financialStudent      FinancialStudent?  @relation(fields: [financialStudentId], references: [id], onDelete: SetNull)
+  financialPaymentId    String?
+  financialPayment      FinancialPayment?  @relation(fields: [financialPaymentId], references: [id], onDelete: SetNull)
+  buyerNameSnapshot     String
+  unit                  FinancialUnit
+  settlementType        SaleSettlementType
+  paymentMethod         String?
+  invoiceYear           Int?
+  invoiceMonth          Int?
+  totalCents            Int
+  costTotalCents        Int
+  note                  String?
+  status                SaleStatus         @default(COMPLETED)
+  paidAt                DateTime?
+  soldByUserId          String?
+  soldByUser            User?              @relation("SaleSoldBy", fields: [soldByUserId], references: [id], onDelete: SetNull)
+  canceledAt            DateTime?
+  canceledByUserId      String?
+  canceledByUser        User?              @relation("SaleCanceledBy", fields: [canceledByUserId], references: [id], onDelete: SetNull)
+  cancelReason          String?
+  items                 SaleItem[]
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  @@index([createdAt, status])
+  @@index([soldByUserId, createdAt])
+  @@index([buyerStudentProfileId, invoiceYear, invoiceMonth, status])
+  @@index([financialStudentId, invoiceYear, invoiceMonth, status])
+  @@index([financialPaymentId])
+  @@index([unit, invoiceYear, invoiceMonth, status])
+  @@index([invoiceYear, invoiceMonth, settlementType, status])
+}
+
+model SaleItem {
+  id                 String      @id @default(cuid())
+  saleId             String
+  sale               Sale        @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId          String
+  product            SaleProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  productNameSnapshot String
+  quantity           Int
+  unitCostCents      Int
+  unitSalePriceCents Int
+  lineCostCents      Int
+  lineTotalCents     Int
+  createdAt          DateTime    @default(now())
+
+  @@index([saleId])
+  @@index([productId, createdAt])
 }
 
 model AgendaStudent {

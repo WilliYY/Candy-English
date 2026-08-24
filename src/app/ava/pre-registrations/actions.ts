@@ -1103,6 +1103,7 @@ async function acceptStudentPreRegistrationWithContext(
           paymentDay: financialRegistration.paymentDay,
           paymentMethod: financialRegistration.paymentMethod,
           phone: contactPhone,
+          studentProfileId: studentProfile.id,
           unit: request.unit,
         },
       });

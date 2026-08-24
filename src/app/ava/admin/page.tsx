@@ -352,6 +352,27 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             snapshotPaymentMethod: true,
             snapshotPhone: true,
             snapshotUnit: true,
+            sales: {
+              where: {
+                settlementType: "MONTHLY_INVOICE",
+                status: "COMPLETED",
+              },
+              orderBy: { createdAt: "asc" },
+              select: {
+                createdAt: true,
+                id: true,
+                items: {
+                  select: {
+                    id: true,
+                    lineTotalCents: true,
+                    productNameSnapshot: true,
+                    quantity: true,
+                    unitSalePriceCents: true,
+                  },
+                },
+                totalCents: true,
+              },
+            },
             updatedAt: true,
             year: true,
           },
@@ -1063,6 +1084,12 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           snapshotPaymentMethod: payment.snapshotPaymentMethod,
           snapshotPhone: payment.snapshotPhone,
           snapshotUnit: payment.snapshotUnit,
+          sales: payment.sales.map((sale) => ({
+            createdAt: sale.createdAt.toISOString(),
+            id: sale.id,
+            items: sale.items,
+            totalCents: sale.totalCents,
+          })),
           updatedAt: payment.updatedAt.toISOString(),
           year: payment.year,
         })),

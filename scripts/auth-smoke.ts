@@ -22,9 +22,11 @@ if (!databaseUrl) {
 const pool = new Pool({ connectionString: databaseUrl });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
-const testEmails = roles.map(
+const roleEmails = roles.map(
   (role) => `codex-smoke-${role.toLowerCase()}-${runId}@example.com`,
 );
+const noProfileTeacherEmail = `codex-smoke-teacher-no-profile-${runId}@example.com`;
+const testEmails = [...roleEmails, noProfileTeacherEmail];
 
 function getDefaultAvaPath(role: SmokeRole) {
   if (role === "ADMIN" || role === "TEACHER") return "/ava/escolha";
@@ -328,7 +330,76 @@ async function assertAreaChoiceShell(role: SmokeRole, cookie: string) {
     throw new Error("Tela de escolha teacher vazou acesso ao Financeiro.");
   }
 
+  if (!normalizedText.includes("/ava/vendas")) {
+    throw new Error(`Tela de escolha ${role} sem area Vendas.`);
+  }
+
   console.log(`OK escolha limpa ${role.toLowerCase()}`);
+}
+
+async function assertSalesPermissions(role: SmokeRole, cookie: string) {
+  const response = await fetch(buildUrl("/ava/vendas"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const location = response.headers.get("location");
+
+  if (role === "STUDENT") {
+    if (
+      ![302, 303, 307, 308].includes(response.status) ||
+      !location?.includes("/ava/student")
+    ) {
+      throw new Error(
+        `Student nao deve acessar Vendas, recebeu ${response.status} ${location ?? ""}`,
+      );
+    }
+
+    console.log("OK vendas blocks student");
+    return;
+  }
+
+  if (!response.ok) {
+    throw new Error(`${role} esperava acessar Vendas, recebeu ${response.status}`);
+  }
+
+  const text = await response.text();
+  assertNoServerException("/ava/vendas", response, text);
+
+  for (const expectedText of ["Vendas", "PDV", "Produtos", "Histórico"]) {
+    if (!text.includes(expectedText)) {
+      throw new Error(`Vendas ${role} sem conteudo esperado: ${expectedText}`);
+    }
+  }
+
+  console.log(`OK vendas ${role.toLowerCase()}`);
+}
+
+async function assertTeacherWithoutProfileCannotListStudents() {
+  const passwordHash = await hash(testPassword, 12);
+
+  await prisma.user.create({
+    data: {
+      email: noProfileTeacherEmail,
+      isActive: true,
+      name: "Codex Smoke Teacher sem perfil",
+      passwordHash,
+      role: "TEACHER",
+    },
+  });
+
+  const cookie = await signInWithCredentials(noProfileTeacherEmail);
+  const response = await fetch(buildUrl("/ava/vendas"), {
+    headers: { cookie },
+  });
+  const text = await response.text();
+
+  assertNoServerException("/ava/vendas teacher sem perfil", response, text);
+
+  if (text.includes(roleEmails[2]) || text.includes("Codex Smoke STUDENT")) {
+    throw new Error("Teacher sem perfil recebeu aluno nao vinculado em Vendas.");
+  }
+
+  console.log("OK vendas teacher sem perfil nao lista alunos");
 }
 
 async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
@@ -624,6 +695,7 @@ async function assertAnonymousProtectedRoutes() {
     "/ava/student",
     "/ava/escolha",
     "/ava/secretaria",
+    "/ava/vendas",
   ];
 
   for (const path of protectedPaths) {
@@ -780,7 +852,7 @@ async function main() {
   await cleanup();
 
   for (const [index, role] of roles.entries()) {
-    const email = testEmails[index];
+    const email = roleEmails[index];
 
     const user = await createSmokeUser(role, email);
     const cookie = await signInWithCredentials(email);
@@ -789,12 +861,15 @@ async function main() {
     await assertPedagogicalWorkspace(role, cookie);
     await assertSecretariaPermissions(role, cookie);
     await assertSecretariaUnitLinks(role, cookie);
+    await assertSalesPermissions(role, cookie);
     await assertAdminAvaTaskRoutes(role, cookie);
     await assertTeacherAvaTaskRoutes(role, cookie);
     await assertStudentRoutes(role, cookie);
     await assertAdminOnlySecretariaTasks(role, cookie);
     await assertCattyChatAccess(role, cookie, user.id);
   }
+
+  await assertTeacherWithoutProfileCannotListStudents();
 
   await reportGoogleProvider();
   console.log("Candy English auth smoke OK");

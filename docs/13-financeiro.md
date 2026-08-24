@@ -6,6 +6,8 @@ O modulo Financeiro e uma area propria e exclusiva do administrador em `/ava/adm
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
+Compras de produtos lancadas para pagamento mensal sao gerenciadas em `/ava/vendas` e ficam no ledger `Sale`; elas nao alteram `FinancialPayment.snapshotAmountCents` nem os snapshots historicos da mensalidade.
+
 Tambem possui a aba `Pagamentos`, que registra gastos internos da loja por mes e por unidade, como insumos comprados, data, valor e pessoa que fez a acao.
 
 Nao e gateway de pagamento, nao emite boleto, nao cobra automaticamente e nao integra com banco.
@@ -46,6 +48,7 @@ Rota:
 - `FinancialStudent.installmentsTotal` e opcional; quando vazio, o aluno segue como mensalidade recorrente normal.
 - `FinancialPayment` guarda a linha mensal: mes, ano, status, data paga, observacao, `isActive` e snapshot de nome, valor, unidade, dia de pagamento, forma, telefone, CPF, email, endereco e dados de parcela quando houver.
 - `FinancialPayment.snapshotUnit` preserva a unidade daquele mes; meses antigos nao mudam se o cadastro do aluno trocar de unidade depois.
+- Valores de `Sale` nunca devem ser incorporados automaticamente ao snapshot de mensalidade. Um relatorio pode somar os dois totais visualmente, mas as origens permanecem separadas e auditaveis.
 - `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` registram a parcela daquele mes, como `1/12`, sem alterar pagamentos antigos.
 - Observacao e pagamento sao por mes; ao trocar mes, esses campos nao devem carregar automaticamente de outro mes.
 - Ao criar aluno recorrente em um mes, o sistema cria linhas daquele mes ate dezembro de 2026; meses anteriores nao recebem o novo aluno automaticamente.
