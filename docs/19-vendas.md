@@ -40,6 +40,7 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 - A foto e opcional. Produtos antigos ou sem foto continuam usando o icone do catalogo.
 - A imagem e servida por rota autenticada somente para `ADMIN` e `TEACHER`; o caminho privado do arquivo nao e enviado ao client.
 - Ao trocar ou remover a foto, o arquivo anterior e limpo depois que a atualizacao do banco termina com sucesso.
+- O runtime Docker leva os pacotes nativos `@img` da plataforma e o `sharp` so e carregado durante a conversao, preservando o health check das demais rotas.
 - `PAID_NOW` exige forma de pagamento e aceita aluno cadastrado ou nome avulso.
 - `MONTHLY_INVOICE` exige `StudentProfile` ativo, mensalidade ativa ainda nao paga e uma `invoiceDueDate` dentro da competencia atual no fuso `America/Sao_Paulo`.
 - Nome digitado livremente nunca cria divida mensal, pois nao existe identidade confiavel para cobrar depois.
