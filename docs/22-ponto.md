@@ -61,6 +61,19 @@ intervalos, com justificativa opcional em cada batida.
 4. Toda correcao pede um motivo e preserva a versao anterior.
 5. Baixa o espelho mensal da pessoa selecionada em PDF.
 
+## Direcao visual
+
+- O painel usa cores funcionais para facilitar leitura rapida sem alterar a
+  regra de negocio: roxo identifica navegacao, azul identifica consulta mensal,
+  verde identifica horas e entradas, ambar identifica alertas/correcoes e rosa
+  identifica saidas.
+- Os indicadores mensais possuem acentos e fundos distintos; entrada e saida
+  tambem usam borda lateral e icone proprios no historico.
+- Filtros, batida manual e gestao de pessoas permanecem em faixas operacionais
+  responsivas, enquanto registros repetidos continuam em cards compactos.
+- Animacoes se limitam ao retorno visual de `hover` e usam `motion-safe` para
+  respeitar a preferencia de movimento reduzido do sistema.
+
 ## PDF
 
 O relatorio e gerado no servidor por rota autenticada. `ADMIN` pode baixar

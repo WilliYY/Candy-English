@@ -7,6 +7,7 @@ import {
   Clock3,
   Download,
   FileClock,
+  Info,
   LogIn,
   LogOut,
   PencilLine,
@@ -462,23 +463,31 @@ export function TimeClockPanel({
     : null;
 
   return (
-    <main className="min-h-screen bg-[#fffafe] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <header className="flex flex-col justify-between gap-4 border-b border-primary/15 pb-5 md:flex-row md:items-end">
-          <div>
-            <p className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.16em] text-primary/60">
-              <FileClock aria-hidden="true" className="size-4" />
-              Controle interno
-            </p>
-            <h1 className="mt-2 text-3xl font-extrabold tracking-normal text-primary">
-              Ponto
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Entradas, saidas, intervalos e espelho mensal da equipe.
-            </p>
+    <main className="min-h-screen bg-[#fff9fc] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
+        <header className="relative overflow-hidden border-y border-violet-200 bg-violet-50/70 px-4 py-5 sm:px-5 md:flex md:items-center md:justify-between md:gap-5">
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#7c3aed_0%,#0ea5e9_34%,#10b981_66%,#f59e0b_100%)]"
+          />
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary text-white shadow-md shadow-primary/20">
+              <FileClock aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-violet-700">
+                Controle interno
+              </p>
+              <h1 className="mt-1 text-3xl font-extrabold tracking-normal text-primary">
+                Ponto da equipe
+              </h1>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+                Entradas, saidas, intervalos e espelho mensal em uma visao clara.
+              </p>
+            </div>
           </div>
           {actor.isAdmin ? (
-            <div className="inline-flex w-full rounded-lg border border-primary/15 bg-white p-1 shadow-sm md:w-auto">
+            <div className="mt-4 inline-flex w-full rounded-lg border border-violet-200 bg-white p-1 shadow-sm md:mt-0 md:w-auto">
               <Button
                 type="button"
                 variant={view === "records" ? "default" : "ghost"}
@@ -502,13 +511,13 @@ export function TimeClockPanel({
         </header>
 
         {actor.canPunch ? (
-          <section className="border-y border-emerald-200 bg-emerald-50/70 px-4 py-5 sm:px-5">
+          <section className="border-y border-emerald-200 bg-emerald-50/80 px-4 py-5 shadow-sm sm:px-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-lg font-extrabold text-emerald-950">Meu ponto</h2>
                 <p className="text-sm text-emerald-900/70">{actor.name}</p>
               </div>
-              <span className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-bold text-emerald-900 shadow-sm">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-900 shadow-sm">
                 <CheckCircle2 aria-hidden="true" className="size-4" />
                 Proxima: {entryTypeLabel(actor.nextType)}
               </span>
@@ -516,41 +525,70 @@ export function TimeClockPanel({
             <PunchForm nextType={actor.nextType} />
           </section>
         ) : actor.isAdmin ? (
-          <section className="border-y border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
-            Habilite seu usuario em Pessoas para tambem registrar o proprio ponto.
+          <section className="flex items-start gap-3 border-y border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+            <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            <span>
+              Habilite seu usuario em Pessoas para tambem registrar o proprio ponto.
+            </span>
           </section>
         ) : null}
 
         {actor.isAdmin && view === "people" ? (
-          <section className="grid gap-6">
-            <div className="border-b border-primary/12 pb-5">
-              <h2 className="flex items-center gap-2 text-xl font-extrabold text-primary">
-                <UserPlus aria-hidden="true" className="size-5" />
-                Adicionar pessoa
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Habilite um Admin ou Teacher que ja possui login no AVA.
-              </p>
+          <section className="grid gap-5">
+            <div className="border-y border-sky-200 bg-sky-50/75 px-4 py-5 sm:px-5">
+              <div className="flex items-start gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm">
+                  <UserPlus aria-hidden="true" className="size-5" />
+                </span>
+                <div>
+                  <h2 className="text-xl font-extrabold text-sky-950">
+                    Adicionar pessoa
+                  </h2>
+                  <p className="mt-1 text-sm text-sky-900/70">
+                    Habilite um Admin ou Teacher que ja possui login no AVA.
+                  </p>
+                </div>
+              </div>
               <div className="mt-4">
                 <AddPersonForm availableUsers={availableUsers} />
               </div>
             </div>
             <div className="grid gap-3">
-              <h2 className="text-xl font-extrabold text-primary">Equipe no ponto</h2>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="flex items-center gap-2 text-xl font-extrabold text-primary">
+                  <UsersRound aria-hidden="true" className="size-5 text-violet-600" />
+                  Equipe no ponto
+                </h2>
+                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">
+                  {profiles.length} pessoa(s)
+                </span>
+              </div>
               {profiles.length === 0 ? (
-                <p className="rounded-lg border border-dashed border-primary/20 bg-white p-6 text-sm text-muted-foreground">
+                <p className="rounded-lg border border-dashed border-sky-300 bg-sky-50/70 p-6 text-sm text-sky-900/70">
                   Nenhuma pessoa foi habilitada ainda.
                 </p>
               ) : (
-                <div className="divide-y divide-primary/10 rounded-lg border border-primary/15 bg-white">
+                <div className="divide-y divide-violet-100 overflow-hidden rounded-lg border border-violet-200 bg-white shadow-sm">
                   {profiles.map((profile) => (
-                    <div key={profile.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0">
-                        <p className="truncate font-bold text-primary">{profile.user.name}</p>
-                        <p className="truncate text-sm text-muted-foreground">{profile.user.email}</p>
-                        <span className={`mt-2 inline-flex rounded-md px-2 py-1 text-xs font-bold ${profile.isActive ? "bg-emerald-100 text-emerald-800" : "bg-zinc-100 text-zinc-700"}`}>
-                          {profile.isActive ? "Ativo" : "Inativo"}
+                    <div
+                      key={profile.id}
+                      className="flex flex-col gap-3 p-4 transition-colors hover:bg-violet-50/60 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 font-extrabold text-violet-800">
+                          {profile.user.name.slice(0, 1).toUpperCase()}
                         </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-bold text-primary">
+                            {profile.user.name}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {profile.user.email}
+                          </p>
+                          <span className={`mt-2 inline-flex rounded-md px-2 py-1 text-xs font-bold ${profile.isActive ? "bg-emerald-100 text-emerald-800" : "bg-zinc-100 text-zinc-700"}`}>
+                            {profile.isActive ? "Ativo" : "Inativo"}
+                          </span>
+                        </div>
                       </div>
                       <ProfileStatusButton profile={profile} />
                     </div>
@@ -561,7 +599,18 @@ export function TimeClockPanel({
           </section>
         ) : (
           <>
-            <section className="grid gap-4 border-b border-primary/12 pb-5">
+            <section className="grid gap-4 border-y border-sky-200 bg-sky-50/65 px-4 py-5 shadow-sm sm:px-5">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white">
+                  <CalendarDays aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <h2 className="font-extrabold text-sky-950">Consulta mensal</h2>
+                  <p className="text-xs leading-5 text-sky-900/70">
+                    Escolha a pessoa e o periodo para abrir o espelho de ponto.
+                  </p>
+                </div>
+              </div>
               <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(13rem,1fr)_9rem_9rem_auto_auto] lg:items-end">
                 {actor.isAdmin ? (
                   <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
@@ -589,7 +638,7 @@ export function TimeClockPanel({
                   <Label htmlFor="year-filter">Ano</Label>
                   <Input id="year-filter" name="year" type="number" min={2020} max={2200} defaultValue={period.year} />
                 </div>
-                <Button type="submit" variant="outline">
+                <Button type="submit" variant="outline" className="border-sky-200 bg-white text-sky-950 hover:bg-sky-100">
                   <CalendarDays aria-hidden="true" />
                   Consultar
                 </Button>
@@ -607,21 +656,33 @@ export function TimeClockPanel({
             {selectedProfile ? (
               <>
                 <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="rounded-lg border border-primary/12 bg-white p-4 shadow-sm">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Pessoa</p>
-                    <p className="mt-2 truncate text-lg font-extrabold text-primary">{selectedProfile.user.name}</p>
+                  <div className="border-l-4 border-violet-500 bg-violet-50/85 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-violet-700">
+                      <UsersRound aria-hidden="true" className="size-4" />
+                      <p className="text-xs font-bold uppercase tracking-[0.1em]">Pessoa</p>
+                    </div>
+                    <p className="mt-2 truncate text-lg font-extrabold text-violet-950">{selectedProfile.user.name}</p>
                   </div>
-                  <div className="rounded-lg border border-primary/12 bg-white p-4 shadow-sm">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Periodo</p>
-                    <p className="mt-2 text-lg font-extrabold capitalize text-primary">{periodLabel}</p>
+                  <div className="border-l-4 border-sky-500 bg-sky-50/85 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-sky-700">
+                      <CalendarDays aria-hidden="true" className="size-4" />
+                      <p className="text-xs font-bold uppercase tracking-[0.1em]">Periodo</p>
+                    </div>
+                    <p className="mt-2 text-lg font-extrabold capitalize text-sky-950">{periodLabel}</p>
                   </div>
-                  <div className="rounded-lg border border-primary/12 bg-white p-4 shadow-sm">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Horas concluidas</p>
-                    <p className="mt-2 text-lg font-extrabold text-primary">{formatWorkedDuration(summary.workedMilliseconds)}</p>
+                  <div className="border-l-4 border-emerald-500 bg-emerald-50/85 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-emerald-700">
+                      <Clock3 aria-hidden="true" className="size-4" />
+                      <p className="text-xs font-bold uppercase tracking-[0.1em]">Horas concluidas</p>
+                    </div>
+                    <p className="mt-2 text-lg font-extrabold text-emerald-950">{formatWorkedDuration(summary.workedMilliseconds)}</p>
                   </div>
-                  <div className="rounded-lg border border-primary/12 bg-white p-4 shadow-sm">
-                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">Batidas</p>
-                    <p className="mt-2 text-lg font-extrabold text-primary">{entries.length}</p>
+                  <div className="border-l-4 border-amber-500 bg-amber-50/85 p-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-amber-700">
+                      <FileClock aria-hidden="true" className="size-4" />
+                      <p className="text-xs font-bold uppercase tracking-[0.1em]">Batidas</p>
+                    </div>
+                    <p className="mt-2 text-lg font-extrabold text-amber-950">{entries.length}</p>
                   </div>
                 </section>
 
@@ -633,24 +694,41 @@ export function TimeClockPanel({
                 ) : null}
 
                 {actor.isAdmin ? (
-                  <section className="border-y border-primary/12 bg-white px-4 py-5">
-                    <h2 className="text-lg font-extrabold text-primary">Adicionar batida manual</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">Use para corrigir um esquecimento informado pela pessoa.</p>
+                  <section className="border-y border-amber-200 bg-amber-50/70 px-4 py-5 sm:px-5">
+                    <div className="flex items-start gap-3">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
+                        <Plus aria-hidden="true" className="size-4" />
+                      </span>
+                      <div>
+                        <h2 className="text-lg font-extrabold text-amber-950">Adicionar batida manual</h2>
+                        <p className="mt-1 text-sm text-amber-900/70">Use para corrigir um esquecimento informado pela pessoa.</p>
+                      </div>
+                    </div>
                     <div className="mt-4"><ManualEntryForm profileId={selectedProfile.id} /></div>
                   </section>
                 ) : null}
 
                 <section>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h2 className="text-xl font-extrabold text-primary">Batidas do mes</h2>
-                    <span className="text-xs font-semibold text-muted-foreground">{summary.completedPairs} periodo(s) concluido(s)</span>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <h2 className="flex items-center gap-2 text-xl font-extrabold text-primary">
+                      <Clock3 aria-hidden="true" className="size-5 text-violet-600" />
+                      Batidas do mes
+                    </h2>
+                    <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">{summary.completedPairs} periodo(s) concluido(s)</span>
                   </div>
                   {entries.length === 0 ? (
-                    <p className="rounded-lg border border-dashed border-primary/20 bg-white p-8 text-center text-sm text-muted-foreground">Nenhuma batida neste mes.</p>
+                    <div className="rounded-lg border border-dashed border-sky-300 bg-sky-50/65 p-8 text-center">
+                      <Clock3 aria-hidden="true" className="mx-auto size-8 text-sky-500" />
+                      <p className="mt-3 text-sm font-bold text-sky-950">Nenhuma batida neste mes</p>
+                      <p className="mt-1 text-xs text-sky-900/65">Os registros aparecerao aqui em ordem mensal.</p>
+                    </div>
                   ) : (
                     <div className="grid gap-3">
                       {entries.map((entry) => (
-                        <article key={entry.id} className="rounded-lg border border-primary/12 bg-white p-4 shadow-sm">
+                        <article
+                          key={entry.id}
+                          className={`rounded-lg border bg-white p-4 shadow-sm transition duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md ${entry.type === "ENTRY" ? "border-emerald-200 border-l-4 border-l-emerald-500" : "border-rose-200 border-l-4 border-l-rose-500"}`}
+                        >
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="flex min-w-0 items-start gap-3">
                               <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${entry.type === "ENTRY" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
@@ -667,7 +745,7 @@ export function TimeClockPanel({
                               </div>
                             </div>
                             {actor.isAdmin ? (
-                              <details className="group w-full rounded-lg border border-primary/10 bg-[#fffafe] px-3 py-2 sm:w-auto sm:min-w-44">
+                              <details className="group w-full rounded-lg border border-violet-200 bg-violet-50/70 px-3 py-2 sm:w-auto sm:min-w-44">
                                 <summary className="flex cursor-pointer list-none items-center justify-center gap-2 text-sm font-bold text-primary">
                                   <PencilLine aria-hidden="true" className="size-4" />
                                   Corrigir
@@ -685,8 +763,8 @@ export function TimeClockPanel({
                 </section>
               </>
             ) : (
-              <section className="rounded-lg border border-dashed border-primary/20 bg-white p-10 text-center">
-                <ShieldCheck aria-hidden="true" className="mx-auto size-8 text-primary/55" />
+              <section className="rounded-lg border border-dashed border-sky-300 bg-sky-50/65 p-10 text-center">
+                <ShieldCheck aria-hidden="true" className="mx-auto size-8 text-sky-600" />
                 <h2 className="mt-3 text-lg font-extrabold text-primary">Nenhuma pessoa no ponto</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Abra Pessoas e habilite o primeiro usuario da equipe.</p>
               </section>
