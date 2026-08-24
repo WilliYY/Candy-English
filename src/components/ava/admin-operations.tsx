@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   UserRound,
   UsersRound,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -333,8 +334,10 @@ export function AdminUserPasswordResetForm({
   userName,
 }: AdminUserPasswordResetFormProps) {
   const router = useRouter();
+  const [issuedPassword, setIssuedPassword] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showIssuedPassword, setShowIssuedPassword] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
   const form = useForm<AdminResetUserPasswordInput>({
@@ -349,6 +352,8 @@ export function AdminUserPasswordResetForm({
   function handleGeneratePassword() {
     const temporaryPassword = generateTemporaryPassword();
 
+    setIssuedPassword(null);
+    setShowIssuedPassword(false);
     form.setValue("newPassword", temporaryPassword, {
       shouldDirty: true,
       shouldValidate: true,
@@ -378,6 +383,20 @@ export function AdminUserPasswordResetForm({
     }
   }
 
+  async function handleCopyIssuedPassword() {
+    if (!issuedPassword) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(issuedPassword);
+      setMessage("Senha recem-definida copiada com seguranca.");
+    } catch {
+      setShowIssuedPassword(true);
+      setMessage("Nao foi possivel copiar. Use o olho e copie manualmente.");
+    }
+  }
+
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
 
@@ -402,6 +421,8 @@ export function AdminUserPasswordResetForm({
         return;
       }
 
+      setIssuedPassword(values.newPassword);
+      setShowIssuedPassword(true);
       form.reset({
         confirmPassword: "",
         newPassword: "",
@@ -409,7 +430,9 @@ export function AdminUserPasswordResetForm({
       });
       setShowConfirmPassword(false);
       setShowPassword(false);
-      setMessage(result.message);
+      setMessage(
+        `${result.message} A nova senha fica visivel somente aqui ate voce limpar ou atualizar a pagina.`,
+      );
       router.refresh();
     });
   });
@@ -419,12 +442,17 @@ export function AdminUserPasswordResetForm({
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
         <span className="inline-flex min-w-0 items-center gap-2">
           <KeyRound aria-hidden="true" className="size-4 shrink-0" />
-          <span className="truncate">Redefinir senha</span>
+          <span className="truncate">Acesso e senha</span>
         </span>
-        <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.68rem] uppercase tracking-[0.12em] text-primary">
-          <span className="group-open/password-reset:hidden">abrir</span>
-          <span className="hidden group-open/password-reset:inline">
-            minimizar
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[0.62rem] uppercase tracking-[0.08em] text-emerald-800">
+            Somente Admin
+          </span>
+          <span className="rounded-full bg-primary/10 px-2 py-1 text-[0.68rem] uppercase tracking-[0.08em] text-primary">
+            <span className="group-open/password-reset:hidden">abrir</span>
+            <span className="hidden group-open/password-reset:inline">
+              minimizar
+            </span>
           </span>
         </span>
       </summary>
@@ -440,10 +468,86 @@ export function AdminUserPasswordResetForm({
             <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             <span>
               A senha atual nao pode ser exibida: ela e protegida por hash. Defina
-              uma nova senha para substituir a anterior.
+              uma nova senha para substituir a anterior. Somente o Admin possui
+              esta acao.
             </span>
           </span>
         </div>
+
+        {issuedPassword ? (
+          <div className="rounded-lg border border-emerald-200 bg-emerald-50/85 p-3 text-emerald-950 shadow-sm">
+            <div className="mb-2 flex items-start gap-2">
+              <ShieldCheck
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-emerald-700"
+              />
+              <div className="min-w-0">
+                <p className="text-xs font-bold">Senha definida agora</p>
+                <p className="text-[0.7rem] leading-5 text-emerald-800">
+                  Visivel uma unica vez neste navegador. Envie por um canal seguro.
+                </p>
+              </div>
+            </div>
+            <div className="relative">
+              <Input
+                aria-label={`Senha recem-definida de ${userName}`}
+                autoComplete="off"
+                className="border-emerald-200 bg-white pr-11 font-mono text-sm text-emerald-950"
+                readOnly
+                type={showIssuedPassword ? "text" : "password"}
+                value={issuedPassword}
+              />
+              <button
+                type="button"
+                aria-label={
+                  showIssuedPassword
+                    ? "Ocultar senha recem-definida"
+                    : "Mostrar senha recem-definida"
+                }
+                aria-pressed={showIssuedPassword}
+                className="absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-emerald-800 transition hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                onClick={() => setShowIssuedPassword((current) => !current)}
+                title={
+                  showIssuedPassword
+                    ? "Ocultar senha recem-definida"
+                    : "Mostrar senha recem-definida"
+                }
+              >
+                {showIssuedPassword ? (
+                  <EyeOff aria-hidden="true" className="size-4" />
+                ) : (
+                  <Eye aria-hidden="true" className="size-4" />
+                )}
+              </button>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="border-emerald-200 bg-white text-emerald-900 hover:bg-emerald-100"
+                onClick={handleCopyIssuedPassword}
+              >
+                <Copy data-icon="inline-start" />
+                Copiar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="text-emerald-900 hover:bg-emerald-100"
+                onClick={() => {
+                  setIssuedPassword(null);
+                  setShowIssuedPassword(false);
+                  setMessage("Senha removida desta tela.");
+                }}
+              >
+                <X data-icon="inline-start" />
+                Limpar
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-2 gap-2">
           <Button

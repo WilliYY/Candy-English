@@ -548,7 +548,8 @@ async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
 
     if (
       !normalizedText.includes("A senha atual nao pode ser exibida") ||
-      !normalizedText.includes("Confirmar nova senha")
+      !normalizedText.includes("Confirmar nova senha") ||
+      !normalizedText.includes("Somente Admin")
     ) {
       throw new Error(
         "Painel Admin nao renderizou a redefinicao segura de senha.",
