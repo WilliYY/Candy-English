@@ -21,6 +21,8 @@ Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao
 - `src/lib/validations/sales.ts`: contratos Zod.
 - `prisma/migrations/20260823233000_add_sales_pos/migration.sql`: tabelas, indices, FKs e checks.
 
+O cadastro de produto abre em um painel expansivel dentro do fluxo da pagina. O formulario ocupa a largura disponivel, empilha os campos no mobile e nao usa sobreposicao absoluta, evitando que nome, custo, valor de venda, estoque ou botao de salvar sejam cortados pelo card do catalogo.
+
 ## Dados
 
 - `SaleProduct` guarda nome normalizado unico, custo, preco, estoque, estado e auditoria de criacao/edicao.

@@ -274,6 +274,7 @@ export function SalesPosPanel({
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [productSearch, setProductSearch] = useState("");
+  const [isProductFormOpen, setIsProductFormOpen] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
   const [studentProfileId, setStudentProfileId] = useState("");
   const [buyerName, setBuyerName] = useState("");
@@ -394,25 +395,44 @@ export function SalesPosPanel({
 
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
         <section className="overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.08)]">
-          <div className="grid gap-3 border-b border-primary/10 bg-[#fbf9fc] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-            <label className="relative block">
-              <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/45" />
-              <Input className="h-11 bg-white pl-9" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Buscar produto..." />
-            </label>
-            <details className="group relative">
-              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-white shadow-md [&::-webkit-details-marker]:hidden">
-                <Plus aria-hidden="true" className="size-4" /> Cadastrar produto
-              </summary>
-              <form onSubmit={submitProduct} className="mt-3 grid gap-3 rounded-lg border border-primary/15 bg-white p-3 shadow-lg sm:absolute sm:right-0 sm:z-20 sm:w-[34rem] sm:grid-cols-2">
-                <label className="grid gap-1 text-xs font-bold text-primary sm:col-span-2">Produto<Input placeholder="Ex: Caderno Candy" {...productForm.register("name")} /></label>
+          <div className="border-b border-primary/10 bg-[#fbf9fc] p-4">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <label className="relative block">
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/45" />
+                <Input className="h-11 bg-white pl-9" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Buscar produto..." />
+              </label>
+              <Button
+                aria-controls="sale-product-form"
+                aria-expanded={isProductFormOpen}
+                className="min-h-11"
+                onClick={() => setIsProductFormOpen((current) => !current)}
+                type="button"
+                variant={isProductFormOpen ? "outline" : "default"}
+              >
+                <Plus aria-hidden="true" className={cn("size-4 transition-transform", isProductFormOpen && "rotate-45")} />
+                {isProductFormOpen ? "Fechar cadastro" : "Cadastrar produto"}
+              </Button>
+            </div>
+
+            {isProductFormOpen ? (
+              <form
+                id="sale-product-form"
+                onSubmit={submitProduct}
+                className="mt-4 grid gap-3 rounded-lg border border-cyan-200 bg-gradient-to-r from-cyan-50/70 via-white to-violet-50/70 p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-[minmax(220px,1.7fr)_repeat(3,minmax(110px,1fr))_auto] xl:items-end"
+              >
+                <div className="sm:col-span-2 xl:col-span-5">
+                  <strong className="block text-sm text-primary">Novo produto</strong>
+                  <span className="text-xs text-muted-foreground">Cadastre os valores e o estoque inicial. Tudo permanece visivel antes de salvar.</span>
+                </div>
+                <label className="grid gap-1 text-xs font-bold text-primary sm:col-span-2 xl:col-span-1">Produto<Input placeholder="Ex: Caderno Candy" {...productForm.register("name")} /></label>
                 <label className="grid gap-1 text-xs font-bold text-primary">Custo<Input min="0" placeholder="0,00" step="0.01" type="number" {...productForm.register("costCents", { setValueAs: moneyToCents })} /></label>
                 <label className="grid gap-1 text-xs font-bold text-primary">Valor de venda<Input min="0.01" placeholder="0,00" step="0.01" type="number" {...productForm.register("salePriceCents", { setValueAs: moneyToCents })} /></label>
                 <label className="grid gap-1 text-xs font-bold text-primary">Estoque inicial<Input min="0" type="number" {...productForm.register("stockQuantity", { valueAsNumber: true })} /></label>
-                <Button disabled={isProductPending} className="self-end" type="submit"><PackagePlus aria-hidden="true" />{isProductPending ? "Salvando" : "Salvar produto"}</Button>
-                {Object.values(productForm.formState.errors)[0]?.message ? <p className="text-xs font-semibold text-red-700 sm:col-span-2">{String(Object.values(productForm.formState.errors)[0]?.message)}</p> : null}
-                {productMessage ? <p className="text-xs font-semibold text-primary sm:col-span-2" role="status">{productMessage}</p> : null}
+                <Button disabled={isProductPending} className="self-end sm:col-span-2 xl:col-span-1" type="submit"><PackagePlus aria-hidden="true" />{isProductPending ? "Salvando" : "Salvar produto"}</Button>
+                {Object.values(productForm.formState.errors)[0]?.message ? <p className="text-xs font-semibold text-red-700 sm:col-span-2 xl:col-span-5">{String(Object.values(productForm.formState.errors)[0]?.message)}</p> : null}
+                {productMessage ? <p className="text-xs font-semibold text-primary sm:col-span-2 xl:col-span-5" role="status">{productMessage}</p> : null}
               </form>
-            </details>
+            ) : null}
           </div>
 
           <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
