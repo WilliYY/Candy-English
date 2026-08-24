@@ -248,8 +248,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
       },
       select: {
+        financialStudent: {
+          select: {
+            id: true,
+          },
+        },
         id: true,
         level: true,
+        studentPhone: true,
+        unit: true,
         user: {
           select: {
             email: true,
@@ -1037,6 +1044,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         title: contract.title,
       }))}
       currentUser={currentUser ?? session.user}
+      financeAvaStudents={students.map((student) => ({
+        email: student.user.email,
+        financialStudentId: student.financialStudent?.id ?? null,
+        id: student.id,
+        isActive: student.user.isActive,
+        name: student.user.name,
+        phone: student.studentPhone,
+        unit: student.unit,
+      }))}
       financeLogs={financeLogs.map((log) => ({
         action: log.action,
         createdAt: log.createdAt.toISOString(),

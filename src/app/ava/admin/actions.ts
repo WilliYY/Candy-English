@@ -1050,85 +1050,161 @@ export async function createFinancialStudent(
   }
 
   const prisma = getPrisma();
+  const creationKey =
+    parsed.data.studentProfileId ??
+    parsed.data.email ??
+    parsed.data.name.toLocaleLowerCase("pt-BR");
 
-  await prisma.$transaction(async (tx) => {
-    const linkedStudentProfile = parsed.data.email
-      ? await tx.studentProfile.findFirst({
-          where: {
-            financialStudent: null,
-            user: {
-              email: parsed.data.email,
-              isActive: true,
-              role: "STUDENT",
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      await acquireTransactionAdvisoryLock(
+        tx,
+        `financial-student-create:${creationKey}`,
+      );
+
+      const linkedStudentProfile = parsed.data.studentProfileId
+        ? await tx.studentProfile.findUnique({
+            where: { id: parsed.data.studentProfileId },
+            select: {
+              financialStudent: { select: { id: true } },
+              id: true,
+              user: {
+                select: { isActive: true, role: true },
+              },
             },
-          },
+          })
+        : parsed.data.email
+          ? await tx.studentProfile.findFirst({
+              where: {
+                user: { email: parsed.data.email },
+              },
+              select: {
+                financialStudent: { select: { id: true } },
+                id: true,
+                user: {
+                  select: { isActive: true, role: true },
+                },
+              },
+            })
+          : null;
+
+      if (
+        parsed.data.studentProfileId &&
+        (!linkedStudentProfile ||
+          !linkedStudentProfile.user.isActive ||
+          linkedStudentProfile.user.role !== "STUDENT")
+      ) {
+        return {
+          message: "O aluno selecionado nao esta ativo no AVA.",
+          ok: false as const,
+        };
+      }
+
+      if (linkedStudentProfile?.financialStudent) {
+        return {
+          message: "Este aluno ja possui cadastro no financeiro.",
+          ok: false as const,
+        };
+      }
+
+      if (parsed.data.email) {
+        const existingEmail = await tx.financialStudent.findFirst({
+          where: { email: parsed.data.email },
           select: { id: true },
-        })
-      : null;
-    const student = await tx.financialStudent.create({
-      data: {
-        address: parsed.data.address,
-        amountCents: parsed.data.amount,
-        cpf: parsed.data.cpf,
-        email: parsed.data.email,
-        installmentsTotal: parsed.data.installmentsTotal ?? null,
-        name: parsed.data.name,
-        paymentDay: parsed.data.paymentDay,
-        paymentMethod: parsed.data.paymentMethod,
-        phone: parsed.data.phone,
-        studentProfileId: linkedStudentProfile?.id,
-        unit: parsed.data.unit,
-      },
-    });
+        });
 
-    const financeMonths = getFinanceMonthsForPlan(
-      parsed.data.month,
-      parsed.data.installmentsTotal,
-    );
+        if (existingEmail) {
+          return {
+            message: "Ja existe um cadastro financeiro com este email.",
+            ok: false as const,
+          };
+        }
+      }
 
-    await tx.financialPayment.createMany({
-      data: financeMonths.map((month) => ({
-        ...buildFinancialPaymentSnapshot(
-          student,
-          getFinancialInstallmentNumber(
-            month,
-            parsed.data.month,
-            student.installmentsTotal,
+      const student = await tx.financialStudent.create({
+        data: {
+          address: parsed.data.address,
+          amountCents: parsed.data.amount,
+          cpf: parsed.data.cpf,
+          email: parsed.data.email,
+          installmentsTotal: parsed.data.installmentsTotal ?? null,
+          name: parsed.data.name,
+          paymentDay: parsed.data.paymentDay,
+          paymentMethod: parsed.data.paymentMethod,
+          phone: parsed.data.phone,
+          studentProfileId:
+            linkedStudentProfile?.user.isActive &&
+            linkedStudentProfile.user.role === "STUDENT"
+              ? linkedStudentProfile.id
+              : undefined,
+          unit: parsed.data.unit,
+        },
+      });
+
+      const financeMonths = getFinanceMonthsForPlan(
+        parsed.data.month,
+        parsed.data.installmentsTotal,
+      );
+
+      await tx.financialPayment.createMany({
+        data: financeMonths.map((month) => ({
+          ...buildFinancialPaymentSnapshot(
+            student,
+            getFinancialInstallmentNumber(
+              month,
+              parsed.data.month,
+              student.installmentsTotal,
+            ),
           ),
-        ),
-        isActive: true,
-        isPaid: month === parsed.data.month && Boolean(parsed.data.paidAt),
-        month,
-        note: month === parsed.data.month ? parsed.data.note ?? null : null,
-        paidAt: month === parsed.data.month ? parsed.data.paidAt ?? null : null,
-        studentId: student.id,
-        year: parsed.data.year,
-      })),
-    });
-
-    const payment = await tx.financialPayment.findUnique({
-      where: {
-        studentId_year_month: {
-          month: parsed.data.month,
+          isActive: true,
+          isPaid: month === parsed.data.month && Boolean(parsed.data.paidAt),
+          month,
+          note: month === parsed.data.month ? parsed.data.note ?? null : null,
+          paidAt: month === parsed.data.month ? parsed.data.paidAt ?? null : null,
           studentId: student.id,
           year: parsed.data.year,
+        })),
+      });
+
+      const payment = await tx.financialPayment.findUnique({
+        where: {
+          studentId_year_month: {
+            month: parsed.data.month,
+            studentId: student.id,
+            year: parsed.data.year,
+          },
         },
-      },
-      select: { id: true },
+        select: { id: true },
+      });
+
+      await tx.financialLog.create({
+        data: {
+          action: "CREATE",
+          createdByUserId: session.user.id,
+          description: student.installmentsTotal
+            ? `Aluno financeiro criado: ${student.name}, em ${student.installmentsTotal} parcela(s).`
+            : `Aluno financeiro criado: ${student.name}.`,
+          paymentId: payment?.id,
+          studentId: student.id,
+        },
+      });
+
+      return { ok: true as const };
     });
 
-    await tx.financialLog.create({
-      data: {
-        action: "CREATE",
-        createdByUserId: session.user.id,
-        description: student.installmentsTotal
-          ? `Aluno financeiro criado: ${student.name}, em ${student.installmentsTotal} parcela(s).`
-          : `Aluno financeiro criado: ${student.name}.`,
-        paymentId: payment?.id,
-        studentId: student.id,
-      },
-    });
-  });
+    if (!result.ok) {
+      return result;
+    }
+  } catch (error) {
+    if (isUniqueConstraintError(error)) {
+      return {
+        ok: false,
+        message: "Este aluno ja possui cadastro no financeiro.",
+      };
+    }
+
+    throw error;
+  }
 
   revalidatePath("/ava/admin");
 

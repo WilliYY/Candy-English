@@ -384,6 +384,7 @@ export const adminFinanceStudentCreateSchema = financialStudentBaseSchema.extend
   month: financeMonthSchema,
   note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
   paidAt: optionalDateSchema,
+  studentProfileId: optionalText(128, "Selecione um aluno valido do AVA."),
   year: year2026Schema,
 });
 

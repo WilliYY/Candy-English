@@ -150,6 +150,16 @@ export type AdminFinanceStudentRow = {
   unit: FinancialUnit;
 };
 
+export type AdminFinanceAvaStudentOption = {
+  email: string;
+  financialStudentId: string | null;
+  id: string;
+  isActive: boolean;
+  name: string;
+  phone: string | null;
+  unit: FinancialUnit;
+};
+
 export type AdminFinanceLogRow = {
   action: string;
   createdAt: string;
@@ -168,6 +178,7 @@ type FinanceMonthRow = AdminFinanceStudentRow & {
 };
 
 type AdminFinancePanelProps = {
+  avaStudents: AdminFinanceAvaStudentOption[];
   expenses: AdminFinanceExpenseRow[];
   initialMonth: number;
   initialUnitFilter?: SecretariaUnitFilter;
@@ -391,9 +402,18 @@ const createDefaultValues = (
   paymentDay: 1,
   paymentMethod: "PIX",
   phone: "",
+  studentProfileId: "",
   unit,
   year: 2026,
 });
+
+function normalizeFinanceSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .trim();
+}
 
 function padDatePart(value: number) {
   return String(value).padStart(2, "0");
@@ -1789,6 +1809,7 @@ function FinanceExportButtons({
 }
 
 export function AdminFinancePanel({
+  avaStudents,
   expenses,
   initialMonth,
   initialUnitFilter,
@@ -1807,6 +1828,9 @@ export function AdminFinancePanel({
   const [financeView, setFinanceView] = useState<FinanceView>("STUDENTS");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [avaStudentSearch, setAvaStudentSearch] = useState("");
+  const [avaStudentUnitFilter, setAvaStudentUnitFilter] =
+    useState<UnitFilter>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | FinanceStatus>("ALL");
   const [unitFilter, setUnitFilter] = useState<UnitFilter>(initialPanelUnitFilter);
   const [expenseUnitFilter, setExpenseUnitFilter] =
@@ -1831,6 +1855,37 @@ export function AdminFinancePanel({
       today,
     ),
   });
+  const selectedAvaStudentId = form.watch("studentProfileId");
+  const selectedAvaStudent = avaStudents.find(
+    (student) => student.id === selectedAvaStudentId,
+  );
+  const availableAvaStudentsCount = avaStudents.filter(
+    (student) => student.isActive && !student.financialStudentId,
+  ).length;
+  const normalizedAvaStudentSearch = normalizeFinanceSearch(avaStudentSearch);
+  const visibleAvaStudentGroups = useMemo(
+    () =>
+      FINANCIAL_UNITS.filter(
+        (unit) =>
+          avaStudentUnitFilter === "ALL" || avaStudentUnitFilter === unit,
+      ).map((unit) => ({
+        students: avaStudents.filter((student) => {
+          if (student.unit !== unit) {
+            return false;
+          }
+
+          if (!normalizedAvaStudentSearch) {
+            return true;
+          }
+
+          return normalizeFinanceSearch(
+            [student.name, student.email, student.phone ?? ""].join(" "),
+          ).includes(normalizedAvaStudentSearch);
+        }),
+        unit,
+      })),
+    [avaStudentUnitFilter, avaStudents, normalizedAvaStudentSearch],
+  );
 
   const monthRows = useMemo(
     () => buildFinanceMonthRows(students, activeMonth, today),
@@ -2007,6 +2062,35 @@ export function AdminFinancePanel({
     });
   }
 
+  function selectAvaStudent(student: AdminFinanceAvaStudentOption) {
+    if (!student.isActive || student.financialStudentId) {
+      return;
+    }
+
+    setMessage(null);
+    form.setValue("studentProfileId", student.id, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    form.setValue("name", student.name, { shouldDirty: true });
+    form.setValue("email", student.email, { shouldDirty: true });
+    form.setValue("phone", student.phone ?? "", { shouldDirty: true });
+    form.setValue("unit", student.unit, { shouldDirty: true });
+  }
+
+  function useManualFinancialRegistration() {
+    setMessage(null);
+    form.setValue("studentProfileId", "", { shouldDirty: true });
+    form.setValue("name", "", { shouldDirty: true });
+    form.setValue("email", "", { shouldDirty: true });
+    form.setValue("phone", "", { shouldDirty: true });
+    form.setValue(
+      "unit",
+      unitFilter === "ALL" ? "IVATE" : unitFilter,
+      { shouldDirty: true },
+    );
+  }
+
   function handleMonthChange(month: number) {
     setActiveMonth(month);
     setSelectedStudentId(null);
@@ -2049,6 +2133,7 @@ export function AdminFinancePanel({
         ...createDefaultValues(activeMonth),
         unit: unitFilter === "ALL" ? "IVATE" : unitFilter,
       });
+      setAvaStudentSearch("");
       setMessage(result.message);
       router.refresh();
     });
@@ -2367,7 +2452,7 @@ export function AdminFinancePanel({
         className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.09)]"
         noValidate
       >
-        <details className="group">
+        <details className="group" open>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gradient-to-r from-white via-[#fff7fb] to-[#fce5d8]/65 p-4 [&::-webkit-details-marker]:hidden">
             <span className="flex min-w-0 items-center gap-3">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -2375,10 +2460,10 @@ export function AdminFinancePanel({
               </span>
               <span className="min-w-0">
                 <strong className="block text-base text-primary">
-                  Adicionar aluno financeiro
+                  Adicionar aluno ao financeiro
                 </strong>
                 <span className="mt-1 block text-sm text-muted-foreground">
-                  Abra somente quando precisar cadastrar uma nova mensalidade.
+                  Escolha um aluno de Ivaté ou Douradina e complete a mensalidade.
                 </span>
               </span>
             </span>
@@ -2386,7 +2471,172 @@ export function AdminFinancePanel({
               <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
             </span>
           </summary>
-          <FieldGroup className="gap-3 border-t border-primary/10 bg-gradient-to-br from-white via-[#fcfaff] to-[#f3fbfd] p-4 sm:p-5">
+          <FieldGroup className="gap-4 border-t border-primary/10 bg-gradient-to-br from-white via-[#fcfaff] to-[#f3fbfd] p-4 sm:p-5">
+          <input type="hidden" {...form.register("studentProfileId")} />
+          <section className="border-b border-primary/10 pb-4" aria-labelledby="finance-ava-students-title">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-[0.14em] text-primary/55">
+                  Alunos dos dois polos
+                </span>
+                <h3
+                  id="finance-ava-students-title"
+                  className="mt-1 text-base font-black text-primary"
+                >
+                  Selecione um aluno do AVA
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {avaStudents.length} aluno(s) cadastrado(s) no AVA, com{" "}
+                  {availableAvaStudentsCount} disponivel(is) para entrar no financeiro.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 border-primary/20 bg-white"
+                onClick={useManualFinancialRegistration}
+                disabled={isPending}
+              >
+                <Pencil data-icon="inline-start" />
+                Cadastro manual
+              </Button>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(220px,1fr)_auto] lg:items-center">
+              <label className="relative block">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/45"
+                />
+                <Input
+                  type="search"
+                  value={avaStudentSearch}
+                  onChange={(event) => setAvaStudentSearch(event.target.value)}
+                  className="h-11 border-primary/20 bg-white pl-10 shadow-sm"
+                  placeholder="Buscar aluno por nome, email ou telefone..."
+                  aria-label="Buscar aluno do AVA"
+                />
+              </label>
+              <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filtrar alunos por polo">
+                {([
+                  ["ALL", "Todos"],
+                  ["IVATE", "Polo 1 - Ivaté"],
+                  ["DOURADINA", "Polo 2 - Douradina"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setAvaStudentUnitFilter(value)}
+                    className={cn(
+                      "h-10 shrink-0 rounded-lg border px-3 text-xs font-black transition-colors",
+                      avaStudentUnitFilter === value
+                        ? "border-primary bg-primary text-white shadow-sm"
+                        : "border-primary/15 bg-white text-primary hover:border-primary/35 hover:bg-primary/[0.04]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {selectedAvaStudent ? (
+              <div className="mt-3 flex flex-col gap-2 border-l-4 border-emerald-500 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-950 sm:flex-row sm:items-center sm:justify-between">
+                <span className="min-w-0">
+                  <strong className="block truncate">{selectedAvaStudent.name}</strong>
+                  <span className="block truncate text-xs text-emerald-800">
+                    Selecionado em {formatFinancialUnitWithPolo(selectedAvaStudent.unit)}. Complete valor, vencimento e forma abaixo.
+                  </span>
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1 text-xs font-black uppercase">
+                  <CheckCircle2 className="size-4" />
+                  Selecionado
+                </span>
+              </div>
+            ) : null}
+
+            <div className="mt-3 max-h-[22rem] space-y-3 overflow-y-auto pr-1">
+              {visibleAvaStudentGroups.map((group) => (
+                <section
+                  key={group.unit}
+                  className={cn(
+                    "border-l-4 px-3 py-3",
+                    group.unit === "IVATE"
+                      ? "border-emerald-500 bg-emerald-50/70"
+                      : "border-sky-500 bg-sky-50/75",
+                  )}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <strong className="text-sm text-primary">
+                      {formatFinancialUnitWithPolo(group.unit)}
+                    </strong>
+                    <span className="text-xs font-bold text-primary/55">
+                      {group.students.length} aluno(s)
+                    </span>
+                  </div>
+                  {group.students.length > 0 ? (
+                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                      {group.students.map((student) => {
+                        const isAlreadyLinked = Boolean(student.financialStudentId);
+                        const isSelected = selectedAvaStudentId === student.id;
+                        const isDisabled = !student.isActive || isAlreadyLinked;
+
+                        return (
+                          <button
+                            key={student.id}
+                            type="button"
+                            onClick={() => selectAvaStudent(student)}
+                            disabled={isDisabled || isPending}
+                            className={cn(
+                              "flex min-h-16 w-full items-center gap-3 border bg-white px-3 py-2.5 text-left transition-colors",
+                              isSelected
+                                ? "border-emerald-500 ring-2 ring-emerald-200"
+                                : "border-primary/12 hover:border-primary/35 hover:bg-white",
+                              isDisabled && "cursor-not-allowed opacity-65",
+                            )}
+                          >
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/[0.08] text-xs font-black text-primary">
+                              {student.name.slice(0, 2).toLocaleUpperCase("pt-BR")}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <strong className="block truncate text-sm text-primary">
+                                {student.name}
+                              </strong>
+                              <span className="block truncate text-xs text-muted-foreground">
+                                {student.email}
+                              </span>
+                            </span>
+                            <span
+                              className={cn(
+                                "shrink-0 text-[10px] font-black uppercase",
+                                isAlreadyLinked
+                                  ? "text-primary/55"
+                                  : student.isActive
+                                    ? "text-emerald-700"
+                                    : "text-rose-700",
+                              )}
+                            >
+                              {isAlreadyLinked
+                                ? "Ja incluido"
+                                : student.isActive
+                                  ? isSelected
+                                    ? "Pronto"
+                                    : "Adicionar"
+                                  : "Inativo"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="py-2 text-sm text-muted-foreground">
+                      Nenhum aluno deste polo corresponde a busca.
+                    </p>
+                  )}
+                </section>
+              ))}
+            </div>
+          </section>
           <div className="grid gap-3 lg:grid-cols-3 xl:grid-cols-[minmax(190px,1.35fr)_minmax(150px,0.85fr)_minmax(120px,0.65fr)_90px_minmax(150px,0.8fr)_110px_auto] xl:items-start">
             <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="finance-student-name">Nome</FieldLabel>

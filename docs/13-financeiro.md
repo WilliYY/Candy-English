@@ -43,6 +43,10 @@ Rota:
 ## Regras de negocio que precisam ser preservadas
 
 - Apenas `ADMIN` visualiza e escreve no financeiro.
+- O formulario de entrada carrega todos os `StudentProfile` dos polos Ivaté e Douradina para o Admin, mesmo quando o filtro principal da planilha esta em um polo especifico. A busca e o filtro do seletor acontecem somente sobre esses dados ja autorizados.
+- Ao selecionar um aluno do AVA, a criacao envia `studentProfileId` e grava o vinculo explicito em `FinancialStudent.studentProfileId`; nome, email, telefone e unidade sao apenas o preenchimento inicial revisavel do cadastro financeiro.
+- Um `StudentProfile` ja vinculado, inativo ou sem role `STUDENT` nao pode ser adicionado pelo seletor. A action valida novamente no servidor, usa lock transacional e a restricao unica do banco para bloquear cliques concorrentes e duplicidade.
+- `Cadastro manual` continua disponivel para pessoas sem login no AVA, mas um email ja utilizado em outro cadastro financeiro e bloqueado.
 - Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `FinancialStudent` e seus `FinancialPayment` dentro da transaction de `Tornar aluno`, sem acessar a tela financeira nem consultar outros alunos/unidades.
 - `FinancialStudent` guarda o cadastro recorrente/base do aluno financeiro, incluindo a unidade atual do aluno.
 - `FinancialStudent.installmentsTotal` e opcional; quando vazio, o aluno segue como mensalidade recorrente normal.
@@ -77,6 +81,7 @@ Rota:
 - Exportacao PDF/Excel acontece no cliente com os dados ja carregados na pagina autorizada.
 - Exportacoes registram log via server action.
 - Dados extras e observacao ficam recolhidos para reduzir poluicao visual.
+- `Adicionar aluno ao financeiro` abre expandido e com uma lista pesquisavel dos dois polos. Cada linha informa se o aluno esta disponivel, inativo ou ja incluido; selecionar um disponivel preenche os dados de identificacao antes de o Admin completar a mensalidade.
 - A tela do financeiro foi simplificada para uso diario: topo com totais previstos/recebidos/pendentes/atrasados, formulario curto, seletor de mes com setas anterior/proximo, busca por nome/telefone e filtros por status e polo.
 - A tela do financeiro prioriza leitura mensal: cards de resumo com progresso de recebimento, separacao visual de recebido/a receber/vencido e linhas compactas tipo planilha com aluno, mes, mensalidade, vencimento, status e acao; no mobile cada linha reorganiza os mesmos dados sem rolagem horizontal da pagina.
 - A planilha mensal e agrupada pelo `snapshotUnit`, com cabecalho verde para `Polo 1 - Ivaté` e azul para `Polo 2 - Douradina`. Cada grupo mostra quantidade, pagos e total exibido. O painel de historico fica fechado ate o Admin selecionar uma linha, preservando a largura total da planilha na leitura inicial.
