@@ -105,33 +105,22 @@ Helpers:
 11. O shell lateral e renderizado somente dentro das areas escolhidas: tarefas pedagogicas mostram grupos do AVA, tarefas administrativas mostram grupos da Secretaria, e a lateral mantem atalho para `Trocar area`.
 12. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
 
-### Pre-cadastro de interessado
+### Cadastro de aluno pela Secretaria
 
-1. Visitante abre `/ava/login` e clica em `Quero ser aluno Candy`.
-2. O botao abre WhatsApp em nova aba usando o numero publico configurado em `NEXT_PUBLIC_CANDY_WHATSAPP_PHONE`, ou o fallback seguro de `src/lib/whatsapp.ts`.
-3. A mensagem ja vai preenchida com interesse em ser aluno Candy English.
-4. Esse clique nao chama server action e nao cria `StudentPreRegistration`.
-5. Pre-cadastros passam a ser criados manualmente dentro da Secretaria, em `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`, depois da conversa da equipe com o interessado.
-6. Admin pode criar e ver todos os pre-cadastros; Teacher cria e ve apenas os proprios ou os atribuidos a sua `TeacherProfile`.
-7. O formulario interno salva nome, telefone, email opcional, nascimento, responsavel, cidade, unidade `Ivaté`/`Douradina`, objetivo, nivel estimado, observacoes, teacher responsavel, dias/horario pretendidos, mensalidade, dia de pagamento, forma e parcelas. Toda criacao nasce obrigatoriamente como `Novo` (`PENDING`), inclusive quando a action e chamada fora da interface; o status inicial nao e escolhivel no formulario.
-8. O topo do modulo separa duas visoes: `Novo pre-cadastro`, com o formulario manual, e `Cadastros salvos`, com a fila operacional `Novo` ordenada do mais recente para o mais antigo. Os cards mostram polo, cidade, dia e horario de criacao, telefone, email e atalho de WhatsApp.
-9. A fila nao exibe seletor de situacao: registros tecnicos ainda abertos (`PENDING`, `CONTACTED`, `WAITING_PAYMENT` e `READY_TO_CONVERT`) aparecem visualmente como `Novo` para preservar compatibilidade com dados antigos. `APPROVED` e `REJECTED` permanecem no banco e fora da fila operacional.
-10. A visao `Cadastros salvos` tem busca inteligente: filtra nome, telefone, email, documento do responsavel, responsavel, cidade e unidade, normalizando acentos, maiusculas/minusculas e telefone/documento sem espacos, pontos, tracos ou parenteses.
-11. A busca e client-side apenas sobre a lista ja autorizada pelo servidor: Admin recebe todos os pre-cadastros; Teacher recebe somente registros criados por ela ou atribuidos a sua `TeacherProfile`.
-12. Quando a Secretaria envia `unit=IVATE` ou `unit=DOURADINA`, o servidor filtra a lista e os contadores de status antes de enviar os dados para Admin/Teacher; Teacher continua limitado aos proprios ou atribuidos.
-13. Quando ha termo digitado, resultados exatos aparecem primeiro; se nao houver exato, a UI mostra correspondencias parciais ou proximas. Sem resultado, aparece `Nenhum pre-cadastro encontrado.`
-14. Criar pre-cadastro nao cria login, `StudentProfile`, financeiro ou agenda; ele apenas guarda os dados combinados para conversao posterior.
-15. Cada card aberto oferece `Editar cadastro` e `Tornar aluno`. A edicao reutiliza os campos validados do cadastro, exige a mesma permissao de Admin/Teacher, bloqueia duplicidade e nao altera o status; registros convertidos ou fora da fila aberta nao podem ser editados. `Tornar aluno` abre um unico painel em portal, sem remontar o card nem deslocar a lista, com as etapas `Dados do aluno`, `Login do AVA`, `Financeiro`, `Agenda` e `Confirmacao`.
-16. `Login do aluno no AVA` sempre exige email/login e senha inicial antes de liberar o botao. Se o pre-cadastro ja tem email, o campo vem preenchido; se nao tem, fica vazio e mostra uma sugestao visual baseada no nome, como `maria.silva@candy.local`, para a equipe confirmar ou editar.
-17. A senha inicial vem visivel e editavel, gerada por nome simplificado + `candy` (`Maria Silva` vira `mariacandy`, `Joao Pedro` vira `joaocandy`), com minimo de 8 caracteres. Se a equipe apagar e digitar outra senha valida, essa senha e respeitada.
-18. O painel mostra estados de `Completar`, `Pronto`, `Convertendo`, `Convertido` e `Erro`; o botao `Criar aluno no AVA` fica bloqueado apenas ate email/login, senha e confirmacao final estarem validos. Financeiro ou agenda incompletos aparecem como pendencias administrativas, sem impedir a criacao do acesso.
-19. Se faltar mensalidade, dia de pagamento ou forma, a transaction cria `FinancialStudent` e snapshots mensais com marcador interno `A_DEFINIR`, valor seguro `0` quando necessario e status visual `Completar`. Se faltarem dias ou horario, cria `AgendaStudent` linkado sem ocorrencias em `AgendaLesson` e tambem mostra `Completar`; ao editar os dados obrigatorios nos modulos correspondentes, o indicador muda para `Completo` em verde.
-20. A action protegida valida email/login e senha no servidor, bloqueia duplicidade de email/login em `User` e em outro pre-cadastro, hash a senha com `bcryptjs` e converte em uma transaction: cria `User.role=STUDENT`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent`, ocorrencias futuras em `AgendaLesson` quando a agenda estiver completa, logs simples e grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` no pre-cadastro. Se algo falhar, nada fica criado pela metade; dados administrativos pendentes podem ser completados depois sem recriar o aluno.
-21. `APPROVED` continua sendo o status tecnico exibido como `Convertido`. O campo minimizado `Contexto Catty`, quando preenchido, grava uma memoria pessoal inicial segura do aluno em `CattyUserMemory` depois da conversao.
-22. Teacher nao recebe lista de financeiro, gastos, agenda completa ou pre-cadastros de outras teachers; a conversao dela cria apenas os registros linkados daquele interessado.
-23. A aba `Alunos cadastrados` usa `User.role=STUDENT` e `StudentProfile` como fonte unica: mostra alunos criados diretamente no Admin e alunos convertidos, sem criar pre-cadastro falso.
-24. Admin pode buscar e editar nome, login, telefone e polo no proprio card. Teacher recebe do servidor somente alunos vinculados a sua `TeacherProfile` e usa a lista em modo de consulta.
-25. O card identifica origem, teacher e se Financeiro/Agenda ja foram criados pela conversao. Alterar o polo de aluno convertido atualiza perfil, cadastro financeiro recorrente e cadastro da agenda na mesma transaction; snapshots financeiros antigos nao sao reescritos.
+1. Visitante abre `/ava/login` e clica em `Quero ser aluno Candy`; o botao abre o WhatsApp com mensagem pronta e nao cria conta nem `StudentPreRegistration`.
+2. Depois da conversa, Admin ou Teacher abre `Cadastro` na Secretaria pela rota antiga compativel `/ava/admin?task=aceitar-alunos` ou `/ava/teacher?task=aceitar-alunos`.
+3. O formulario salva nome, telefone, email/login obrigatorio, nascimento, responsavel, cidade, unidade `Ivaté`/`Douradina`, objetivo, nivel estimado, observacoes, teacher responsavel, agenda pretendida e combinado financeiro.
+4. A senha inicial e sugerida por nome simplificado + `candy`, permanece visivel/editavel pelo controle de olho, exige minimo de 8 caracteres e confirmacao igual. O servidor nunca persiste a senha em texto puro.
+5. O botao `Cadastrar e liberar AVA` executa uma unica transaction protegida: cria o registro auditavel `StudentPreRegistration`, `User.role=STUDENT` com hash `bcryptjs`, `StudentProfile`, vinculo teacher quando houver, `FinancialStudent`, snapshots mensais, `AgendaStudent`, ocorrencias futuras quando os dados estiverem completos e os logs correspondentes.
+6. A transaction grava `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId` e `convertedAgendaStudentId` e conclui o registro como `APPROVED`. Se qualquer etapa falhar, nenhum dado fica criado pela metade.
+7. Financeiro ou agenda incompletos nao impedem o acesso ao AVA: os registros linkados nascem como `Completar` e podem ser ajustados depois nas areas administrativas.
+8. Locks transacionais separados por email e telefone normalizado, alem das restricoes unicas, impedem cadastros simultaneos duplicados.
+9. Admin pode cadastrar em qualquer polo e escolher teacher. Teacher cadastra somente para a propria `TeacherProfile`; ela nao recebe financeiro geral, gastos, agenda completa ou dados de outras teachers.
+10. `Cadastros anteriores` preserva somente registros abertos do fluxo antigo (`PENDING`, `CONTACTED`, `WAITING_PAYMENT` e `READY_TO_CONVERT`). Esses registros mantem busca, edicao e o painel legado `Tornar aluno`, sem reescrever historico.
+11. A busca dos registros antigos continua client-side apenas sobre a lista autorizada pelo servidor, normalizando acentos, maiusculas/minusculas, telefone e documento; o filtro `unit` e aplicado no servidor.
+12. A aba `Alunos cadastrados` usa `User.role=STUDENT` e `StudentProfile` como fonte unica e mostra imediatamente os alunos criados pelo fluxo novo, pelo Admin direto ou por conversoes antigas.
+13. Admin pode buscar e editar nome, login, telefone e polo no card do aluno. Teacher recebe apenas alunos vinculados e usa a lista em modo de consulta.
+14. Alterar o polo de aluno linkado atualiza perfil, cadastro financeiro recorrente e cadastro da agenda na mesma transaction; snapshots financeiros antigos nao sao reescritos.
 
 ### Admin
 
@@ -140,7 +129,7 @@ Helpers:
 3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA`, `Secretaria` ou `Financeiro`.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
 4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. A criacao direta de usuario exige senha provisoria e confirmacao iguais no cliente e no servidor, com controles independentes para mostrar/ocultar os dois campos. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
-5. Admin cria e acompanha pre-cadastros em `Aceitar alunos`, alternando entre `Novo pre-cadastro` e a fila `Cadastros salvos`; na lista, busca por nome, telefone, email, documento, cidade ou unidade, edita o registro e pode transforma-lo em aluno.
+5. Admin cadastra alunos em `Cadastro de alunos`, liberando o AVA no mesmo envio, e usa `Cadastros anteriores` apenas para concluir registros do fluxo antigo.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin usa `Catty dos alunos` para escolher aluno, cadastrar gostos, gerar emojis/sons/bordoes e ver um resumo simples das memorias ativas daquele aluno.
 8. Admin ajusta temas, gosto principal, emojis, sons e bordoes por aluno em `Catty dos alunos`; temas ativos entram na Catty, pendentes aguardam revisao, desativados criam preferencia `avoid_*` e arquivados ficam fora do prompt.

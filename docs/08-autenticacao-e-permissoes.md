@@ -91,8 +91,8 @@ Rotas protegidas:
 - `/ava/secretaria` aceita apenas `ADMIN` e `TEACHER`; Student nao ve nem acessa a Secretaria.
 - A Secretaria possui matriz central em `SECRETARIA_PERMISSION_MATRIX` (`src/lib/roles.ts`) para documentar e renderizar o escopo por role; cada destino continua validando role e permissao por dado no servidor.
 - Matriz da Secretaria:
-  - `ADMIN`: todas as unidades, todos os pre-cadastros, conversao de qualquer pre-cadastro com escolha de teacher, financeiro completo, agenda completa, gastos/pagamentos, relatorios simples, administracao e credenciais.
-  - `TEACHER`: Secretaria limitada; cria pre-cadastro, ve/atualiza/converte apenas registros criados por ela ou atribuidos a sua `TeacherProfile`, converte para a propria teacher, acessa contratos permitidos e nao ve financeiro geral, gastos da loja, agenda completa, administracao, credenciais nem pre-cadastros de outras teachers.
+  - `ADMIN`: todas as unidades, cadastro unico de qualquer aluno com escolha de teacher, acesso aos registros antigos, financeiro completo, agenda completa, gastos/pagamentos, relatorios simples, administracao e credenciais.
+  - `TEACHER`: Secretaria limitada; cadastra aluno diretamente para a propria `TeacherProfile`, ve/atualiza/converte apenas registros antigos criados por ela ou atribuidos a ela, acessa contratos permitidos e nao ve financeiro geral, gastos da loja, agenda completa, administracao, credenciais nem dados de outras teachers.
   - `STUDENT`: nao acessa Secretaria.
 - `/ava/avatar/[userId]` exige sessao; admin le todos, o dono le o proprio avatar, teacher le avatar de aluno vinculado e qualquer usuario autenticado do AVA pode ler somente o avatar de participante ativo que ja aparece no ranking interno Candy XP. Perfis inativos, sem XP e fora de vinculo continuam protegidos.
 - Usuario inativo nao entra.
@@ -100,16 +100,16 @@ Rotas protegidas:
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Login Google esta desativado nesta fase; o login ativo e por email/senha com Credentials Provider.
 - O botao publico `Quero ser aluno Candy` no login abre WhatsApp e nao cria `StudentPreRegistration`.
-- `StudentPreRegistration` continua fora do Auth.js e so vira acesso real depois de `Tornar aluno` por action protegida por `ADMIN` ou `TEACHER`.
-- `ADMIN` pode criar, ver, atualizar status e converter todos os pre-cadastros da Secretaria.
-- `TEACHER` pode criar pre-cadastro e ver/atualizar/converter apenas registros criados por ela (`createdByUserId`) ou atribuidos a sua `TeacherProfile` (`assignedTeacherProfileId`).
-- `STUDENT` nao acessa pre-cadastros nem Secretaria.
-- A busca de pre-cadastros fica no client, mas opera somente sobre a lista ja filtrada pelo server component: Admin recebe todos os registros; Teacher recebe apenas registros proprios/atribuidos. Student nao recebe componente nem dados.
+- O cadastro novo da Secretaria exige login e senha confirmada e cria o acesso `STUDENT` imediatamente em action protegida por `ADMIN` ou `TEACHER`.
+- `ADMIN` pode cadastrar alunos em qualquer polo, escolher teacher e consultar/concluir todos os registros antigos.
+- `TEACHER` cadastra somente para a propria `TeacherProfile` e ve/atualiza/converte apenas registros antigos criados por ela (`createdByUserId`) ou atribuidos a ela (`assignedTeacherProfileId`).
+- `STUDENT` nao acessa Cadastro nem Secretaria.
+- A busca de cadastros anteriores fica no client, mas opera somente sobre a lista ja filtrada pelo server component: Admin recebe todos os registros; Teacher recebe apenas registros proprios/atribuidos. Student nao recebe componente nem dados.
 - A normalizacao da busca remove acentos, ignora maiusculas/minusculas e compara telefone/documento tambem por digitos, sem espacos, pontos, tracos ou parenteses; resultados exatos ficam antes dos parciais/proximos.
-- A conversao `Tornar aluno` sempre exige `emailForLogin` e `initialPassword` no formulario. O email do pre-cadastro pode preencher o campo, mas o Admin/Teacher precisa revisar; sem email, a UI mostra sugestao baseada no nome e mantem o campo vazio ate alguem confirmar ou editar.
-- A senha inicial aparece visivel/editavel antes da conversao, gerada por nome simplificado + `candy`, e precisa ter no minimo 8 caracteres. O servidor recebe apenas para gerar `passwordHash` com `bcryptjs`; a senha em texto puro nao e persistida nem exibida depois da conversao.
+- O cadastro novo sempre exige email/login, senha inicial e confirmacao. A UI oferece sugestao baseada no nome, mas Admin/Teacher precisa revisar; o servidor valida unicidade, tamanho e igualdade das senhas.
+- A senha inicial aparece editavel, gerada por nome simplificado + `candy`, e precisa ter no minimo 8 caracteres. O servidor recebe apenas para gerar `passwordHash` com `bcryptjs`; a senha em texto puro e a confirmacao nao sao persistidas nem exibidas depois do cadastro.
 - No Financeiro, apenas `ADMIN` pode usar `Criar novo aluno`: sem `studentProfileId`, email/login e senha inicial validos tornam-se obrigatorios e a mesma transaction cria `User STUDENT`, `StudentProfile`, `FinancialStudent` e os snapshots mensais. O login sugerido `@candy.local` e revisavel, duplicidades sao bloqueadas e somente o hash `bcryptjs` chega ao banco; o cliente mostra a senha uma unica vez depois do sucesso.
-- Ao converter, o servidor cria `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction. Um lock transacional por pre-cadastro impede duas conversoes simultaneas e garante que a segunda chamada encontre o registro ja convertido.
+- No cadastro novo, o servidor cria `StudentPreRegistration`, `User.role=STUDENT`, `StudentProfile`, vinculo teacher quando aplicavel, `FinancialStudent`, snapshots em `FinancialPayment`, `AgendaStudent` e ocorrencias futuras em `AgendaLesson` dentro de uma transaction. Locks por email e telefone normalizado impedem chamadas simultaneas duplicadas. O fluxo antigo `Tornar aluno` continua protegido por lock do registro.
 - Financeiro e agenda incompletos nao removem as exigencias de login/senha nem enfraquecem a transaction: os registros administrativos linkados sao criados como `Completar`, sem liberar pagamento em linha provisoria, e podem ser preenchidos depois pelo Admin nas telas protegidas.
 - `TEACHER` so converte pre-cadastro criado por ela ou atribuido a sua `TeacherProfile`; se o registro tiver outra teacher responsavel, a conversao e bloqueada. Essa escrita cria apenas os dados linkados daquele interessado e nao libera acesso ao financeiro completo nem a agenda interna.
 - `ADMIN` pode escolher a teacher no momento da conversao e converter qualquer pre-cadastro.

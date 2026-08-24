@@ -3,6 +3,7 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
 import { auth } from "@/lib/auth";
 import { upsertCattyUserMemory } from "@/lib/catty-user-memory";
 import { resolveFinancialRegistration } from "@/lib/financial-completeness";
@@ -18,12 +19,12 @@ import {
   normalizePhoneDigits,
   preRegistrationAcceptSchema,
   preRegistrationReviewSchema,
-  secretariaPreRegistrationSchema,
   secretariaPreRegistrationUpdateSchema,
+  secretariaStudentRegistrationSchema,
   type PreRegistrationAcceptInput,
   type PreRegistrationReviewInput,
-  type SecretariaPreRegistrationInput,
   type SecretariaPreRegistrationUpdateInput,
+  type SecretariaStudentRegistrationInput,
 } from "@/lib/validations/pre-registration";
 
 export type PreRegistrationActionResult<TInput extends Record<string, unknown>> = {
@@ -58,6 +59,44 @@ type FinancialSnapshotSource = {
   phone: string | null;
   unit: "IVATE" | "DOURADINA";
 };
+
+const conversionRequestSelect = {
+  address: true,
+  assignedTeacherProfileId: true,
+  birthDate: true,
+  city: true,
+  convertedAgendaStudentId: true,
+  convertedFinancialStudentId: true,
+  convertedStudentProfileId: true,
+  convertedUserId: true,
+  createdByUserId: true,
+  email: true,
+  englishGoal: true,
+  estimatedLevel: true,
+  fullName: true,
+  guardianDocument: true,
+  guardianName: true,
+  guardianPhone: true,
+  id: true,
+  installmentsTotal: true,
+  intendedTime: true,
+  intendedWeekdayMask: true,
+  lastMobileConversionOperationId: true,
+  notes: true,
+  paymentDay: true,
+  paymentMethod: true,
+  phone: true,
+  secondaryContact: true,
+  status: true,
+  studentPhone: true,
+  tuitionCents: true,
+  unit: true,
+  updatedAt: true,
+} satisfies Prisma.StudentPreRegistrationSelect;
+
+type ConversionRequest = Prisma.StudentPreRegistrationGetPayload<{
+  select: typeof conversionRequestSelect;
+}>;
 
 function fieldErrors<TInput extends Record<string, unknown>>(
   issues: { message: string; path: PropertyKey[] }[],
@@ -279,25 +318,354 @@ function buildStudentNotes(request: {
     .join("\n\n");
 }
 
-export async function createStudentPreRegistration(
-  input: SecretariaPreRegistrationInput,
-): Promise<PreRegistrationActionResult<SecretariaPreRegistrationInput>> {
+async function createLinkedStudentFromRequest({
+  confirmMissingAgendaData,
+  context,
+  emailForLogin,
+  mobileOperationKey,
+  passwordHash,
+  request,
+  teacherProfileIdForConversion,
+  tx,
+}: {
+  confirmMissingAgendaData: boolean;
+  context: ReviewerContext;
+  emailForLogin: string;
+  mobileOperationKey?: string;
+  passwordHash: string;
+  request: ConversionRequest;
+  teacherProfileIdForConversion?: string;
+  tx: Prisma.TransactionClient;
+}) {
+  const financialRegistration = resolveFinancialRegistration({
+    amountCents: request.tuitionCents,
+    paymentDay: request.paymentDay,
+    paymentMethod: request.paymentMethod
+      ? mapPreRegistrationPaymentMethod(request.paymentMethod)
+      : null,
+  });
+  const agendaWeekdays = decodeWeekdayMask(request.intendedWeekdayMask);
+  const hasCompleteAgendaData = Boolean(
+    agendaWeekdays.length > 0 &&
+      request.intendedTime &&
+      agendaTimePattern.test(request.intendedTime),
+  );
+
+  if (!hasCompleteAgendaData && !confirmMissingAgendaData) {
+    throw new Error("MISSING_AGENDA_CONFIRMATION");
+  }
+
+  const intendedTime = hasCompleteAgendaData ? request.intendedTime : null;
+  const pendingAdministrativeModules = [
+    financialRegistration.isComplete ? null : "financeiro",
+    hasCompleteAgendaData ? null : "agenda",
+  ].filter(Boolean) as string[];
+  let teacherProfileId: string | null = null;
+
+  if (context.session.user.role === "TEACHER") {
+    if (!context.teacherProfileId) {
+      throw new Error("TEACHER_PROFILE_REQUIRED");
+    }
+
+    if (
+      request.assignedTeacherProfileId &&
+      request.assignedTeacherProfileId !== context.teacherProfileId
+    ) {
+      throw new Error("REQUEST_FORBIDDEN");
+    }
+
+    teacherProfileId = context.teacherProfileId;
+  } else {
+    teacherProfileId =
+      teacherProfileIdForConversion ??
+      request.assignedTeacherProfileId ??
+      null;
+  }
+
+  if (teacherProfileId) {
+    const teacherProfile = await tx.teacherProfile.findUnique({
+      where: { id: teacherProfileId },
+      select: { id: true },
+    });
+
+    if (!teacherProfile) {
+      throw new Error("TEACHER_NOT_FOUND");
+    }
+  }
+
+  const existingUser = await tx.user.findUnique({
+    where: { email: emailForLogin },
+    select: { id: true },
+  });
+
+  if (existingUser) {
+    throw new Error("USER_EMAIL_EXISTS");
+  }
+
+  const existingPreRegistration = await tx.studentPreRegistration.findFirst({
+    where: {
+      email: emailForLogin,
+      NOT: { id: request.id },
+    },
+    select: { id: true },
+  });
+
+  if (existingPreRegistration) {
+    throw new Error("PRE_REGISTRATION_EMAIL_EXISTS");
+  }
+
+  const contactPhone = request.studentPhone ?? request.phone;
+  const [existingPhoneUser, existingFinancialStudent] = await Promise.all([
+    tx.user.findFirst({
+      where: {
+        OR: [
+          { phone: contactPhone },
+          { studentProfile: { studentPhone: contactPhone } },
+        ],
+      },
+      select: { id: true },
+    }),
+    tx.financialStudent.findFirst({
+      where: {
+        OR: [{ phone: contactPhone }, { email: emailForLogin }],
+      },
+      select: { id: true },
+    }),
+  ]);
+  const existingAgendaLesson =
+    hasCompleteAgendaData && intendedTime
+      ? await tx.agendaLesson.findFirst({
+          where: {
+            isActive: true,
+            isMakeup: false,
+            time: intendedTime,
+            weekday: { in: agendaWeekdays },
+            year: CONVERSION_YEAR,
+            student: {
+              name: { equals: request.fullName, mode: "insensitive" },
+            },
+          },
+          select: { id: true },
+        })
+      : null;
+
+  if (existingPhoneUser) throw new Error("USER_PHONE_EXISTS");
+  if (existingFinancialStudent) throw new Error("FINANCIAL_DUPLICATE");
+  if (existingAgendaLesson) throw new Error("AGENDA_DUPLICATE");
+
+  const user = await tx.user.create({
+    data: {
+      address: request.address ?? request.city ?? undefined,
+      email: emailForLogin,
+      name: request.fullName,
+      passwordHash,
+      phone: contactPhone,
+      role: "STUDENT",
+    },
+  });
+  const studentProfile = await tx.studentProfile.create({
+    data: {
+      birthDate: request.birthDate,
+      guardianDocument: request.guardianDocument,
+      motherName: request.guardianName,
+      motherPhone: request.guardianPhone,
+      notes: buildStudentNotes(request),
+      studentPhone: contactPhone,
+      studentPhoneAlt: request.secondaryContact,
+      unit: request.unit,
+      userId: user.id,
+    },
+  });
+
+  if (teacherProfileId) {
+    await tx.studentTeacherAssignment.upsert({
+      where: {
+        teacherProfileId_studentProfileId: {
+          studentProfileId: studentProfile.id,
+          teacherProfileId,
+        },
+      },
+      create: { studentProfileId: studentProfile.id, teacherProfileId },
+      update: {},
+    });
+  }
+
+  const financialStudent = await tx.financialStudent.create({
+    data: {
+      address: request.address ?? request.city,
+      amountCents: financialRegistration.amountCents,
+      cpf: null,
+      email: emailForLogin,
+      installmentsTotal: request.installmentsTotal,
+      name: request.fullName,
+      paymentDay: financialRegistration.paymentDay,
+      paymentMethod: financialRegistration.paymentMethod,
+      phone: contactPhone,
+      studentProfileId: studentProfile.id,
+      unit: request.unit,
+    },
+  });
+  const conversionMonth = getConversionStartMonth();
+  const financeMonths = getFinanceMonthsForPlan(
+    conversionMonth,
+    financialStudent.installmentsTotal,
+  );
+
+  await tx.financialPayment.createMany({
+    data: financeMonths.map((month) => ({
+      ...buildFinancialPaymentSnapshot(
+        financialStudent,
+        getFinancialInstallmentNumber(
+          month,
+          conversionMonth,
+          financialStudent.installmentsTotal,
+        ),
+      ),
+      isActive: true,
+      isPaid: false,
+      month,
+      note:
+        month === conversionMonth
+          ? financialRegistration.isComplete
+            ? "Criado pelo cadastro unico da Secretaria."
+            : "Criado pelo cadastro unico com financeiro incompleto; preencher valor, dia e forma de pagamento."
+          : null,
+      paidAt: null,
+      studentId: financialStudent.id,
+      year: CONVERSION_YEAR,
+    })),
+  });
+
+  const firstPayment = await tx.financialPayment.findUnique({
+    where: {
+      studentId_year_month: {
+        month: conversionMonth,
+        studentId: financialStudent.id,
+        year: CONVERSION_YEAR,
+      },
+    },
+    select: { id: true },
+  });
+
+  await tx.financialLog.create({
+    data: {
+      action: "CREATE_FROM_PRE_REGISTRATION",
+      createdByUserId: context.session.user.id,
+      description: financialRegistration.isComplete
+        ? `Aluno financeiro criado pelo cadastro da Secretaria: ${financialStudent.name}.`
+        : `Aluno financeiro criado como incompleto pelo cadastro da Secretaria: ${financialStudent.name}; preencher valor, dia e forma de pagamento.`,
+      paymentId: firstPayment?.id,
+      studentId: financialStudent.id,
+    },
+  });
+
+  const agendaDates =
+    hasCompleteAgendaData && intendedTime
+      ? getAgendaRecurringDates(conversionMonth, agendaWeekdays)
+      : [];
+  const agendaPendingNote = hasCompleteAgendaData
+    ? null
+    : "Agenda criada sem ocorrencias; preencher dias e horario depois.";
+  const agendaStudentNotes = [request.notes, agendaPendingNote]
+    .filter(Boolean)
+    .join("\n\n");
+  const agendaStudent = await tx.agendaStudent.create({
+    data: {
+      defaultTime: intendedTime,
+      isActive: true,
+      name: request.fullName,
+      notes: agendaStudentNotes || null,
+      phone: contactPhone,
+      unit: request.unit,
+      weekdayMask: request.intendedWeekdayMask,
+    },
+  });
+
+  if (agendaDates.length > 0 && intendedTime) {
+    await tx.agendaLesson.createMany({
+      data: agendaDates.map((date) => {
+        const dateParts = getAgendaDateParts(date);
+
+        return {
+          date,
+          isActive: true,
+          isMakeup: false,
+          month: dateParts.month,
+          notes: "Criada pelo cadastro unico da Secretaria.",
+          status: "SCHEDULED",
+          studentId: agendaStudent.id,
+          time: intendedTime,
+          weekday: dateParts.weekday,
+          year: dateParts.year,
+        };
+      }),
+    });
+  }
+
+  await tx.agendaLog.create({
+    data: {
+      action: "CREATE_FROM_PRE_REGISTRATION",
+      createdByUserId: context.session.user.id,
+      description: hasCompleteAgendaData
+        ? `Agenda criada pelo cadastro da Secretaria para ${agendaStudent.name}: ${agendaDates.length} aula(s) ate dezembro.`
+        : `Agenda criada pelo cadastro da Secretaria para ${agendaStudent.name} sem ocorrencias; dias e horario ficaram pendentes.`,
+      studentId: agendaStudent.id,
+    },
+  });
+
+  const postConversionMessage =
+    pendingAdministrativeModules.length === 0
+      ? "Aluno cadastrado com acesso ao AVA, financeiro e agenda."
+      : `Aluno cadastrado com acesso ao AVA. ${pendingAdministrativeModules.join(
+          " e ",
+        )} ficou como Completar para preenchimento posterior.`;
+
+  await tx.studentPreRegistration.update({
+    where: { id: request.id },
+    data: {
+      assignedTeacherProfileId: teacherProfileId,
+      convertedAgendaStudentId: agendaStudent.id,
+      convertedFinancialStudentId: financialStudent.id,
+      convertedStudentProfileId: studentProfile.id,
+      convertedUserId: user.id,
+      email: request.email ?? emailForLogin,
+      lastMobileConversionOperationId: mobileOperationKey ?? undefined,
+      reviewedAt: new Date(),
+      reviewedByUserId: context.session.user.id,
+      status: "APPROVED",
+      statusNote:
+        pendingAdministrativeModules.length === 0
+          ? "Cadastro concluido com AVA, financeiro e agenda."
+          : `Cadastro concluido com AVA; completar ${pendingAdministrativeModules.join(
+              " e ",
+            )}.`,
+    },
+  });
+
+  return { postConversionMessage, userId: user.id };
+}
+
+export async function createStudentRegistration(
+  input: SecretariaStudentRegistrationInput,
+): Promise<PreRegistrationActionResult<SecretariaStudentRegistrationInput>> {
   const context = await requirePreRegistrationReviewer();
 
   if (!context) {
     return {
       ok: false,
-      message: "Voce nao tem permissao para criar pre-cadastros.",
+      message: "Voce nao tem permissao para cadastrar alunos.",
     };
   }
 
-  const parsed = secretariaPreRegistrationSchema.safeParse(input);
+  const parsed = secretariaStudentRegistrationSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
-      errors: fieldErrors<SecretariaPreRegistrationInput>(parsed.error.issues),
+      errors: fieldErrors<SecretariaStudentRegistrationInput>(
+        parsed.error.issues,
+      ),
       ok: false,
-      message: "Revise os dados do pre-cadastro.",
+      message: "Revise os dados do cadastro.",
     };
   }
 
@@ -309,7 +677,7 @@ export async function createStudentPreRegistration(
     if (!context.teacherProfileId) {
       return {
         ok: false,
-        message: "Perfil teacher nao encontrado para criar pre-cadastro.",
+        message: "Perfil teacher nao encontrado para cadastrar o aluno.",
       };
     }
 
@@ -320,7 +688,7 @@ export async function createStudentPreRegistration(
       return {
         errors: {
           assignedTeacherProfileId:
-            "Teacher so pode assumir os proprios pre-cadastros.",
+            "Teacher so pode cadastrar alunos para o proprio AVA.",
         },
         ok: false,
         message: "Revise a teacher responsavel.",
@@ -330,13 +698,103 @@ export async function createStudentPreRegistration(
     assignedTeacherProfileId = context.teacherProfileId;
   }
 
-  if (assignedTeacherProfileId) {
-    const teacherProfile = await prisma.teacherProfile.findUnique({
-      where: { id: assignedTeacherProfileId },
-      select: { id: true },
-    });
+  const passwordHash = await hash(parsed.data.initialPassword, 12);
+  let postRegistrationMessage = "Aluno cadastrado com acesso ao AVA.";
+  try {
+    await prisma.$transaction(async (tx) => {
+      await acquireTransactionAdvisoryLock(
+        tx,
+        `student-registration-email:${parsed.data.email}`,
+      );
+      await acquireTransactionAdvisoryLock(
+        tx,
+        `student-registration-phone:${phoneNormalized}`,
+      );
 
-    if (!teacherProfile) {
+      const duplicateFilters = [
+        { phoneNormalized },
+        { phone: parsed.data.phone },
+        { email: parsed.data.email },
+      ];
+      const [existingRequest, existingUser] = await Promise.all([
+        tx.studentPreRegistration.findFirst({
+          where: { OR: duplicateFilters },
+          select: { fullName: true, id: true },
+        }),
+        tx.user.findUnique({
+          where: { email: parsed.data.email },
+          select: { id: true },
+        }),
+      ]);
+
+      if (existingUser) throw new Error("USER_EMAIL_EXISTS");
+      if (existingRequest) throw new Error("PRE_REGISTRATION_DUPLICATE");
+
+      const request = await tx.studentPreRegistration.create({
+        data: {
+          assignedTeacherProfileId,
+          birthDate: parsed.data.birthDate ?? null,
+          city: parsed.data.city ?? null,
+          createdByUserId: context.session.user.id,
+          email: parsed.data.email,
+          englishGoal: parsed.data.englishGoal,
+          estimatedLevel: parsed.data.estimatedLevel ?? null,
+          fullName: parsed.data.fullName,
+          guardianName: parsed.data.guardianName ?? null,
+          installmentsTotal: parsed.data.installmentsTotal ?? null,
+          intendedTime: parsed.data.intendedTime ?? null,
+          intendedWeekdayMask: parsed.data.intendedWeekdayMask,
+          notes: parsed.data.notes ?? null,
+          paymentDay: parsed.data.paymentDay ?? null,
+          paymentMethod: parsed.data.paymentMethod ?? null,
+          phone: parsed.data.phone,
+          phoneNormalized,
+          status: "PENDING",
+          tuitionCents: parsed.data.tuitionAmount ?? null,
+          unit: parsed.data.unit,
+        },
+        select: conversionRequestSelect,
+      });
+      const linkedResult = await createLinkedStudentFromRequest({
+        confirmMissingAgendaData: true,
+        context,
+        emailForLogin: parsed.data.email,
+        passwordHash,
+        request,
+        teacherProfileIdForConversion: assignedTeacherProfileId ?? undefined,
+        tx,
+      });
+
+      postRegistrationMessage = linkedResult.postConversionMessage;
+    });
+  } catch (error) {
+    const errorMessage = (error as Error).message;
+
+    if (
+      isUniqueConstraintError(error) ||
+      errorMessage === "USER_EMAIL_EXISTS"
+    ) {
+      return {
+        errors: { email: "Ja existe um usuario com este email/login." },
+        ok: false,
+        message: "Ja existe um usuario com este email no AVA.",
+      };
+    }
+
+    if (
+      errorMessage === "PRE_REGISTRATION_DUPLICATE" ||
+      errorMessage === "PRE_REGISTRATION_EMAIL_EXISTS" ||
+      errorMessage === "USER_PHONE_EXISTS" ||
+      errorMessage === "FINANCIAL_DUPLICATE"
+    ) {
+      return {
+        errors: { phone: "Telefone ou email ja cadastrado." },
+        ok: false,
+        message: "Ja existe um cadastro para este aluno.",
+      };
+    }
+
+    if (errorMessage === "TEACHER_NOT_FOUND") {
       return {
         errors: {
           assignedTeacherProfileId: "Teacher responsavel nao encontrada.",
@@ -345,85 +803,18 @@ export async function createStudentPreRegistration(
         message: "Revise a teacher responsavel.",
       };
     }
-  }
 
-  const duplicateFilters = [
-    { phoneNormalized },
-    { phone: parsed.data.phone },
-    ...(parsed.data.email ? [{ email: parsed.data.email }] : []),
-  ];
-  const [existingRequest, existingUser] = await Promise.all([
-    prisma.studentPreRegistration.findFirst({
-      where: { OR: duplicateFilters },
-      select: { email: true, fullName: true, id: true, phone: true },
-    }),
-    parsed.data.email
-      ? prisma.user.findUnique({
-          where: { email: parsed.data.email },
-          select: { id: true },
-        })
-      : null,
-  ]);
-
-  if (existingUser) {
-    return {
-      errors: {
-        email: "Ja existe um usuario com este email.",
-      },
-      ok: false,
-      message: "Ja existe um usuario com este email no AVA.",
-    };
-  }
-
-  if (existingRequest) {
-    return {
-      errors: {
-        phone: "Ja existe um pre-cadastro com este telefone ou email.",
-      },
-      ok: false,
-      message: `Ja existe um pre-cadastro para ${existingRequest.fullName}.`,
-    };
-  }
-
-  try {
-    await prisma.studentPreRegistration.create({
-      data: {
-        assignedTeacherProfileId,
-        birthDate: parsed.data.birthDate ?? null,
-        city: parsed.data.city ?? null,
-        createdByUserId: context.session.user.id,
-        email: parsed.data.email ?? null,
-        englishGoal: parsed.data.englishGoal,
-        estimatedLevel: parsed.data.estimatedLevel ?? null,
-        fullName: parsed.data.fullName,
-        guardianName: parsed.data.guardianName ?? null,
-        installmentsTotal: parsed.data.installmentsTotal ?? null,
-        intendedTime: parsed.data.intendedTime ?? null,
-        intendedWeekdayMask: parsed.data.intendedWeekdayMask,
-        notes: parsed.data.notes ?? null,
-        paymentDay: parsed.data.paymentDay ?? null,
-        paymentMethod: parsed.data.paymentMethod ?? null,
-        phone: parsed.data.phone,
-        phoneNormalized,
-        status: "PENDING",
-        tuitionCents: parsed.data.tuitionAmount ?? null,
-        unit: parsed.data.unit,
-      },
-    });
-  } catch (error) {
-    if (isUniqueConstraintError(error)) {
+    if (errorMessage === "AGENDA_DUPLICATE") {
       return {
-        errors: {
-          phone: "Telefone ou email ja cadastrado.",
-        },
+        errors: { intendedTime: "Ja existe uma agenda ativa parecida." },
         ok: false,
-        message: "Este interessado ja esta cadastrado.",
+        message: "Ja existe uma agenda ativa parecida para este aluno.",
       };
     }
 
     return {
       ok: false,
-      message: "Nao foi possivel criar o pre-cadastro agora.",
+      message: "Nao foi possivel cadastrar o aluno agora.",
     };
   }
 
@@ -431,7 +822,7 @@ export async function createStudentPreRegistration(
 
   return {
     ok: true,
-    message: "Pre-cadastro salvo na Secretaria.",
+    message: postRegistrationMessage,
   };
 }
 
@@ -832,39 +1223,7 @@ async function acceptStudentPreRegistrationWithContext(
 
       const request = await tx.studentPreRegistration.findUnique({
         where: { id: parsed.data.requestId },
-        select: {
-          address: true,
-          assignedTeacherProfileId: true,
-          birthDate: true,
-          city: true,
-          convertedAgendaStudentId: true,
-          convertedFinancialStudentId: true,
-          convertedStudentProfileId: true,
-          convertedUserId: true,
-          createdByUserId: true,
-          email: true,
-          englishGoal: true,
-          estimatedLevel: true,
-          fullName: true,
-          guardianDocument: true,
-          guardianName: true,
-          guardianPhone: true,
-          id: true,
-          installmentsTotal: true,
-          intendedTime: true,
-          intendedWeekdayMask: true,
-          lastMobileConversionOperationId: true,
-          notes: true,
-          paymentDay: true,
-          paymentMethod: true,
-          phone: true,
-          secondaryContact: true,
-          status: true,
-          studentPhone: true,
-          tuitionCents: true,
-          unit: true,
-          updatedAt: true,
-        },
+        select: conversionRequestSelect,
       });
 
       if (!request) {
@@ -916,336 +1275,19 @@ async function acceptStudentPreRegistrationWithContext(
         throw new Error("REQUEST_NOT_ACCEPTABLE");
       }
 
-      const emailForLogin = parsed.data.emailForLogin;
-      const financialRegistration = resolveFinancialRegistration({
-        amountCents: request.tuitionCents,
-        paymentDay: request.paymentDay,
-        paymentMethod: request.paymentMethod
-          ? mapPreRegistrationPaymentMethod(request.paymentMethod)
-          : null,
+      const linkedResult = await createLinkedStudentFromRequest({
+        confirmMissingAgendaData: parsed.data.confirmMissingAgendaData,
+        context,
+        emailForLogin: parsed.data.emailForLogin,
+        mobileOperationKey: options.mobileOperationKey,
+        passwordHash,
+        request,
+        teacherProfileIdForConversion:
+          parsed.data.teacherProfileIdForConversion,
+        tx,
       });
-
-      const agendaWeekdays = decodeWeekdayMask(request.intendedWeekdayMask);
-      const hasCompleteAgendaData = Boolean(
-        agendaWeekdays.length > 0 &&
-          request.intendedTime &&
-          agendaTimePattern.test(request.intendedTime),
-      );
-      if (!hasCompleteAgendaData && !parsed.data.confirmMissingAgendaData) {
-        throw new Error("MISSING_AGENDA_CONFIRMATION");
-      }
-      const intendedTime = hasCompleteAgendaData ? request.intendedTime : null;
-      const pendingAdministrativeModules = [
-        financialRegistration.isComplete ? null : "financeiro",
-        hasCompleteAgendaData ? null : "agenda",
-      ].filter(Boolean) as string[];
-
-      let teacherProfileId: string | null = null;
-
-      if (context.session.user.role === "TEACHER") {
-        if (!context.teacherProfileId) {
-          throw new Error("TEACHER_PROFILE_REQUIRED");
-        }
-
-        if (
-          request.assignedTeacherProfileId &&
-          request.assignedTeacherProfileId !== context.teacherProfileId
-        ) {
-          throw new Error("REQUEST_FORBIDDEN");
-        }
-
-        teacherProfileId = context.teacherProfileId;
-      } else {
-        teacherProfileId =
-          parsed.data.teacherProfileIdForConversion ??
-          request.assignedTeacherProfileId ??
-          null;
-      }
-
-      if (teacherProfileId) {
-        const teacherProfile = await tx.teacherProfile.findUnique({
-          where: { id: teacherProfileId },
-          select: { id: true },
-        });
-
-        if (!teacherProfile) {
-          throw new Error("TEACHER_NOT_FOUND");
-        }
-      }
-
-      const existingUser = await tx.user.findUnique({
-        where: { email: emailForLogin },
-        select: { id: true },
-      });
-
-      if (existingUser) {
-        throw new Error("USER_EMAIL_EXISTS");
-      }
-
-      const existingPreRegistration = await tx.studentPreRegistration.findFirst({
-        where: {
-          email: emailForLogin,
-          NOT: {
-            id: request.id,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (existingPreRegistration) {
-        throw new Error("PRE_REGISTRATION_EMAIL_EXISTS");
-      }
-
-      const contactPhone = request.studentPhone ?? request.phone;
-      const [existingPhoneUser, existingFinancialStudent] = await Promise.all([
-        tx.user.findFirst({
-          where: {
-            OR: [
-              { phone: contactPhone },
-              { studentProfile: { studentPhone: contactPhone } },
-            ],
-          },
-          select: { id: true },
-        }),
-        tx.financialStudent.findFirst({
-          where: {
-            OR: [{ phone: contactPhone }, { email: emailForLogin }],
-          },
-          select: { id: true },
-        }),
-      ]);
-      const existingAgendaLesson =
-        hasCompleteAgendaData && intendedTime
-          ? await tx.agendaLesson.findFirst({
-              where: {
-                isActive: true,
-                isMakeup: false,
-                time: intendedTime,
-                weekday: {
-                  in: agendaWeekdays,
-                },
-                year: CONVERSION_YEAR,
-                student: {
-                  name: {
-                    equals: request.fullName,
-                    mode: "insensitive",
-                  },
-                },
-              },
-              select: { id: true },
-            })
-          : null;
-
-      if (existingPhoneUser) {
-        throw new Error("USER_PHONE_EXISTS");
-      }
-
-      if (existingFinancialStudent) {
-        throw new Error("FINANCIAL_DUPLICATE");
-      }
-
-      if (existingAgendaLesson) {
-        throw new Error("AGENDA_DUPLICATE");
-      }
-
-      const user = await tx.user.create({
-        data: {
-          address: request.address ?? request.city ?? undefined,
-          email: emailForLogin,
-          name: request.fullName,
-          passwordHash,
-          phone: request.studentPhone ?? request.phone,
-          role: "STUDENT",
-        },
-      });
-      createdUserId = user.id;
-
-      const studentProfile = await tx.studentProfile.create({
-        data: {
-          birthDate: request.birthDate,
-          guardianDocument: request.guardianDocument,
-          motherName: request.guardianName,
-          motherPhone: request.guardianPhone,
-          notes: buildStudentNotes(request),
-          studentPhone: request.studentPhone ?? request.phone,
-          studentPhoneAlt: request.secondaryContact,
-          unit: request.unit,
-          userId: user.id,
-        },
-      });
-
-      if (teacherProfileId) {
-        await tx.studentTeacherAssignment.upsert({
-          where: {
-            teacherProfileId_studentProfileId: {
-              studentProfileId: studentProfile.id,
-              teacherProfileId,
-            },
-          },
-          create: {
-            studentProfileId: studentProfile.id,
-            teacherProfileId,
-          },
-          update: {},
-        });
-      }
-
-      const financialStudent = await tx.financialStudent.create({
-        data: {
-          address: request.address ?? request.city,
-          amountCents: financialRegistration.amountCents,
-          cpf: null,
-          email: emailForLogin,
-          installmentsTotal: request.installmentsTotal,
-          name: request.fullName,
-          paymentDay: financialRegistration.paymentDay,
-          paymentMethod: financialRegistration.paymentMethod,
-          phone: contactPhone,
-          studentProfileId: studentProfile.id,
-          unit: request.unit,
-        },
-      });
-      const conversionMonth = getConversionStartMonth();
-      const financeMonths = getFinanceMonthsForPlan(
-        conversionMonth,
-        financialStudent.installmentsTotal,
-      );
-
-      await tx.financialPayment.createMany({
-        data: financeMonths.map((month) => ({
-          ...buildFinancialPaymentSnapshot(
-            financialStudent,
-            getFinancialInstallmentNumber(
-              month,
-              conversionMonth,
-              financialStudent.installmentsTotal,
-            ),
-          ),
-          isActive: true,
-          isPaid: false,
-          month,
-          note:
-            month === conversionMonth
-              ? financialRegistration.isComplete
-                ? "Criado a partir do pre-cadastro da Secretaria."
-                : "Criado a partir do pre-cadastro com cadastro financeiro incompleto; preencher valor, dia e forma de pagamento."
-              : null,
-          paidAt: null,
-          studentId: financialStudent.id,
-          year: CONVERSION_YEAR,
-        })),
-      });
-
-      const firstPayment = await tx.financialPayment.findUnique({
-        where: {
-          studentId_year_month: {
-            month: conversionMonth,
-            studentId: financialStudent.id,
-            year: CONVERSION_YEAR,
-          },
-        },
-        select: { id: true },
-      });
-
-      await tx.financialLog.create({
-        data: {
-          action: "CREATE_FROM_PRE_REGISTRATION",
-          createdByUserId: context.session.user.id,
-          description: financialRegistration.isComplete
-            ? `Aluno financeiro criado a partir do pre-cadastro: ${financialStudent.name}.`
-            : `Aluno financeiro criado como incompleto a partir do pre-cadastro: ${financialStudent.name}; preencher valor, dia e forma de pagamento.`,
-          paymentId: firstPayment?.id,
-          studentId: financialStudent.id,
-        },
-      });
-
-      const agendaDates =
-        hasCompleteAgendaData && intendedTime
-          ? getAgendaRecurringDates(conversionMonth, agendaWeekdays)
-          : [];
-
-      const agendaPendingNote =
-        hasCompleteAgendaData
-          ? null
-          : "Agenda convertida sem ocorrencias; preencher dias e horario depois.";
-      const agendaStudentNotes = [request.notes, agendaPendingNote]
-        .filter(Boolean)
-        .join("\n\n");
-
-      const agendaStudent = await tx.agendaStudent.create({
-        data: {
-          defaultTime: intendedTime,
-          isActive: true,
-          name: request.fullName,
-          notes: agendaStudentNotes || null,
-          phone: contactPhone,
-          unit: request.unit,
-          weekdayMask: request.intendedWeekdayMask,
-        },
-      });
-
-      if (agendaDates.length > 0 && intendedTime) {
-        await tx.agendaLesson.createMany({
-          data: agendaDates.map((date) => {
-            const dateParts = getAgendaDateParts(date);
-
-            return {
-              date,
-              isActive: true,
-              isMakeup: false,
-              month: dateParts.month,
-              notes: "Criada a partir do pre-cadastro da Secretaria.",
-              status: "SCHEDULED",
-              studentId: agendaStudent.id,
-              time: intendedTime,
-              weekday: dateParts.weekday,
-              year: dateParts.year,
-            };
-          }),
-        });
-      }
-
-      await tx.agendaLog.create({
-        data: {
-          action: "CREATE_FROM_PRE_REGISTRATION",
-          createdByUserId: context.session.user.id,
-          description: hasCompleteAgendaData
-            ? `Agenda criada a partir do pre-cadastro para ${agendaStudent.name}: ${agendaDates.length} aula(s) ate dezembro.`
-            : `Agenda criada a partir do pre-cadastro para ${agendaStudent.name} sem ocorrencias; dias e horario ficaram pendentes.`,
-          studentId: agendaStudent.id,
-        },
-      });
-      postConversionMessage =
-        pendingAdministrativeModules.length === 0
-          ? "Aluno convertido com AVA, financeiro e agenda criados."
-          : `Aluno convertido com AVA. ${pendingAdministrativeModules.join(
-              " e ",
-            )} criado(s) como Completar para preenchimento posterior.`;
-
-      await tx.studentPreRegistration.update({
-        where: { id: request.id },
-        data: {
-          assignedTeacherProfileId: teacherProfileId,
-          convertedAgendaStudentId: agendaStudent.id,
-          convertedFinancialStudentId: financialStudent.id,
-          convertedStudentProfileId: studentProfile.id,
-          convertedUserId: user.id,
-          email: request.email ?? emailForLogin,
-          lastMobileConversionOperationId:
-            options.mobileOperationKey ?? undefined,
-          reviewedAt: new Date(),
-          reviewedByUserId: context.session.user.id,
-          status: "APPROVED",
-          statusNote:
-            pendingAdministrativeModules.length === 0
-              ? "Convertido em aluno com AVA, financeiro e agenda."
-              : `Convertido em aluno com AVA; completar ${pendingAdministrativeModules.join(
-                  " e ",
-                )}.`,
-        },
-      });
+      createdUserId = linkedResult.userId;
+      postConversionMessage = linkedResult.postConversionMessage;
     });
   } catch (error) {
     const errorMessage = (error as Error).message;

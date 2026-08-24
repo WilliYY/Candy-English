@@ -61,13 +61,13 @@ const secretariaCards: SecretariaCard[] = [
     accentClassName: "from-sky-50 via-white to-cyan-50",
     barClassName: "from-sky-500 via-cyan-400 to-emerald-400",
     badgeClassName: "border-sky-200 bg-sky-50 text-sky-900",
-    description: "Revise interessados, acompanhe status e converta em aluno.",
+    description: "Cadastre o aluno e libere o acesso ao AVA em um unico envio.",
     feature: "pre-registrations",
     icon: UserCheck,
     iconClassName: "bg-sky-600 text-white shadow-sky-900/20",
-    label: "Entrada de alunos",
+    label: "Acesso de alunos",
     teacherHref: "/ava/teacher?task=aceitar-alunos",
-    title: "Pre-cadastros",
+    title: "Cadastro",
   },
   {
     adminHref: "/ava/admin?task=agenda",
@@ -188,7 +188,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
           {
             className: "border-sky-200 bg-sky-50 text-sky-900",
             icon: UserCheck,
-            label: "Todos os pre-cadastros",
+            label: "Todos os cadastros",
           },
           {
             className: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -205,7 +205,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
           {
             className: "border-sky-200 bg-sky-50 text-sky-900",
             icon: UserCheck,
-            label: "Pre-cadastros proprios ou atribuidos",
+            label: "Cadastros proprios ou atribuidos",
           },
           {
             className: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -243,7 +243,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
               </h1>
               <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">
                 Controle interno separado da rotina pedagogica. Use esta area
-                para pre-cadastros, agenda, contratos e registros
+                para cadastro de alunos, agenda, contratos e registros
                 administrativos permitidos para sua role.
               </p>
             </span>
@@ -280,7 +280,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
                   Filtro atual: {unitLabel}
                 </strong>
                 <span className="mt-1 block text-sm leading-6 text-muted-foreground">
-                  Use este filtro para abrir pre-cadastros e agenda ja no
+                  Use este filtro para abrir cadastro e agenda ja no
                   escopo do polo selecionado.
                 </span>
               </span>
@@ -327,7 +327,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
             );
           })}
           <span className="rounded-lg border border-primary/10 bg-[linear-gradient(90deg,#fbf7ff,#ffffff,#f7fdff)] px-3 py-2 text-sm font-semibold text-muted-foreground shadow-sm sm:col-span-2 lg:col-span-4">
-            Escopo: pre-cadastros {scopeLabels[permission.preRegistrations]} e
+            Escopo: cadastros {scopeLabels[permission.preRegistrations]} e
             agenda {scopeLabels[permission.agenda]}. O Financeiro fica em uma
             area propria, exclusiva do Admin.
           </span>

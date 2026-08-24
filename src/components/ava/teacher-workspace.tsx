@@ -278,7 +278,7 @@ const taskMeta = {
   "aceitar-alunos": {
     description: "Revise interessados e crie contas STUDENT liberadas.",
     icon: UserCheck,
-    title: "Aceitar alunos",
+    title: "Cadastro de alunos",
   },
   "catty-learning": {
     description: "Sugira exemplos e regras para a memoria aprovada da Catty.",

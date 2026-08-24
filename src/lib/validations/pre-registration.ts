@@ -308,6 +308,31 @@ export const secretariaPreRegistrationUpdateSchema =
     requestId: z.string().min(1, "Pre-cadastro invalido."),
   });
 
+export const secretariaStudentRegistrationSchema =
+  secretariaPreRegistrationSchema
+    .omit({ email: true, status: true })
+    .extend({
+      email: requiredEmail(),
+      initialPassword: z
+        .string()
+        .trim()
+        .min(8, "A senha inicial precisa ter pelo menos 8 caracteres.")
+        .max(120, "A senha inicial pode ter no maximo 120 caracteres."),
+      initialPasswordConfirmation: z
+        .string()
+        .trim()
+        .min(1, "Confirme a senha inicial."),
+    })
+    .superRefine((data, ctx) => {
+      if (data.initialPassword !== data.initialPasswordConfirmation) {
+        ctx.addIssue({
+          code: "custom",
+          message: "As senhas precisam ser iguais.",
+          path: ["initialPasswordConfirmation"],
+        });
+      }
+    });
+
 export type StudentPreRegistrationInput = z.input<
   typeof studentPreRegistrationSchema
 >;
@@ -322,6 +347,9 @@ export type SecretariaPreRegistrationData = z.output<
 >;
 export type SecretariaPreRegistrationUpdateInput = z.input<
   typeof secretariaPreRegistrationUpdateSchema
+>;
+export type SecretariaStudentRegistrationInput = z.input<
+  typeof secretariaStudentRegistrationSchema
 >;
 
 export const studentPreRegistrationStatusSchema = z.enum(

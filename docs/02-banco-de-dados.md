@@ -144,9 +144,9 @@ Enums:
 
 - `User.email` e unico.
 - `StudentPreRegistration.email` e opcional e unico quando preenchido; `phoneNormalized` tambem e unico para evitar duplicidade por telefone no fluxo interno da Secretaria.
-- `StudentPreRegistration` guarda unidade (`FinancialUnit`), teacher responsavel opcional, usuario que criou, cidade, nivel estimado, dias/horario pretendidos, mensalidade combinada, dia de pagamento, forma e parcelas sem criar financeiro, agenda ou login no momento da criacao.
+- `StudentPreRegistration` continua como origem auditavel do cadastro da Secretaria: guarda unidade (`FinancialUnit`), teacher responsavel opcional, usuario que criou, cidade, nivel estimado, dias/horario pretendidos, mensalidade combinada, dia de pagamento, forma e parcelas. No fluxo novo, ele e criado e convertido na mesma transaction; registros antigos ainda podem permanecer abertos ate a conversao manual.
 - `StudentPreRegistration.reviewedByUserId`, `reviewedAt`, `convertedUserId`, `convertedStudentProfileId`, `convertedFinancialStudentId`, `convertedAgendaStudentId` e `statusNote` registram revisao/conversao sem armazenar senha inicial.
-- Ao clicar em `Tornar aluno`, a action protegida cria `User`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, `FinancialPayment` e `AgendaStudent`/`AgendaLesson` em uma transaction; se qualquer parte falhar, o pre-cadastro continua sem ids convertidos.
+- No cadastro novo, a action protegida cria `StudentPreRegistration`, `User`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, `FinancialPayment` e `AgendaStudent`/`AgendaLesson` na mesma transaction e grava os ids convertidos. Se qualquer parte falhar, nenhum desses registros persiste. O botao legado `Tornar aluno` continua fazendo a mesma criacao linkada para registros antigos.
 - `StudentPreRegistrationStatus` preserva os status antigos e adiciona `WAITING_PAYMENT` e `READY_TO_CONVERT`; na UI da Secretaria eles aparecem como `Aguardando pagamento` e `Pronto para virar aluno`.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.

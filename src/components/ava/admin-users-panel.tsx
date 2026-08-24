@@ -373,7 +373,7 @@ const taskMeta = {
   },
   "aceitar-alunos": {
     icon: UserCheck,
-    title: "Aceitar alunos",
+    title: "Cadastro de alunos",
   },
   contratos: {
     icon: FileText,

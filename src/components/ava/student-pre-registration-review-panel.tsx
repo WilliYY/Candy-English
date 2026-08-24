@@ -9,6 +9,9 @@ import {
   Clock3,
   ClipboardCheck,
   CreditCard,
+  Eye,
+  EyeOff,
+  KeyRound,
   ListChecks,
   LoaderCircle,
   Mail,
@@ -42,7 +45,7 @@ import {
 import { createPortal } from "react-dom";
 import {
   acceptStudentPreRegistration,
-  createStudentPreRegistration,
+  createStudentRegistration,
   updateStudentPreRegistration,
 } from "@/app/ava/pre-registrations/actions";
 import { Button } from "@/components/ui/button";
@@ -58,6 +61,7 @@ import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 import type {
   SecretariaPreRegistrationInput,
   SecretariaPreRegistrationUpdateInput,
+  SecretariaStudentRegistrationInput,
 } from "@/lib/validations/pre-registration";
 import { cn } from "@/lib/utils";
 
@@ -138,6 +142,8 @@ type CreateFormState = {
   estimatedLevel: string;
   fullName: string;
   guardianName: string;
+  initialPassword: string;
+  initialPasswordConfirmation: string;
   installmentsTotal: string;
   intendedTime: string;
   intendedWeekdayMask: number;
@@ -199,7 +205,7 @@ const statusMeta = {
     className: "border-primary/20 bg-primary/10 text-primary",
     emptyDescription:
       "Novos interessados cadastrados pela Secretaria aparecem aqui.",
-    emptyTitle: "Nenhum pre-cadastro novo.",
+    emptyTitle: "Nenhum cadastro pendente.",
     icon: UserRound,
     label: "Novo",
     summaryLabel: "Novos",
@@ -219,7 +225,7 @@ const statusMeta = {
     className: "border-rose-200 bg-rose-50 text-rose-800",
     emptyDescription:
       "Recusados ficam separados para consulta sem misturar com a fila ativa.",
-    emptyTitle: "Nenhum pre-cadastro recusado.",
+    emptyTitle: "Nenhum cadastro recusado.",
     icon: XCircle,
     label: "Recusado",
     summaryLabel: "Recusados",
@@ -256,6 +262,8 @@ const defaultCreateState: CreateFormState = {
   estimatedLevel: "",
   fullName: "",
   guardianName: "",
+  initialPassword: "",
+  initialPasswordConfirmation: "",
   installmentsTotal: "",
   intendedTime: "",
   intendedWeekdayMask: 0,
@@ -409,6 +417,8 @@ function createFormStateFromRequest(
     estimatedLevel: request.estimatedLevel ?? "",
     fullName: request.fullName,
     guardianName: request.guardianName ?? "",
+    initialPassword: "",
+    initialPasswordConfirmation: "",
     installmentsTotal: request.installmentsTotal?.toString() ?? "",
     intendedTime: request.intendedTime ?? "",
     intendedWeekdayMask: request.intendedWeekdayMask,
@@ -1431,7 +1441,7 @@ function AcceptForm({
                         />
                         <ConversionInfoTile
                           icon={Mail}
-                          label="Email do pre-cadastro"
+                          label="Email do cadastro"
                           value={request.email ?? "Nao informado"}
                         />
                       </div>
@@ -1515,8 +1525,8 @@ function AcceptForm({
                             </span>
                             <span>
                               {request.email
-                                ? "Preenchido com o email do pre-cadastro; edite se precisar."
-                                : "Sem email no pre-cadastro; confirme digitando ou usando a sugestao."}
+                                ? "Preenchido com o email do cadastro; edite se precisar."
+                                : "Sem email no cadastro anterior; confirme digitando ou usando a sugestao."}
                             </span>
                           </div>
                           {emailValidationMessage ? (
@@ -1793,7 +1803,7 @@ function AcceptForm({
                         ) : (
                           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm leading-6 text-emerald-800">
                             Conversao concluida. Atualize a lista para ver o
-                            pre-cadastro em Convertido.
+                            cadastro anterior em Convertido.
                           </div>
                         )}
 
@@ -1915,13 +1925,26 @@ function CreatePreRegistrationForm({
   const [errors, setErrors] = useState<
     Partial<
       Record<
-        keyof SecretariaPreRegistrationInput | "requestId",
+        | keyof SecretariaPreRegistrationInput
+        | keyof SecretariaStudentRegistrationInput
+        | "requestId",
         string
       >
     >
   >({});
   const [message, setMessage] = useState<string | null>(null);
+  const [showInitialPassword, setShowInitialPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] =
+    useState(false);
   const [isPending, startTransition] = useTransition();
+  const canSubmit =
+    isEditing ||
+    (form.fullName.trim().length >= 2 &&
+      normalizeDigits(form.phone).length >= 8 &&
+      form.englishGoal.trim().length >= 5 &&
+      isValidEmailForLogin(form.email) &&
+      form.initialPassword.trim().length >= 8 &&
+      form.initialPassword === form.initialPasswordConfirmation);
 
   function setField<TKey extends keyof CreateFormState>(
     field: TKey,
@@ -1935,6 +1958,32 @@ function CreatePreRegistrationForm({
       ...current,
       intendedWeekdayMask: current.intendedWeekdayMask ^ (1 << weekday),
     }));
+  }
+
+  function handleFullNameChange(value: string) {
+    setForm((current) => {
+      const previousSuggestion = buildDefaultInitialPassword(current.fullName);
+      const nextSuggestion = buildDefaultInitialPassword(value);
+      const shouldUpdatePassword =
+        !isEditing &&
+        (!current.initialPassword ||
+          current.initialPassword === previousSuggestion);
+      const shouldUpdateConfirmation =
+        !isEditing &&
+        (!current.initialPasswordConfirmation ||
+          current.initialPasswordConfirmation === previousSuggestion);
+
+      return {
+        ...current,
+        fullName: value,
+        initialPassword: shouldUpdatePassword
+          ? nextSuggestion
+          : current.initialPassword,
+        initialPasswordConfirmation: shouldUpdateConfirmation
+          ? nextSuggestion
+          : current.initialPasswordConfirmation,
+      };
+    });
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1970,7 +2019,12 @@ function CreatePreRegistrationForm({
             ...payload,
             requestId: request.id,
           } satisfies SecretariaPreRegistrationUpdateInput)
-        : await createStudentPreRegistration(payload);
+        : await createStudentRegistration({
+            ...payload,
+            email: form.email,
+            initialPassword: form.initialPassword,
+            initialPasswordConfirmation: form.initialPasswordConfirmation,
+          } satisfies SecretariaStudentRegistrationInput);
 
       if (!result.ok) {
         setErrors(result.errors ?? {});
@@ -2004,12 +2058,12 @@ function CreatePreRegistrationForm({
                 Secretaria
               </p>
               <h3 className="mt-1 text-2xl font-black text-primary">
-                {isEditing ? "Editar pre-cadastro" : "Novo pre-cadastro"}
+                {isEditing ? "Editar cadastro anterior" : "Cadastrar aluno"}
               </h3>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 {isEditing
-                  ? "Atualize os dados antes de transformar o interessado em aluno."
-                  : "Cadastre o interessado depois do contato pelo WhatsApp. Isso ainda nao cria login, financeiro ou agenda."}
+                  ? "Atualize os dados deste registro anterior antes de concluir a conversao."
+                  : "Um unico envio cria o aluno, libera o login do AVA e vincula financeiro e agenda."}
               </p>
             </div>
           </div>
@@ -2025,10 +2079,10 @@ function CreatePreRegistrationForm({
         noValidate
       >
         <FormSectionCard
-          description="Dados para identificar o interessado, contato e polo antes da conversa virar aluno."
+          description="Identificacao, contato, polo e teacher responsavel pelo novo aluno."
           eyebrow="Primeira etapa"
           icon={UserRound}
-          title="Dados do interessado"
+          title="Dados do aluno"
           tone="violet"
         >
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -2036,7 +2090,7 @@ function CreatePreRegistrationForm({
               <span>Nome</span>
               <Input
                 value={form.fullName}
-                onChange={(event) => setField("fullName", event.target.value)}
+                onChange={(event) => handleFullNameChange(event.target.value)}
                 disabled={isPending}
                 aria-invalid={Boolean(errors.fullName)}
                 placeholder="Nome completo"
@@ -2064,28 +2118,6 @@ function CreatePreRegistrationForm({
                   {errors.phone}
                 </span>
               ) : null}
-            </label>
-
-            <label className={preRegistrationFieldClassName}>
-              <span>Email</span>
-              <Input
-                type="email"
-                value={form.email}
-                onChange={(event) => setField("email", event.target.value)}
-                disabled={isPending}
-                aria-invalid={Boolean(errors.email)}
-                placeholder="Opcional"
-                className={preRegistrationInputClassName}
-              />
-              {errors.email ? (
-                <span className={preRegistrationErrorClassName}>
-                  {errors.email}
-                </span>
-              ) : (
-                <span className={preRegistrationHelpClassName}>
-                  Necessario apenas para criar login depois.
-                </span>
-              )}
             </label>
 
             <label className={preRegistrationFieldClassName}>
@@ -2192,7 +2224,145 @@ function CreatePreRegistrationForm({
         </FormSectionCard>
 
         <FormSectionCard
-          description="Resumo da conversa para a equipe saber o que o interessado busca. Todo novo registro entra na fila como Novo."
+          description={
+            isEditing
+              ? "Email que sera usado quando este cadastro anterior for convertido."
+              : "Revise o login e a senha que o aluno usara para entrar no AVA."
+          }
+          eyebrow="Acesso ao AVA"
+          icon={KeyRound}
+          title={isEditing ? "Login futuro" : "Login liberado ao cadastrar"}
+          tone="emerald"
+        >
+          <div className={cn("grid gap-3", isEditing ? "md:grid-cols-1" : "lg:grid-cols-3")}>
+            <label className={preRegistrationFieldClassName}>
+              <span>Email / login</span>
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(event) => setField("email", event.target.value)}
+                disabled={isPending}
+                aria-invalid={Boolean(errors.email)}
+                placeholder="aluno@exemplo.com"
+                className={preRegistrationInputClassName}
+              />
+              {errors.email ? (
+                <span className={preRegistrationErrorClassName}>
+                  {errors.email}
+                </span>
+              ) : !isEditing && form.fullName.trim() ? (
+                <button
+                  type="button"
+                  className="w-fit text-left text-xs font-bold text-emerald-700 underline-offset-4 hover:underline"
+                  onClick={() => setField("email", buildSuggestedLogin(form.fullName))}
+                  disabled={isPending}
+                >
+                  Usar sugestao: {buildSuggestedLogin(form.fullName)}
+                </button>
+              ) : (
+                <span className={preRegistrationHelpClassName}>
+                  {isEditing
+                    ? "Obrigatorio para liberar o AVA na conversao."
+                    : "Obrigatorio e exclusivo para este aluno."}
+                </span>
+              )}
+            </label>
+
+            {!isEditing ? (
+              <>
+                <label className={preRegistrationFieldClassName}>
+                  <span>Senha inicial</span>
+                  <div className="relative">
+                    <Input
+                      type={showInitialPassword ? "text" : "password"}
+                      value={form.initialPassword}
+                      onChange={(event) =>
+                        setField("initialPassword", event.target.value)
+                      }
+                      disabled={isPending}
+                      aria-invalid={Boolean(errors.initialPassword)}
+                      autoComplete="new-password"
+                      className={cn(preRegistrationInputClassName, "pr-11")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowInitialPassword((current) => !current)}
+                      disabled={isPending}
+                      aria-label={showInitialPassword ? "Ocultar senha" : "Mostrar senha"}
+                      className="absolute right-1 top-1 flex size-9 items-center justify-center rounded-lg text-primary/65 transition hover:bg-primary/8 hover:text-primary"
+                    >
+                      {showInitialPassword ? (
+                        <EyeOff aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Eye aria-hidden="true" className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.initialPassword ? (
+                    <span className={preRegistrationErrorClassName}>
+                      {errors.initialPassword}
+                    </span>
+                  ) : (
+                    <span className={preRegistrationHelpClassName}>
+                      Preenchida pelo nome e editavel. Minimo de 8 caracteres.
+                    </span>
+                  )}
+                </label>
+
+                <label className={preRegistrationFieldClassName}>
+                  <span>Confirmar senha</span>
+                  <div className="relative">
+                    <Input
+                      type={showPasswordConfirmation ? "text" : "password"}
+                      value={form.initialPasswordConfirmation}
+                      onChange={(event) =>
+                        setField(
+                          "initialPasswordConfirmation",
+                          event.target.value,
+                        )
+                      }
+                      disabled={isPending}
+                      aria-invalid={Boolean(errors.initialPasswordConfirmation)}
+                      autoComplete="new-password"
+                      className={cn(preRegistrationInputClassName, "pr-11")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowPasswordConfirmation((current) => !current)
+                      }
+                      disabled={isPending}
+                      aria-label={
+                        showPasswordConfirmation
+                          ? "Ocultar confirmacao da senha"
+                          : "Mostrar confirmacao da senha"
+                      }
+                      className="absolute right-1 top-1 flex size-9 items-center justify-center rounded-lg text-primary/65 transition hover:bg-primary/8 hover:text-primary"
+                    >
+                      {showPasswordConfirmation ? (
+                        <EyeOff aria-hidden="true" className="size-4" />
+                      ) : (
+                        <Eye aria-hidden="true" className="size-4" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.initialPasswordConfirmation ? (
+                    <span className={preRegistrationErrorClassName}>
+                      {errors.initialPasswordConfirmation}
+                    </span>
+                  ) : (
+                    <span className={preRegistrationHelpClassName}>
+                      A senha e salva somente como hash seguro.
+                    </span>
+                  )}
+                </label>
+              </>
+            ) : null}
+          </div>
+        </FormSectionCard>
+
+        <FormSectionCard
+          description="Objetivo e nivel ajudam a teacher a receber o aluno com contexto desde o primeiro acesso."
           eyebrow="Conversa"
           icon={Sparkles}
           title="Objetivo e nivel"
@@ -2247,11 +2417,15 @@ function CreatePreRegistrationForm({
                 </span>
                 <div className="min-w-0">
                   <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-primary/60">
-                    Status ao salvar
+                    {isEditing ? "Status atual" : "Resultado do cadastro"}
                   </p>
-                  <p className="mt-1 text-sm font-black">Novo</p>
+                  <p className="mt-1 text-sm font-black">
+                    {isEditing ? "Novo" : "AVA liberado"}
+                  </p>
                   <p className="mt-1 text-xs font-medium leading-5 text-muted-foreground">
-                    A situacao pode ser atualizada depois, dentro do cadastro.
+                    {isEditing
+                      ? "A situacao pode ser atualizada depois, dentro do cadastro."
+                      : "O aluno ja sera criado como STUDENT e aparecera nas areas vinculadas."}
                   </p>
                 </div>
               </div>
@@ -2261,7 +2435,7 @@ function CreatePreRegistrationForm({
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <FormSectionCard
-            description="Dias e horario pretendidos para usar na conversao para agenda."
+            description="Dias e horario usados para criar a agenda do aluno; podem ser completados depois."
             eyebrow="Agenda"
             icon={CalendarClock}
             title="Agenda pretendida"
@@ -2323,7 +2497,7 @@ function CreatePreRegistrationForm({
           </FormSectionCard>
 
           <FormSectionCard
-            description="Combinado financeiro usado depois para criar o aluno financeiro."
+            description="Combinado usado para criar o financeiro no mesmo cadastro; dados faltantes ficam como Completar."
             eyebrow="Pagamento"
             icon={WalletCards}
             title="Combinado de pagamento"
@@ -2422,7 +2596,7 @@ function CreatePreRegistrationForm({
         </div>
 
         <FormSectionCard
-          description="Notas internas ajudam na continuidade da conversa sem criar aluno ainda."
+          description="Notas internas acompanham o cadastro sem aparecer para o aluno."
           eyebrow="Registro interno"
           icon={MessageSquareText}
           title="Observacoes internas"
@@ -2463,13 +2637,16 @@ function CreatePreRegistrationForm({
                 aria-hidden="true"
                 className="mt-0.5 size-4 shrink-0 text-emerald-600"
               />
-              Duplicidade por telefone normalizado e email e bloqueada no
-              servidor.
+              {isEditing
+                ? "Duplicidade por telefone normalizado e email e bloqueada no servidor."
+                : canSubmit
+                  ? "Aluno, AVA, financeiro e agenda sao criados juntos. Se algo falhar, nada fica pela metade."
+                  : "Preencha nome, telefone, objetivo, login e confirme uma senha com pelo menos 8 caracteres."}
             </p>
           )}
           <Button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || !canSubmit}
             className="h-11 shadow-lg shadow-primary/20 sm:min-w-48"
           >
             {isPending ? (
@@ -2477,7 +2654,7 @@ function CreatePreRegistrationForm({
             ) : (
               <ClipboardCheck data-icon="inline-start" />
             )}
-            {isEditing ? "Salvar alteracoes" : "Salvar pre-cadastro"}
+            {isEditing ? "Salvar alteracoes" : "Cadastrar e liberar AVA"}
           </Button>
         </div>
       </form>
@@ -2542,8 +2719,8 @@ export function StudentPreRegistrationReviewPanel({
   }, [isSearching, openRequests, trimmedSearchTerm]);
   const visibleRequestsLabel =
     visibleRequests.length === 1
-      ? "1 pre-cadastro encontrado"
-      : `${visibleRequests.length} pre-cadastros encontrados`;
+      ? "1 cadastro anterior encontrado"
+      : `${visibleRequests.length} cadastros anteriores encontrados`;
   const totalSaved = openRequests.length;
   const initialCreateUnit = unitFilter === "all" ? "IVATE" : unitFilter;
 
@@ -2562,11 +2739,11 @@ export function StudentPreRegistrationReviewPanel({
                   Secretaria
                 </div>
                 <h2 className="mt-3 text-3xl font-black tracking-normal text-primary">
-                  Entrada de alunos
+                  Cadastro de alunos
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  Cadastre interessados e consulte todos os alunos do AVA no
-                  mesmo lugar, com polo e integracoes operacionais visiveis.
+                  Cadastre e libere o AVA em um unico envio. Consulte tambem os
+                  alunos ativos e os registros anteriores no mesmo lugar.
                 </p>
               </div>
             </div>
@@ -2575,13 +2752,13 @@ export function StudentPreRegistrationReviewPanel({
               <div className="relative overflow-hidden rounded-xl border border-primary/15 bg-white/90 p-3 shadow-sm shadow-primary/5">
                 <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#412a4c,#e57cd8,#f97316)]" />
                 <p className="text-[0.68rem] font-black uppercase tracking-[0.14em] text-muted-foreground">
-                  Cadastros salvos
+                  Pendencias anteriores
                 </p>
                 <strong className="mt-2 block text-2xl font-black leading-none text-primary">
                   {totalSaved}
                 </strong>
                 <span className="mt-2 block text-xs text-muted-foreground">
-                  historico autorizado neste polo
+                  registros antigos ainda nao convertidos
                 </span>
               </div>
               <SummaryMetric status="PENDING" value={totalSaved} />
@@ -2589,7 +2766,7 @@ export function StudentPreRegistrationReviewPanel({
           </div>
 
           <nav
-            aria-label="Escolher modo do pre-cadastro"
+            aria-label="Escolher modo do cadastro de alunos"
             className="mt-5 grid gap-2 sm:grid-cols-3"
           >
             <button
@@ -2607,9 +2784,9 @@ export function StudentPreRegistrationReviewPanel({
                 <UserPlus aria-hidden="true" className="size-4" />
               </span>
               <span className="min-w-0">
-                <strong className="block text-sm font-black">Novo pre-cadastro</strong>
+                <strong className="block text-sm font-black">Cadastrar aluno</strong>
                 <span className={cn("mt-0.5 block text-xs", activeView === "create" ? "text-white/75" : "text-muted-foreground")}>
-                  Registrar um novo contato como Novo
+                  Criar login e liberar o AVA agora
                 </span>
               </span>
             </button>
@@ -2630,13 +2807,13 @@ export function StudentPreRegistrationReviewPanel({
               </span>
               <span className="min-w-0 flex-1">
                 <strong className="flex items-center justify-between gap-2 text-sm font-black">
-                  Cadastros salvos
+                  Cadastros anteriores
                   <span className={cn("rounded-full px-2 py-0.5 text-xs", activeView === "list" ? "bg-white/15" : "bg-sky-100 text-sky-800")}>
                     {totalSaved}
                   </span>
                 </strong>
                 <span className={cn("mt-0.5 block text-xs", activeView === "list" ? "text-white/75" : "text-muted-foreground")}>
-                  Localizar, chamar e acompanhar interessados
+                  Concluir registros criados no fluxo antigo
                 </span>
               </span>
             </button>
@@ -2759,12 +2936,12 @@ export function StudentPreRegistrationReviewPanel({
           </span>
           <div className="max-w-md">
             <h3 className="text-lg font-semibold text-primary">
-              Nenhum pre-cadastro encontrado.
+              Nenhum cadastro anterior encontrado.
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {isSearching
                 ? "Tente parte do nome, telefone sem mascara, email, documento, cidade ou unidade."
-                : "Crie um novo pre-cadastro para iniciar a fila."}
+                : "Use Cadastrar aluno para criar o acesso ao AVA diretamente."}
             </p>
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white/80 px-3 py-1.5 text-xs font-semibold text-muted-foreground shadow-sm">
@@ -2773,7 +2950,7 @@ export function StudentPreRegistrationReviewPanel({
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => setActiveView("create")}>
             <UserPlus data-icon="inline-start" />
-            Criar pre-cadastro
+            Cadastrar aluno
           </Button>
         </div>
       ) : (
@@ -3082,7 +3259,7 @@ export function StudentPreRegistrationReviewPanel({
                       </div>
                     ) : (
                       <p className="rounded-lg border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                        Este pre-cadastro ja saiu da fila de conversao.
+                        Este cadastro anterior ja saiu da fila de conversao.
                         {isConverted
                           ? " Os IDs linkados ficam no historico ao lado."
                           : ""}
@@ -3116,7 +3293,7 @@ export function StudentPreRegistrationReviewPanel({
                 {editingRequest.fullName}
               </h3>
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Corrija os dados antes de transformar este pre-cadastro em aluno.
+                Corrija os dados antes de transformar este cadastro anterior em aluno.
               </p>
             </div>
             <Button
@@ -3124,7 +3301,7 @@ export function StudentPreRegistrationReviewPanel({
               variant="outline"
               size="icon"
               onClick={() => setEditingRequest(null)}
-              aria-label="Fechar edicao do pre-cadastro"
+              aria-label="Fechar edicao do cadastro anterior"
             >
               <X aria-hidden="true" className="size-4" />
             </Button>

@@ -57,7 +57,7 @@ export default async function AvaAreaChoicePage() {
     {
       accent: "border-rose-200 bg-rose-50/72 text-rose-950",
       bar: "bg-rose-500",
-      description: "Pre-cadastros, agenda e contratos.",
+      description: "Cadastro de alunos, agenda e contratos.",
       href: getSecretariaPath(session.user.role),
       icon: Building2,
       iconStyle: "bg-rose-700 text-white shadow-rose-900/20",

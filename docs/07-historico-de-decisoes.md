@@ -705,6 +705,13 @@ Cada decisao deve conter:
 - Impacto: `TimeClockProfile`, `TimeClockEntry`, `TimeClockEntryRevision`, migration `20260824013000_add_time_clock`, actions, painel, area `PONTO`, PDF server-side e smoke de permissoes.
 - Riscos/cuidados: nao liberar Teacher apenas pela UI, nao apagar perfil/batida, manter `America/Sao_Paulo`, exigir motivo de correcao e aplicar migration antes do app novo.
 
+### 2026-08-24 - Cadastro unico da Secretaria libera o AVA imediatamente
+
+- Decisao: substituir a criacao de novos pre-cadastros pelo fluxo `Cadastro`, que exige login e senha confirmada e cria aluno, perfil, vinculo, financeiro e agenda na mesma transaction.
+- Motivo: eliminar a segunda etapa obrigatoria `Tornar aluno` para novos registros e manter uma entrada unica, simples e imediatamente utilizavel no AVA.
+- Impacto: nova validacao de cadastro, action transacional, formulario com acesso do AVA, rotulos da Secretaria e preservacao dos registros antigos em `Cadastros anteriores`.
+- Riscos/cuidados: nunca persistir senha em texto puro, bloquear duplicidade concorrente por email/telefone, permitir financeiro/agenda como `Completar` e manter o fluxo legado para nao perder historico.
+
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
 - Se uma decisao mudar, registrar a substituicao neste arquivo em vez de apagar o passado.
 

@@ -192,7 +192,7 @@ const navGroups = [
       {
         href: "/ava/admin?task=aceitar-alunos",
         icon: UserCheck,
-        label: "Pre-cadastros",
+        label: "Cadastro",
         section: "Entrada",
       },
       {
@@ -252,7 +252,7 @@ const navGroups = [
       {
         href: "/ava/teacher?task=aceitar-alunos",
         icon: UserCheck,
-        label: "Pre-cadastros",
+        label: "Cadastro",
         section: "Entrada",
       },
       {
