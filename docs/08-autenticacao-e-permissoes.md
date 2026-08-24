@@ -84,7 +84,8 @@ Rotas protegidas:
 - `STUDENT` acessa student e apenas os proprios dados.
 - Depois do login, `ADMIN` e `TEACHER` entram em `/ava/escolha`; `STUDENT` entra direto em `/ava/student`.
 - Deep links protegidos preservam apenas os query params conhecidos de cada area (`task`, `unit` e `preStatus`) no `callbackUrl`; o login aceita retorno somente para rotas AVA existentes da lista segura.
-- `/ava/escolha` usa layout limpo sem sidebar de trabalho; Admin ve `AVA`, `Secretaria` e `Financeiro`, Teacher ve apenas `AVA` e `Secretaria`, e a sidebar protegida aparece somente depois da escolha.
+- `/ava/escolha` usa layout limpo sem sidebar de trabalho; Admin ve `AVA`, `Secretaria`, `Financeiro` e `Vendas`, Teacher ve `AVA`, `Secretaria` e `Vendas`, e a sidebar protegida aparece somente depois da escolha.
+- `/ava/vendas` aceita apenas `ADMIN` e `TEACHER`. Admin recebe todos os alunos e vendas; Teacher recebe apenas alunos vinculados e as vendas registradas por ela. `STUDENT` nao recebe rota, dados nem server actions do PDV.
 - `/ava/secretaria` aceita apenas `ADMIN` e `TEACHER`; Student nao ve nem acessa a Secretaria.
 - A Secretaria possui matriz central em `SECRETARIA_PERMISSION_MATRIX` (`src/lib/roles.ts`) para documentar e renderizar o escopo por role; cada destino continua validando role e permissao por dado no servidor.
 - Matriz da Secretaria:
@@ -157,8 +158,8 @@ Rotas protegidas:
 - Credentials Provider e o login principal.
 - `getDefaultAvaPath` direciona `ADMIN` e `TEACHER` para `/ava/escolha`; `STUDENT` continua indo para `/ava/student`.
 - A escolha pos-login e a Secretaria usam `requireAvaRole` em Server Component, sem criar nova role.
-- O shell lateral do AVA fica em `AvaWorkspaceShell` e recebe o modo atual (`AVA`, `SECRETARIA`, `FINANCEIRO` ou `STUDENT`) pelas paginas protegidas, evitando buscar dados de sidebar em `/ava/escolha` e sem misturar o menu financeiro na Secretaria.
-- `scripts/auth-smoke.ts` valida que somente Admin recebe o bloco/link de Financeiro na escolha, Teacher ve apenas AVA/Secretaria, Student e redirecionado para `/ava/student`, e Teacher/Student nao entram em `/ava/admin?task=financeiro`, `/ava/admin?task=agenda` ou `/ava/admin?task=apis-senhas`.
+- O shell lateral do AVA fica em `AvaWorkspaceShell` e recebe o modo atual (`AVA`, `SECRETARIA`, `FINANCEIRO`, `VENDAS` ou `STUDENT`) pelas paginas protegidas, evitando buscar dados de sidebar em `/ava/escolha` e sem misturar os menus das areas.
+- `scripts/auth-smoke.ts` valida que somente Admin recebe o bloco/link de Financeiro na escolha, Admin e Teacher recebem Vendas, Student e redirecionado para `/ava/student`, Teacher/Student nao entram no Financeiro administrativo e Student nao entra em `/ava/vendas`.
 - Google Provider foi removido temporariamente; o provider ativo e Credentials.
 - `StudentPreRegistration` guarda interessados da Secretaria fora do fluxo de Auth.js, com email opcional, telefone normalizado, unidade, agenda pretendida e combinado de pagamento.
 - `StudentPreRegistration` tambem guarda metadados de criacao, teacher responsavel, revisao/conversao e os ids linkados criados por `Tornar aluno`; `APPROVED` e usado como status tecnico para `Convertido` na UI, e `WAITING_PAYMENT`/`READY_TO_CONVERT` cobrem a conversa antes do aceite.
