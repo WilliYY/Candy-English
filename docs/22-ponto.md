@@ -68,6 +68,9 @@ qualquer perfil; outro usuario somente o proprio. A resposta usa
 `Cache-Control: private, no-store`, `Content-Disposition: attachment` e nao
 grava copia no disco do servidor.
 
+No build standalone, `pdfkit` permanece externo e seus arquivos `js/data/*.afm`
+entram no trace da rota para preservar as fontes padrao no container.
+
 Para a geracao foi escolhido `pdfkit@0.19.1`, fixado no lockfile, por ser uma
 biblioteca MIT ativa, adequada a documentos multipagina no Node 24. A versao
 `0.20.1`, publicada no mesmo dia da avaliacao, nao foi adotada imediatamente.

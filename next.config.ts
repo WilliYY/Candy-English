@@ -6,6 +6,10 @@ const liveClassJitsiPermissionOrigins = getLiveClassJitsiOrigins()
   .join(" ");
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/ava/ponto/relatorio": ["./node_modules/pdfkit/js/data/**/*"],
+  },
+  serverExternalPackages: ["pdfkit"],
   experimental: {
     serverActions: {
       bodySizeLimit: "15mb",
