@@ -224,6 +224,16 @@ enum SaleStatus {
   CANCELED
 }
 
+enum TimeClockEntryType {
+  ENTRY
+  EXIT
+}
+
+enum TimeClockEntrySource {
+  SELF
+  ADMIN
+}
+
 model User {
   id                               String                      @id @default(cuid())
   name                             String
@@ -269,10 +279,16 @@ model User {
   sentChatMessages                 ChatMessage[]
   uploadedContracts                ContractDocument[]          @relation("UploadedContracts")
   createdFinancialExpenses         FinancialExpense[]          @relation("FinancialExpenseCreatedBy")
-  createdSaleProducts              SaleProduct[]                @relation("SaleProductCreatedBy")
-  updatedSaleProducts              SaleProduct[]                @relation("SaleProductUpdatedBy")
-  completedSales                   Sale[]                       @relation("SaleSoldBy")
-  canceledSales                    Sale[]                       @relation("SaleCanceledBy")
+  createdSaleProducts              SaleProduct[]               @relation("SaleProductCreatedBy")
+  updatedSaleProducts              SaleProduct[]               @relation("SaleProductUpdatedBy")
+  completedSales                   Sale[]                      @relation("SaleSoldBy")
+  canceledSales                    Sale[]                      @relation("SaleCanceledBy")
+  timeClockProfile                 TimeClockProfile?           @relation("TimeClockProfileUser")
+  createdTimeClockProfiles         TimeClockProfile[]          @relation("TimeClockProfileCreatedBy")
+  updatedTimeClockProfiles         TimeClockProfile[]          @relation("TimeClockProfileUpdatedBy")
+  recordedTimeClockEntries         TimeClockEntry[]            @relation("TimeClockEntryRecordedBy")
+  correctedTimeClockEntries        TimeClockEntry[]            @relation("TimeClockEntryCorrectedBy")
+  changedTimeClockEntryRevisions   TimeClockEntryRevision[]    @relation("TimeClockEntryRevisionChangedBy")
   mobileDevices                    MobileDevice[]
   mobileSessions                   MobileSession[]
   createdAt                        DateTime                    @default(now())
@@ -696,20 +712,20 @@ model FinancialExpense {
 }
 
 model SaleProduct {
-  id                 String     @id @default(cuid())
-  name               String
-  normalizedName     String     @unique
-  costCents          Int
-  salePriceCents     Int
-  stockQuantity      Int        @default(0)
-  isActive           Boolean    @default(true)
-  createdByUserId    String?
-  createdByUser      User?      @relation("SaleProductCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  updatedByUserId    String?
-  updatedByUser      User?      @relation("SaleProductUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
-  saleItems          SaleItem[]
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  id              String     @id @default(cuid())
+  name            String
+  normalizedName  String     @unique
+  costCents       Int
+  salePriceCents  Int
+  stockQuantity   Int        @default(0)
+  isActive        Boolean    @default(true)
+  createdByUserId String?
+  createdByUser   User?      @relation("SaleProductCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUserId String?
+  updatedByUser   User?      @relation("SaleProductUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  saleItems       SaleItem[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@index([isActive, name])
   @@index([stockQuantity])
@@ -755,21 +771,79 @@ model Sale {
 }
 
 model SaleItem {
-  id                 String      @id @default(cuid())
-  saleId             String
-  sale               Sale        @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  productId          String
-  product            SaleProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  id                  String      @id @default(cuid())
+  saleId              String
+  sale                Sale        @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId           String
+  product             SaleProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
   productNameSnapshot String
-  quantity           Int
-  unitCostCents      Int
-  unitSalePriceCents Int
-  lineCostCents      Int
-  lineTotalCents     Int
-  createdAt          DateTime    @default(now())
+  quantity            Int
+  unitCostCents       Int
+  unitSalePriceCents  Int
+  lineCostCents       Int
+  lineTotalCents      Int
+  createdAt           DateTime    @default(now())
 
   @@index([saleId])
   @@index([productId, createdAt])
+}
+
+model TimeClockProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  user            User             @relation("TimeClockProfileUser", fields: [userId], references: [id], onDelete: Restrict)
+  isActive        Boolean          @default(true)
+  createdByUserId String?
+  createdByUser   User?            @relation("TimeClockProfileCreatedBy", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  updatedByUserId String?
+  updatedByUser   User?            @relation("TimeClockProfileUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  entries         TimeClockEntry[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([isActive])
+  @@index([createdByUserId])
+  @@index([updatedByUserId])
+}
+
+model TimeClockEntry {
+  id                String                   @id @default(cuid())
+  profileId         String
+  profile           TimeClockProfile         @relation(fields: [profileId], references: [id], onDelete: Restrict)
+  type              TimeClockEntryType
+  occurredAt        DateTime
+  justification     String?
+  source            TimeClockEntrySource
+  operationId       String?                  @unique
+  recordedByUserId  String?
+  recordedByUser    User?                    @relation("TimeClockEntryRecordedBy", fields: [recordedByUserId], references: [id], onDelete: SetNull)
+  correctedAt       DateTime?
+  correctedByUserId String?
+  correctedByUser   User?                    @relation("TimeClockEntryCorrectedBy", fields: [correctedByUserId], references: [id], onDelete: SetNull)
+  revisions         TimeClockEntryRevision[]
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  @@index([profileId, occurredAt])
+  @@index([recordedByUserId, createdAt])
+  @@index([correctedByUserId, correctedAt])
+}
+
+model TimeClockEntryRevision {
+  id                    String             @id @default(cuid())
+  entryId               String
+  entry                 TimeClockEntry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  previousType          TimeClockEntryType
+  previousOccurredAt    DateTime
+  previousJustification String?
+  previousUpdatedAt     DateTime
+  correctionReason      String
+  changedByUserId       String?
+  changedByUser         User?              @relation("TimeClockEntryRevisionChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+  createdAt             DateTime           @default(now())
+
+  @@index([entryId, createdAt])
+  @@index([changedByUserId, createdAt])
 }
 
 model AgendaStudent {

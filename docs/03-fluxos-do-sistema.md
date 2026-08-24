@@ -14,6 +14,8 @@ Rotas:
 - `/ava/admin?task=...`
 - `/ava/teacher?task=...`
 - `/ava/student?task=...`
+- `/ava/ponto`
+- `/ava/ponto/relatorio`
 - `/ava/avatar`
 - `/ava/contracts/[contractId]`
 - `/ava/candy-xp-assets/[activityId]`
@@ -418,6 +420,16 @@ Helpers:
 7. O cancelamento registra operador, data e motivo e devolve as quantidades ao estoque na mesma transaction; a venda nao e apagada e uma competencia ja paga precisa ser reaberta pelo Admin antes do estorno.
 
 A cobranca mensal de produtos fica no ledger de `Sale`, separada de `FinancialPayment`. Assim, uma compra nao altera snapshots nem historico de mensalidades.
+
+## Fluxo de Ponto
+
+1. Admin sempre ve a area `PONTO`; Teacher so ve o atalho e acessa a rota depois de receber um `TimeClockProfile` ativo.
+2. A pessoa autorizada registra a acao esperada (`Entrada` ou `Saida`) com horario do servidor e justificativa opcional. Depois de cada batida a proxima acao alterna, sem limitar a quantidade diaria.
+3. O servidor bloqueia o perfil na transaction, rele a ultima batida e usa `operationId` para evitar duplicacao por clique duplo ou repeticao de rede.
+4. Admin habilita/desabilita usuarios existentes, inclui batida manual e corrige horario, tipo ou justificativa.
+5. Toda correcao exige motivo e cria `TimeClockEntryRevision` com os valores anteriores antes de atualizar a batida atual.
+6. A consulta mensal usa `America/Sao_Paulo`, soma somente pares concluidos e sinaliza entrada aberta ou sequencia inconsistente.
+7. O PDF e gerado em memoria por rota autenticada: Admin baixa qualquer perfil e outro usuario somente o proprio perfil ativo.
 
 ## Riscos ao alterar esta parte
 

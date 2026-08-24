@@ -677,6 +677,13 @@ Cada decisao deve conter:
 - Impacto: novos modelos `SaleProduct`, `Sale` e `SaleItem`, migration `20260823233000_add_sales_pos`, server actions transacionais, painel de Vendas, escolha de area e smoke de permissoes.
 - Riscos/cuidados: fatura mensal exige aluno cadastrado; Teacher so usa alunos vinculados e suas vendas; preco e estoque sempre sao revalidados no servidor; cancelamento preserva o registro e devolve estoque.
 
+### 2026-08-24 - Ponto separado com permissao individual e revisao imutavel
+
+- Decisao: criar `/ava/ponto` como area propria para Admin e usuarios Teacher habilitados, com batidas ilimitadas, `operationId`, horario do servidor, correcao administrativa e PDF mensal protegido.
+- Motivo: a jornada precisa aceitar varios intervalos sem depender da Agenda e sem permitir que uma correcao apague o valor originalmente registrado.
+- Impacto: `TimeClockProfile`, `TimeClockEntry`, `TimeClockEntryRevision`, migration `20260824013000_add_time_clock`, actions, painel, area `PONTO`, PDF server-side e smoke de permissoes.
+- Riscos/cuidados: nao liberar Teacher apenas pela UI, nao apagar perfil/batida, manter `America/Sao_Paulo`, exigir motivo de correcao e aplicar migration antes do app novo.
+
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
 - Se uma decisao mudar, registrar a substituicao neste arquivo em vez de apagar o passado.
 

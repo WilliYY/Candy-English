@@ -94,6 +94,12 @@ Vendas:
 - `Sale`: cabecalho auditavel da venda, comprador, liquidacao, competencia e cancelamento.
 - `SaleItem`: snapshot imutavel de nome, custo, preco e quantidade de cada item vendido.
 
+Ponto:
+
+- `TimeClockProfile`: liga um usuario da equipe a permissao de bater ponto.
+- `TimeClockEntry`: guarda entrada/saida, horario, justificativa, origem e autor.
+- `TimeClockEntryRevision`: preserva a versao anterior de cada correcao administrativa.
+
 Agenda:
 
 - `AgendaStudent`
@@ -111,6 +117,8 @@ Enums:
 - `HomeworkFieldType`
 - `SubmissionStatus`
 - `AgendaLessonStatus`
+- `TimeClockEntryType`
+- `TimeClockEntrySource`
 - `AdminCredentialKind`
 - `AdminCredentialSource`
 - `CattyMessageRole`
@@ -165,6 +173,7 @@ Enums:
 - `FinancialExpense` registra gastos internos da loja por ano/mes/unidade, com insumo, data da compra, valor, responsavel informado e usuario admin criador opcional.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
 - Agenda guarda alunos internos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`; a criacao manual da agenda nao cria nem vincula `User` ou `StudentProfile`.
+- Ponto reutiliza um `User` ativo; desativar `TimeClockProfile` preserva batidas, `operationId` impede repeticao e cada correcao cria `TimeClockEntryRevision` antes da atualizacao.
 - `AgendaStudent.unit` guarda a unidade interna do aluno da agenda, usando `IVATE` por padrao para registros antigos.
 - `AgendaStudent.isActive`, `defaultTime` e `weekdayMask` guardam o estado atual da rotina interna para edicao/inativacao, enquanto `AgendaLesson` preserva as ocorrencias e o historico de presenca/falta.
 - Reposicoes da agenda usam `AgendaLesson.isMakeup=true` e podem apontar para a aula original por `makeupForLessonId`.
@@ -220,6 +229,7 @@ Enums:
 - Migration `20260713133000_financial_units` adiciona `FinancialUnit`, unidade no cadastro financeiro, snapshot mensal da unidade e unidade nos gastos internos; registros antigos recebem `IVATE` por padrao.
 - Migration `20260801210000_mobile_admin_finance_operations` adiciona chaves unicas de idempotencia para alteracoes de pagamentos e criacao de gastos pela API mobile ADMIN.
 - Migration `20260823233000_add_sales_pos` adiciona catalogo, estoque, vendas, itens, cobranca mensal separada e auditoria de cancelamento do PDV.
+- Migration `20260824013000_add_time_clock` adiciona perfis autorizados, batidas idempotentes e revisoes imutaveis de correcoes do ponto.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.

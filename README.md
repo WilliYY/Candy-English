@@ -4,7 +4,7 @@ Site institucional e AVA da Candy English.
 
 ## Objetivo
 
-O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional, AVA e um PDV interno de vendas com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
+O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional, AVA, PDV interno de vendas e ponto da equipe com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
 
 O AVA permite administrar usuarios, vincular alunos a teachers, criar aulas, materiais, vocabulario, homework online, feedback, contratos PDF protegidos, aula ao vivo em manutencao temporaria, financeiro interno e agenda administrativa.
 
@@ -33,6 +33,7 @@ Ja existe:
 - contratos e avatar servidos por rotas protegidas;
 - financeiro admin simples em cards para 2026, com `FinancialStudent`, unidade `Unidade 1 Ivaté`/`Unidade 2 Douradina`, snapshots mensais em `FinancialPayment`, parcelas opcionais, historico por aluno, gastos mensais da loja em `FinancialExpense` e `FinancialLog`;
 - agenda admin interna para 2026, separada dos alunos do AVA, com calendario mensal, cadastro recorrente por dias/horario, presenca, falta, historico e inativacao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
+- ponto interno com batidas ilimitadas de entrada/saida, justificativa opcional, habilitacao individual, correcao administrativa auditada e espelho mensal em PDF;
 - homework e aula interativa com arquivo PDF/imagem protegido, campos editaveis desenhados por arrastar sobre o arquivo, autosave, selecao direta de aluno e replicacao de homework ja editada para outro aluno sem novo upload;
 - campos Listening no homework/aula interativa, com leitura Gemini do texto dentro da area desenhada pela teacher, botao de volume posicionado no fim da area, audio OpenAI text-to-speech em ingles e botao unico que alterna ouvir/pausar, retomando a proxima reproducao em velocidade normal/devagar;
 - Catty como gatinha mascote-professora publica com baloes aleatorios no site para visitantes e assistente interna para usuarios logados tambem no site/home e no AVA, com personalidade Candy oficial, primeiro nome seguro em respostas quando fizer sentido, emojis controlados, artefatos meme por interesse do aluno tambem nos baloes locais do AVA logado, painel unificado `Catty dos alunos` apenas para Admin/Teacher escolherem aluno, gosto, emojis, sons e bordoes com memoria leve sincronizada, enriquecimento controlado de temas por cache/provedor de busca apenas em fluxo de preparacao com aprovacao humana, feedback discreto nas respostas, Learning Center com fila de treino, ate 3 memorias globais aprovadas por Admin no contexto, memoria pessoal ativa e ranqueada por usuario para gostos/preferencias/dificuldades leves, campo minimizado `Contexto Catty` na criacao/aceite de alunos para gravar memoria inicial segura, gestao tecnica de memorias sem exposicao para Student e tela informativa `Catty aprendendo` para Student, auto-sugestoes pendentes quando houver lacuna de resposta, Gemini padrao, OpenAI apenas quando a mensagem chama Catty pelo nome, fallback local autorizado, historico persistente por usuario/contexto com prompt curto e limpeza manual quando ficar pesado, atalhos de estudo, baloes personalizados, incentivo e pratica simples em ingles com perguntas traduzidas para portugues, correcoes curtas no formato `Better`/`English tip`/`Em portugues` e comando avancado `Catty, [word or short expression] meaning` com definicao, exemplo e convite em ingles, incluindo phrasal verbs e alvos de ate 15 palavras;
@@ -76,6 +77,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/14-agenda.md`: modulo agenda admin.
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 - `docs/19-vendas.md`: PDV interno, produtos, estoque e cobrancas de compras.
+- `docs/22-ponto.md`: ponto da equipe, permissoes, auditoria e relatorio mensal em PDF.
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
 - `docs/18-mobile-api.md`: autenticacao movel, sessoes revogaveis, overview e modulos nativos por role.

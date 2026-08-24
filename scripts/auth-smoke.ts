@@ -334,6 +334,14 @@ async function assertAreaChoiceShell(role: SmokeRole, cookie: string) {
     throw new Error(`Tela de escolha ${role} sem area Vendas.`);
   }
 
+  if (role === "ADMIN" && !normalizedText.includes("/ava/ponto")) {
+    throw new Error("Tela de escolha admin sem area Ponto.");
+  }
+
+  if (role === "TEACHER" && normalizedText.includes("/ava/ponto")) {
+    throw new Error("Tela de escolha teacher sem permissao vazou area Ponto.");
+  }
+
   console.log(`OK escolha limpa ${role.toLowerCase()}`);
 }
 
@@ -372,6 +380,102 @@ async function assertSalesPermissions(role: SmokeRole, cookie: string) {
   }
 
   console.log(`OK vendas ${role.toLowerCase()}`);
+}
+
+async function assertTimeClockPermissions(
+  role: SmokeRole,
+  cookie: string,
+  userId: string,
+) {
+  const initialResponse = await fetch(buildUrl("/ava/ponto"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const initialLocation = initialResponse.headers.get("location");
+
+  if (role === "STUDENT") {
+    if (
+      ![302, 303, 307, 308].includes(initialResponse.status) ||
+      !initialLocation?.includes("/ava/student")
+    ) {
+      throw new Error(
+        `Student nao deve acessar Ponto, recebeu ${initialResponse.status} ${initialLocation ?? ""}`,
+      );
+    }
+
+    console.log("OK ponto blocks student");
+    return;
+  }
+
+  if (role === "TEACHER") {
+    if (
+      ![302, 303, 307, 308].includes(initialResponse.status) ||
+      !initialLocation?.includes("/ava/escolha")
+    ) {
+      throw new Error(
+        `Teacher sem permissao nao deve acessar Ponto, recebeu ${initialResponse.status} ${initialLocation ?? ""}`,
+      );
+    }
+  } else if (!initialResponse.ok) {
+    throw new Error(
+      `Admin esperava acessar Ponto, recebeu HTTP ${initialResponse.status}`,
+    );
+  }
+
+  const profile = await prisma.timeClockProfile.create({
+    data: { userId },
+  });
+  const response = await fetch(buildUrl("/ava/ponto"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `${role} habilitado esperava acessar Ponto, recebeu HTTP ${response.status}`,
+    );
+  }
+
+  const text = await response.text();
+  assertNoServerException("/ava/ponto", response, text);
+
+  for (const expectedText of ["Ponto", "Meu ponto", "Batidas do mes"]) {
+    if (!text.includes(expectedText)) {
+      throw new Error(`Ponto ${role} sem conteudo esperado: ${expectedText}`);
+    }
+  }
+
+  const escolhaResponse = await fetch(buildUrl("/ava/escolha"), {
+    headers: { cookie },
+    redirect: "manual",
+  });
+  const escolhaText = normalizeHtmlText(await escolhaResponse.text());
+
+  if (!escolhaResponse.ok || !escolhaText.includes("/ava/ponto")) {
+    throw new Error(`Tela de escolha ${role} habilitado sem area Ponto.`);
+  }
+
+  const reportResponse = await fetch(
+    buildUrl(
+      `/ava/ponto/relatorio?profileId=${profile.id}&year=2026&month=8`,
+    ),
+    { headers: { cookie } },
+  );
+  const reportBytes = new Uint8Array(await reportResponse.arrayBuffer());
+  const signature = Buffer.from(reportBytes.subarray(0, 5)).toString("ascii");
+
+  if (
+    reportResponse.status !== 200 ||
+    reportResponse.headers.get("content-type") !== "application/pdf" ||
+    !reportResponse.headers.get("content-disposition")?.includes("attachment") ||
+    signature !== "%PDF-"
+  ) {
+    throw new Error(
+      `Relatorio de ponto ${role} invalido: HTTP ${reportResponse.status} ${signature}`,
+    );
+  }
+
+  console.log(`OK ponto ${role.toLowerCase()} authorized and PDF protected`);
 }
 
 async function assertTeacherWithoutProfileCannotListStudents() {
@@ -696,6 +800,7 @@ async function assertAnonymousProtectedRoutes() {
     "/ava/escolha",
     "/ava/secretaria",
     "/ava/vendas",
+    "/ava/ponto",
   ];
 
   for (const path of protectedPaths) {
@@ -838,6 +943,22 @@ async function cleanup() {
       },
     },
   });
+  await prisma.timeClockEntry.deleteMany({
+    where: {
+      profile: {
+        user: {
+          email: { in: testEmails },
+        },
+      },
+    },
+  });
+  await prisma.timeClockProfile.deleteMany({
+    where: {
+      user: {
+        email: { in: testEmails },
+      },
+    },
+  });
   await prisma.user.deleteMany({
     where: {
       email: {
@@ -858,6 +979,7 @@ async function main() {
     const cookie = await signInWithCredentials(email);
     await assertRoleRedirect(role, cookie);
     await assertAreaChoiceShell(role, cookie);
+    await assertTimeClockPermissions(role, cookie, user.id);
     await assertPedagogicalWorkspace(role, cookie);
     await assertSecretariaPermissions(role, cookie);
     await assertSecretariaUnitLinks(role, cookie);

@@ -6,6 +6,7 @@ import {
   CalendarCheck2,
   ChevronDown,
   CircleDollarSign,
+  Clock3,
   ClipboardCheck,
   FileText,
   GraduationCap,
@@ -112,6 +113,21 @@ const navGroups = [
         icon: Store,
         label: "PDV e estoque",
         section: "Operacao de vendas",
+      },
+    ],
+  },
+  {
+    allowedRoles: ["ADMIN", "TEACHER"] as const,
+    areaLabel: "Ponto",
+    href: "/ava/ponto",
+    icon: Clock3,
+    label: "Ponto",
+    links: [
+      {
+        href: "/ava/ponto",
+        icon: FileText,
+        label: "Batidas e espelho",
+        section: "Jornada da equipe",
       },
     ],
   },
@@ -316,6 +332,7 @@ export type AvaWorkspaceArea =
   | "AVA"
   | "SECRETARIA"
   | "FINANCEIRO"
+  | "PONTO"
   | "VENDAS"
   | "STUDENT";
 
@@ -330,6 +347,10 @@ function getWorkspaceAreaLabel(area: AvaWorkspaceArea) {
 
   if (area === "VENDAS") {
     return "Vendas";
+  }
+
+  if (area === "PONTO") {
+    return "Ponto";
   }
 
   return "AVA";
@@ -367,9 +388,6 @@ export async function AvaWorkspaceShell({
   const session = await auth();
   const role = isRole(session?.user?.role) ? session.user.role : null;
   const userId = session?.user?.id;
-  const visibleGroups = role
-    ? navGroups.filter((group) => isVisibleInWorkspaceArea(group, role, area))
-    : [];
   const areaLabel = getWorkspaceAreaLabel(area);
   const getWorkspaceHref = (href: string) =>
     area === "SECRETARIA" || area === "FINANCEIRO"
@@ -387,10 +405,18 @@ export async function AvaWorkspaceShell({
       select: {
         avatarPath: true,
         name: true,
+        timeClockProfile: { select: { isActive: true } },
       },
     }),
     getAvaNavAlertSignatures(role, userId),
   ]);
+  const canAccessTimeClock =
+    role === "ADMIN" || Boolean(currentUser?.timeClockProfile?.isActive);
+  const visibleGroups = navGroups.filter(
+    (group) =>
+      isVisibleInWorkspaceArea(group, role, area) &&
+      (group.areaLabel !== "Ponto" || canAccessTimeClock),
+  );
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background">
@@ -509,6 +535,16 @@ export async function AvaWorkspaceShell({
                       <Store aria-hidden="true" className="size-4" />
                       Vendas
                     </AvaNavAlertLink>
+                    {canAccessTimeClock ? (
+                      <AvaNavAlertLink
+                        href="/ava/ponto"
+                        className="relative col-span-2 flex min-h-11 touch-manipulation items-center justify-center gap-2 overflow-hidden rounded-xl border border-violet-200 bg-violet-50/80 px-2.5 py-2 text-sm font-bold text-violet-950 shadow-sm transition-all hover:border-violet-400 hover:bg-white"
+                        activeClassName={navItemActiveClassName}
+                      >
+                        <Clock3 aria-hidden="true" className="size-4" />
+                        Ponto
+                      </AvaNavAlertLink>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -521,6 +557,8 @@ export async function AvaWorkspaceShell({
                   ? "Financeiro"
                   : area === "VENDAS"
                     ? "Vendas"
+                    : area === "PONTO"
+                      ? "Ponto"
                     : "Area de trabalho"}
             </div>
 

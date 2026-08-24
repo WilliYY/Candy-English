@@ -20,6 +20,7 @@
     "test:mobile-auth": "tsx --test src/lib/mobile-auth/__tests__/*.test.ts",
     "test:mobile-homework": "tsx --test src/lib/__tests__/*.test.ts",
     "test:sales": "tsx --test src/lib/__tests__/sales-*.test.ts",
+    "test:ponto": "tsx --test src/lib/__tests__/time-clock-*.test.ts",
     "verify:mobile-teacher": "npm run test:mobile-homework && npm run test:mobile-auth && npm run typecheck && npm run lint && npm run prisma:validate && npm run build",
     "audit:avatar-smoke": "tsx scripts/avatar-smoke.ts",
     "audit:pre-registration": "tsx scripts/pre-registration-smoke.ts",
@@ -53,6 +54,7 @@
     "next": "15.5.22",
     "next-auth": "5.0.0-beta.32",
     "pdfjs-dist": "^5.7.284",
+    "pdfkit": "0.19.1",
     "pg": "8.16.3",
     "radix-ui": "1.4.3",
     "react": "19.2.5",
@@ -73,6 +75,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "4.2.4",
     "@types/node": "24.10.2",
+    "@types/pdfkit": "0.17.6",
     "@types/pg": "8.16.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",

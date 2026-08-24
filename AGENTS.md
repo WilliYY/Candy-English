@@ -4,7 +4,7 @@ Este arquivo e a primeira leitura obrigatoria para qualquer conversa futura do C
 
 ## Objetivo do projeto
 
-Candy English e um site institucional com AVA proprio em `/ava`. O AVA possui areas para `ADMIN`, `TEACHER` e `STUDENT`, com login real, controle de permissao, aulas, materiais, homework, feedback, contratos, aula ao vivo, chat interno, financeiro administrativo e agenda administrativa.
+Candy English e um site institucional com AVA proprio em `/ava`. O AVA possui areas para `ADMIN`, `TEACHER` e `STUDENT`, com login real, controle de permissao, aulas, materiais, homework, feedback, contratos, aula ao vivo, chat interno, financeiro administrativo, agenda administrativa, vendas e ponto da equipe.
 
 ## Leitura obrigatoria antes de alterar arquivos
 
@@ -68,6 +68,7 @@ Leitura minima recomendada:
 - `/ava/admin`: exige `ADMIN`
 - `/ava/teacher`: exige `ADMIN` ou `TEACHER`
 - `/ava/student`: exige `ADMIN`, `TEACHER` ou `STUDENT`
+- `/ava/ponto`: exige `ADMIN` ou usuario `TEACHER` com `TimeClockProfile.isActive=true`
 
 ## Roles
 
@@ -141,6 +142,17 @@ A agenda e controle interno do admin em `/ava/admin?task=agenda`.
 - `AgendaLesson` guarda ocorrencias de 2026, status de presenca, reposicoes e retirada futura.
 - `AgendaLog` registra acoes simples.
 - Mudancas neste modulo devem atualizar `docs/14-agenda.md`.
+
+## Ponto
+
+O ponto da equipe fica em `/ava/ponto` e deve atualizar `docs/22-ponto.md`.
+
+- `ADMIN` administra pessoas, batidas manuais, correcoes e relatorios.
+- `TEACHER` acessa somente quando possui `TimeClockProfile` ativo e ve apenas o proprio historico.
+- Batidas do proprio usuario usam horario do servidor e `operationId` anti-duplicacao.
+- Correcoes administrativas exigem motivo e preservam o valor anterior em `TimeClockEntryRevision`.
+- Perfis e batidas nao devem ser apagados pela interface; desativacao preserva historico.
+- Periodos e relatorios usam `America/Sao_Paulo`.
 
 ## Homework interativo
 

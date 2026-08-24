@@ -5,12 +5,14 @@ import {
   ArrowRight,
   BookOpen,
   Building2,
+  Clock3,
   ShieldCheck,
   Store,
   WalletCards,
 } from "lucide-react";
 import { BrandLogo } from "@/components/site/brand-logo";
 import { requireAvaRole } from "@/lib/authorization";
+import { getPrisma } from "@/lib/prisma";
 import {
   getPedagogicalAvaPath,
   getSecretariaPath,
@@ -35,6 +37,13 @@ export default async function AvaAreaChoicePage() {
   }
 
   const isAdmin = session.user.role === "ADMIN";
+  const timeClockProfile = isAdmin
+    ? null
+    : await getPrisma().timeClockProfile.findUnique({
+        where: { userId: session.user.id },
+        select: { isActive: true },
+      });
+  const canAccessTimeClock = isAdmin || Boolean(timeClockProfile?.isActive);
   const areas = [
     {
       accent: "border-cyan-200 bg-cyan-50/72 text-cyan-950",
@@ -77,6 +86,19 @@ export default async function AvaAreaChoicePage() {
       iconStyle: "bg-sky-700 text-white shadow-sky-900/20",
       title: "VENDAS",
     },
+    ...(canAccessTimeClock
+      ? [
+          {
+            accent: "border-violet-200 bg-violet-50/72 text-violet-950",
+            bar: "bg-violet-500",
+            description: "Entradas, saidas e espelho mensal da equipe.",
+            href: "/ava/ponto",
+            icon: Clock3,
+            iconStyle: "bg-violet-700 text-white shadow-violet-900/20",
+            title: "PONTO",
+          },
+        ]
+      : []),
   ];
 
   return (
