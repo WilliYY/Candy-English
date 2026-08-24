@@ -491,19 +491,26 @@ export async function createSale(
     });
   } catch (error) {
     if (error instanceof SaleRuleError) {
-      return {
-        message: error.message,
-        ok: false,
-      };
-    }
-
-    if (isUniqueConstraintError(error)) {
       const existingSale = await prisma.sale.findUnique({
         where: { operationId },
-        select: { id: true },
+        select: { soldByUserId: true },
       });
 
-      if (existingSale) {
+      if (existingSale?.soldByUserId === actor.userId) {
+        replayed = true;
+      } else {
+        return {
+          message: error.message,
+          ok: false,
+        };
+      }
+    } else if (isUniqueConstraintError(error)) {
+      const existingSale = await prisma.sale.findUnique({
+        where: { operationId },
+        select: { soldByUserId: true },
+      });
+
+      if (existingSale?.soldByUserId === actor.userId) {
         replayed = true;
       } else {
         return {
@@ -556,12 +563,19 @@ export async function cancelSale(
 
   try {
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw<{ id: string }[]>`
+        SELECT "id"
+        FROM "Sale"
+        WHERE "id" = ${parsed.data.saleId}
+        FOR UPDATE
+      `;
+
       const sale = await tx.sale.findUnique({
         where: { id: parsed.data.saleId },
         select: {
           items: { select: { productId: true, quantity: true } },
           financialPayment: {
-            select: { isActive: true, isPaid: true },
+            select: { id: true },
           },
           settlementType: true,
           soldByUserId: true,
@@ -577,13 +591,21 @@ export async function cancelSale(
         throw new SaleRuleError("Professor pode cancelar somente a propria venda.");
       }
 
-      if (
-        sale.settlementType === "MONTHLY_INVOICE" &&
-        !isMonthlyInvoiceOpen(sale.financialPayment)
-      ) {
-        throw new SaleRuleError(
-          "Esta fatura ja foi paga ou fechada. Reabra a competencia no Financeiro antes de cancelar.",
-        );
+      if (sale.settlementType === "MONTHLY_INVOICE") {
+        const paymentRows = sale.financialPayment
+          ? await tx.$queryRaw<{ isActive: boolean; isPaid: boolean }[]>`
+              SELECT "isActive", "isPaid"
+              FROM "FinancialPayment"
+              WHERE "id" = ${sale.financialPayment.id}
+              FOR UPDATE
+            `
+          : [];
+
+        if (!isMonthlyInvoiceOpen(paymentRows[0])) {
+          throw new SaleRuleError(
+            "Esta fatura ja foi paga ou fechada. Reabra a competencia no Financeiro antes de cancelar.",
+          );
+        }
       }
 
       const cancellation = await tx.sale.updateMany({
