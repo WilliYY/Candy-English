@@ -33,6 +33,7 @@ export default async function RootLayout({
     ? {
         artifacts: cattyArtifacts,
         name: session.user.name ?? null,
+        role: session.user.role,
       }
     : null;
 

@@ -6,6 +6,12 @@ Este documento registra exemplos internos para manter a Catty com voz de mascote
 
 A identidade viva da personagem fica em `src/lib/catty-personality.ts`. Esse arquivo concentra bordoes, aberturas, frases de incentivo, recuperacao de erro, homework, correcao, teacher, visitante sem login, baloes publicos/logados e regras para evitar repeticao.
 
+## Acesso por papel e modulo
+
+A conversa real exige sessao autenticada e aceita os tres papeis do AVA: `ADMIN`, `TEACHER` e `STUDENT`. O site e o login continuam mostrando apenas a chamada publica quando nao existe sessao. No AVA, a classificacao usa primeiro as rotas diretas `/ava/admin`, `/ava/teacher` e `/ava/student`; modulos compartilhados como `/ava/escolha`, `/ava/secretaria`, `/ava/vendas` e `/ava/ponto` herdam a area do papel autenticado. Um modulo autenticado novo tambem herda o papel, evitando que a Catty volte ao estado publico por nao reconhecer o caminho.
+
+O contexto enviado ao chat continua limitado a `area` e `task`. A Catty pode adaptar o titulo e os atalhos para Homework, aula, mensagens, Secretaria, Vendas e Ponto, mas nao recebe registros da tela, valores, contratos, credenciais ou dados de outras pessoas. Sugestoes para Admin e Teacher ajudam a redigir mensagens, avisos, feedbacks e atividades; sugestoes para Student permanecem voltadas a estudo, pratica, correcao e pistas sem resposta pronta.
+
 O Catty Learning Center fica em `/ava/admin?task=catty-learning` e `/ava/teacher?task=catty-learning`. Ele guarda memorias curtas em `CattyLearningItem`; teachers podem sugerir, mas apenas admins aprovam. O widget tambem pode gerar `CattyLearningFeedback` discreto em respostas logadas, e a rota pode criar `PATTERN_SUGGESTION` pendente quando detectar lacuna de memoria ou repeticao de feedback negativo. Feedback e auto-sugestao nunca mudam o prompt sozinhos. Somente ate 3 itens `APPROVED` e relevantes entram no prompt/fallback, e nunca devem conter senha, pagamento, contrato, telefone, documento, email, token, chave ou dados privados.
 
 Visualmente, o painel separa `Feedbacks recebidos` de `Aprendizados da Catty` e usa filtros com cores por status (`PENDING`, `APPROVED`, `REJECTED`, `ARCHIVED`) para facilitar revisao, aprovacao e auditoria rapida.

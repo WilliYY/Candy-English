@@ -32,6 +32,7 @@ import {
   canUseLoggedInCattyChat,
   isLoggedInCattyChatArea,
   isPublicCattyArea,
+  resolveCattyPageContext,
 } from "@/lib/catty-client-access";
 import {
   CATTY_AUTH_REQUIRED_REPLY,
@@ -39,6 +40,7 @@ import {
   CATTY_PUBLIC_BALLOON_TEMPLATES,
   CATTY_PUBLIC_LOCKED_REPLY,
 } from "@/lib/catty-personality";
+import type { Role } from "@/lib/roles";
 
 type QuickReply = {
   icon: "book" | "check" | "heart" | "lightbulb" | "pencil" | "practice";
@@ -54,6 +56,7 @@ type CattyWidgetProps = {
   sessionUser?: {
     artifacts?: CattyArtifactCustomItem[];
     name: string | null;
+    role: Role;
   } | null;
 };
 
@@ -187,55 +190,41 @@ function isInitialCattyMessageList(messages: CattyMessage[]) {
   );
 }
 
-function getCurrentPageContext(): CattyPageContext {
+function getCurrentPageContext(role?: Role): CattyPageContext {
   if (typeof window === "undefined") {
     return {
       area: "unknown",
     };
   }
 
-  const { pathname, search } = window.location;
-  const task = new URLSearchParams(search).get("task") ?? undefined;
-
-  if (pathname.startsWith("/ava/login")) {
-    return { area: "login", task };
-  }
-
-  if (pathname.startsWith("/ava/admin")) {
-    return { area: "admin", task };
-  }
-
-  if (pathname.startsWith("/ava/teacher")) {
-    return { area: "teacher", task };
-  }
-
-  if (pathname.startsWith("/ava/student")) {
-    return { area: "student", task };
-  }
-
-  if (pathname.startsWith("/ava")) {
-    return { area: "unknown", task };
-  }
-
-  return { area: "site", task };
+  return resolveCattyPageContext({
+    pathname: window.location.pathname,
+    role,
+    search: window.location.search,
+  });
 }
 
 function getContextCopy(context: CattyPageContext): CattyContextCopy {
-  if (context.area === "student" && context.task === "homeworks") {
-    return {
-      eyebrow: "Homework",
-    };
-  }
+  const taskLabels: Record<string, string> = {
+    aulas: "Aula",
+    "aula-ao-vivo": "Aula ao vivo",
+    "candy-ranking": "Ranking",
+    "candy-xp": "Candy XP",
+    contratos: "Contratos",
+    escolha: "AVA",
+    financeiro: "Financeiro",
+    homeworks: "Homework",
+    mensagens: "Mensagens",
+    perfil: "Perfil",
+    ponto: "Ponto",
+    secretaria: "Secretaria",
+    vendas: "Vendas",
+  };
+  const taskLabel = context.task ? taskLabels[context.task] : undefined;
 
-  if (context.area === "student" && context.task === "aulas") {
+  if (taskLabel) {
     return {
-      eyebrow: "Aula",
-    };
-  }
-
-  if (context.task === "mensagens") {
-    return {
-      eyebrow: "Mensagens",
+      eyebrow: taskLabel,
     };
   }
 
@@ -247,7 +236,7 @@ function getContextCopy(context: CattyPageContext): CattyContextCopy {
 
   if (context.area === "admin") {
     return {
-      eyebrow: "Study mode",
+      eyebrow: "Admin",
     };
   }
 
@@ -257,6 +246,81 @@ function getContextCopy(context: CattyPageContext): CattyContextCopy {
 }
 
 function getQuickReplies(context: CattyPageContext): QuickReply[] {
+  if (context.task === "ponto") {
+    return [
+      {
+        icon: "pencil",
+        label: "Escrever justificativa",
+        text: "Me ajuda a escrever uma justificativa de ponto curta e objetiva.",
+      },
+      {
+        icon: "check",
+        label: "Revisar texto",
+        text: "Revise esta justificativa sem inventar nenhuma informação.",
+      },
+      {
+        icon: "book",
+        label: "Deixar claro",
+        text: "Simplifique este texto para ficar profissional e fácil de entender.",
+      },
+      {
+        icon: "heart",
+        label: "Mensagem educada",
+        text: "Me ajuda a escrever uma mensagem educada sobre meu horário.",
+      },
+    ];
+  }
+
+  if (context.task === "vendas") {
+    return [
+      {
+        icon: "pencil",
+        label: "Texto de atendimento",
+        text: "Me ajuda a escrever uma mensagem curta e educada de atendimento.",
+      },
+      {
+        icon: "book",
+        label: "Inglês de vendas",
+        text: "Me ensina uma frase simples em inglês para atendimento de venda.",
+      },
+      {
+        icon: "check",
+        label: "Revisar descrição",
+        text: "Revise esta descrição de produto sem inventar informações.",
+      },
+      {
+        icon: "heart",
+        label: "Cobrança gentil",
+        text: "Me ajuda a escrever um lembrete de pagamento gentil e objetivo.",
+      },
+    ];
+  }
+
+  if (context.task === "secretaria") {
+    return [
+      {
+        icon: "pencil",
+        label: "Mensagem para aluno",
+        text: "Me ajuda a escrever uma mensagem clara e acolhedora para um aluno.",
+      },
+      {
+        icon: "check",
+        label: "Revisar aviso",
+        text: "Revise este aviso para ficar curto, educado e sem ambiguidades.",
+      },
+      {
+        icon: "heart",
+        label: "Contato acolhedor",
+        text: "Cria uma mensagem acolhedora para iniciar um atendimento.",
+      },
+      {
+        icon: "book",
+        label: "Inglês simples",
+        text: "Transforme esta ideia em uma frase simples e educada em inglês.",
+      },
+    ];
+  }
+
   if (context.area === "student" && context.task === "homeworks") {
     return [
       {
@@ -307,7 +371,7 @@ function getQuickReplies(context: CattyPageContext): QuickReply[] {
     ];
   }
 
-  if (context.task === "mensagens") {
+  if (context.area === "student" && context.task === "mensagens") {
     return [
       {
         icon: "pencil",
@@ -328,6 +392,31 @@ function getQuickReplies(context: CattyPageContext): QuickReply[] {
         icon: "heart",
         label: "Pedir ajuda",
         text: "Me ajuda a pedir ajuda sem vergonha.",
+      },
+    ];
+  }
+
+  if (context.task === "mensagens") {
+    return [
+      {
+        icon: "pencil",
+        label: "Mensagem para aluno",
+        text: "Me ajuda a escrever uma mensagem curta e clara para um aluno.",
+      },
+      {
+        icon: "heart",
+        label: "Feedback gentil",
+        text: "Cria um feedback carinhoso, específico e acionável.",
+      },
+      {
+        icon: "check",
+        label: "Revisar mensagem",
+        text: "Revise esta mensagem para ficar profissional e acolhedora.",
+      },
+      {
+        icon: "book",
+        label: "Mensagem em inglês",
+        text: "Transforme esta ideia em uma mensagem simples em inglês.",
       },
     ];
   }
@@ -357,14 +446,45 @@ function getQuickReplies(context: CattyPageContext): QuickReply[] {
     ];
   }
 
+  if (context.area === "admin") {
+    return [
+      {
+        icon: "pencil",
+        label: "Mensagem clara",
+        text: "Me ajuda a escrever uma mensagem administrativa curta e clara.",
+      },
+      {
+        icon: "check",
+        label: "Revisar aviso",
+        text: "Revise este aviso sem inventar dados e deixe o texto objetivo.",
+      },
+      {
+        icon: "heart",
+        label: "Feedback para equipe",
+        text: "Cria um feedback gentil e acionável para a equipe.",
+      },
+      {
+        icon: "book",
+        label: "Ideia de atividade",
+        text: "Cria uma ideia simples de atividade de inglês para alunos.",
+      },
+    ];
+  }
+
   return defaultQuickReplies;
 }
 
-function getFirstDisplayName(name?: string | null) {
+function getFirstDisplayName(name?: string | null, role?: Role) {
+  const fallbackName =
+    role === "ADMIN"
+      ? "admin Candy"
+      : role === "TEACHER"
+        ? "teacher Candy"
+        : "aluno Candy";
   const cleaned = name?.replace(/\s+/g, " ").trim();
 
   if (!cleaned) {
-    return "aluno Candy";
+    return fallbackName;
   }
 
   if (cleaned.includes("@")) {
@@ -376,7 +496,7 @@ function getFirstDisplayName(name?: string | null) {
       .trim()
       .split(" ")[0];
 
-    return localName || "aluno Candy";
+    return localName || fallbackName;
   }
 
   if (cleaned.length <= 18) {
@@ -482,8 +602,8 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   const contextCopy = useMemo(() => getContextCopy(context), [context]);
   const quickReplies = useMemo(() => getQuickReplies(context), [context]);
   const displayName = useMemo(
-    () => getFirstDisplayName(sessionUser?.name),
-    [sessionUser?.name],
+    () => getFirstDisplayName(sessionUser?.name, sessionUser?.role),
+    [sessionUser?.name, sessionUser?.role],
   );
   const sessionArtifacts = useMemo(
     () => sessionUser?.artifacts ?? [],
@@ -585,7 +705,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   useEffect(() => {
     function refreshContext() {
-      setContext(getCurrentPageContext());
+      setContext(getCurrentPageContext(sessionUser?.role));
     }
 
     refreshContext();
@@ -596,7 +716,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       window.removeEventListener("popstate", refreshContext);
       window.removeEventListener("focus", refreshContext);
     };
-  }, [pathname]);
+  }, [pathname, sessionUser?.role]);
 
   useEffect(() => {
     function refreshCompactBalloonViewport() {
@@ -836,7 +956,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
   }, [publicNoticeVisible]);
 
   function openCatty() {
-    const currentContext = getCurrentPageContext();
+    const currentContext = getCurrentPageContext(sessionUser?.role);
 
     setContext(currentContext);
 
@@ -855,7 +975,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
     if (!clean || isThinking || requestInFlightRef.current) return;
 
-    const currentContext = getCurrentPageContext();
+    const currentContext = getCurrentPageContext(sessionUser?.role);
 
     if (!canUseCattyChat) {
       setContext(currentContext);

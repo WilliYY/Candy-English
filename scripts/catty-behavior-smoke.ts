@@ -20,6 +20,7 @@ import {
   canUseLoggedInCattyChat,
   isLoggedInCattyChatArea,
   isPublicCattyArea,
+  resolveCattyPageContext,
 } from "../src/lib/catty-client-access";
 import {
   formatCattyLearningPromptContext,
@@ -185,6 +186,33 @@ function assertCattyClientAccessRules() {
     !isPublicCattyArea({ area: "admin" }),
     "Catty nao deve tratar area admin como publica.",
   );
+
+  for (const scenario of [
+    { area: "admin", pathname: "/ava/escolha", role: "ADMIN" },
+    { area: "teacher", pathname: "/ava/escolha", role: "TEACHER" },
+    { area: "admin", pathname: "/ava/secretaria", role: "ADMIN" },
+    { area: "teacher", pathname: "/ava/secretaria", role: "TEACHER" },
+    { area: "admin", pathname: "/ava/vendas", role: "ADMIN" },
+    { area: "teacher", pathname: "/ava/vendas", role: "TEACHER" },
+    { area: "admin", pathname: "/ava/ponto", role: "ADMIN" },
+    { area: "teacher", pathname: "/ava/ponto", role: "TEACHER" },
+    { area: "student", pathname: "/ava/student", role: "STUDENT" },
+  ] as const) {
+    const context = resolveCattyPageContext({
+      pathname: scenario.pathname,
+      role: scenario.role,
+      search: scenario.role === "STUDENT" ? "?task=homeworks" : "",
+    });
+
+    assertCondition(
+      context.area === scenario.area,
+      `Catty classificou ${scenario.pathname} de ${scenario.role} como ${context.area}.`,
+    );
+    assertCondition(
+      canUseLoggedInCattyChat({ context, hasSessionUser: true }),
+      `Catty bloqueou ${scenario.role} autenticado em ${scenario.pathname}.`,
+    );
+  }
 }
 
 function getExampleRole(area?: string) {

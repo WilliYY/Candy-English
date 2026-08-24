@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  type AuthenticatedCattyUser,
   handleCattyChatRequest,
   handleCattyHistoryRequest,
 } from "@/lib/catty-chat-handler";
@@ -41,3 +42,23 @@ test("requires an authenticated user before processing a Catty message", async (
   assert.equal(body.ok, false);
   assert.equal(body.source, "unauthorized");
 });
+
+for (const role of ["ADMIN", "TEACHER", "STUDENT"] as const) {
+  test(`accepts ${role} authentication before validating a Catty message`, async () => {
+    const user: AuthenticatedCattyUser = {
+      id: `user-${role.toLowerCase()}`,
+      name: role,
+      role,
+    };
+    const response = await handleCattyChatRequest(
+      new Request("https://candy.example/api/catty/chat", {
+        body: JSON.stringify({ message: "" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }),
+      user,
+    );
+
+    assert.equal(response.status, 400);
+  });
+}
