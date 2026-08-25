@@ -528,6 +528,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         createdAt: true,
         id: true,
         sizeBytes: true,
+        studentProfileId: true,
         studentProfile: {
           select: {
             user: {
@@ -862,6 +863,8 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         teacherProfileId: thread.teacherProfileId,
       }))}
       contracts={contracts.map((contract) => ({
+        canDelete:
+          session.user.role === "ADMIN" || Boolean(contract.studentProfileId),
         createdAt: contract.createdAt,
         id: contract.id,
         sizeBytes: contract.sizeBytes,

@@ -18,6 +18,7 @@ import {
   ChatThreadPanel,
   type ChatThreadRow,
 } from "@/components/ava/chat-thread-panel";
+import { ContractDeleteButton } from "@/components/ava/contract-delete-button";
 import { ContractUploadForm } from "@/components/ava/contract-upload-form";
 import {
   LiveSessionForm,
@@ -224,6 +225,7 @@ type LiveSessionRow = {
 };
 
 type ContractRow = {
+  canDelete: boolean;
   createdAt: Date;
   id: string;
   sizeBytes: number;
@@ -792,26 +794,36 @@ export function TeacherWorkspace({
               ) : (
                 <div className="grid gap-3">
                   {contracts.map((contract) => (
-                    <Link
+                    <div
                       key={contract.id}
-                      href={`/ava/contracts/${contract.id}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="ava-soft-card flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
+                      className="ava-soft-card flex items-center gap-2 rounded-lg border p-2 text-sm transition-colors hover:border-primary"
                     >
-                      <span className="flex min-w-0 items-center gap-3">
-                        <FileText aria-hidden="true" />
-                        <span className="truncate">
-                          {contract.title}
-                          {contract.studentName
-                            ? ` - ${contract.studentName}`
-                            : ""}
+                      <Link
+                        href={`/ava/contracts/${contract.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-md px-2 py-2"
+                      >
+                        <span className="flex min-w-0 items-center gap-3">
+                          <FileText aria-hidden="true" />
+                          <span className="truncate">
+                            {contract.title}
+                            {contract.studentName
+                              ? ` - ${contract.studentName}`
+                              : ""}
+                          </span>
                         </span>
-                      </span>
-                      <span className="text-muted-foreground">
-                        {Math.ceil(contract.sizeBytes / 1024)} KB
-                      </span>
-                    </Link>
+                        <span className="shrink-0 text-muted-foreground">
+                          {Math.ceil(contract.sizeBytes / 1024)} KB
+                        </span>
+                      </Link>
+                      {contract.canDelete ? (
+                        <ContractDeleteButton
+                          contractId={contract.id}
+                          contractTitle={contract.title}
+                        />
+                      ) : null}
+                    </div>
                   ))}
                 </div>
               )}

@@ -124,6 +124,7 @@ Rotas protegidas:
 - Valores de `AdminCredential` devem ser criptografados no servidor e revelados somente por server action protegida; nunca retornar valores para teacher/student.
 - Arquivos de homework interativo exigem `ADMIN`, `TEACHER` dona da aula ou `STUDENT` dono da homework.
 - Contratos PDF podem ser embutidos apenas em paginas do proprio AVA (`SAMEORIGIN`); a rota continua exigindo sessao e permissao por aluno.
+- Exclusao de contrato PDF e uma server action protegida: `ADMIN` possui escopo total; `TEACHER` exige contrato individual e `StudentTeacherAssignment` ativo com o aluno; contrato geral e bloqueado para Teacher; `STUDENT` nunca possui permissao de exclusao.
 - Candy XP e gravado apenas no servidor a partir de dados ja autorizados para a role atual; student nao pode gravar XP para outro usuario e teacher nao pode pontuar aluno fora do vinculo.
 - O ranking Candy XP e interno do AVA e so renderiza em paginas protegidas por `requireAvaRole`; ele usa `CandyXpProfile` no servidor, inclui apenas usuarios ativos `STUDENT` e `TEACHER`, exibe teacher como `Prof`, calcula a posicao pessoal por categoria para o proprio usuario logado e nunca envia email, telefone, documento, contrato, pagamento ou credencial para os componentes de ranking.
 - A leitura do ranking usa snapshot transacional e desempate final por `userId`; a atualizacao do cache `CandyXpProfile` e serializada por usuario para impedir totais antigos de sobrescreverem eventos mais novos quando varias requisicoes rodam ao mesmo tempo.

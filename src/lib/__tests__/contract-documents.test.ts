@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   getContractContentDisposition,
   getContractDocumentAccessScope,
+  getContractDocumentDeletionScope,
   hasPdfSignature,
   normalizeContractFileName,
 } from "@/lib/contract-documents";
@@ -49,6 +50,40 @@ test("scopes contract access by role without exposing another student", () => {
       "contract-1",
     ),
     { id: "contract-1" },
+  );
+});
+
+test("scopes contract deletion to admins or teachers linked to the student", () => {
+  assert.deepEqual(
+    getContractDocumentDeletionScope(
+      { id: "admin-user-1", role: "ADMIN" },
+      "contract-1",
+    ),
+    { id: "contract-1" },
+  );
+
+  assert.deepEqual(
+    getContractDocumentDeletionScope(
+      { id: "teacher-user-1", role: "TEACHER" },
+      "contract-1",
+    ),
+    {
+      id: "contract-1",
+      studentProfileId: { not: null },
+      studentProfile: {
+        teacherAssignments: {
+          some: { teacherProfile: { userId: "teacher-user-1" } },
+        },
+      },
+    },
+  );
+
+  assert.equal(
+    getContractDocumentDeletionScope(
+      { id: "student-user-1", role: "STUDENT" },
+      "contract-1",
+    ),
+    null,
   );
 });
 

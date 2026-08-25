@@ -59,6 +59,7 @@ import {
   AdminUserStatusButton,
 } from "@/components/ava/admin-operations";
 import { AdminMaintenancePanel } from "@/components/ava/admin-maintenance-panel";
+import { ContractDeleteButton } from "@/components/ava/contract-delete-button";
 import { ContractUploadForm } from "@/components/ava/contract-upload-form";
 import { CandyXpRankingCard } from "@/components/ava/candy-xp-ranking-card";
 import { CandyXpCard } from "@/components/ava/student-xp-card";
@@ -1397,29 +1398,37 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
   return (
     <div className="grid gap-3">
       {contracts.map((contract) => (
-        <a
+        <div
           key={contract.id}
-          href={`/ava/contracts/${contract.id}`}
-          target="_blank"
-          rel="noreferrer"
-          className="ava-soft-card flex items-center justify-between gap-4 rounded-lg border p-4 text-sm hover:border-primary"
+          className="ava-soft-card flex items-center gap-2 rounded-lg border p-2 text-sm transition-colors hover:border-primary"
         >
-          <span className="flex min-w-0 items-center gap-3">
-            <FileText aria-hidden="true" className="size-4 shrink-0" />
-            <span className="min-w-0">
-              <span className="block truncate font-semibold">
-                {contract.title}
-              </span>
-              <span className="block truncate text-muted-foreground">
-                {contract.studentName ?? "Contrato geral"} -{" "}
-                {formatDate(contract.createdAt)}
+          <a
+            href={`/ava/contracts/${contract.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-w-0 flex-1 items-center justify-between gap-4 rounded-md px-2 py-2"
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <FileText aria-hidden="true" className="size-4 shrink-0" />
+              <span className="min-w-0">
+                <span className="block truncate font-semibold">
+                  {contract.title}
+                </span>
+                <span className="block truncate text-muted-foreground">
+                  {contract.studentName ?? "Contrato geral"} -{" "}
+                  {formatDate(contract.createdAt)}
+                </span>
               </span>
             </span>
-          </span>
-          <span className="shrink-0 text-muted-foreground">
-            {formatBytes(contract.sizeBytes)}
-          </span>
-        </a>
+            <span className="shrink-0 text-muted-foreground">
+              {formatBytes(contract.sizeBytes)}
+            </span>
+          </a>
+          <ContractDeleteButton
+            contractId={contract.id}
+            contractTitle={contract.title}
+          />
+        </div>
       ))}
     </div>
   );

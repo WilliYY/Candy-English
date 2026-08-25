@@ -92,6 +92,7 @@ Leitura minima recomendada:
 - Nivel do aluno deve ser alterado por `TEACHER` vinculada ou `ADMIN`, nunca pelo proprio `STUDENT`.
 - Contratos devem continuar protegidos por rota server-side.
 - Contratos gerais podem ser vistos por alunos logados; contratos com aluno definido exigem proprio aluno, teacher vinculada ou admin.
+- Exclusao de contrato exige confirmacao e validacao no servidor: `ADMIN` exclui qualquer contrato; `TEACHER` exclui somente contrato individual de aluno vinculado e nunca contrato geral; `STUDENT` nao exclui.
 - Modo manutencao bloqueia `STUDENT`, mas nao `ADMIN` nem `TEACHER`.
 - `User.isActive=false` deve bloquear login sem apagar historico.
 - Redefinicao de senha pela interface admin deve validar role `ADMIN` no servidor e gravar apenas hash, nunca a senha em texto puro.

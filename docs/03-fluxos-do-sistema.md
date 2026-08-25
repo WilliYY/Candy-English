@@ -209,6 +209,7 @@ Helpers:
 2. O arquivo fica em storage privado e e servido por `/ava/contracts/[contractId]` com validacao server-side de sessao e permissao por aluno.
 3. Student abre `/ava/student?task=contratos` e visualiza o PDF embutido no proprio AVA; o header `X-Frame-Options=SAMEORIGIN` permite esse preview interno sem liberar embed por sites externos.
 4. O aluno tambem pode abrir o contrato em nova aba pela mesma rota protegida.
+5. Admin pode excluir qualquer contrato. Teacher pode excluir somente contrato individual de aluno que continua vinculado a ela; contrato geral e contrato de outro vinculo permanecem protegidos. A interface confirma a acao e a server action valida novamente role, vinculo e contrato antes de remover o registro e o PDF.
 
 ### Catty
 

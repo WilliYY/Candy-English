@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { sendAuthorizedChatMessage } from "@/lib/chat-service";
+import { getContractDocumentDeletionScope } from "@/lib/contract-documents";
 import {
   getLiveClassJitsiOrigin,
   LIVE_CLASS_MAINTENANCE_ENABLED,
@@ -12,15 +13,17 @@ import {
 import { persistOwnProfile } from "@/lib/profile-service";
 import { getPrisma } from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
-import { saveContractPdf } from "@/lib/storage";
+import { deleteContractPdf, saveContractPdf } from "@/lib/storage";
 import {
   createLiveSessionSchema,
+  deleteContractSchema,
   sendChatMessageSchema,
   toggleLiveSessionSchema,
   updateStudentLevelSchema,
   updateProfileSchema,
   uploadContractSchema,
   type CreateLiveSessionInput,
+  type DeleteContractInput,
   type SendChatMessageInput,
   type ToggleLiveSessionInput,
   type UpdateStudentLevelInput,
@@ -490,6 +493,90 @@ export async function uploadContractDocument(formData: FormData) {
   return {
     ok: true,
     message: "Contrato enviado com sucesso.",
+  };
+}
+
+export async function deleteContractDocument(
+  input: DeleteContractInput,
+): Promise<ActionResult<DeleteContractInput>> {
+  const actor = await getActor();
+
+  if (!actor || (actor.role !== "ADMIN" && actor.role !== "TEACHER")) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir contratos.",
+    };
+  }
+
+  const parsed = deleteContractSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<DeleteContractInput>(parsed.error.issues),
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Contrato invalido.",
+    };
+  }
+
+  const deletionScope = getContractDocumentDeletionScope(
+    { id: actor.userId, role: actor.role },
+    parsed.data.contractId,
+  );
+
+  if (!deletionScope) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir este contrato.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const contract = await prisma.contractDocument.findFirst({
+    where: deletionScope,
+    select: {
+      id: true,
+      storagePath: true,
+    },
+  });
+
+  if (!contract) {
+    return {
+      ok: false,
+      message: "Contrato nao encontrado ou sem permissao para exclusao.",
+    };
+  }
+
+  const deletion = await prisma.contractDocument.deleteMany({
+    where: deletionScope,
+  });
+
+  if (deletion.count !== 1) {
+    return {
+      ok: false,
+      message: "O contrato ja foi excluido ou o vinculo foi alterado.",
+    };
+  }
+
+  let cleanupWarning = false;
+
+  try {
+    await deleteContractPdf(contract.storagePath);
+  } catch {
+    cleanupWarning = true;
+    console.error("Falha ao limpar o arquivo de um contrato excluido.", {
+      contractId: contract.id,
+    });
+  }
+
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/student");
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: cleanupWarning
+      ? "Contrato excluido. O arquivo residual precisa de revisao tecnica."
+      : "Contrato excluido com sucesso.",
   };
 }
 

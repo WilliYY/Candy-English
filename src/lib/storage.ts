@@ -200,6 +200,29 @@ export async function deleteSaleProductImage(relativePath?: string | null) {
   }
 }
 
+export async function deleteContractPdf(relativePath?: string | null) {
+  if (!relativePath) {
+    return;
+  }
+
+  const normalized = path.normalize(relativePath);
+  const contractPrefix = `contracts${path.sep}`;
+
+  if (!normalized.startsWith(contractPrefix)) {
+    throw new Error("Caminho de contrato invalido.");
+  }
+
+  try {
+    await unlink(getStoragePath(normalized));
+  } catch (error) {
+    if (isMissingStorageFileError(error)) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
 async function saveFileBuffer(directory: string, extension: string, buffer: Buffer) {
   const fileName = `${randomUUID()}${extension}`;
   const relativePath = path.join(directory, fileName);

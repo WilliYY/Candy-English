@@ -51,6 +51,29 @@ export function getContractDocumentAccessScope(
   };
 }
 
+export function getContractDocumentDeletionScope(
+  user: ContractAccessUser,
+  contractId: string,
+): Prisma.ContractDocumentWhereInput | null {
+  if (user.role === "ADMIN") {
+    return { id: contractId };
+  }
+
+  if (user.role !== "TEACHER") {
+    return null;
+  }
+
+  return {
+    id: contractId,
+    studentProfileId: { not: null },
+    studentProfile: {
+      teacherAssignments: {
+        some: { teacherProfile: { userId: user.id } },
+      },
+    },
+  };
+}
+
 export async function getAuthorizedContractDocument(
   user: ContractAccessUser,
   contractId: string,
