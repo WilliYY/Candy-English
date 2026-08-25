@@ -44,7 +44,7 @@ Rota:
 - A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje quando o navegador esta em 2026.
 - O dia atual e as comparacoes de ocorrencias usam uma referencia unica em `America/Sao_Paulo`, passada pelo servidor para evitar mudanca de dia durante a hidratacao.
 - Alteracoes ainda nao salvas da rotina permanecem ao atualizar presenca ou trocar o dia selecionado; trocar aluno ou mes pede confirmacao antes de descartar o formulario.
-- O admin ve calendario mensal, botao `Hoje`, navegacao de mes, dia atual destacado, dia selecionado destacado e contagem visual de aulas por dia.
+- O admin ve uma planilha mensal por aluno, botao `Hoje`, navegacao de mes, busca por nome/telefone, filtros rapidos de situacao e agrupamento visual por polo.
 - Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, unidade, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando foram convertidos sem dias/horario. A lista mostra `Completar` em amarelo enquanto faltarem dias ou horario e muda para `Completo` em verde depois que a rotina valida for salva.
 - Quando a Secretaria abre a agenda com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega somente `AgendaStudent` daquela unidade e ocorrencias de `AgendaLesson` ligadas a alunos daquele polo. Sem `unit`, ou com `unit=all`, mostra todos os polos.
 - O sistema cria ocorrencias do mes escolhido ate dezembro de 2026.
@@ -53,7 +53,7 @@ Rota:
 - Ao editar a rotina, o sistema desativa ocorrencias recorrentes futuras do mes selecionado em diante e cria/reativa as novas ocorrencias, preservando historico antigo.
 - Inativar aluno marca `AgendaStudent.isActive=false`, limpa horario/dias padrao e inativa ocorrencias recorrentes do mes selecionado em diante; registros antigos permanecem no historico.
 - Excluir aluno da agenda e uma acao definitiva de `ADMIN`: remove o `AgendaStudent` e suas ocorrencias por cascade, mantendo um log textual da exclusao. Para preservar historico, usar `Inativar`.
-- As ocorrencias aparecem por calendario mensal e por lista do dia selecionado, ordenadas por horario.
+- A planilha mensal mostra uma linha por aluno com rotina, polo, total de aulas, presencas, faltas, pendencias e proxima aula. As ocorrencias do dia selecionado continuam ordenadas por horario abaixo da planilha.
 - Status padrao e `SCHEDULED`.
 - Presenca confirmada vira `ATTENDED`.
 - Falta vira `MISSED`.
@@ -61,9 +61,9 @@ Rota:
 - Reposicao confirmada vira `MAKEUP_ATTENDED`.
 - Cada card do dia mostra nome, horario, telefone, observacao curta, status e botoes `Veio`, `Nao veio` e `Resetar`.
 - Cores de status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
-- A lista do dia possui busca por nome/telefone.
+- A busca por nome/telefone e os filtros `Todos`, `Aulas de hoje`, `A confirmar`, `Com faltas` e `Inativos` atuam sobre a planilha mensal.
 - O botao `Adicionar neste dia` preseleciona o dia da semana do dia selecionado no formulario.
-- Clicar em um aluno da lista interna destaca o card e abre abaixo da lista o detalhe com dados, edicao de rotina, presencas, faltas, historico de ocorrencias ativas/inativas e acoes `Inativar`/`Excluir`.
+- Clicar em `Abrir` na linha do aluno destaca a linha e abre a ficha com dados, edicao de rotina, presencas, faltas, historico de ocorrencias ativas/inativas e acoes `Inativar`/`Excluir`.
 - O log da agenda fica recolhido por padrao em um card abaixo da agenda.
 - `AgendaLog` registra criacao, edicao, presenca, falta, reposicao e inativacao.
 
@@ -77,12 +77,12 @@ Rota:
 - Reposicoes sao ocorrencias independentes, ligadas opcionalmente a aula original por `makeupForLessonId`.
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
-- A tela da Agenda usa hierarquia operacional simples: cabecalho do mes, metricas, calendario mensal, lista do dia selecionado, cadastro rapido, detalhe/historico do aluno e log recolhido.
-- A tela da Agenda prioriza leitura rapida: fila de hoje/proximos 7 dias no topo, calendario mensal com primeiro horario/aluno por dia, totais do dia selecionado, cards de aula com status/horario/telefone/observacao e cards de alunos internos com rotina, proxima aula e contadores de presenca/falta.
-- O cabecalho mensal inclui seletor direto de mes, navegacao anterior/proximo e metricas com icones, cores semanticas e descricao curta; a fila operacional identifica status e unidade antes de abrir o detalhe.
-- No mobile, o calendario preserva sete colunas com largura estavel e rolagem horizontal, evitando comprimir nomes, horarios e contadores. A legenda explica presenca, falta e dias com maior movimento.
-- Os cards de alunos internos usam tonalidades discretas por unidade, nomes em ate duas linhas e contadores separados por cor; formularios de cadastro/edicao usam campos mais altos, borda visivel e foco reforcado.
-- O painel evita tabela grande e usa cards empilhados no mobile para facilitar toque em `Veio` e `Nao veio`.
+- A tela da Agenda usa hierarquia operacional simples: cabecalho do mes, metricas, busca/filtros, planilha mensal por aluno, lista do dia selecionado, cadastro rapido, ficha/historico do aluno e log recolhido.
+- A planilha substitui a fila e o calendario como visao principal. Ela separa Ivaté e Douradina por faixas de cor e concentra rotina, totais mensais e proxima ocorrencia sem repetir uma segunda lista de cards.
+- O cabecalho mensal inclui seletor direto de mes, navegacao anterior/proximo e metricas com icones, cores semanticas e descricao curta; o filtro de polo reaproveita `unit=all|IVATE|DOURADINA` e continua protegido no servidor.
+- No mobile, busca e filtros ficam rolaveis em linha. A planilha preserva largura minima e usa rolagem horizontal, evitando comprimir nomes, horarios e contadores.
+- As colunas de presenca, falta e pendencia usam verde, vermelho e ambar; as faixas de polo usam ciano para Ivaté e rosa para Douradina sem transformar a tela em um conjunto de cards.
+- Os cards do dia selecionado permanecem responsivos para facilitar o toque em `Veio`, `Nao veio` e `Resetar`; formularios de cadastro/edicao usam campos altos, borda visivel e foco reforcado.
 - A busca e o detalhe trabalham apenas com `AgendaStudent`, sem consultar `User`/`StudentProfile`.
 - A migration `20260714170000_linked_pre_registration_conversion` adiciona `AgendaStudent.unit` e o vinculo de conversao entre `StudentPreRegistration` e `AgendaStudent`.
 
@@ -116,7 +116,6 @@ Rota:
 
 ## Como pode evoluir
 
-- Adicionar busca por aluno.
 - Criar visao semanal e impressao da agenda.
 - Permitir importacao CSV/Excel.
 - Criar relatorio de presenca e faltas por aluno.

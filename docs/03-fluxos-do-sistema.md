@@ -325,12 +325,12 @@ Helpers:
 
 1. Admin abre `/ava/admin?task=agenda`.
 2. A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje.
-3. Admin navega pelo calendario mensal, usa `Hoje`, mes anterior/proximo e clica em qualquer dia para ver os alunos internos daquele dia.
+3. Admin navega por mes e usa uma planilha mensal agrupada por `Polo 1 - Ivate` e `Polo 2 - Douradina`, com uma linha por aluno e colunas de rotina, aulas, presencas, faltas, pendencias e proxima aula.
 4. Admin cadastra aluno interno da agenda com nome, telefone opcional, dias da semana, horario e observacao; esse cadastro nao cria usuario, login nem `StudentProfile`.
 5. O sistema cria ocorrencias recorrentes do mes selecionado ate dezembro de 2026 e evita duplicar o mesmo nome no mesmo dia/horario ativo.
-6. No dia selecionado, cada aluno aparece em card com nome, horario, telefone, observacao curta, status e botoes `Veio`, `Nao veio` e `Resetar`.
-7. O card muda de cor por status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
-8. Admin pode buscar por nome/telefone, clicar em um aluno da lista interna e abrir abaixo da lista o detalhe com dados, edicao da rotina, presencas, faltas e historico.
+6. A busca, os filtros rapidos de situacao e o filtro server-side de polo reduzem as linhas visiveis sem misturar unidades; ao abrir a ficha de uma linha, o admin acessa edicao e historico daquele aluno.
+7. No dia selecionado, cada aluno aparece em card com nome, horario, telefone, observacao curta, status e botoes `Veio`, `Nao veio` e `Resetar`.
+8. O card muda de cor por status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
 9. Ao editar, o sistema atualiza a rotina do mes selecionado em diante sem apagar historico antigo.
 10. Ao inativar, o aluno para de aparecer nas proximas ocorrencias, mas o historico fica salvo.
 11. Ao excluir, o admin confirma uma acao definitiva que remove o cadastro interno da agenda e suas ocorrencias; para preservar historico, deve usar `Inativar`.

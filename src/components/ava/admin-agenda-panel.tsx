@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   createAgendaSchedule,
@@ -50,7 +50,10 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
+import {
+  SECRETARIA_UNIT_FILTER_OPTIONS,
+  type SecretariaUnitFilter,
+} from "@/lib/secretaria-unit-filter";
 
 export type AdminAgendaLessonStatus =
   | "ATTENDED"
@@ -107,15 +110,21 @@ type AdminAgendaPanelProps = {
   students: AdminAgendaStudentRow[];
 };
 
-type CalendarDayCell = {
-  date: Date;
-  day: number;
-  key: string;
-  weekday: number;
-};
+type AgendaSheetFilter = "ALL" | "TODAY" | "PENDING" | "MISSED" | "INACTIVE";
 
-type CalendarBlankCell = {
-  key: string;
+type AgendaStudentMonthRow = {
+  attendedCount: number;
+  lessons: AdminAgendaLessonRow[];
+  missedCount: number;
+  nextLesson: AdminAgendaLessonRow | null;
+  scheduledCount: number;
+  schedule: {
+    isComplete: boolean;
+    time: string;
+    weekdays: number[];
+  };
+  student: AdminAgendaStudentRow;
+  todayLesson: AdminAgendaLessonRow | null;
 };
 
 const AGENDA_YEAR = 2026;
@@ -149,6 +158,40 @@ const weekdays = [
 const unitLabels: Record<FinancialUnit, string> = {
   DOURADINA: "Unidade 2 Douradina",
   IVATE: "Unidade 1 Ivate",
+};
+
+const agendaSheetFilters: ReadonlyArray<{
+  label: string;
+  value: AgendaSheetFilter;
+}> = [
+  { label: "Todos", value: "ALL" },
+  { label: "Aulas de hoje", value: "TODAY" },
+  { label: "A confirmar", value: "PENDING" },
+  { label: "Com faltas", value: "MISSED" },
+  { label: "Inativos", value: "INACTIVE" },
+];
+
+const agendaUnitMeta: Record<
+  FinancialUnit,
+  {
+    groupClassName: string;
+    label: string;
+    pillClassName: string;
+    rowClassName: string;
+  }
+> = {
+  DOURADINA: {
+    groupClassName: "border-rose-200 bg-rose-50 text-rose-900",
+    label: "Polo 2 - Douradina",
+    pillClassName: "border-rose-200 bg-rose-50 text-rose-800",
+    rowClassName: "bg-rose-50/35 hover:bg-rose-50/70",
+  },
+  IVATE: {
+    groupClassName: "border-cyan-200 bg-cyan-50 text-cyan-900",
+    label: "Polo 1 - Ivate",
+    pillClassName: "border-cyan-200 bg-cyan-50 text-cyan-800",
+    rowClassName: "bg-cyan-50/35 hover:bg-cyan-50/70",
+  },
 };
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
@@ -260,44 +303,6 @@ function formatDate(value: string) {
 
 function formatShortDate(value: string) {
   return shortDateFormatter.format(parseLessonDate(value));
-}
-
-function getMonthDays(month: number): CalendarDayCell[] {
-  const lastDay = new Date(Date.UTC(AGENDA_YEAR, month, 0)).getUTCDate();
-
-  return Array.from({ length: lastDay }, (_, index) => {
-    const day = index + 1;
-    const date = new Date(Date.UTC(AGENDA_YEAR, month - 1, day, 12));
-
-    return {
-      date,
-      day,
-      key: getDayKey(AGENDA_YEAR, month, day),
-      weekday: date.getUTCDay(),
-    };
-  });
-}
-
-function addDaysToDayKey(key: string, amount: number) {
-  const date = parseDayKey(key);
-
-  date.setUTCDate(date.getUTCDate() + amount);
-
-  return getDayKey(
-    date.getUTCFullYear(),
-    date.getUTCMonth() + 1,
-    date.getUTCDate(),
-  );
-}
-
-function getCalendarCells(month: number): (CalendarDayCell | CalendarBlankCell)[] {
-  const days = getMonthDays(month);
-  const firstWeekday = days[0]?.weekday ?? 0;
-  const blanks = Array.from({ length: firstWeekday }, (_, index) => ({
-    key: `blank-${month}-${index}`,
-  }));
-
-  return [...blanks, ...days];
 }
 
 function sortLessons(left: AdminAgendaLessonRow, right: AdminAgendaLessonRow) {
@@ -421,6 +426,29 @@ function getStudentSchedule(
     time: resolvedTime ?? "08:00",
     weekdays: scheduleWeekdays,
   };
+}
+
+function matchesAgendaSheetFilter(
+  row: AgendaStudentMonthRow,
+  filter: AgendaSheetFilter,
+) {
+  if (filter === "TODAY") {
+    return Boolean(row.todayLesson);
+  }
+
+  if (filter === "PENDING") {
+    return row.scheduledCount > 0;
+  }
+
+  if (filter === "MISSED") {
+    return row.missedCount > 0;
+  }
+
+  if (filter === "INACTIVE") {
+    return !row.student.isActive;
+  }
+
+  return true;
 }
 
 function buildEditValues(
@@ -580,6 +608,7 @@ export function AdminAgendaPanel({
   const [activeMonth, setActiveMonth] = useState(todayMonth);
   const [selectedDayKey, setSelectedDayKey] = useState(todayKey);
   const [search, setSearch] = useState("");
+  const [sheetFilter, setSheetFilter] = useState<AgendaSheetFilter>("ALL");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
     null,
   );
@@ -684,22 +713,85 @@ export function AdminAgendaPanel({
     (lesson) =>
       lesson.status === "SCHEDULED" || lesson.status === "MAKEUP_SCHEDULED",
   ).length;
-  const upcomingLessons = useMemo(() => {
-    const endKey = addDaysToDayKey(todayKey, 7);
+  const agendaMonthRows = useMemo<AgendaStudentMonthRow[]>(() => {
+    const monthStartKey = getDayKey(AGENDA_YEAR, activeMonth, 1);
+    const referenceKey = activeMonth === todayMonth ? todayKey : monthStartKey;
+    const canHaveNextLesson = !todayIsAgendaYear || activeMonth >= todayMonth;
 
-    return lessons
-      .filter((lesson) => {
-        if (lesson.year !== AGENDA_YEAR || !lesson.isActive) {
-          return false;
+    return students
+      .map((student) => {
+        const studentLessons = monthLessons.filter(
+          (lesson) => lesson.studentId === student.id,
+        );
+        const attendedCount = studentLessons.filter(
+          (lesson) =>
+            lesson.status === "ATTENDED" ||
+            lesson.status === "MAKEUP_ATTENDED",
+        ).length;
+        const missedCount = studentLessons.filter(
+          (lesson) => lesson.status === "MISSED",
+        ).length;
+        const scheduledCount = studentLessons.filter(
+          (lesson) =>
+            lesson.status === "SCHEDULED" ||
+            lesson.status === "MAKEUP_SCHEDULED",
+        ).length;
+        const todayLesson =
+          activeMonth === todayMonth
+            ? studentLessons.find(
+                (lesson) => getLessonDayKey(lesson) === todayKey,
+              ) ?? null
+            : null;
+        const nextLesson = canHaveNextLesson
+          ? studentLessons.find(
+              (lesson) =>
+                getLessonDayKey(lesson) >= referenceKey &&
+                (lesson.status === "SCHEDULED" ||
+                  lesson.status === "MAKEUP_SCHEDULED"),
+            ) ?? null
+          : null;
+
+        return {
+          attendedCount,
+          lessons: studentLessons,
+          missedCount,
+          nextLesson,
+          scheduledCount,
+          schedule: getStudentSchedule(student, lessons),
+          student,
+          todayLesson,
+        };
+      })
+      .sort((left, right) => {
+        if (left.student.unit !== right.student.unit) {
+          return left.student.unit === "IVATE" ? -1 : 1;
         }
 
-        const lessonKey = getLessonDayKey(lesson);
+        return left.student.name.localeCompare(right.student.name, "pt-BR");
+      });
+  }, [activeMonth, lessons, monthLessons, students, todayIsAgendaYear, todayKey, todayMonth]);
+  const agendaSheetRows = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase("pt-BR");
 
-        return lessonKey >= todayKey && lessonKey <= endKey;
-      })
-      .sort(sortLessons)
-      .slice(0, 6);
-  }, [lessons, todayKey]);
+    return agendaMonthRows.filter((row) => {
+      const matchesSearch =
+        !query ||
+        row.student.name.toLocaleLowerCase("pt-BR").includes(query) ||
+        row.student.phone?.toLocaleLowerCase("pt-BR").includes(query);
+
+      return matchesSearch && matchesAgendaSheetFilter(row, sheetFilter);
+    });
+  }, [agendaMonthRows, search, sheetFilter]);
+  const agendaSheetGroups = useMemo(
+    () =>
+      (["IVATE", "DOURADINA"] as const)
+        .map((unit) => ({
+          rows: agendaSheetRows.filter((row) => row.student.unit === unit),
+          unit,
+        }))
+        .filter((group) => group.rows.length > 0),
+    [agendaSheetRows],
+  );
   const attendedCount = monthLessons.filter(
     (lesson) =>
       lesson.status === "ATTENDED" || lesson.status === "MAKEUP_ATTENDED",
@@ -814,6 +906,27 @@ export function AdminAgendaPanel({
     editForm.reset(
       buildEditValues(student, lessons, targetMonth),
     );
+  }
+
+  function openAgendaSheetRow(row: AgendaStudentMonthRow) {
+    const focusLesson = row.todayLesson ?? row.nextLesson ?? row.lessons[0] ?? null;
+
+    if (focusLesson) {
+      setSelectedDayKey(getLessonDayKey(focusLesson));
+    }
+
+    openStudent(row.student.id, activeMonth);
+    window.setTimeout(() => {
+      document
+        .getElementById("agenda-student-details")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
+  function changeUnitFilter(filter: SecretariaUnitFilter) {
+    const unitParam = filter === "all" ? "" : `&unit=${filter}`;
+
+    router.push(`/ava/admin?task=agenda${unitParam}`);
   }
 
   const onSubmit = form.handleSubmit((values) => {
@@ -944,7 +1057,7 @@ export function AdminAgendaPanel({
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-28 lg:pr-20">
+    <div className="flex flex-col gap-4 pb-28">
       <section className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_22px_60px_rgba(65,42,76,0.11)] ring-1 ring-white/70">
         <span
           aria-hidden="true"
@@ -1048,215 +1161,266 @@ export function AdminAgendaPanel({
               valueClassName="text-amber-800"
             />
           </div>
-          <div className="mt-4 rounded-lg border border-primary/12 bg-gradient-to-r from-white via-white to-cyan-50/55 p-3.5 shadow-sm">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <span>
-                <span className="block text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/60">
-                  Fila operacional
-                </span>
-                <strong className="text-sm text-primary">
-                  Hoje e proximos 7 dias
-                </strong>
+          <div className="mt-4 grid gap-3 rounded-lg border border-primary/15 bg-white p-3.5 shadow-sm lg:grid-cols-[minmax(260px,1fr)_auto]">
+            <label className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-primary/20 bg-white px-3 shadow-sm focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/10">
+              <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
+              <span className="sr-only">Buscar aluno na agenda</span>
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                placeholder="Buscar aluno ou telefone"
+                type="search"
+              />
+            </label>
+            <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:justify-end lg:pb-0">
+              {agendaSheetFilters.map((filter) => (
+                <Button
+                  key={filter.value}
+                  type="button"
+                  size="sm"
+                  variant={sheetFilter === filter.value ? "default" : "outline"}
+                  className={cn(
+                    "h-11 shrink-0 px-3",
+                    sheetFilter === filter.value
+                      ? "bg-primary text-primary-foreground"
+                      : "border-primary/15 bg-white text-primary",
+                  )}
+                  onClick={() => setSheetFilter(filter.value)}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+            <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 lg:col-span-2 lg:pb-0">
+              <span className="mr-1 shrink-0 text-[0.68rem] font-bold uppercase tracking-[0.13em] text-primary/55">
+                Polo
               </span>
-              <span className="rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
-                {upcomingLessons.length} aula(s)
+              {SECRETARIA_UNIT_FILTER_OPTIONS.map((option) => (
+                <Button
+                  key={option.value}
+                  type="button"
+                  size="sm"
+                  variant={initialUnitFilter === option.value ? "default" : "outline"}
+                  className={cn(
+                    "h-9 shrink-0",
+                    initialUnitFilter === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "border-primary/15 bg-white text-primary",
+                  )}
+                  onClick={() => changeUnitFilter(option.value)}
+                >
+                  {option.value === "all"
+                    ? "Todos os polos"
+                    : option.value === "IVATE"
+                      ? "Polo 1 - Ivate"
+                      : "Polo 2 - Douradina"}
+                </Button>
+              ))}
+              <span className="ml-auto shrink-0 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
+                {agendaSheetRows.length} de {agendaMonthRows.length} aluno(s)
               </span>
             </div>
-            {upcomingLessons.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-primary/15 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
-                Nenhuma aula ativa nessa janela.
-              </p>
-            ) : (
-              <div className="grid gap-2.5 md:grid-cols-2 2xl:grid-cols-3">
-                {upcomingLessons.map((lesson) => {
-                  const meta = getStatusMeta(lesson.status);
+          </div>
+          {listMessage ? (
+            <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+              {listMessage}
+            </p>
+          ) : null}
+        </div>
 
-                  return (
-                    <button
-                      key={lesson.id}
-                      type="button"
-                      className="group relative min-w-0 overflow-hidden rounded-lg border border-primary/12 bg-white px-3 py-3 pl-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
-                      onClick={() => {
-                        setActiveMonth(lesson.month);
-                        setSelectedDayKey(getLessonDayKey(lesson));
-                        openStudent(
-                          lesson.studentId,
-                          lesson.month,
-                        );
-                      }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "absolute inset-y-0 left-0 w-1",
-                          meta.accentClassName,
-                        )}
-                      />
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-bold text-primary">
-                          <Clock aria-hidden="true" className="size-3.5 shrink-0" />
-                          <span className="truncate">
-                            {formatShortDate(lesson.date)} as {lesson.time}
-                          </span>
-                        </span>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full border px-2 py-0.5 text-[0.68rem] font-bold",
-                            meta.pillClassName,
-                          )}
-                        >
-                          {meta.label}
-                        </span>
-                      </span>
-                      <span className="mt-1.5 block truncate text-sm font-semibold text-primary">
-                        {lesson.studentName}
-                      </span>
-                      <span className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-[0.08em] text-primary/65">
-                        {unitLabels[lesson.studentUnit]}
-                      </span>
-                    </button>
-                  );
-                })}
+        <div className="grid gap-4 p-3 md:p-4">
+          <div className="min-w-0 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-primary/15 bg-primary px-4 py-3.5 text-primary-foreground">
+              <div>
+                <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/65">
+                  Planilha mensal
+                </span>
+                <h3 className="mt-0.5 text-base font-semibold">
+                  Controle por aluno - {activeMonthLabel}
+                </h3>
+                <p className="mt-1 text-xs text-white/75">
+                  Rotina, presencas, faltas e proximas aulas em uma unica visao.
+                </p>
+              </div>
+              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold">
+                {agendaSheetRows.length} aluno(s) visivel(is)
+              </span>
+            </div>
+
+            {agendaSheetRows.length === 0 ? (
+              <div className="m-4 rounded-lg border border-dashed border-primary/20 bg-primary/5 px-4 py-10 text-center">
+                <Users aria-hidden="true" className="mx-auto size-6 text-primary/45" />
+                <p className="mt-2 text-sm font-semibold text-primary">
+                  Nenhum aluno encontrado neste filtro.
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Ajuste a busca, o status ou o polo para ver outros registros.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
+                  <thead className="bg-[#f8f4fa] text-[0.65rem] font-bold uppercase tracking-[0.11em] text-primary/60">
+                    <tr>
+                      <th className="w-[23%] px-4 py-3">Aluno</th>
+                      <th className="w-[16%] px-3 py-3">Rotina</th>
+                      <th className="px-3 py-3">Polo</th>
+                      <th className="px-3 py-3 text-center">Aulas</th>
+                      <th className="px-3 py-3 text-center">Vieram</th>
+                      <th className="px-3 py-3 text-center">Faltas</th>
+                      <th className="px-3 py-3 text-center">A confirmar</th>
+                      <th className="w-[17%] px-3 py-3">Proxima aula</th>
+                      <th className="px-4 py-3 text-right">Acao</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {agendaSheetGroups.map((group) => {
+                      const unitMeta = agendaUnitMeta[group.unit];
+
+                      if (group.rows.length === 0) {
+                        return null;
+                      }
+
+                      return (
+                        <Fragment key={group.unit}>
+                          <tr className={unitMeta.groupClassName}>
+                            <td colSpan={9} className="border-y px-4 py-2.5">
+                              <span className="font-bold">{unitMeta.label}</span>
+                              <span className="ml-2 text-xs font-medium opacity-70">
+                                {group.rows.length} aluno(s)
+                              </span>
+                            </td>
+                          </tr>
+                          {group.rows.map((row) => {
+                            const isSelected = selectedStudentId === row.student.id;
+                            const pendingCount = row.lessons.filter(
+                              (lesson) =>
+                                lesson.status === "SCHEDULED" ||
+                                lesson.status === "MAKEUP_SCHEDULED",
+                            ).length;
+
+                            return (
+                              <tr
+                                key={row.student.id}
+                                className={cn(
+                                  "border-b border-primary/10 transition-colors hover:bg-primary/[0.035]",
+                                  unitMeta.rowClassName,
+                                  isSelected && "bg-primary/[0.08] ring-1 ring-inset ring-primary/25",
+                                )}
+                              >
+                                <td className="px-4 py-3">
+                                  <button
+                                    type="button"
+                                    className="flex min-w-0 items-center gap-2.5 text-left focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                    onClick={() => openAgendaSheetRow(row)}
+                                  >
+                                    <span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
+                                      {getAgendaInitials(row.student.name)}
+                                    </span>
+                                    <span className="min-w-0">
+                                      <strong className="block truncate text-sm text-primary">
+                                        {row.student.name}
+                                      </strong>
+                                      <span className="block truncate text-xs text-muted-foreground">
+                                        {row.student.phone || "Sem telefone"}
+                                      </span>
+                                    </span>
+                                  </button>
+                                </td>
+                                <td className="px-3 py-3">
+                                  {row.schedule.isComplete ? (
+                                    <>
+                                      <strong className="block text-xs text-primary">
+                                        {formatWeekdayList(row.schedule.weekdays)}
+                                      </strong>
+                                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                                        {row.schedule.time}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">
+                                      Completar rotina
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-3 py-3">
+                                  <span className={cn("inline-flex rounded-full border px-2 py-1 text-xs font-bold", unitMeta.pillClassName)}>
+                                    {group.unit === "IVATE" ? "Polo 1" : "Polo 2"}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-3 text-center font-bold text-primary">
+                                  {row.lessons.length}
+                                </td>
+                                <td className="px-3 py-3 text-center">
+                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-800">
+                                    {row.attendedCount}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-3 text-center">
+                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-red-100 px-2 py-1 font-bold text-red-800">
+                                    {row.missedCount}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-3 text-center">
+                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-amber-100 px-2 py-1 font-bold text-amber-900">
+                                    {pendingCount}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-3">
+                                  {row.todayLesson ? (
+                                    <span className="inline-flex items-center gap-1.5 font-bold text-violet-800">
+                                      <Clock aria-hidden="true" className="size-3.5" />
+                                      Hoje as {row.todayLesson.time}
+                                    </span>
+                                  ) : row.nextLesson ? (
+                                    <>
+                                      <strong className="block text-xs text-primary">
+                                        {formatShortDate(row.nextLesson.date)}
+                                      </strong>
+                                      <span className="mt-0.5 block text-xs text-muted-foreground">
+                                        as {row.nextLesson.time}
+                                      </span>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">
+                                      Sem proxima aula
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={isSelected ? "default" : "outline"}
+                                    className={cn(
+                                      "h-9",
+                                      isSelected
+                                        ? "bg-primary text-primary-foreground"
+                                        : "border-primary/20 bg-white text-primary",
+                                    )}
+                                    onClick={() => openAgendaSheetRow(row)}
+                                  >
+                                    {isSelected ? "Aberto" : "Abrir"}
+                                    <ChevronRight data-icon="inline-end" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
-        </div>
 
-        <div className="grid gap-4 p-3 md:p-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)]">
-          <div className="min-w-0 rounded-lg border border-primary/15 bg-white/88 p-3 shadow-sm md:p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-primary/10 pb-3">
-              <div>
-                <span className="text-[0.68rem] font-bold uppercase tracking-[0.15em] text-primary/55">
-                  Visao mensal
-                </span>
-                <h3 className="mt-0.5 text-base font-semibold text-primary">
-                  Calendario de {activeMonthLabel}
-                </h3>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-[0.68rem] font-semibold text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-emerald-500" /> Presenca
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-red-500" /> Falta
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="size-2 rounded-full bg-amber-500" /> Movimento
-                </span>
-              </div>
-            </div>
-            <div className="overflow-x-auto pb-1">
-              <div className="min-w-[620px]">
-                <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                  {weekdays.map((weekday) => (
-                    <span key={weekday.value}>{weekday.label}</span>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1.5">
-              {getCalendarCells(activeMonth).map((cell) => {
-                if (!("day" in cell)) {
-                  return <span key={cell.key} aria-hidden="true" />;
-                }
-
-                const dayLessons = monthLessonsByDay.get(cell.key) ?? [];
-                const firstLesson = dayLessons[0];
-                const isSelected = selectedDayKey === cell.key;
-                const isToday = todayKey === cell.key;
-                const hasMissed = dayLessons.some(
-                  (lesson) => lesson.status === "MISSED",
-                );
-                const hasAttended = dayLessons.some(
-                  (lesson) =>
-                    lesson.status === "ATTENDED" ||
-                    lesson.status === "MAKEUP_ATTENDED",
-                );
-
-                return (
-                  <button
-                    key={cell.key}
-                    type="button"
-                    onClick={() => {
-                      setSelectedDayKey(cell.key);
-                      setSelectedStudentId(null);
-                    }}
-                    className={cn(
-                      "min-h-[104px] rounded-lg border bg-white p-2.5 text-left transition-all",
-                      "hover:-translate-y-0.5 hover:border-primary/45 hover:shadow-sm",
-                      isSelected
-                        ? "border-primary bg-primary text-primary-foreground shadow-md shadow-primary/15"
-                        : "border-primary/15 text-primary",
-                      isToday && !isSelected
-                        ? "ring-2 ring-amber-300 ring-offset-1"
-                        : "",
-                    )}
-                  >
-                    <span className="flex items-start justify-between gap-1">
-                      <span className="text-sm font-bold">{cell.day}</span>
-                      {dayLessons.length > 0 ? (
-                        <span
-                          className={cn(
-                            "rounded-full px-1.5 py-0.5 text-[0.68rem] font-bold",
-                            isSelected
-                              ? "bg-white/20 text-white"
-                              : "bg-primary/8 text-primary",
-                          )}
-                        >
-                          {dayLessons.length}
-                        </span>
-                      ) : null}
-                    </span>
-                    {firstLesson ? (
-                      <span
-                        className={cn(
-                          "mt-2 block min-w-0 rounded-md px-1.5 py-1 text-[0.68rem] font-semibold leading-tight",
-                          isSelected
-                            ? "bg-white/15 text-white"
-                            : "bg-primary/5 text-primary",
-                        )}
-                      >
-                        <span className="block truncate">
-                          {firstLesson.time}
-                        </span>
-                        <span className="block truncate opacity-80">
-                          {firstLesson.studentName}
-                        </span>
-                      </span>
-                    ) : null}
-                    {dayLessons.length > 0 ? (
-                      <span className="mt-2 flex items-center gap-1">
-                        <span
-                          className={cn(
-                            "size-2 rounded-full",
-                            hasAttended ? "bg-emerald-500" : "bg-primary",
-                          )}
-                        />
-                        {hasMissed ? (
-                          <span className="size-2 rounded-full bg-red-500" />
-                        ) : null}
-                        {dayLessons.length > 2 ? (
-                          <span className="size-2 rounded-full bg-amber-500" />
-                        ) : null}
-                        {dayLessons.length > 1 ? (
-                          <span
-                            className={cn(
-                              "ml-auto text-[0.68rem] font-bold",
-                              isSelected ? "text-white/75" : "text-primary/55",
-                            )}
-                          >
-                            +{dayLessons.length - 1}
-                          </span>
-                        ) : null}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-3">
+          <div
+            id="agenda-day-details"
+            className="flex min-w-0 scroll-mt-24 flex-col gap-3"
+          >
             <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-white via-white to-violet-50/70 p-3.5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1304,16 +1468,6 @@ export function AdminAgendaPanel({
                     {selectedDayMissedCount}
                   </strong>
                 </span>
-              </div>
-              <div className="mt-3 flex h-11 items-center gap-2 rounded-lg border border-primary/20 bg-white px-3 shadow-sm focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/10">
-                <Search aria-hidden="true" className="size-4 text-primary" />
-                <input
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                  placeholder="Buscar por aluno ou telefone"
-                  type="search"
-                />
               </div>
             </div>
 
@@ -1564,7 +1718,10 @@ export function AdminAgendaPanel({
       </form>
 
       {selectedStudent ? (
-        <section className="order-[30] rounded-lg border border-primary/20 bg-gradient-to-br from-white via-white to-cyan-50/45 p-3 shadow-[0_16px_40px_rgba(58,29,75,0.08)] md:p-4">
+        <section
+          id="agenda-student-details"
+          className="order-[30] scroll-mt-24 rounded-lg border border-primary/20 bg-gradient-to-br from-white via-white to-cyan-50/45 p-3 shadow-[0_16px_40px_rgba(58,29,75,0.08)] md:p-4"
+        >
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div className="flex min-w-0 items-start gap-3">
               <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm">
@@ -1820,186 +1977,6 @@ export function AdminAgendaPanel({
           </div>
         </section>
       ) : null}
-
-      <section className="order-[20] rounded-lg border border-primary/20 bg-gradient-to-br from-white via-white to-violet-50/45 p-3 shadow-[0_16px_40px_rgba(58,29,75,0.08)] md:p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Users aria-hidden="true" className="size-4" />
-            </span>
-            <div>
-              <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                Alunos da agenda
-              </span>
-              <h2 className="text-base font-semibold text-primary">
-                Lista interna simples
-              </h2>
-            </div>
-          </div>
-          <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
-            {students.length} cadastro(s)
-          </span>
-        </div>
-        {students.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
-            Nenhum aluno interno cadastrado na agenda.
-          </p>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {students.map((student) => {
-              const schedule = getStudentSchedule(student, lessons);
-              const studentLessons = lessons
-                .filter(
-                  (lesson) => lesson.studentId === student.id && lesson.isActive,
-                )
-                .sort(sortLessons);
-              const studentMonthLessons = monthLessons.filter(
-                (lesson) => lesson.studentId === student.id,
-              );
-              const nextStudentLesson =
-                studentLessons.find(
-                  (lesson) => getLessonDayKey(lesson) >= todayKey,
-                ) ?? studentLessons[0];
-              const studentAttended = lessons.filter(
-                (lesson) =>
-                  lesson.studentId === student.id &&
-                  (lesson.status === "ATTENDED" ||
-                    lesson.status === "MAKEUP_ATTENDED"),
-              ).length;
-              const studentMissed = lessons.filter(
-                (lesson) =>
-                  lesson.studentId === student.id && lesson.status === "MISSED",
-              ).length;
-              const isSelected = selectedStudentId === student.id;
-
-              return (
-                <button
-                  key={student.id}
-                  type="button"
-                  onClick={() => openStudent(student.id)}
-                  className={cn(
-                    "relative min-w-0 overflow-hidden rounded-lg border p-3 pt-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
-                     isSelected
-                       ? "border-primary bg-primary text-primary-foreground ring-2 ring-primary/35 ring-offset-2 ring-offset-white"
-                       : student.isActive
-                         ? schedule.isComplete
-                           ? student.unit === "IVATE"
-                             ? "border-cyan-200 bg-gradient-to-br from-white via-white to-cyan-50 text-primary"
-                             : "border-fuchsia-200 bg-gradient-to-br from-white via-white to-fuchsia-50 text-primary"
-                           : "border-amber-200 bg-gradient-to-br from-amber-50 via-white to-white text-primary"
-                         : "border-muted bg-muted/35 text-muted-foreground",
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                       "absolute inset-x-0 top-0 h-1",
-                       student.isActive
-                         ? schedule.isComplete
-                           ? student.unit === "IVATE"
-                             ? "bg-gradient-to-r from-cyan-500 to-violet-500"
-                             : "bg-gradient-to-r from-fuchsia-500 to-amber-400"
-                           : "bg-amber-500"
-                         : "bg-muted-foreground/40",
-                    )}
-                  />
-                  <span className="flex min-w-0 items-start gap-3">
-                    <span
-                      className={cn(
-                        "grid size-10 shrink-0 place-items-center rounded-lg text-xs font-bold uppercase shadow-sm",
-                        isSelected
-                          ? "bg-white/15 text-white"
-                          : student.unit === "IVATE"
-                            ? "bg-cyan-700 text-white"
-                            : "bg-fuchsia-700 text-white",
-                      )}
-                    >
-                      {getAgendaInitials(student.name)}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex items-center justify-between gap-2">
-                        <strong className="line-clamp-2 text-base leading-5">
-                          {student.name}
-                        </strong>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full border px-2 py-0.5 text-[0.68rem] font-bold",
-                            student.isActive
-                              ? schedule.isComplete
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                                : "border-amber-200 bg-amber-50 text-amber-900"
-                              : "border-muted bg-white text-muted-foreground",
-                          )}
-                        >
-                          {student.isActive
-                            ? schedule.isComplete
-                              ? "Completo"
-                              : "Completar"
-                            : "Inativo"}
-                        </span>
-                      </span>
-                      <span className="mt-2 block truncate text-xs font-semibold opacity-80">
-                        {schedule.isComplete
-                          ? `${formatWeekdayList(schedule.weekdays)} / ${schedule.time}`
-                          : "Dias e horario pendentes"}
-                      </span>
-                      <span
-                        className={cn(
-                          "mt-1 inline-flex rounded-full border px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-[0.08em]",
-                          isSelected
-                            ? "border-white/20 bg-white/15 text-white"
-                            : "border-primary/10 bg-white/75 text-primary/70",
-                        )}
-                      >
-                        {unitLabels[student.unit]}
-                      </span>
-                      {student.phone ? (
-                        <span className="mt-1 flex min-w-0 items-center gap-1.5 text-xs opacity-75">
-                          <Phone aria-hidden="true" className="size-3.5 shrink-0" />
-                          <span className="truncate">{student.phone}</span>
-                        </span>
-                      ) : null}
-                    </span>
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-3 grid gap-2 rounded-lg border px-2.5 py-2 text-xs",
-                      isSelected
-                        ? "border-white/20 bg-white/10"
-                        : "border-primary/10 bg-[#fbf7ff] text-primary/80",
-                    )}
-                  >
-                    <span className="flex items-center justify-between gap-2">
-                      <span className="font-bold">Proxima</span>
-                      <span className="truncate">
-                        {nextStudentLesson
-                          ? `${formatShortDate(nextStudentLesson.date)} as ${nextStudentLesson.time}`
-                          : "Sem aula ativa"}
-                      </span>
-                    </span>
-                    <span className="grid grid-cols-3 gap-1 text-center font-bold">
-                      <span className={cn("rounded-md px-1 py-1", !isSelected && "bg-violet-50 text-violet-800")}>
-                        {studentMonthLessons.length} no mes
-                      </span>
-                      <span className={cn("rounded-md px-1 py-1", !isSelected && "bg-emerald-50 text-emerald-800")}>
-                        {studentAttended} veio
-                      </span>
-                      <span className={cn("rounded-md px-1 py-1", !isSelected && "bg-red-50 text-red-800")}>
-                        {studentMissed} falta
-                      </span>
-                    </span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {listMessage ? (
-          <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
-            {listMessage}
-          </p>
-        ) : null}
-      </section>
 
       <details className="order-[40] rounded-lg border border-primary/20 bg-white p-3 shadow-sm md:p-4">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
