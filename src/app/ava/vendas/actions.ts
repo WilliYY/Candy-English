@@ -673,7 +673,7 @@ export async function cancelSale(
   if (!parsed.success) {
     return {
       errors: fieldErrors<SaleCancelInput>(parsed.error.issues),
-      message: "Revise o cancelamento.",
+      message: "Revise o estorno.",
       ok: false,
     };
   }
@@ -703,11 +703,11 @@ export async function cancelSale(
       });
 
       if (!sale || sale.status !== "COMPLETED") {
-        throw new SaleRuleError("Venda inexistente ou ja cancelada.");
+        throw new SaleRuleError("Venda inexistente ou ja estornada.");
       }
 
       if (!actor.isAdmin && sale.soldByUserId !== actor.userId) {
-        throw new SaleRuleError("Professor pode cancelar somente a propria venda.");
+        throw new SaleRuleError("Professor pode estornar somente a propria venda.");
       }
 
       if (sale.settlementType === "MONTHLY_INVOICE") {
@@ -722,7 +722,7 @@ export async function cancelSale(
 
         if (!isMonthlyInvoiceOpen(paymentRows[0])) {
           throw new SaleRuleError(
-            "Esta fatura ja foi paga ou fechada. Reabra a competencia no Financeiro antes de cancelar.",
+            "Esta fatura ja foi paga ou fechada. Reabra a competencia no Financeiro antes de estornar.",
           );
         }
       }
@@ -738,7 +738,7 @@ export async function cancelSale(
       });
 
       if (cancellation.count !== 1) {
-        throw new SaleRuleError("A venda mudou enquanto era cancelada.");
+        throw new SaleRuleError("A venda mudou enquanto era estornada.");
       }
 
       for (const item of sale.items) {
@@ -757,7 +757,7 @@ export async function cancelSale(
     }
 
     return {
-      message: "Nao foi possivel cancelar a venda. O estoque foi preservado.",
+      message: "Nao foi possivel estornar a venda. O estoque foi preservado.",
       ok: false,
     };
   }
@@ -766,7 +766,7 @@ export async function cancelSale(
   revalidatePath("/ava/admin");
 
   return {
-    message: "Venda cancelada e estoque devolvido.",
+    message: "Venda estornada e estoque devolvido.",
     ok: true,
   };
 }

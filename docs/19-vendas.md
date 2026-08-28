@@ -6,8 +6,8 @@
 
 ## Acesso
 
-- `ADMIN`: ve todos os alunos e todas as vendas; pode manter produtos, vender e cancelar.
-- `TEACHER`: ve apenas alunos vinculados por `StudentTeacherAssignment`; pode manter produtos, vender e consultar/cancelar somente vendas registradas por ela.
+- `ADMIN`: ve todos os alunos e todas as vendas; pode manter produtos, vender e estornar.
+- `TEACHER`: ve apenas alunos vinculados por `StudentTeacherAssignment`; pode manter produtos, vender e consultar/estornar somente vendas registradas por ela.
 - `STUDENT`: nao acessa a rota, os dados nem as server actions.
 
 Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao e considerado autorizacao.
@@ -15,9 +15,10 @@ Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao
 ## Arquivos principais
 
 - `src/app/ava/vendas/page.tsx`: consultas autorizadas e composicao da pagina.
-- `src/app/ava/vendas/actions.ts`: produtos, checkout e cancelamento.
-- `src/components/ava/sales-pos-panel.tsx`: abas PDV, Produtos e Historico.
+- `src/app/ava/vendas/actions.ts`: produtos, checkout e estorno.
+- `src/components/ava/sales-pos-panel.tsx`: PDV, produtos e historico rapido com estorno.
 - `src/lib/sales-domain.ts`: normalizacao, competencia e calculos puros.
+- `src/lib/sales-history.ts`: busca normalizada e filtros do historico rapido.
 - `src/lib/validations/sales.ts`: contratos Zod.
 - `prisma/migrations/20260823233000_add_sales_pos/migration.sql`: tabelas, indices, FKs e checks.
 
@@ -57,15 +58,17 @@ A compra mensal e uma cobranca do ledger `Sale`, identificada por `invoiceYear` 
 
 Nao ha gateway nem cobranca online: a forma de pagamento informa apenas como a venda interna foi liquidada.
 
-## Cancelamento
+## Historico rapido e estorno
 
-Venda concluida nao e apagada. O cancelamento exige motivo, registra operador/data e bloqueia venda, fatura e reposicao de estoque na mesma transaction. Uma venda cancelada nao pode ser cancelada novamente. Compra mensal vinculada a uma competencia ja paga ou fechada exige que o Admin reabra a competencia antes do cancelamento, evitando alterar silenciosamente uma fatura quitada.
+O historico aparece no topo do PDV e lista as 40 vendas mais recentes autorizadas para a role. A busca localiza cliente, vendedor ou produto sem diferenciar acentos; os filtros separam todas, concluidas e estornadas. Admin ve o movimento geral e Teacher continua recebendo apenas as proprias vendas pelo filtro server-side.
+
+Venda concluida nao e apagada. O estorno exige motivo e confirmacao explicita, registra operador/data e bloqueia venda, fatura e reposicao de estoque na mesma transaction. Uma venda estornada nao pode ser estornada novamente. Compra mensal vinculada a uma competencia ja paga ou fechada exige que o Admin reabra a competencia antes do estorno, evitando alterar silenciosamente uma fatura quitada.
 
 ## Concorrencia e riscos
 
 - Edicao de produto usa `expectedUpdatedAt`; conflito obriga recarregar em vez de sobrescrever alteracao recente.
 - Checkout faz baixa condicional por estoque e versao do produto; falha em um item reverte todos os itens.
-- Fatura e venda usam locks de linha no PostgreSQL para serializar fechamento, inclusao e cancelamento concorrentes.
+- Fatura e venda usam locks de linha no PostgreSQL para serializar fechamento, inclusao e estorno concorrentes.
 - Excluir produto foi evitado para preservar FKs e auditoria; use `Ativo`/`Inativo`.
 - Custo fica visivel para Admin e Teacher porque ambos foram autorizados a gerenciar o PDV.
 - A migration deve ser aplicada antes de publicar a nova aplicacao.

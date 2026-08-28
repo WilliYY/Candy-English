@@ -41,6 +41,10 @@ import {
   saleProductCreateSchema,
   type SaleProductCreateInput,
 } from "@/lib/validations/sales";
+import {
+  filterSalesHistory,
+  type SalesHistoryStatusFilter,
+} from "@/lib/sales-history";
 import { cn } from "@/lib/utils";
 
 type FinancialUnit = "IVATE" | "DOURADINA";
@@ -220,69 +224,198 @@ function ProductEditor({ product }: { product: ProductRow }) {
   );
 }
 
-function RecentSaleCard({ actorId, isAdmin, sale }: { actorId: string; isAdmin: boolean; sale: SaleRow }) {
+function RecentSaleCard({
+  actorId,
+  isAdmin,
+  sale,
+}: {
+  actorId: string;
+  isAdmin: boolean;
+  sale: SaleRow;
+}) {
   const router = useRouter();
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [isRefundOpen, setIsRefundOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const canCancel = sale.status === "COMPLETED" && (isAdmin || sale.soldByUserId === actorId);
+  const canRefund =
+    sale.status === "COMPLETED" &&
+    (isAdmin || sale.soldByUserId === actorId);
+  const refundPanelId = `sale-refund-${sale.id}`;
 
-  function handleCancel() {
+  function handleRefund() {
+    setMessage(null);
     startTransition(async () => {
       const result = await cancelSale({ reason, saleId: sale.id });
       setMessage(result.message);
       if (result.ok) {
         setReason("");
+        setIsRefundOpen(false);
         router.refresh();
       }
     });
   }
 
   return (
-    <article className={cn("overflow-hidden rounded-lg border bg-white shadow-sm", sale.status === "CANCELED" ? "border-slate-200 opacity-70" : sale.settlementType === "MONTHLY_INVOICE" ? "border-amber-200" : "border-emerald-200")}>
+    <article
+      className={cn(
+        "overflow-hidden rounded-lg border bg-white shadow-sm",
+        sale.status === "CANCELED"
+          ? "border-slate-200 bg-slate-50/60"
+          : sale.settlementType === "MONTHLY_INVOICE"
+            ? "border-amber-200"
+            : "border-emerald-200",
+      )}
+    >
       <div className="grid gap-3 p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <strong className="truncate text-sm text-primary">{sale.buyerNameSnapshot}</strong>
-            <span className={cn("rounded-full border px-2 py-0.5 text-[0.65rem] font-extrabold uppercase", sale.status === "CANCELED" ? "border-slate-200 bg-slate-50 text-slate-600" : sale.settlementType === "MONTHLY_INVOICE" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-800")}>
-              {sale.status === "CANCELED" ? "Cancelada" : sale.settlementType === "MONTHLY_INVOICE" ? "Na fatura" : "Pago agora"}
+            <strong className="truncate text-sm text-primary">
+              {sale.buyerNameSnapshot}
+            </strong>
+            <span
+              className={cn(
+                "rounded-full border px-2 py-0.5 text-[0.65rem] font-extrabold uppercase",
+                sale.status === "CANCELED"
+                  ? "border-slate-200 bg-slate-100 text-slate-700"
+                  : sale.settlementType === "MONTHLY_INVOICE"
+                    ? "border-amber-200 bg-amber-50 text-amber-900"
+                    : "border-emerald-200 bg-emerald-50 text-emerald-800",
+              )}
+            >
+              {sale.status === "CANCELED"
+                ? "Estornada"
+                : sale.settlementType === "MONTHLY_INVOICE"
+                  ? "Na fatura"
+                  : "Pago agora"}
             </span>
-            <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-2 py-0.5 text-[0.65rem] font-bold text-primary/70">{formatUnit(sale.unit)}</span>
+            <span className="rounded-full border border-primary/10 bg-primary/[0.04] px-2 py-0.5 text-[0.65rem] font-bold text-primary/70">
+              {formatUnit(sale.unit)}
+            </span>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{dateTimeFormatter.format(new Date(sale.createdAt))} por {sale.sellerName}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {dateTimeFormatter.format(new Date(sale.createdAt))} por {sale.sellerName}
+          </p>
         </div>
-        <strong className="text-lg tabular-nums text-primary">{formatCurrency(sale.totalCents)}</strong>
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <strong className="text-lg tabular-nums text-primary">
+            {formatCurrency(sale.totalCents)}
+          </strong>
+          {canRefund ? (
+            <Button
+              aria-controls={refundPanelId}
+              aria-expanded={isRefundOpen}
+              className="h-10 border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+              onClick={() => {
+                setMessage(null);
+                setIsRefundOpen((current) => !current);
+              }}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <ArchiveRestore aria-hidden="true" />
+              Estornar
+            </Button>
+          ) : null}
+        </div>
       </div>
       <details className="group border-t border-primary/10 bg-[#fbf9fc]">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-bold text-primary [&::-webkit-details-marker]:hidden">
-          <span>{sale.items.length} produto(s)</span>
-          <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-xs font-bold text-primary [&::-webkit-details-marker]:hidden">
+          <span>{sale.items.length} produto(s) · Ver detalhes</span>
+          <ChevronDown
+            aria-hidden="true"
+            className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+          />
         </summary>
         <div className="grid gap-2 border-t border-primary/10 p-3">
           {sale.items.map((item) => (
-            <div className="flex items-center justify-between gap-3 text-xs" key={item.id}>
-              <span className="min-w-0 truncate">{item.quantity}x {item.productNameSnapshot}</span>
-              <strong className="shrink-0 tabular-nums">{formatCurrency(item.lineTotalCents)}</strong>
+            <div
+              className="flex items-center justify-between gap-3 text-xs"
+              key={item.id}
+            >
+              <span className="min-w-0 truncate">
+                {item.quantity}x {item.productNameSnapshot}
+              </span>
+              <strong className="shrink-0 tabular-nums">
+                {formatCurrency(item.lineTotalCents)}
+              </strong>
             </div>
           ))}
           <p className="text-xs text-muted-foreground">
             {sale.settlementType === "MONTHLY_INVOICE" && sale.invoiceMonth
               ? `Fatura de ${monthLabels[sale.invoiceMonth]} de ${sale.invoiceYear}${sale.invoiceDueDate ? ` · cobrar em ${dateFormatter.format(new Date(`${sale.invoiceDueDate}T00:00:00.000Z`))}` : ""}`
-              : paymentMethodLabels[sale.paymentMethod ?? ""] ?? "Pagamento registrado"}
+              : paymentMethodLabels[sale.paymentMethod ?? ""] ??
+                "Pagamento registrado"}
           </p>
-          {sale.status === "CANCELED" ? <p className="rounded-md bg-slate-100 px-2 py-1.5 text-xs text-slate-600">Motivo: {sale.cancelReason}</p> : null}
-          {canCancel ? (
-            <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-              <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Motivo do cancelamento" />
-              <Button disabled={isPending || reason.trim().length < 3} onClick={handleCancel} size="sm" type="button" variant="outline">
-                <ArchiveRestore aria-hidden="true" />
-                Cancelar venda
-              </Button>
-            </div>
+          {sale.status === "CANCELED" ? (
+            <p className="rounded-md border border-slate-200 bg-slate-100 px-2 py-1.5 text-xs text-slate-700">
+              {sale.canceledAt
+                ? `Estornada em ${dateTimeFormatter.format(new Date(sale.canceledAt))}. `
+                : ""}
+              Motivo: {sale.cancelReason}
+            </p>
           ) : null}
-          {message ? <p className="text-xs font-semibold text-primary">{message}</p> : null}
         </div>
       </details>
+      {canRefund && isRefundOpen ? (
+        <div
+          aria-label="Confirmar estorno da venda"
+          className="grid gap-2 border-t border-red-200 bg-red-50 p-3"
+          id={refundPanelId}
+          role="region"
+        >
+          <label
+            className="text-xs font-extrabold text-red-950"
+            htmlFor={`${refundPanelId}-reason`}
+          >
+            Motivo do estorno
+          </label>
+          <Textarea
+            id={`${refundPanelId}-reason`}
+            maxLength={300}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Ex.: cliente desistiu da compra"
+            value={reason}
+          />
+          <p className="text-xs text-red-900/80">
+            A venda continuara no historico e os produtos voltarao ao estoque.
+          </p>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button
+              disabled={isPending}
+              onClick={() => {
+                setReason("");
+                setIsRefundOpen(false);
+              }}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              Voltar
+            </Button>
+            <Button
+              disabled={isPending || reason.trim().length < 3}
+              onClick={handleRefund}
+              size="sm"
+              type="button"
+              variant="destructive"
+            >
+              <ArchiveRestore aria-hidden="true" />
+              {isPending ? "Estornando..." : "Confirmar estorno"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {message ? (
+        <p
+          aria-live="polite"
+          className="border-t border-primary/10 px-3 py-2 text-xs font-semibold text-primary"
+          role="status"
+        >
+          {message}
+        </p>
+      ) : null}
     </article>
   );
 }
@@ -315,6 +448,9 @@ export function SalesPosPanel({
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [productMessage, setProductMessage] = useState<string | null>(null);
   const [productImageKey, setProductImageKey] = useState(0);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatus, setHistoryStatus] =
+    useState<SalesHistoryStatusFilter>("ALL");
   const [operationId, setOperationId] = useState(() => crypto.randomUUID());
   const [isCheckoutPending, startCheckoutTransition] = useTransition();
   const [isProductPending, startProductTransition] = useTransition();
@@ -327,6 +463,18 @@ export function SalesPosPanel({
     const search = productSearch.trim().toLocaleLowerCase("pt-BR");
     return products.filter((product) => product.isActive && (!search || product.name.toLocaleLowerCase("pt-BR").includes(search)));
   }, [productSearch, products]);
+  const filteredRecentSales = useMemo(
+    () =>
+      filterSalesHistory(recentSales, {
+        query: historySearch,
+        status: historyStatus,
+      }),
+    [historySearch, historyStatus, recentSales],
+  );
+  const completedRecentSalesCount = recentSales.filter(
+    (sale) => sale.status === "COMPLETED",
+  ).length;
+  const refundedRecentSalesCount = recentSales.length - completedRecentSalesCount;
   const filteredStudents = useMemo(() => {
     const search = buyerQuery.trim() === "Venda livre"
       ? ""
@@ -448,8 +596,95 @@ export function SalesPosPanel({
         <div className="grid gap-2 sm:grid-cols-3">
             <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3"><Boxes className="size-4 text-cyan-700" /><strong className="mt-2 block text-xl text-cyan-950">{products.filter((product) => product.isActive).length}</strong><span className="text-[0.65rem] font-bold uppercase text-cyan-800">Produtos</span></div>
             <div className="rounded-lg border border-violet-200 bg-violet-50 p-3"><PackagePlus className="size-4 text-violet-700" /><strong className="mt-2 block text-xl text-violet-950">{stockUnits}</strong><span className="text-[0.65rem] font-bold uppercase text-violet-800">No estoque</span></div>
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><ReceiptText className="size-4 text-emerald-700" /><strong className="mt-2 block text-xl text-emerald-950">{recentSales.filter((sale) => sale.status === "COMPLETED").length}</strong><span className="text-[0.65rem] font-bold uppercase text-emerald-800">Recentes</span></div>
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><ReceiptText className="size-4 text-emerald-700" /><strong className="mt-2 block text-xl text-emerald-950">{completedRecentSalesCount}</strong><span className="text-[0.65rem] font-bold uppercase text-emerald-800">Vendas validas</span></div>
           </div>
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="sales-history-title"
+        className="scroll-mt-4 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.08)]"
+        id="historico-vendas"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-primary/10 bg-gradient-to-r from-violet-50 via-white to-emerald-50 p-4">
+          <span>
+            <p className="text-[0.68rem] font-extrabold uppercase tracking-[0.15em] text-primary/55">
+              Acesso rapido
+            </p>
+            <h2
+              className="mt-1 text-xl font-extrabold text-primary"
+              id="sales-history-title"
+            >
+              Historico e estornos
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Consulte as ultimas vendas e estorne quando o cliente desistir.
+            </p>
+          </span>
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-xs font-bold text-primary shadow-sm">
+            <CircleDollarSign aria-hidden="true" className="size-4" />
+            {recentSales.length} venda(s)
+          </span>
+        </div>
+        <div className="grid gap-3 border-b border-primary/10 bg-[#fbf9fc] p-4 lg:grid-cols-[minmax(240px,1fr)_auto] lg:items-center">
+          <label className="relative block">
+            <span className="sr-only">Buscar no historico de vendas</span>
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/45"
+            />
+            <Input
+              autoComplete="off"
+              className="h-11 bg-white pl-9"
+              onChange={(event) => setHistorySearch(event.target.value)}
+              placeholder="Buscar cliente, vendedor ou produto..."
+              type="search"
+              value={historySearch}
+            />
+          </label>
+          <div
+            aria-label="Filtrar historico por situacao"
+            className="flex gap-2 overflow-x-auto pb-1 lg:pb-0"
+            role="group"
+          >
+            {(
+              [
+                ["ALL", `Todas (${recentSales.length})`],
+                ["COMPLETED", `Concluidas (${completedRecentSalesCount})`],
+                ["CANCELED", `Estornadas (${refundedRecentSalesCount})`],
+              ] as const
+            ).map(([status, label]) => (
+              <Button
+                aria-pressed={historyStatus === status}
+                className="h-10 shrink-0"
+                key={status}
+                onClick={() => setHistoryStatus(status)}
+                size="sm"
+                type="button"
+                variant={historyStatus === status ? "default" : "outline"}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 lg:grid-cols-2">
+          {filteredRecentSales.map((sale) => (
+            <RecentSaleCard
+              actorId={actor.id}
+              isAdmin={actor.isAdmin}
+              key={sale.id}
+              sale={sale}
+            />
+          ))}
+          {filteredRecentSales.length === 0 ? (
+            <div
+              className="rounded-lg border border-dashed border-primary/20 p-8 text-center text-sm text-muted-foreground lg:col-span-2"
+              role="status"
+            >
+              Nenhuma venda encontrada neste filtro.
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -624,10 +859,6 @@ export function SalesPosPanel({
         </aside>
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.08)]">
-        <div className="flex items-center justify-between gap-3 border-b border-primary/10 bg-gradient-to-r from-violet-50 via-white to-emerald-50 p-4"><span><p className="text-[0.68rem] font-extrabold uppercase tracking-[0.15em] text-primary/55">Movimento recente</p><h2 className="mt-1 text-xl font-extrabold text-primary">Histórico de vendas</h2></span><CircleDollarSign className="size-6 text-primary/45" /></div>
-        <div className="grid gap-3 p-4 lg:grid-cols-2">{recentSales.map((sale) => <RecentSaleCard actorId={actor.id} isAdmin={actor.isAdmin} key={sale.id} sale={sale} />)}{recentSales.length === 0 ? <div className="rounded-lg border border-dashed border-primary/20 p-8 text-center text-sm text-muted-foreground lg:col-span-2">Nenhuma venda registrada.</div> : null}</div>
-      </section>
     </div>
   );
 }
