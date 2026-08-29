@@ -53,6 +53,11 @@ import {
 } from "@/components/ava/admin-finance-panel";
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
 import {
+  AdminUsersSheet,
+  type AdminUsersSheetRow,
+} from "@/components/ava/admin-users-sheet";
+import { AdminUsersView } from "@/components/ava/admin-users-view";
+import {
   AdminAssignTeacherForm,
   AdminStudentContactEditForm,
   AdminUserPasswordResetForm,
@@ -790,6 +795,52 @@ function UsersOverview({
       </div>
     </section>
   );
+}
+
+function UsersSheet({ users }: { users: AdminUserRow[] }) {
+  const rows: AdminUsersSheetRow[] = users.map((user) => {
+    const attentionLabel = getUserAttentionLabel(user);
+    const phone = getUserPrimaryPhone(user);
+
+    return {
+      accessActions: (
+        <>
+          <AdminUserStatusButton
+            isActive={user.isActive}
+            userId={user.id}
+          />
+          <AdminUserPasswordResetForm
+            userId={user.id}
+            userName={user.name}
+          />
+        </>
+      ),
+      attentionClassName: getUserAttentionClassName(user, attentionLabel),
+      attentionLabel,
+      contactActions:
+        user.role === "STUDENT" ? (
+          <AdminStudentContactEditForm
+            email={user.email}
+            phone={phone}
+            unit={user.studentProfile?.unit ?? "IVATE"}
+            userId={user.id}
+            userName={user.name}
+          />
+        ) : null,
+      createdAtLabel: formatDate(user.createdAt),
+      email: user.email,
+      history: getUserHistory(user),
+      id: user.id,
+      initials: getUserInitials(user),
+      isActive: user.isActive,
+      name: user.name,
+      phone,
+      profileSummary: getProfileSummary(user),
+      role: user.role,
+    };
+  });
+
+  return <AdminUsersSheet rows={rows} />;
 }
 
 function UsersByRole({ users }: { users: AdminUserRow[] }) {
@@ -1727,7 +1778,10 @@ export function AdminUsersPanel({
                   <AdminUserStatCard key={stat.label} stat={stat} />
                 ))}
               </div>
-              <UsersByRole users={users} />
+              <AdminUsersView
+                cards={<UsersByRole users={users} />}
+                sheet={<UsersSheet users={users} />}
+              />
             </div>
           ) : null}
 
