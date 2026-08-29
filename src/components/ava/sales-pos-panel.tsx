@@ -615,7 +615,7 @@ export function SalesPosPanel({
               className="mt-1 text-xl font-extrabold text-primary"
               id="sales-history-title"
             >
-              Historico e estornos
+              Histórico e estornos
             </h2>
             <p className="mt-1 text-xs text-muted-foreground">
               Consulte as ultimas vendas e estorne quando o cliente desistir.
