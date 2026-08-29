@@ -220,6 +220,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               },
             },
             bio: true,
+            studentAssignments: {
+              select: {
+                studentProfile: {
+                  select: {
+                    unit: true,
+                  },
+                },
+              },
+            },
           },
         },
       },

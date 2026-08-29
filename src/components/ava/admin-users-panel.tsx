@@ -10,6 +10,7 @@ import {
   KeyRound,
   Link2,
   Mail,
+  MapPin,
   Phone,
   Power,
   ShieldCheck,
@@ -84,6 +85,7 @@ import {
 import type { CandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import type { CattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import type { CattyMemoryManagementData } from "@/lib/catty-memory-management";
+import { getAdminUserPoloScope } from "@/lib/admin-user-polo";
 import type { Role } from "@/lib/roles";
 import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 import { cn } from "@/lib/utils";
@@ -155,8 +157,23 @@ type AdminUserRow = {
       studentAssignments: number;
     };
     bio: string | null;
+    studentAssignments: {
+      studentProfile: {
+        unit: "IVATE" | "DOURADINA";
+      };
+    }[];
   } | null;
 };
+
+function getUserPoloScope(user: AdminUserRow) {
+  return getAdminUserPoloScope({
+    role: user.role,
+    studentUnit: user.studentProfile?.unit,
+    teacherStudentUnits: user.teacherProfile?.studentAssignments.map(
+      (assignment) => assignment.studentProfile.unit,
+    ),
+  });
+}
 
 type AssignmentOption = {
   email: string;
@@ -801,6 +818,7 @@ function UsersSheet({ users }: { users: AdminUserRow[] }) {
   const rows: AdminUsersSheetRow[] = users.map((user) => {
     const attentionLabel = getUserAttentionLabel(user);
     const phone = getUserPrimaryPhone(user);
+    const poloScope = getUserPoloScope(user);
 
     return {
       accessActions: (
@@ -835,6 +853,9 @@ function UsersSheet({ users }: { users: AdminUserRow[] }) {
       isActive: user.isActive,
       name: user.name,
       phone,
+      poloLabel: poloScope.label,
+      poloTone: poloScope.tone,
+      poloUnits: poloScope.units,
       profileSummary: getProfileSummary(user),
       role: user.role,
     };
@@ -1002,6 +1023,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                     const insightMetrics = getUserInsightMetrics(user);
                     const phone = getUserPrimaryPhone(user);
                     const profileSummary = getProfileSummary(user);
+                    const poloScope = getUserPoloScope(user);
 
                     return (
                       <article
@@ -1087,6 +1109,15 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                                 />
                                 <span className="truncate">
                                   {attentionLabel}
+                                  </span>
+                                </span>
+                              <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[0.72rem] font-semibold text-violet-800">
+                                <MapPin
+                                  aria-hidden="true"
+                                  className="size-3.5 shrink-0"
+                                />
+                                <span className="truncate">
+                                  {poloScope.label}
                                 </span>
                               </span>
                               <span className="inline-flex min-w-0 items-center rounded-full border border-primary/10 bg-white/78 px-2.5 py-1 text-[0.72rem] font-semibold text-primary shadow-sm">
