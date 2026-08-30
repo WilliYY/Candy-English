@@ -175,6 +175,13 @@ function AdminUserDeleteForm({
       userId,
     },
   });
+  const reason = form.watch("reason");
+  const confirmation = form.watch("confirmation");
+  const isDeleteReady = adminDeleteUserSchema.safeParse({
+    confirmation,
+    reason,
+    userId,
+  }).success;
 
   const onSubmit = form.handleSubmit((values) => {
     setMessage(null);
@@ -254,7 +261,11 @@ function AdminUserDeleteForm({
           <FieldError errors={[form.formState.errors.confirmation]} />
         </Field>
 
-        <Button disabled={isPending} type="submit" variant="destructive">
+        <Button
+          disabled={isPending || !isDeleteReady}
+          type="submit"
+          variant="destructive"
+        >
           {isPending ? (
             <LoaderCircle data-icon="inline-start" className="animate-spin" />
           ) : (
