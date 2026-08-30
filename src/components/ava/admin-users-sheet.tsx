@@ -115,17 +115,20 @@ export function filterAdminUsersSheetRows(
 
 const roleDetailStyles: Record<
   Role,
-  { history: string; profile: string }
+  { accent: string; history: string; profile: string }
 > = {
   ADMIN: {
+    accent: "border-l-amber-400",
     history: "border-amber-200/80 bg-amber-50/70",
     profile: "border-amber-200/70 bg-amber-50/60",
   },
   TEACHER: {
+    accent: "border-l-pink-400",
     history: "border-pink-200/80 bg-pink-50/70",
     profile: "border-pink-200/70 bg-pink-50/60",
   },
   STUDENT: {
+    accent: "border-l-sky-400",
     history: "border-sky-200/80 bg-sky-50/70",
     profile: "border-sky-200/70 bg-sky-50/60",
   },
@@ -287,12 +290,12 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
 
       <div
         aria-label="Planilha de usuarios com rolagem horizontal"
-        className="overflow-x-auto"
+        className="overflow-x-auto overscroll-x-contain [container-type:inline-size]"
         role="region"
         tabIndex={0}
       >
-        <div className="min-w-[1520px]">
-          <div className="grid grid-cols-[3rem_minmax(18rem,1.35fr)_7rem_6.5rem_11.5rem_minmax(18rem,1fr)_minmax(12rem,0.9fr)_minmax(12rem,0.9fr)_8rem_7.5rem] border-b border-primary/10 bg-[#f7f1f8] text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary/55">
+        <div className="min-w-[1320px]">
+          <div className="grid grid-cols-[3rem_minmax(15rem,1.25fr)_6rem_5.5rem_9rem_minmax(12rem,1fr)_minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_6.5rem_6.5rem] border-b border-primary/10 bg-[#f7f1f8] text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary/55">
             <span className="px-3 py-2.5 text-center">#</span>
             <span className="px-3 py-2.5">Nome completo</span>
             <span className="px-3 py-2.5">Role</span>
@@ -336,8 +339,8 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                   key={row.id}
                 >
                   <summary
-                    aria-label={`Abrir detalhes e acoes de ${row.name}, ${roleLabels[row.role]}, ${row.isActive ? "ativo" : "inativo"}, ${row.poloLabel}, ${row.attentionLabel}`}
-                    className="grid min-h-16 cursor-pointer list-none grid-cols-[3rem_minmax(18rem,1.35fr)_7rem_6.5rem_11.5rem_minmax(18rem,1fr)_minmax(12rem,0.9fr)_minmax(12rem,0.9fr)_8rem_7.5rem] items-center text-sm transition-colors hover:bg-primary/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden"
+                    aria-label={`Gerenciar ${row.name}, ${roleLabels[row.role]}, ${row.isActive ? "ativo" : "inativo"}, ${row.poloLabel}, ${row.attentionLabel}`}
+                    className="grid min-h-16 cursor-pointer list-none grid-cols-[3rem_minmax(15rem,1.25fr)_6rem_5.5rem_9rem_minmax(12rem,1fr)_minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_6.5rem_6.5rem] items-center text-sm transition-colors hover:bg-primary/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden"
                   >
                     <span className="px-3 text-center font-mono text-xs text-primary/45">
                       {String(index + 1).padStart(2, "0")}
@@ -448,9 +451,66 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                     </span>
                   </summary>
 
-                  <div className="border-t border-primary/10 bg-[#fcfafc] p-4">
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-                      <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+                  <section
+                    aria-label={`Painel de gestão de ${row.name}`}
+                    className="sticky left-0 box-border w-[100cqw] max-w-[100cqw] border-t border-primary/10 bg-[#fcfafc] p-3 sm:p-4"
+                    data-user-detail-viewport="true"
+                  >
+                    <div
+                      className={cn(
+                        "mb-3 flex min-w-0 flex-col gap-3 rounded-xl border border-l-4 border-primary/10 bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between",
+                        detailStyles.accent,
+                      )}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span
+                          className={cn(
+                            "flex size-10 shrink-0 items-center justify-center rounded-lg border",
+                            roleStyles[row.role],
+                          )}
+                        >
+                          <UsersRound aria-hidden="true" className="size-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-[0.65rem] font-bold uppercase tracking-[0.16em] text-primary/50">
+                            Painel de gestão
+                          </span>
+                          <strong className="mt-0.5 block break-words text-sm leading-5 text-primary">
+                            {row.name}
+                          </strong>
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                        <span
+                          className={cn(
+                            "inline-flex rounded-md border px-2 py-1 text-xs font-semibold",
+                            roleStyles[row.role],
+                          )}
+                        >
+                          {roleLabels[row.role]}
+                        </span>
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold",
+                            row.isActive
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                              : "border-slate-200 bg-slate-50 text-slate-700",
+                          )}
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              row.isActive ? "bg-emerald-500" : "bg-slate-400",
+                            )}
+                          />
+                          {row.isActive ? "Ativo" : "Inativo"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13.5rem),1fr))]">
+                      <div className="min-w-0 rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
                         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
                           Identificação
                         </p>
@@ -466,7 +526,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       </div>
                       <div
                         className={cn(
-                          "rounded-lg border p-3 shadow-sm",
+                          "min-w-0 rounded-lg border p-3 shadow-sm",
                           detailStyles.profile,
                         )}
                       >
@@ -479,7 +539,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       </div>
                       <div
                         className={cn(
-                          "rounded-lg border p-3 shadow-sm",
+                          "min-w-0 rounded-lg border p-3 shadow-sm",
                           poloStyles[row.poloTone],
                         )}
                       >
@@ -493,7 +553,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       </div>
                       <div
                         className={cn(
-                          "rounded-lg border p-3 shadow-sm",
+                          "min-w-0 rounded-lg border p-3 shadow-sm",
                           row.attentionClassName,
                         )}
                       >
@@ -504,56 +564,75 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                           {row.attentionLabel}
                         </p>
                       </div>
-                      <div
-                        className={cn(
-                          "rounded-lg border p-3 shadow-sm",
-                          detailStyles.history,
-                        )}
-                      >
-                        <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
-                          Histórico rápido
-                        </p>
-                        <ul className="mt-2 grid gap-1.5 text-sm leading-5 text-foreground/85">
-                          {row.history.map((item) => (
-                            <li className="flex items-start gap-2" key={`${row.id}-${item}`}>
-                              <span
-                                aria-hidden="true"
-                                className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-45"
-                              />
-                              <span className="break-words">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
                     </div>
 
-                    <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                      {row.contactActions}
+                    <div
+                      className={cn(
+                        "mt-3 min-w-0 rounded-lg border p-3 shadow-sm",
+                        detailStyles.history,
+                      )}
+                    >
+                      <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                        Histórico rápido
+                      </p>
+                      <ul className="mt-2 grid min-w-0 gap-2 text-sm leading-5 text-foreground/85 sm:grid-cols-2 xl:grid-cols-3">
+                        {row.history.map((item) => (
+                          <li
+                            className="flex min-w-0 items-start gap-2 rounded-md bg-white/65 px-2.5 py-2"
+                            key={`${row.id}-${item}`}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-45"
+                            />
+                            <span className="min-w-0 break-words">{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="mt-3 grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+                      {row.contactActions ? (
+                        <div className="min-w-0 self-start">
+                          {row.contactActions}
+                        </div>
+                      ) : null}
                       <div
                         aria-label={`Acoes de acesso de ${row.name}`}
                         className={cn(
-                          "grid content-start gap-3 rounded-lg border border-primary/10 bg-white p-3 shadow-sm",
+                          "grid min-w-0 content-start gap-3 overflow-hidden rounded-xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4",
                           !row.contactActions ? "lg:col-span-2" : null,
                         )}
                       >
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary/55">
-                          Acoes de acesso
-                        </p>
-                        <p className="flex items-start gap-2 rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-violet-200 bg-violet-50 text-violet-800">
+                            <KeyRound aria-hidden="true" className="size-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-primary/55">
+                              Ações de acesso
+                            </span>
+                            <span className="mt-0.5 block text-xs leading-4 text-muted-foreground">
+                              Senha, ativação e exclusão da conta
+                            </span>
+                          </span>
+                        </div>
+                        <p className="flex min-w-0 items-start gap-2 rounded-md border border-violet-200 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-900">
                           <KeyRound
                             aria-hidden="true"
                             className="mt-0.5 size-3.5 shrink-0"
                           />
-                          <span>
-                            <strong>Senha protegida.</strong> A senha atual não é
-                            exibida. Use a redefinição para gerar uma senha
-                            temporária segura.
+                          <span className="min-w-0 break-words">
+                            <strong>Senha protegida.</strong> A senha atual nunca é
+                            exibida. Gere uma temporária em Acesso e senha.
                           </span>
                         </p>
-                        {row.accessActions}
+                        <div className="grid min-w-0 gap-2">
+                          {row.accessActions}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 </details>
               );
               })
@@ -562,8 +641,8 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
         </div>
       </div>
       <p className="border-t border-primary/10 bg-primary/[0.025] px-4 py-2.5 text-xs text-muted-foreground">
-        No celular, deslize para os lados. Abra uma linha para editar contato,
-        acesso ou senha.
+        Deslize a planilha para consultar as colunas. O painel aberto acompanha a
+        área visível, sem cortar os dados ou as ações.
       </p>
     </section>
   );
