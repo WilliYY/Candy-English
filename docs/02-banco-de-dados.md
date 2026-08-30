@@ -149,6 +149,8 @@ Enums:
 - No cadastro novo, a action protegida cria `StudentPreRegistration`, `User`, `StudentProfile`, `StudentTeacherAssignment` quando houver teacher, `FinancialStudent`, `FinancialPayment` e `AgendaStudent`/`AgendaLesson` na mesma transaction e grava os ids convertidos. Se qualquer parte falhar, nenhum desses registros persiste. O botao legado `Tornar aluno` continua fazendo a mesma criacao linkada para registros antigos.
 - `StudentPreRegistrationStatus` preserva os status antigos e adiciona `WAITING_PAYMENT` e `READY_TO_CONVERT`; na UI da Secretaria eles aparecem como `Aguardando pagamento` e `Pronto para virar aluno`.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
+- `User.deletedAt` retira a conta da base ativa e bloqueia novas alteracoes de acesso; `scheduledAnonymizationAt` agenda a anonimização para 2 anos depois, `anonymizedAt` registra a execucao, e `deletionReason`/`deletedByName` existem apenas durante a retencao auditavel.
+- A rotina de retencao nao apaga fisicamente `User`: depois de 2 anos substitui nome/email/senha, limpa contato, endereco, avatar, dados pessoais de `StudentProfile`/`TeacherProfile`, pre-cadastro convertido, cadastros/snapshots de Financeiro e Agenda, nome do comprador em Vendas, sessoes moveis e dados pessoais da Catty. O registro tecnico minimo permanece para nao romper vendas, financeiro, agenda, contratos, aulas e ponto ligados por chave estrangeira.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
 - `StudentProfile.unit` guarda o polo operacional do aluno do AVA. Alunos antigos recebem `IVATE` por compatibilidade; alunos convertidos recuperam a unidade confiavel do `StudentPreRegistration` durante a migration.
 - A origem continua auditavel por `StudentPreRegistration.convertedStudentProfileId`. Aluno criado diretamente pelo Admin nao recebe pre-cadastro artificial.
@@ -254,6 +256,7 @@ Enums:
 - Migration `20260714170000_linked_pre_registration_conversion` adiciona os ids linkados de conversao em `StudentPreRegistration`, relacoes para `StudentProfile`, `FinancialStudent` e `AgendaStudent`, alem de `AgendaStudent.unit`.
 - Migration `20260714193000_repair_agenda_student_unit` repara de forma idempotente bancos onde `AgendaStudent.unit` ficou ausente apesar da migration de conversao linkada estar registrada como aplicada.
 - Migration `20260811143000_link_student_profile_to_secretaria` adiciona `StudentProfile.unit`, preserva registros antigos como Ivaté e recupera o polo real dos perfis convertidos a partir do pre-cadastro.
+- Migration `20260830133000_add_user_deletion_retention` adiciona datas de exclusao/anonimizacao, motivo, responsavel e indices para a rotina diaria de retencao de contas.
 - Migration `20260605120000_catty_conversation_history` adiciona historico recente da Catty por usuario/contexto.
 - Migration `20260605210000_catty_learning_center` adiciona Catty Learning Center com itens aprovaveis e feedback/sugestoes.
 - Migration `20260605223000_catty_learning_feedback` adiciona tipos e campos para feedback real do widget da Catty.

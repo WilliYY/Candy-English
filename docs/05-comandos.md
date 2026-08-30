@@ -20,6 +20,7 @@ Este documento centraliza comandos de desenvolvimento, validacao, Docker e deplo
 - `scripts/homework-concurrency-smoke.ts`
 - `scripts/candy-xp-visibility-smoke.ts`
 - `scripts/catty-behavior-smoke.ts`
+- `scripts/anonymize-expired-users.ts`
 
 ## Instalar
 
@@ -59,6 +60,7 @@ npm run audit:candy-xp-submission-concurrency
 npm run audit:homework-concurrency
 npm run audit:candy-xp-visibility
 npm run audit:catty-behavior
+npm run retention:anonymize-users
 ```
 
 ## Docker local
@@ -84,6 +86,28 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:homewor
 docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-visibility
 docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior
 ```
+
+## Retencao de contas excluidas
+
+Auditar sem alterar dados:
+
+```bash
+docker compose --profile tools run --rm audit-server-smoke npm run retention:anonymize-users
+```
+
+Aplicar a anonimização das contas cujo prazo de 2 anos venceu:
+
+```bash
+docker compose --profile tools run --rm audit-server-smoke npm run retention:anonymize-users -- --apply
+```
+
+No Oracle, manter uma unica entrada no `crontab` do usuario de deploy:
+
+```cron
+15 3 * * * flock -n /tmp/candy-user-retention.lock bash -lc 'cd /home/ubuntu/projetos/candy-english && docker compose --profile tools run --rm audit-server-smoke npm run retention:anonymize-users -- --apply' 2>&1 | logger -t candy-user-retention
+```
+
+O script usa dry-run por padrao, processa apenas `deletedAt` com `scheduledAnonymizationAt <= agora` e ignora registros que ja possuem `anonymizedAt`.
 
 ## Deploy Oracle sem migration
 

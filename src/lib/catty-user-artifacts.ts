@@ -177,6 +177,7 @@ async function getAccessibleStudentUserIds(input: ActorContext) {
       },
       take: 500,
       where: {
+        deletedAt: null,
         role: "STUDENT",
       },
     });
@@ -762,6 +763,7 @@ export async function getCattyArtifactManagementData(
         role: true,
       },
       where: {
+        deletedAt: null,
         id: {
           in: accessibleUserIds,
         },

@@ -115,6 +115,7 @@ async function getAccessibleUserIds(input: {
         id: true,
       },
       take: 500,
+      where: { deletedAt: null },
     });
 
     return users.map((user) => user.id);
@@ -282,6 +283,7 @@ export async function getCattyMemoryManagementData(input: {
         role: true,
       },
       where: {
+        deletedAt: null,
         id: {
           in: accessibleUserIds,
         },

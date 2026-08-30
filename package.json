@@ -29,6 +29,7 @@
     "audit:homework-concurrency": "tsx scripts/homework-concurrency-smoke.ts",
     "audit:candy-xp-visibility": "tsx scripts/candy-xp-visibility-smoke.ts",
     "audit:catty-behavior": "tsx scripts/catty-behavior-smoke.ts",
+    "retention:anonymize-users": "tsx scripts/anonymize-expired-users.ts",
     "verify:server-smoke": "docker compose --profile tools run --rm audit-server-smoke",
     "verify:auth-smoke": "docker compose --profile tools run --rm audit-server-smoke npm run audit:auth-smoke",
     "verify:mobile-auth": "docker compose --profile tools run --rm audit-server-smoke npm run audit:mobile-auth",

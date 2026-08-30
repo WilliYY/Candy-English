@@ -205,14 +205,17 @@ export async function updateMobileAdminUser(
     await store.$transaction(async (transaction) => {
       const user = await transaction.user.findUnique({
         where: { id: parsedUserId.data },
-        select: { id: true, role: true, updatedAt: true },
+        select: { deletedAt: true, id: true, role: true, updatedAt: true },
       });
-      if (!user) throw new MobileAdminUserMutationError("USER_NOT_FOUND");
+      if (!user || user.deletedAt) {
+        throw new MobileAdminUserMutationError("USER_NOT_FOUND");
+      }
       if (user.role !== "STUDENT" && parsed.data.level) throw invalidInput();
       if (user.role !== "TEACHER" && parsed.data.bio) throw invalidInput();
 
       const update = await transaction.user.updateMany({
         where: {
+          deletedAt: null,
           id: user.id,
           updatedAt: new Date(parsed.data.expectedUpdatedAt),
         },
@@ -289,9 +292,17 @@ export async function changeMobileAdminUserStatus(
     await acquireLock(transaction);
     const user = await transaction.user.findUnique({
       where: { id: parsedUserId.data },
-      select: { id: true, isActive: true, role: true, updatedAt: true },
+      select: {
+        deletedAt: true,
+        id: true,
+        isActive: true,
+        role: true,
+        updatedAt: true,
+      },
     });
-    if (!user) throw new MobileAdminUserMutationError("USER_NOT_FOUND");
+    if (!user || user.deletedAt) {
+      throw new MobileAdminUserMutationError("USER_NOT_FOUND");
+    }
 
     if (user.isActive === parsed.data.isActive) {
       return {
@@ -312,6 +323,7 @@ export async function changeMobileAdminUserStatus(
 
     const update = await transaction.user.updateMany({
       where: {
+        deletedAt: null,
         id: user.id,
         updatedAt: new Date(parsed.data.expectedUpdatedAt),
       },
@@ -362,6 +374,7 @@ export async function resetMobileAdminUserPassword(
   return store.$transaction(async (transaction) => {
     const update = await transaction.user.updateMany({
       where: {
+        deletedAt: null,
         id: parsedUserId.data,
         updatedAt: new Date(parsed.data.expectedUpdatedAt),
       },
@@ -374,10 +387,10 @@ export async function resetMobileAdminUserPassword(
     if (update.count !== 1) {
       const user = await transaction.user.findUnique({
         where: { id: parsedUserId.data },
-        select: { id: true },
+        select: { deletedAt: true, id: true },
       });
       throw new MobileAdminUserMutationError(
-        user ? "EDIT_CONFLICT" : "USER_NOT_FOUND",
+        user && !user.deletedAt ? "EDIT_CONFLICT" : "USER_NOT_FOUND",
       );
     }
 

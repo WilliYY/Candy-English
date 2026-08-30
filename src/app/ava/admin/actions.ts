@@ -15,6 +15,8 @@ import { hasCompleteFinancialRegistration } from "@/lib/financial-completeness";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
+import { deleteAvatarImage } from "@/lib/storage";
+import { getUserAnonymizationDate } from "@/lib/user-retention";
 import {
   adminCredentialCreateSchema,
   adminCredentialIdSchema,
@@ -34,6 +36,7 @@ import {
   adminMaintenanceSchema,
   adminAssignTeacherSchema,
   adminCreateUserSchema,
+  adminDeleteUserSchema,
   adminFinanceExportLogSchema,
   adminFinancePaymentUpdateSchema,
   adminFinanceStatusSchema,
@@ -53,6 +56,7 @@ import {
   type AdminMaintenanceInput,
   type AdminAssignTeacherInput,
   type AdminCreateUserInput,
+  type AdminDeleteUserInput,
   type AdminFinanceExportLogInput,
   type AdminFinanceExpenseCreateInput,
   type AdminFinancePaymentUpdateInput,
@@ -585,6 +589,142 @@ export async function createAvaUser(
   };
 }
 
+export async function deleteAvaUser(
+  input: AdminDeleteUserInput,
+): Promise<AdminActionResult<AdminDeleteUserInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para excluir usuarios.",
+    };
+  }
+
+  const parsed = adminDeleteUserSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<AdminDeleteUserInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise a confirmacao da exclusao.",
+    };
+  }
+
+  if (parsed.data.userId === session.user.id) {
+    return {
+      ok: false,
+      message: "Voce nao pode excluir sua propria conta.",
+    };
+  }
+
+  const prisma = getPrisma();
+  const user = await prisma.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: {
+      avatarPath: true,
+      deletedAt: true,
+      id: true,
+    },
+  });
+
+  if (!user || user.deletedAt) {
+    return {
+      ok: false,
+      message: user ? "Esta conta ja foi excluida." : "Usuario nao encontrado.",
+    };
+  }
+
+  const deletedAt = new Date();
+  const scheduledAnonymizationAt = getUserAnonymizationDate(deletedAt);
+  const updateResult = await prisma.$transaction(async (tx) => {
+    await acquireTransactionAdvisoryLock(tx, "admin-user-deletion");
+
+    const lockedUser = await tx.user.findUnique({
+      where: { id: user.id },
+      select: { deletedAt: true, role: true },
+    });
+
+    if (!lockedUser || lockedUser.deletedAt) {
+      return { code: "NOT_AVAILABLE" as const, count: 0 };
+    }
+
+    if (lockedUser.role === "ADMIN") {
+      const activeAdmins = await tx.user.count({
+        where: {
+          deletedAt: null,
+          isActive: true,
+          role: "ADMIN",
+        },
+      });
+
+      if (activeAdmins <= 1) {
+        return { code: "LAST_ADMIN" as const, count: 0 };
+      }
+    }
+
+    const updated = await tx.user.updateMany({
+      data: {
+        deletedAt,
+        deletedByName: session.user.name ?? "Administrador",
+        deletionReason: parsed.data.reason,
+        isActive: false,
+        scheduledAnonymizationAt,
+        sessionVersion: { increment: 1 },
+      },
+      where: {
+        deletedAt: null,
+        id: user.id,
+      },
+    });
+
+    if (updated.count === 1) {
+      await tx.mobileDevice.deleteMany({ where: { userId: user.id } });
+    }
+
+    return { code: "UPDATED" as const, count: updated.count };
+  });
+
+  if (updateResult.code === "LAST_ADMIN") {
+    return {
+      ok: false,
+      message: "Mantenha pelo menos um admin ativo.",
+    };
+  }
+
+  if (updateResult.count !== 1) {
+    return {
+      ok: false,
+      message: "A conta foi alterada por outro processo. Atualize e tente novamente.",
+    };
+  }
+
+  let avatarWarning = "";
+
+  try {
+    await deleteAvatarImage(user.avatarPath);
+    await prisma.user.updateMany({
+      data: {
+        avatarMimeType: null,
+        avatarPath: null,
+      },
+      where: {
+        deletedAt: { not: null },
+        id: user.id,
+      },
+    });
+  } catch {
+    avatarWarning = " A foto antiga ficou pendente de limpeza no armazenamento.";
+  }
+
+  revalidatePath("/ava/admin");
+
+  return {
+    ok: true,
+    message: `Conta excluida da base ativa. Os dados pessoais serao anonimizados em ${scheduledAnonymizationAt.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}.${avatarWarning}`,
+  };
+}
+
 export async function toggleAvaUserStatus(
   input: AdminToggleUserStatusInput,
 ): Promise<AdminActionResult<AdminToggleUserStatusInput>> {
@@ -618,15 +758,16 @@ export async function toggleAvaUserStatus(
   const user = await prisma.user.findUnique({
     where: { id: parsed.data.userId },
     select: {
+      deletedAt: true,
       id: true,
       role: true,
     },
   });
 
-  if (!user) {
+  if (!user || user.deletedAt) {
     return {
       ok: false,
-      message: "Usuario nao encontrado.",
+      message: user ? "Uma conta excluida nao pode ser reativada." : "Usuario nao encontrado.",
     };
   }
 
@@ -692,15 +833,16 @@ export async function resetAvaUserPassword(
   const user = await prisma.user.findUnique({
     where: { id: parsed.data.userId },
     select: {
+      deletedAt: true,
       id: true,
       name: true,
     },
   });
 
-  if (!user) {
+  if (!user || user.deletedAt) {
     return {
       ok: false,
-      message: "Usuario nao encontrado.",
+      message: user ? "Uma conta excluida nao aceita nova senha." : "Usuario nao encontrado.",
     };
   }
 
@@ -750,6 +892,7 @@ export async function updateStudentContactByAdmin(
   const user = await prisma.user.findUnique({
     where: { id: parsed.data.userId },
     select: {
+      deletedAt: true,
       email: true,
       id: true,
       role: true,
@@ -767,7 +910,12 @@ export async function updateStudentContactByAdmin(
     },
   });
 
-  if (!user || user.role !== "STUDENT" || !user.studentProfile) {
+  if (
+    !user ||
+    user.deletedAt ||
+    user.role !== "STUDENT" ||
+    !user.studentProfile
+  ) {
     return {
       errors: {
         userId: "Aluno nao encontrado.",

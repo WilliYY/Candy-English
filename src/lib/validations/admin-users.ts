@@ -322,6 +322,26 @@ export const adminToggleUserStatusSchema = z.object({
   userId: z.string().min(1, "Usuario invalido."),
 });
 
+export const adminDeleteUserSchema = z
+  .object({
+    confirmation: z.string().trim(),
+    reason: z
+      .string()
+      .trim()
+      .min(3, "Informe o motivo da exclusao.")
+      .max(240, "O motivo pode ter no maximo 240 caracteres."),
+    userId: z.string().min(1, "Usuario invalido."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.confirmation.toLocaleUpperCase("pt-BR") !== "EXCLUIR") {
+      ctx.addIssue({
+        code: "custom",
+        message: "Digite EXCLUIR para confirmar.",
+        path: ["confirmation"],
+      });
+    }
+  });
+
 export const adminResetUserPasswordSchema = z
   .object({
     confirmPassword: z
@@ -543,6 +563,7 @@ export const adminAgendaRemoveStudentSchema = z.object({
 export type AdminToggleUserStatusInput = z.input<
   typeof adminToggleUserStatusSchema
 >;
+export type AdminDeleteUserInput = z.input<typeof adminDeleteUserSchema>;
 export type AdminResetUserPasswordInput = z.input<
   typeof adminResetUserPasswordSchema
 >;

@@ -291,10 +291,10 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
         role="region"
         tabIndex={0}
       >
-        <div className="min-w-[1220px]">
-          <div className="grid grid-cols-[3rem_minmax(13rem,1.35fr)_7rem_6.5rem_10.5rem_minmax(11rem,1fr)_minmax(9rem,0.85fr)_minmax(9rem,0.85fr)_7.5rem_6rem] border-b border-primary/10 bg-[#f7f1f8] text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary/55">
+        <div className="min-w-[1520px]">
+          <div className="grid grid-cols-[3rem_minmax(18rem,1.35fr)_7rem_6.5rem_11.5rem_minmax(18rem,1fr)_minmax(12rem,0.9fr)_minmax(12rem,0.9fr)_8rem_7.5rem] border-b border-primary/10 bg-[#f7f1f8] text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary/55">
             <span className="px-3 py-2.5 text-center">#</span>
-            <span className="px-3 py-2.5">Usuario</span>
+            <span className="px-3 py-2.5">Nome completo</span>
             <span className="px-3 py-2.5">Role</span>
             <span className="px-3 py-2.5">Status</span>
             <span className="px-3 py-2.5">Polo</span>
@@ -302,7 +302,9 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
             <span className="px-3 py-2.5">Perfil</span>
             <span className="px-3 py-2.5">Sinal</span>
             <span className="px-3 py-2.5">Cadastro</span>
-            <span className="px-3 py-2.5 text-center">Acao</span>
+            <span className="sticky right-0 bg-[#f7f1f8] px-3 py-2.5 text-center shadow-[-10px_0_16px_-16px_rgba(65,42,76,0.5)]">
+              Ações
+            </span>
           </div>
 
           <div className="divide-y divide-primary/10">
@@ -335,7 +337,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                 >
                   <summary
                     aria-label={`Abrir detalhes e acoes de ${row.name}, ${roleLabels[row.role]}, ${row.isActive ? "ativo" : "inativo"}, ${row.poloLabel}, ${row.attentionLabel}`}
-                    className="grid min-h-16 cursor-pointer list-none grid-cols-[3rem_minmax(13rem,1.35fr)_7rem_6.5rem_10.5rem_minmax(11rem,1fr)_minmax(9rem,0.85fr)_minmax(9rem,0.85fr)_7.5rem_6rem] items-center text-sm transition-colors hover:bg-primary/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden"
+                    className="grid min-h-16 cursor-pointer list-none grid-cols-[3rem_minmax(18rem,1.35fr)_7rem_6.5rem_11.5rem_minmax(18rem,1fr)_minmax(12rem,0.9fr)_minmax(12rem,0.9fr)_8rem_7.5rem] items-center text-sm transition-colors hover:bg-primary/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden"
                   >
                     <span className="px-3 text-center font-mono text-xs text-primary/45">
                       {String(index + 1).padStart(2, "0")}
@@ -349,11 +351,11 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       >
                         {row.initials}
                       </span>
-                      <span className="min-w-0">
-                        <strong className="block truncate font-semibold text-primary">
+                      <span className="min-w-0 py-2">
+                        <strong className="block whitespace-normal break-words font-semibold leading-5 text-primary">
                           {row.name}
                         </strong>
-                        <span className="block truncate text-xs text-muted-foreground">
+                        <span className="mt-0.5 block break-all text-xs leading-4 text-muted-foreground">
                           {row.email}
                         </span>
                       </span>
@@ -399,21 +401,23 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                           aria-hidden="true"
                           className="size-3.5 shrink-0"
                         />
-                        <span className="truncate">{row.poloLabel}</span>
+                        <span className="whitespace-normal text-left leading-4">
+                          {row.poloLabel}
+                        </span>
                       </span>
                     </span>
                     <span className="min-w-0 px-3 text-xs text-muted-foreground">
-                      <span className="block truncate" title={row.email}>
+                      <span className="block break-all leading-4" title={row.email}>
                         {row.email}
                       </span>
                       <span
-                        className="mt-0.5 block truncate"
+                        className="mt-1 block whitespace-normal break-words leading-4"
                         title={row.phone ?? ""}
                       >
                         {row.phone ?? "Sem telefone"}
                       </span>
                     </span>
-                    <span className="truncate px-3 text-xs font-medium text-foreground/80">
+                    <span className="whitespace-normal break-words px-3 py-2 text-xs font-medium leading-4 text-foreground/80">
                       {row.profileSummary}
                     </span>
                     <span className="px-3">
@@ -427,13 +431,15 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                           aria-hidden="true"
                           className="size-3.5 shrink-0"
                         />
-                        <span className="truncate">{row.attentionLabel}</span>
+                        <span className="whitespace-normal text-left leading-4">
+                          {row.attentionLabel}
+                        </span>
                       </span>
                     </span>
                     <span className="px-3 text-xs text-muted-foreground">
                       {row.createdAtLabel}
                     </span>
-                    <span className="flex items-center justify-center gap-1 px-3 text-xs font-semibold text-primary">
+                    <span className="sticky right-0 flex self-stretch items-center justify-center gap-1 bg-white px-3 text-xs font-semibold text-primary shadow-[-10px_0_16px_-16px_rgba(65,42,76,0.5)] group-open/sheet-row:bg-[#fcfafc]">
                       Gerenciar
                       <ChevronDown
                         aria-hidden="true"
@@ -443,7 +449,21 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                   </summary>
 
                   <div className="border-t border-primary/10 bg-[#fcfafc] p-4">
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                      <div className="rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
+                        <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                          Identificação
+                        </p>
+                        <p className="mt-1 break-words text-sm font-semibold leading-5 text-primary">
+                          {row.name}
+                        </p>
+                        <p className="mt-1 break-all text-xs leading-4 text-muted-foreground">
+                          {row.email}
+                        </p>
+                        <p className="mt-1 text-xs leading-4 text-muted-foreground">
+                          {row.phone ?? "Sem telefone"}
+                        </p>
+                      </div>
                       <div
                         className={cn(
                           "rounded-lg border p-3 shadow-sm",
@@ -491,11 +511,19 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                         )}
                       >
                         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
-                          Historico rapido
+                          Histórico rápido
                         </p>
-                        <p className="mt-1 line-clamp-2 text-sm text-foreground/85">
-                          {row.history.join(" · ")}
-                        </p>
+                        <ul className="mt-2 grid gap-1.5 text-sm leading-5 text-foreground/85">
+                          {row.history.map((item) => (
+                            <li className="flex items-start gap-2" key={`${row.id}-${item}`}>
+                              <span
+                                aria-hidden="true"
+                                className="mt-2 size-1.5 shrink-0 rounded-full bg-current opacity-45"
+                              />
+                              <span className="break-words">{item}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
 

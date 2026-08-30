@@ -105,6 +105,15 @@ Helpers:
 11. O shell lateral e renderizado somente dentro das areas escolhidas: tarefas pedagogicas mostram grupos do AVA, tarefas administrativas mostram grupos da Secretaria, e a lateral mantem atalho para `Trocar area`.
 12. Links antigos como `/ava/admin?task=financeiro` e `/ava/teacher?task=criar-homework` continuam funcionando.
 
+### Exclusao de conta pelo Admin
+
+1. Em `/ava/admin?task=usuarios`, o Admin abre a linha ou o cartao, informa o motivo e digita `EXCLUIR`.
+2. O servidor revalida `ADMIN`, impede autoexclusao e preserva pelo menos um Admin ativo.
+3. A conta recebe `isActive=false`, incremento de `sessionVersion`, perde sessoes/dispositivos moveis, sai das listagens ativas e guarda `deletedAt` com anonimização marcada para exatamente 2 anos depois.
+4. Durante a retencao, o registro fica apenas no banco para auditoria e nao pode ser reativado, editado nem receber nova senha.
+5. A rotina diaria `retention:anonymize-users -- --apply` troca identidade e credencial por valores tecnicos, limpa perfil pessoal, avatar e dados pessoais da Catty e marca `anonymizedAt`.
+6. Vendas, financeiro, agenda, contratos, aulas e ponto preservam suas relacoes operacionais; por isso a linha tecnica de `User` nao e apagada fisicamente.
+
 ### Cadastro de aluno pela Secretaria
 
 1. Visitante abre `/ava/login` e clica em `Quero ser aluno Candy`; o botao abre o WhatsApp com mensagem pronta e nao cria conta nem `StudentPreRegistration`.
@@ -128,7 +137,7 @@ Helpers:
 2. A tarefa padrao e `usuarios`.
 3. Ao entrar pelo fluxo normal, Admin passa antes por `/ava/escolha` e escolhe `AVA`, `Secretaria` ou `Financeiro` completo.
 4. No painel de usuarios, ve o card Admin XP com nivel, fontes operacionais, trilha infinita e proximas metas de gestao.
-4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, ativar/desativar, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. A criacao direta de usuario exige senha provisoria e confirmacao iguais no cliente e no servidor, com controles independentes para mostrar/ocultar os dois campos. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
+4. Admin pode criar usuarios, editar nome/email/telefone principal de alunos, redefinir senhas, excluir contas com retencao de 2 anos, reativar apenas contas inativas do fluxo legado, vincular aluno-teacher, enviar contratos, registrar APIs/senhas, controlar manutencao e gerenciar financeiro. A criacao direta de usuario exige senha provisoria e confirmacao iguais no cliente e no servidor, com controles independentes para mostrar/ocultar os dois campos. Na criacao de aluno, o campo minimizado `Contexto Catty` permite salvar uma nota pedagogica leve para a memoria pessoal da Catty.
 5. Admin cadastra alunos em `Cadastro de alunos`, liberando o AVA no mesmo envio, e usa `Cadastros anteriores` apenas para concluir registros do fluxo antigo.
 6. Admin aprova, recusa ou arquiva memorias e feedbacks do Catty Learning Center em `Catty Learning`.
 7. Admin usa `Catty dos alunos` para escolher aluno, cadastrar gostos, gerar emojis/sons/bordoes e ver um resumo simples das memorias ativas daquele aluno.

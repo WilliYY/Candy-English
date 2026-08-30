@@ -156,6 +156,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       orderBy: {
         createdAt: "desc",
       },
+      where: {
+        deletedAt: null,
+      },
       select: {
         _count: {
           select: {

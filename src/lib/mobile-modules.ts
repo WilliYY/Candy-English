@@ -459,6 +459,7 @@ async function getAdminModule(slug: string) {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: "desc" },
       take: 100,
+      where: { deletedAt: null },
       select: {
         createdAt: true,
         email: true,

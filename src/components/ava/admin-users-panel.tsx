@@ -826,6 +826,7 @@ function UsersSheet({ users }: { users: AdminUserRow[] }) {
           <AdminUserStatusButton
             isActive={user.isActive}
             userId={user.id}
+            userName={user.name}
           />
           <AdminUserPasswordResetForm
             userId={user.id}
@@ -1045,7 +1046,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-start justify-between gap-3">
                               <div className="min-w-0">
-                                <h3 className="truncate text-base font-semibold text-primary">
+                                <h3 className="break-words text-base font-semibold leading-5 text-primary">
                                   {user.name}
                                 </h3>
                                 <p
@@ -1056,7 +1057,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                                     aria-hidden="true"
                                     className="size-4 shrink-0"
                                   />
-                                  <span className="truncate">{user.email}</span>
+                                  <span className="break-all leading-5">{user.email}</span>
                                 </p>
                                 {phone ? (
                                   <p
@@ -1067,7 +1068,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                                       aria-hidden="true"
                                       className="size-3.5 shrink-0"
                                     />
-                                    <span className="truncate">{phone}</span>
+                                    <span className="break-words">{phone}</span>
                                   </p>
                                 ) : null}
                               </div>
@@ -1089,17 +1090,17 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                             <div className="mt-3 flex flex-wrap gap-2">
                               <span
                                 className={cn(
-                                  "inline-flex min-w-0 items-center rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold",
+                                  "inline-flex max-w-full min-w-0 items-center rounded-lg border px-2.5 py-1 text-[0.72rem] font-semibold",
                                   visual.metaCardClassName,
                                 )}
                               >
-                                <span className="truncate">
+                                <span className="whitespace-normal break-words text-left leading-4">
                                   {profileSummary}
                                 </span>
                               </span>
                               <span
                                 className={cn(
-                                  "inline-flex min-w-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.72rem] font-semibold",
+                                  "inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[0.72rem] font-semibold",
                                   attentionClassName,
                                 )}
                               >
@@ -1107,21 +1108,23 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                                   aria-hidden="true"
                                   className="size-3.5 shrink-0 opacity-70"
                                 />
-                                <span className="truncate">
+                                <span className="whitespace-normal break-words text-left leading-4">
                                   {attentionLabel}
-                                  </span>
                                 </span>
-                              <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[0.72rem] font-semibold text-violet-800">
+                              </span>
+                              <span className="inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-lg border border-violet-200 bg-violet-50 px-2.5 py-1 text-[0.72rem] font-semibold text-violet-800">
                                 <MapPin
                                   aria-hidden="true"
                                   className="size-3.5 shrink-0"
                                 />
-                                <span className="truncate">
+                                <span className="whitespace-normal break-words text-left leading-4">
                                   {poloScope.label}
                                 </span>
                               </span>
-                              <span className="inline-flex min-w-0 items-center rounded-full border border-primary/10 bg-white/78 px-2.5 py-1 text-[0.72rem] font-semibold text-primary shadow-sm">
-                                <span className="truncate">{actionHint}</span>
+                              <span className="inline-flex max-w-full min-w-0 items-center rounded-lg border border-primary/10 bg-white/78 px-2.5 py-1 text-[0.72rem] font-semibold text-primary shadow-sm">
+                                <span className="whitespace-normal break-words text-left leading-4">
+                                  {actionHint}
+                                </span>
                               </span>
                             </div>
                           </div>
@@ -1277,6 +1280,7 @@ function UsersByRole({ users }: { users: AdminUserRow[] }) {
                               <AdminUserStatusButton
                                 isActive={user.isActive}
                                 userId={user.id}
+                                userName={user.name}
                               />
                               <AdminUserPasswordResetForm
                                 userId={user.id}

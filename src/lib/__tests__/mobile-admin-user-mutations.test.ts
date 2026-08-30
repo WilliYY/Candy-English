@@ -381,7 +381,7 @@ test("password reset hashes the new password and revokes all mobile sessions ato
           passwordHash: "new-secure-hash",
           sessionVersion: { increment: 1 },
         },
-        where: { id: "user-1", updatedAt },
+        where: { deletedAt: null, id: "user-1", updatedAt },
       },
       model: "user",
     },

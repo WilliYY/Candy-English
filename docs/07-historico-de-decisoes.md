@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-08-30 - Exclusao de conta com retencao e anonimização em 2 anos
+
+- Decisao: substituir a desativacao normal da base Admin por exclusao confirmada; a conta perde acesso e sai da UI imediatamente, permanece auditavel por 2 anos e depois tem dados pessoais/credenciais anonimizados por rotina diaria.
+- Motivo: atender a saida de clientes sem deixar contas acessiveis e sem destruir vendas, financeiro, agenda, contratos, aulas ou ponto que dependem do mesmo `User`.
+- Impacto: schema/migration de `User`, action e validacao Admin, planilha/cartoes de usuarios, consultas ativas, API mobile, servico/script de retencao, cron Oracle, testes e documentacao.
+- Riscos/cuidados: nao fazer `DELETE` fisico de `User`; manter o cron unico e verificavel; senha nunca e revelada; autoexclusao e exclusao do ultimo Admin ativo continuam bloqueadas no servidor.
+
 ### 2026-08-24 - Fotos WebP recortadas no catalogo de Vendas
 
 - Decisao: permitir foto opcional no cadastro e na edicao de `SaleProduct`, com previa 4:3, recorte central automatico para `1200x900` e armazenamento final somente em WebP.

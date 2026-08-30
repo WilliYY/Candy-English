@@ -3,6 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ArrowRight,
+  AlertTriangle,
+  CalendarClock,
   Copy,
   Eye,
   EyeOff,
@@ -14,10 +16,10 @@ import {
   MapPin,
   PenLine,
   Power,
-  PowerOff,
   RefreshCw,
   Save,
   ShieldCheck,
+  Trash2,
   UserRound,
   UsersRound,
   X,
@@ -27,15 +29,18 @@ import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   assignStudentToTeacher,
+  deleteAvaUser,
   resetAvaUserPassword,
   toggleAvaUserStatus,
   updateStudentContactByAdmin,
 } from "@/app/ava/admin/actions";
 import {
   adminAssignTeacherSchema,
+  adminDeleteUserSchema,
   adminResetUserPasswordSchema,
   adminUpdateStudentContactSchema,
   type AdminAssignTeacherInput,
+  type AdminDeleteUserInput,
   type AdminResetUserPasswordInput,
   type AdminUpdateStudentContactInput,
 } from "@/lib/validations/admin-users";
@@ -53,6 +58,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 type AdminUserStatusButtonProps = {
   isActive: boolean;
   userId: string;
+  userName: string;
 };
 
 type AdminUserPasswordResetFormProps = {
@@ -99,17 +105,18 @@ type AdminAssignTeacherFormProps = {
 export function AdminUserStatusButton({
   isActive,
   userId,
+  userName,
 }: AdminUserStatusButtonProps) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function handleClick() {
+  function handleReactivate() {
     setMessage(null);
 
     startTransition(async () => {
       const result = await toggleAvaUserStatus({
-        isActive: !isActive,
+        isActive: true,
         userId,
       });
 
@@ -122,30 +129,147 @@ export function AdminUserStatusButton({
   }
 
   return (
-    <div className="flex w-full flex-col items-start gap-2">
-      <Button
-        type="button"
-        variant={isActive ? "outline" : "secondary"}
-        size="sm"
-        className="w-full justify-start"
-        disabled={isPending}
-        onClick={handleClick}
-      >
-        {isPending ? (
-          <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : isActive ? (
-          <PowerOff data-icon="inline-start" />
-        ) : (
-          <Power data-icon="inline-start" />
-        )}
-        {isActive ? "Desativar" : "Reativar"}
-      </Button>
+    <div className="grid w-full gap-2">
+      {!isActive ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="w-full justify-start"
+          disabled={isPending}
+          onClick={handleReactivate}
+        >
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Power data-icon="inline-start" />
+          )}
+          Reativar acesso
+        </Button>
+      ) : null}
+      <AdminUserDeleteForm userId={userId} userName={userName} />
       {message ? (
         <span className="max-w-full text-xs leading-5 text-muted-foreground">
           {message}
         </span>
       ) : null}
     </div>
+  );
+}
+
+function AdminUserDeleteForm({
+  userId,
+  userName,
+}: {
+  userId: string;
+  userName: string;
+}) {
+  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const form = useForm<AdminDeleteUserInput>({
+    resolver: zodResolver(adminDeleteUserSchema, undefined, { raw: true }),
+    defaultValues: {
+      confirmation: "",
+      reason: "",
+      userId,
+    },
+  });
+
+  const onSubmit = form.handleSubmit((values) => {
+    setMessage(null);
+
+    startTransition(async () => {
+      const result = await deleteAvaUser({ ...values, userId });
+
+      if (!result.ok) {
+        if (result.errors) {
+          Object.entries(result.errors).forEach(([field, fieldMessage]) => {
+            if (fieldMessage) {
+              form.setError(field as keyof AdminDeleteUserInput, {
+                message: fieldMessage,
+              });
+            }
+          });
+        }
+
+        setMessage(result.message);
+        return;
+      }
+
+      form.reset();
+      setMessage(result.message);
+      router.refresh();
+    });
+  });
+
+  return (
+    <details className="group/delete overflow-hidden rounded-lg border border-red-200 bg-red-50/60">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-300 [&::-webkit-details-marker]:hidden">
+        <span className="inline-flex items-center gap-2">
+          <Trash2 aria-hidden="true" className="size-4" />
+          Excluir conta
+        </span>
+        <span className="text-[0.65rem] uppercase tracking-[0.12em] text-red-700/75">
+          <span className="group-open/delete:hidden">confirmar</span>
+          <span className="hidden group-open/delete:inline">fechar</span>
+        </span>
+      </summary>
+
+      <form className="grid gap-3 border-t border-red-200 p-3" onSubmit={onSubmit}>
+        <div className="rounded-md border border-red-200 bg-white p-3 text-xs leading-5 text-red-950">
+          <p className="flex items-start gap-2 font-semibold">
+            <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            {userName} perderá o acesso imediatamente e sairá da base ativa.
+          </p>
+          <p className="mt-2 flex items-start gap-2 text-red-800">
+            <CalendarClock aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+            O registro fica somente no histórico do banco por 2 anos. Depois,
+            nome, contato, senha e dados pessoais do perfil são anonimizados de
+            forma irreversível.
+          </p>
+        </div>
+
+        <Field data-invalid={Boolean(form.formState.errors.reason)}>
+          <FieldLabel htmlFor={`delete-reason-${userId}`}>Motivo</FieldLabel>
+          <Input
+            id={`delete-reason-${userId}`}
+            maxLength={240}
+            placeholder="Ex.: cliente encerrou o vínculo"
+            {...form.register("reason")}
+          />
+          <FieldError errors={[form.formState.errors.reason]} />
+        </Field>
+
+        <Field data-invalid={Boolean(form.formState.errors.confirmation)}>
+          <FieldLabel htmlFor={`delete-confirmation-${userId}`}>
+            Digite EXCLUIR para confirmar
+          </FieldLabel>
+          <Input
+            autoComplete="off"
+            id={`delete-confirmation-${userId}`}
+            placeholder="EXCLUIR"
+            {...form.register("confirmation")}
+          />
+          <FieldError errors={[form.formState.errors.confirmation]} />
+        </Field>
+
+        <Button disabled={isPending} type="submit" variant="destructive">
+          {isPending ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : (
+            <Trash2 data-icon="inline-start" />
+          )}
+          Excluir e iniciar retenção de 2 anos
+        </Button>
+
+        {message ? (
+          <p className="text-xs leading-5 text-red-800" role="status">
+            {message}
+          </p>
+        ) : null}
+      </form>
+    </details>
   );
 }
 

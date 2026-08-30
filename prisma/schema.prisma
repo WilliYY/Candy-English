@@ -246,6 +246,11 @@ model User {
   address                          String?
   avatarPath                       String?
   avatarMimeType                   String?
+  deletedAt                        DateTime?
+  scheduledAnonymizationAt         DateTime?
+  anonymizedAt                     DateTime?
+  deletionReason                   String?
+  deletedByName                    String?
   studentProfile                   StudentProfile?
   teacherProfile                   TeacherProfile?
   financialLogs                    FinancialLog[]
@@ -295,6 +300,8 @@ model User {
   updatedAt                        DateTime                    @updatedAt
 
   @@index([isActive])
+  @@index([deletedAt])
+  @@index([scheduledAnonymizationAt, anonymizedAt])
 }
 
 model StudentProfile {

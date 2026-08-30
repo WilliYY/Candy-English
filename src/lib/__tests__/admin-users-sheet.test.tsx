@@ -30,7 +30,7 @@ const rows: AdminUsersSheetRow[] = [
     role: "STUDENT",
   },
   {
-    accessActions: <button type="button">Desativar</button>,
+    accessActions: <button type="button">Excluir conta</button>,
     attentionClassName: "border-emerald-200",
     attentionLabel: "Admin ativo",
     contactActions: null,
@@ -62,7 +62,12 @@ test("renders the user sheet in role order with expandable access actions", () =
   assert.match(markup, /Todos os polos/);
   assert.match(markup, /Polo 1 · Ivaté/);
   assert.match(markup, /Senha protegida/);
+  assert.match(markup, /Identificação/);
+  assert.match(markup, /Histórico rápido/);
+  assert.doesNotMatch(markup, /line-clamp-2/);
+  assert.match(markup, /admin@example.com/);
   assert.match(markup, /Abrir detalhes e acoes de Admin Teste/);
+  assert.match(markup, /Excluir conta/);
   assert.match(markup, /Redefinir senha/);
 });
 
