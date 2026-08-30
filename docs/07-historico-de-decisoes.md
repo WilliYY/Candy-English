@@ -719,6 +719,13 @@ Cada decisao deve conter:
 - Impacto: nova validacao de cadastro, action transacional, formulario com acesso do AVA, rotulos da Secretaria e preservacao dos registros antigos em `Cadastros anteriores`.
 - Riscos/cuidados: nunca persistir senha em texto puro, bloquear duplicidade concorrente por email/telefone, permitir financeiro/agenda como `Completar` e manter o fluxo legado para nao perder historico.
 
+### 2026-08-30 - Selecao de alunos sem liberacao previa
+
+- Decisao: `ADMIN` e `TEACHER` podem selecionar qualquer `StudentProfile` com conta `STUDENT` ativa e nao excluida em aulas, homework, replicas, nivel, aula ao vivo, contratos, chat, Vendas, Financeiro minimizado e seletores moveis. `StudentTeacherAssignment` permanece como referencia opcional e nao e criado automaticamente por esses fluxos.
+- Motivo: eliminar a etapa manual de liberacao/vinculo antes de cada atendimento e permitir que toda a equipe pedagogica opere a base ativa.
+- Impacto: consultas e server actions do AVA Teacher, PDV, contratos, chat, API mobile, textos operacionais, smoke de autenticacao e documentacao de permissoes.
+- Riscos/cuidados: `STUDENT` continua vendo apenas dados e conversas do proprio perfil; Teacher continua editando somente aulas/homeworks proprios; Financeiro Teacher segue sem valores ou dados administrativos; memorias/artefatos pessoais da Catty e pre-cadastros continuam com seus escopos especificos.
+
 - Decisoes antigas so devem ser substituidas com motivo tecnico claro.
 - Se uma decisao mudar, registrar a substituicao neste arquivo em vez de apagar o passado.
 

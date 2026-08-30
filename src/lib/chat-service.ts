@@ -1,5 +1,6 @@
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
+import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 
 export type ChatActor = {
   role: Role;
@@ -20,38 +21,70 @@ export type ChatServiceResult = {
   ok: boolean;
 };
 
+type ActiveChatPair = {
+  hasExistingStudentAccess: boolean;
+  studentUserId: string;
+  teacherUserId: string;
+};
+
+export function canActorUseActiveChatPair(
+  actor: ChatActor,
+  pair: ActiveChatPair,
+) {
+  if (actor.role === "ADMIN") return true;
+  if (actor.role === "TEACHER") return pair.teacherUserId === actor.userId;
+  if (actor.role === "STUDENT") {
+    return (
+      pair.studentUserId === actor.userId && pair.hasExistingStudentAccess
+    );
+  }
+  return false;
+}
+
 async function actorCanUsePair(actor: ChatActor, pair: ChatPair) {
   const prisma = getPrisma();
-  const assignment = await prisma.studentTeacherAssignment.findUnique({
-    where: { teacherProfileId_studentProfileId: pair },
-    select: { id: true },
-  });
+  const [studentProfile, teacherProfile] = await Promise.all([
+    prisma.studentProfile.findFirst({
+      where: {
+        id: pair.studentProfileId,
+        user: { deletedAt: null, isActive: true, role: "STUDENT" },
+      },
+      select: { id: true, userId: true },
+    }),
+    prisma.teacherProfile.findFirst({
+      where: {
+        id: pair.teacherProfileId,
+        user: { deletedAt: null, isActive: true, role: "TEACHER" },
+      },
+      select: { id: true, userId: true },
+    }),
+  ]);
 
-  if (!assignment) {
+  if (!studentProfile || !teacherProfile) {
     return false;
   }
 
-  if (actor.role === "ADMIN") {
-    return true;
-  }
-
-  if (actor.role === "TEACHER") {
-    const profile = await prisma.teacherProfile.findUnique({
-      where: { userId: actor.userId },
-      select: { id: true },
-    });
-    return profile?.id === pair.teacherProfileId;
-  }
-
+  let hasExistingStudentAccess = false;
   if (actor.role === "STUDENT") {
-    const profile = await prisma.studentProfile.findUnique({
-      where: { userId: actor.userId },
-      select: { id: true },
-    });
-    return profile?.id === pair.studentProfileId;
+    const [assignment, thread] = await Promise.all([
+      prisma.studentTeacherAssignment.findUnique({
+        where: { teacherProfileId_studentProfileId: pair },
+        select: { id: true },
+      }),
+      prisma.chatThread.findUnique({
+        where: { teacherProfileId_studentProfileId: pair },
+        select: { id: true },
+      }),
+    ]);
+
+    hasExistingStudentAccess = Boolean(assignment || thread);
   }
 
-  return false;
+  return canActorUseActiveChatPair(actor, {
+    hasExistingStudentAccess,
+    studentUserId: studentProfile.userId,
+    teacherUserId: teacherProfile.userId,
+  });
 }
 
 export async function sendAuthorizedChatMessage(
@@ -94,44 +127,60 @@ export async function sendAuthorizedChatMessage(
 
 export async function listAuthorizedChatThreads(actor: ChatActor) {
   const prisma = getPrisma();
-  const profileScope =
-    actor.role === "ADMIN"
-      ? {}
-      : actor.role === "TEACHER"
-        ? { teacherProfile: { userId: actor.userId } }
-        : { studentProfile: { userId: actor.userId } };
-  const assignments = await prisma.studentTeacherAssignment.findMany({
-    where: profileScope,
-    orderBy: { createdAt: "desc" },
-    take: 100,
-    select: {
-      createdAt: true,
-      id: true,
-      studentProfile: {
-        select: {
-          id: true,
-          user: { select: { name: true } },
-        },
+  const [students, teachers] = await Promise.all([
+    prisma.studentProfile.findMany({
+      where:
+        actor.role === "STUDENT"
+          ? {
+              ...getStaffStudentSelectionWhere(),
+              userId: actor.userId,
+            }
+          : getStaffStudentSelectionWhere(),
+      orderBy: { user: { name: "asc" } },
+      take: 100,
+      select: {
+        id: true,
+        user: { select: { createdAt: true, name: true } },
       },
-      teacherProfile: {
-        select: {
-          id: true,
-          user: { select: { name: true } },
-        },
+    }),
+    prisma.teacherProfile.findMany({
+      where: {
+        ...(actor.role === "TEACHER" ? { userId: actor.userId } : {}),
+        ...(actor.role === "STUDENT"
+          ? {
+              OR: [
+                { studentAssignments: { some: { studentProfile: { userId: actor.userId } } } },
+                { chatThreads: { some: { studentProfile: { userId: actor.userId } } } },
+              ],
+            }
+          : {}),
+        user: { deletedAt: null, isActive: true, role: "TEACHER" },
       },
-    },
-  });
+      orderBy: { user: { name: "asc" } },
+      take: 100,
+      select: {
+        id: true,
+        user: { select: { createdAt: true, name: true } },
+      },
+    }),
+  ]);
+  const pairs = teachers
+    .flatMap((teacher) =>
+      students.map((student) => ({ student, teacher })),
+    )
+    .slice(0, 100);
 
-  if (assignments.length === 0) {
+  if (pairs.length === 0) {
     return [];
   }
 
-  const pairs = assignments.map((assignment) => ({
-    studentProfileId: assignment.studentProfile.id,
-    teacherProfileId: assignment.teacherProfile.id,
-  }));
   const threads = await prisma.chatThread.findMany({
-    where: { OR: pairs },
+    where: {
+      OR: pairs.map(({ student, teacher }) => ({
+        studentProfileId: student.id,
+        teacherProfileId: teacher.id,
+      })),
+    },
     select: {
       messages: {
         orderBy: { createdAt: "desc" },
@@ -150,26 +199,33 @@ export async function listAuthorizedChatThreads(actor: ChatActor) {
     ]),
   );
 
-  return assignments
-    .map((assignment) => {
+  return pairs
+    .map(({ student, teacher }) => {
       const thread = threadsByPair.get(
-        `${assignment.teacherProfile.id}:${assignment.studentProfile.id}`,
+        `${teacher.id}:${student.id}`,
       );
       const peerName =
         actor.role === "STUDENT"
-          ? assignment.teacherProfile.user.name
-          : assignment.studentProfile.user.name;
+          ? teacher.user.name
+          : student.user.name;
 
       return {
-        id: assignment.id,
+        id: thread?.studentProfileId
+          ? `${teacher.id}:${student.id}`
+          : `available:${teacher.id}:${student.id}`,
         lastMessage: thread?.messages[0]?.body ?? null,
         lastMessageAt:
           thread?.messages[0]?.createdAt.toISOString() ??
           thread?.updatedAt.toISOString() ??
-          assignment.createdAt.toISOString(),
+          new Date(
+            Math.max(
+              student.user.createdAt.getTime(),
+              teacher.user.createdAt.getTime(),
+            ),
+          ).toISOString(),
         peerName,
-        studentProfileId: assignment.studentProfile.id,
-        teacherProfileId: assignment.teacherProfile.id,
+        studentProfileId: student.id,
+        teacherProfileId: teacher.id,
       };
     })
     .sort((left, right) =>

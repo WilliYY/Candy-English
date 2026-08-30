@@ -2,6 +2,7 @@ import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { getMobileStudentLessonScope } from "@/lib/mobile-lesson";
 import { getContractDocumentAccessScope } from "@/lib/contract-documents";
 import { getPrisma } from "@/lib/prisma";
+import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 import { getMobileTeacherContracts } from "@/lib/mobile-teacher-contracts";
 import { getMobileTeacherCandyXpOverview } from "@/lib/mobile-teacher-candy-xp";
 
@@ -280,30 +281,26 @@ async function getTeacherModule(user: MobileAuthUser, slug: string) {
   }
 
   if (slug === "students") {
-    const assignments = await prisma.studentTeacherAssignment.findMany({
-      where: { teacherProfileId: profile.id },
-      orderBy: { studentProfile: { user: { name: "asc" } } },
+    const students = await prisma.studentProfile.findMany({
+      where: getStaffStudentSelectionWhere(),
+      orderBy: { user: { name: "asc" } },
       take: 100,
       select: {
         id: true,
-        studentProfile: {
-          select: {
-            level: true,
-            user: { select: { email: true, name: true } },
-          },
-        },
+        level: true,
+        user: { select: { email: true, name: true } },
       },
     });
 
     return data(
       slug,
       "Alunos",
-      "Nenhum aluno vinculado.",
-      assignments.map((assignment) => ({
-        detail: assignment.studentProfile.level ?? "Nível a definir",
-        id: assignment.id,
-        subtitle: assignment.studentProfile.user.email,
-        title: assignment.studentProfile.user.name,
+      "Nenhum aluno ativo.",
+      students.map((student) => ({
+        detail: student.level ?? "Nível a definir",
+        id: student.id,
+        subtitle: student.user.email,
+        title: student.user.name,
       })),
     );
   }

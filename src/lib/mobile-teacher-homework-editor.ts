@@ -2,6 +2,7 @@ import { unlink } from "node:fs/promises";
 
 import type { Prisma } from "@/generated/prisma/client";
 import { getPrisma } from "@/lib/prisma";
+import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 import { getStoragePath } from "@/lib/storage";
 import { z } from "zod";
 
@@ -190,7 +191,7 @@ export type MobileTeacherHomeworkEditorStore = Pick<
   | "homeworkStudentAssignment"
   | "lesson"
   | "mobileTeacherHomeworkDeletion"
-  | "studentTeacherAssignment"
+  | "studentProfile"
   | "teacherProfile"
 >;
 
@@ -320,20 +321,18 @@ async function validateOwnedLesson(
   });
 }
 
-async function validateLinkedStudents(
+async function validateActiveStudents(
   store: MobileTeacherHomeworkEditorStore,
-  teacherProfileId: string,
   studentProfileIds: string[],
 ) {
-  const assignments = await store.studentTeacherAssignment.findMany({
+  const students = await store.studentProfile.findMany({
     where: {
-      studentProfileId: { in: studentProfileIds },
-      teacherProfileId,
-      studentProfile: { user: { isActive: true, role: "STUDENT" } },
+      ...getStaffStudentSelectionWhere(),
+      id: { in: studentProfileIds },
     },
-    select: { studentProfileId: true },
+    select: { id: true },
   });
-  return new Set(assignments.map((assignment) => assignment.studentProfileId));
+  return new Set(students.map((student) => student.id));
 }
 
 function questionsData(questions: HomeworkInput["questions"]) {
@@ -414,12 +413,8 @@ export async function createMobileTeacherHomework(
       const lesson = await validateOwnedLesson(tx, teacherProfileId, data.lessonId);
       if (!lesson) return { kind: "lesson-not-found" as const };
 
-      const linkedStudents = await validateLinkedStudents(
-        tx,
-        teacherProfileId,
-        data.studentProfileIds,
-      );
-      if (linkedStudents.size !== data.studentProfileIds.length) {
+      const activeStudents = await validateActiveStudents(tx, data.studentProfileIds);
+      if (activeStudents.size !== data.studentProfileIds.length) {
         return { kind: "student-forbidden" as const };
       }
 
@@ -450,10 +445,10 @@ export async function createMobileTeacherHomework(
       return failure("NOT_FOUND", "Aula nao encontrada.");
     }
     if (result.kind === "student-forbidden") {
-      return failure(
-        "STUDENT_FORBIDDEN",
-        "Selecione somente alunos vinculados ao seu perfil.",
-      );
+        return failure(
+          "STUDENT_FORBIDDEN",
+          "Selecione somente alunos ativos.",
+        );
     }
 
     return mutationSuccess(
@@ -527,12 +522,8 @@ export async function updateMobileTeacherHomework(
       const lesson = await validateOwnedLesson(tx, teacherProfileId, data.lessonId);
       if (!lesson) return { kind: "lesson-not-found" as const };
 
-      const linkedStudents = await validateLinkedStudents(
-        tx,
-        teacherProfileId,
-        data.studentProfileIds,
-      );
-      if (linkedStudents.size !== data.studentProfileIds.length) {
+      const activeStudents = await validateActiveStudents(tx, data.studentProfileIds);
+      if (activeStudents.size !== data.studentProfileIds.length) {
         return { kind: "student-forbidden" as const };
       }
 
@@ -610,10 +601,10 @@ export async function updateMobileTeacherHomework(
       );
     }
     if (result.kind === "student-forbidden") {
-      return failure(
-        "STUDENT_FORBIDDEN",
-        "Selecione somente alunos vinculados ao seu perfil.",
-      );
+        return failure(
+          "STUDENT_FORBIDDEN",
+          "Selecione somente alunos ativos.",
+        );
     }
     if (result.kind === "assignments-locked") {
       return failure(
@@ -731,7 +722,7 @@ export async function getMobileTeacherHomeworkOptions(
     };
   }
 
-  const [lessons, assignments] = await Promise.all([
+  const [lessons, students] = await Promise.all([
     store.lesson.findMany({
       where: { teacherProfileId },
       orderBy: { updatedAt: "desc" },
@@ -743,21 +734,14 @@ export async function getMobileTeacherHomeworkOptions(
         title: true,
       },
     }),
-    store.studentTeacherAssignment.findMany({
-      where: {
-        teacherProfileId,
-        studentProfile: { user: { isActive: true, role: "STUDENT" } },
-      },
-      orderBy: { studentProfile: { user: { name: "asc" } } },
+    store.studentProfile.findMany({
+      where: getStaffStudentSelectionWhere(),
+      orderBy: { user: { name: "asc" } },
       take: 100,
       select: {
-        studentProfile: {
-          select: {
-            id: true,
-            level: true,
-            user: { select: { name: true } },
-          },
-        },
+        id: true,
+        level: true,
+        user: { select: { name: true } },
       },
     }),
   ]);
@@ -765,10 +749,10 @@ export async function getMobileTeacherHomeworkOptions(
   return {
     data: {
       lessons,
-      students: assignments.map(({ studentProfile }) => ({
-        id: studentProfile.id,
-        level: studentProfile.level,
-        name: studentProfile.user.name,
+      students: students.map((student) => ({
+        id: student.id,
+        level: student.level,
+        name: student.user.name,
       })),
     },
     message: "Opcoes carregadas.",
@@ -822,15 +806,11 @@ export async function duplicateMobileTeacherHomework(
     return duplicateFailure("INVALID", "Selecione pelo menos outro aluno.");
   }
 
-  const linkedStudents = await validateLinkedStudents(
-    store,
-    teacherProfileId,
-    targetStudentIds,
-  );
-  if (linkedStudents.size !== targetStudentIds.length) {
+  const activeStudents = await validateActiveStudents(store, targetStudentIds);
+  if (activeStudents.size !== targetStudentIds.length) {
     return duplicateFailure(
       "STUDENT_FORBIDDEN",
-      "Selecione somente alunos vinculados ao seu perfil.",
+      "Selecione somente alunos ativos.",
     );
   }
 

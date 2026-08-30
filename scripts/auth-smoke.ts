@@ -485,7 +485,7 @@ async function assertTimeClockPermissions(
   console.log(`OK ponto ${role.toLowerCase()} authorized and PDF protected`);
 }
 
-async function assertTeacherWithoutProfileCannotListStudents() {
+async function assertTeacherWithoutProfileCanListStudents() {
   const passwordHash = await hash(testPassword, 12);
 
   await prisma.user.create({
@@ -506,11 +506,11 @@ async function assertTeacherWithoutProfileCannotListStudents() {
 
   assertNoServerException("/ava/vendas teacher sem perfil", response, text);
 
-  if (text.includes(roleEmails[2]) || text.includes("Codex Smoke STUDENT")) {
-    throw new Error("Teacher sem perfil recebeu aluno nao vinculado em Vendas.");
+  if (!text.includes(roleEmails[2]) && !text.includes("Codex Smoke STUDENT")) {
+    throw new Error("Teacher sem perfil nao recebeu os alunos ativos em Vendas.");
   }
 
-  console.log("OK vendas teacher sem perfil nao lista alunos");
+  console.log("OK vendas teacher sem perfil lista todos os alunos ativos");
 }
 
 async function assertPedagogicalWorkspace(role: SmokeRole, cookie: string) {
@@ -1051,7 +1051,7 @@ async function main() {
     await assertCattyChatAccess(role, cookie, user.id);
   }
 
-  await assertTeacherWithoutProfileCannotListStudents();
+  await assertTeacherWithoutProfileCanListStudents();
 
   await reportGoogleProvider();
   console.log("Candy English auth smoke OK");

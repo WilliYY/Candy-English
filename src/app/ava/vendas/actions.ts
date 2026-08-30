@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
+import { getActiveStudentProfileWhere } from "@/lib/staff-student-access";
 import {
   areSaleAmountsDatabaseSafe,
   calculateSaleTotals,
@@ -37,7 +38,6 @@ export type SaleActionResult<TInput extends Record<string, unknown>> = {
 
 type SalesActor = {
   isAdmin: boolean;
-  teacherProfileId: string | null;
   userId: string;
 };
 
@@ -79,7 +79,6 @@ async function getSalesActor(): Promise<SalesActor | null> {
   if (session.user.role === "ADMIN") {
     return {
       isAdmin: true,
-      teacherProfileId: null,
       userId: session.user.id,
     };
   }
@@ -88,19 +87,8 @@ async function getSalesActor(): Promise<SalesActor | null> {
     return null;
   }
 
-  const prisma = getPrisma();
-  const teacherProfile = await prisma.teacherProfile.findUnique({
-    where: { userId: session.user.id },
-    select: { id: true },
-  });
-
-  if (!teacherProfile) {
-    return null;
-  }
-
   return {
     isAdmin: false,
-    teacherProfileId: teacherProfile.id,
     userId: session.user.id,
   };
 }
@@ -380,20 +368,7 @@ export async function createSale(
 
   if (parsed.data.studentProfileId) {
     student = await prisma.studentProfile.findFirst({
-      where: {
-        id: parsed.data.studentProfileId,
-        user: {
-          isActive: true,
-          role: "STUDENT",
-        },
-        ...(actor.teacherProfileId
-          ? {
-              teacherAssignments: {
-                some: { teacherProfileId: actor.teacherProfileId },
-              },
-            }
-          : {}),
-      },
+      where: getActiveStudentProfileWhere(parsed.data.studentProfileId),
       select: {
         financialStudent: {
           select: {
@@ -418,8 +393,8 @@ export async function createSale(
 
     if (!student) {
       return {
-        errors: { studentProfileId: "Aluno indisponivel para este usuario." },
-        message: "Selecione um aluno permitido.",
+        errors: { studentProfileId: "Aluno nao encontrado ou inativo." },
+        message: "Selecione um aluno ativo.",
         ok: false,
       };
     }

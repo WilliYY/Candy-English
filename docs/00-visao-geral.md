@@ -41,10 +41,10 @@ Rotas principais:
 - Admins podem criar usuarios, ativar/desativar acessos e redefinir senhas pela interface protegida.
 - Admins podem registrar APIs/senhas em `/ava/admin?task=apis-senhas`; os valores ficam criptografados e so devem ser revelados pela UI protegida.
 - O aluno so acessa dados do proprio perfil.
-- Teacher trabalha com alunos vinculados por `StudentTeacherAssignment`.
+- Admin e Teacher podem selecionar qualquer aluno ativo nos fluxos operacionais; `StudentTeacherAssignment` fica como referencia opcional e nao como liberacao de acesso.
 - Contratos e avatares sao protegidos por rotas server-side.
 - Financeiro e modulo interno do admin, sem pagamento online.
-- Vendas e um PDV interno para Admin e Teacher; Student nao acessa. Teacher ve somente alunos vinculados e as proprias vendas.
+- Vendas e um PDV interno para Admin e Teacher; Student nao acessa. Teacher pode selecionar qualquer aluno ativo e ve somente as proprias vendas.
 - Ponto e uma area interna para Admin e usuarios Teacher habilitados; aceita varios pares de entrada/saida, preserva correcoes e gera PDF mensal.
 - Agenda e modulo interno do admin para controle operacional de presenca e reposicao.
 - Homework e aula interativa devem manter arquivo e campos protegidos por permissao de aluno/teacher/admin.

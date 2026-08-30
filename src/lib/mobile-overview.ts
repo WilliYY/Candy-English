@@ -1,6 +1,7 @@
 import type { Prisma } from "@/generated/prisma/client";
 import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { getPrisma } from "@/lib/prisma";
+import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 
 export type MobileOverviewMetric = {
   id: string;
@@ -139,8 +140,8 @@ async function getTeacherOverview(
 
   const [students, lessons, homeworks, submissions, secretary, nextLesson] =
     await Promise.all([
-      prisma.studentTeacherAssignment.count({
-        where: { teacherProfileId: profile.id },
+      prisma.studentProfile.count({
+        where: getStaffStudentSelectionWhere(),
       }),
       prisma.lesson.count({ where: { teacherProfileId: profile.id } }),
       prisma.homework.count({ where: { teacherProfileId: profile.id } }),

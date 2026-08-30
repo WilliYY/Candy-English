@@ -171,18 +171,7 @@ export async function getAvaNavAlertSignatures(
         select: { createdAt: true, id: true },
       }),
       prisma.contractDocument.findFirst({
-        where: teacherScoped
-          ? {
-              OR: [
-                { studentProfileId: null },
-                {
-                  studentProfile: {
-                    teacherAssignments: { some: { teacherProfileId } },
-                  },
-                },
-              ],
-            }
-          : {},
+        where: {},
         orderBy: { createdAt: "desc" },
         select: { createdAt: true, id: true },
       }),

@@ -6,6 +6,10 @@ import { auth } from "@/lib/auth";
 import { Prisma } from "@/generated/prisma/client";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
+import {
+  getActiveStudentProfileWhere,
+  getStaffStudentSelectionWhere,
+} from "@/lib/staff-student-access";
 import { isRole } from "@/lib/roles";
 import { getStoragePath, saveHomeworkAsset } from "@/lib/storage";
 import {
@@ -270,8 +274,8 @@ export async function createLesson(
   }
 
   if (data.studentProfileId) {
-    const student = await prisma.studentProfile.findUnique({
-      where: { id: data.studentProfileId },
+    const student = await prisma.studentProfile.findFirst({
+      where: getActiveStudentProfileWhere(data.studentProfileId),
       select: { id: true },
     });
 
@@ -283,29 +287,6 @@ export async function createLesson(
       };
     }
 
-    if (!actor.isAdmin) {
-      const assignment = await prisma.studentTeacherAssignment.findUnique({
-        where: {
-          teacherProfileId_studentProfileId: {
-            studentProfileId: data.studentProfileId,
-            teacherProfileId,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      if (!assignment) {
-        return {
-          errors: {
-            studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
-          },
-          ok: false,
-          message: "Voce so pode criar aulas para alunos vinculados a voce.",
-        };
-      }
-    }
   }
 
   await prisma.$transaction(async (tx) => {
@@ -318,22 +299,6 @@ export async function createLesson(
         title: data.title,
       },
     });
-
-    if (data.studentProfileId && actor.isAdmin) {
-      await tx.studentTeacherAssignment.upsert({
-        where: {
-          teacherProfileId_studentProfileId: {
-            studentProfileId: data.studentProfileId,
-            teacherProfileId,
-          },
-        },
-        create: {
-          studentProfileId: data.studentProfileId,
-          teacherProfileId,
-        },
-        update: {},
-      });
-    }
 
     if (data.materialTitle || data.materialContent || data.materialUrl) {
       await tx.lessonMaterial.create({
@@ -427,7 +392,10 @@ export async function createInteractiveHomework(
       select: { id: true },
     }),
     prisma.studentProfile.findMany({
-      where: { id: { in: studentProfileIds } },
+      where: {
+        ...getStaffStudentSelectionWhere(),
+        id: { in: studentProfileIds },
+      },
       select: { id: true },
     }),
   ]);
@@ -451,30 +419,6 @@ export async function createInteractiveHomework(
   const studentsById = new Map(students.map((student) => [student.id, student]));
   const orderedStudents = studentProfileIds.map((id) => studentsById.get(id)!);
 
-  if (!actor.isAdmin) {
-    const assignments = await prisma.studentTeacherAssignment.findMany({
-      where: {
-        studentProfileId: { in: studentProfileIds },
-        teacherProfileId,
-      },
-      select: { studentProfileId: true },
-    });
-    const assignedStudentIds = new Set(
-      assignments.map((assignment) => assignment.studentProfileId),
-    );
-
-    if (assignedStudentIds.size !== studentProfileIds.length) {
-      return {
-        errors: {
-          studentProfileIds:
-            "Um ou mais alunos nao estao vinculados a sua area teacher.",
-        },
-        ok: false,
-        message: "Voce so pode criar homework para alunos vinculados a voce.",
-      };
-    }
-  }
-
   let savedAsset: Awaited<ReturnType<typeof saveHomeworkAsset>>;
 
   try {
@@ -493,22 +437,6 @@ export async function createInteractiveHomework(
     const createdHomeworks: { id: string }[] = [];
 
     for (const student of orderedStudents) {
-      if (actor.isAdmin) {
-        await tx.studentTeacherAssignment.upsert({
-          where: {
-            teacherProfileId_studentProfileId: {
-              studentProfileId: student.id,
-              teacherProfileId,
-            },
-          },
-          create: {
-            studentProfileId: student.id,
-            teacherProfileId,
-          },
-          update: {},
-        });
-      }
-
       const lesson = await tx.lesson.create({
         data: {
           description:
@@ -625,7 +553,10 @@ export async function createInteractiveLesson(
       select: { id: true },
     }),
     prisma.studentProfile.findMany({
-      where: { id: { in: studentProfileIds } },
+      where: {
+        ...getStaffStudentSelectionWhere(),
+        id: { in: studentProfileIds },
+      },
       select: { id: true },
     }),
   ]);
@@ -649,30 +580,6 @@ export async function createInteractiveLesson(
   const studentsById = new Map(students.map((student) => [student.id, student]));
   const orderedStudents = studentProfileIds.map((id) => studentsById.get(id)!);
 
-  if (!actor.isAdmin) {
-    const assignments = await prisma.studentTeacherAssignment.findMany({
-      where: {
-        studentProfileId: { in: studentProfileIds },
-        teacherProfileId,
-      },
-      select: { studentProfileId: true },
-    });
-    const assignedStudentIds = new Set(
-      assignments.map((assignment) => assignment.studentProfileId),
-    );
-
-    if (assignedStudentIds.size !== studentProfileIds.length) {
-      return {
-        errors: {
-          studentProfileIds:
-            "Um ou mais alunos nao estao vinculados a sua area teacher.",
-        },
-        ok: false,
-        message: "Voce so pode criar aulas para alunos vinculados a voce.",
-      };
-    }
-  }
-
   let savedAsset: Awaited<ReturnType<typeof saveHomeworkAsset>>;
 
   try {
@@ -691,22 +598,6 @@ export async function createInteractiveLesson(
     const createdHomeworks: { id: string }[] = [];
 
     for (const student of orderedStudents) {
-      if (actor.isAdmin) {
-        await tx.studentTeacherAssignment.upsert({
-          where: {
-            teacherProfileId_studentProfileId: {
-              studentProfileId: student.id,
-              teacherProfileId,
-            },
-          },
-          create: {
-            studentProfileId: student.id,
-            teacherProfileId,
-          },
-          update: {},
-        });
-      }
-
       const lesson = await tx.lesson.create({
         data: {
           description: data.instructions,
@@ -1164,11 +1055,8 @@ export async function replicateInteractiveHomeworkForStudent(
 
   const students = await prisma.studentProfile.findMany({
     where: {
+      ...getStaffStudentSelectionWhere(),
       id: { in: targetStudentProfileIds },
-      user: {
-        isActive: true,
-        role: "STUDENT",
-      },
     },
     select: {
       id: true,
@@ -1197,39 +1085,6 @@ export async function replicateInteractiveHomeworkForStudent(
     (studentProfileId) => studentsById.get(studentProfileId)!,
   );
 
-  if (!actor.isAdmin) {
-    const teacherProfileId = actor.teacherProfileId;
-
-    if (!teacherProfileId) {
-      return {
-        ok: false,
-        message: "Perfil de teacher nao encontrado.",
-      };
-    }
-
-    const assignments = await prisma.studentTeacherAssignment.findMany({
-      where: {
-        studentProfileId: { in: targetStudentProfileIds },
-        teacherProfileId,
-      },
-      select: { studentProfileId: true },
-    });
-    const assignedStudentIds = new Set(
-      assignments.map((assignment) => assignment.studentProfileId),
-    );
-
-    if (assignedStudentIds.size !== targetStudentProfileIds.length) {
-      return {
-        errors: {
-          studentProfileIds:
-            "Um ou mais alunos nao estao vinculados a sua area teacher.",
-        },
-        ok: false,
-        message: "Um ou mais alunos nao estao vinculados a sua area teacher.",
-      };
-    }
-  }
-
   const replicatedStudentIds = new Set(
     homework.homeworkReplicas
       .map((replica) => replica.lesson.studentProfileId)
@@ -1257,22 +1112,6 @@ export async function replicateInteractiveHomeworkForStudent(
     }
 
     for (const student of studentsToCreate) {
-      if (actor.isAdmin) {
-        await tx.studentTeacherAssignment.upsert({
-          where: {
-            teacherProfileId_studentProfileId: {
-              studentProfileId: student.id,
-              teacherProfileId: homework.teacherProfileId,
-            },
-          },
-          create: {
-            studentProfileId: student.id,
-            teacherProfileId: homework.teacherProfileId,
-          },
-          update: {},
-        });
-      }
-
       const lesson = await tx.lesson.create({
         data: {
           description:

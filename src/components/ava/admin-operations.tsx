@@ -891,10 +891,10 @@ export function AdminAssignTeacherForm({
             Novo vinculo
           </span>
           <h2 className="mt-3 text-lg font-semibold text-primary">
-            Conectar teacher e aluno
+            Definir teacher de referencia
           </h2>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            Escolha quem ensina e quem passa a aparecer na area dessa teacher.
+            Vinculo opcional para organizacao; nao limita a selecao de alunos.
           </p>
         </div>
 
@@ -937,7 +937,7 @@ export function AdminAssignTeacherForm({
             ))}
           </NativeSelect>
           <FieldDescription>
-            Esta teacher vai enxergar o aluno vinculado nas areas pedagogicas.
+            Admin e Teacher ja podem selecionar qualquer aluno ativo.
           </FieldDescription>
           <FieldError errors={[form.formState.errors.teacherProfileId]} />
         </Field>
@@ -960,7 +960,7 @@ export function AdminAssignTeacherForm({
             ))}
           </NativeSelect>
           <FieldDescription>
-            Esse vinculo define quais alunos aparecem para a teacher.
+            Use apenas para registrar a teacher de referencia do aluno.
           </FieldDescription>
           <FieldError errors={[form.formState.errors.studentProfileId]} />
         </Field>
@@ -1038,8 +1038,8 @@ export function AdminAssignTeacherForm({
       {!canAssign ? (
         <div className="flex items-start gap-3 rounded-lg border bg-muted/50 p-4 text-sm text-muted-foreground">
           <UsersRound aria-hidden="true" />
-          Cadastre pelo menos uma teacher ativa e um aluno ativo antes de criar
-          vinculos.
+          Cadastre pelo menos uma teacher ativa e um aluno ativo antes de
+          registrar uma referencia.
         </div>
       ) : null}
     </form>

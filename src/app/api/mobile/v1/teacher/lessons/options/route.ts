@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     console.error("[mobile-teacher-lesson:options]", { error, requestId });
     return mobileError(
       "LESSON_OPTIONS_UNAVAILABLE",
-      "Nao foi possivel carregar os alunos vinculados agora.",
+      "Nao foi possivel carregar os alunos ativos agora.",
       503,
       requestId,
     );

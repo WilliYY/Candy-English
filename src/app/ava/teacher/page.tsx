@@ -15,6 +15,7 @@ import { getCandyXpRankingSnapshot } from "@/lib/candy-xp-ranking";
 import { getCattyArtifactManagementData } from "@/lib/catty-user-artifacts";
 import { getCattyMemoryManagementData } from "@/lib/catty-memory-management";
 import { getPrisma } from "@/lib/prisma";
+import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 import { buildTeacherCandyXpEvents } from "@/lib/mobile-teacher-candy-xp";
 import type {
   CattyLearningCategoryInput,
@@ -112,22 +113,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
     session.user.role === "TEACHER"
       ? { id: teacherProfileIdForFiltering }
       : {};
-  const studentUnitWhere = selectedUnit ? { unit: selectedUnit } : {};
-  const studentWhere =
-    session.user.role === "TEACHER"
-      ? {
-          AND: [
-            studentUnitWhere,
-            {
-              teacherAssignments: {
-                some: {
-                  teacherProfileId: teacherProfileIdForFiltering,
-                },
-              },
-            },
-          ],
-        }
-      : studentUnitWhere;
+  const studentWhere = getStaffStudentSelectionWhere(selectedUnit);
   const lessonWhere =
     session.user.role === "TEACHER"
       ? { teacherProfileId: teacherProfileIdForFiltering }
@@ -504,23 +490,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       },
     }),
     prisma.contractDocument.findMany({
-      where:
-        session.user.role === "TEACHER"
-          ? {
-              OR: [
-                { studentProfileId: null },
-                {
-                  studentProfile: {
-                    teacherAssignments: {
-                      some: {
-                        teacherProfileId: teacherProfileIdForFiltering,
-                      },
-                    },
-                  },
-                },
-              ],
-            }
-          : {},
+      where: {},
       orderBy: {
         createdAt: "desc",
       },

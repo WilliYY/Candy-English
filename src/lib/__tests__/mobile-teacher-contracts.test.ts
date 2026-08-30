@@ -32,7 +32,7 @@ test("returns an empty protected module when the teacher profile is unavailable"
   assert.equal(contractQueries, 0);
 });
 
-test("lists only general or linked-student contracts without storage paths", async () => {
+test("lists every staff contract without storage paths", async () => {
   let query: unknown;
   const result = await getMobileTeacherContracts("teacher-user", {
     store: asStore({
@@ -66,18 +66,7 @@ test("lists only general or linked-student contracts without storage paths", asy
   });
 
   assert.equal(result.ok, true);
-  assert.deepEqual((query as { where: unknown }).where, {
-    OR: [
-      { studentProfileId: null },
-      {
-        studentProfile: {
-          teacherAssignments: {
-            some: { teacherProfile: { userId: "teacher-user" } },
-          },
-        },
-      },
-    ],
-  });
+  assert.deepEqual((query as { where: unknown }).where, {});
   assert.equal((query as { take: number }).take, 51);
   assert.deepEqual(result.data?.items, [
     {

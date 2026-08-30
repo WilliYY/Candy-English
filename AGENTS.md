@@ -73,7 +73,7 @@ Leitura minima recomendada:
 ## Roles
 
 - `ADMIN`: administra usuarios, redefine senhas, vinculos, contratos, manutencao, financeiro e agenda; tambem pode supervisionar areas teacher/student.
-- `TEACHER`: gerencia aulas, materiais, homework, feedback, mensagens, contratos e aula ao vivo para alunos vinculados; consulta somente a situacao mensal sem valores desses mesmos alunos.
+- `TEACHER`: pode selecionar qualquer aluno ativo para aulas, materiais, homework, mensagens, contratos, nivel, aula ao vivo, vendas e consulta mensal sem valores; continua editando apenas aulas/homeworks proprios.
 - `STUDENT`: acessa aulas, homework, mensagens, contratos, perfil e aula ao vivo permitida.
 
 ## Regras criticas de seguranca
@@ -87,12 +87,12 @@ Leitura minima recomendada:
 - Server actions sensiveis precisam chamar `auth()` e validar role.
 - Permissao deve ser validada por dado, nao apenas por UI protegida.
 - `STUDENT` so deve acessar dados do proprio `StudentProfile`.
-- `TEACHER` so deve editar/corrigir dados das proprias aulas ou dos alunos vinculados.
-- Chat teacher/aluno deve validar `StudentTeacherAssignment` antes de gravar mensagem.
-- Nivel do aluno deve ser alterado por `TEACHER` vinculada ou `ADMIN`, nunca pelo proprio `STUDENT`.
+- `TEACHER` so deve editar/corrigir aulas e homeworks da propria `TeacherProfile`, mas pode selecionar qualquer aluno ativo como destinatario.
+- Chat iniciado por `ADMIN`/`TEACHER` aceita qualquer aluno ativo; `STUDENT` so acessa conversas do proprio perfil e pode responder uma conversa ja aberta ou um vinculo de referencia.
+- Nivel do aluno pode ser alterado por `TEACHER` ou `ADMIN`, nunca pelo proprio `STUDENT`.
 - Contratos devem continuar protegidos por rota server-side.
-- Contratos gerais podem ser vistos por alunos logados; contratos com aluno definido exigem proprio aluno, teacher vinculada ou admin.
-- Exclusao de contrato exige confirmacao e validacao no servidor: `ADMIN` exclui qualquer contrato; `TEACHER` exclui somente contrato individual de aluno vinculado e nunca contrato geral; `STUDENT` nao exclui.
+- Contratos gerais podem ser vistos por alunos logados; contratos com aluno definido exigem proprio aluno, `TEACHER` ou `ADMIN`.
+- Exclusao de contrato exige confirmacao e validacao no servidor: `ADMIN` exclui qualquer contrato; `TEACHER` exclui somente contrato individual e nunca contrato geral; `STUDENT` nao exclui.
 - Modo manutencao bloqueia `STUDENT`, mas nao `ADMIN` nem `TEACHER`.
 - `User.isActive=false` deve bloquear login sem apagar historico.
 - Redefinicao de senha pela interface admin deve validar role `ADMIN` no servidor e gravar apenas hash, nunca a senha em texto puro.
@@ -125,10 +125,10 @@ Leitura minima recomendada:
 
 ## Financeiro
 
-O financeiro administrativo completo fica em `/ava/admin?task=financeiro`. A Teacher usa `/ava/teacher?task=financeiro` somente para acompanhar pago/pendente/atrasado dos alunos vinculados, sem valores, totais, gastos, vendas, contatos financeiros, observacoes, logs ou exportacoes.
+O financeiro administrativo completo fica em `/ava/admin?task=financeiro`. A Teacher usa `/ava/teacher?task=financeiro` somente para acompanhar pago/pendente/atrasado de todos os alunos ativos, sem valores, totais, gastos, vendas, contatos financeiros, observacoes, logs ou exportacoes.
 
 - Nao tratar como pagamento online sem pedido explicito.
-- Toda escrita, valor, gasto, exportacao e relatorio financeiro continua `ADMIN` only. A consulta Teacher deve filtrar `StudentTeacherAssignment` no servidor e projetar apenas campos permitidos antes de renderizar.
+- Toda escrita, valor, gasto, exportacao e relatorio financeiro continua `ADMIN` only. A consulta Teacher pode listar todos os alunos ativos, mas deve projetar apenas campos permitidos antes de renderizar.
 - `FinancialStudent` guarda dados recorrentes.
 - `FinancialPayment` guarda o snapshot mensal do aluno, status, data paga, observacao e se a linha segue ativa naquele mes.
 - `FinancialLog` registra acoes simples.
@@ -162,7 +162,7 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 
 - A criacao nova de homework usa o fluxo interativo do Canva; homework simples fica apenas como legado para atividades antigas.
 - A criacao nova de aula tambem pode usar PDF/imagem do Canva, criando uma aula real com uma atividade interativa vinculada para reaproveitar as mesmas ferramentas.
-- A criacao interativa seleciona teacher e aluno; o sistema cria uma aula interna automaticamente para vincular permissao, arquivo e entrega.
+- A criacao interativa seleciona teacher e qualquer aluno ativo; o sistema cria uma aula interna automaticamente para associar arquivo e entrega, sem criar ou exigir `StudentTeacherAssignment`.
 - Atividades criadas por `Criar aula` aparecem para o aluno em `Aulas e materiais`; somente atividades criadas por `Criar homework` aparecem em `Responder homework`.
 - Arquivos ficam em `storage/homework-assets` e sao servidos apenas por rota protegida.
 - `Homework.kind=INTERACTIVE` diferencia arquivos interativos de perguntas simples.

@@ -4,7 +4,7 @@
 
 O modulo Financeiro possui duas superficies protegidas. O painel administrativo completo fica em `/ava/admin?task=financeiro`; a consulta limitada da Teacher fica em `/ava/teacher?task=financeiro`. A tela Admin usa uma planilha mensal separada por polo, com Ivaté primeiro e Douradina depois. Cada linha mostra aluno, mes, valor, vencimento, situacao e acao rapida para marcar como pago; ao clicar no aluno, o painel de detalhes abre com a data de pagamento ou a pendencia daquela competencia.
 
-A Teacher ve somente alunos vinculados a sua `TeacherProfile` e apenas nome, polo do snapshot, situacao mensal, dia de vencimento e data de confirmacao. A projecao nao envia valor, forma de pagamento, contato, CPF, endereco, observacao, venda, gasto, total, log ou exportacao.
+A Teacher ve todos os alunos ativos e apenas nome, polo do snapshot, situacao mensal, dia de vencimento e data de confirmacao. A projecao nao envia valor, forma de pagamento, contato, CPF, endereco, observacao, venda, gasto, total, log ou exportacao.
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
@@ -46,7 +46,7 @@ Rota:
 ## Regras de negocio que precisam ser preservadas
 
 - Apenas `ADMIN` visualiza o financeiro completo e executa qualquer escrita, exportacao ou consulta de valores/gastos.
-- `TEACHER` recebe somente leitura minimizada de alunos com `StudentTeacherAssignment` para sua `TeacherProfile`. O filtro de vinculo e o `select` de dados acontecem no servidor; esconder campos no cliente nao e usado como barreira de seguranca.
+- `TEACHER` recebe somente leitura minimizada de todos os alunos ativos. O filtro de conta ativa e o `select` de dados acontecem no servidor; esconder campos no cliente nao e usado como barreira de seguranca.
 - A competencia da Teacher usa `FinancialPayment.snapshotName`, `snapshotUnit`, `snapshotPaymentDay`, `isPaid`, `paidAt` e `isActive`. Campos monetarios podem ser lidos apenas no servidor para calcular `Completar`, mas sao removidos pela projecao antes de chegar ao componente.
 - `STUDENT` nao acessa nenhuma superficie financeira.
 - O formulario de entrada carrega todos os `StudentProfile` dos polos Ivaté e Douradina para o Admin, mesmo quando o filtro principal da planilha esta em um polo especifico. A busca e o filtro do seletor acontecem somente sobre esses dados ja autorizados.
@@ -99,7 +99,7 @@ Rota:
 - A area `Pagamentos` usa resumo mensal proprio, totais por Polo 1/Polo 2, filtro de polo sincronizado com a aba de alunos, formulario compacto com observacao recolhida e lista em tabela no desktop para facilitar leitura de insumo, data, responsavel, polo e valor.
 - As unidades fixas do financeiro sao `IVATE` (`Unidade 1 Ivaté`) e `DOURADINA` (`Unidade 2 Douradina`); registros antigos entram por padrao como `IVATE`.
 - A UI mostra chips de polo no topo do financeiro, perto do filtro de mes. Os cards/listas exibem badge `Polo 1 - Ivaté` ou `Polo 2 - Douradina`; em `Todos`, os gastos exibem totais separados por polo e total geral.
-- O Financeiro possui modo proprio na tela de escolha e na sidebar de Admin/Teacher. O parametro `unit=all|IVATE|DOURADINA` continua inicializando o filtro sem alterar snapshots antigos; para Teacher, ele nunca amplia o conjunto alem dos alunos vinculados.
+- O Financeiro possui modo proprio na tela de escolha e na sidebar de Admin/Teacher. O parametro `unit=all|IVATE|DOURADINA` continua inicializando o filtro sem alterar snapshots antigos; para Teacher, ele alterna entre todos os alunos ativos ou o polo selecionado.
 - Clicar em um card abre o painel de historico com dados fixos, meses/parcelas, observacoes, edicao do pagamento mensal e acoes de inativacao.
 - Exportacao PDF/Excel continua no cliente com dados autorizados ja carregados, mas deixou de ser o centro do fluxo.
 - A migration de recorrencia preserva linhas antigas convertendo-as para aluno financeiro e pagamento mensal.

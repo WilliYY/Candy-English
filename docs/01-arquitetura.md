@@ -61,7 +61,7 @@ Servicos Docker:
 - `TEACHER` nao deve receber acesso global irrestrito aos alunos.
 - `STUDENT` nao edita o proprio nivel.
 - Financeiro e agenda sao modulos internos do `ADMIN`.
-- Vendas e um modulo interno de `ADMIN` e `TEACHER`; Teacher opera apenas alunos vinculados e consulta/cancela somente vendas que registrou.
+- Vendas e um modulo interno de `ADMIN` e `TEACHER`; Teacher pode selecionar qualquer aluno ativo e consulta/cancela somente vendas que registrou.
 - Ponto e um modulo proprio: Admin administra tudo; Teacher precisa de perfil ativo e consulta somente o proprio registro.
 - APIs e senhas ficam em modulo interno do `ADMIN`, com valor criptografado e revelacao explicita na UI.
 - Homework e aula interativa usam arquivo protegido e permissao por dado entre admin, teacher dona da aula e aluno dono.

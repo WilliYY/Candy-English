@@ -207,8 +207,8 @@ function ChatComposer({
         />
         {!compact ? (
           <FieldDescription>
-            A mensagem fica registrada dentro do AVA e respeita o vinculo
-            teacher-aluno.
+            A mensagem fica registrada dentro do AVA entre a teacher escolhida
+            e o aluno.
           </FieldDescription>
         ) : null}
       </Field>
@@ -263,8 +263,8 @@ export function ChatThreadPanel({
               Nenhuma conversa disponivel
             </p>
             <p className="mt-1">
-              Para abrir a chatbox, primeiro vincule um aluno a uma teacher.
-              Depois a conversa aparece aqui para os dois lados.
+              Ainda nao existe uma teacher ou um aluno ativo disponivel para
+              abrir a conversa.
             </p>
           </div>
         </div>
@@ -301,8 +301,8 @@ export function ChatThreadPanel({
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">
                   {mode === "student"
-                    ? "Fale com sua teacher vinculada dentro do AVA."
-                    : "Escolha um aluno vinculado e envie uma mensagem."}
+                    ? "Continue suas conversas com a equipe dentro do AVA."
+                    : "Escolha qualquer aluno ativo e envie uma mensagem."}
                 </p>
               </div>
             </div>

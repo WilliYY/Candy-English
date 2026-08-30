@@ -62,7 +62,7 @@ test("rejects invalid homework input before querying the teacher profile", async
   assert.equal(profileCalls, 0);
 });
 
-test("creates a text homework only inside an owned lesson for linked students", async () => {
+test("creates a text homework inside an owned lesson for any active student", async () => {
   const calls: Record<string, unknown> = {};
   const store = profileStore({
     homework: {
@@ -78,10 +78,10 @@ test("creates a text homework only inside an owned lesson for linked students", 
         return { id: "lesson-1" };
       },
     },
-    studentTeacherAssignment: {
+    studentProfile: {
       findMany: async (args: unknown) => {
         calls.assignments = args;
-        return [{ studentProfileId: "student-1" }];
+        return [{ id: "student-1" }];
       },
     },
   });
@@ -129,7 +129,7 @@ test("creates a text homework only inside an owned lesson for linked students", 
   );
 });
 
-test("rejects students that are not linked to the teacher", async () => {
+test("rejects students that are missing or inactive", async () => {
   let createCalls = 0;
   const store = profileStore({
     homework: {
@@ -139,7 +139,7 @@ test("rejects students that are not linked to the teacher", async () => {
       findUnique: async () => null,
     },
     lesson: { findFirst: async () => ({ id: "lesson-1" }) },
-    studentTeacherAssignment: { findMany: async () => [] },
+    studentProfile: { findMany: async () => [] },
   });
   const result = await createMobileTeacherHomework("teacher-user", baseInput, {
     store,
@@ -184,8 +184,8 @@ test("updates text metadata and questions with an atomic version condition", asy
       deleteMany: async () => ({ count: 0 }),
     },
     lesson: { findFirst: async () => ({ id: "lesson-1" }) },
-    studentTeacherAssignment: {
-      findMany: async () => [{ studentProfileId: "student-1" }],
+    studentProfile: {
+      findMany: async () => [{ id: "student-1" }],
     },
   });
 
@@ -283,8 +283,8 @@ test("updates interactive metadata without replacing protected fields", async ()
       deleteMany: async () => ({ count: 0 }),
     },
     lesson: { findFirst: async () => ({ id: "lesson-1" }) },
-    studentTeacherAssignment: {
-      findMany: async () => [{ studentProfileId: "student-1" }],
+    studentProfile: {
+      findMany: async () => [{ id: "student-1" }],
     },
   });
   const result = await updateMobileTeacherHomework(
@@ -316,8 +316,8 @@ test("locks assignment changes after a student has submitted", async () => {
       }),
     },
     lesson: { findFirst: async () => ({ id: "lesson-1" }) },
-    studentTeacherAssignment: {
-      findMany: async () => [{ studentProfileId: "student-2" }],
+    studentProfile: {
+      findMany: async () => [{ id: "student-2" }],
     },
   });
   const result = await updateMobileTeacherHomework(
@@ -378,7 +378,7 @@ test("loads only an owned homework and refuses silent list truncation", async ()
   );
 });
 
-test("duplicates the complete homework only for a linked target student", async () => {
+test("duplicates the complete homework for any active target student", async () => {
   const calls: Record<string, unknown> = {};
   const source = {
     assetFileName: "homework.pdf",
@@ -421,8 +421,8 @@ test("duplicates the complete homework only for a linked target student", async 
         return { id: "lesson-copy" };
       },
     },
-    studentTeacherAssignment: {
-      findMany: async () => [{ studentProfileId: "student-2" }],
+    studentProfile: {
+      findMany: async () => [{ id: "student-2" }],
     },
   });
 
@@ -528,7 +528,7 @@ test("replays a durable deletion without touching the homework again", async () 
   assert.equal(transactionCalls, 0);
 });
 
-test("returns lesson and linked-student options without email data", async () => {
+test("returns lesson and all active-student options without email data", async () => {
   const calls: Record<string, unknown> = {};
   const store = profileStore({
     lesson: {
@@ -544,16 +544,14 @@ test("returns lesson and linked-student options without email data", async () =>
         ];
       },
     },
-    studentTeacherAssignment: {
+    studentProfile: {
       findMany: async (args: unknown) => {
         calls.students = args;
         return [
           {
-            studentProfile: {
-              id: "student-1",
-              level: "A1",
-              user: { name: "Ana" },
-            },
+            id: "student-1",
+            level: "A1",
+            user: { name: "Ana" },
           },
         ];
       },

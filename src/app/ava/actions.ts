@@ -13,6 +13,7 @@ import {
 import { persistOwnProfile } from "@/lib/profile-service";
 import { getPrisma } from "@/lib/prisma";
 import { isRole, type Role } from "@/lib/roles";
+import { getActiveStudentProfileWhere } from "@/lib/staff-student-access";
 import { deleteContractPdf, saveContractPdf } from "@/lib/storage";
 import {
   createLiveSessionSchema,
@@ -102,22 +103,14 @@ async function getTeacherActor(actor: Actor) {
   };
 }
 
-async function teacherCanAccessStudent(
-  teacherProfileId: string,
-  studentProfileId: string,
-) {
+async function staffCanAccessStudent(studentProfileId: string) {
   const prisma = getPrisma();
-  const assignment = await prisma.studentTeacherAssignment.findUnique({
-    where: {
-      teacherProfileId_studentProfileId: {
-        studentProfileId,
-        teacherProfileId,
-      },
-    },
+  const student = await prisma.studentProfile.findFirst({
+    where: getActiveStudentProfileWhere(studentProfileId),
     select: { id: true },
   });
 
-  return Boolean(assignment);
+  return Boolean(student);
 }
 
 function createJitsiMeetUrl(title: string) {
@@ -218,19 +211,16 @@ export async function createLiveSession(
     };
   }
 
-  if (data.studentProfileId && !teacherActor.isAdmin) {
-    const canAccess = await teacherCanAccessStudent(
-      teacherProfileId,
-      data.studentProfileId,
-    );
+  if (data.studentProfileId) {
+    const canAccess = await staffCanAccessStudent(data.studentProfileId);
 
     if (!canAccess) {
       return {
         errors: {
-          studentProfileId: "Aluno nao esta vinculado a sua area teacher.",
+          studentProfileId: "Aluno nao encontrado ou inativo.",
         },
         ok: false,
-        message: "Voce so pode abrir aula para alunos vinculados a voce.",
+        message: "Selecione um aluno ativo.",
       };
     }
   }
@@ -368,27 +358,11 @@ export async function updateStudentLevel(
   const prisma = getPrisma();
   const { level, studentProfileId } = parsed.data;
 
-  if (!teacherActor.isAdmin) {
-    const teacherProfileId = teacherActor.teacherProfileId;
-
-    if (!teacherProfileId) {
-      return {
-        ok: false,
-        message: "Teacher invalida para atualizar nivel.",
-      };
-    }
-
-    const canAccess = await teacherCanAccessStudent(
-      teacherProfileId,
-      studentProfileId,
-    );
-
-    if (!canAccess) {
-      return {
-        ok: false,
-        message: "Voce so pode alterar alunos vinculados a sua teacher.",
-      };
-    }
+  if (!(await staffCanAccessStudent(studentProfileId))) {
+    return {
+      ok: false,
+      message: "Selecione um aluno ativo.",
+    };
   }
 
   await prisma.studentProfile.update({
@@ -442,24 +416,14 @@ export async function uploadContractDocument(formData: FormData) {
 
   const prisma = getPrisma();
 
-  if (parsed.data.studentProfileId && actor.role === "TEACHER") {
-    const teacherProfile = await prisma.teacherProfile.findUnique({
-      where: { userId: actor.userId },
-      select: { id: true },
-    });
-
-    if (
-      !teacherProfile ||
-      !(await teacherCanAccessStudent(
-        teacherProfile.id,
-        parsed.data.studentProfileId,
-      ))
-    ) {
+  if (
+    parsed.data.studentProfileId &&
+    !(await staffCanAccessStudent(parsed.data.studentProfileId))
+  ) {
       return {
         ok: false,
-        message: "Voce so pode enviar contrato para alunos vinculados a voce.",
+        message: "Selecione um aluno ativo.",
       };
-    }
   }
 
   try {

@@ -168,7 +168,7 @@ export function TeacherFinanceStatusPanel({
                 Acompanhamento de mensalidades
               </h2>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Consulte somente a situacao mensal dos alunos vinculados a voce.
+                Consulte somente a situacao mensal de todos os alunos ativos.
               </p>
             </div>
           </div>
@@ -263,7 +263,7 @@ export function TeacherFinanceStatusPanel({
         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="font-bold text-primary">Filtrar por polo</h3>
-            <p className="text-sm text-muted-foreground">Somente alunos vinculados permanecem visiveis.</p>
+            <p className="text-sm text-muted-foreground">Mostrando alunos ativos do polo selecionado.</p>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {SECRETARIA_UNIT_FILTER_OPTIONS.map((option) => (
@@ -287,8 +287,8 @@ export function TeacherFinanceStatusPanel({
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-cyan-200 bg-cyan-50/55 px-5 py-10 text-center">
           <UserRound aria-hidden="true" className="mx-auto size-7 text-cyan-700" />
-          <strong className="mt-3 block text-primary">Nenhum aluno vinculado nesta selecao</strong>
-          <p className="mt-1 text-sm text-muted-foreground">Troque o polo ou confirme os vinculos dos alunos.</p>
+          <strong className="mt-3 block text-primary">Nenhum aluno ativo nesta selecao</strong>
+          <p className="mt-1 text-sm text-muted-foreground">Troque o polo ou confira os cadastros ativos.</p>
         </div>
       ) : (
         <div className="grid gap-4">

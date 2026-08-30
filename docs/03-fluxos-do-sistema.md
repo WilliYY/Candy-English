@@ -87,7 +87,7 @@ Helpers:
 1. Usuario entra em `/ava/login`.
 2. Auth.js valida email, senha, usuario ativo e manutencao.
 3. Sessao JWT recebe `id` e `role`.
-4. `ADMIN` e `TEACHER` vao para `/ava/escolha`; ambos veem `AVA`, `Secretaria` e `Financeiro`, mas a Teacher abre apenas o acompanhamento sem valores dos alunos vinculados.
+4. `ADMIN` e `TEACHER` vao para `/ava/escolha`; ambos veem `AVA`, `Secretaria` e `Financeiro`, mas a Teacher abre apenas o acompanhamento sem valores de todos os alunos ativos.
 5. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.
 
 ### Escolha da area de trabalho
@@ -98,7 +98,7 @@ Helpers:
 4. Clicar em `Secretaria` leva para `/ava/secretaria`, um painel protegido de atalhos.
 5. Clicar em `Financeiro` leva Admin para `/ava/admin?task=financeiro` e Teacher para `/ava/teacher?task=financeiro`.
 6. A Secretaria usa `SECRETARIA_PERMISSION_MATRIX` para renderizar o escopo da role logada, mas nao mistura o atalho financeiro em seu painel.
-7. Teacher ve somente Secretaria limitada e, no Financeiro, situacao mensal dos alunos vinculados. Valores, totais, gastos, vendas, contatos financeiros, observacoes, exportacoes e alteracoes seguem exclusivos de Admin.
+7. Teacher ve somente Secretaria limitada e, no Financeiro, situacao mensal de todos os alunos ativos. Valores, totais, gastos, vendas, contatos financeiros, observacoes, exportacoes e alteracoes seguem exclusivos de Admin.
 8. A Secretaria mostra um filtro geral de polo logo abaixo do titulo: `Todos os polos`, `Polo 1 — Ivaté` e `Polo 2 — Douradina`. O filtro usa `unit=IVATE` ou `unit=DOURADINA` na URL quando ha polo especifico.
 9. Ao abrir pre-cadastros ou agenda a partir da Secretaria, o `unit` selecionado e preservado nos links e aplicado nas consultas server-side dos dados sensiveis. O Financeiro tambem mantem esse filtro quando e aberto por link direto ou pela troca de area.
 10. Student nao acessa Secretaria e e redirecionado para `/ava/student`.
@@ -128,7 +128,7 @@ Helpers:
 10. `Cadastros anteriores` preserva somente registros abertos do fluxo antigo (`PENDING`, `CONTACTED`, `WAITING_PAYMENT` e `READY_TO_CONVERT`). Esses registros mantem busca, edicao e o painel legado `Tornar aluno`, sem reescrever historico.
 11. A busca dos registros antigos continua client-side apenas sobre a lista autorizada pelo servidor, normalizando acentos, maiusculas/minusculas, telefone e documento; o filtro `unit` e aplicado no servidor.
 12. A aba `Alunos cadastrados` usa `User.role=STUDENT` e `StudentProfile` como fonte unica e mostra imediatamente os alunos criados pelo fluxo novo, pelo Admin direto ou por conversoes antigas.
-13. Admin pode buscar e editar nome, login, telefone e polo no card do aluno. Teacher recebe apenas alunos vinculados e usa a lista em modo de consulta.
+13. Admin pode buscar e editar nome, login, telefone e polo no card do aluno. Teacher recebe todos os alunos ativos e usa a lista em modo de consulta.
 14. Alterar o polo de aluno linkado atualiza perfil, cadastro financeiro recorrente e cadastro da agenda na mesma transaction; snapshots financeiros antigos nao sao reescritos.
 
 ### Admin
@@ -158,7 +158,7 @@ Helpers:
 1. Teacher entra pelo fluxo normal em `/ava/escolha` e escolhe `AVA` ou `Secretaria`.
 2. Ao clicar em `AVA`, abre `/ava/teacher?task=resumo`.
 3. No resumo, ve o card Teacher XP com nivel, fontes pedagogicas, trilha infinita e proximas metas de rotina.
-3. Ve alunos vinculados.
+3. Ve e seleciona todos os alunos ativos, sem liberacao ou vinculo previo.
 4. Cria aula interativa e homework interativo por arquivo do Canva, podendo selecionar um aluno, varios alunos ou todos os disponiveis no formulario; ao marcar todos, o seletor usa um resumo curto com total e acao separada para limpar, sem comprimir os controles.
 5. Corrige respostas e envia feedback.
 6. Ve a area de aula ao vivo em manutencao temporaria e usa mensagens enquanto a integracao de video e revisada.
@@ -218,7 +218,7 @@ Helpers:
 2. O arquivo fica em storage privado e e servido por `/ava/contracts/[contractId]` com validacao server-side de sessao e permissao por aluno.
 3. Student abre `/ava/student?task=contratos` e visualiza o PDF embutido no proprio AVA; o header `X-Frame-Options=SAMEORIGIN` permite esse preview interno sem liberar embed por sites externos.
 4. O aluno tambem pode abrir o contrato em nova aba pela mesma rota protegida.
-5. Admin pode excluir qualquer contrato. Teacher pode excluir somente contrato individual de aluno que continua vinculado a ela; contrato geral e contrato de outro vinculo permanecem protegidos. A interface confirma a acao e a server action valida novamente role, vinculo e contrato antes de remover o registro e o PDF.
+5. Admin pode excluir qualquer contrato. Teacher pode excluir contrato individual de qualquer aluno ativo, mas nunca contrato geral. A interface confirma a acao e a server action valida novamente role e contrato antes de remover o registro e o PDF.
 
 ### Catty
 
@@ -320,14 +320,14 @@ Helpers:
 12. Admin pode inativar somente o mes selecionado ou encerrar o aluno a partir daquele mes, sempre preservando historico antigo.
 13. Exporta PDF/Excel com a unidade de cada aluno e acompanha log em card separado.
 14. Na aba `Pagamentos`, admin registra gastos internos da loja com unidade, insumo, data, valor e quem fez a compra; esses registros sao separados dos alunos financeiros.
-15. Teacher abre `/ava/teacher?task=financeiro`, escolhe mes e polo e ve apenas nome, polo, situacao, vencimento e data de confirmacao dos alunos vinculados. A consulta usa o snapshot mensal, mas remove valores e demais dados sensiveis antes de renderizar.
+15. Teacher abre `/ava/teacher?task=financeiro`, escolhe mes e polo e ve apenas nome, polo, situacao, vencimento e data de confirmacao de todos os alunos ativos. A consulta usa o snapshot mensal, mas remove valores e demais dados sensiveis antes de renderizar.
 
 ### Secretaria
 
 1. Admin ou Teacher abre `/ava/secretaria` depois da escolha pos-login ou pela sidebar.
 2. A pagina agrupa atalhos administrativos, sem substituir as rotas antigas por `?task=`.
 3. Admin ve pre-cadastros, financeiro, agenda, contratos, administracao e sistema.
-4. Teacher ve somente cadastros proprios/atribuidos, contratos permitidos e um atalho para o Financeiro limitado por role/vinculo.
+4. Teacher ve somente cadastros proprios/atribuidos, todos os contratos permitidos para sua role e um atalho para o Financeiro minimizado de todos os alunos ativos.
 5. Student nao acessa `/ava/secretaria`; ao tentar, a autorizacao o redireciona para o AVA Student.
 
 ### Agenda
@@ -383,10 +383,10 @@ Helpers:
 - Catty Learning Center nunca deve aprender automaticamente com qualquer usuario; feedback do widget vira fila pendente, Teacher/Admin sugerem, apenas Admin aprova memoria global, e itens com dados sensiveis devem ser recusados.
 - Enriquecimento de artefato da Catty nunca deve rodar durante o chat normal; ele acontece apenas no fluxo Admin/Teacher de preparacao/revisao, usa cache e so ativa um tema apos aprovacao/edicao humana.
 - APIs e senhas so podem ser acessadas por `ADMIN`; o painel nunca deve importar `DATABASE_URL`, `AUTH_SECRET`, senhas do Postgres ou senha seed do admin.
-- Mensagem teacher/aluno exige vinculo.
+- Teacher pode iniciar mensagem com qualquer aluno ativo usando o proprio perfil; Student atua apenas nas proprias conversas e pode responder a uma conversa existente mesmo sem vinculo de referencia.
 - Contratos e avatar exigem sessao.
 - Edicao rapida de nome/email/telefone de aluno na tela `Usuarios` exige `ADMIN` no servidor e so aceita usuarios `STUDENT`.
-- Agenda e a administracao financeira sao internas do Admin; Teacher recebe somente a leitura minimizada da situacao dos alunos vinculados.
+- Agenda e a administracao financeira sao internas do Admin; Teacher recebe somente a leitura minimizada da situacao de todos os alunos ativos.
 
 ## Decisoes tecnicas tomadas
 
@@ -415,7 +415,7 @@ Helpers:
 1. Admin ou Teacher entra em `/ava/vendas`; Student e recusado pelo guard server-side.
 2. O operador pesquisa produtos ativos, adiciona quantidades ao carrinho e seleciona um aluno autorizado ou informa um comprador avulso.
 3. Em `Pago na hora`, o servidor exige uma forma de pagamento. Comprador avulso e permitido somente neste fluxo.
-4. Em `Fatura mensal`, o servidor exige um aluno cadastrado e uma competencia ativa ainda nao paga, gravando ano/mes no fuso `America/Sao_Paulo`; Teacher so pode selecionar aluno vinculado.
+4. Em `Fatura mensal`, o servidor exige um aluno ativo cadastrado e uma competencia ativa ainda nao paga, gravando ano/mes no fuso `America/Sao_Paulo`; Teacher pode selecionar qualquer aluno ativo.
 5. A transaction rele produto, preco, estado e estoque no servidor, baixa cada quantidade e cria `Sale`/`SaleItem` com snapshots dos valores.
 6. Se qualquer item mudou ou ficou sem estoque, toda a transaction falha sem criar venda e sem baixar estoque parcialmente.
 7. O cancelamento registra operador, data e motivo e devolve as quantidades ao estoque na mesma transaction; a venda nao e apagada e uma competencia ja paga precisa ser reaberta pelo Admin antes do estorno.

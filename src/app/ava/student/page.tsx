@@ -606,10 +606,20 @@ export default async function StudentPage({ searchParams }: StudentPageProps) {
         studentPhoneAlt: studentProfile.studentPhoneAlt,
       }}
       profileCompletion={profileCompletion}
-      teachers={teacherAssignments.map((assignment) => ({
-        id: assignment.teacherProfileId,
-        label: `${assignment.teacherProfile.user.name} - ${assignment.teacherProfile.user.email}`,
-      }))}
+      teachers={Array.from(
+        new Map(
+          [
+            ...teacherAssignments.map((assignment) => ({
+              id: assignment.teacherProfileId,
+              label: `${assignment.teacherProfile.user.name} - ${assignment.teacherProfile.user.email}`,
+            })),
+            ...chatThreads.map((thread) => ({
+              id: thread.teacherProfileId,
+              label: thread.teacherProfile.user.name,
+            })),
+          ].map((teacher) => [teacher.id, teacher]),
+        ).values(),
+      )}
       />
     </AvaWorkspaceShell>
   );

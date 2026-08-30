@@ -37,7 +37,6 @@ const baseInput = {
 };
 
 type StoreOptions = {
-  assignmentExists?: boolean;
   editorMaterialCount?: number;
   editorExists?: boolean;
   profileId?: string | null;
@@ -101,10 +100,10 @@ function createStore(options: StoreOptions = {}) {
         return { count: 1 };
       },
     },
-    studentTeacherAssignment: {
-      findUnique: async (args: unknown) => {
-        calls.assignment = args;
-        return options.assignmentExists === false ? null : { id: "link-1" };
+    studentProfile: {
+      findFirst: async (args: unknown) => {
+        calls.student = args;
+        return { id: "student-1" };
       },
     },
     vocabularyItem: {
@@ -155,16 +154,14 @@ function createStore(options: StoreOptions = {}) {
         };
       },
     },
-    studentTeacherAssignment: {
+    studentProfile: {
       findMany: async (args: unknown) => {
         calls.options = args;
         return [
           {
-            studentProfile: {
-              id: "student-1",
-              level: "A2",
-              user: { name: "Candy Student" },
-            },
+            id: "student-1",
+            level: "A2",
+            user: { name: "Candy Student" },
           },
         ];
       },
@@ -205,7 +202,7 @@ test("rejects invalid or unsafe lesson input before querying profiles", async ()
   assert.equal(calls.profile, undefined);
 });
 
-test("creates a lesson only for a student linked to the teacher", async () => {
+test("creates a lesson for any active student", async () => {
   const { calls, store } = createStore();
   const result = await createMobileTeacherLesson(
     "teacher-user",
@@ -213,12 +210,14 @@ test("creates a lesson only for a student linked to the teacher", async () => {
     { store },
   );
 
-  assert.deepEqual(calls.assignment, {
+  assert.deepEqual(calls.student, {
     select: { id: true },
     where: {
-      teacherProfileId_studentProfileId: {
-        studentProfileId: "student-1",
-        teacherProfileId: "teacher-1",
+      id: "student-1",
+      user: {
+        deletedAt: null,
+        isActive: true,
+        role: "STUDENT",
       },
     },
   });
@@ -279,20 +278,20 @@ test("replays the same create operation without duplicating the lesson", async (
   assert.equal(result.data?.lessonId, "lesson-replayed");
   assert.equal(result.data?.replayed, true);
   assert.equal(calls.create, undefined);
-  assert.equal(calls.assignment, undefined);
+  assert.equal(calls.student, undefined);
 });
 
-test("rejects a student outside the teacher assignment", async () => {
-  const { calls, store } = createStore({ assignmentExists: false });
+test("creates a lesson for an active student without teacher assignment", async () => {
+  const { calls, store } = createStore();
   const result = await createMobileTeacherLesson(
     "teacher-user",
     baseInput,
     { store },
   );
 
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, "STUDENT_FORBIDDEN");
-  assert.equal(calls.create, undefined);
+  assert.equal(result.ok, true);
+  assert.ok(calls.create);
+  assert.ok(calls.student);
 });
 
 test("updates one owned lesson atomically and replaces editor collections", async () => {
@@ -429,7 +428,7 @@ test("refuses to truncate an oversized existing lesson in the editor", async () 
   assert.equal(result.reason, "LIMIT_EXCEEDED");
 });
 
-test("lists only students linked to the authenticated teacher", async () => {
+test("lists every active student for the authenticated teacher", async () => {
   const { calls, store } = createStore();
   const result = await getMobileTeacherLessonOptions("teacher-user", { store });
 
@@ -443,17 +442,19 @@ test("lists only students linked to the authenticated teacher", async () => {
     ok: true,
   });
   assert.deepEqual(calls.options, {
-    orderBy: { studentProfile: { user: { name: "asc" } } },
+    orderBy: { user: { name: "asc" } },
     select: {
-      studentProfile: {
-        select: {
-          id: true,
-          level: true,
-          user: { select: { name: true } },
-        },
-      },
+      id: true,
+      level: true,
+      user: { select: { name: true } },
     },
     take: 100,
-    where: { teacherProfileId: "teacher-1" },
+    where: {
+      user: {
+        deletedAt: null,
+        isActive: true,
+        role: "STUDENT",
+      },
+    },
   });
 });

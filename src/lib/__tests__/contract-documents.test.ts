@@ -9,7 +9,7 @@ import {
   normalizeContractFileName,
 } from "@/lib/contract-documents";
 
-test("scopes contract access by role without exposing another student", () => {
+test("scopes student contracts to self and lets staff access every contract", () => {
   assert.deepEqual(
     getContractDocumentAccessScope(
       { id: "student-user-1", role: "STUDENT" },
@@ -29,19 +29,7 @@ test("scopes contract access by role without exposing another student", () => {
       { id: "teacher-user-1", role: "TEACHER" },
       "contract-1",
     ),
-    {
-      id: "contract-1",
-      OR: [
-        { studentProfileId: null },
-        {
-          studentProfile: {
-            teacherAssignments: {
-              some: { teacherProfile: { userId: "teacher-user-1" } },
-            },
-          },
-        },
-      ],
-    },
+    { id: "contract-1" },
   );
 
   assert.deepEqual(
@@ -53,7 +41,7 @@ test("scopes contract access by role without exposing another student", () => {
   );
 });
 
-test("scopes contract deletion to admins or teachers linked to the student", () => {
+test("scopes contract deletion to admins or teachers for individual students", () => {
   assert.deepEqual(
     getContractDocumentDeletionScope(
       { id: "admin-user-1", role: "ADMIN" },
@@ -70,11 +58,6 @@ test("scopes contract deletion to admins or teachers linked to the student", () 
     {
       id: "contract-1",
       studentProfileId: { not: null },
-      studentProfile: {
-        teacherAssignments: {
-          some: { teacherProfile: { userId: "teacher-user-1" } },
-        },
-      },
     },
   );
 

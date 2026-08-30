@@ -22,7 +22,7 @@ export function getContractDocumentAccessScope(
   user: ContractAccessUser,
   contractId?: string,
 ): Prisma.ContractDocumentWhereInput {
-  if (user.role === "ADMIN") {
+  if (user.role === "ADMIN" || user.role === "TEACHER") {
     return contractId ? { id: contractId } : {};
   }
 
@@ -40,13 +40,7 @@ export function getContractDocumentAccessScope(
     ...(contractId ? { id: contractId } : {}),
     OR: [
       { studentProfileId: null },
-      {
-        studentProfile: {
-          teacherAssignments: {
-            some: { teacherProfile: { userId: user.id } },
-          },
-        },
-      },
+      { studentProfile: { userId: user.id } },
     ],
   };
 }
@@ -66,11 +60,6 @@ export function getContractDocumentDeletionScope(
   return {
     id: contractId,
     studentProfileId: { not: null },
-    studentProfile: {
-      teacherAssignments: {
-        some: { teacherProfile: { userId: user.id } },
-      },
-    },
   };
 }
 

@@ -325,12 +325,12 @@ const taskMeta = {
   },
   financeiro: {
     description:
-      "Acompanhe a situacao mensal dos alunos vinculados sem acessar valores.",
+      "Acompanhe a situacao mensal de todos os alunos ativos sem acessar valores.",
     icon: CircleDollarSign,
     title: "Financeiro dos alunos",
   },
   mensagens: {
-    description: "Espaco de conversa com alunos vinculados a teacher.",
+    description: "Espaco de conversa com qualquer aluno ativo.",
     icon: MessageSquareText,
     title: "Mensagens",
   },
@@ -556,7 +556,7 @@ export function TeacherWorkspace({
                 <h2 className="text-lg font-semibold">Nivel dos alunos</h2>
                 {students.length === 0 ? (
                   <EmptyState>
-                    Nenhum aluno vinculado a esta teacher.
+                    Nenhum aluno ativo disponivel.
                   </EmptyState>
                 ) : (
                   <div className="grid gap-3">

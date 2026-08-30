@@ -3,6 +3,7 @@ import { AvaWorkspaceShell } from "@/components/ava/ava-workspace-shell";
 import { SalesPosPanel } from "@/components/ava/sales-pos-panel";
 import { requireAvaRole } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
+import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 import {
   getSaoPauloDateKey,
   getSaoPauloYearMonth,
@@ -20,14 +21,6 @@ export default async function SalesPage() {
   const session = await requireAvaRole(["ADMIN", "TEACHER"], "/ava/vendas");
   const prisma = getPrisma();
   const period = getSaoPauloYearMonth();
-  const teacherProfile =
-    session.user.role === "TEACHER"
-      ? await prisma.teacherProfile.findUnique({
-          where: { userId: session.user.id },
-          select: { id: true },
-        })
-      : null;
-
   const [products, students, recentSales] = await Promise.all([
     prisma.saleProduct.findMany({
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
@@ -43,19 +36,7 @@ export default async function SalesPage() {
       },
     }),
     prisma.studentProfile.findMany({
-      where: {
-        user: { isActive: true, role: "STUDENT" },
-        ...(session.user.role === "TEACHER"
-          ? {
-              teacherAssignments: {
-                some: {
-                  teacherProfileId:
-                    teacherProfile?.id ?? "__missing_teacher_profile__",
-                },
-              },
-            }
-          : {}),
-      },
+      where: getStaffStudentSelectionWhere(),
       orderBy: { user: { name: "asc" } },
       select: {
         financialStudent: {

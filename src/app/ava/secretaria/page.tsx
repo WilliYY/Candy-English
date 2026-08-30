@@ -309,7 +309,7 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
           <div className="rounded-lg border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm font-semibold text-amber-900 shadow-sm">
             Valores, gastos, exportacoes, agenda interna, APIs e configuracoes
             seguem exclusivos de Admin. A teacher recebe apenas a situacao
-            mensal dos alunos vinculados.
+            mensal de todos os alunos ativos.
           </div>
         ) : null}
 
@@ -330,8 +330,8 @@ export default async function SecretariaPage({ searchParams }: SecretariaPagePro
           <span className="rounded-lg border border-primary/10 bg-[linear-gradient(90deg,#fbf7ff,#ffffff,#f7fdff)] px-3 py-2 text-sm font-semibold text-muted-foreground shadow-sm sm:col-span-2 lg:col-span-4">
             Escopo: cadastros {scopeLabels[permission.preRegistrations]} e
             agenda {scopeLabels[permission.agenda]}. O Financeiro fica em uma
-            area propria: completo para Admin e somente por vinculo, sem
-            valores, para Teacher.
+            area propria: completo para Admin e somente leitura minimizada,
+            sem valores, para Teacher.
           </span>
         </div>
 

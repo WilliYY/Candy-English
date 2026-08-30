@@ -1,6 +1,10 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { normalizeExternalMaterialUrl } from "@/lib/mobile-lesson";
 import { getPrisma } from "@/lib/prisma";
+import {
+  getActiveStudentProfileWhere,
+  getStaffStudentSelectionWhere,
+} from "@/lib/staff-student-access";
 import { z } from "zod";
 
 const nullableText = (max: number, message: string) =>
@@ -143,7 +147,7 @@ type EditorLessonRow = Prisma.LessonGetPayload<{
 
 export type MobileTeacherLessonEditorStore = Pick<
   ReturnType<typeof getPrisma>,
-  "lesson" | "studentTeacherAssignment" | "teacherProfile" | "$transaction"
+  "lesson" | "studentProfile" | "teacherProfile" | "$transaction"
 >;
 
 type EditorOptions = {
@@ -264,22 +268,16 @@ function vocabularyData(
   }));
 }
 
-async function hasStudentAssignment(
+async function hasActiveStudent(
   transaction: Prisma.TransactionClient,
-  teacherProfileId: string,
   studentProfileId: string,
 ) {
-  const assignment = await transaction.studentTeacherAssignment.findUnique({
-    where: {
-      teacherProfileId_studentProfileId: {
-        studentProfileId,
-        teacherProfileId,
-      },
-    },
+  const student = await transaction.studentProfile.findFirst({
+    where: getActiveStudentProfileWhere(studentProfileId),
     select: { id: true },
   });
 
-  return Boolean(assignment);
+  return Boolean(student);
 }
 
 export async function createMobileTeacherLesson(
@@ -326,16 +324,12 @@ export async function createMobileTeacherLesson(
 
       if (
         data.studentProfileId &&
-        !(await hasStudentAssignment(
-          transaction,
-          teacherProfileId,
-          data.studentProfileId,
-        ))
+        !(await hasActiveStudent(transaction, data.studentProfileId))
       ) {
         return failure(
           "STUDENT_FORBIDDEN",
-          "Voce so pode criar aulas para alunos vinculados.",
-          { studentProfileId: "Aluno nao esta vinculado a sua area teacher." },
+          "Selecione um aluno ativo.",
+          { studentProfileId: "Aluno nao encontrado ou inativo." },
         );
       }
 
@@ -423,16 +417,12 @@ export async function updateMobileTeacherLesson(
 
     if (
       data.studentProfileId &&
-      !(await hasStudentAssignment(
-        transaction,
-        teacherProfileId,
-        data.studentProfileId,
-      ))
+      !(await hasActiveStudent(transaction, data.studentProfileId))
     ) {
       return failure(
         "STUDENT_FORBIDDEN",
-        "Voce so pode usar alunos vinculados.",
-        { studentProfileId: "Aluno nao esta vinculado a sua area teacher." },
+        "Selecione um aluno ativo.",
+        { studentProfileId: "Aluno nao encontrado ou inativo." },
       );
     }
 
@@ -589,27 +579,23 @@ export async function getMobileTeacherLessonOptions(
     };
   }
 
-  const assignments = await store.studentTeacherAssignment.findMany({
-    where: { teacherProfileId },
-    orderBy: { studentProfile: { user: { name: "asc" } } },
+  const students = await store.studentProfile.findMany({
+    where: getStaffStudentSelectionWhere(),
+    orderBy: { user: { name: "asc" } },
     take: 100,
     select: {
-      studentProfile: {
-        select: {
-          id: true,
-          level: true,
-          user: { select: { name: true } },
-        },
-      },
+      id: true,
+      level: true,
+      user: { select: { name: true } },
     },
   });
 
   return {
     data: {
-      students: assignments.map(({ studentProfile }) => ({
-        id: studentProfile.id,
-        level: studentProfile.level,
-        name: studentProfile.user.name,
+      students: students.map((student) => ({
+        id: student.id,
+        level: student.level,
+        name: student.user.name,
       })),
     },
     message: "Opcoes da aula carregadas.",
