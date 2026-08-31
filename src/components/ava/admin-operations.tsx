@@ -577,7 +577,9 @@ export function AdminUserPasswordResetForm({
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-primary [&::-webkit-details-marker]:hidden">
         <span className="inline-flex min-w-0 items-center gap-2">
           <KeyRound aria-hidden="true" className="size-4 shrink-0" />
-          <span className="truncate">Acesso e senha</span>
+          <span className="whitespace-normal break-words text-left leading-4">
+            Acesso e senha
+          </span>
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[0.62rem] uppercase tracking-[0.08em] text-emerald-800">
