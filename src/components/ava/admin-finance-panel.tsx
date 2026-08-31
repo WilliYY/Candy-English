@@ -70,6 +70,7 @@ import {
 import { suggestStudentAccess } from "@/lib/finance-student-access";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { AdminStaffInvoicesSection } from "@/components/ava/admin-staff-invoices-section";
 import {
   Field,
   FieldError,
@@ -80,6 +81,7 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
+import type { StaffInvoiceSale } from "@/lib/staff-invoices";
 
 type PaymentMethod = (typeof FINANCIAL_PAYMENT_METHODS)[number];
 type FinancialUnit = (typeof FINANCIAL_UNITS)[number];
@@ -172,6 +174,8 @@ export type AdminFinanceLogRow = {
   studentName: string | null;
 };
 
+export type AdminStaffInvoiceSale = StaffInvoiceSale;
+
 type FinanceMonthRow = AdminFinanceStudentRow & {
   isOverdue: boolean;
   isPaid: boolean;
@@ -188,6 +192,7 @@ type AdminFinancePanelProps = {
   initialUnitFilter?: SecretariaUnitFilter;
   logs: AdminFinanceLogRow[];
   nowIso: string;
+  staffInvoiceSales: AdminStaffInvoiceSale[];
   students: AdminFinanceStudentRow[];
 };
 
@@ -1820,6 +1825,7 @@ export function AdminFinancePanel({
   initialUnitFilter,
   logs,
   nowIso,
+  staffInvoiceSales,
   students,
 }: AdminFinancePanelProps) {
   const router = useRouter();
@@ -2462,6 +2468,12 @@ export function AdminFinancePanel({
                 value={formatCurrency(monthSummary.overdue)}
               />
             </div>
+
+            <AdminStaffInvoicesSection
+              month={activeMonth}
+              sales={staffInvoiceSales}
+              unitFilter={unitFilter}
+            />
 
             <div className="mx-4 mb-4 overflow-hidden rounded-lg border border-primary/15 bg-gradient-to-r from-primary via-[#68407c] to-[#245f70] p-4 text-white shadow-[0_16px_34px_rgba(65,42,76,0.16)] sm:mx-5 sm:mb-5">
               <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">

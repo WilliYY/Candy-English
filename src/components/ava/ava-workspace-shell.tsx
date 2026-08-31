@@ -18,6 +18,7 @@ import {
   Palette,
   PencilLine,
   Radio,
+  ReceiptText,
   Settings,
   Sparkles,
   Store,
@@ -414,7 +415,7 @@ export async function AvaWorkspaceShell({
   }
 
   const prisma = getPrisma();
-  const [currentUser, navAlertSignatures] = await Promise.all([
+  const [currentUser, navAlertSignatures, pendingStaffInvoice] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -424,6 +425,41 @@ export async function AvaWorkspaceShell({
       },
     }),
     getAvaNavAlertSignatures(role, userId),
+    role === "TEACHER"
+      ? Promise.all([
+          prisma.sale.aggregate({
+            where: {
+              buyerUserId: userId,
+              financialPaymentId: null,
+              invoiceYear: 2026,
+              paidAt: null,
+              settlementType: "MONTHLY_INVOICE",
+              status: "COMPLETED",
+            },
+            _count: { _all: true },
+            _sum: { totalCents: true },
+          }),
+          prisma.sale.findFirst({
+            where: {
+              buyerUserId: userId,
+              financialPaymentId: null,
+              invoiceYear: 2026,
+              paidAt: null,
+              settlementType: "MONTHLY_INVOICE",
+              status: "COMPLETED",
+            },
+            orderBy: [{ invoiceMonth: "asc" }, { createdAt: "asc" }],
+            select: { invoiceMonth: true },
+          }),
+        ]).then(([summary, oldestPending]) => ({
+          ...summary,
+          invoiceMonth: oldestPending?.invoiceMonth ?? null,
+        }))
+      : Promise.resolve({
+          _count: { _all: 0 },
+          _sum: { totalCents: null },
+          invoiceMonth: null,
+        }),
   ]);
   const canAccessTimeClock =
     role === "ADMIN" || Boolean(currentUser?.timeClockProfile?.isActive);
@@ -478,6 +514,32 @@ export async function AvaWorkspaceShell({
                   </p>
                 </div>
               </div>
+              {role === "TEACHER" && pendingStaffInvoice._count._all > 0 ? (
+                <Link
+                  href={`/ava/teacher?task=financeiro&month=${pendingStaffInvoice.invoiceMonth ?? new Date().getMonth() + 1}`}
+                  className="relative z-10 mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-amber-950 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-amber-500 text-white">
+                      <ReceiptText aria-hidden="true" className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <strong className="block text-xs uppercase tracking-[0.1em]">
+                        Fatura pendente
+                      </strong>
+                      <span className="block truncate text-[0.68rem] font-semibold text-amber-800">
+                        {pendingStaffInvoice._count._all} compra(s) de doces
+                      </span>
+                    </span>
+                  </span>
+                  <strong className="shrink-0 text-sm tabular-nums">
+                    {new Intl.NumberFormat("pt-BR", {
+                      currency: "BRL",
+                      style: "currency",
+                    }).format((pendingStaffInvoice._sum.totalCents ?? 0) / 100)}
+                  </strong>
+                </Link>
+              ) : null}
               {role === "STUDENT" ? (
                 <div className="relative z-10 mt-4 grid grid-cols-3 gap-2">
                   <span className="ava-sidebar-study-chip">XP</span>

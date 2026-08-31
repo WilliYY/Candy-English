@@ -18,6 +18,10 @@ import type { Role } from "@/lib/roles";
 import { deleteAvatarImage } from "@/lib/storage";
 import { getUserAnonymizationDate } from "@/lib/user-retention";
 import {
+  staffInvoiceSettlementSchema,
+  type StaffInvoiceSettlementInput,
+} from "@/lib/validations/sales";
+import {
   adminCredentialCreateSchema,
   adminCredentialIdSchema,
   adminCredentialUpdateSchema,
@@ -90,6 +94,8 @@ export type AdminRevealCredentialResult = {
 
 const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
 const AGENDA_YEAR = 2026;
+
+class AdminFinanceRuleError extends Error {}
 
 type FinancialSnapshotSource = {
   address: string | null;
@@ -1937,6 +1943,126 @@ export async function recordFinancialExport(
   return {
     ok: true,
     message: "Exportacao registrada no log.",
+  };
+}
+
+export async function settleStaffInvoice(
+  input: StaffInvoiceSettlementInput,
+): Promise<AdminActionResult<StaffInvoiceSettlementInput>> {
+  const session = await requireAdmin();
+
+  if (!session) {
+    return {
+      ok: false,
+      message: "Voce nao tem permissao para confirmar faturas da equipe.",
+    };
+  }
+
+  const parsed = staffInvoiceSettlementSchema.safeParse(input);
+
+  if (!parsed.success) {
+    return {
+      errors: fieldErrors<StaffInvoiceSettlementInput>(parsed.error.issues),
+      ok: false,
+      message: "Revise as vendas selecionadas para a fatura.",
+    };
+  }
+
+  const prisma = getPrisma();
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const buyer = await tx.user.findFirst({
+        where: { id: parsed.data.buyerUserId, role: "TEACHER" },
+        select: { id: true, name: true },
+      });
+      const sales = await tx.sale.findMany({
+        where: { id: { in: parsed.data.saleIds } },
+        select: {
+          buyerUserId: true,
+          financialPaymentId: true,
+          id: true,
+          invoiceMonth: true,
+          invoiceYear: true,
+          paidAt: true,
+          settlementType: true,
+          status: true,
+          totalCents: true,
+        },
+      });
+
+      if (!buyer || sales.length !== parsed.data.saleIds.length) {
+        throw new AdminFinanceRuleError(
+          "A fatura mudou ou a conta do professor nao esta mais disponivel.",
+        );
+      }
+
+      const hasInvalidSale = sales.some(
+        (sale) =>
+          sale.buyerUserId !== buyer.id ||
+          sale.financialPaymentId !== null ||
+          sale.invoiceMonth !== parsed.data.month ||
+          sale.invoiceYear !== parsed.data.year ||
+          sale.settlementType !== "MONTHLY_INVOICE" ||
+          sale.status !== "COMPLETED" ||
+          (parsed.data.isPaid ? sale.paidAt !== null : sale.paidAt === null),
+      );
+
+      if (hasInvalidSale) {
+        throw new AdminFinanceRuleError(
+          "A fatura ja foi alterada. Atualize a tela antes de confirmar.",
+        );
+      }
+
+      const update = await tx.sale.updateMany({
+        where: {
+          buyerUserId: buyer.id,
+          id: { in: parsed.data.saleIds },
+          paidAt: parsed.data.isPaid ? null : { not: null },
+          status: "COMPLETED",
+        },
+        data: { paidAt: parsed.data.isPaid ? new Date() : null },
+      });
+
+      if (update.count !== sales.length) {
+        throw new AdminFinanceRuleError(
+          "A fatura mudou durante a confirmacao. Atualize a tela e tente novamente.",
+        );
+      }
+
+      const totalCents = sales.reduce(
+        (total, sale) => total + sale.totalCents,
+        0,
+      );
+      await tx.financialLog.create({
+        data: {
+          action: parsed.data.isPaid
+            ? "STAFF_INVOICE_PAID"
+            : "STAFF_INVOICE_REOPENED",
+          createdByUserId: session.user.id,
+          description: `${parsed.data.isPaid ? "Fatura da equipe confirmada" : "Fatura da equipe reaberta"}: ${buyer.name}, ${parsed.data.month}/${parsed.data.year}, ${sales.length} venda(s), ${totalCents} centavos.`,
+        },
+      });
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      message:
+        error instanceof AdminFinanceRuleError
+          ? error.message
+          : "Nao foi possivel atualizar a fatura da equipe.",
+    };
+  }
+
+  revalidatePath("/ava/admin");
+  revalidatePath("/ava/teacher");
+  revalidatePath("/ava/vendas");
+
+  return {
+    ok: true,
+    message: parsed.data.isPaid
+      ? "Fatura da equipe marcada como paga."
+      : "Fatura da equipe reaberta como pendente.",
   };
 }
 

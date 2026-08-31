@@ -8,7 +8,9 @@ import {
   GraduationCap,
   Info,
   MapPin,
+  ReceiptText,
   ShieldCheck,
+  ShoppingBag,
   TriangleAlert,
   UserRound,
 } from "lucide-react";
@@ -25,9 +27,14 @@ import {
   type SecretariaUnitFilter,
 } from "@/lib/secretaria-unit-filter";
 import { cn } from "@/lib/utils";
+import {
+  groupStaffInvoices,
+  type StaffInvoiceSale,
+} from "@/lib/staff-invoices";
 
 type TeacherFinanceStatusPanelProps = {
   month: number;
+  personalSales: StaffInvoiceSale[];
   rows: TeacherFinanceRow[];
   unitFilter: SecretariaUnitFilter;
 };
@@ -132,6 +139,7 @@ function getTimeline(row: TeacherFinanceRow) {
 
 export function TeacherFinanceStatusPanel({
   month,
+  personalSales,
   rows,
   unitFilter,
 }: TeacherFinanceStatusPanelProps) {
@@ -150,6 +158,15 @@ export function TeacherFinanceStatusPanel({
   );
   const previousMonth = month === 1 ? 12 : month - 1;
   const nextMonth = month === 12 ? 1 : month + 1;
+  const personalInvoice = groupStaffInvoices(
+    personalSales,
+    TEACHER_FINANCE_YEAR,
+    month,
+  )[0] ?? null;
+  const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  });
 
   return (
     <div className="flex flex-col gap-5">
@@ -165,10 +182,10 @@ export function TeacherFinanceStatusPanel({
                 Visao protegida da teacher
               </p>
               <h2 className="mt-1 text-xl font-bold text-primary">
-                Acompanhamento de mensalidades
+                Financeiro e minha fatura
               </h2>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Consulte somente a situacao mensal de todos os alunos ativos.
+                Veja a situacao dos alunos e, separadamente, suas compras de doces.
               </p>
             </div>
           </div>
@@ -179,13 +196,87 @@ export function TeacherFinanceStatusPanel({
         </div>
       </section>
 
+      <section className="overflow-hidden rounded-lg border border-fuchsia-200 bg-white shadow-sm">
+        <div className="grid gap-4 border-b border-fuchsia-100 bg-gradient-to-r from-fuchsia-50 via-white to-amber-50 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-fuchsia-700 text-white shadow-lg shadow-fuchsia-900/15">
+              <ReceiptText aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-fuchsia-700">
+                Minha fatura pessoal
+              </p>
+              <h3 className="mt-1 text-lg font-bold text-primary">
+                Compras marcadas em {TEACHER_FINANCE_MONTHS[month - 1]}
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Esta conta pertence somente a voce e nao se mistura com os alunos.
+              </p>
+            </div>
+          </div>
+          <span className={cn(
+            "w-fit rounded-full border px-3 py-1.5 text-xs font-extrabold uppercase",
+            personalInvoice?.pendingTotalCents
+              ? "border-amber-300 bg-amber-100 text-amber-900"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800",
+          )}>
+            {personalInvoice?.pendingTotalCents ? "Pagamento pendente" : "Nada pendente"}
+          </span>
+        </div>
+
+        <div className="grid gap-3 p-4 sm:grid-cols-3 sm:p-5">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <span className="text-[0.68rem] font-extrabold uppercase text-slate-500">Mensalidade</span>
+            <strong className="mt-1 block text-lg text-slate-700">Nao se aplica</strong>
+            <span className="text-xs text-slate-500">Conta de professor</span>
+          </div>
+          <div className="rounded-lg border border-fuchsia-200 bg-fuchsia-50 p-3">
+            <span className="text-[0.68rem] font-extrabold uppercase text-fuchsia-700">Doces</span>
+            <strong className="mt-1 block text-lg tabular-nums text-fuchsia-950">
+              {currencyFormatter.format((personalInvoice?.totalCents ?? 0) / 100)}
+            </strong>
+            <span className="text-xs text-fuchsia-700">{personalInvoice?.items.length ?? 0} item(ns)</span>
+          </div>
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <span className="text-[0.68rem] font-extrabold uppercase text-amber-700">A pagar</span>
+            <strong className="mt-1 block text-lg tabular-nums text-amber-950">
+              {currencyFormatter.format((personalInvoice?.pendingTotalCents ?? 0) / 100)}
+            </strong>
+            <span className="text-xs text-amber-700">Confirmacao feita pelo Admin</span>
+          </div>
+        </div>
+
+        {personalInvoice?.items.length ? (
+          <div className="grid gap-2 border-t border-fuchsia-100 p-4 sm:p-5">
+            {personalInvoice.items.map((item) => (
+              <div className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-fuchsia-100 bg-white px-3 py-2 text-sm" key={item.id}>
+                <span className="flex min-w-0 items-center gap-2">
+                  <ShoppingBag aria-hidden="true" className="size-4 shrink-0 text-fuchsia-600" />
+                  <span className="min-w-0">
+                  <strong className="block break-words text-primary">{item.quantity}x {item.productNameSnapshot}</strong>
+                    <span className="text-xs text-muted-foreground">Doce · {item.paidAt ? "Pago" : "Pendente"}</span>
+                  </span>
+                </span>
+                <strong className="shrink-0 tabular-nums text-primary">
+                  {currencyFormatter.format(item.lineTotalCents / 100)}
+                </strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="border-t border-fuchsia-100 px-4 py-4 text-sm text-muted-foreground sm:px-5">
+            Nenhuma compra de doce foi lancada nesta fatura.
+          </p>
+        )}
+      </section>
+
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
         <span className="flex items-start gap-2">
           <Info aria-hidden="true" className="mt-1 size-4 shrink-0" />
           <span>
-            Esta tela nao mostra valores, formas de pagamento, gastos, vendas,
-            contatos, observacoes ou exportacoes. Alteracoes financeiras continuam
-            exclusivas do Admin.
+            Os dados dos alunos continuam sem valores, vendas, contatos ou
+            observacoes. Os valores acima pertencem somente a sua fatura pessoal;
+            alteracoes financeiras continuam exclusivas do Admin.
           </span>
         </span>
       </div>
@@ -247,7 +338,7 @@ export function TeacherFinanceStatusPanel({
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { className: "border-cyan-200 bg-cyan-50 text-cyan-950", label: "Alunos vinculados", value: rows.length },
+          { className: "border-cyan-200 bg-cyan-50 text-cyan-950", label: "Alunos ativos", value: rows.length },
           { className: "border-emerald-200 bg-emerald-50 text-emerald-950", label: "Pagos", value: counts.PAID },
           { className: "border-amber-200 bg-amber-50 text-amber-950", label: "Pendentes", value: counts.PENDING },
           { className: "border-rose-200 bg-rose-50 text-rose-950", label: "Em atraso", value: counts.OVERDUE },

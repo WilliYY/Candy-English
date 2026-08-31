@@ -4,11 +4,13 @@
 
 O modulo Financeiro possui duas superficies protegidas. O painel administrativo completo fica em `/ava/admin?task=financeiro`; a consulta limitada da Teacher fica em `/ava/teacher?task=financeiro`. A tela Admin usa uma planilha mensal separada por polo, com Ivaté primeiro e Douradina depois. Cada linha mostra aluno, mes, valor, vencimento, situacao e acao rapida para marcar como pago; ao clicar no aluno, o painel de detalhes abre com a data de pagamento ou a pendencia daquela competencia.
 
-A Teacher ve todos os alunos ativos e apenas nome, polo do snapshot, situacao mensal, dia de vencimento e data de confirmacao. A projecao nao envia valor, forma de pagamento, contato, CPF, endereco, observacao, venda, gasto, total, log ou exportacao.
+A Teacher ve todos os alunos ativos e apenas nome, polo do snapshot, situacao mensal, dia de vencimento e data de confirmacao. A projecao de alunos nao envia valor, forma de pagamento, contato, CPF, endereco, observacao, venda, gasto, total, log ou exportacao. Em um bloco isolado, a Teacher autenticada recebe somente as vendas de doces cuja `Sale.buyerUserId` corresponde ao proprio `User.id`, com itens, total, parte paga e parte pendente.
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
 Compras de produtos lancadas para pagamento mensal sao gerenciadas em `/ava/vendas` e ficam no ledger `Sale`; elas nao alteram `FinancialPayment.snapshotAmountCents` nem os snapshots historicos da mensalidade.
+
+O perfil da Teacher mostra `Fatura pendente` somente quando existem vendas pessoais `MONTHLY_INVOICE`, concluidas e sem `paidAt`. O link abre a competencia financeira; o Admin confirma ou reabre o recebimento da equipe usando as vendas esperadas e o sistema registra a acao no `FinancialLog`.
 
 Tambem possui a aba `Pagamentos`, que registra gastos internos da loja por mes e por unidade, como insumos comprados, data, valor e pessoa que fez a acao.
 
@@ -19,10 +21,14 @@ Nao e gateway de pagamento, nao emite boleto, nao cobra automaticamente e nao in
 Arquivos:
 
 - `src/components/ava/admin-finance-panel.tsx`
+- `src/components/ava/admin-staff-invoices-section.tsx`
+- `src/components/ava/ava-workspace-shell.tsx`
+- `src/components/ava/teacher-finance-status-panel.tsx`
 - `src/app/ava/admin/actions.ts`
 - `src/app/ava/admin/page.tsx`
 - `src/lib/validations/admin-users.ts`
 - `src/lib/ava-nav-alerts.ts`
+- `src/lib/staff-invoices.ts`
 - `prisma/schema.prisma`
 - `prisma/migrations/20260510203000_recurring_finance_students/migration.sql`
 - `prisma/migrations/20260511110000_finance_month_snapshots/migration.sql`
@@ -30,6 +36,7 @@ Arquivos:
 - `prisma/migrations/20260713120000_financial_expenses/migration.sql`
 - `prisma/migrations/20260713133000_financial_units/migration.sql`
 - `prisma/migrations/20260714170000_linked_pre_registration_conversion/migration.sql`
+- `prisma/migrations/20260831120000_add_teacher_personal_invoices/migration.sql`
 
 Tabelas:
 
@@ -37,6 +44,7 @@ Tabelas:
 - `FinancialPayment`
 - `FinancialExpense`
 - `FinancialLog`
+- `Sale` e `SaleItem` para compras pessoais da equipe
 
 Rota:
 
@@ -47,6 +55,9 @@ Rota:
 
 - Apenas `ADMIN` visualiza o financeiro completo e executa qualquer escrita, exportacao ou consulta de valores/gastos.
 - `TEACHER` recebe somente leitura minimizada de todos os alunos ativos. O filtro de conta ativa e o `select` de dados acontecem no servidor; esconder campos no cliente nao e usado como barreira de seguranca.
+- A excecao de valor para `TEACHER` e estritamente pessoal: somente `Sale.buyerUserId=session.user.id`, `settlementType=MONTHLY_INVOICE` e `status=COMPLETED`; faturas de outros professores e vendas dos alunos nao entram nessa leitura.
+- Fatura pessoal de professor nao cria nem reutiliza `FinancialStudent`/`FinancialPayment`. `Mensalidade` aparece como `Nao se aplica`; itens do PDV aparecem como `Doces`.
+- Apenas `ADMIN` confirma ou reabre o recebimento da equipe. A action valida role e pertencimento de cada `Sale`, atualiza apenas os IDs esperados e registra `STAFF_INVOICE_PAID` ou `STAFF_INVOICE_REOPENED` no `FinancialLog`.
 - A competencia da Teacher usa `FinancialPayment.snapshotName`, `snapshotUnit`, `snapshotPaymentDay`, `isPaid`, `paidAt` e `isActive`. Campos monetarios podem ser lidos apenas no servidor para calcular `Completar`, mas sao removidos pela projecao antes de chegar ao componente.
 - `STUDENT` nao acessa nenhuma superficie financeira.
 - O formulario de entrada carrega todos os `StudentProfile` dos polos Ivaté e Douradina para o Admin, mesmo quando o filtro principal da planilha esta em um polo especifico. A busca e o filtro do seletor acontecem somente sobre esses dados ja autorizados.

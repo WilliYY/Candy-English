@@ -744,6 +744,39 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       ),
     ),
   ]);
+  const personalInvoiceSales =
+    session.user.role === "TEACHER"
+      ? await prisma.sale.findMany({
+          where: {
+            buyerUserId: session.user.id,
+            financialPaymentId: null,
+            invoiceMonth: financeMonth,
+            invoiceYear: TEACHER_FINANCE_YEAR,
+            settlementType: "MONTHLY_INVOICE",
+            status: "COMPLETED",
+          },
+          orderBy: { createdAt: "desc" },
+          select: {
+            createdAt: true,
+            id: true,
+            invoiceDueDate: true,
+            invoiceMonth: true,
+            invoiceYear: true,
+            items: {
+              select: {
+                id: true,
+                lineTotalCents: true,
+                productNameSnapshot: true,
+                quantity: true,
+                unitSalePriceCents: true,
+              },
+            },
+            paidAt: true,
+            totalCents: true,
+            unit: true,
+          },
+        })
+      : [];
   let candyXpPersistence: CandyXpPersistenceSnapshot | null = null;
 
   if (session.user.role === "TEACHER" && currentTeacherProfile && currentUser) {
@@ -892,6 +925,20 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       teacherFinanceRows={students.map((student) =>
         projectTeacherFinanceRow(student, now),
       )}
+      teacherPersonalInvoiceSales={personalInvoiceSales.map((sale) => ({
+        buyerEmail: currentUser?.email ?? session.user.email ?? "",
+        buyerName: currentUser?.name ?? session.user.name ?? "Professor Candy",
+        buyerUserId: session.user.id,
+        createdAt: sale.createdAt.toISOString(),
+        invoiceDueDate: sale.invoiceDueDate?.toISOString().slice(0, 10) ?? null,
+        invoiceMonth: sale.invoiceMonth ?? financeMonth,
+        invoiceYear: sale.invoiceYear ?? TEACHER_FINANCE_YEAR,
+        items: sale.items,
+        paidAt: sale.paidAt?.toISOString() ?? null,
+        saleId: sale.id,
+        totalCents: sale.totalCents,
+        unit: sale.unit,
+      }))}
       studentPreRegistrations={studentPreRegistrations.map((request) => ({
         address: request.address,
         assignedTeacherEmail:

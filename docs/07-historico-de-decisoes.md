@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-08-31 - Fatura pessoal de doces para professores
+
+- Decisao: permitir selecionar contas `TEACHER` ativas no PDV e registrar compras marcadas em `Sale.buyerUserId`, sem criar `FinancialStudent` nem misturar a conta da equipe com mensalidades; o perfil mostra indicador de pendencia e o Financeiro discrimina `Mensalidade` de `Doces`.
+- Motivo: professores compram doces para pagar depois e precisam reconhecer rapidamente a propria conta, enquanto o Admin precisa conferir itens e confirmar o recebimento com seguranca.
+- Impacto: schema/migration de `Sale`, checkout e estorno de Vendas, shell do AVA, Financeiro Teacher/Admin, validacoes, testes e documentacao.
+- Riscos/cuidados: somente a propria Teacher le valores/itens pessoais; valores dos alunos continuam minimizados; apenas Admin confirma/reabre o pagamento; nao ha gateway nem cobranca online; liquidacao usa IDs esperados e registra `FinancialLog`.
+
 ### 2026-08-30 - Exclusao de conta com retencao e anonimização em 2 anos
 
 - Decisao: substituir a desativacao normal da base Admin por exclusao confirmada; a conta perde acesso e sai da UI imediatamente, permanece auditavel por 2 anos e depois tem dados pessoais/credenciais anonimizados por rotina diaria.

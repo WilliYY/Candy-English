@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   saleCheckoutSchema,
   saleProductCreateSchema,
+  staffInvoiceSettlementSchema,
 } from "../validations/sales";
 
 const checkoutItem = {
@@ -34,7 +35,7 @@ test("rejects products with negative stock", () => {
   assert.equal(result.success, false);
 });
 
-test("requires a registered student for a monthly invoice", () => {
+test("requires a registered student or teacher for a monthly invoice", () => {
   const result = saleCheckoutSchema.safeParse({
     buyerName: "Aluno digitado",
     invoiceDueDate: "2026-08-29",
@@ -42,6 +43,34 @@ test("requires a registered student for a monthly invoice", () => {
     paymentMethod: null,
     settlementType: "MONTHLY_INVOICE",
     studentProfileId: null,
+  });
+
+  assert.equal(result.success, false);
+});
+
+test("accepts a registered teacher account for a monthly invoice", () => {
+  const result = saleCheckoutSchema.safeParse({
+    buyerName: "",
+    buyerUserId: "teacher-user-1",
+    invoiceDueDate: "2026-08-29",
+    items: [checkoutItem],
+    paymentMethod: null,
+    settlementType: "MONTHLY_INVOICE",
+    studentProfileId: null,
+  });
+
+  assert.equal(result.success, true);
+});
+
+test("rejects checkout linked to a student and teacher at the same time", () => {
+  const result = saleCheckoutSchema.safeParse({
+    buyerName: "",
+    buyerUserId: "teacher-user-1",
+    invoiceDueDate: "2026-08-29",
+    items: [checkoutItem],
+    paymentMethod: null,
+    settlementType: "MONTHLY_INVOICE",
+    studentProfileId: "student-1",
   });
 
   assert.equal(result.success, false);
@@ -107,6 +136,30 @@ test("rejects duplicate products in the same checkout payload", () => {
     paymentMethod: "CASH",
     settlementType: "PAID_NOW",
     studentProfileId: null,
+  });
+
+  assert.equal(result.success, false);
+});
+
+test("accepts an explicit set of teacher sales for admin settlement", () => {
+  const result = staffInvoiceSettlementSchema.safeParse({
+    buyerUserId: "teacher-user-1",
+    isPaid: true,
+    month: 8,
+    saleIds: ["sale-1", "sale-2"],
+    year: 2026,
+  });
+
+  assert.equal(result.success, true);
+});
+
+test("rejects duplicate sale ids in teacher invoice settlement", () => {
+  const result = staffInvoiceSettlementSchema.safeParse({
+    buyerUserId: "teacher-user-1",
+    isPaid: true,
+    month: 8,
+    saleIds: ["sale-1", "sale-1"],
+    year: 2026,
   });
 
   assert.equal(result.success, false);

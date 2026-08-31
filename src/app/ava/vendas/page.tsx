@@ -21,7 +21,7 @@ export default async function SalesPage() {
   const session = await requireAvaRole(["ADMIN", "TEACHER"], "/ava/vendas");
   const prisma = getPrisma();
   const period = getSaoPauloYearMonth();
-  const [products, students, recentSales] = await Promise.all([
+  const [products, students, teachers, recentSales] = await Promise.all([
     prisma.saleProduct.findMany({
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
       select: {
@@ -58,6 +58,15 @@ export default async function SalesPage() {
           select: { email: true, name: true },
         },
       },
+    }),
+    prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        role: "TEACHER",
+      },
+      orderBy: { name: "asc" },
+      select: { email: true, id: true, name: true },
     }),
     prisma.sale.findMany({
       where:
@@ -131,6 +140,7 @@ export default async function SalesPage() {
           name: student.user.name,
           unit: student.unit,
         }))}
+        teachers={teachers}
       />
     </AvaWorkspaceShell>
   );

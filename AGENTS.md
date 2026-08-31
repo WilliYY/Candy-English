@@ -73,7 +73,7 @@ Leitura minima recomendada:
 ## Roles
 
 - `ADMIN`: administra usuarios, redefine senhas, vinculos, contratos, manutencao, financeiro e agenda; tambem pode supervisionar areas teacher/student.
-- `TEACHER`: pode selecionar qualquer aluno ativo para aulas, materiais, homework, mensagens, contratos, nivel, aula ao vivo, vendas e consulta mensal sem valores; continua editando apenas aulas/homeworks proprios.
+- `TEACHER`: pode selecionar qualquer aluno ativo para aulas, materiais, homework, mensagens, contratos, nivel, aula ao vivo, vendas e consulta mensal sem valores; tambem consulta valores e itens somente da propria fatura pessoal de doces; continua editando apenas aulas/homeworks proprios.
 - `STUDENT`: acessa aulas, homework, mensagens, contratos, perfil e aula ao vivo permitida.
 
 ## Regras criticas de seguranca
@@ -125,10 +125,11 @@ Leitura minima recomendada:
 
 ## Financeiro
 
-O financeiro administrativo completo fica em `/ava/admin?task=financeiro`. A Teacher usa `/ava/teacher?task=financeiro` somente para acompanhar pago/pendente/atrasado de todos os alunos ativos, sem valores, totais, gastos, vendas, contatos financeiros, observacoes, logs ou exportacoes.
+O financeiro administrativo completo fica em `/ava/admin?task=financeiro`. A Teacher usa `/ava/teacher?task=financeiro` para acompanhar pago/pendente/atrasado de todos os alunos ativos sem valores e, em bloco separado, consultar somente valores e itens da propria fatura pessoal de doces.
 
 - Nao tratar como pagamento online sem pedido explicito.
-- Toda escrita, valor, gasto, exportacao e relatorio financeiro continua `ADMIN` only. A consulta Teacher pode listar todos os alunos ativos, mas deve projetar apenas campos permitidos antes de renderizar.
+- Toda escrita, gasto, exportacao e relatorio financeiro continua `ADMIN` only. A consulta Teacher pode listar todos os alunos ativos sem valores e ler apenas vendas `MONTHLY_INVOICE` cujo `Sale.buyerUserId` seja o proprio usuario autenticado.
+- O Admin confirma ou reabre o pagamento da fatura pessoal da equipe; a alteracao deve usar IDs esperados das vendas, validar a conta `TEACHER` no servidor e registrar `FinancialLog`.
 - `FinancialStudent` guarda dados recorrentes.
 - `FinancialPayment` guarda o snapshot mensal do aluno, status, data paga, observacao e se a linha segue ativa naquele mes.
 - `FinancialLog` registra acoes simples.

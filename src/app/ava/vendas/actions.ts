@@ -362,9 +362,10 @@ export async function createSale(
         } | null;
         id: string;
         unit: "IVATE" | "DOURADINA";
-        user: { name: string };
+        user: { id: string; name: string };
       }
     | null = null;
+  let staffBuyer: { id: string; name: string } | null = null;
 
   if (parsed.data.studentProfileId) {
     student = await prisma.studentProfile.findFirst({
@@ -387,7 +388,7 @@ export async function createSale(
         },
         id: true,
         unit: true,
-        user: { select: { name: true } },
+        user: { select: { id: true, name: true } },
       },
     });
 
@@ -400,10 +401,31 @@ export async function createSale(
     }
   }
 
+  if (parsed.data.buyerUserId) {
+    staffBuyer = await prisma.user.findFirst({
+      where: {
+        deletedAt: null,
+        id: parsed.data.buyerUserId,
+        isActive: true,
+        role: "TEACHER",
+      },
+      select: { id: true, name: true },
+    });
+
+    if (!staffBuyer) {
+      return {
+        errors: { buyerUserId: "Professor nao encontrado ou inativo." },
+        message: "Selecione uma conta de professor ativa.",
+        ok: false,
+      };
+    }
+  }
+
   const invoicePayment = student?.financialStudent?.payments[0] ?? null;
 
   if (
     invoicePeriod &&
+    student &&
     (!student?.financialStudent || !isMonthlyInvoiceOpen(invoicePayment))
   ) {
     return {
@@ -417,7 +439,8 @@ export async function createSale(
     };
   }
 
-  const buyerName = student?.user.name ?? parsed.data.buyerName.trim();
+  const buyerName =
+    student?.user.name ?? staffBuyer?.name ?? parsed.data.buyerName.trim();
   const operationId = parsed.data.operationId ?? randomUUID();
   let replayed = false;
 
@@ -435,6 +458,24 @@ export async function createSale(
 
         replayed = true;
         return;
+      }
+
+      if (staffBuyer) {
+        const currentStaffBuyer = await tx.user.findFirst({
+          where: {
+            deletedAt: null,
+            id: staffBuyer.id,
+            isActive: true,
+            role: "TEACHER",
+          },
+          select: { id: true },
+        });
+
+        if (!currentStaffBuyer) {
+          throw new SaleRuleError(
+            "A conta do professor foi alterada. Atualize a tela antes de continuar.",
+          );
+        }
       }
 
       let lockedInvoicePayment:
@@ -554,6 +595,7 @@ export async function createSale(
         data: {
           buyerNameSnapshot: buyerName,
           buyerStudentProfileId: student?.id ?? null,
+          buyerUserId: staffBuyer?.id ?? student?.user.id ?? null,
           costTotalCents: totals.costTotalCents,
           financialPaymentId: lockedInvoicePayment?.id ?? null,
           financialStudentId: student?.financialStudent?.id ?? null,
@@ -622,6 +664,7 @@ export async function createSale(
 
   revalidatePath("/ava/vendas");
   revalidatePath("/ava/admin");
+  revalidatePath("/ava/teacher");
 
   return {
     message: replayed
@@ -667,6 +710,7 @@ export async function cancelSale(
       const sale = await tx.sale.findUnique({
         where: { id: parsed.data.saleId },
         select: {
+          buyerUserId: true,
           items: { select: { productId: true, quantity: true } },
           financialPayment: {
             select: { id: true },
@@ -674,6 +718,7 @@ export async function cancelSale(
           settlementType: true,
           soldByUserId: true,
           status: true,
+          paidAt: true,
         },
       });
 
@@ -695,7 +740,13 @@ export async function cancelSale(
             `
           : [];
 
-        if (!isMonthlyInvoiceOpen(paymentRows[0])) {
+        const standaloneStaffInvoiceOpen =
+          !sale.financialPayment && Boolean(sale.buyerUserId) && !sale.paidAt;
+
+        if (
+          !standaloneStaffInvoiceOpen &&
+          !isMonthlyInvoiceOpen(paymentRows[0])
+        ) {
           throw new SaleRuleError(
             "Esta fatura ja foi paga ou fechada. Reabra a competencia no Financeiro antes de estornar.",
           );
@@ -739,6 +790,7 @@ export async function cancelSale(
 
   revalidatePath("/ava/vendas");
   revalidatePath("/ava/admin");
+  revalidatePath("/ava/teacher");
 
   return {
     message: "Venda estornada e estoque devolvido.",

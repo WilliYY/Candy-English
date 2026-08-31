@@ -687,7 +687,8 @@ async function assertTeacherAvaTaskRoutes(role: SmokeRole, cookie: string) {
     if (path.includes("task=financeiro")) {
       for (const expectedText of [
         "Visao protegida da teacher",
-        "Acompanhamento de mensalidades",
+        "Financeiro e minha fatura",
+        "Minha fatura pessoal",
         "Dados financeiros restritos",
       ]) {
         if (!normalizedText.includes(expectedText)) {
@@ -699,7 +700,6 @@ async function assertTeacherAvaTaskRoutes(role: SmokeRole, cookie: string) {
 
       for (const forbiddenText of [
         "/ava/admin?task=financeiro",
-        "R$",
         "Total previsto",
         "Gastos da loja",
         "Valor mensal",

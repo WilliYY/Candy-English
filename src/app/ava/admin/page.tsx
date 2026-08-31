@@ -128,6 +128,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     financeStudents,
     financeLogs,
     financeExpenses,
+    staffInvoiceSales,
     agendaStudents,
     agendaLessons,
     agendaLogs,
@@ -437,6 +438,37 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         year: true,
       },
       where: financeExpenseWhere,
+    }),
+    prisma.sale.findMany({
+      where: {
+        buyerUser: { role: "TEACHER" },
+        financialPaymentId: null,
+        invoiceYear: 2026,
+        settlementType: "MONTHLY_INVOICE",
+        status: "COMPLETED",
+        ...(selectedUnit ? { unit: selectedUnit } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        buyerUser: { select: { email: true, id: true, name: true } },
+        createdAt: true,
+        id: true,
+        invoiceDueDate: true,
+        invoiceMonth: true,
+        invoiceYear: true,
+        items: {
+          select: {
+            id: true,
+            lineTotalCents: true,
+            productNameSnapshot: true,
+            quantity: true,
+            unitSalePriceCents: true,
+          },
+        },
+        paidAt: true,
+        totalCents: true,
+        unit: true,
+      },
     }),
     prisma.agendaStudent.findMany({
       where: agendaStudentWhere,
@@ -1124,6 +1156,24 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         phone: student.phone,
         unit: student.unit,
       }))}
+      staffInvoiceSales={staffInvoiceSales.flatMap((sale) =>
+        sale.buyerUser && sale.invoiceMonth && sale.invoiceYear
+          ? [{
+              buyerEmail: sale.buyerUser.email,
+              buyerName: sale.buyerUser.name,
+              buyerUserId: sale.buyerUser.id,
+              createdAt: sale.createdAt.toISOString(),
+              invoiceDueDate: sale.invoiceDueDate?.toISOString().slice(0, 10) ?? null,
+              invoiceMonth: sale.invoiceMonth,
+              invoiceYear: sale.invoiceYear,
+              items: sale.items,
+              paidAt: sale.paidAt?.toISOString() ?? null,
+              saleId: sale.id,
+              totalCents: sale.totalCents,
+              unit: sale.unit,
+            }]
+          : [],
+      )}
       initialAgendaMonth={initialAgendaMonth}
       initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}

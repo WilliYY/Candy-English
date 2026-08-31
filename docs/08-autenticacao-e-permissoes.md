@@ -80,20 +80,20 @@ Rotas protegidas:
 ## Regras de negocio que precisam ser preservadas
 
 - `ADMIN` acessa admin e pode supervisionar teacher/student.
-- `TEACHER` acessa teacher e student, mas dados editaveis dependem de vinculo.
+- `TEACHER` acessa teacher e student; pode selecionar qualquer aluno ativo nos fluxos pedagogicos liberados, mas continua editando somente aulas/homeworks proprios e lendo dados financeiros conforme a projecao server-side.
 - `STUDENT` acessa student e apenas os proprios dados.
 - Depois do login, `ADMIN` e `TEACHER` entram em `/ava/escolha`; `STUDENT` entra direto em `/ava/student`.
 - Deep links protegidos preservam apenas os query params conhecidos de cada area (`task`, `unit` e `preStatus`) no `callbackUrl`; o login aceita retorno somente para rotas AVA existentes da lista segura.
 - `/ava/escolha` usa layout limpo sem sidebar de trabalho; Admin ve `AVA`, `Secretaria`, `Financeiro`, `Vendas` e `Ponto`; Teacher ve `AVA`, `Secretaria`, `Financeiro` limitado, `Vendas` e `Ponto` somente quando possui perfil ativo; a sidebar protegida aparece somente depois da escolha.
-- `/ava/teacher?task=financeiro` aceita `ADMIN` ou `TEACHER` pelo guard da area Teacher, mas para `TEACHER` a consulta server-side exige `StudentTeacherAssignment` e seleciona somente a competencia solicitada dos alunos vinculados. A projecao enviada ao componente contem apenas nome do snapshot, polo do snapshot, situacao, vencimento e data de confirmacao; nao contem valor, forma de pagamento, telefone, email, CPF, endereco, observacao, venda, gasto, total ou exportacao.
-- `/ava/vendas` aceita apenas `ADMIN` e `TEACHER`. Admin recebe todos os alunos e vendas; Teacher recebe apenas alunos vinculados e as vendas registradas por ela. `STUDENT` nao recebe rota, dados nem server actions do PDV.
+- `/ava/teacher?task=financeiro` aceita `ADMIN` ou `TEACHER` pelo guard da area Teacher. A projecao dos alunos ativos contem apenas nome do snapshot, polo, situacao, vencimento e data de confirmacao, sem valores ou dados pessoais. Em consulta separada, `TEACHER` recebe itens e totais somente de `Sale.buyerUserId=session.user.id`; nunca recebe faturas de outra pessoa. Apenas `ADMIN` confirma/reabre o pagamento.
+- `/ava/vendas` aceita apenas `ADMIN` e `TEACHER`. Ambos recebem alunos e professores ativos no seletor; Teacher recebe somente as vendas registradas por ela no historico. O checkout valida a role `TEACHER` da conta compradora no servidor e venda livre nunca entra em fatura. `STUDENT` nao recebe rota, dados nem server actions do PDV.
 - `/ava/ponto` aceita `ADMIN` para gestao e `TEACHER` apenas com `TimeClockProfile.isActive=true`. Teacher recebe somente o proprio perfil e as proprias batidas; todas as actions repetem auth/permissao no servidor.
 - `/ava/ponto/relatorio` valida sessao, role, perfil e dono. Admin baixa qualquer pessoa; Teacher baixa somente o proprio perfil ativo. A resposta e privada, sem cache e como anexo PDF.
 - `/ava/secretaria` aceita apenas `ADMIN` e `TEACHER`; Student nao ve nem acessa a Secretaria.
 - A Secretaria possui matriz central em `SECRETARIA_PERMISSION_MATRIX` (`src/lib/roles.ts`) para documentar e renderizar o escopo por role; cada destino continua validando role e permissao por dado no servidor.
 - Matriz da Secretaria:
   - `ADMIN`: todas as unidades, cadastro unico de qualquer aluno com escolha de teacher, acesso aos registros antigos, financeiro completo, agenda completa, gastos/pagamentos, relatorios simples, administracao e credenciais.
-  - `TEACHER`: Secretaria limitada; cadastra aluno diretamente para a propria `TeacherProfile`, ve/atualiza/converte apenas registros antigos criados por ela ou atribuidos a ela, acessa contratos permitidos e consulta somente o status mensal dos alunos vinculados. Nao recebe valores, financeiro geral, gastos da loja, exportacoes, agenda completa, administracao, credenciais nem dados de outras teachers.
+  - `TEACHER`: Secretaria limitada; cadastra aluno diretamente para a propria `TeacherProfile`, ve/atualiza/converte apenas registros antigos criados por ela ou atribuidos a ela, acessa contratos permitidos e consulta o status mensal sem valores de todos os alunos ativos. Pode ler valores e itens apenas da propria fatura pessoal de doces; nao recebe financeiro geral, gastos, exportacoes, agenda completa, administracao, credenciais nem dados de outras teachers.
   - `STUDENT`: nao acessa Secretaria.
 - `/ava/avatar/[userId]` exige sessao; admin le todos, o dono le o proprio avatar, teacher le avatar de aluno vinculado e qualquer usuario autenticado do AVA pode ler somente o avatar de participante ativo que ja aparece no ranking interno Candy XP. Perfis inativos, sem XP e fora de vinculo continuam protegidos.
 - Usuario inativo nao entra.

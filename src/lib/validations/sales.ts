@@ -42,6 +42,7 @@ const saleCheckoutItemSchema = z.object({
 export const saleCheckoutSchema = z
   .object({
     buyerName: z.string().trim().max(120).default(""),
+    buyerUserId: z.string().trim().min(1).nullable().default(null),
     invoiceDueDate: z
       .string()
       .trim()
@@ -61,12 +62,21 @@ export const saleCheckoutSchema = z
   .superRefine((value, context) => {
     if (
       value.settlementType === "MONTHLY_INVOICE" &&
-      !value.studentProfileId
+      !value.studentProfileId &&
+      !value.buyerUserId
     ) {
       context.addIssue({
         code: "custom",
-        message: "Selecione um aluno cadastrado para adicionar a fatura.",
+        message: "Selecione um aluno ou professor cadastrado para adicionar a fatura.",
         path: ["studentProfileId"],
+      });
+    }
+
+    if (value.studentProfileId && value.buyerUserId) {
+      context.addIssue({
+        code: "custom",
+        message: "Selecione somente uma conta compradora.",
+        path: ["buyerUserId"],
       });
     }
 
@@ -89,7 +99,7 @@ export const saleCheckoutSchema = z
       });
     }
 
-    if (!value.studentProfileId && !value.buyerName?.trim()) {
+    if (!value.studentProfileId && !value.buyerUserId && !value.buyerName?.trim()) {
       context.addIssue({
         code: "custom",
         message: "Selecione um aluno ou informe o nome do comprador.",
@@ -118,8 +128,29 @@ export const saleCancelSchema = z.object({
   saleId: z.string().min(1),
 });
 
+export const staffInvoiceSettlementSchema = z
+  .object({
+    buyerUserId: z.string().trim().min(1),
+    isPaid: z.boolean(),
+    month: z.number().int().min(1).max(12),
+    saleIds: z.array(z.string().trim().min(1)).min(1).max(100),
+    year: z.number().int().min(2026).max(2100),
+  })
+  .superRefine((value, context) => {
+    if (new Set(value.saleIds).size !== value.saleIds.length) {
+      context.addIssue({
+        code: "custom",
+        message: "A mesma venda nao pode aparecer duas vezes.",
+        path: ["saleIds"],
+      });
+    }
+  });
+
 export type SaleCheckoutInput = z.input<typeof saleCheckoutSchema>;
 export type SaleCancelInput = z.input<typeof saleCancelSchema>;
+export type StaffInvoiceSettlementInput = z.input<
+  typeof staffInvoiceSettlementSchema
+>;
 export type SaleProductCreateInput = z.input<typeof saleProductCreateSchema>;
 export type SaleProductStockAdjustmentInput = z.input<
   typeof saleProductStockAdjustmentSchema

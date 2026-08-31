@@ -91,7 +91,7 @@ Financeiro:
 Vendas:
 
 - `SaleProduct`: catalogo, caminho privado da foto WebP opcional, custo, preco de venda, estoque e estado ativo.
-- `Sale`: cabecalho auditavel da venda, comprador, liquidacao, competencia, data combinada da fatura e cancelamento.
+- `Sale`: cabecalho auditavel da venda, comprador, liquidacao, competencia, data combinada da fatura e cancelamento. `buyerUserId` identifica a conta registrada compradora, inclusive a fatura pessoal de um `TEACHER`, sem misturar esse ledger ao `FinancialPayment` dos alunos.
 - `SaleItem`: snapshot imutavel de nome, custo, preco e quantidade de cada item vendido.
 
 Ponto:

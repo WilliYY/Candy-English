@@ -67,6 +67,7 @@ import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
 import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 import type { TeacherFinanceRow } from "@/lib/teacher-finance";
+import type { StaffInvoiceSale } from "@/lib/staff-invoices";
 
 export const teacherTaskIds = [
   "resumo",
@@ -263,6 +264,7 @@ type TeacherWorkspaceProps = {
   submissions: TeacherSubmission[];
   teacherFinanceMonth: number;
   teacherFinanceRows: TeacherFinanceRow[];
+  teacherPersonalInvoiceSales: StaffInvoiceSale[];
   teachers: Option[];
 };
 
@@ -390,6 +392,7 @@ export function TeacherWorkspace({
   submissions,
   teacherFinanceMonth,
   teacherFinanceRows,
+  teacherPersonalInvoiceSales,
   teachers,
 }: TeacherWorkspaceProps) {
   const interactiveItems = lessons.flatMap((lesson) =>
@@ -742,6 +745,7 @@ export function TeacherWorkspace({
           {activeTask === "financeiro" ? (
             <TeacherFinanceStatusPanel
               month={teacherFinanceMonth}
+              personalSales={teacherPersonalInvoiceSales}
               rows={teacherFinanceRows}
               unitFilter={secretariaUnitFilter}
             />

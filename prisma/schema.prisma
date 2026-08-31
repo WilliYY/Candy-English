@@ -288,6 +288,7 @@ model User {
   updatedSaleProducts              SaleProduct[]               @relation("SaleProductUpdatedBy")
   completedSales                   Sale[]                      @relation("SaleSoldBy")
   canceledSales                    Sale[]                      @relation("SaleCanceledBy")
+  purchasedSales                   Sale[]                      @relation("SaleBuyerUser")
   timeClockProfile                 TimeClockProfile?           @relation("TimeClockProfileUser")
   createdTimeClockProfiles         TimeClockProfile[]          @relation("TimeClockProfileCreatedBy")
   updatedTimeClockProfiles         TimeClockProfile[]          @relation("TimeClockProfileUpdatedBy")
@@ -742,6 +743,8 @@ model SaleProduct {
 model Sale {
   id                    String             @id @default(cuid())
   operationId           String             @unique
+  buyerUserId           String?
+  buyerUser             User?              @relation("SaleBuyerUser", fields: [buyerUserId], references: [id], onDelete: SetNull)
   buyerStudentProfileId String?
   buyerStudentProfile   StudentProfile?    @relation(fields: [buyerStudentProfileId], references: [id], onDelete: SetNull)
   financialStudentId    String?
@@ -772,6 +775,7 @@ model Sale {
 
   @@index([createdAt, status])
   @@index([soldByUserId, createdAt])
+  @@index([buyerUserId, invoiceYear, invoiceMonth, status, paidAt])
   @@index([buyerStudentProfileId, invoiceYear, invoiceMonth, status])
   @@index([financialStudentId, invoiceYear, invoiceMonth, status])
   @@index([financialPaymentId])
