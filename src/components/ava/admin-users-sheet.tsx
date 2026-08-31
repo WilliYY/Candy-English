@@ -453,7 +453,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
 
                   <section
                     aria-label={`Painel de gestão de ${row.name}`}
-                    className="sticky left-0 box-border w-[100cqw] max-w-[100cqw] border-t border-primary/10 bg-[#fcfafc] p-3 sm:p-4"
+                    className="sticky left-0 box-border w-[100cqw] max-w-[100cqw] border-t border-primary/10 bg-[#fcfafc] p-3 sm:p-4 xl:pr-[17rem]"
                     data-user-detail-viewport="true"
                   >
                     <div

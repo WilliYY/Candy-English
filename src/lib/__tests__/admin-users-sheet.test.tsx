@@ -67,6 +67,7 @@ test("renders the user sheet in role order with expandable access actions", () =
   assert.match(markup, /Painel de gestão/);
   assert.match(markup, /data-user-detail-viewport="true"/);
   assert.match(markup, /w-\[100cqw\]/);
+  assert.match(markup, /xl:pr-\[17rem\]/);
   assert.doesNotMatch(markup, /min-w-\[1520px\]/);
   assert.match(markup, /O painel aberto acompanha a área visível/);
   assert.doesNotMatch(markup, /line-clamp-2/);
