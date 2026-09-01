@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-01 - CSP e PDF.js corrigido como primeira camada de hardening
+
+- Decisao: fixar `pdfjs-dist` em versao sem a vulnerabilidade conhecida de execucao por PDF malicioso, migrar o uso removido da API de viewport/ciclo de vida, aplicar CSP compativel com o AVA/Jitsi e desativar `X-Powered-By`.
+- Motivo: reduzir XSS, carregamento de recursos nao autorizados, fingerprint do framework e risco no processamento dos PDFs pedagogicos sem retirar o preview interno nem a aula Jitsi configurada.
+- Impacto: `package.json`, `package-lock.json`, `next.config.ts`, editor interativo e documentacao de arquitetura/deploy.
+- Riscos/cuidados: manter `unsafe-inline` apenas enquanto o Next.js 15 depender de bootstrap inline; toda origem externa nova precisa ser adicionada de forma explicita; atualizar PDF.js somente com typecheck, testes e build.
+
 ### 2026-08-31 - Fatura pessoal de doces para professores
 
 - Decisao: permitir selecionar contas `TEACHER` ativas no PDV e registrar compras marcadas em `Sale.buyerUserId`, sem criar `FinancialStudent` nem misturar a conta da equipe com mensalidades; o perfil mostra indicador de pendencia e o Financeiro discrimina `Mensalidade` de `Doces`.

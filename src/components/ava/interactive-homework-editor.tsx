@@ -656,12 +656,11 @@ async function getListeningPdfTextCandidates({
       const [, , , rawTextHeight = 0, x = 0, y = 0] = item.transform;
       const width = Math.max(item.width ?? 0, text.length * 3);
       const height = Math.max(item.height ?? 0, Math.abs(rawTextHeight), 8);
-      const [x1, y1, x2, y2] = viewport.convertToViewportRectangle([
-        x,
-        y,
+      const [x1, y1] = viewport.convertToViewportPoint(x, y);
+      const [x2, y2] = viewport.convertToViewportPoint(
         x + width,
         y + height,
-      ]);
+      );
       const left = (Math.min(x1, x2) / viewport.width) * 100;
       const right = (Math.max(x1, x2) / viewport.width) * 100;
       const top = (Math.min(y1, y2) / viewport.height) * 100;
@@ -681,7 +680,7 @@ async function getListeningPdfTextCandidates({
     }
 
     page.cleanup();
-    void pdf.destroy();
+    await loadingTask.destroy().catch(() => undefined);
 
     return candidates;
   } catch {

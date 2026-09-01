@@ -96,7 +96,8 @@ Servicos Docker:
 - Server Actions aceitam upload ate 15 MB para suportar homework/aula interativa exportados do Canva.
 - O app ajusta permissao de `/app/storage` no boot e depois executa o servidor como usuario `nextjs`.
 - Ghostscript fica instalado no container para comprimir PDFs quando `PDF_OPTIMIZATION_ENABLED=true`.
-- Headers basicos de seguranca ficam em `next.config.ts`; `X-Frame-Options=SAMEORIGIN` permite previews internos protegidos, como contratos PDF no AVA, sem liberar embed por sites externos.
+- Headers de seguranca ficam em `next.config.ts`: CSP restringe scripts, frames, conexoes, workers e objetos aos recursos do proprio AVA e aos dominios Jitsi configurados; `X-Frame-Options=SAMEORIGIN` preserva previews internos protegidos sem liberar embed por sites externos; `X-Powered-By` fica desativado.
+- A renderizacao de PDF interativo usa `pdfjs-dist` fixado em versao corrigida e deve permanecer coberta por typecheck/build ao atualizar, porque a API de viewport e ciclo de vida pode mudar entre majors.
 - Aula ao vivo esta pausada por manutencao temporaria; quando reativada, Jitsi Meet e usado para aula ao vivo embutida quando nao ha link externo.
 - O dominio Jitsi e configuravel por `NEXT_PUBLIC_LIVE_CLASS_JITSI_DOMAIN`; `meet.jit.si` fica como fallback/local, mas producao deve migrar para Jitsi dedicado/JaaS para evitar login externo e limite de embed publico.
 - Catty chama `auth()` em `/api/catty/chat` e so responde para sessoes com `ADMIN`, `TEACHER` ou `STUDENT`; sem sessao valida, retorna 401 amigavel sem acionar Gemini, OpenAI ou fallback.
