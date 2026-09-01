@@ -303,7 +303,7 @@ Enums:
 
 ## Pendencias
 
-- Falta rotina formal de backup/restore.
+- Falta configurar a copia externa dos backups criptografados; backup local, verificacao e restore drill estao documentados em `docs/10-backup-e-recuperacao.md`.
 - Falta normalizacao case-insensitive mais robusta para email.
 - Falta auditoria geral fora do financeiro.
 - Falta trilha de auditoria detalhada para revelar/copiar credenciais do cofre admin.
@@ -315,6 +315,6 @@ Enums:
 ## Como pode evoluir
 
 - Documentar diagrama ER quando o schema crescer.
-- Criar politica de backup e restore.
+- Integrar o backup criptografado com armazenamento externo versionado e imutavel.
 - Adicionar logs/auditoria para areas administrativas sensiveis.
 - Avaliar indices novos conforme volume real de aulas, mensagens e financeiro.

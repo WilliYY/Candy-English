@@ -79,6 +79,7 @@ Rotas principais:
 - `07-historico-de-decisoes.md`: decisoes importantes.
 - `08-autenticacao-e-permissoes.md`: Auth.js, roles e autorizacao.
 - `09-deploy-e-ambiente.md`: ambientes e operacao.
+- `10-backup-e-recuperacao.md`: backup criptografado, verificacao e recuperacao testada em ambiente isolado.
 - `13-financeiro.md`: modulo financeiro.
 - `14-agenda.md`: modulo agenda.
 - `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave para homework/aula interativa.

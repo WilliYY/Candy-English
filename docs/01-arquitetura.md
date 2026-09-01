@@ -137,7 +137,7 @@ Servicos Docker:
 - Nao ha dashboard analitico complexo.
 - Nao ha API publica versionada.
 - Nao ha sistema de permissoes customizaveis alem das roles atuais.
-- Nao ha rotina formal de backup/restore documentada dentro do app.
+- Backup operacional usa `pg_dump` custom + `app-storage` em pacote criptografado, verificacao diaria e restore drill isolado; a copia externa ainda depende do provedor escolhido.
 
 ## Como pode evoluir
 

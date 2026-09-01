@@ -16,6 +16,9 @@ Arquivos:
 - `scripts/server-smoke.ts`
 - `scripts/auth-smoke.ts`
 - `scripts/avatar-smoke.ts`
+- `scripts/backup-production.sh`
+- `scripts/verify-production-backup.sh`
+- `scripts/restore-production-backup-drill.sh`
 
 Servicos:
 
@@ -96,7 +99,7 @@ Operacao por agente:
 
 ## Pendencias
 
-- Rotina formal de backup e restore.
+- Copia externa dos backups em provedor com versionamento/retencao imutavel; a conta e as credenciais ainda precisam ser definidas.
 - Checklist de rollback.
 - CI remoto documentado.
 - Monitoramento externo de disponibilidade e erros.
@@ -104,6 +107,6 @@ Operacao por agente:
 ## Como pode evoluir
 
 - Criar `docs/11-seguranca.md`.
-- Criar rotina de backup versionada fora do Git.
+- Integrar a copia criptografada com o provedor externo escolhido.
 - Adicionar CI/CD com build, lint, typecheck e smokes.
 - Documentar proxy reverso quando a configuracao final estiver estabilizada.

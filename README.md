@@ -74,6 +74,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/07-historico-de-decisoes.md`: decisoes tecnicas relevantes.
 - `docs/08-autenticacao-e-permissoes.md`: autenticacao, roles e autorizacao.
 - `docs/09-deploy-e-ambiente.md`: ambientes, Docker e Oracle.
+- `docs/10-backup-e-recuperacao.md`: backup criptografado, verificacao e restore drill isolado.
 - `docs/13-financeiro.md`: modulo financeiro admin.
 - `docs/14-agenda.md`: modulo agenda admin.
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.

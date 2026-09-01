@@ -20,6 +20,9 @@ Este documento centraliza comandos de desenvolvimento, validacao, Docker e deplo
 - `scripts/homework-concurrency-smoke.ts`
 - `scripts/candy-xp-visibility-smoke.ts`
 - `scripts/catty-behavior-smoke.ts`
+- `scripts/backup-production.sh`
+- `scripts/verify-production-backup.sh`
+- `scripts/restore-production-backup-drill.sh`
 - `scripts/anonymize-expired-users.ts`
 
 ## Instalar
@@ -117,6 +120,18 @@ No Oracle, manter uma unica entrada no `crontab` do usuario de deploy:
 
 O script usa dry-run por padrao, processa apenas `deletedAt` com `scheduledAnonymizationAt <= agora` e ignora registros que ja possuem `anonymizedAt`.
 
+## Backup e recuperacao
+
+No Oracle, depois de criar a chave protegida conforme `docs/10-backup-e-recuperacao.md`:
+
+```bash
+./scripts/backup-production.sh
+./scripts/verify-production-backup.sh /home/ubuntu/backups/candy-english/candy-AAAAMMDDTHHMMSSZ.tar.gz.enc
+./scripts/restore-production-backup-drill.sh --latest
+```
+
+O backup diario e o restore drill semanal ficam no `crontab` documentado em `docs/10-backup-e-recuperacao.md`. O drill usa container isolado e nao altera o banco real.
+
 ## Deploy Oracle sem migration
 
 Regra operacional: quando houver acesso remoto disponivel, o Codex deve executar este pull/deploy no Oracle por conta propria. Se nao houver SSH, chave, sessao remota ou permissao no ambiente atual, reportar o bloqueio exato e deixar estes comandos para PuTTY.
@@ -177,11 +192,9 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 
 ## Pendencias
 
-- Ainda falta documentacao formal de backup e restore.
 - Ainda falta pipeline CI remoto documentado.
 
 ## Como pode evoluir
 
-- Adicionar comandos de backup verificado.
 - Adicionar checklist de rollback.
 - Criar CI com lint/typecheck/build e smokes essenciais.

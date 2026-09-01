@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-01 - Backup criptografado com verificacao e restore drill
+
+- Decisao: gerar diariamente um pacote unico com dump custom do PostgreSQL e `app-storage`, checksums internos e criptografia AES-256/PBKDF2; publicar apenas depois da verificacao e testar semanalmente o restore em PostgreSQL 17 isolado.
+- Motivo: um arquivo existente nao prova recuperacao; o sistema precisa cobrir banco e uploads sem expor dados ou arriscar o ambiente real durante o teste.
+- Impacto: tres scripts operacionais, retencao local minima de 7 dias (padrao 14), crons Oracle e `docs/10-backup-e-recuperacao.md`.
+- Riscos/cuidados: guardar a chave fora do servidor, nunca versionar dados, monitorar os jobs e concluir a replicacao externa imutavel; o script nao automatiza substituicao destrutiva do banco/volume real.
+
 ### 2026-09-01 - Rate limit compartilhado sem armazenar IP bruto
 
 - Decisao: manter o bloqueio de 8 falhas por email em 15 minutos e adicionar limite de 30 falhas por origem na mesma janela para login web/mobile; a origem e persistida apenas como HMAC-SHA-256 com contexto proprio e `AUTH_SECRET`.

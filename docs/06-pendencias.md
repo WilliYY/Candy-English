@@ -39,7 +39,7 @@ As pendencias podem afetar:
 
 ## Pendencias tecnicas
 
-- Rotina formal de backup e restore do PostgreSQL.
+- Replicacao externa versionada/imutavel do backup criptografado; rotina local e restore drill ja existem.
 - Throttling mais forte por IP ou servico dedicado, inclusive para a Catty com Gemini/OpenAI.
 - Normalizacao case-insensitive mais robusta para email.
 - Testes automatizados amplos por modulo.
