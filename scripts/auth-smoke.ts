@@ -684,18 +684,21 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
     if (path === "/ava/admin?task=agenda") {
       const normalizedText = normalizeHtmlText(text);
       const requiredAgendaText = [
-        "Planilha mensal",
-        "Controle por aluno",
-        "Aulas de hoje",
-        "A confirmar",
-        "Com faltas",
-        "Proxima aula",
+        "Agenda interna",
+        "Previstos",
+        "Vieram",
+        "Nao vieram",
+        "Alunos ativos",
+        "Agenda do dia",
+        "Visao mensal",
+        "Navegue pelo mes",
+        "Escolha um dia da agenda",
       ];
 
       for (const expectedText of requiredAgendaText) {
         if (!normalizedText.includes(expectedText)) {
           throw new Error(
-            `Agenda admin sem planilha mensal esperada: ${expectedText}`,
+            `Agenda admin sem visao inicial esperada: ${expectedText}`,
           );
         }
       }
