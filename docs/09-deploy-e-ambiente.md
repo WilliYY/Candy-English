@@ -19,6 +19,7 @@ Arquivos:
 - `scripts/backup-production.sh`
 - `scripts/verify-production-backup.sh`
 - `scripts/restore-production-backup-drill.sh`
+- `scripts/monitor-production.sh`
 
 Servicos:
 

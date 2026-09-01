@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-01 - Defesa em camadas com CI e monitor operacional
+
+- Decisao: manter controles de aplicacao no repositorio, validar cada mudanca em CI, atualizar dependencias via Dependabot e monitorar health, containers, disco, backups e falhas de login no Oracle. DDoS/WAF/rate limit global continuam na borda e nao sao simulados dentro do Node.
+- Motivo: controles internos nao absorvem ataque volumetrico, enquanto configuracao externa sem acesso a DNS/firewall pode derrubar o site. A separacao deixa claro o que ja esta protegido e o que exige credencial/rollback operacional.
+- Impacto: `.github/workflows/security.yml`, `.github/dependabot.yml`, `scripts/monitor-production.sh`, `docs/11-seguranca.md` e rotina de cron documentada.
+- Riscos/cuidados: configurar webhook e copia externa sem versionar credenciais; ativar WAF primeiro em observacao; nao aceitar o downgrade forcado do Prisma sugerido pelo `npm audit`; manter pentest independente no calendario.
+
 ### 2026-09-01 - 2FA TOTP por administrador sem ativacao forcada
 
 - Decisao: permitir que cada Admin ative TOTP em `Seguranca e acessos`; depois da confirmacao, login exige senha mais TOTP novo ou recuperacao de uso unico. Contas existentes nao sao ativadas automaticamente.

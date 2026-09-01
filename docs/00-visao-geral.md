@@ -80,6 +80,7 @@ Rotas principais:
 - `08-autenticacao-e-permissoes.md`: Auth.js, roles e autorizacao.
 - `09-deploy-e-ambiente.md`: ambientes e operacao.
 - `10-backup-e-recuperacao.md`: backup criptografado, verificacao e recuperacao testada em ambiente isolado.
+- `11-seguranca.md`: defesa em camadas, monitoramento, CI e controles externos pendentes.
 - `13-financeiro.md`: modulo financeiro.
 - `14-agenda.md`: modulo agenda.
 - `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave para homework/aula interativa.
@@ -97,7 +98,7 @@ Rotas principais:
 
 ## Pendencias
 
-- Consolidar no futuro docs especificos para testes, seguranca, painel administrativo, logs e performance se esses temas crescerem.
+- Consolidar no futuro docs especificos para testes, painel administrativo e performance se esses temas crescerem.
 - Manter documentos historicos sincronizados ou marcar claramente como historicos quando forem substituidos.
 
 ## Como pode evoluir
@@ -105,7 +106,7 @@ Rotas principais:
 Esta pasta pode receber novos documentos numerados por tema. Use nomes claros, por exemplo:
 
 - `10-integracoes.md`
-- `11-seguranca.md`
+- `12-testes.md`
 - `14-painel-administrativo.md`
 - `16-testes.md`
 - `18-modulos-futuros.md`

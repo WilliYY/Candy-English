@@ -160,6 +160,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 - Nunca abrir PostgreSQL publicamente.
 - Login web/mobile limita 8 falhas por email e 30 por origem em 15 minutos; `LoginAttempt.ipHash` guarda somente HMAC com `AUTH_SECRET`, nunca IP bruto. Em producao o proxy precisa sobrescrever `X-Real-IP` e o app continua preso a `127.0.0.1`.
 - Admin pode ativar 2FA TOTP em `Seguranca e acessos`; depois de ativo, senha + TOTP/recuperacao sao obrigatorios, o segredo fica AES-256-GCM, recuperacoes ficam em HMAC e reutilizacao de TOTP e bloqueada. Nunca rotacionar `AUTH_SECRET` sem plano para os segredos MFA.
+- A matriz dos 15 controles fica em `docs/11-seguranca.md`; CI/Dependabot e monitor de health, containers, disco, backup e falhas de login estao no repositorio, enquanto DDoS/WAF, copia externa e pentest dependem de operacao externa.
 - Nunca reverter mudancas do usuario sem permissao explicita.
 - Mudancas sensiveis devem validar `auth()`, role e permissao por dado no servidor.
 - `STUDENT` acessa apenas o proprio perfil.

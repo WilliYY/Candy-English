@@ -1,0 +1,60 @@
+name: Security and quality
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    - cron: "17 10 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate application
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AUTH_SECRET: ci-only-auth-secret-with-at-least-32-characters
+      DATABASE_URL: postgresql://candy_ci:ci-only@127.0.0.1:5432/candy_ci?schema=public
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Reject critical dependency advisories
+        run: npm audit --audit-level=critical
+
+      - name: Validate Prisma schema
+        run: npm run prisma:validate
+
+      - name: Run unit and authorization tests
+        run: npm run test:mobile-homework
+
+      - name: Run mobile authentication tests
+        run: npm run test:mobile-auth
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build production bundle
+        run: npm run build
