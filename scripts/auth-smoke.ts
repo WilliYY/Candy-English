@@ -223,8 +223,8 @@ async function signInWithCredentials(
   });
   const sessionPayload = (await sessionResponse.json()) as {
     user?: { email?: string };
-  };
-  const authenticatedEmail = sessionPayload.user?.email?.toLowerCase();
+  } | null;
+  const authenticatedEmail = sessionPayload?.user?.email?.toLowerCase();
 
   if (shouldAuthenticate && authenticatedEmail !== email.toLowerCase()) {
     throw new Error(`Login nao criou sessao para ${email}.`);
