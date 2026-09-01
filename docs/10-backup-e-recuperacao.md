@@ -40,7 +40,7 @@ cd /home/ubuntu/projetos/candy-english
 Entrada unica no `crontab -e` do usuario `ubuntu`:
 
 ```cron
-30 2 * * * bash -lc 'cd /home/ubuntu/projetos/candy-english && ./scripts/backup-production.sh' 2>&1 | logger -t candy-backup
+30 2 * * * flock -n /tmp/candy-backup.lock bash -lc 'cd /home/ubuntu/projetos/candy-english && ./scripts/backup-production.sh' 2>&1 | logger -t candy-backup
 ```
 
 Variaveis opcionais: `CANDY_BACKUP_DIR`, `CANDY_BACKUP_KEY_FILE`, `CANDY_BACKUP_RETENTION_DAYS` (minimo 7) e `CANDY_PROJECT_DIR`.
@@ -62,7 +62,7 @@ O drill sobe PostgreSQL 17 isolado, sem publicar porta, restaura o dump, exige t
 Executar semanalmente depois do backup de domingo:
 
 ```cron
-30 4 * * 0 bash -lc 'cd /home/ubuntu/projetos/candy-english && ./scripts/restore-production-backup-drill.sh --latest' 2>&1 | logger -t candy-backup-drill
+30 4 * * 0 flock -n /tmp/candy-backup-drill.lock bash -lc 'cd /home/ubuntu/projetos/candy-english && ./scripts/restore-production-backup-drill.sh --latest' 2>&1 | logger -t candy-backup-drill
 ```
 
 ## Recuperacao real

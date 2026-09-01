@@ -52,7 +52,7 @@ Teste manual:
 Cron a cada cinco minutos:
 
 ```cron
-*/5 * * * * bash -lc 'cd /home/ubuntu/projetos/candy-english && ./scripts/monitor-production.sh' 2>&1 | logger -t candy-monitor
+*/5 * * * * flock -n /tmp/candy-monitor.lock bash -lc 'cd /home/ubuntu/projetos/candy-english && ./scripts/monitor-production.sh' 2>&1 | logger -t candy-monitor
 ```
 
 Variaveis opcionais: `CANDY_PUBLIC_HEALTH_URL`, `CANDY_BACKUP_DIR`, `CANDY_MAX_BACKUP_AGE_HOURS`, `CANDY_MAX_DISK_PERCENT`, `CANDY_LOGIN_FAILURE_ALERT_THRESHOLD`, `CANDY_ALERT_REPEAT_MINUTES`, `CANDY_MONITOR_STATE_DIR` e `CANDY_MONITOR_ENV_FILE`.
