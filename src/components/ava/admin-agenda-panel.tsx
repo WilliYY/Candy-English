@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Clock,
   History,
+  ListChecks,
   LoaderCircle,
   Pencil,
   Phone,
@@ -54,6 +55,11 @@ import {
   SECRETARIA_UNIT_FILTER_OPTIONS,
   type SecretariaUnitFilter,
 } from "@/lib/secretaria-unit-filter";
+import {
+  AgendaDateRail,
+  type AgendaDateRailDay,
+} from "@/components/ava/agenda-date-rail";
+import { AgendaMonthStudentCard } from "@/components/ava/agenda-month-student-card";
 
 export type AdminAgendaLessonStatus =
   | "ATTENDED"
@@ -94,6 +100,16 @@ export type AdminAgendaStudentRow = {
   weekdayMask: number;
 };
 
+export type AdminAgendaAvaStudentOption = {
+  agendaStudentId: string | null;
+  email: string;
+  id: string;
+  isActive: boolean;
+  name: string;
+  phone: string | null;
+  unit: FinancialUnit;
+};
+
 export type AdminAgendaLogRow = {
   createdAt: string;
   description: string;
@@ -102,6 +118,7 @@ export type AdminAgendaLogRow = {
 };
 
 type AdminAgendaPanelProps = {
+  avaStudents: AdminAgendaAvaStudentOption[];
   initialMonth: number;
   initialUnitFilter?: SecretariaUnitFilter;
   lessons: AdminAgendaLessonRow[];
@@ -111,6 +128,7 @@ type AdminAgendaPanelProps = {
 };
 
 type AgendaSheetFilter = "ALL" | "TODAY" | "PENDING" | "MISSED" | "INACTIVE";
+type AgendaViewMode = "DAY" | "MONTH";
 
 type AgendaStudentMonthRow = {
   attendedCount: number;
@@ -204,6 +222,12 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
 const shortDateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
+  timeZone: SAO_PAULO_TIME_ZONE,
+});
+
+const railDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  day: "numeric",
+  month: "long",
   timeZone: SAO_PAULO_TIME_ZONE,
 });
 
@@ -337,6 +361,7 @@ function createDefaultValues(
     name: "",
     notes: "",
     phone: "",
+    studentProfileId: "",
     time: "08:00",
     unit,
     weekdays: weekdaysValue,
@@ -451,6 +476,14 @@ function matchesAgendaSheetFilter(
   return true;
 }
 
+function getPendingLessonCount(lessons: AdminAgendaLessonRow[]) {
+  return lessons.filter(
+    (lesson) =>
+      lesson.status === "SCHEDULED" ||
+      lesson.status === "MAKEUP_SCHEDULED",
+  ).length;
+}
+
 function buildEditValues(
   student: AdminAgendaStudentRow,
   lessons: AdminAgendaLessonRow[],
@@ -511,7 +544,7 @@ function AgendaMetric({
       </div>
       <strong
         className={cn(
-          "mt-1 block text-3xl leading-none text-primary",
+          "mt-1 block text-3xl leading-none text-primary tabular-nums",
           valueClassName,
         )}
       >
@@ -547,7 +580,7 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
         type="button"
         size="sm"
         disabled={isPending}
-        className="h-9 justify-center border border-emerald-700 bg-emerald-600 px-3 text-white hover:bg-emerald-700"
+        className="h-11 justify-center border border-emerald-700 bg-emerald-600 px-3 text-white hover:bg-emerald-700"
         onClick={() => submitStatus("ATTENDED")}
       >
         {isPending ? (
@@ -561,7 +594,7 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
         type="button"
         size="sm"
         disabled={isPending}
-        className="h-9 justify-center border border-red-700 bg-red-600 px-3 text-white hover:bg-red-700"
+        className="h-11 justify-center border border-red-700 bg-red-600 px-3 text-white hover:bg-red-700"
         onClick={() => submitStatus("MISSED")}
       >
         <XCircle data-icon="inline-start" />
@@ -573,7 +606,7 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
           size="sm"
           variant="outline"
           disabled={isPending}
-          className="h-9 justify-center border-primary/25 px-3 text-primary sm:col-span-2 2xl:col-span-1"
+          className="h-11 justify-center border-primary/25 px-3 text-primary sm:col-span-2 2xl:col-span-1"
           onClick={() => submitStatus("SCHEDULED")}
         >
           <RotateCcw data-icon="inline-start" />
@@ -585,6 +618,7 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
 }
 
 export function AdminAgendaPanel({
+  avaStudents,
   initialMonth,
   initialUnitFilter,
   lessons,
@@ -607,6 +641,7 @@ export function AdminAgendaPanel({
     : getDayKey(AGENDA_YEAR, todayMonth, 1);
   const [activeMonth, setActiveMonth] = useState(todayMonth);
   const [selectedDayKey, setSelectedDayKey] = useState(todayKey);
+  const [viewMode, setViewMode] = useState<AgendaViewMode>("DAY");
   const [search, setSearch] = useState("");
   const [sheetFilter, setSheetFilter] = useState<AgendaSheetFilter>("ALL");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
@@ -648,7 +683,22 @@ export function AdminAgendaPanel({
     resolver: zodResolver(adminAgendaStudentUpdateSchema),
   });
   const selectedCreateWeekdays = form.watch("weekdays") ?? [];
+  const selectedCreateStudentProfileId = form.watch("studentProfileId");
   const selectedEditWeekdays = editForm.watch("weekdays") ?? [];
+  const selectedCreateStudent = useMemo(
+    () =>
+      avaStudents.find(
+        (student) => student.id === selectedCreateStudentProfileId,
+      ) ?? null,
+    [avaStudents, selectedCreateStudentProfileId],
+  );
+  const availableAvaStudents = useMemo(
+    () =>
+      avaStudents.filter(
+        (student) => student.isActive && !student.agendaStudentId,
+      ),
+    [avaStudents],
+  );
   const selectedStudent = useMemo(
     () => students.find((student) => student.id === selectedStudentId) ?? null,
     [selectedStudentId, students],
@@ -662,6 +712,14 @@ export function AdminAgendaPanel({
   useEffect(() => {
     form.setValue("month", activeMonth);
   }, [activeMonth, form]);
+
+  useEffect(() => {
+    if (!selectedCreateStudent) return;
+
+    form.setValue("name", selectedCreateStudent.name, { shouldValidate: true });
+    form.setValue("phone", selectedCreateStudent.phone ?? "");
+    form.setValue("unit", selectedCreateStudent.unit);
+  }, [form, selectedCreateStudent]);
 
   const monthLessons = useMemo(
     () =>
@@ -689,6 +747,43 @@ export function AdminAgendaPanel({
       new Map(),
     );
   }, [monthLessons]);
+  const agendaRailDays = useMemo<AgendaDateRailDay[]>(() => {
+    const daysInMonth = new Date(
+      Date.UTC(AGENDA_YEAR, activeMonth, 0),
+    ).getUTCDate();
+
+    return Array.from({ length: daysInMonth }, (_, index) => {
+      const day = index + 1;
+      const key = getDayKey(AGENDA_YEAR, activeMonth, day);
+      const date = new Date(Date.UTC(AGENDA_YEAR, activeMonth - 1, day, 12));
+      const dayLessons = monthLessonsByDay.get(key) ?? [];
+      const attendedCount = dayLessons.filter(
+        (lesson) =>
+          lesson.status === "ATTENDED" ||
+          lesson.status === "MAKEUP_ATTENDED",
+      ).length;
+      const missedCount = dayLessons.filter(
+        (lesson) => lesson.status === "MISSED",
+      ).length;
+      const pendingCount = dayLessons.filter(
+        (lesson) =>
+          lesson.status === "SCHEDULED" ||
+          lesson.status === "MAKEUP_SCHEDULED",
+      ).length;
+
+      return {
+        attendedCount,
+        dateLabel: railDateFormatter.format(date),
+        day,
+        key,
+        lessonCount: dayLessons.length,
+        missedCount,
+        pendingCount,
+        weekdayLabel: getWeekdayShortLabel(date.getUTCDay()),
+        weekdayLongLabel: getWeekdayLabel(date.getUTCDay()),
+      };
+    });
+  }, [activeMonth, monthLessonsByDay]);
   const selectedDayAllLessons = monthLessonsByDay.get(selectedDayKey) ?? [];
   const selectedDayLessons = selectedDayAllLessons.filter((lesson) => {
     const query = search.trim().toLocaleLowerCase("pt-BR");
@@ -853,6 +948,16 @@ export function AdminAgendaPanel({
 
     setActiveMonth(nextMonth);
     updateSelectedDay(nextMonth);
+  }
+
+  function selectAgendaDay(dayKey: string) {
+    setSelectedDayKey(dayKey);
+    setViewMode("DAY");
+    window.setTimeout(() => {
+      document
+        .getElementById("agenda-day-details")
+        ?.scrollIntoView({ behavior: "auto", block: "start" });
+    }, 50);
   }
 
   function toggleCreateWeekday(weekday: number) {
@@ -1076,12 +1181,16 @@ export function AdminAgendaPanel({
                 <h2 className="mt-1 text-xl font-semibold text-primary">
                   {activeMonthLabel} {AGENDA_YEAR}
                 </h2>
+                <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                  Organize a rotina, acompanhe o dia e confirme presencas em um
+                  so lugar.
+                </p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <NativeSelect
                 aria-label="Selecionar mes da agenda"
-                className="h-9 min-w-36 border-primary/20 bg-white font-semibold text-primary shadow-sm"
+                className="h-11 min-w-36 border-primary/20 bg-white font-semibold text-primary shadow-sm"
                 value={activeMonth}
                 onChange={(event) => changeMonth(Number(event.target.value))}
               >
@@ -1095,7 +1204,8 @@ export function AdminAgendaPanel({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="border-primary/25 bg-white text-primary shadow-sm"
+                aria-label="Ir para o mes anterior"
+                className="h-11 border-primary/25 bg-white px-3 text-primary shadow-sm"
                 onClick={() => changeMonth(activeMonth - 1)}
                 disabled={activeMonth <= 1}
               >
@@ -1105,7 +1215,7 @@ export function AdminAgendaPanel({
               <Button
                 type="button"
                 size="sm"
-                className="bg-primary text-primary-foreground shadow-sm"
+                className="h-11 bg-primary px-4 text-primary-foreground shadow-sm"
                 onClick={() => changeMonth(todayMonth)}
               >
                 Hoje
@@ -1114,7 +1224,8 @@ export function AdminAgendaPanel({
                 type="button"
                 variant="outline"
                 size="sm"
-                className="border-primary/25 bg-white text-primary shadow-sm"
+                aria-label="Ir para o proximo mes"
+                className="h-11 border-primary/25 bg-white px-3 text-primary shadow-sm"
                 onClick={() => changeMonth(activeMonth + 1)}
                 disabled={activeMonth >= 12}
               >
@@ -1161,38 +1272,61 @@ export function AdminAgendaPanel({
               valueClassName="text-amber-800"
             />
           </div>
-          <div className="mt-4 grid gap-3 rounded-lg border border-primary/15 bg-white p-3.5 shadow-sm lg:grid-cols-[minmax(260px,1fr)_auto]">
-            <label className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-primary/20 bg-white px-3 shadow-sm focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/10">
-              <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
-              <span className="sr-only">Buscar aluno na agenda</span>
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                placeholder="Buscar aluno ou telefone"
-                type="search"
-              />
-            </label>
-            <div className="flex min-w-0 gap-2 overflow-x-auto pb-1 lg:justify-end lg:pb-0">
-              {agendaSheetFilters.map((filter) => (
+          <div className="mt-4 rounded-lg border border-primary/15 bg-white p-3.5 shadow-sm">
+            <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_auto]">
+              <label className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-primary/20 bg-white px-3 shadow-sm focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/10">
+                <Search aria-hidden="true" className="size-4 shrink-0 text-primary" />
+                <span className="sr-only">Buscar aluno na agenda</span>
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  autoComplete="off"
+                  className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                  placeholder="Buscar aluno ou telefone…"
+                  type="search"
+                />
+              </label>
+              <div
+                aria-label="Escolher visualizacao da agenda"
+                className="grid grid-cols-2 rounded-lg border border-primary/15 bg-primary/[0.045] p-1"
+                role="group"
+              >
                 <Button
-                  key={filter.value}
                   type="button"
                   size="sm"
-                  variant={sheetFilter === filter.value ? "default" : "outline"}
+                  variant="ghost"
+                  aria-pressed={viewMode === "DAY"}
                   className={cn(
-                    "h-11 shrink-0 px-3",
-                    sheetFilter === filter.value
-                      ? "bg-primary text-primary-foreground"
-                      : "border-primary/15 bg-white text-primary",
+                    "h-11 px-3",
+                    viewMode === "DAY"
+                      ? "bg-white text-primary shadow-sm hover:bg-white"
+                      : "text-primary/65 hover:bg-white/70 hover:text-primary",
                   )}
-                  onClick={() => setSheetFilter(filter.value)}
+                  onClick={() => setViewMode("DAY")}
                 >
-                  {filter.label}
+                  <Clock data-icon="inline-start" />
+                  Agenda do dia
                 </Button>
-              ))}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  aria-pressed={viewMode === "MONTH"}
+                  className={cn(
+                    "h-11 px-3",
+                    viewMode === "MONTH"
+                      ? "bg-white text-primary shadow-sm hover:bg-white"
+                      : "text-primary/65 hover:bg-white/70 hover:text-primary",
+                  )}
+                  onClick={() => setViewMode("MONTH")}
+                >
+                  <ListChecks data-icon="inline-start" />
+                  Visao mensal
+                </Button>
+              </div>
             </div>
-            <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1 lg:col-span-2 lg:pb-0">
+
+            <div className="mt-3 flex min-w-0 items-center gap-2 overflow-x-auto border-t border-primary/10 pt-3">
               <span className="mr-1 shrink-0 text-[0.68rem] font-bold uppercase tracking-[0.13em] text-primary/55">
                 Polo
               </span>
@@ -1202,8 +1336,9 @@ export function AdminAgendaPanel({
                   type="button"
                   size="sm"
                   variant={initialUnitFilter === option.value ? "default" : "outline"}
+                  aria-pressed={initialUnitFilter === option.value}
                   className={cn(
-                    "h-9 shrink-0",
+                    "h-11 shrink-0",
                     initialUnitFilter === option.value
                       ? "bg-primary text-primary-foreground"
                       : "border-primary/15 bg-white text-primary",
@@ -1218,19 +1353,77 @@ export function AdminAgendaPanel({
                 </Button>
               ))}
               <span className="ml-auto shrink-0 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-bold text-primary">
-                {agendaSheetRows.length} de {agendaMonthRows.length} aluno(s)
+                {viewMode === "DAY"
+                  ? `${selectedDayLessons.length} aula(s) no dia`
+                  : `${agendaSheetRows.length} de ${agendaMonthRows.length} aluno(s)`}
               </span>
             </div>
+
+            {viewMode === "MONTH" ? (
+              <div className="mt-3 flex min-w-0 items-center gap-2 overflow-x-auto border-t border-primary/10 pt-3">
+                <span className="mr-1 shrink-0 text-[0.68rem] font-bold uppercase tracking-[0.13em] text-primary/55">
+                  Situacao
+                </span>
+                {agendaSheetFilters.map((filter) => (
+                  <Button
+                    key={filter.value}
+                    type="button"
+                    size="sm"
+                    variant={sheetFilter === filter.value ? "default" : "outline"}
+                    aria-pressed={sheetFilter === filter.value}
+                    className={cn(
+                      "h-11 shrink-0 px-3",
+                      sheetFilter === filter.value
+                        ? "bg-primary text-primary-foreground"
+                        : "border-primary/15 bg-white text-primary",
+                    )}
+                    onClick={() => setSheetFilter(filter.value)}
+                  >
+                    {filter.label}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
           </div>
           {listMessage ? (
-            <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+            <p
+              aria-live="polite"
+              className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
+            >
               {listMessage}
             </p>
           ) : null}
         </div>
 
         <div className="grid gap-4 p-3 md:p-4">
-          <div className="min-w-0 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-sm">
+          <div className="min-w-0 rounded-lg border border-primary/15 bg-gradient-to-r from-white via-white to-violet-50/60 p-3 shadow-sm md:p-4">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
+                  Navegue pelo mes
+                </span>
+                <h3 className="mt-1 text-base font-semibold text-primary">
+                  Escolha um dia da agenda
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Verde indica presencas, vermelho faltas e amarelo aulas a
+                  confirmar.
+                </p>
+              </div>
+              <span className="rounded-full border border-primary/15 bg-white px-3 py-1 text-xs font-bold text-primary shadow-sm">
+                {agendaRailDays.length} dias em {activeMonthLabel}
+              </span>
+            </div>
+            <AgendaDateRail
+              days={agendaRailDays}
+              onSelectDay={selectAgendaDay}
+              selectedDayKey={selectedDayKey}
+              todayKey={todayKey}
+            />
+          </div>
+
+          {viewMode === "MONTH" ? (
+            <div className="min-w-0 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-primary/15 bg-primary px-4 py-3.5 text-primary-foreground">
               <div>
                 <span className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-white/65">
@@ -1259,7 +1452,62 @@ export function AdminAgendaPanel({
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <>
+                <div className="grid gap-3 p-3 md:hidden">
+                  {agendaSheetGroups.map((group) => {
+                    const unitMeta = agendaUnitMeta[group.unit];
+
+                    return (
+                      <section key={group.unit} className="grid gap-2">
+                        <div
+                          className={cn(
+                            "flex items-center justify-between rounded-lg border px-3 py-2",
+                            unitMeta.groupClassName,
+                          )}
+                        >
+                          <h4 className="text-sm font-bold">{unitMeta.label}</h4>
+                          <span className="text-xs font-semibold opacity-75">
+                            {group.rows.length} aluno(s)
+                          </span>
+                        </div>
+                        {group.rows.map((row) => {
+                          const isSelected = selectedStudentId === row.student.id;
+                          const pendingCount = getPendingLessonCount(row.lessons);
+
+                          return (
+                            <AgendaMonthStudentCard
+                              key={row.student.id}
+                              attendedCount={row.attendedCount}
+                              initials={getAgendaInitials(row.student.name)}
+                              isSelected={isSelected}
+                              missedCount={row.missedCount}
+                              nextLessonLabel={
+                                row.todayLesson
+                                  ? `Hoje as ${row.todayLesson.time}`
+                                  : row.nextLesson
+                                    ? `Proxima: ${formatShortDate(row.nextLesson.date)} as ${row.nextLesson.time}`
+                                    : "Sem proxima aula"
+                              }
+                              onOpen={() => openAgendaSheetRow(row)}
+                              pendingCount={pendingCount}
+                              phone={row.student.phone}
+                              scheduleLabel={
+                                row.schedule.isComplete
+                                  ? `${formatWeekdayList(row.schedule.weekdays)} as ${row.schedule.time}`
+                                  : "Rotina pendente"
+                              }
+                              studentName={row.student.name}
+                              unitLabel={group.unit === "IVATE" ? "Polo 1" : "Polo 2"}
+                              unitToneClassName={unitMeta.pillClassName}
+                            />
+                          );
+                        })}
+                      </section>
+                    );
+                  })}
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
                   <thead className="bg-[#f8f4fa] text-[0.65rem] font-bold uppercase tracking-[0.11em] text-primary/60">
                     <tr>
@@ -1294,11 +1542,7 @@ export function AdminAgendaPanel({
                           </tr>
                           {group.rows.map((row) => {
                             const isSelected = selectedStudentId === row.student.id;
-                            const pendingCount = row.lessons.filter(
-                              (lesson) =>
-                                lesson.status === "SCHEDULED" ||
-                                lesson.status === "MAKEUP_SCHEDULED",
-                            ).length;
+                            const pendingCount = getPendingLessonCount(row.lessons);
 
                             return (
                               <tr
@@ -1350,20 +1594,20 @@ export function AdminAgendaPanel({
                                   </span>
                                 </td>
                                 <td className="px-3 py-3 text-center font-bold text-primary">
-                                  {row.lessons.length}
+                                  <span className="tabular-nums">{row.lessons.length}</span>
                                 </td>
                                 <td className="px-3 py-3 text-center">
-                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-800">
+                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-800 tabular-nums">
                                     {row.attendedCount}
                                   </span>
                                 </td>
                                 <td className="px-3 py-3 text-center">
-                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-red-100 px-2 py-1 font-bold text-red-800">
+                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-red-100 px-2 py-1 font-bold text-red-800 tabular-nums">
                                     {row.missedCount}
                                   </span>
                                 </td>
                                 <td className="px-3 py-3 text-center">
-                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-amber-100 px-2 py-1 font-bold text-amber-900">
+                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-amber-100 px-2 py-1 font-bold text-amber-900 tabular-nums">
                                     {pendingCount}
                                   </span>
                                 </td>
@@ -1412,15 +1656,17 @@ export function AdminAgendaPanel({
                       );
                     })}
                   </tbody>
-                </table>
-              </div>
+                  </table>
+                </div>
+              </>
             )}
-          </div>
+            </div>
+          ) : (
 
-          <div
-            id="agenda-day-details"
-            className="flex min-w-0 scroll-mt-24 flex-col gap-3"
-          >
+            <div
+              id="agenda-day-details"
+              className="flex min-w-0 scroll-mt-24 flex-col gap-3"
+            >
             <div className="rounded-lg border border-primary/15 bg-gradient-to-br from-white via-white to-violet-50/70 p-3.5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -1486,7 +1732,7 @@ export function AdminAgendaPanel({
                     <article
                       key={lesson.id}
                       className={cn(
-                        "relative overflow-hidden rounded-lg border p-3.5 pt-5 shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)]",
+                        "relative overflow-hidden rounded-lg border p-3.5 pt-5 shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)] motion-reduce:transition-none motion-reduce:hover:translate-y-0",
                         meta.cardClassName,
                       )}
                     >
@@ -1570,7 +1816,8 @@ export function AdminAgendaPanel({
                 })
               )}
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -1591,13 +1838,14 @@ export function AdminAgendaPanel({
             </span>
             <div>
               <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                Aluno interno
+                Vinculo com o AVA
               </span>
               <h2 className="mt-1 text-lg font-semibold text-primary">
                 Adicionar aluno na agenda
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Cadastro simples, separado dos alunos do AVA.
+                Selecione o cadastro real do aluno para manter AVA, polo,
+                financeiro e agenda unidos.
               </p>
             </div>
           </div>
@@ -1606,45 +1854,50 @@ export function AdminAgendaPanel({
           </span>
         </div>
         <FieldGroup className="gap-3">
-          <div className="grid gap-3 lg:grid-cols-[minmax(190px,1fr)_minmax(130px,0.6fr)_minmax(150px,0.56fr)_minmax(110px,0.42fr)_auto]">
-            <Field data-invalid={Boolean(form.formState.errors.name)}>
-              <FieldLabel htmlFor="agenda-name">Nome do aluno</FieldLabel>
-              <Input
-                id="agenda-name"
-                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
-                disabled={isPending}
-                placeholder="Nome do aluno"
-                {...form.register("name")}
-              />
-              <FieldError errors={[form.formState.errors.name]} />
-            </Field>
-            <Field data-invalid={Boolean(form.formState.errors.phone)}>
-              <FieldLabel htmlFor="agenda-phone">Telefone</FieldLabel>
-              <Input
-                id="agenda-phone"
-                className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
-                disabled={isPending}
-                placeholder="Opcional"
-                {...form.register("phone")}
-              />
-              <FieldError errors={[form.formState.errors.phone]} />
-            </Field>
-            <Field data-invalid={Boolean(form.formState.errors.unit)}>
-              <FieldLabel htmlFor="agenda-unit">Unidade</FieldLabel>
+          <div className="grid gap-3 lg:grid-cols-[minmax(280px,1.25fr)_minmax(220px,0.9fr)_minmax(110px,0.42fr)_auto]">
+            <Field
+              data-invalid={Boolean(form.formState.errors.studentProfileId)}
+            >
+              <FieldLabel htmlFor="agenda-student-profile">
+                Aluno cadastrado no AVA
+              </FieldLabel>
               <NativeSelect
-                id="agenda-unit"
+                id="agenda-student-profile"
                 className="h-11 border-primary/20 bg-white shadow-sm focus-visible:border-primary/50"
-                disabled={isPending}
-                {...form.register("unit")}
+                disabled={isPending || availableAvaStudents.length === 0}
+                {...form.register("studentProfileId")}
               >
-                {FINANCIAL_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {unitLabels[unit]}
+                <option value="">
+                  {availableAvaStudents.length > 0
+                    ? "Selecione nome, email ou polo"
+                    : "Todos os alunos ativos ja estao vinculados"}
+                </option>
+                {availableAvaStudents.map((student) => (
+                  <option key={student.id} value={student.id}>
+                    {student.name} - {student.email} - {unitLabels[student.unit]}
                   </option>
                 ))}
               </NativeSelect>
-              <FieldError errors={[form.formState.errors.unit]} />
+              <FieldError
+                errors={[form.formState.errors.studentProfileId]}
+              />
             </Field>
+            <div className="rounded-lg border border-cyan-200 bg-cyan-50/70 px-3 py-2.5 text-sm">
+              <span className="block text-[0.68rem] font-bold uppercase tracking-[0.12em] text-cyan-800/70">
+                Cadastro selecionado
+              </span>
+              <strong className="mt-1 block truncate text-primary">
+                {selectedCreateStudent?.name ?? "Aguardando selecao"}
+              </strong>
+              <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                {selectedCreateStudent
+                  ? `${unitLabels[selectedCreateStudent.unit]} - ${selectedCreateStudent.phone || "sem telefone"}`
+                  : "Nome, telefone e polo vem do AVA."}
+              </span>
+              <input type="hidden" {...form.register("name")} />
+              <input type="hidden" {...form.register("phone")} />
+              <input type="hidden" {...form.register("unit")} />
+            </div>
             <Field data-invalid={Boolean(form.formState.errors.time)}>
               <FieldLabel htmlFor="agenda-time">Horario</FieldLabel>
               <Input
@@ -1685,7 +1938,7 @@ export function AdminAgendaPanel({
                     aria-pressed={checked}
                     onClick={() => toggleCreateWeekday(weekday.value)}
                     className={cn(
-                      "rounded-lg border px-2.5 py-2 text-sm font-semibold transition-colors",
+                      "min-h-11 rounded-lg border px-2.5 py-2 text-sm font-semibold transition-colors",
                       checked
                         ? "border-primary bg-primary text-primary-foreground shadow-sm"
                         : "border-primary/20 bg-primary/5 text-primary hover:bg-primary/10",
@@ -1711,7 +1964,10 @@ export function AdminAgendaPanel({
           </Field>
         </FieldGroup>
         {message ? (
-          <p className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary">
+          <p
+            aria-live="polite"
+            className="mt-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm font-medium text-primary"
+          >
             {message}
           </p>
         ) : null}
@@ -1854,7 +2110,7 @@ export function AdminAgendaPanel({
                           aria-pressed={checked}
                           onClick={() => toggleEditWeekday(weekday.value)}
                           className={cn(
-                            "rounded-lg border px-2.5 py-2 text-sm font-semibold transition-colors",
+                            "min-h-11 rounded-lg border px-2.5 py-2 text-sm font-semibold transition-colors",
                             checked
                               ? "border-primary bg-primary text-primary-foreground shadow-sm"
                               : "border-primary/20 bg-white text-primary hover:bg-primary/5",
@@ -1914,7 +2170,10 @@ export function AdminAgendaPanel({
                 </Button>
               </div>
               {editMessage ? (
-                <p className="mt-3 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm font-medium text-primary">
+                <p
+                  aria-live="polite"
+                  className="mt-3 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm font-medium text-primary"
+                >
                   {editMessage}
                 </p>
               ) : null}

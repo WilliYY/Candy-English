@@ -45,10 +45,13 @@ test("rejects non-admin user writes before hashing or opening a transaction", as
 
 test("creates a student and profile atomically without returning the password", async () => {
   const writes: Array<{ data: unknown; model: string }> = [];
+  const linkages: unknown[] = [];
   const tx = {
     studentProfile: {
-      create: async ({ data }: { data: unknown }) =>
-        writes.push({ data, model: "studentProfile" }),
+      create: async ({ data }: { data: unknown }) => {
+        writes.push({ data, model: "studentProfile" });
+        return { id: "student-profile-1" };
+      },
     },
     teacherProfile: { create: async () => undefined },
     user: {
@@ -70,6 +73,15 @@ test("creates a student and profile atomically without returning the password", 
       role: "STUDENT",
     },
     {
+      ensureAdministrativeRecords: async (_transaction, input) => {
+        linkages.push(input);
+        return {
+          agendaStudentId: "agenda-1",
+          createdAgenda: true,
+          createdFinancial: true,
+          financialStudentId: "finance-1",
+        };
+      },
       hashPassword: async (password) => {
         assert.equal(password, "StrongPass123");
         return "secure-hash";
@@ -106,15 +118,26 @@ test("creates a student and profile atomically without returning the password", 
       model: "studentProfile",
     },
   ]);
+  assert.deepEqual(linkages, [
+    {
+      actorUserId: "admin-1",
+      sourceDescription: "cadastro mobile do Admin",
+      studentProfileId: "student-profile-1",
+    },
+  ]);
   assert.equal(JSON.stringify(result).includes("StrongPass123"), false);
 });
 
 test("updates identity and the matching profile with optimistic concurrency", async () => {
   const updatedAt = new Date("2026-08-01T12:00:00.000Z");
   const writes: unknown[] = [];
+  const linkages: unknown[] = [];
   const tx = {
     studentProfile: {
-      upsert: async (input: unknown) => writes.push(input),
+      upsert: async (input: unknown) => {
+        writes.push(input);
+        return { id: "student-profile-1" };
+      },
     },
     teacherProfile: { upsert: async () => undefined },
     user: {
@@ -134,6 +157,15 @@ test("updates identity and the matching profile with optimistic concurrency", as
       phone: "11988887777",
     },
     {
+      ensureAdministrativeRecords: async (_transaction, input) => {
+        linkages.push(input);
+        return {
+          agendaStudentId: "agenda-1",
+          createdAgenda: false,
+          createdFinancial: false,
+          financialStudentId: "finance-1",
+        };
+      },
       store: {
         $transaction: async (operation: (value: typeof tx) => unknown) =>
           operation(tx),
@@ -143,6 +175,13 @@ test("updates identity and the matching profile with optimistic concurrency", as
 
   assert.equal(result.userId, "user-1");
   assert.equal(writes.length, 2);
+  assert.deepEqual(linkages, [
+    {
+      actorUserId: "admin-1",
+      sourceDescription: "edicao mobile do Admin",
+      studentProfileId: "student-profile-1",
+    },
+  ]);
 });
 
 test("refuses to overwrite a user changed by another session", async () => {

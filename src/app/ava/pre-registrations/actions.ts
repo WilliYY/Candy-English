@@ -576,6 +576,7 @@ async function createLinkedStudentFromRequest({
       name: request.fullName,
       notes: agendaStudentNotes || null,
       phone: contactPhone,
+      studentProfileId: studentProfile.id,
       unit: request.unit,
       weekdayMask: request.intendedWeekdayMask,
     },

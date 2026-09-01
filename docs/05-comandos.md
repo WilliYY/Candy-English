@@ -49,6 +49,7 @@ npm run typecheck
 npm run build
 npm run test:sales
 npm run test:ponto
+npm run audit:student-links
 npm run audit:server-smoke
 npm run audit:auth-smoke
 npm run test:mobile-auth
@@ -85,6 +86,13 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-x
 docker compose --profile tools run --rm audit-server-smoke npm run audit:homework-concurrency
 docker compose --profile tools run --rm audit-server-smoke npm run audit:candy-xp-visibility
 docker compose --profile tools run --rm audit-server-smoke npm run audit:catty-behavior
+docker compose --profile tools run --rm audit-server-smoke npm run audit:student-links
+```
+
+Para reparar os vinculos antigos depois de revisar a auditoria:
+
+```bash
+docker compose --profile tools run --rm audit-server-smoke npm run repair:student-links
 ```
 
 ## Retencao de contas excluidas

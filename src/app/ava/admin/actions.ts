@@ -16,6 +16,7 @@ import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
 import { deleteAvatarImage } from "@/lib/storage";
+import { ensureStudentAdministrativeRecords } from "@/lib/student-administrative-linkage";
 import { getUserAnonymizationDate } from "@/lib/user-retention";
 import {
   staffInvoiceSettlementSchema,
@@ -522,7 +523,7 @@ export async function createAvaUser(
       createdUserId = user.id;
 
       if (role === "STUDENT") {
-        await tx.studentProfile.create({
+        const studentProfile = await tx.studentProfile.create({
           data: {
             birthDate,
             guardianDocument,
@@ -535,6 +536,12 @@ export async function createAvaUser(
             unit,
             userId: user.id,
           },
+        });
+
+        await ensureStudentAdministrativeRecords(tx, {
+          actorUserId: session.user.id,
+          sourceDescription: "cadastro direto do Admin",
+          studentProfileId: studentProfile.id,
         });
       }
 
@@ -564,7 +571,10 @@ export async function createAvaUser(
     };
   }
 
-  let message = "Usuario cadastrado com sucesso.";
+  let message =
+    role === "STUDENT"
+      ? "Aluno cadastrado com AVA, financeiro e agenda vinculados."
+      : "Usuario cadastrado com sucesso.";
 
   if (role === "STUDENT" && cattyContext && createdUserId) {
     const memoryResult = await upsertCattyUserMemory({
@@ -581,9 +591,10 @@ export async function createAvaUser(
 
     if (!memoryResult.ok) {
       message =
-        "Usuario cadastrado, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
+        "Aluno cadastrado com AVA, financeiro e agenda vinculados, mas o contexto Catty nao foi salvo. Revise em Memoria da Catty.";
     } else {
-      message = "Usuario cadastrado com contexto Catty inicial.";
+      message =
+        "Aluno cadastrado com AVA, financeiro, agenda e contexto Catty inicial.";
     }
   }
 
@@ -904,11 +915,17 @@ export async function updateStudentContactByAdmin(
       role: true,
       studentProfile: {
         select: {
+          agendaStudent: {
+            select: { id: true },
+          },
           convertedStudentPreRegistration: {
             select: {
               convertedAgendaStudentId: true,
               convertedFinancialStudentId: true,
             },
+          },
+          financialStudent: {
+            select: { id: true },
           },
           id: true,
         },
@@ -935,6 +952,12 @@ export async function updateStudentContactByAdmin(
   const studentProfileId = user.studentProfile.id;
   const convertedRegistration =
     user.studentProfile.convertedStudentPreRegistration;
+  const financialStudentId =
+    user.studentProfile.financialStudent?.id ??
+    convertedRegistration?.convertedFinancialStudentId;
+  const agendaStudentId =
+    user.studentProfile.agendaStudent?.id ??
+    convertedRegistration?.convertedAgendaStudentId;
 
   if (emailChanged) {
     const emailOwner = await prisma.user.findUnique({
@@ -981,19 +1004,34 @@ export async function updateStudentContactByAdmin(
         },
       });
 
-      if (convertedRegistration?.convertedFinancialStudentId) {
+      if (financialStudentId) {
         await tx.financialStudent.update({
-          where: { id: convertedRegistration.convertedFinancialStudentId },
-          data: { unit: parsed.data.unit },
+          where: { id: financialStudentId },
+          data: {
+            email: parsed.data.email,
+            name: parsed.data.name,
+            phone: parsed.data.phone ?? null,
+            unit: parsed.data.unit,
+          },
         });
       }
 
-      if (convertedRegistration?.convertedAgendaStudentId) {
+      if (agendaStudentId) {
         await tx.agendaStudent.update({
-          where: { id: convertedRegistration.convertedAgendaStudentId },
-          data: { unit: parsed.data.unit },
+          where: { id: agendaStudentId },
+          data: {
+            name: parsed.data.name,
+            phone: parsed.data.phone ?? null,
+            unit: parsed.data.unit,
+          },
         });
       }
+
+      await ensureStudentAdministrativeRecords(tx, {
+        actorUserId: session.user.id,
+        sourceDescription: "edicao pela Secretaria",
+        studentProfileId,
+      });
     });
   } catch (error) {
     if (isUniqueConstraintError(error)) {
@@ -1309,19 +1347,48 @@ export async function createFinancialStudent(
         linkedStudentProfileId = studentProfile.id;
       }
 
+      const linkedStudentProfile = linkedStudentProfileId
+        ? await tx.studentProfile.findUnique({
+            where: { id: linkedStudentProfileId },
+            select: {
+              id: true,
+              studentPhone: true,
+              unit: true,
+              user: {
+                select: {
+                  address: true,
+                  email: true,
+                  name: true,
+                  phone: true,
+                },
+              },
+            },
+          })
+        : null;
+
+      if (!linkedStudentProfile) {
+        return {
+          message: "Nao foi possivel localizar o aluno do AVA para vincular.",
+          ok: false as const,
+        };
+      }
+
       const student = await tx.financialStudent.create({
         data: {
-          address: parsed.data.address,
+          address: linkedStudentProfile.user.address ?? parsed.data.address,
           amountCents: parsed.data.amount,
           cpf: parsed.data.cpf,
-          email: parsed.data.email,
+          email: linkedStudentProfile.user.email,
           installmentsTotal: parsed.data.installmentsTotal ?? null,
-          name: parsed.data.name,
+          name: linkedStudentProfile.user.name,
           paymentDay: parsed.data.paymentDay,
           paymentMethod: parsed.data.paymentMethod,
-          phone: parsed.data.phone,
-          studentProfileId: linkedStudentProfileId,
-          unit: parsed.data.unit,
+          phone:
+            linkedStudentProfile.studentPhone ??
+            linkedStudentProfile.user.phone ??
+            parsed.data.phone,
+          studentProfileId: linkedStudentProfile.id,
+          unit: linkedStudentProfile.unit,
         },
       });
 
@@ -1373,6 +1440,14 @@ export async function createFinancialStudent(
         },
       });
 
+      await ensureStudentAdministrativeRecords(tx, {
+        actorUserId: session.user.id,
+        sourceDescription: "cadastro pelo Financeiro",
+        startMonth: parsed.data.month,
+        studentProfileId: linkedStudentProfile.id,
+        year: parsed.data.year,
+      });
+
       return { ok: true as const };
     });
 
@@ -1397,8 +1472,8 @@ export async function createFinancialStudent(
   return {
     ok: true,
     message: createsAvaStudent
-      ? "Novo aluno criado com acesso ao AVA e cadastro financeiro."
-      : "Aluno do AVA adicionado ao financeiro.",
+      ? "Novo aluno criado com AVA, financeiro e agenda vinculados."
+      : "Aluno do AVA adicionado ao financeiro e vinculado a agenda.",
   };
 }
 
@@ -1427,7 +1502,12 @@ export async function updateFinancialStudent(
   const prisma = getPrisma();
   const student = await prisma.financialStudent.findUnique({
     where: { id: parsed.data.studentId },
-    select: { id: true },
+    select: {
+      id: true,
+      studentProfile: {
+        select: { id: true, userId: true },
+      },
+    },
   });
 
   if (!student) {
@@ -1453,6 +1533,38 @@ export async function updateFinancialStudent(
         unit: parsed.data.unit,
       },
     });
+
+    if (student.studentProfile) {
+      await tx.studentProfile.update({
+        where: { id: student.studentProfile.id },
+        data: {
+          studentPhone: parsed.data.phone ?? null,
+          unit: parsed.data.unit,
+        },
+      });
+      await tx.user.update({
+        where: { id: student.studentProfile.userId },
+        data: {
+          name: parsed.data.name,
+          phone: parsed.data.phone ?? null,
+        },
+      });
+      await tx.agendaStudent.updateMany({
+        where: { studentProfileId: student.studentProfile.id },
+        data: {
+          name: parsed.data.name,
+          phone: parsed.data.phone ?? null,
+          unit: parsed.data.unit,
+        },
+      });
+      await ensureStudentAdministrativeRecords(tx, {
+        actorUserId: session.user.id,
+        sourceDescription: "edicao pelo Financeiro",
+        startMonth: parsed.data.month,
+        studentProfileId: student.studentProfile.id,
+        year: parsed.data.year,
+      });
+    }
     const financeMonths = getFinanceMonthsForPlan(
       parsed.data.month,
       updatedStudent.installmentsTotal ?? undefined,
@@ -2157,10 +2269,8 @@ export async function createAgendaSchedule(
   }
 
   const prisma = getPrisma();
-  const normalizedName = parsed.data.name.trim().toLocaleLowerCase("pt-BR");
   const scheduleKey = [
-    normalizedName,
-    parsed.data.unit,
+    parsed.data.studentProfileId,
     parsed.data.year,
     parsed.data.time,
   ].join(":");
@@ -2170,40 +2280,54 @@ export async function createAgendaSchedule(
       `agenda-schedule:${scheduleKey}`,
     );
 
-    const duplicateLesson = await tx.agendaLesson.findFirst({
-      where: {
-        isActive: true,
-        isMakeup: false,
-        time: parsed.data.time,
-        weekday: {
-          in: parsed.data.weekdays,
-        },
-        year: parsed.data.year,
-        student: {
-          name: {
-            equals: parsed.data.name,
-            mode: "insensitive",
-          },
-          unit: parsed.data.unit,
-        },
-      },
+    const studentProfile = await tx.studentProfile.findUnique({
+      where: { id: parsed.data.studentProfileId },
       select: {
+        agendaStudent: {
+          select: { id: true },
+        },
         id: true,
+        studentPhone: true,
+        unit: true,
+        user: {
+          select: {
+            isActive: true,
+            name: true,
+            phone: true,
+            role: true,
+          },
+        },
       },
     });
 
-    if (duplicateLesson) {
-      return false;
+    if (
+      !studentProfile ||
+      !studentProfile.user.isActive ||
+      studentProfile.user.role !== "STUDENT"
+    ) {
+      return { kind: "INVALID_STUDENT" as const };
     }
 
-    const student = await tx.agendaStudent.create({
+    if (studentProfile.agendaStudent) {
+      return { kind: "ALREADY_LINKED" as const };
+    }
+
+    const linkedRecords = await ensureStudentAdministrativeRecords(tx, {
+      actorUserId: session.user.id,
+      sourceDescription: "cadastro pela Agenda",
+      startMonth: parsed.data.month,
+      studentProfileId: studentProfile.id,
+      year: parsed.data.year,
+    });
+    const student = await tx.agendaStudent.update({
+      where: { id: linkedRecords.agendaStudentId! },
       data: {
         defaultTime: parsed.data.time,
         isActive: true,
-        name: parsed.data.name,
+        name: studentProfile.user.name,
         notes: parsed.data.notes ?? null,
-        phone: parsed.data.phone ?? null,
-        unit: parsed.data.unit,
+        phone: studentProfile.studentPhone ?? studentProfile.user.phone,
+        unit: studentProfile.unit,
         weekdayMask: buildAgendaWeekdayMask(parsed.data.weekdays),
       },
     });
@@ -2235,13 +2359,21 @@ export async function createAgendaSchedule(
       },
     });
 
-    return true;
+    return { kind: "CREATED" as const };
   });
 
-  if (!created) {
+  if (created.kind === "INVALID_STUDENT") {
     return {
       ok: false,
-      message: "Esse aluno ja tem agenda ativa nesse dia e horario.",
+      message: "O aluno selecionado nao esta ativo no AVA.",
+    };
+  }
+
+  if (created.kind === "ALREADY_LINKED") {
+    return {
+      ok: false,
+      message:
+        "Este aluno ja esta vinculado a agenda. Abra a linha dele para editar dias e horario.",
     };
   }
 
@@ -2249,7 +2381,7 @@ export async function createAgendaSchedule(
 
   return {
     ok: true,
-    message: "Aluno adicionado na agenda.",
+    message: "Rotina da agenda salva no cadastro vinculado do aluno.",
   };
 }
 
@@ -2289,7 +2421,13 @@ export async function updateAgendaStudentSchedule(
   const prisma = getPrisma();
   const student = await prisma.agendaStudent.findUnique({
     where: { id: parsed.data.studentId },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      studentProfile: {
+        select: { id: true, userId: true },
+      },
+    },
   });
 
   if (!student) {
@@ -2348,6 +2486,51 @@ export async function updateAgendaStudentSchedule(
           : 0,
       },
     });
+
+    if (student.studentProfile) {
+      await tx.studentProfile.update({
+        where: { id: student.studentProfile.id },
+        data: {
+          studentPhone: parsed.data.phone ?? null,
+          unit: parsed.data.unit,
+        },
+      });
+      await tx.user.update({
+        where: { id: student.studentProfile.userId },
+        data: {
+          name: parsed.data.name,
+          phone: parsed.data.phone ?? null,
+        },
+      });
+      const linkedRecords = await ensureStudentAdministrativeRecords(tx, {
+        actorUserId: session.user.id,
+        sourceDescription: "edicao pela Agenda",
+        startMonth: parsed.data.month,
+        studentProfileId: student.studentProfile.id,
+        year: parsed.data.year,
+      });
+
+      await tx.financialStudent.update({
+        where: { id: linkedRecords.financialStudentId! },
+        data: {
+          name: parsed.data.name,
+          phone: parsed.data.phone ?? null,
+          unit: parsed.data.unit,
+        },
+      });
+      await tx.financialPayment.updateMany({
+        where: {
+          month: { gte: parsed.data.month },
+          studentId: linkedRecords.financialStudentId!,
+          year: parsed.data.year,
+        },
+        data: {
+          snapshotName: parsed.data.name,
+          snapshotPhone: parsed.data.phone ?? null,
+          snapshotUnit: parsed.data.unit,
+        },
+      });
+    }
 
     await tx.agendaLesson.updateMany({
       where: {

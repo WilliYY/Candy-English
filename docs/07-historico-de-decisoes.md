@@ -30,6 +30,13 @@ Cada decisao deve conter:
 - Impacto: schema/migration de `User`, action e validacao Admin, planilha/cartoes de usuarios, consultas ativas, API mobile, servico/script de retencao, cron Oracle, testes e documentacao.
 - Riscos/cuidados: nao fazer `DELETE` fisico de `User`; manter o cron unico e verificavel; senha nunca e revelada; autoexclusao e exclusao do ultimo Admin ativo continuam bloqueadas no servidor.
 
+### 2026-08-26 - Identidade unica do aluno no AVA, Financeiro e Agenda
+
+- Decisao: usar `StudentProfile.id` como identidade central e manter `FinancialStudent.studentProfileId` e `AgendaStudent.studentProfileId` como vinculos 1:1; todo caminho oficial de criacao garante os dois registros administrativos na mesma transaction.
+- Motivo: impedir que Secretaria, Financeiro, Agenda, Admin direto ou API mobile criem cadastros paralelos do mesmo aluno por nome e polo.
+- Impacto: schema/migration da Agenda, actions Admin e Secretaria, mutacoes mobile, seletores da Agenda, servico central de vinculacao, reconciliacao de legado, testes e documentacao.
+- Riscos/cuidados: registros antigos so sao ligados automaticamente por correspondencia exata e nao ambigua; snapshots financeiros antigos permanecem congelados; rotinas e valores incompletos ficam pendentes para completar sem bloquear o login do aluno.
+
 ### 2026-08-24 - Fotos WebP recortadas no catalogo de Vendas
 
 - Decisao: permitir foto opcional no cadastro e na edicao de `SaleProduct`, com previa 4:3, recorte central automatico para `1200x900` e armazenamento final somente em WebP.

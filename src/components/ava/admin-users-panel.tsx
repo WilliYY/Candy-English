@@ -1892,6 +1892,7 @@ export function AdminUsersPanel({
 
           {activeTask === "agenda" ? (
             <AdminAgendaPanel
+              avaStudents={financeAvaStudents}
               initialMonth={initialAgendaPanelMonth}
               initialUnitFilter={secretariaUnitFilter}
               lessons={agendaLessons}

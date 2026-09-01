@@ -5,6 +5,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
+import { ensureStudentAdministrativeRecords } from "@/lib/student-administrative-linkage";
 
 const optionalText = (maximum: number) =>
   z
@@ -93,6 +94,7 @@ export type MobileAdminUserMutationStore = Pick<
 
 type Options = {
   acquireLock?: (transaction: Prisma.TransactionClient) => Promise<void>;
+  ensureAdministrativeRecords?: typeof ensureStudentAdministrativeRecords;
   hashPassword?: (password: string) => Promise<string>;
   now?: () => Date;
   store?: MobileAdminUserMutationStore;
@@ -162,12 +164,21 @@ export async function createMobileAdminUser(
       });
 
       if (parsed.data.role === "STUDENT") {
-        await transaction.studentProfile.create({
+        const studentProfile = await transaction.studentProfile.create({
           data: {
             level: parsed.data.level,
             studentPhone: parsed.data.phone,
             userId: user.id,
           },
+        });
+
+        await (
+          options.ensureAdministrativeRecords ??
+          ensureStudentAdministrativeRecords
+        )(transaction, {
+          actorUserId: actor.id,
+          sourceDescription: "cadastro mobile do Admin",
+          studentProfileId: studentProfile.id,
         });
       }
       if (parsed.data.role === "TEACHER") {
@@ -231,7 +242,7 @@ export async function updateMobileAdminUser(
       }
 
       if (user.role === "STUDENT") {
-        await transaction.studentProfile.upsert({
+        const studentProfile = await transaction.studentProfile.upsert({
           where: { userId: user.id },
           create: {
             level: parsed.data.level,
@@ -242,6 +253,16 @@ export async function updateMobileAdminUser(
             level: parsed.data.level ?? null,
             studentPhone: parsed.data.phone ?? null,
           },
+          select: { id: true },
+        });
+
+        await (
+          options.ensureAdministrativeRecords ??
+          ensureStudentAdministrativeRecords
+        )(transaction, {
+          actorUserId: actor.id,
+          sourceDescription: "edicao mobile do Admin",
+          studentProfileId: studentProfile.id,
         });
       }
       if (user.role === "TEACHER") {

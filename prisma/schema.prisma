@@ -330,6 +330,7 @@ model StudentProfile {
   liveSessions                    LiveSession[]
   convertedStudentPreRegistration StudentPreRegistration?     @relation("StudentPreRegistrationConvertedStudentProfile")
   financialStudent                FinancialStudent?
+  agendaStudent                   AgendaStudent?
   sales                           Sale[]
 }
 
@@ -868,6 +869,8 @@ model AgendaStudent {
   isActive                        Boolean                 @default(true)
   defaultTime                     String?
   weekdayMask                     Int                     @default(0)
+  studentProfileId                String?                 @unique
+  studentProfile                  StudentProfile?         @relation(fields: [studentProfileId], references: [id], onDelete: SetNull)
   lessons                         AgendaLesson[]
   logs                            AgendaLog[]
   convertedStudentPreRegistration StudentPreRegistration? @relation("StudentPreRegistrationConvertedAgendaStudent")

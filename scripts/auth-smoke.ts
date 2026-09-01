@@ -639,6 +639,26 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
         }
       }
     }
+
+    if (path === "/ava/admin?task=agenda") {
+      const normalizedText = normalizeHtmlText(text);
+      const requiredAgendaText = [
+        "Planilha mensal",
+        "Controle por aluno",
+        "Aulas de hoje",
+        "A confirmar",
+        "Com faltas",
+        "Proxima aula",
+      ];
+
+      for (const expectedText of requiredAgendaText) {
+        if (!normalizedText.includes(expectedText)) {
+          throw new Error(
+            `Agenda admin sem planilha mensal esperada: ${expectedText}`,
+          );
+        }
+      }
+    }
   }
 
   console.log("OK admin task routes");

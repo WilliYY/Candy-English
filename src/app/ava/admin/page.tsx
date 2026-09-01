@@ -261,6 +261,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         },
       },
       select: {
+        agendaStudent: {
+          select: {
+            id: true,
+          },
+        },
         financialStudent: {
           select: {
             id: true,
@@ -1089,6 +1094,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       }))}
       currentUser={currentUser ?? session.user}
       financeAvaStudents={students.map((student) => ({
+        agendaStudentId: student.agendaStudent?.id ?? null,
         email: student.user.email,
         financialStudentId: student.financialStudent?.id ?? null,
         id: student.id,

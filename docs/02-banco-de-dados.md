@@ -153,6 +153,8 @@ Enums:
 - A rotina de retencao nao apaga fisicamente `User`: depois de 2 anos substitui nome/email/senha, limpa contato, endereco, avatar, dados pessoais de `StudentProfile`/`TeacherProfile`, pre-cadastro convertido, cadastros/snapshots de Financeiro e Agenda, nome do comprador em Vendas, sessoes moveis e dados pessoais da Catty. O registro tecnico minimo permanece para nao romper vendas, financeiro, agenda, contratos, aulas e ponto ligados por chave estrangeira.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
 - `StudentProfile.unit` guarda o polo operacional do aluno do AVA. Alunos antigos recebem `IVATE` por compatibilidade; alunos convertidos recuperam a unidade confiavel do `StudentPreRegistration` durante a migration.
+- `FinancialStudent.studentProfileId` e `AgendaStudent.studentProfileId` sao vinculos 1:1 opcionais e unicos com `StudentProfile`. Todo cadastro novo de `STUDENT` cria ou reutiliza os dois registros administrativos na mesma transaction.
+- Cadastros administrativos incompletos continuam vinculados: o Financeiro usa dados tecnicos seguros e valor `0` ate ser completado; a Agenda pode ficar sem dias/horario e sem ocorrencias. Isso evita registros paralelos por nome.
 - A origem continua auditavel por `StudentPreRegistration.convertedStudentProfileId`. Aluno criado diretamente pelo Admin nao recebe pre-cadastro artificial.
 - `StudentTeacherAssignment` possui chave unica por teacher/aluno.
 - `HomeworkSubmission` possui chave unica por homework/aluno.
@@ -174,7 +176,7 @@ Enums:
 - `FinancialPayment.snapshotInstallmentNumber` e `snapshotInstallmentsTotal` guardam a parcela congelada daquele mes, sem recalcular historico antigo.
 - `FinancialExpense` registra gastos internos da loja por ano/mes/unidade, com insumo, data da compra, valor, responsavel informado e usuario admin criador opcional.
 - `FinancialLog` deve manter historico simples mesmo se um aluno financeiro for excluido.
-- Agenda guarda alunos internos em `AgendaStudent`, ocorrencias de aula em `AgendaLesson` e log operacional em `AgendaLog`; a criacao manual da agenda nao cria nem vincula `User` ou `StudentProfile`.
+- Agenda guarda a rotina administrativa em `AgendaStudent`, ocorrencias em `AgendaLesson` e log operacional em `AgendaLog`; a identidade do aluno vem do `StudentProfile` vinculado, e edicoes de nome, telefone ou polo sincronizam AVA, Financeiro e Agenda na transaction da action.
 - Ponto reutiliza um `User` ativo; desativar `TimeClockProfile` preserva batidas, `operationId` impede repeticao e cada correcao cria `TimeClockEntryRevision` antes da atualizacao.
 - `AgendaStudent.unit` guarda a unidade interna do aluno da agenda, usando `IVATE` por padrao para registros antigos.
 - `AgendaStudent.isActive`, `defaultTime` e `weekdayMask` guardam o estado atual da rotina interna para edicao/inativacao, enquanto `AgendaLesson` preserva as ocorrencias e o historico de presenca/falta.
@@ -236,6 +238,7 @@ Enums:
 - Migration `20260824013000_add_time_clock` adiciona perfis autorizados, batidas idempotentes e revisoes imutaveis de correcoes do ponto.
 - Migration `20260511160000_admin_agenda_module` adiciona agenda administrativa de 2026.
 - Migration `20260626120000_simple_internal_agenda` adiciona estado ativo, horario padrao e mascara de dias da semana ao `AgendaStudent`, preservando ocorrencias antigas em `AgendaLesson`.
+- Migration `20260826160000_link_agenda_to_student_profile` adiciona o vinculo unico `AgendaStudent.studentProfileId`, recupera conversoes ja auditadas e faz backfill legado somente por correspondencia exata e nao ambigua de telefone/unidade ou nome/unidade.
 - Migration `20260512120000_interactive_homework` adiciona homework interativo, campos editaveis, metadados do arquivo e novos status de submissao.
 - Migration `20260519033000_interactive_homework_drawing_field` adiciona o tipo `DRAWING` ao enum `HomeworkFieldType`.
 - Migration `20260606120000_interactive_homework_tiny_text_field` adiciona o tipo `TINY_TEXT` ao enum `HomeworkFieldType`.

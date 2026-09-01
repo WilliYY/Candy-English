@@ -157,6 +157,7 @@ export type AdminFinanceStudentRow = {
 };
 
 export type AdminFinanceAvaStudentOption = {
+  agendaStudentId: string | null;
   email: string;
   financialStudentId: string | null;
   id: string;

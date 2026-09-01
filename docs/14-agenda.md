@@ -4,7 +4,7 @@
 
 O modulo Agenda e um controle interno simples do administrador em `/ava/admin?task=agenda`. Ele substitui o uso de sheets para organizar quais alunos internos vem em quais dias e horarios, confirmar presenca, registrar falta, consultar historico, inativar rotinas sem apagar registros antigos e excluir cadastros criados por engano.
 
-O modulo e administrativo. Ele nao usa alunos do AVA, nao cria `User`, nao cria `StudentProfile` e nao substitui o fluxo pedagogico de aulas, materiais e homework da area teacher/student.
+O modulo e administrativo e nao substitui o fluxo pedagogico de aulas, materiais e homework. A identidade, porem, vem do aluno real do AVA: cada `AgendaStudent` novo fica ligado por `studentProfileId` ao mesmo `StudentProfile` usado no Financeiro.
 
 ## Arquivos, rotas, componentes, tabelas ou servicos envolvidos
 
@@ -21,6 +21,8 @@ Arquivos:
 - `prisma/migrations/20260511160000_admin_agenda_module/migration.sql`
 - `prisma/migrations/20260626120000_simple_internal_agenda/migration.sql`
 - `prisma/migrations/20260714170000_linked_pre_registration_conversion/migration.sql`
+- `prisma/migrations/20260826160000_link_agenda_to_student_profile/migration.sql`
+- `src/lib/student-administrative-linkage.ts`
 
 Tabelas:
 
@@ -40,20 +42,20 @@ Rota:
 
 - Apenas `ADMIN` visualiza e escreve na tela da agenda.
 - Excecao controlada: ao converter pre-cadastro proprio/atribuido, `TEACHER` pode disparar a criacao linkada de um `AgendaStudent` e suas `AgendaLesson` futuras dentro da transaction de `Tornar aluno`, sem acessar a agenda completa. Se dias ou horario ainda nao foram definidos, a conversao continua, cria `AgendaStudent` linkado sem ocorrencias e registra a pendencia no log.
-- Agenda e separada dos alunos do AVA; cadastro manual da agenda nao cria login, usuario ou perfil de aluno.
+- Agenda e pedagogico continuam modulos separados, mas nao usam identidades duplicadas. Todo `AgendaStudent` novo referencia um `StudentProfile`; a tela da Agenda seleciona um aluno real do AVA e apenas completa sua rotina.
 - A tela abre no mes atual de 2026 e seleciona automaticamente o dia de hoje quando o navegador esta em 2026.
 - O dia atual e as comparacoes de ocorrencias usam uma referencia unica em `America/Sao_Paulo`, passada pelo servidor para evitar mudanca de dia durante a hidratacao.
 - Alteracoes ainda nao salvas da rotina permanecem ao atualizar presenca ou trocar o dia selecionado; trocar aluno ou mes pede confirmacao antes de descartar o formulario.
-- O admin ve uma planilha mensal por aluno, botao `Hoje`, navegacao de mes, busca por nome/telefone, filtros rapidos de situacao e agrupamento visual por polo.
-- Ao cadastrar um aluno interno, o admin informa nome, telefone opcional, unidade, dias da semana, horario e observacao opcional; registros vindos de pre-cadastro tambem guardam a unidade em `AgendaStudent.unit` e podem guardar uma observacao de agenda pendente quando foram convertidos sem dias/horario. A lista mostra `Completar` em amarelo enquanto faltarem dias ou horario e muda para `Completo` em verde depois que a rotina valida for salva.
+- O admin alterna entre `Agenda do dia` e `Visao mensal`, usa uma faixa interativa com todos os dias do mes, botao `Hoje`, navegacao de mes, busca por nome/telefone, filtros rapidos de situacao e agrupamento visual por polo.
+- Ao completar a agenda, o admin seleciona o aluno do AVA e informa dias da semana, horario e observacao opcional. Nome, telefone e unidade partem do perfil vinculado; a lista mostra `Completar` em amarelo enquanto faltarem dias ou horario e muda para `Completo` em verde depois que a rotina valida for salva.
 - Quando a Secretaria abre a agenda com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega somente `AgendaStudent` daquela unidade e ocorrencias de `AgendaLesson` ligadas a alunos daquele polo. Sem `unit`, ou com `unit=all`, mostra todos os polos.
 - O sistema cria ocorrencias do mes escolhido ate dezembro de 2026.
 - `AgendaStudent.isActive`, `AgendaStudent.defaultTime` e `AgendaStudent.weekdayMask` guardam o estado atual da rotina para edicao rapida; `AgendaLesson` continua guardando as ocorrencias reais e o historico.
-- A action de cadastro recusa duplicidade quando o mesmo nome ja tem agenda ativa no mesmo dia/horario. A verificacao roda dentro da mesma transaction e usa lock por aluno/unidade/ano/horario para impedir cadastros duplicados por cliques ou usuarios simultaneos.
+- A action usa lock por `StudentProfile.id` e a restricao unica de `AgendaStudent.studentProfileId` para impedir duplicidade por clique ou por usuarios simultaneos.
 - Ao editar a rotina, o sistema desativa ocorrencias recorrentes futuras do mes selecionado em diante e cria/reativa as novas ocorrencias, preservando historico antigo.
 - Inativar aluno marca `AgendaStudent.isActive=false`, limpa horario/dias padrao e inativa ocorrencias recorrentes do mes selecionado em diante; registros antigos permanecem no historico.
 - Excluir aluno da agenda e uma acao definitiva de `ADMIN`: remove o `AgendaStudent` e suas ocorrencias por cascade, mantendo um log textual da exclusao. Para preservar historico, usar `Inativar`.
-- A planilha mensal mostra uma linha por aluno com rotina, polo, total de aulas, presencas, faltas, pendencias e proxima aula. As ocorrencias do dia selecionado continuam ordenadas por horario abaixo da planilha.
+- A visao mensal mostra uma linha por aluno no desktop e um card operacional por aluno no mobile, sempre com rotina, polo, totais de aulas, presencas, faltas, pendencias e proxima aula. A `Agenda do dia` mostra separadamente as ocorrencias do dia selecionado, ordenadas por horario.
 - Status padrao e `SCHEDULED`.
 - Presenca confirmada vira `ATTENDED`.
 - Falta vira `MISSED`.
@@ -77,14 +79,16 @@ Rota:
 - Reposicoes sao ocorrencias independentes, ligadas opcionalmente a aula original por `makeupForLessonId`.
 - O modulo fica dentro da area admin e segue o padrao de `?task=`.
 - Alertas da sidebar usam a ultima entrada de `AgendaLog`.
-- A tela da Agenda usa hierarquia operacional simples: cabecalho do mes, metricas, busca/filtros, planilha mensal por aluno, lista do dia selecionado, cadastro rapido, ficha/historico do aluno e log recolhido.
-- A planilha substitui a fila e o calendario como visao principal. Ela separa Ivaté e Douradina por faixas de cor e concentra rotina, totais mensais e proxima ocorrencia sem repetir uma segunda lista de cards.
+- A tela da Agenda usa hierarquia operacional simples: cabecalho do mes, metricas, busca/filtros, seletor de visualizacao, faixa de dias, conteudo do dia ou do mes, cadastro rapido, ficha/historico do aluno e log recolhido.
+- A `Agenda do dia` e a abertura padrao para o trabalho operacional. A `Visao mensal` separa Ivaté e Douradina por faixas de cor e concentra rotina, totais mensais e proxima ocorrencia sem competir com a fila diaria na mesma tela.
 - O cabecalho mensal inclui seletor direto de mes, navegacao anterior/proximo e metricas com icones, cores semanticas e descricao curta; o filtro de polo reaproveita `unit=all|IVATE|DOURADINA` e continua protegido no servidor.
-- No mobile, busca e filtros ficam rolaveis em linha. A planilha preserva largura minima e usa rolagem horizontal, evitando comprimir nomes, horarios e contadores.
+- No mobile, busca, polos e filtros ficam rolaveis em linha; a faixa de dias centraliza automaticamente a data selecionada e usa alvos de toque amplos. A visao mensal troca a tabela larga por cards compactos, sem rolagem horizontal da planilha.
+- A faixa de dias informa quantidade de aulas e usa marcadores verde, vermelho e amarelo para presencas, faltas e pendencias; o texto explicativo e os totais evitam depender apenas de cor.
 - As colunas de presenca, falta e pendencia usam verde, vermelho e ambar; as faixas de polo usam ciano para Ivaté e rosa para Douradina sem transformar a tela em um conjunto de cards.
 - Os cards do dia selecionado permanecem responsivos para facilitar o toque em `Veio`, `Nao veio` e `Resetar`; formularios de cadastro/edicao usam campos altos, borda visivel e foco reforcado.
-- A busca e o detalhe trabalham apenas com `AgendaStudent`, sem consultar `User`/`StudentProfile`.
+- A busca operacional continua baseada em `AgendaStudent`, mas o cadastro e as edicoes resolvem a identidade pelo `StudentProfile` vinculado e sincronizam nome, telefone e polo com `User` e `FinancialStudent`.
 - A migration `20260714170000_linked_pre_registration_conversion` adiciona `AgendaStudent.unit` e o vinculo de conversao entre `StudentPreRegistration` e `AgendaStudent`.
+- A migration `20260826160000_link_agenda_to_student_profile` adiciona o vinculo 1:1 com `StudentProfile`; o backfill liga somente correspondencias legadas exatas e nao ambiguas.
 
 ## Operacoes no aplicativo ADMIN
 

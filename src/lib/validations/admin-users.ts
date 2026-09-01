@@ -499,7 +499,7 @@ export const adminFinanceExpenseCreateSchema = z
     }
   });
 
-export const adminAgendaScheduleCreateSchema = z.object({
+const adminAgendaScheduleBaseSchema = z.object({
   month: financeMonthSchema,
   name: z
     .string()
@@ -517,11 +517,15 @@ export const adminAgendaScheduleCreateSchema = z.object({
   year: year2026Schema,
 });
 
-export const adminAgendaStudentUpdateSchema =
-  adminAgendaScheduleCreateSchema.extend({
-    isActive: z.boolean(),
-    studentId: z.string().min(1, "Aluno da agenda invalido."),
+export const adminAgendaScheduleCreateSchema =
+  adminAgendaScheduleBaseSchema.extend({
+    studentProfileId: z.string().min(1, "Selecione um aluno do AVA."),
   });
+
+export const adminAgendaStudentUpdateSchema = adminAgendaScheduleBaseSchema.extend({
+  isActive: z.boolean(),
+  studentId: z.string().min(1, "Aluno da agenda invalido."),
+});
 
 export const adminAgendaStudentDeleteSchema = z.object({
   studentId: z.string().min(1, "Aluno da agenda invalido."),

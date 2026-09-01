@@ -130,6 +130,9 @@ Helpers:
 12. A aba `Alunos cadastrados` usa `User.role=STUDENT` e `StudentProfile` como fonte unica e mostra imediatamente os alunos criados pelo fluxo novo, pelo Admin direto ou por conversoes antigas.
 13. Admin pode buscar e editar nome, login, telefone e polo no card do aluno. Teacher recebe todos os alunos ativos e usa a lista em modo de consulta.
 14. Alterar o polo de aluno linkado atualiza perfil, cadastro financeiro recorrente e cadastro da agenda na mesma transaction; snapshots financeiros antigos nao sao reescritos.
+15. Qualquer entrada oficial de aluno, pela Secretaria, Admin direto, Financeiro, Agenda ou API mobile Admin, usa `StudentProfile.id` como identidade central e garante `FinancialStudent` e `AgendaStudent` vinculados na mesma transaction.
+16. Financeiro ou agenda incompletos nao criam outro aluno: o registro vinculado fica com status visual de completar e pode ser finalizado depois. A Agenda seleciona um aluno real do AVA em vez de aceitar outro cadastro solto por nome.
+17. O comando `npm run audit:student-links` apenas conta vinculos faltantes; `npm run repair:student-links` religa registros antigos somente quando a correspondencia e exata e nao ambigua, e cria placeholders vinculados para o restante.
 
 ### Admin
 
