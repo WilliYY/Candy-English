@@ -78,7 +78,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.2.4",
-    "@types/node": "24.10.2",
+    "@types/node": "26.4.0",
     "@types/pdfkit": "0.17.6",
     "@types/pg": "8.16.0",
     "@types/react": "19.2.14",
