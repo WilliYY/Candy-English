@@ -38,6 +38,7 @@ import {
   AdminCredentialsPanel,
   type AdminCredentialRow,
 } from "@/components/ava/admin-credentials-panel";
+import { AdminMfaPanel } from "@/components/ava/admin-mfa-panel";
 import {
   CattyLearningCenterPanel,
   type CattyLearningFeedbackRow,
@@ -222,6 +223,7 @@ type UserInsightMetric = {
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
+  adminMfaEnabledAt: string | null;
   candyXpActivities: AdminCandyXpActivityRow[];
   cattyArtifactData: CattyArtifactManagementData;
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
@@ -414,7 +416,7 @@ const taskMeta = {
   },
   "apis-senhas": {
     icon: KeyRound,
-    title: "APIs e senhas",
+    title: "Seguranca e acessos",
   },
   "candy-xp": {
     icon: Sparkles,
@@ -1525,6 +1527,7 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
 export function AdminUsersPanel({
   activeTask,
   adminCredentials,
+  adminMfaEnabledAt,
   candyXpActivities,
   cattyArtifactData,
   cattyLearningFeedbacks,
@@ -1903,7 +1906,13 @@ export function AdminUsersPanel({
           ) : null}
 
           {activeTask === "apis-senhas" ? (
-            <AdminCredentialsPanel credentials={adminCredentials} />
+            <div className="grid gap-5">
+              <AdminMfaPanel
+                email={currentUser.email}
+                enabledAt={adminMfaEnabledAt}
+              />
+              <AdminCredentialsPanel credentials={adminCredentials} />
+            </div>
           ) : null}
 
           {activeTask === "catty-learning" ? (

@@ -61,7 +61,7 @@ Operacao por agente:
 - A aula ao vivo pode ser pausada temporariamente pelo codigo com `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`; quando ativo, teacher/student veem aviso de manutencao e as actions bloqueiam criacao/reativacao apos validar role.
 - `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
 - O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: Gemini, OpenAI e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
-- `AUTH_SECRET` precisa manter pelo menos 32 caracteres e tambem funciona como chave HMAC de dominio separado para anonimizar a origem das tentativas de login. O valor nunca deve ser registrado; sua rotacao invalida sessoes e reinicia naturalmente a janela de hashes de IP.
+- `AUTH_SECRET` precisa manter pelo menos 32 caracteres e tambem deriva, com contextos separados, o HMAC da origem de login, a cifra AES-256-GCM do TOTP e o HMAC dos codigos de recuperacao. O valor nunca deve ser registrado.
 
 ## Decisoes tecnicas tomadas
 
@@ -91,7 +91,7 @@ Operacao por agente:
 - Pular a migration do Catty Learning Center ou do feedback de treino quebra admin/teacher e a rota/widget da Catty quando consultam memoria aprovada ou salvam feedback.
 - Configurar `PDF_OPTIMIZATION_PRESET=screen` pode reduzir mais, mas tambem pode prejudicar leitura em materiais do Canva; manter `ebook` salvo motivo claro.
 - Aumentar `PDF_MAX_UPLOAD_MB` acima do limite de Server Actions nao funciona sem mudar `next.config.ts`.
-- Perder ou trocar `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` pode impedir leitura de credenciais ja criptografadas.
+- Perder ou trocar `ADMIN_CREDENTIALS_SECRET`/`AUTH_SECRET` pode impedir leitura de credenciais ja criptografadas. Rotacionar `AUTH_SECRET` depois de ativar 2FA exige desativar/reconfigurar o MFA de cada Admin ou migrar os segredos cifrados com a chave antiga antes da troca.
 - O app envia `Strict-Transport-Security: max-age=31536000`, CSP restritiva e headers defensivos adicionais; a CSP permite script/frame/conexao somente para a propria origem e para os dominios retornados por `getLiveClassJitsiOrigins()`. Alterar Jitsi ou carregar recurso externo novo exige atualizar e validar a CSP antes do deploy.
 - `X-Powered-By` fica desativado para nao anunciar o framework em cada resposta.
 - Atualizacao de `pdfjs-dist` precisa manter Node compativel no Docker e validar editor/visualizador de homework com typecheck e build; nunca usar `npm audit fix --force` automaticamente.

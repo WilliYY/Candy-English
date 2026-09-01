@@ -20,13 +20,16 @@ Arquivos:
 - `src/lib/validations/candy-xp-activities.ts`
 - `src/lib/candy-xp-ranking.ts`
 - `src/lib/admin-credentials.ts`
+- `src/lib/mfa.ts`
 - `src/app/ava/admin/actions.ts`
+- `src/app/ava/admin/mfa-actions.ts`
 - `src/app/ava/login/actions.ts`
 - `src/app/ava/candy-xp/actions.ts`
 - `src/app/api/auth/[...nextauth]/route.ts`
 - `src/app/ava/login/page.tsx`
 - `src/components/ava/admin-operations.tsx`
 - `src/components/ava/admin-credentials-panel.tsx`
+- `src/components/ava/admin-mfa-panel.tsx`
 - `src/components/ava/admin-candy-xp-panel.tsx`
 - `src/components/ava/candy-xp-ranking-card.tsx`
 - `src/components/ava/student-candy-xp-activities-panel.tsx`
@@ -40,6 +43,7 @@ Tabelas:
 
 - `User`
 - `LoginAttempt`
+- `UserMfa`
 - `StudentProfile`
 - `StudentPreRegistration`
 - `TeacherProfile`
@@ -98,6 +102,11 @@ Rotas protegidas:
 - `/ava/avatar/[userId]` exige sessao; admin le todos, o dono le o proprio avatar, teacher le avatar de aluno vinculado e qualquer usuario autenticado do AVA pode ler somente o avatar de participante ativo que ja aparece no ranking interno Candy XP. Perfis inativos, sem XP e fora de vinculo continuam protegidos.
 - Usuario inativo nao entra.
 - Muitas falhas de login bloqueiam novas tentativas na janela configurada. A contagem e a gravacao sao serializadas por email com lock transacional para que tentativas paralelas nao burlem o limite; registros com mais de 24 horas sao limpos independentemente de um login bem-sucedido.
+- Cada `ADMIN` pode ativar o proprio 2FA em `/ava/admin?task=apis-senhas`. Depois de ativo, login web/mobile exige senha e TOTP de 6 digitos ou um codigo de recuperacao de uso unico; teacher/student nao recebem essa exigencia.
+- O segredo TOTP fica somente em `UserMfa.secretCiphertext`, cifrado com AES-256-GCM e chave derivada de `AUTH_SECRET`. Codigos de recuperacao sao mostrados uma vez, persistidos apenas como HMAC e consumidos ao usar.
+- Iniciar a configuracao exige reautenticacao com a senha atual; a pendencia expira em 10 minutos. Ativacao e desativacao reutilizam o mesmo limitador por conta/origem do login, sem criar um ponto separado de forca bruta. O servidor aceita janela TOTP de um passo antes/depois e grava `lastUsedTimeStep` para rejeitar reutilizacao no login.
+- Desativar 2FA exige a senha atual mais TOTP/recuperacao, incrementa `sessionVersion`, revoga sessoes mobile e encerra a sessao web. Exclusao/anonimizacao de conta remove `UserMfa`.
+- O deploy nao ativa 2FA automaticamente em contas existentes para evitar bloqueio sem o autenticador. Cada Admin deve concluir o cadastro manual e guardar os codigos; depois da adocao de todos, obrigatoriedade global pode ser avaliada separadamente.
 - Modo manutencao bloqueia student, mas nao admin/teacher.
 - Login Google esta desativado nesta fase; o login ativo e por email/senha com Credentials Provider.
 - O botao publico `Quero ser aluno Candy` no login abre WhatsApp e nao cria `StudentPreRegistration`.

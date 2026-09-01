@@ -13,6 +13,7 @@ test("normalizes a valid mobile login without accepting unknown fields", () => {
       platform: "ANDROID",
     },
     email: "  Teacher@Candy.Example  ",
+    mfaCode: "123456",
     password: "correct-password",
   });
 
@@ -20,6 +21,7 @@ test("normalizes a valid mobile login without accepting unknown fields", () => {
 
   if (parsed.success) {
     assert.equal(parsed.data.email, "teacher@candy.example");
+    assert.equal(parsed.data.mfaCode, "123456");
   }
 
   assert.equal(

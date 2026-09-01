@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     if (!user) {
       return mobileError(
         "AUTHENTICATION_FAILED",
-        "Email ou senha inválidos.",
+        "Email, senha ou código de segurança inválidos.",
         401,
         requestId,
       );

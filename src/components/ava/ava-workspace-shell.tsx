@@ -217,7 +217,7 @@ const navGroups = [
       {
         href: "/ava/admin?task=apis-senhas",
         icon: KeyRound,
-        label: "APIs e senhas",
+        label: "Seguranca e acessos",
         section: "Sistema",
       },
       {

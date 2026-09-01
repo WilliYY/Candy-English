@@ -6,6 +6,11 @@ import {
   buildAvaCallbackUrl,
   getSafeAvaCallbackUrl,
 } from "../src/lib/ava-callback-url";
+import {
+  createTotpCode,
+  encryptMfaSecret,
+  getTotpTimeStep,
+} from "../src/lib/mfa";
 
 type SmokeRole = "ADMIN" | "TEACHER" | "STUDENT";
 
@@ -14,6 +19,7 @@ const databaseUrl = process.env.DATABASE_URL;
 const roles: SmokeRole[] = ["ADMIN", "TEACHER", "STUDENT"];
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const testPassword = `CandySmoke-${runId}`;
+const adminMfaSecret = "JBSWY3DPEHPK3PXP";
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL precisa estar definido para auth-smoke.");
@@ -82,6 +88,17 @@ async function createSmokeUser(role: SmokeRole, email: string) {
       name: `Codex Smoke ${role}`,
       passwordHash,
       role,
+      ...(role === "ADMIN"
+        ? {
+            mfa: {
+              create: {
+                enabledAt: new Date(),
+                recoveryCodeHashes: [],
+                secretCiphertext: encryptMfaSecret(adminMfaSecret),
+              },
+            },
+          }
+        : {}),
       ...(role === "TEACHER"
         ? {
             teacherProfile: {
@@ -154,7 +171,11 @@ async function assertCattyChatAccess(
   console.log(`OK catty history isolated ${role.toLowerCase()}`);
 }
 
-async function signInWithCredentials(email: string) {
+async function signInWithCredentials(
+  email: string,
+  mfaCode?: string,
+  shouldAuthenticate = true,
+) {
   const csrfResponse = await fetch(buildUrl("/api/auth/csrf"));
 
   if (!csrfResponse.ok) {
@@ -176,6 +197,10 @@ async function signInWithCredentials(email: string) {
     password: testPassword,
   });
 
+  if (mfaCode) {
+    body.set("mfaCode", mfaCode);
+  }
+
   const loginResponse = await fetch(buildUrl("/api/auth/callback/credentials"), {
     body,
     headers: {
@@ -191,6 +216,22 @@ async function signInWithCredentials(email: string) {
 
   if (![200, 302, 303, 307].includes(loginResponse.status) || !cookie) {
     throw new Error(`Login retornou HTTP ${loginResponse.status}`);
+  }
+
+  const sessionResponse = await fetch(buildUrl("/api/auth/session"), {
+    headers: { cookie },
+  });
+  const sessionPayload = (await sessionResponse.json()) as {
+    user?: { email?: string };
+  };
+  const authenticatedEmail = sessionPayload.user?.email?.toLowerCase();
+
+  if (shouldAuthenticate && authenticatedEmail !== email.toLowerCase()) {
+    throw new Error(`Login nao criou sessao para ${email}.`);
+  }
+
+  if (!shouldAuthenticate && authenticatedEmail) {
+    throw new Error("Admin com 2FA entrou sem codigo de seguranca.");
   }
 
   return cookie;
@@ -1056,7 +1097,16 @@ async function main() {
     const email = roleEmails[index];
 
     const user = await createSmokeUser(role, email);
-    const cookie = await signInWithCredentials(email);
+    if (role === "ADMIN") {
+      await signInWithCredentials(email, undefined, false);
+      console.log("OK admin MFA rejects login without code");
+    }
+    const cookie = await signInWithCredentials(
+      email,
+      role === "ADMIN"
+        ? createTotpCode(adminMfaSecret, getTotpTimeStep())
+        : undefined,
+    );
     await assertRoleRedirect(role, cookie);
     await assertAreaChoiceShell(role, cookie);
     await assertTimeClockPermissions(role, cookie, user.id);

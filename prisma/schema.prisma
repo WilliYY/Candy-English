@@ -251,6 +251,7 @@ model User {
   anonymizedAt                     DateTime?
   deletionReason                   String?
   deletedByName                    String?
+  mfa                              UserMfa?
   studentProfile                   StudentProfile?
   teacherProfile                   TeacherProfile?
   financialLogs                    FinancialLog[]
@@ -303,6 +304,21 @@ model User {
   @@index([isActive])
   @@index([deletedAt])
   @@index([scheduledAnonymizationAt, anonymizedAt])
+}
+
+model UserMfa {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secretCiphertext   String
+  pendingExpiresAt   DateTime?
+  enabledAt          DateTime?
+  recoveryCodeHashes String[]  @default([])
+  lastUsedTimeStep   BigInt?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([enabledAt])
 }
 
 model StudentProfile {

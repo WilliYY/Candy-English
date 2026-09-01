@@ -32,6 +32,7 @@ export function LoginForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
+      mfaCode: "",
       password: "",
     },
   });
@@ -42,6 +43,7 @@ export function LoginForm({
     try {
       const result = await signIn("credentials", {
         email: values.email,
+        mfaCode: values.mfaCode,
         password: values.password,
         redirect: false,
       });
@@ -50,7 +52,7 @@ export function LoginForm({
         setAuthError(
           maintenanceMode
             ? "Acesso de alunos pausado durante a manutencao. Admins e teachers podem entrar."
-            : "Email ou senha invalidos.",
+            : "Email, senha ou codigo de seguranca invalidos.",
         );
         return;
       }
@@ -63,6 +65,7 @@ export function LoginForm({
   });
 
   const emailError = form.formState.errors.email;
+  const mfaCodeError = form.formState.errors.mfaCode;
   const passwordError = form.formState.errors.password;
   const isSubmitting = form.formState.isSubmitting;
 
@@ -114,6 +117,27 @@ export function LoginForm({
               </button>
             </div>
             <FieldError errors={[passwordError]} />
+          </Field>
+
+          <Field data-invalid={Boolean(mfaCodeError)}>
+            <FieldLabel htmlFor="mfaCode">
+              Codigo de seguranca
+              <span className="font-normal text-muted-foreground">
+                (somente admins com 2FA)
+              </span>
+            </FieldLabel>
+            <Input
+              id="mfaCode"
+              type="text"
+              autoComplete="one-time-code"
+              autoCapitalize="characters"
+              aria-invalid={Boolean(mfaCodeError)}
+              disabled={isSubmitting}
+              maxLength={32}
+              placeholder="000000 ou codigo de recuperacao"
+              {...form.register("mfaCode")}
+            />
+            <FieldError errors={[mfaCodeError]} />
           </Field>
         </FieldGroup>
 

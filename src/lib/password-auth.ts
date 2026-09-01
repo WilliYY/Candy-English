@@ -1,6 +1,7 @@
 import { compare } from "bcryptjs";
 
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
+import { decryptMfaSecret, verifyMfaCredential } from "@/lib/mfa";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import type { Role } from "@/lib/roles";
@@ -76,6 +77,7 @@ export async function authenticatePasswordCredentials(
 
     const user = await tx.user.findUnique({
       where: { email: input.email },
+      include: { mfa: true },
     });
     const passwordMatches = await compare(
       input.password,
@@ -83,8 +85,68 @@ export async function authenticatePasswordCredentials(
     );
     const blockedByMaintenance =
       user?.role === "STUDENT" && (await isMaintenanceModeEnabled());
+    let mfaVerified = user?.role !== "ADMIN" || !user.mfa?.enabledAt;
+
+    if (
+      user?.role === "ADMIN" &&
+      user.isActive &&
+      passwordMatches &&
+      user.mfa?.enabledAt &&
+      input.mfaCode
+    ) {
+      try {
+        const verifiedCredential = verifyMfaCredential(
+          decryptMfaSecret(user.mfa.secretCiphertext),
+          input.mfaCode,
+          user.mfa.recoveryCodeHashes,
+          now,
+        );
+
+        if (verifiedCredential?.kind === "totp") {
+          const update = await tx.userMfa.updateMany({
+            where: {
+              id: user.mfa.id,
+              enabledAt: { not: null },
+              OR: [
+                { lastUsedTimeStep: null },
+                {
+                  lastUsedTimeStep: {
+                    lt: BigInt(verifiedCredential.timeStep),
+                  },
+                },
+              ],
+            },
+            data: {
+              lastUsedTimeStep: BigInt(verifiedCredential.timeStep),
+            },
+          });
+
+          mfaVerified = update.count === 1;
+        } else if (verifiedCredential?.kind === "recovery") {
+          await tx.userMfa.update({
+            where: { id: user.mfa.id },
+            data: {
+              recoveryCodeHashes: {
+                set: user.mfa.recoveryCodeHashes.filter(
+                  (hash) => hash !== verifiedCredential.recoveryHash,
+                ),
+              },
+            },
+          });
+          mfaVerified = true;
+        }
+      } catch {
+        console.error(
+          "Admin MFA verification failed because the stored secret could not be decrypted.",
+        );
+      }
+    }
+
     const success = Boolean(
-      user?.isActive && passwordMatches && !blockedByMaintenance,
+      user?.isActive &&
+        passwordMatches &&
+        mfaVerified &&
+        !blockedByMaintenance,
     );
 
     await tx.loginAttempt.create({

@@ -31,6 +31,7 @@ Perfis e auth:
 - `StudentPreRegistration`
 - `TeacherProfile`
 - `LoginAttempt`
+- `UserMfa`
 - `MobileDevice`
 - `MobileSession`
 - `MobileRefreshToken`
@@ -150,6 +151,7 @@ Enums:
 - `StudentPreRegistrationStatus` preserva os status antigos e adiciona `WAITING_PAYMENT` e `READY_TO_CONVERT`; na UI da Secretaria eles aparecem como `Aguardando pagamento` e `Pronto para virar aluno`.
 - `User.sessionVersion` invalida sessoes JWT antigas quando o admin desativa/reativa usuario, redefine senha ou quando uma mudanca de role for detectada.
 - `LoginAttempt` aplica a janela de 15 minutos tanto por email quanto por `ipHash`: o email bloqueia apos 8 falhas e a origem compartilhada apos 30. `ipHash` e HMAC-SHA-256 derivado de `AUTH_SECRET`; o IP bruto nunca e persistido e tentativas com mais de 24 horas sao removidas.
+- `UserMfa` e 1:1 com `User`; guarda segredo TOTP somente cifrado, expiracao do cadastro pendente, ativacao, hashes dos codigos de recuperacao e ultimo passo TOTP usado. A relation e removida com a conta tecnica, na exclusao logica e na anonimizacao.
 - `User.deletedAt` retira a conta da base ativa e bloqueia novas alteracoes de acesso; `scheduledAnonymizationAt` agenda a anonimização para 2 anos depois, `anonymizedAt` registra a execucao, e `deletionReason`/`deletedByName` existem apenas durante a retencao auditavel.
 - A rotina de retencao nao apaga fisicamente `User`: depois de 2 anos substitui nome/email/senha, limpa contato, endereco, avatar, dados pessoais de `StudentProfile`/`TeacherProfile`, pre-cadastro convertido, cadastros/snapshots de Financeiro e Agenda, nome do comprador em Vendas, sessoes moveis e dados pessoais da Catty. O registro tecnico minimo permanece para nao romper vendas, financeiro, agenda, contratos, aulas e ponto ligados por chave estrangeira.
 - `StudentProfile.userId` e `TeacherProfile.userId` sao 1:1 com `User`.
@@ -250,6 +252,7 @@ Enums:
 - Migration `20260619120000_site_visit_counter` adiciona `SiteVisitCounter` para exibir total agregado de visitas no footer publico sem rastrear dados pessoais.
 - Migration `20260523120000_admin_credentials` adiciona o cofre admin `AdminCredential` e os enums `AdminCredentialKind`/`AdminCredentialSource`.
 - Migration `20260530183000_user_session_version` adiciona `User.sessionVersion` para revogacao de sessoes JWT.
+- Migration `20260901170000_admin_mfa` adiciona `UserMfa` para TOTP/codigos de recuperacao por Admin sem armazenar segredo ou codigo em texto puro.
 - Migration `20260730121000_mobile_sessions` adiciona dispositivos, sessoes e refresh tokens moveis com hashes, rotacao e revogacao.
 - Migration `20260601170000_candy_xp_persistence` adiciona Candy XP persistente com perfil, eventos, badges, missoes e tentativas.
 - Migration `20260601193000_candy_xp_activities` adiciona atividades Candy XP com PDF/imagem, perguntas, liberacao por aluno, progresso/submissao e evento de XP por atividade concluida.

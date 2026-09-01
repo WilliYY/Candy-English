@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-01 - 2FA TOTP por administrador sem ativacao forcada
+
+- Decisao: permitir que cada Admin ative TOTP em `Seguranca e acessos`; depois da confirmacao, login exige senha mais TOTP novo ou recuperacao de uso unico. Contas existentes nao sao ativadas automaticamente.
+- Motivo: adicionar segunda camada contra senha vazada sem bloquear os administradores antes de eles cadastrarem um autenticador e salvarem recuperacoes.
+- Impacto: `UserMfa`, migration `20260901170000_admin_mfa`, cifra/HMAC/TOTP server-side, login web/mobile, actions protegidas, painel operacional, smoke com Admin temporario e documentacao de Auth/deploy.
+- Riscos/cuidados: `AUTH_SECRET` passa a proteger segredos MFA e nao pode ser rotacionado sem migracao/reconfiguracao; iniciar ou desativar exige senha atual, desativar tambem exige segundo fator e revoga sessoes; recuperacoes aparecem uma vez; obrigatoriedade global so deve vir depois da adesao confirmada de todos os Admins.
+
 ### 2026-09-01 - Backup criptografado com verificacao e restore drill
 
 - Decisao: gerar diariamente um pacote unico com dump custom do PostgreSQL e `app-storage`, checksums internos e criptografia AES-256/PBKDF2; publicar apenas depois da verificacao e testar semanalmente o restore em PostgreSQL 17 isolado.

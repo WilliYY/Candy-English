@@ -82,6 +82,7 @@ export async function anonymizeExpiredUsers({
       });
       await tx.cattyUserArtifact.deleteMany({ where: { userId: candidate.id } });
       await tx.loginAttempt.deleteMany({ where: { email: candidate.email } });
+      await tx.userMfa.deleteMany({ where: { userId: candidate.id } });
 
       await tx.studentProfile.updateMany({
         data: {

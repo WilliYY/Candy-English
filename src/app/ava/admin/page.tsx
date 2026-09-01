@@ -149,6 +149,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         avatarPath: true,
         email: true,
         id: true,
+        mfa: {
+          select: { enabledAt: true },
+        },
         name: true,
         role: true,
       },
@@ -946,6 +949,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         url: credential.url,
         username: credential.username,
       }))}
+      adminMfaEnabledAt={currentUser?.mfa?.enabledAt?.toISOString() ?? null}
       candyXpActivities={candyXpActivities.map((activity) => ({
         assignments: activity.assignments.map((assignment) => ({
           studentEmail: assignment.studentProfile.user.email,

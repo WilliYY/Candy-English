@@ -697,6 +697,7 @@ export async function deleteAvaUser(
 
     if (updated.count === 1) {
       await tx.mobileDevice.deleteMany({ where: { userId: user.id } });
+      await tx.userMfa.deleteMany({ where: { userId: user.id } });
     }
 
     return { code: "UPDATED" as const, count: updated.count };

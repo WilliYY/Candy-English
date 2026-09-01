@@ -12,6 +12,11 @@ export const loginSchema = z.object({
     .min(1, "Informe sua senha.")
     .min(8, "A senha precisa ter pelo menos 8 caracteres.")
     .max(128, "A senha precisa ter no maximo 128 caracteres."),
+  mfaCode: z
+    .string()
+    .trim()
+    .max(32, "O codigo de seguranca e invalido.")
+    .optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
