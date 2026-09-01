@@ -1485,10 +1485,12 @@ model ChatMessage {
 model LoginAttempt {
   id        String   @id @default(cuid())
   email     String
+  ipHash    String?
   success   Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([email, createdAt])
+  @@index([ipHash, createdAt])
   @@index([success, createdAt])
 }
 

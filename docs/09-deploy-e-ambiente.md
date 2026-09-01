@@ -58,6 +58,7 @@ Operacao por agente:
 - A aula ao vivo pode ser pausada temporariamente pelo codigo com `LIVE_CLASS_MAINTENANCE_ENABLED` em `src/lib/live-class.ts`; quando ativo, teacher/student veem aviso de manutencao e as actions bloqueiam criacao/reativacao apos validar role.
 - `ADMIN_CREDENTIALS_SECRET` e opcional e protege o cofre admin de APIs/senhas; se ficar vazio, o cofre usa `AUTH_SECRET`. Depois que houver credenciais salvas, trocar esse segredo exige plano de rotacao.
 - O cofre admin sincroniza para o banco apenas integracoes externas existentes no `.env`: Gemini, OpenAI e dominio Jitsi. Nao sincronizar variaveis internas como `DATABASE_URL`, `AUTH_SECRET`, Postgres ou senha seed.
+- `AUTH_SECRET` precisa manter pelo menos 32 caracteres e tambem funciona como chave HMAC de dominio separado para anonimizar a origem das tentativas de login. O valor nunca deve ser registrado; sua rotacao invalida sessoes e reinicia naturalmente a janela de hashes de IP.
 
 ## Decisoes tecnicas tomadas
 
@@ -67,6 +68,7 @@ Operacao por agente:
 - Logs Docker usam rotacao `max-size=10m` e `max-file=3`.
 - Containers possuem limites/reservas de memoria.
 - `next.config.ts` define Server Actions com limite de 15 MB para upload de homework interativo.
+- O reverse proxy deve sobrescrever `X-Real-IP` com o endereco que ele recebeu e encaminhar `X-Forwarded-For`; como a porta do app fica presa a `127.0.0.1`, esses headers nao podem chegar diretamente da internet. O app prefere `X-Real-IP` e usa o ultimo IP valido de `X-Forwarded-For` apenas como fallback.
 - O app corrige permissao de `/app/storage` no boot e roda Next como `nextjs`.
 - Homework interativo usa o mesmo volume `app-storage` para `storage/homework-assets`.
 - A imagem Docker instala Ghostscript para otimizar PDFs pedagogicos protegidos no runtime; ambientes sem Ghostscript usam fallback e salvam o original.

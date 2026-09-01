@@ -158,6 +158,7 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 - Nunca expor segredos, `.env`, chaves, senhas ou valores revelados do cofre admin.
 - Nunca versionar uploads, backups ou arquivos reais de ambiente.
 - Nunca abrir PostgreSQL publicamente.
+- Login web/mobile limita 8 falhas por email e 30 por origem em 15 minutos; `LoginAttempt.ipHash` guarda somente HMAC com `AUTH_SECRET`, nunca IP bruto. Em producao o proxy precisa sobrescrever `X-Real-IP` e o app continua preso a `127.0.0.1`.
 - Nunca reverter mudancas do usuario sem permissao explicita.
 - Mudancas sensiveis devem validar `auth()`, role e permissao por dado no servidor.
 - `STUDENT` acessa apenas o proprio perfil.

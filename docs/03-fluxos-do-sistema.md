@@ -85,10 +85,12 @@ Helpers:
 ### Login
 
 1. Usuario entra em `/ava/login`.
-2. Auth.js valida email, senha, usuario ativo e manutencao.
-3. Sessao JWT recebe `id` e `role`.
-4. `ADMIN` e `TEACHER` vao para `/ava/escolha`; ambos veem `AVA`, `Secretaria` e `Financeiro`, mas a Teacher abre apenas o acompanhamento sem valores de todos os alunos ativos.
-5. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.
+2. O proxy reverso entrega `X-Real-IP`; o app deriva somente um HMAC irreversivel da origem usando `AUTH_SECRET` e nao grava o IP bruto.
+3. Auth.js valida email, senha, usuario ativo e manutencao. A mesma resposta generica cobre credencial incorreta ou limite atingido.
+4. Em 15 minutos, 8 falhas para o mesmo email ou 30 falhas para a mesma origem bloqueiam novas tentativas; a protecao vale para login web e mobile e os registros expiram apos 24 horas.
+5. Sessao JWT recebe `id` e `role`.
+6. `ADMIN` e `TEACHER` vao para `/ava/escolha`; ambos veem `AVA`, `Secretaria` e `Financeiro`, mas a Teacher abre apenas o acompanhamento sem valores de todos os alunos ativos.
+7. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.
 
 ### Escolha da area de trabalho
 

@@ -8,6 +8,7 @@ import type { LoginInput } from "@/lib/validations/auth";
 
 const LOGIN_WINDOW_MINUTES = 15;
 const LOGIN_MAX_FAILURES = 8;
+const LOGIN_MAX_IP_FAILURES = 30;
 const DUMMY_PASSWORD_HASH =
   "$2b$12$AkGmRH3KHezo64Lo0iexO.BkYlIWGgPih3LpM9wDjpdBCA7ex.6Gu";
 
@@ -21,11 +22,16 @@ export type PasswordAuthenticatedUser = {
 
 export async function authenticatePasswordCredentials(
   input: LoginInput,
+  options: { ipHash?: string | null } = {},
 ): Promise<PasswordAuthenticatedUser | null> {
   const prisma = getPrisma();
 
   return prisma.$transaction(async (tx) => {
     await acquireTransactionAdvisoryLock(tx, `login:${input.email}`);
+
+    if (options.ipHash) {
+      await acquireTransactionAdvisoryLock(tx, `login-ip:${options.ipHash}`);
+    }
 
     const now = Date.now();
     const windowStart = new Date(now - LOGIN_WINDOW_MINUTES * 60 * 1000);
@@ -38,17 +44,33 @@ export async function authenticatePasswordCredentials(
       },
     });
 
-    const failures = await tx.loginAttempt.count({
-      where: {
-        createdAt: {
-          gte: windowStart,
+    const [accountFailures, ipFailures] = await Promise.all([
+      tx.loginAttempt.count({
+        where: {
+          createdAt: {
+            gte: windowStart,
+          },
+          email: input.email,
+          success: false,
         },
-        email: input.email,
-        success: false,
-      },
-    });
+      }),
+      options.ipHash
+        ? tx.loginAttempt.count({
+            where: {
+              createdAt: {
+                gte: windowStart,
+              },
+              ipHash: options.ipHash,
+              success: false,
+            },
+          })
+        : Promise.resolve(0),
+    ]);
 
-    if (failures >= LOGIN_MAX_FAILURES) {
+    if (
+      accountFailures >= LOGIN_MAX_FAILURES ||
+      ipFailures >= LOGIN_MAX_IP_FAILURES
+    ) {
       return null;
     }
 
@@ -68,6 +90,7 @@ export async function authenticatePasswordCredentials(
     await tx.loginAttempt.create({
       data: {
         email: input.email,
+        ipHash: options.ipHash,
         success,
       },
     });

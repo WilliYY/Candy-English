@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-01 - Rate limit compartilhado sem armazenar IP bruto
+
+- Decisao: manter o bloqueio de 8 falhas por email em 15 minutos e adicionar limite de 30 falhas por origem na mesma janela para login web/mobile; a origem e persistida apenas como HMAC-SHA-256 com contexto proprio e `AUTH_SECRET`.
+- Motivo: conter brute force e credential stuffing distribuido entre contas sem transformar o banco em repositorio de enderecos IP pessoais.
+- Impacto: `LoginAttempt.ipHash`, migration `20260901150000_login_attempt_ip_rate_limit`, extracao de IP confiavel do proxy, autenticacao web/mobile e testes unitarios.
+- Riscos/cuidados: manter o app acessivel apenas pelo proxy que sobrescreve `X-Real-IP`; nunca logar o IP bruto; migrar antes de recriar a aplicacao; a camada de aplicacao complementa, mas nao substitui, rate limiting/WAF na borda.
+
 ### 2026-09-01 - CSP e PDF.js corrigido como primeira camada de hardening
 
 - Decisao: fixar `pdfjs-dist` em versao sem a vulnerabilidade conhecida de execucao por PDF malicioso, migrar o uso removido da API de viewport/ciclo de vida, aplicar CSP compativel com o AVA/Jitsi e desativar `X-Powered-By`.

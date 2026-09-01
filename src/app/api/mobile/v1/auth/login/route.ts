@@ -6,6 +6,7 @@ import {
 import { serializeMobileAuthSuccess } from "@/lib/mobile-auth/payload";
 import { mobileLoginSchema } from "@/lib/mobile-auth/schemas";
 import { createMobileSession } from "@/lib/mobile-auth/session-issuer";
+import { getLoginIpHash } from "@/lib/login-request-security";
 import { authenticatePasswordCredentials } from "@/lib/password-auth";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await authenticatePasswordCredentials(parsed.data);
+    const user = await authenticatePasswordCredentials(parsed.data, {
+      ipHash: getLoginIpHash(request.headers),
+    });
 
     if (!user) {
       return mobileError(

@@ -2,6 +2,7 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
+import { getLoginIpHash } from "@/lib/login-request-security";
 import { authenticatePasswordCredentials } from "@/lib/password-auth";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
@@ -51,14 +52,16 @@ const providers: NextAuthConfig["providers"] = [
       email: { label: "Email", type: "email" },
       password: { label: "Senha", type: "password" },
     },
-    authorize: async (credentials) => {
+    authorize: async (credentials, request) => {
       const parsed = loginSchema.safeParse(credentials);
 
       if (!parsed.success) {
         return null;
       }
 
-      return authenticatePasswordCredentials(parsed.data);
+      return authenticatePasswordCredentials(parsed.data, {
+        ipHash: getLoginIpHash(request.headers),
+      });
     },
   }),
 ];
