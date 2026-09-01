@@ -482,7 +482,7 @@ export function TimeClockPanel({
     : null;
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#fbf7ff_0%,#fff9fc_18rem,#fffdfd_100%)] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <main className="time-clock-page min-h-screen bg-[linear-gradient(180deg,#fbf7ff_0%,#fff9fc_18rem,#fffdfd_100%)] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-24">
         <header className="relative overflow-hidden rounded-2xl border border-violet-200 bg-white/90 px-4 py-5 shadow-sm sm:px-6 sm:py-6 md:flex md:items-center md:justify-between md:gap-5">
           <span
@@ -636,9 +636,9 @@ export function TimeClockPanel({
                   </p>
                 </div>
               </div>
-              <form method="get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(18rem,1fr)_minmax(9rem,0.45fr)_minmax(8rem,0.4fr)] lg:items-end">
+              <form method="get" className="grid grid-cols-2 gap-4 lg:grid-cols-[minmax(18rem,1fr)_minmax(9rem,0.45fr)_minmax(8rem,0.4fr)] lg:items-end">
                 {actor.isAdmin ? (
-                  <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
+                  <div className="col-span-2 grid gap-2 lg:col-span-1">
                     <Label htmlFor="profile-filter">Pessoa</Label>
                      <NativeSelect id="profile-filter" name="profileId" autoComplete="off" defaultValue={selectedProfileId ?? ""}>
                       {profiles.map((profile) => (
@@ -663,16 +663,18 @@ export function TimeClockPanel({
                   <Label htmlFor="year-filter">Ano</Label>
                    <Input id="year-filter" name="year" type="number" min={2020} max={2200} autoComplete="off" defaultValue={period.year} />
                 </div>
-                 <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end lg:col-span-3">
+                 <div className="col-span-2 grid grid-cols-2 gap-2 sm:flex sm:justify-end lg:col-span-3">
                    <Button type="submit" variant="outline" className="border-sky-200 bg-white text-sky-950 hover:bg-sky-100">
                      <CalendarDays aria-hidden="true" />
-                     Consultar periodo
+                     <span className="sm:hidden">Consultar</span>
+                     <span className="hidden sm:inline">Consultar periodo</span>
                    </Button>
                    {reportHref ? (
                      <Button asChild>
                        <Link href={reportHref} prefetch={false}>
                          <Download aria-hidden="true" />
-                         Baixar espelho em PDF
+                         <span className="sm:hidden">PDF</span>
+                         <span className="hidden sm:inline">Baixar espelho em PDF</span>
                        </Link>
                      </Button>
                    ) : null}

@@ -78,6 +78,9 @@ intervalos, com justificativa opcional em cada batida.
   registros repetidos continuam em cards compactos com data e hora tabulares.
 - A lista de batidas reserva uma area segura no desktop para a Catty nao cobrir
   registros nem a acao administrativa de correcao.
+- Em celulares, mes e ano compartilham a mesma linha, as acoes usam rotulos
+  curtos e a Catty recolhe o balao automatico e usa um launcher menor para nao
+  esconder filtros ou botoes do ponto.
 - Animacoes se limitam ao retorno visual de `hover` e usam `motion-safe` para
   respeitar a preferencia de movimento reduzido do sistema.
 
