@@ -69,8 +69,15 @@ intervalos, com justificativa opcional em cada batida.
   identifica saidas.
 - Os indicadores mensais possuem acentos e fundos distintos; entrada e saida
   tambem usam borda lateral e icone proprios no historico.
-- Filtros, batida manual e gestao de pessoas permanecem em faixas operacionais
-  responsivas, enquanto registros repetidos continuam em cards compactos.
+- A consulta mensal separa filtros de acoes, exibe o nome do mes por extenso e
+  mantem nomes e e-mails completos sem truncar a identificacao principal.
+- O resumo mensal funciona como uma faixa operacional unica: pessoa, periodo,
+  horas e quantidade de batidas continuam visiveis em leitura horizontal no
+  desktop e empilhada no celular.
+- Filtros, batida manual e gestao de pessoas permanecem responsivos, enquanto
+  registros repetidos continuam em cards compactos com data e hora tabulares.
+- A lista de batidas reserva uma area segura no desktop para a Catty nao cobrir
+  registros nem a acao administrativa de correcao.
 - Animacoes se limitam ao retorno visual de `hover` e usam `motion-safe` para
   respeitar a preferencia de movimento reduzido do sistema.
 

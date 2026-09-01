@@ -108,6 +108,11 @@ const monthFormatter = new Intl.DateTimeFormat("pt-BR", {
   year: "numeric",
 });
 
+const monthNameFormatter = new Intl.DateTimeFormat("pt-BR", {
+  month: "long",
+  timeZone: "UTC",
+});
+
 function getNewOperationId() {
   return globalThis.crypto?.randomUUID?.() ??
     `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -119,6 +124,11 @@ function formatDateTime(value: string) {
 
 function entryTypeLabel(type: TimeClockEntryTypeValue) {
   return type === "ENTRY" ? "Entrada" : "Saida";
+}
+
+function formatMonthName(month: number) {
+  const label = monthNameFormatter.format(new Date(Date.UTC(2026, month - 1, 1)));
+  return `${label.slice(0, 1).toUpperCase()}${label.slice(1)}`;
 }
 
 function ActionNotice({
@@ -177,7 +187,8 @@ function PunchForm({ nextType }: { nextType: TimeClockEntryTypeValue }) {
         <Label htmlFor="punch-justification">Justificativa (opcional)</Label>
         <Input
           id="punch-justification"
-          placeholder="Ex.: retorno de atendimento externo"
+          placeholder="Ex.: retorno de atendimento externo…"
+          autoComplete="off"
           {...form.register("justification")}
         />
         {form.formState.errors.justification ? (
@@ -234,7 +245,7 @@ function AddPersonForm({
     <form onSubmit={submit} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
       <div className="grid gap-2">
         <Label htmlFor="time-clock-user">Usuario da equipe</Label>
-        <NativeSelect id="time-clock-user" {...form.register("userId")}>
+        <NativeSelect id="time-clock-user" autoComplete="off" {...form.register("userId")}>
           <option value="">Selecione uma pessoa</option>
           {availableUsers.map((user) => (
             <option key={user.id} value={user.id}>
@@ -324,10 +335,10 @@ function ManualEntryForm({ profileId }: { profileId: string }) {
   });
 
   return (
-    <form onSubmit={submit} className="grid gap-3 md:grid-cols-2 xl:grid-cols-[10rem_13rem_minmax(0,1fr)_auto] xl:items-end">
+    <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 lg:grid-cols-[minmax(10rem,0.65fr)_minmax(14rem,1fr)_minmax(18rem,2fr)] lg:items-end">
       <div className="grid gap-2">
         <Label htmlFor="manual-type">Tipo</Label>
-        <NativeSelect id="manual-type" {...form.register("type")}>
+        <NativeSelect id="manual-type" autoComplete="off" {...form.register("type")}>
           <option value="ENTRY">Entrada</option>
           <option value="EXIT">Saida</option>
         </NativeSelect>
@@ -337,23 +348,29 @@ function ManualEntryForm({ profileId }: { profileId: string }) {
         <Input
           id="manual-occurred-at"
           type="datetime-local"
+          autoComplete="off"
           value={localDateTime}
           onChange={(event) => setLocalDateTime(event.target.value)}
         />
       </div>
-      <div className="grid gap-2 md:col-span-2 xl:col-span-1">
+      <div className="grid gap-2 md:col-span-2 lg:col-span-1">
         <Label htmlFor="manual-justification">Justificativa</Label>
         <Input
           id="manual-justification"
-          placeholder="Ex.: esquecimento informado"
+          placeholder="Ex.: esquecimento informado…"
+          autoComplete="off"
           {...form.register("justification")}
         />
       </div>
-      <Button type="submit" disabled={form.formState.isSubmitting}>
+      <Button
+        type="submit"
+        disabled={form.formState.isSubmitting}
+        className="w-full md:w-auto md:justify-self-start lg:col-start-3 lg:justify-self-end"
+      >
         <Plus aria-hidden="true" />
         Adicionar batida
       </Button>
-      <div className="md:col-span-2 xl:col-span-4">
+      <div className="md:col-span-2 lg:col-span-3">
         <ActionNotice {...feedback} />
       </div>
     </form>
@@ -397,7 +414,7 @@ function EditEntryForm({ entry }: { entry: TimeClockEntryView }) {
     <form onSubmit={submit} className="grid gap-3 border-t border-primary/10 pt-4 md:grid-cols-2">
       <div className="grid gap-2">
         <Label htmlFor={`edit-type-${entry.id}`}>Tipo</Label>
-        <NativeSelect id={`edit-type-${entry.id}`} {...form.register("type")}>
+        <NativeSelect id={`edit-type-${entry.id}`} autoComplete="off" {...form.register("type")}>
           <option value="ENTRY">Entrada</option>
           <option value="EXIT">Saida</option>
         </NativeSelect>
@@ -407,19 +424,21 @@ function EditEntryForm({ entry }: { entry: TimeClockEntryView }) {
         <Input
           id={`edit-time-${entry.id}`}
           type="datetime-local"
+          autoComplete="off"
           value={localDateTime}
           onChange={(event) => setLocalDateTime(event.target.value)}
         />
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`edit-note-${entry.id}`}>Justificativa da batida</Label>
-        <Input id={`edit-note-${entry.id}`} {...form.register("justification")} />
+        <Input id={`edit-note-${entry.id}`} autoComplete="off" {...form.register("justification")} />
       </div>
       <div className="grid gap-2">
         <Label htmlFor={`edit-reason-${entry.id}`}>Motivo da correcao</Label>
         <Input
           id={`edit-reason-${entry.id}`}
-          placeholder="Obrigatorio para auditoria"
+          placeholder="Obrigatorio para auditoria…"
+          autoComplete="off"
           {...form.register("correctionReason")}
         />
         {form.formState.errors.correctionReason ? (
@@ -463,9 +482,9 @@ export function TimeClockPanel({
     : null;
 
   return (
-    <main className="min-h-screen bg-[#fff9fc] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-        <header className="relative overflow-hidden border-y border-violet-200 bg-violet-50/70 px-4 py-5 sm:px-5 md:flex md:items-center md:justify-between md:gap-5">
+    <main className="min-h-screen bg-[linear-gradient(180deg,#fbf7ff_0%,#fff9fc_18rem,#fffdfd_100%)] px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 pb-24">
+        <header className="relative overflow-hidden rounded-2xl border border-violet-200 bg-white/90 px-4 py-5 shadow-sm sm:px-6 sm:py-6 md:flex md:items-center md:justify-between md:gap-5">
           <span
             aria-hidden="true"
             className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,#7c3aed_0%,#0ea5e9_34%,#10b981_66%,#f59e0b_100%)]"
@@ -478,7 +497,7 @@ export function TimeClockPanel({
               <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-violet-700">
                 Controle interno
               </p>
-              <h1 className="mt-1 text-3xl font-extrabold tracking-normal text-primary">
+              <h1 className="mt-1 text-pretty text-2xl font-extrabold tracking-tight text-primary sm:text-3xl">
                 Ponto da equipe
               </h1>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -487,9 +506,14 @@ export function TimeClockPanel({
             </div>
           </div>
           {actor.isAdmin ? (
-            <div className="mt-4 inline-flex w-full rounded-lg border border-violet-200 bg-white p-1 shadow-sm md:mt-0 md:w-auto">
+            <div
+              role="group"
+              aria-label="Navegacao do ponto"
+              className="mt-4 inline-flex w-full rounded-xl border border-violet-200 bg-violet-50/70 p-1 shadow-sm md:mt-0 md:w-auto"
+            >
               <Button
-                type="button"
+                 type="button"
+                 aria-pressed={view === "records"}
                 variant={view === "records" ? "default" : "ghost"}
                 onClick={() => setView("records")}
                 className="flex-1 md:flex-none"
@@ -498,7 +522,8 @@ export function TimeClockPanel({
                 Registros
               </Button>
               <Button
-                type="button"
+                 type="button"
+                 aria-pressed={view === "people"}
                 variant={view === "people" ? "default" : "ghost"}
                 onClick={() => setView("people")}
                 className="flex-1 md:flex-none"
@@ -511,7 +536,7 @@ export function TimeClockPanel({
         </header>
 
         {actor.canPunch ? (
-          <section className="border-y border-emerald-200 bg-emerald-50/80 px-4 py-5 shadow-sm sm:px-5">
+          <section className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-5 shadow-sm sm:px-6">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
               <div>
                 <h2 className="text-lg font-extrabold text-emerald-950">Meu ponto</h2>
@@ -525,7 +550,7 @@ export function TimeClockPanel({
             <PunchForm nextType={actor.nextType} />
           </section>
         ) : actor.isAdmin ? (
-          <section className="flex items-start gap-3 border-y border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950">
+          <section className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-950 shadow-sm">
             <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
             <span>
               Habilite seu usuario em Pessoas para tambem registrar o proprio ponto.
@@ -535,7 +560,7 @@ export function TimeClockPanel({
 
         {actor.isAdmin && view === "people" ? (
           <section className="grid gap-5">
-            <div className="border-y border-sky-200 bg-sky-50/75 px-4 py-5 sm:px-5">
+            <div className="rounded-2xl border border-sky-200 bg-sky-50/75 px-4 py-5 shadow-sm sm:px-6">
               <div className="flex items-start gap-3">
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm">
                   <UserPlus aria-hidden="true" className="size-5" />
@@ -578,12 +603,12 @@ export function TimeClockPanel({
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 font-extrabold text-violet-800">
                           {profile.user.name.slice(0, 1).toUpperCase()}
                         </span>
-                        <div className="min-w-0">
-                          <p className="truncate font-bold text-primary">
-                            {profile.user.name}
+                        <div className="min-w-0 break-words">
+                          <p className="font-bold text-primary">
+                             {profile.user.name}
                           </p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {profile.user.email}
+                          <p className="break-all text-sm text-muted-foreground">
+                             {profile.user.email}
                           </p>
                           <span className={`mt-2 inline-flex rounded-md px-2 py-1 text-xs font-bold ${profile.isActive ? "bg-emerald-100 text-emerald-800" : "bg-zinc-100 text-zinc-700"}`}>
                             {profile.isActive ? "Ativo" : "Inativo"}
@@ -599,7 +624,7 @@ export function TimeClockPanel({
           </section>
         ) : (
           <>
-            <section className="grid gap-4 border-y border-sky-200 bg-sky-50/65 px-4 py-5 shadow-sm sm:px-5">
+            <section className="grid gap-5 rounded-2xl border border-sky-200 bg-white px-4 py-5 shadow-sm sm:px-6">
               <div className="flex items-start gap-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white">
                   <CalendarDays aria-hidden="true" className="size-4" />
@@ -611,11 +636,11 @@ export function TimeClockPanel({
                   </p>
                 </div>
               </div>
-              <form method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(13rem,1fr)_9rem_9rem_auto_auto] lg:items-end">
+              <form method="get" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(18rem,1fr)_minmax(9rem,0.45fr)_minmax(8rem,0.4fr)] lg:items-end">
                 {actor.isAdmin ? (
                   <div className="grid gap-2 sm:col-span-2 lg:col-span-1">
                     <Label htmlFor="profile-filter">Pessoa</Label>
-                    <NativeSelect id="profile-filter" name="profileId" defaultValue={selectedProfileId ?? ""}>
+                     <NativeSelect id="profile-filter" name="profileId" autoComplete="off" defaultValue={selectedProfileId ?? ""}>
                       {profiles.map((profile) => (
                         <option key={profile.id} value={profile.id}>
                           {profile.user.name}{profile.isActive ? "" : " (inativo)"}
@@ -628,61 +653,66 @@ export function TimeClockPanel({
                 )}
                 <div className="grid gap-2">
                   <Label htmlFor="month-filter">Mes</Label>
-                  <NativeSelect id="month-filter" name="month" defaultValue={String(period.month)}>
-                    {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
-                      <option key={month} value={month}>{String(month).padStart(2, "0")}</option>
-                    ))}
+                   <NativeSelect id="month-filter" name="month" autoComplete="off" defaultValue={String(period.month)}>
+                     {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                       <option key={month} value={month}>{formatMonthName(month)}</option>
+                     ))}
                   </NativeSelect>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="year-filter">Ano</Label>
-                  <Input id="year-filter" name="year" type="number" min={2020} max={2200} defaultValue={period.year} />
+                   <Input id="year-filter" name="year" type="number" min={2020} max={2200} autoComplete="off" defaultValue={period.year} />
                 </div>
-                <Button type="submit" variant="outline" className="border-sky-200 bg-white text-sky-950 hover:bg-sky-100">
-                  <CalendarDays aria-hidden="true" />
-                  Consultar
-                </Button>
-                {reportHref ? (
-                  <Button asChild>
-                    <Link href={reportHref} prefetch={false}>
-                      <Download aria-hidden="true" />
-                      Baixar PDF
-                    </Link>
-                  </Button>
-                ) : null}
-              </form>
-            </section>
+                 <div className="flex flex-col gap-2 sm:col-span-2 sm:flex-row sm:justify-end lg:col-span-3">
+                   <Button type="submit" variant="outline" className="border-sky-200 bg-white text-sky-950 hover:bg-sky-100">
+                     <CalendarDays aria-hidden="true" />
+                     Consultar periodo
+                   </Button>
+                   {reportHref ? (
+                     <Button asChild>
+                       <Link href={reportHref} prefetch={false}>
+                         <Download aria-hidden="true" />
+                         Baixar espelho em PDF
+                       </Link>
+                     </Button>
+                   ) : null}
+                 </div>
+               </form>
+             </section>
 
             {selectedProfile ? (
               <>
-                <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div className="border-l-4 border-violet-500 bg-violet-50/85 p-4 shadow-sm">
+                <section aria-label="Resumo do periodo" className="overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-sm">
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-[minmax(18rem,2fr)_minmax(13rem,1.2fr)_minmax(11rem,1fr)_minmax(8rem,0.7fr)]">
+                    <div className="min-w-0 border-b border-violet-100 bg-violet-50/80 p-4 sm:border-r xl:border-b-0">
                     <div className="flex items-center gap-2 text-violet-700">
                       <UsersRound aria-hidden="true" className="size-4" />
                       <p className="text-xs font-bold uppercase tracking-[0.1em]">Pessoa</p>
                     </div>
-                    <p className="mt-2 truncate text-lg font-extrabold text-violet-950">{selectedProfile.user.name}</p>
-                  </div>
-                  <div className="border-l-4 border-sky-500 bg-sky-50/85 p-4 shadow-sm">
+                    <p className="mt-2 break-words text-lg font-extrabold leading-snug text-violet-950">{selectedProfile.user.name}</p>
+                    <p className="mt-1 break-all text-xs text-violet-900/65">{selectedProfile.user.email}</p>
+                    </div>
+                    <div className="border-b border-violet-100 bg-sky-50/80 p-4 xl:border-b-0 xl:border-r">
                     <div className="flex items-center gap-2 text-sky-700">
                       <CalendarDays aria-hidden="true" className="size-4" />
                       <p className="text-xs font-bold uppercase tracking-[0.1em]">Periodo</p>
                     </div>
-                    <p className="mt-2 text-lg font-extrabold capitalize text-sky-950">{periodLabel}</p>
-                  </div>
-                  <div className="border-l-4 border-emerald-500 bg-emerald-50/85 p-4 shadow-sm">
+                    <p className="mt-2 text-lg font-extrabold capitalize leading-snug text-sky-950">{periodLabel}</p>
+                    </div>
+                    <div className="border-b border-violet-100 bg-emerald-50/80 p-4 sm:border-b-0 sm:border-r">
                     <div className="flex items-center gap-2 text-emerald-700">
                       <Clock3 aria-hidden="true" className="size-4" />
                       <p className="text-xs font-bold uppercase tracking-[0.1em]">Horas concluidas</p>
                     </div>
-                    <p className="mt-2 text-lg font-extrabold text-emerald-950">{formatWorkedDuration(summary.workedMilliseconds)}</p>
-                  </div>
-                  <div className="border-l-4 border-amber-500 bg-amber-50/85 p-4 shadow-sm">
+                    <p className="mt-2 text-xl font-extrabold tabular-nums text-emerald-950">{formatWorkedDuration(summary.workedMilliseconds)}</p>
+                    </div>
+                    <div className="bg-amber-50/80 p-4">
                     <div className="flex items-center gap-2 text-amber-700">
                       <FileClock aria-hidden="true" className="size-4" />
                       <p className="text-xs font-bold uppercase tracking-[0.1em]">Batidas</p>
                     </div>
-                    <p className="mt-2 text-lg font-extrabold text-amber-950">{entries.length}</p>
+                    <p className="mt-2 text-xl font-extrabold tabular-nums text-amber-950">{entries.length}</p>
+                    </div>
                   </div>
                 </section>
 
@@ -694,7 +724,7 @@ export function TimeClockPanel({
                 ) : null}
 
                 {actor.isAdmin ? (
-                  <section className="border-y border-amber-200 bg-amber-50/70 px-4 py-5 sm:px-5">
+                  <section className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-5 shadow-sm sm:px-6">
                     <div className="flex items-start gap-3">
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
                         <Plus aria-hidden="true" className="size-4" />
@@ -708,16 +738,16 @@ export function TimeClockPanel({
                   </section>
                 ) : null}
 
-                <section>
+                <section className="min-w-0 xl:mr-72">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <h2 className="flex items-center gap-2 text-xl font-extrabold text-primary">
                       <Clock3 aria-hidden="true" className="size-5 text-violet-600" />
                       Batidas do mes
                     </h2>
-                    <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-800">{summary.completedPairs} periodo(s) concluido(s)</span>
+                    <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold tabular-nums text-violet-800">{summary.completedPairs} periodo(s) concluido(s)</span>
                   </div>
                   {entries.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-sky-300 bg-sky-50/65 p-8 text-center">
+                    <div className="rounded-2xl border border-dashed border-sky-300 bg-sky-50/65 px-5 py-10 text-center">
                       <Clock3 aria-hidden="true" className="mx-auto size-8 text-sky-500" />
                       <p className="mt-3 text-sm font-bold text-sky-950">Nenhuma batida neste mes</p>
                       <p className="mt-1 text-xs text-sky-900/65">Os registros aparecerao aqui em ordem mensal.</p>
@@ -727,17 +757,20 @@ export function TimeClockPanel({
                       {entries.map((entry) => (
                         <article
                           key={entry.id}
-                          className={`rounded-lg border bg-white p-4 shadow-sm transition duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md ${entry.type === "ENTRY" ? "border-emerald-200 border-l-4 border-l-emerald-500" : "border-rose-200 border-l-4 border-l-rose-500"}`}
+                          className={`rounded-xl border bg-white p-4 shadow-sm transition-[transform,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none ${entry.type === "ENTRY" ? "border-emerald-200 border-l-4 border-l-emerald-500" : "border-rose-200 border-l-4 border-l-rose-500"}`}
                         >
                           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div className="flex min-w-0 items-start gap-3">
                               <span className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${entry.type === "ENTRY" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}>
                                 {entry.type === "ENTRY" ? <LogIn aria-hidden="true" className="size-5" /> : <LogOut aria-hidden="true" className="size-5" />}
                               </span>
-                              <div className="min-w-0">
-                                <p className="font-extrabold text-primary">{entryTypeLabel(entry.type)} - {formatDateTime(entry.occurredAt)}</p>
-                                <p className="mt-1 text-sm text-muted-foreground">{entry.justification || "Sem justificativa"}</p>
-                                <p className="mt-2 text-xs text-muted-foreground">
+                              <div className="min-w-0 break-words">
+                                 <p className="font-extrabold text-primary">
+                                   {entryTypeLabel(entry.type)} <span aria-hidden="true" className="text-primary/40">·</span>{" "}
+                                   <time dateTime={entry.occurredAt} className="tabular-nums">{formatDateTime(entry.occurredAt)}</time>
+                                 </p>
+                                 <p className="mt-1 break-words text-sm text-muted-foreground">{entry.justification || "Sem justificativa"}</p>
+                                 <p className="mt-2 break-words text-xs leading-5 text-muted-foreground">
                                   {entry.source === "SELF" ? "Registrado pela pessoa" : `Incluido pelo Admin: ${entry.recordedByName}`}
                                   {entry.correctedAt ? ` | Corrigido por ${entry.correctedByName ?? "Admin"}` : ""}
                                   {entry.revisionCount > 0 ? ` | ${entry.revisionCount} revisao(oes)` : ""}
