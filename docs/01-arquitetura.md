@@ -9,6 +9,7 @@ Este documento descreve a arquitetura tecnica atual do Candy English. Ele deve s
 Camadas principais:
 
 - `src/app/(site)/`: site institucional.
+- `src/app/(site)/privacidade/page.tsx`: aviso publico de privacidade, cookies e armazenamento local.
 - `src/app/ava/`: areas logadas do AVA.
 - `src/app/ava/vendas/`: pagina e server actions do PDV interno.
 - `src/app/ava/ponto/`: pagina, server actions e rota protegida do espelho PDF do ponto.
@@ -54,6 +55,7 @@ Servicos Docker:
 ## Regras de negocio que precisam ser preservadas
 
 - O site institucional e publico; o AVA e protegido.
+- `/privacidade` e publico, nao consulta banco e deve continuar acessivel pelo footer, login, sidebar do AVA e aviso contextual da Catty.
 - O contador de visitas aparece apenas no footer do site publico, registra somente total agregado em `SiteVisitCounter`, nao salva IP, email, telefone, user-agent ou outros dados pessoais, e nao deve bloquear o carregamento se a API falhar.
 - `/ava` redireciona visitante para `/ava/login` e usuario logado para a area correta.
 - `/ava/login` mostra o botao publico `Quero ser aluno Candy`, que abre WhatsApp em nova aba com mensagem pronta e nao grava `StudentPreRegistration`.
@@ -89,6 +91,7 @@ Servicos Docker:
 - O Ponto usa rota propria `/ava/ponto`, area `PONTO` no shell e geracao PDF em memoria; a UI nao substitui os guards server-side.
 - O cofre administrativo usa a task `apis-senhas`, server actions em `src/app/ava/admin/actions.ts` e componente `src/components/ava/admin-credentials-panel.tsx`.
 - O contador de visitas do site usa componente client no footer publico, chama `/api/site-visits` apos o carregamento, aplica cooldown local no navegador e incrementa apenas rotas institucionais (`/`, `/sobre`, `/metodologia`, `/planos`, `/contato`).
+- Copias locais de atividades usam `src/lib/interactive-homework-draft-storage.ts`, expiram em 7 dias e sao removidas ao entregar, bloquear a atividade ou encerrar a sessao; o autosave principal continua no servidor.
 - Arquivos privados do AVA sao servidos por rotas server-side autenticadas, como contratos e homework assets. Assets de homework/Candy XP usam `Cache-Control: private, no-store`; a leitura interna continua inline para o PDF.js e a query `?download=1` responde como anexo para evitar abrir a interface externa do navegador.
 - Atividades Candy XP usam rota server-side protegida para PDF/imagem e server actions para criacao, edicao de areas interativas, progresso, envio e correcao.
 - PDFs de Candy XP, homework interativo e aulas interativas passam por tentativa de otimizacao no servidor antes de serem salvos em `storage/candy-xp-assets` ou `storage/homework-assets`; se a otimizacao falhar ou nao reduzir tamanho, o arquivo original continua sendo salvo.

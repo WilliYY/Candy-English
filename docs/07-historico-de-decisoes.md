@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-03 - Transparencia publica e prazo para rascunhos locais
+
+- Decisao: publicar `/privacidade` com canal para titulares, menores, Catty/IA, servicos externos, cookies essenciais e armazenamento local; manter sem banner de consentimento enquanto nao houver rastreador opcional; limitar copias locais de atividades a 7 dias e limpa-las no logout.
+- Motivo: o sistema trata dados educacionais, cadastrais, financeiros e de menores, e precisava tornar o fluxo visivel sem interromper login, AVA ou autosave principal do servidor.
+- Impacto: nova rota publica, links no footer/login/AVA/Catty, helper testavel de storage, teste unitario e `docs/23-privacidade-e-cookies.md`.
+- Riscos/cuidados: complementar identificacao cadastral do controlador quando o negocio fornecer dados oficiais; revisar bases legais e retencao com profissional de privacidade; antes de adicionar Analytics/Pixel, criar consentimento real com rejeicao equivalente.
+
 ### 2026-09-01 - Defesa em camadas com CI e monitor operacional
 
 - Decisao: manter controles de aplicacao no repositorio, validar cada mudanca em CI, atualizar dependencias via Dependabot e monitorar health, containers, disco, backups e falhas de login no Oracle. DDoS/WAF/rate limit global continuam na borda e nao sao simulados dentro do Node.

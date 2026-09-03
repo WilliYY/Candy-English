@@ -61,6 +61,11 @@ import {
   type InteractiveHomeworkFieldType,
 } from "@/lib/interactive-homework-fields";
 import { CANDY_XP_REWARDS } from "@/lib/candy-xp";
+import {
+  clearInteractiveDraft,
+  readInteractiveDraft,
+  writeInteractiveDraft,
+} from "@/lib/interactive-homework-draft-storage";
 
 export type StudentInteractiveField = {
   height: number;
@@ -180,100 +185,6 @@ function valuesSignature(values: Record<string, string>) {
       .sort()
       .map((key) => [key, values[key] ?? ""]),
   );
-}
-
-function draftStorageKey(homeworkId: string, context = "homework") {
-  if (context === "homework") {
-    return `candy:interactive-homework-draft:${homeworkId}`;
-  }
-
-  return `candy:interactive-${context}-draft:${homeworkId}`;
-}
-
-function readStoredDraft(homeworkId: string, context = "homework") {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const rawDraft = window.localStorage.getItem(
-      draftStorageKey(homeworkId, context),
-    );
-
-    if (!rawDraft) {
-      return null;
-    }
-
-    const parsed: unknown = JSON.parse(rawDraft);
-
-    if (!parsed || typeof parsed !== "object" || !("values" in parsed)) {
-      return null;
-    }
-
-    const maybeValues = (parsed as { values?: unknown }).values;
-
-    if (
-      !maybeValues ||
-      typeof maybeValues !== "object" ||
-      Array.isArray(maybeValues)
-    ) {
-      return null;
-    }
-
-    return Object.entries(maybeValues).reduce<Record<string, string>>(
-      (draft, [fieldId, value]) => {
-        if (typeof value === "string") {
-          draft[fieldId] = value;
-        }
-
-        return draft;
-      },
-      {},
-    );
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredDraft(
-  homeworkId: string,
-  values: Record<string, string>,
-  context = "homework",
-) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    const hasContent = Object.values(values).some((value) => value.length > 0);
-
-    if (!hasContent) {
-      window.localStorage.removeItem(draftStorageKey(homeworkId, context));
-      return;
-    }
-
-    window.localStorage.setItem(
-      draftStorageKey(homeworkId, context),
-      JSON.stringify({
-        savedAt: new Date().toISOString(),
-        values,
-      }),
-    );
-  } catch {
-    // localStorage is only a safety copy; autosave to the server remains primary.
-  }
-}
-
-function clearStoredDraft(homeworkId: string, context = "homework") {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    window.localStorage.removeItem(draftStorageKey(homeworkId, context));
-  } catch {
-    // Ignore storage cleanup failures.
-  }
 }
 
 function statusLabel(status?: string) {
@@ -739,12 +650,16 @@ export function InteractiveHomeworkStudent({
     setDraftHydrated(false);
 
     if (isLocked) {
-      clearStoredDraft(homework.id, context);
+      clearInteractiveDraft(window.localStorage, homework.id, context);
       setDraftHydrated(true);
       return;
     }
 
-    const storedValues = readStoredDraft(homework.id, context);
+    const storedValues = readInteractiveDraft(
+      window.localStorage,
+      homework.id,
+      context,
+    );
 
     if (storedValues && Object.keys(storedValues).length > 0) {
       dirtyValues.current = true;
@@ -762,7 +677,7 @@ export function InteractiveHomeworkStudent({
       return;
     }
 
-    writeStoredDraft(homework.id, values, context);
+    writeInteractiveDraft(window.localStorage, homework.id, values, context);
   }, [context, draftHydrated, homework.id, isLocked, values]);
 
   useEffect(() => {
@@ -878,7 +793,7 @@ export function InteractiveHomeworkStudent({
         setMessage(result.message);
 
         if (result.ok) {
-          clearStoredDraft(homework.id, context);
+          clearInteractiveDraft(window.localStorage, homework.id, context);
           dirtyValues.current = false;
           setSaveState("saved");
           router.refresh();

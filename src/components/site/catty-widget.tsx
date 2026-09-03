@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
@@ -1344,6 +1345,17 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
                 <span className="sr-only">Enviar</span>
               </Button>
             </form>
+            <p className="text-[0.68rem] leading-4 text-muted-foreground">
+              Não envie senhas, documentos ou dados de pagamento. A mensagem
+              pode ser processada por Gemini ou OpenAI para gerar a resposta.{" "}
+              <Link
+                className="font-bold text-primary underline decoration-primary/25 underline-offset-2 hover:decoration-primary"
+                href="/privacidade#inteligencia-artificial"
+              >
+                Saiba mais
+              </Link>
+              .
+            </p>
           </div>
         </section>
       ) : null}

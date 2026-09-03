@@ -22,7 +22,7 @@ Arquivos centrais:
 
 Rotas principais:
 
-- `/`, `/sobre`, `/metodologia`, `/planos`, `/contato`
+- `/`, `/sobre`, `/metodologia`, `/planos`, `/contato`, `/privacidade`
 - `/ava`, `/ava/login`, `/ava/escolha`, `/ava/admin`, `/ava/teacher`, `/ava/student`, `/ava/secretaria`, `/ava/vendas`, `/ava/ponto`
 - `/ava/avatar`, `/ava/avatar/[userId]`
 - `/ava/contracts/[contractId]`
@@ -51,6 +51,7 @@ Rotas principais:
 - Candy XP e persistido por eventos server-side e continua respeitando role: student usa apenas dados do proprio aluno, teacher usa apenas dados da area permitida e admin usa indicadores operacionais globais permitidos; nao deve expor ranking publico nem dados indevidos. Usuarios logados veem ranking interno de alunos/profs com nome, avatar/foto, role e metricas de XP, paginado de 10 em 10, sem email nem dados sensiveis.
 - Atividades Candy XP devem liberar PDF/imagem apenas por rota protegida, permitir areas interativas salvas por `ADMIN` e conceder XP no servidor, com conclusao automatica quando os campos obrigatorios estiverem preenchidos e correcao manual para respostas escritas antigas.
 - PDFs pedagogicos protegidos, como atividades Candy XP, homework interativo e aulas interativas, podem ser otimizados no servidor antes de salvar, mas a falha da otimizacao nao deve quebrar o upload nem abrir acesso publico.
+- O aviso `/privacidade` deve permanecer publico e acessivel antes e depois do login; enquanto houver apenas cookies tecnicos essenciais, nao criar banner de consentimento opcional enganoso.
 
 ## Decisoes tecnicas tomadas
 
@@ -83,6 +84,7 @@ Rotas principais:
 - `11-seguranca.md`: defesa em camadas, monitoramento, CI e controles externos pendentes.
 - `13-financeiro.md`: modulo financeiro.
 - `14-agenda.md`: modulo agenda.
+- `23-privacidade-e-cookies.md`: transparencia de dados, cookies essenciais, armazenamento local, Catty/IA e direitos dos titulares.
 - `15-homework-interativo.md`: upload do Canva, editor manual de areas sobre o arquivo e autosave para homework/aula interativa.
 - `16-candy-xp.md`: fundacao de gamificacao persistente no estilo Duolingo.
 - `17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, areas interativas, perguntas antigas, progresso, correcao e XP.

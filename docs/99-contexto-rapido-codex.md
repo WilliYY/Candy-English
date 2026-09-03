@@ -33,6 +33,7 @@ Ao receber o prompt minimo, o agente deve:
 
 - Site institucional e AVA proprio em `/ava`.
 - O site publico mostra no footer um contador discreto de visitas via `/api/site-visits` e `SiteVisitCounter`; ele registra apenas total agregado, sem IP/user-agent persistido, e usa cooldown local no navegador para reduzir inflacao por refresh.
+- `/privacidade` publica o aviso de dados/cookies e aparece no footer, login, sidebar do AVA e chat da Catty. Nao ha banner de consentimento porque a versao atual usa somente cookies essenciais; copias locais de atividades expiram em 7 dias e sao removidas na entrega, bloqueio ou logout. Detalhes em `docs/23-privacidade-e-cookies.md`.
 - Roles atuais: `ADMIN`, `TEACHER` e `STUDENT`.
 - Login Google esta desativado por enquanto; o AVA usa email/senha pelo Credentials Provider.
 - Login do AVA tem o CTA publico `Quero ser aluno Candy`; ele abre WhatsApp em nova aba com mensagem pronta e nao grava `StudentPreRegistration` automaticamente.

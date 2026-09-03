@@ -67,6 +67,9 @@ export function SiteFooter() {
             <Link className="hover:text-white" href="/contato">
               Contato
             </Link>
+            <Link className="hover:text-white" href="/privacidade">
+              Privacidade e cookies
+            </Link>
             <Link className="hover:text-white" href="/ava">
               AVA
             </Link>

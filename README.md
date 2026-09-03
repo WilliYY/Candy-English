@@ -31,6 +31,7 @@ Ja existe:
 - chat interno em que Teacher inicia conversa com qualquer aluno ativo e Student responde apenas nas proprias conversas;
 - botao `Quero ser aluno Candy` no login do AVA abrindo WhatsApp em nova aba com mensagem pronta; o cadastro protegido da Secretaria exige login e senha inicial confirmada e cria `User STUDENT`, perfil, vinculo, financeiro e agenda em uma unica transaction, liberando o AVA no mesmo envio; pre-cadastros antigos continuam preservados e podem ser concluidos pelo fluxo legado `Tornar aluno`;
 - contador discreto de visitas no footer do site publico, salvo como total agregado em `SiteVisitCounter`, com registro client-side leve e sem armazenar IP, user-agent ou dados pessoais;
+- aviso publico em `/privacidade`, acessivel no site, login e AVA, com canal para titulares, informacoes sobre menores, Catty/IA, cookies essenciais e armazenamento local; copias locais de atividades expiram em 7 dias e sao limpas no logout;
 - contratos e avatar servidos por rotas protegidas; Admin pode excluir contratos e Teacher somente contratos individuais, sempre com confirmacao e validacao server-side;
 - financeiro admin em planilha mensal ampla para 2026, separado por `Unidade 1 Ivaté`/`Unidade 2 Douradina`, com filtros rapidos de situacao, vinculo de alunos existentes do AVA, criacao transacional de novo `User STUDENT` com login sugerido, snapshots em `FinancialPayment`, parcelas opcionais, historico por aluno, gastos da loja em `FinancialExpense` e `FinancialLog`; Teacher usa `/ava/teacher?task=financeiro` apenas para ver pago/pendente/atrasado de todos os alunos ativos, sem receber valores, gastos, contatos, observacoes ou exportacoes;
 - agenda admin interna para 2026, separada dos alunos do AVA, com planilha mensal por aluno agrupada por polo, busca e filtros rapidos, cadastro recorrente por dias/horario, presenca, falta, historico e inativacao por `AgendaStudent`, `AgendaLesson` e `AgendaLog`;
@@ -81,6 +82,7 @@ Use estes documentos como memoria longa do projeto:
 - `docs/15-homework-interativo.md`: homework/aula interativa com upload do Canva, editor manual de areas, autosave e arquivo protegido.
 - `docs/19-vendas.md`: PDV interno, produtos, estoque e cobrancas de compras.
 - `docs/22-ponto.md`: ponto da equipe, permissoes, auditoria e relatorio mensal em PDF.
+- `docs/23-privacidade-e-cookies.md`: aviso publico, cookies essenciais, armazenamento local, Catty/IA e direitos dos titulares.
 - `docs/16-candy-xp.md`: gamificacao persistente, XP, streaks, badges, missoes e anti-abuso.
 - `docs/17-candy-xp-atividades.md`: historias Candy XP com PDF do Canva, perguntas, progresso, correcao e XP.
 - `docs/18-mobile-api.md`: autenticacao movel, sessoes revogaveis, overview e modulos nativos por role.

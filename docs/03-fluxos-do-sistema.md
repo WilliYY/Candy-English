@@ -82,6 +82,14 @@ Helpers:
 
 ## Fluxos principais
 
+### Privacidade e cookies
+
+1. Visitante ou usuario logado abre `/privacidade` pelo footer publico, login, sidebar do AVA ou aviso da Catty.
+2. A pagina informa dados tratados, finalidades, menores/responsaveis, Catty/IA, servicos externos, retencao, seguranca, cookies essenciais, armazenamento local e direitos do titular.
+3. Solicitacoes usam `candyenglishbr@gmail.com` com assunto `Privacidade e dados pessoais`; a equipe confirma a identidade antes de entregar ou alterar dados protegidos.
+4. O site nao exibe banner `Aceitar tudo` porque a versao atual nao usa cookies opcionais de analise ou publicidade. Se isso mudar, o recurso opcional deve ficar bloqueado ate escolha clara.
+5. Rascunhos de atividades continuam salvos no servidor; a copia de contingencia do navegador expira em 7 dias e e removida na entrega, no bloqueio da atividade ou no logout.
+
 ### Login
 
 1. Usuario entra em `/ava/login`.

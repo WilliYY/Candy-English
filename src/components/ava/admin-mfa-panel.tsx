@@ -23,6 +23,7 @@ import {
 } from "@/app/ava/admin/mfa-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { clearAllInteractiveDrafts } from "@/lib/interactive-homework-draft-storage";
 import { cn } from "@/lib/utils";
 
 type Enrollment = NonNullable<AdminMfaActionResult["enrollment"]>;
@@ -125,6 +126,7 @@ export function AdminMfaPanel({
           setIsEnabled(false);
           setDisableCode("");
           setDisablePassword("");
+          clearAllInteractiveDrafts(window.localStorage);
           await signOut({ callbackUrl: "/ava/login" });
         }
       } catch {

@@ -101,6 +101,16 @@ export default async function LoginPage() {
               >
                 <LoginForm maintenanceMode={maintenanceMode} />
               </Suspense>
+              <p className="mt-5 border-t border-primary/10 pt-4 text-center text-xs leading-5 text-muted-foreground">
+                Ao acessar, consulte como protegemos seus dados em{" "}
+                <Link
+                  className="font-bold text-primary underline decoration-primary/25 underline-offset-4 hover:decoration-primary"
+                  href="/privacidade"
+                >
+                  Privacidade e cookies
+                </Link>
+                .
+              </p>
             </CardContent>
           </Card>
         </div>

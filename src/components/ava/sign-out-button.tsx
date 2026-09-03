@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { clearAllInteractiveDrafts } from "@/lib/interactive-homework-draft-storage";
 
 type SignOutButtonProps = {
   className?: string;
@@ -27,6 +28,7 @@ export function SignOutButton({ className }: SignOutButtonProps) {
         redirectTo: AVA_LOGIN_PATH,
       });
     } finally {
+      clearAllInteractiveDrafts(window.localStorage);
       window.location.replace(AVA_LOGIN_PATH);
     }
   }

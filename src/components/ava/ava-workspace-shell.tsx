@@ -838,6 +838,15 @@ export async function AvaWorkspaceShell({
                 </Button>
               ) : null}
             </nav>
+            <div className="mt-auto border-t border-primary/10 px-2 pt-4 text-center">
+              <Link
+                className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-3 text-xs font-bold text-primary/65 transition hover:bg-white/70 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35"
+                href="/privacidade"
+              >
+                <LockKeyhole aria-hidden="true" className="size-3.5" />
+                Privacidade e cookies
+              </Link>
+            </div>
           </div>
         </AvaResponsiveSidebar>
 
