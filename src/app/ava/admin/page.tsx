@@ -128,7 +128,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     financeStudents,
     financeLogs,
     financeExpenses,
-    staffInvoiceSales,
+    standaloneInvoiceSales,
     agendaStudents,
     agendaLessons,
     agendaLogs,
@@ -449,7 +449,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     }),
     prisma.sale.findMany({
       where: {
-        buyerUser: { role: "TEACHER" },
+        buyerUser: { role: { in: ["STUDENT", "TEACHER"] } },
         financialPaymentId: null,
         invoiceYear: 2026,
         settlementType: "MONTHLY_INVOICE",
@@ -458,7 +458,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
       orderBy: { createdAt: "desc" },
       select: {
-        buyerUser: { select: { email: true, id: true, name: true } },
+        buyerUser: { select: { email: true, id: true, name: true, role: true } },
         createdAt: true,
         id: true,
         invoiceDueDate: true,
@@ -1166,11 +1166,15 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         phone: student.phone,
         unit: student.unit,
       }))}
-      staffInvoiceSales={staffInvoiceSales.flatMap((sale) =>
-        sale.buyerUser && sale.invoiceMonth && sale.invoiceYear
+      standaloneInvoiceSales={standaloneInvoiceSales.flatMap((sale) =>
+        sale.buyerUser &&
+        (sale.buyerUser.role === "STUDENT" || sale.buyerUser.role === "TEACHER") &&
+        sale.invoiceMonth &&
+        sale.invoiceYear
           ? [{
               buyerEmail: sale.buyerUser.email,
               buyerName: sale.buyerUser.name,
+              buyerRole: sale.buyerUser.role,
               buyerUserId: sale.buyerUser.id,
               createdAt: sale.createdAt.toISOString(),
               invoiceDueDate: sale.invoiceDueDate?.toISOString().slice(0, 10) ?? null,

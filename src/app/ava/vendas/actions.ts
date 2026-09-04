@@ -10,6 +10,7 @@ import {
   areSaleAmountsDatabaseSafe,
   calculateSaleTotals,
   getSaoPauloYearMonth,
+  getStudentInvoiceDestination,
   isMonthlyInvoiceOpen,
   normalizeSaleProductName,
   parseSaleInvoiceDate,
@@ -423,22 +424,6 @@ export async function createSale(
 
   const invoicePayment = student?.financialStudent?.payments[0] ?? null;
 
-  if (
-    invoicePeriod &&
-    student &&
-    (!student?.financialStudent || !isMonthlyInvoiceOpen(invoicePayment))
-  ) {
-    return {
-      errors: {
-        studentProfileId:
-          "Este aluno nao tem uma mensalidade ativa e em aberto neste mes.",
-      },
-      message:
-        "Complete o cadastro financeiro do aluno antes de adicionar a fatura.",
-      ok: false,
-    };
-  }
-
   const buyerName =
     student?.user.name ?? staffBuyer?.name ?? parsed.data.buyerName.trim();
   const operationId = parsed.data.operationId ?? randomUUID();
@@ -503,14 +488,23 @@ export async function createSale(
         `;
         lockedInvoicePayment = paymentRows[0] ?? null;
 
+        const invoiceDestination = getStudentInvoiceDestination(
+          student?.financialStudent?.id,
+          lockedInvoicePayment,
+        );
+
         if (
-          !isMonthlyInvoiceOpen(lockedInvoicePayment) ||
+          invoiceDestination.kind === "MONTHLY_PAYMENT" &&
           lockedInvoicePayment?.financialStudentId !==
             student?.financialStudent?.id
         ) {
           throw new SaleRuleError(
             "A fatura foi paga, fechada ou alterada. Atualize a tela antes de continuar.",
           );
+        }
+
+        if (invoiceDestination.kind === "PRODUCT_ONLY") {
+          lockedInvoicePayment = null;
         }
       }
 

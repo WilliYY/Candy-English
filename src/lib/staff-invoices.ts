@@ -3,6 +3,7 @@ export type StaffInvoiceUnit = "IVATE" | "DOURADINA";
 export type StaffInvoiceSale = {
   buyerEmail: string;
   buyerName: string;
+  buyerRole: "STUDENT" | "TEACHER";
   buyerUserId: string;
   createdAt: string;
   invoiceDueDate: string | null;
@@ -30,6 +31,7 @@ export type StaffInvoiceItem = StaffInvoiceSale["items"][number] & {
 export type StaffInvoiceSummary = {
   buyerEmail: string;
   buyerName: string;
+  buyerRole: "STUDENT" | "TEACHER";
   buyerUserId: string;
   dueDate: string | null;
   items: StaffInvoiceItem[];
@@ -56,6 +58,7 @@ export function groupStaffInvoices(
     const current = grouped.get(sale.buyerUserId) ?? {
       buyerEmail: sale.buyerEmail,
       buyerName: sale.buyerName,
+      buyerRole: sale.buyerRole,
       buyerUserId: sale.buyerUserId,
       dueDate: null,
       items: [],

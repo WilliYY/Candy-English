@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-04 - Fatura de produtos para todo aluno ativo
+
+- Decisao: permitir que todo `StudentProfile` ativo receba compra `MONTHLY_INVOICE`; usar o `FinancialPayment` somente quando estiver ativo e nao pago e, nos demais casos, manter uma fatura separada apenas de produtos. Produtos com estoque zero permanecem editaveis, mas ganham card vermelho e nao podem entrar no carrinho.
+- Motivo: dez alunos ativos da base estavam sem fatura disponivel por nao terem mensalidade aberta, embora precisassem comprar produtos marcados; reabrir uma mensalidade paga misturaria cobrancas e criaria risco de cobrar o valor escolar novamente.
+- Impacto: dominio e testes de Vendas, checkout transacional, catalogo do PDV, consulta e liquidacao no Financeiro Admin e documentacao de Vendas/Financeiro.
+- Riscos/cuidados: fatura separada exige identidade `STUDENT` ou `TEACHER`, continua no ledger `Sale`, nao altera `snapshotAmountCents`, usa IDs esperados na confirmacao e deve ser reaberta antes do estorno quando ja estiver paga.
+
 ### 2026-09-03 - Transparencia publica e prazo para rascunhos locais
 
 - Decisao: publicar `/privacidade` com canal para titulares, menores, Catty/IA, servicos externos, cookies essenciais e armazenamento local; manter sem banner de consentimento enquanto nao houver rastreador opcional; limitar copias locais de atividades a 7 dias e limpa-las no logout.

@@ -131,7 +131,7 @@ export default async function SalesPage() {
           sellerName: sale.soldByUser?.name ?? "Usuario removido",
         }))}
         students={students.map((student) => ({
-          canInvoice: Boolean(
+          hasOpenMonthlyPayment: Boolean(
             student.financialStudent?.id &&
               isMonthlyInvoiceOpen(student.financialStudent.payments[0]),
           ),

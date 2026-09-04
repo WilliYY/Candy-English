@@ -5,6 +5,7 @@ import { groupStaffInvoices } from "../staff-invoices";
 const baseSale = {
   buyerEmail: "teacher@candy.com",
   buyerName: "Teacher Candy",
+  buyerRole: "TEACHER" as const,
   buyerUserId: "teacher-1",
   createdAt: "2026-08-20T14:00:00.000Z",
   invoiceDueDate: "2026-08-29",
@@ -73,4 +74,23 @@ test("does not mix another competence into the teacher invoice", () => {
   );
 
   assert.deepEqual(invoices, []);
+});
+
+test("identifies a standalone product invoice that belongs to a student", () => {
+  const invoices = groupStaffInvoices(
+    [
+      {
+        ...baseSale,
+        buyerEmail: "student@candy.com",
+        buyerName: "Student Candy",
+        buyerRole: "STUDENT" as const,
+        buyerUserId: "student-1",
+      },
+    ],
+    2026,
+    8,
+  );
+
+  assert.equal(invoices[0]?.buyerRole, "STUDENT");
+  assert.equal(invoices[0]?.pendingTotalCents, 600);
 });

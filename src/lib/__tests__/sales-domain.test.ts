@@ -3,8 +3,10 @@ import test from "node:test";
 import {
   areSaleAmountsDatabaseSafe,
   calculateSaleTotals,
+  getSaleProductAvailability,
   getSaoPauloDateKey,
   getSaoPauloYearMonth,
+  getStudentInvoiceDestination,
   isMonthlyInvoiceOpen,
   normalizeSaleProductName,
   parseSaleInvoiceDate,
@@ -53,6 +55,72 @@ test("accepts only an active unpaid monthly invoice", () => {
   assert.equal(isMonthlyInvoiceOpen({ isActive: true, isPaid: true }), false);
   assert.equal(isMonthlyInvoiceOpen({ isActive: false, isPaid: false }), false);
   assert.equal(isMonthlyInvoiceOpen(null), false);
+});
+
+test("blocks unavailable products before they enter the cart", () => {
+  assert.equal(
+    getSaleProductAvailability(
+      { isActive: true, stockQuantity: 0 },
+      0,
+    ),
+    "OUT_OF_STOCK",
+  );
+  assert.equal(
+    getSaleProductAvailability(
+      { isActive: false, stockQuantity: 10 },
+      0,
+    ),
+    "INACTIVE",
+  );
+  assert.equal(
+    getSaleProductAvailability(
+      { isActive: true, stockQuantity: 2 },
+      2,
+    ),
+    "LIMIT_REACHED",
+  );
+  assert.equal(
+    getSaleProductAvailability(
+      { isActive: true, stockQuantity: 2 },
+      1,
+    ),
+    "AVAILABLE",
+  );
+});
+
+test("uses a product-only invoice when the student has no open tuition invoice", () => {
+  assert.deepEqual(
+    getStudentInvoiceDestination(null, null),
+    {
+      financialPaymentId: null,
+      financialStudentId: null,
+      kind: "PRODUCT_ONLY",
+    },
+  );
+  assert.deepEqual(
+    getStudentInvoiceDestination("financial-1", {
+      id: "payment-paid",
+      isActive: true,
+      isPaid: true,
+    }),
+    {
+      financialPaymentId: null,
+      financialStudentId: "financial-1",
+      kind: "PRODUCT_ONLY",
+    },
+  );
+  assert.deepEqual(
+    getStudentInvoiceDestination("financial-1", {
+      id: "payment-open",
+      isActive: true,
+      isPaid: false,
+    }),
+    {
+      financialPaymentId: "payment-open",
+      financialStudentId: "financial-1",
+      kind: "MONTHLY_PAYMENT",
+    },
+  );
 });
 
 test("rejects totals that overflow PostgreSQL integer cents", () => {

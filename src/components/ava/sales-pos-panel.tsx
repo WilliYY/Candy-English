@@ -14,6 +14,7 @@ import {
   MapPin,
   Minus,
   PackagePlus,
+  PackageX,
   Pencil,
   Plus,
   ReceiptText,
@@ -37,6 +38,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  getSaleProductAvailability,
+} from "@/lib/sales-domain";
 import {
   SALE_PAYMENT_METHODS,
   saleProductCreateSchema,
@@ -64,8 +68,8 @@ type ProductRow = {
 };
 
 type StudentOption = {
-  canInvoice: boolean;
   email: string;
+  hasOpenMonthlyPayment: boolean;
   id: string;
   name: string;
   unit: FinancialUnit;
@@ -508,7 +512,7 @@ export function SalesPosPanel({
   const invoiceDateMin = getMonthDateBoundary(currentPeriod, "first");
   const invoiceDateMax = getMonthDateBoundary(currentPeriod, "last");
   const invoiceDateReady = invoiceDueDate >= invoiceDateMin && invoiceDueDate <= invoiceDateMax;
-  const invoiceReady = settlementType !== "MONTHLY_INVOICE" || Boolean((selectedStudent?.canInvoice || selectedTeacher) && invoiceDateReady);
+  const invoiceReady = settlementType !== "MONTHLY_INVOICE" || Boolean((selectedStudent || selectedTeacher) && invoiceDateReady);
   const buyerReady = Boolean(selectedStudent || selectedTeacher || buyerQuery.trim());
 
   function selectBuyerStudent(student: StudentOption) {
@@ -536,7 +540,8 @@ export function SalesPosPanel({
   }
 
   function addToCart(product: ProductRow) {
-    if (!product.isActive || product.stockQuantity < 1) return;
+    const quantityInCart = cart.find((item) => item.id === product.id)?.quantity ?? 0;
+    if (getSaleProductAvailability(product, quantityInCart) !== "AVAILABLE") return;
     setCart((current) => {
       const existing = current.find((item) => item.id === product.id);
       if (existing) {
@@ -773,24 +778,49 @@ export function SalesPosPanel({
           <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
             {activeProducts.map((product) => {
               const inCart = cart.find((item) => item.id === product.id)?.quantity ?? 0;
+              const availability = getSaleProductAvailability(product, inCart);
+              const isOutOfStock = availability === "OUT_OF_STOCK";
+              const stockLabel = isOutOfStock
+                ? "Sem estoque"
+                : `${product.stockQuantity} em estoque`;
               return (
-                <article className="relative overflow-hidden rounded-lg border border-primary/12 bg-gradient-to-br from-white via-white to-cyan-50/50 p-3 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md" key={product.id}>
+                <article
+                  className={cn(
+                    "relative overflow-hidden rounded-lg border p-3 shadow-sm transition",
+                    isOutOfStock
+                      ? "border-rose-300 bg-gradient-to-br from-rose-50 via-white to-rose-100/70"
+                      : "border-primary/12 bg-gradient-to-br from-white via-white to-cyan-50/50 hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md",
+                  )}
+                  key={product.id}
+                >
+                  {isOutOfStock ? (
+                    <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-rose-500" />
+                  ) : null}
                   {product.imageUrl ? (
-                    <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-md border border-cyan-100 bg-cyan-50">
+                    <div className={cn("relative mb-3 aspect-[4/3] overflow-hidden rounded-md border", isOutOfStock ? "border-rose-200 bg-rose-50" : "border-cyan-100 bg-cyan-50")}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img alt={product.name} className="size-full object-cover object-center" src={product.imageUrl} />
-                      <span className={cn("absolute right-2 top-2 rounded-full border px-2 py-1 text-[0.65rem] font-extrabold shadow-sm", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800")}>{product.stockQuantity} em estoque</span>
+                      <img alt={product.name} className={cn("size-full object-cover object-center", isOutOfStock && "grayscale")} src={product.imageUrl} />
+                      <span className={cn("absolute right-2 top-2 rounded-full border px-2 py-1 text-[0.65rem] font-extrabold shadow-sm", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-rose-300 bg-rose-600 text-white")}>{stockLabel}</span>
                     </div>
                   ) : null}
                   <div className="flex items-start justify-between gap-3">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-100 text-cyan-800"><ShoppingBag aria-hidden="true" className="size-5" /></span>
-                    {!product.imageUrl ? <span className={cn("rounded-full border px-2 py-1 text-[0.65rem] font-extrabold", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-800")}>{product.stockQuantity} em estoque</span> : null}
+                    <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-lg", isOutOfStock ? "bg-rose-600 text-white" : "bg-cyan-100 text-cyan-800")}>{isOutOfStock ? <PackageX aria-hidden="true" className="size-5" /> : <ShoppingBag aria-hidden="true" className="size-5" />}</span>
+                    {!product.imageUrl ? <span className={cn("rounded-full border px-2 py-1 text-[0.65rem] font-extrabold", product.stockQuantity > 5 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : product.stockQuantity > 0 ? "border-amber-200 bg-amber-50 text-amber-900" : "border-rose-300 bg-rose-600 text-white")}>{stockLabel}</span> : null}
                   </div>
-                  <h2 className="mt-3 min-h-10 text-base font-extrabold leading-5 text-primary">{product.name}</h2>
+                  <h2 className={cn("mt-3 min-h-10 text-base font-extrabold leading-5", isOutOfStock ? "text-rose-950" : "text-primary")}>{product.name}</h2>
                   <div className="mt-3 flex items-end justify-between gap-2">
                     <div><p className="text-[0.64rem] font-bold uppercase text-primary/50">Venda</p><strong className="text-xl tabular-nums text-cyan-800">{formatCurrency(product.salePriceCents)}</strong><p className="text-[0.68rem] text-muted-foreground">Custo {formatCurrency(product.costCents)}</p></div>
-                    <Button aria-label={`Adicionar ${product.name}`} disabled={product.stockQuantity < 1 || inCart >= product.stockQuantity} onClick={() => addToCart(product)} size="icon" title="Adicionar ao carrinho"><Plus aria-hidden="true" /></Button>
+                    <Button
+                      aria-label={isOutOfStock ? `${product.name} sem estoque` : `Adicionar ${product.name}`}
+                      disabled={availability !== "AVAILABLE"}
+                      onClick={() => addToCart(product)}
+                      size="icon"
+                      title={isOutOfStock ? "Sem estoque" : availability === "LIMIT_REACHED" ? "Todo o estoque ja esta no carrinho" : "Adicionar ao carrinho"}
+                    >
+                      {isOutOfStock ? <PackageX aria-hidden="true" /> : <Plus aria-hidden="true" />}
+                    </Button>
                   </div>
+                  {isOutOfStock ? <p className="mt-2 rounded-md border border-rose-200 bg-rose-100 px-2 py-1.5 text-center text-xs font-extrabold text-rose-900">Indisponivel para venda</p> : null}
                   {inCart > 0 ? <p className="mt-2 rounded-md bg-primary px-2 py-1 text-center text-xs font-bold text-white">{inCart} no carrinho</p> : null}
                   <ProductEditor product={product} />
                 </article>
@@ -880,7 +910,7 @@ export function SalesPosPanel({
             {selectedStudent ? (
               <div className={cn("rounded-lg border p-2.5 text-xs", selectedStudent.unit === "IVATE" ? "border-cyan-200 bg-cyan-50" : "border-rose-200 bg-rose-50")}>
                 <span className="inline-flex items-center gap-1.5 font-extrabold text-primary"><MapPin aria-hidden="true" className="size-3.5" />Polo automatico: {formatUnit(selectedStudent.unit)}</span>
-                <span className="mt-1 block text-primary/70">{selectedStudent.canInvoice ? "Fatura mensal ativa" : "Sem fatura mensal ativa"}</span>
+                <span className="mt-1 block text-primary/70">{selectedStudent.hasOpenMonthlyPayment ? `Produtos serao somados a fatura mensal de ${monthLabels[currentPeriod.month]}.` : "Sera criada uma fatura somente dos produtos, sem alterar a mensalidade."}</span>
               </div>
             ) : selectedTeacher ? (
               <div className="rounded-lg border border-fuchsia-200 bg-fuchsia-50 p-2.5 text-xs text-fuchsia-950">
@@ -899,7 +929,6 @@ export function SalesPosPanel({
             {!selectedStudent ? <label className="grid gap-1 text-xs font-bold text-primary">{selectedTeacher ? "Polo da compra" : "Polo da venda livre"}<NativeSelect value={unit} onChange={(event) => setUnit(event.target.value as FinancialUnit)}><option value="IVATE">Polo 1 - Ivate</option><option value="DOURADINA">Polo 2 - Douradina</option></NativeSelect></label> : null}
             <label className="grid gap-1 text-xs font-bold text-primary">Observacao opcional<Textarea className="min-h-16" value={note} onChange={(event) => setNote(event.target.value)} placeholder="Detalhe da venda" /></label>
             {settlementType === "MONTHLY_INVOICE" && !selectedStudent && !selectedTeacher ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Selecione um aluno ou professor cadastrado para lançar na fatura.</p> : null}
-            {settlementType === "MONTHLY_INVOICE" && selectedStudent && !selectedStudent.canInvoice ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Este aluno precisa de mensalidade ativa e em aberto em {monthLabels[currentPeriod.month]} para usar a fatura.</p> : null}
             {settlementType === "MONTHLY_INVOICE" && !invoiceDateReady ? <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Escolha uma data dentro do mes financeiro atual.</p> : null}
             {checkoutMessage ? <p className="rounded-lg border border-primary/15 bg-primary/[0.05] px-3 py-2 text-xs font-semibold text-primary">{checkoutMessage}</p> : null}
             <Button className="h-12" disabled={isCheckoutPending || cart.length === 0 || !buyerReady || !invoiceReady} onClick={submitCheckout} type="button"><BadgeDollarSign aria-hidden="true" />{isCheckoutPending ? "Finalizando..." : settlementType === "MONTHLY_INVOICE" ? "Adicionar a fatura" : "Finalizar venda"}</Button>

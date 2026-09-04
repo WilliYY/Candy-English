@@ -1,9 +1,9 @@
 "use client";
 
-import { GraduationCap } from "lucide-react";
+import { GraduationCap, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { settleStaffInvoice } from "@/app/ava/admin/actions";
+import { settleProductInvoice } from "@/app/ava/admin/actions";
 import { Button } from "@/components/ui/button";
 import {
   groupStaffInvoices,
@@ -46,7 +46,7 @@ function StaffInvoicePaymentButton({
 
     setMessage(null);
     startTransition(async () => {
-      const result = await settleStaffInvoice({
+      const result = await settleProductInvoice({
         buyerUserId: invoice.buyerUserId,
         isPaid: willMarkPaid,
         month,
@@ -87,7 +87,7 @@ function StaffInvoicePaymentButton({
   );
 }
 
-export function AdminStaffInvoicesSection({
+export function AdminProductInvoicesSection({
   month,
   sales,
   unitFilter,
@@ -113,17 +113,17 @@ export function AdminStaffInvoicesSection({
       <div className="grid gap-3 border-b border-fuchsia-100 bg-gradient-to-r from-fuchsia-50 via-white to-amber-50 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div className="flex min-w-0 items-start gap-3">
           <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-fuchsia-700 text-white shadow-md shadow-fuchsia-900/15">
-            <GraduationCap aria-hidden="true" className="size-5" />
+            <UserRound aria-hidden="true" className="size-5" />
           </span>
           <span className="min-w-0">
             <span className="text-[0.68rem] font-extrabold uppercase tracking-[0.12em] text-fuchsia-700">
-              Faturas da equipe
+              Faturas separadas
             </span>
             <strong className="mt-1 block text-lg text-primary">
-              Compras de doces dos professores
+              Produtos de alunos e professores
             </strong>
             <span className="mt-1 block text-sm text-muted-foreground">
-              Conta pessoal separada das mensalidades dos alunos.
+              Quando nao ha mensalidade aberta, a compra continua visivel e cobravel aqui.
             </span>
           </span>
         </div>
@@ -134,22 +134,35 @@ export function AdminStaffInvoicesSection({
 
       {invoices.length === 0 ? (
         <p className="px-4 py-5 text-sm text-muted-foreground">
-          Nenhuma compra marcada para professores nesta competencia.
+          Nenhuma fatura separada de produtos nesta competencia.
         </p>
       ) : (
         <div className="grid gap-3 p-4 xl:grid-cols-2">
           {invoices.map((invoice) => (
             <article
-              className="overflow-hidden rounded-lg border border-fuchsia-100 bg-[#fffafd]"
+              className={cn(
+                "overflow-hidden rounded-lg border",
+                invoice.buyerRole === "STUDENT"
+                  ? "border-cyan-200 bg-cyan-50/35"
+                  : "border-fuchsia-100 bg-[#fffafd]",
+              )}
               key={invoice.buyerUserId}
             >
-              <div className="flex min-w-0 items-start justify-between gap-3 border-b border-fuchsia-100 bg-white p-3">
-                <span className="min-w-0">
-                  <strong className="block break-words text-primary">
-                    {invoice.buyerName}
-                  </strong>
-                  <span className="block break-all text-xs text-muted-foreground">
-                    {invoice.buyerEmail}
+              <div className={cn("flex min-w-0 items-start justify-between gap-3 border-b bg-white p-3", invoice.buyerRole === "STUDENT" ? "border-cyan-100" : "border-fuchsia-100")}>
+                <span className="flex min-w-0 items-start gap-2.5">
+                  <span className={cn("grid size-8 shrink-0 place-items-center rounded-md", invoice.buyerRole === "STUDENT" ? "bg-cyan-100 text-cyan-800" : "bg-fuchsia-100 text-fuchsia-800")}>
+                    {invoice.buyerRole === "STUDENT" ? <UserRound aria-hidden="true" className="size-4" /> : <GraduationCap aria-hidden="true" className="size-4" />}
+                  </span>
+                  <span className="min-w-0">
+                    <strong className="block break-words text-primary">
+                      {invoice.buyerName}
+                    </strong>
+                    <span className="block break-all text-xs text-muted-foreground">
+                      {invoice.buyerEmail}
+                    </span>
+                    <span className={cn("mt-1 inline-flex rounded-full border px-2 py-0.5 text-[0.62rem] font-extrabold uppercase", invoice.buyerRole === "STUDENT" ? "border-cyan-200 bg-cyan-50 text-cyan-800" : "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800")}>
+                      {invoice.buyerRole === "STUDENT" ? "Aluno" : "Professor"}
+                    </span>
                   </span>
                 </span>
                 <span
@@ -170,7 +183,7 @@ export function AdminStaffInvoicesSection({
                     Mensalidade
                   </small>
                   <strong className="mt-1 block text-slate-700">
-                    Nao se aplica
+                    {invoice.buyerRole === "STUDENT" ? "Ja fechada ou ausente" : "Nao se aplica"}
                   </strong>
                 </span>
                 <span className="bg-fuchsia-50 p-2.5">

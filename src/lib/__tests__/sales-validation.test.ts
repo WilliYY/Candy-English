@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   saleCheckoutSchema,
   saleProductCreateSchema,
-  staffInvoiceSettlementSchema,
+  productInvoiceSettlementSchema,
 } from "../validations/sales";
 
 const checkoutItem = {
@@ -141,8 +141,8 @@ test("rejects duplicate products in the same checkout payload", () => {
   assert.equal(result.success, false);
 });
 
-test("accepts an explicit set of teacher sales for admin settlement", () => {
-  const result = staffInvoiceSettlementSchema.safeParse({
+test("accepts an explicit set of product sales for admin settlement", () => {
+  const result = productInvoiceSettlementSchema.safeParse({
     buyerUserId: "teacher-user-1",
     isPaid: true,
     month: 8,
@@ -153,8 +153,8 @@ test("accepts an explicit set of teacher sales for admin settlement", () => {
   assert.equal(result.success, true);
 });
 
-test("rejects duplicate sale ids in teacher invoice settlement", () => {
-  const result = staffInvoiceSettlementSchema.safeParse({
+test("rejects duplicate sale ids in product invoice settlement", () => {
+  const result = productInvoiceSettlementSchema.safeParse({
     buyerUserId: "teacher-user-1",
     isPaid: true,
     month: 8,

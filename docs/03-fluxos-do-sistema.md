@@ -429,12 +429,12 @@ Helpers:
 1. Admin ou Teacher entra em `/ava/vendas`; Student e recusado pelo guard server-side.
 2. O operador pesquisa produtos ativos, adiciona quantidades ao carrinho e seleciona um aluno ativo, uma conta ativa de professor ou informa um comprador avulso.
 3. Em `Pago na hora`, o servidor exige uma forma de pagamento. Comprador avulso e permitido somente neste fluxo.
-4. Em `Fatura mensal`, o servidor exige uma identidade registrada. Para aluno, exige competencia ativa ainda nao paga e vincula a venda ao `FinancialPayment`; para professor, vincula somente `Sale.buyerUserId` a conta pessoal. Ano/mes usam `America/Sao_Paulo` e venda livre continua proibida nesse fluxo.
+4. Em `Fatura mensal`, o servidor exige uma identidade registrada. Para aluno, vincula ao `FinancialPayment` somente quando a mensalidade esta ativa e em aberto; caso contrario cria uma fatura somente de produtos pela identidade do aluno, sem reabrir a mensalidade. Para professor, vincula somente `Sale.buyerUserId` a conta pessoal. Ano/mes usam `America/Sao_Paulo` e venda livre continua proibida nesse fluxo.
 5. A transaction rele produto, preco, estado e estoque no servidor, baixa cada quantidade e cria `Sale`/`SaleItem` com snapshots dos valores.
-6. Se qualquer item mudou ou ficou sem estoque, toda a transaction falha sem criar venda e sem baixar estoque parcialmente.
+6. Produto com estoque zero aparece em vermelho e nao entra no carrinho. Se qualquer item mudou ou ficou sem estoque entre tela e confirmacao, toda a transaction falha sem criar venda e sem baixar estoque parcialmente.
 7. O cancelamento registra operador, data e motivo e devolve as quantidades ao estoque na mesma transaction; a venda nao e apagada e uma competencia ja paga precisa ser reaberta pelo Admin antes do estorno.
 
-A cobranca mensal de produtos fica no ledger de `Sale`, separada de `FinancialPayment`. Assim, uma compra nao altera snapshots nem historico de mensalidades.
+A cobranca mensal de produtos fica no ledger de `Sale`, separada do valor de `FinancialPayment`. O Admin ve faturas de produtos separadas de alunos e professores, confirma ou reabre o pagamento, e a compra nunca altera snapshots nem historico de mensalidades.
 
 A conta `TEACHER` com compra pendente recebe o indicador `Fatura pendente` no perfil. O clique abre `/ava/teacher?task=financeiro`, onde a propria conta ve itens de doce e total separados da consulta sem valores das mensalidades dos alunos. O Admin confirma ou reabre o recebimento em `/ava/admin?task=financeiro`, e a mudanca fica registrada no `FinancialLog`.
 

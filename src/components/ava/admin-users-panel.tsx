@@ -51,7 +51,7 @@ import {
   type AdminFinanceAvaStudentOption,
   type AdminFinanceExpenseRow,
   type AdminFinanceLogRow,
-  type AdminStaffInvoiceSale,
+  type AdminProductInvoiceSale,
   type AdminFinanceStudentRow,
 } from "@/components/ava/admin-finance-panel";
 import { AdminCreateUserForm } from "@/components/ava/admin-create-user-form";
@@ -247,7 +247,7 @@ type AdminUsersPanelProps = {
   financeLogs: AdminFinanceLogRow[];
   financeExpenses: AdminFinanceExpenseRow[];
   financeStudents: AdminFinanceStudentRow[];
-  staffInvoiceSales: AdminStaffInvoiceSale[];
+  standaloneInvoiceSales: AdminProductInvoiceSale[];
   initialAgendaMonth: number;
   initialFinanceMonth: number;
   maintenanceMode: boolean;
@@ -1545,7 +1545,7 @@ export function AdminUsersPanel({
   financeLogs,
   financeExpenses,
   financeStudents,
-  staffInvoiceSales,
+  standaloneInvoiceSales,
   initialAgendaMonth,
   initialFinanceMonth,
   maintenanceMode,
@@ -1887,7 +1887,7 @@ export function AdminUsersPanel({
               initialUnitFilter={secretariaUnitFilter}
               logs={financeLogs}
               students={financeStudents}
-              staffInvoiceSales={staffInvoiceSales}
+              standaloneInvoiceSales={standaloneInvoiceSales}
               initialMonth={initialFinancePanelMonth}
               nowIso={nowIso}
             />

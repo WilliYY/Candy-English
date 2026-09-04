@@ -928,6 +928,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       teacherPersonalInvoiceSales={personalInvoiceSales.map((sale) => ({
         buyerEmail: currentUser?.email ?? session.user.email ?? "",
         buyerName: currentUser?.name ?? session.user.name ?? "Professor Candy",
+        buyerRole: "TEACHER",
         buyerUserId: session.user.id,
         createdAt: sale.createdAt.toISOString(),
         invoiceDueDate: sale.invoiceDueDate?.toISOString().slice(0, 10) ?? null,

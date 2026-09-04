@@ -128,7 +128,7 @@ export const saleCancelSchema = z.object({
   saleId: z.string().min(1),
 });
 
-export const staffInvoiceSettlementSchema = z
+export const productInvoiceSettlementSchema = z
   .object({
     buyerUserId: z.string().trim().min(1),
     isPaid: z.boolean(),
@@ -148,8 +148,8 @@ export const staffInvoiceSettlementSchema = z
 
 export type SaleCheckoutInput = z.input<typeof saleCheckoutSchema>;
 export type SaleCancelInput = z.input<typeof saleCancelSchema>;
-export type StaffInvoiceSettlementInput = z.input<
-  typeof staffInvoiceSettlementSchema
+export type ProductInvoiceSettlementInput = z.input<
+  typeof productInvoiceSettlementSchema
 >;
 export type SaleProductCreateInput = z.input<typeof saleProductCreateSchema>;
 export type SaleProductStockAdjustmentInput = z.input<

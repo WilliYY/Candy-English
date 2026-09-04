@@ -8,7 +8,7 @@ A Teacher ve todos os alunos ativos e apenas nome, polo do snapshot, situacao me
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
-Compras de produtos lancadas para pagamento mensal sao gerenciadas em `/ava/vendas` e ficam no ledger `Sale`; elas nao alteram `FinancialPayment.snapshotAmountCents` nem os snapshots historicos da mensalidade.
+Compras de produtos lancadas para pagamento mensal sao gerenciadas em `/ava/vendas` e ficam no ledger `Sale`; elas nao alteram `FinancialPayment.snapshotAmountCents` nem os snapshots historicos da mensalidade. Todo aluno ativo pode receber a compra: quando nao existe mensalidade aberta, o Financeiro mostra uma fatura separada somente de produtos, sem criar ou reabrir mensalidade.
 
 O perfil da Teacher mostra `Fatura pendente` somente quando existem vendas pessoais `MONTHLY_INVOICE`, concluidas e sem `paidAt`. O link abre a competencia financeira; o Admin confirma ou reabre o recebimento da equipe usando as vendas esperadas e o sistema registra a acao no `FinancialLog`.
 
@@ -44,7 +44,7 @@ Tabelas:
 - `FinancialPayment`
 - `FinancialExpense`
 - `FinancialLog`
-- `Sale` e `SaleItem` para compras pessoais da equipe
+- `Sale` e `SaleItem` para compras de produtos de alunos e da equipe
 
 Rota:
 
@@ -57,7 +57,8 @@ Rota:
 - `TEACHER` recebe somente leitura minimizada de todos os alunos ativos. O filtro de conta ativa e o `select` de dados acontecem no servidor; esconder campos no cliente nao e usado como barreira de seguranca.
 - A excecao de valor para `TEACHER` e estritamente pessoal: somente `Sale.buyerUserId=session.user.id`, `settlementType=MONTHLY_INVOICE` e `status=COMPLETED`; faturas de outros professores e vendas dos alunos nao entram nessa leitura.
 - Fatura pessoal de professor nao cria nem reutiliza `FinancialStudent`/`FinancialPayment`. `Mensalidade` aparece como `Nao se aplica`; itens do PDV aparecem como `Doces`.
-- Apenas `ADMIN` confirma ou reabre o recebimento da equipe. A action valida role e pertencimento de cada `Sale`, atualiza apenas os IDs esperados e registra `STAFF_INVOICE_PAID` ou `STAFF_INVOICE_REOPENED` no `FinancialLog`.
+- Apenas `ADMIN` confirma ou reabre faturas separadas de produtos. A action aceita somente comprador registrado `STUDENT` ou `TEACHER`, valida role e pertencimento de cada `Sale`, atualiza apenas os IDs esperados e registra eventos distintos de aluno ou equipe no `FinancialLog`.
+- Compra de aluno usa a mensalidade atual somente quando o `FinancialPayment` esta ativo e nao pago. Se estiver pago, fechado ou ausente, a venda permanece separada por `buyerStudentProfileId`, `buyerUserId`, ano e mes; assim, uma compra nova nunca faz uma mensalidade quitada voltar a parecer pendente.
 - A competencia da Teacher usa `FinancialPayment.snapshotName`, `snapshotUnit`, `snapshotPaymentDay`, `isPaid`, `paidAt` e `isActive`. Campos monetarios podem ser lidos apenas no servidor para calcular `Completar`, mas sao removidos pela projecao antes de chegar ao componente.
 - `STUDENT` nao acessa nenhuma superficie financeira.
 - O formulario de entrada carrega todos os `StudentProfile` dos polos Ivaté e Douradina para o Admin, mesmo quando o filtro principal da planilha esta em um polo especifico. A busca e o filtro do seletor acontecem somente sobre esses dados ja autorizados.

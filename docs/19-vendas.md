@@ -19,7 +19,7 @@ Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao
 - `src/components/ava/sales-pos-panel.tsx`: PDV, produtos e historico rapido com estorno.
 - `src/lib/sales-domain.ts`: normalizacao, competencia e calculos puros.
 - `src/lib/sales-history.ts`: busca normalizada e filtros do historico rapido.
-- `src/lib/staff-invoices.ts`: agrupamento seguro das faturas pessoais da equipe por competencia.
+- `src/lib/staff-invoices.ts`: agrupamento seguro das faturas separadas de produtos por comprador e competencia.
 - `src/lib/validations/sales.ts`: contratos Zod.
 - `prisma/migrations/20260823233000_add_sales_pos/migration.sql`: tabelas, indices, FKs e checks.
 - `prisma/migrations/20260831120000_add_teacher_personal_invoices/migration.sql`: vinculo opcional entre `Sale` e a conta compradora.
@@ -27,6 +27,8 @@ Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao
 O cadastro de produto abre em um painel expansivel dentro do fluxo da pagina. O formulario ocupa a largura disponivel, empilha os campos no mobile e nao usa sobreposicao absoluta, evitando que nome, custo, valor de venda, estoque ou botao de salvar sejam cortados pelo card do catalogo.
 
 O carrinho usa um unico campo de comprador. `Venda livre` aparece primeiro e aceita qualquer nome ou descricao digitada; abaixo ficam professores e alunos ativos, identificados por tipo e filtrados no mesmo campo por nome ou email. Ao escolher um aluno, o polo vem automaticamente do `StudentProfile`; para professor ou venda livre, a equipe escolhe o polo da compra.
+
+Produto ativo com estoque `0` continua visivel para permitir reposicao pelo editor, mas o card fica vermelho, mostra `Sem estoque` e `Indisponivel para venda`, remove o hover de disponibilidade e mantem o botao de adicionar desabilitado. O helper de dominio tambem impede inclusao programatica no carrinho; o servidor continua sendo a barreira final.
 
 ## Dados
 
@@ -45,7 +47,7 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 - Ao trocar ou remover a foto, o arquivo anterior e limpo depois que a atualizacao do banco termina com sucesso.
 - O runtime Docker leva os pacotes nativos `@img` da plataforma e o `sharp` so e carregado durante a conversao, preservando o health check das demais rotas.
 - `PAID_NOW` exige forma de pagamento e aceita aluno cadastrado ou nome avulso.
-- `MONTHLY_INVOICE` exige uma identidade registrada e uma `invoiceDueDate` dentro da competencia atual no fuso `America/Sao_Paulo`. Para aluno, exige `StudentProfile` ativo e mensalidade ativa ainda nao paga; para professor, exige `User role=TEACHER` ativo e grava a conta pessoal sem `FinancialPayment`.
+- `MONTHLY_INVOICE` exige uma identidade registrada e uma `invoiceDueDate` dentro da competencia atual no fuso `America/Sao_Paulo`. Para aluno, exige apenas `StudentProfile` ativo: se houver `FinancialPayment` ativo e nao pago, a venda e vinculada a ele; sem mensalidade aberta, a venda vira uma fatura somente de produtos, sem reabrir ou alterar a mensalidade. Para professor, exige `User role=TEACHER` ativo e grava a conta pessoal sem `FinancialPayment`.
 - Nome digitado livremente nunca cria divida mensal, pois nao existe identidade confiavel para cobrar depois.
 - Produto inativo, preco alterado ou estoque insuficiente interrompe toda a venda.
 - O cliente envia `expectedUpdatedAt` e `expectedSalePriceCents`; preco, estado, permissao e estoque sao relidos no servidor. Se a versao mudou, o checkout para e pede revisao, sem cobrar valor diferente do exibido.
@@ -54,9 +56,9 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 
 ## Financeiro e fatura mensal
 
-A compra mensal e uma cobranca do ledger `Sale`, identificada por `invoiceYear` e `invoiceMonth`. Quando o comprador e aluno, ela se vincula ao `FinancialPayment` ativo sem modificar `snapshotAmountCents`, status ou historico da mensalidade. Quando o comprador e professor, `buyerUserId` aponta para a conta pessoal e `financialPaymentId` fica nulo.
+A compra mensal e uma cobranca do ledger `Sale`, identificada por `invoiceYear` e `invoiceMonth`. Quando o comprador e aluno e existe mensalidade aberta, ela se vincula ao `FinancialPayment` sem modificar `snapshotAmountCents`, status ou historico. Quando a mensalidade esta paga, fechada ou ausente, `buyerStudentProfileId` e `buyerUserId` preservam o aluno e `financialPaymentId` fica nulo. Para professor, `buyerUserId` aponta para a conta pessoal e `financialPaymentId` tambem fica nulo.
 
-O Financeiro do aluno apresenta `Mensalidade`, `Produtos` e total consolidado. A fatura da equipe apresenta `Mensalidade: Nao se aplica`, `Doces` e `A pagar`. A Teacher ve apenas a propria conta; o Admin ve as contas da equipe e confirma/reabre o recebimento com registro no `FinancialLog`. O perfil da Teacher mostra um indicador clicavel enquanto existir valor pessoal pendente.
+O Financeiro do aluno apresenta `Mensalidade`, `Produtos` e total consolidado quando a compra esta vinculada a uma mensalidade aberta. Faturas separadas aparecem no bloco `Produtos de alunos e professores`, identificadas por role, com itens, pendencia e acao de confirmar/reabrir. A Teacher ve apenas a propria conta; o Admin confirma ou reabre essas cobrancas usando os IDs esperados e registra a acao no `FinancialLog`. O perfil da Teacher mostra um indicador clicavel enquanto existir valor pessoal pendente.
 
 `invoiceDueDate` registra o dia combinado para cobrar a compra dentro da fatura atual. Escolher outro dia nao move nem recria a mensalidade: a venda continua ligada ao mesmo `FinancialPayment` do mes. Datas fora do mes financeiro corrente sao recusadas no servidor.
 
@@ -66,7 +68,7 @@ Nao ha gateway nem cobranca online: a forma de pagamento informa apenas como a v
 
 O historico aparece no topo do PDV e lista as 40 vendas mais recentes autorizadas para a role. A busca localiza cliente, vendedor ou produto sem diferenciar acentos; os filtros separam todas, concluidas e estornadas. Admin ve o movimento geral e Teacher continua recebendo apenas as proprias vendas pelo filtro server-side.
 
-Venda concluida nao e apagada. O estorno exige motivo e confirmacao explicita, registra operador/data e bloqueia venda, fatura e reposicao de estoque na mesma transaction. Uma venda estornada nao pode ser estornada novamente. Compra mensal de aluno vinculada a uma competencia paga/fechada ou compra pessoal de professor ja quitada precisa ser reaberta pelo Admin antes do estorno.
+Venda concluida nao e apagada. O estorno exige motivo e confirmacao explicita, registra operador/data e bloqueia venda, fatura e reposicao de estoque na mesma transaction. Uma venda estornada nao pode ser estornada novamente. Compra vinculada a uma mensalidade paga/fechada ou fatura separada de aluno/professor ja quitada precisa ser reaberta pelo Admin antes do estorno.
 
 ## Concorrencia e riscos
 

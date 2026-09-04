@@ -92,3 +92,35 @@ export function isMonthlyInvoiceOpen(
 ) {
   return Boolean(payment?.isActive && !payment.isPaid);
 }
+
+export function getSaleProductAvailability(
+  product: { isActive: boolean; stockQuantity: number },
+  quantityInCart: number,
+) {
+  if (!product.isActive) return "INACTIVE" as const;
+  if (product.stockQuantity < 1) return "OUT_OF_STOCK" as const;
+  if (quantityInCart >= product.stockQuantity) return "LIMIT_REACHED" as const;
+  return "AVAILABLE" as const;
+}
+
+export function getStudentInvoiceDestination(
+  financialStudentId: string | null | undefined,
+  payment:
+    | { id: string; isActive: boolean; isPaid: boolean }
+    | null
+    | undefined,
+) {
+  if (financialStudentId && payment?.id && isMonthlyInvoiceOpen(payment)) {
+    return {
+      financialPaymentId: payment.id,
+      financialStudentId,
+      kind: "MONTHLY_PAYMENT" as const,
+    };
+  }
+
+  return {
+    financialPaymentId: null,
+    financialStudentId: financialStudentId ?? null,
+    kind: "PRODUCT_ONLY" as const,
+  };
+}

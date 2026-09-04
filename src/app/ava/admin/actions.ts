@@ -19,8 +19,8 @@ import { deleteAvatarImage } from "@/lib/storage";
 import { ensureStudentAdministrativeRecords } from "@/lib/student-administrative-linkage";
 import { getUserAnonymizationDate } from "@/lib/user-retention";
 import {
-  staffInvoiceSettlementSchema,
-  type StaffInvoiceSettlementInput,
+  productInvoiceSettlementSchema,
+  type ProductInvoiceSettlementInput,
 } from "@/lib/validations/sales";
 import {
   adminCredentialCreateSchema,
@@ -2059,23 +2059,23 @@ export async function recordFinancialExport(
   };
 }
 
-export async function settleStaffInvoice(
-  input: StaffInvoiceSettlementInput,
-): Promise<AdminActionResult<StaffInvoiceSettlementInput>> {
+export async function settleProductInvoice(
+  input: ProductInvoiceSettlementInput,
+): Promise<AdminActionResult<ProductInvoiceSettlementInput>> {
   const session = await requireAdmin();
 
   if (!session) {
     return {
       ok: false,
-      message: "Voce nao tem permissao para confirmar faturas da equipe.",
+      message: "Voce nao tem permissao para confirmar faturas de produtos.",
     };
   }
 
-  const parsed = staffInvoiceSettlementSchema.safeParse(input);
+  const parsed = productInvoiceSettlementSchema.safeParse(input);
 
   if (!parsed.success) {
     return {
-      errors: fieldErrors<StaffInvoiceSettlementInput>(parsed.error.issues),
+      errors: fieldErrors<ProductInvoiceSettlementInput>(parsed.error.issues),
       ok: false,
       message: "Revise as vendas selecionadas para a fatura.",
     };
@@ -2086,13 +2086,17 @@ export async function settleStaffInvoice(
   try {
     await prisma.$transaction(async (tx) => {
       const buyer = await tx.user.findFirst({
-        where: { id: parsed.data.buyerUserId, role: "TEACHER" },
-        select: { id: true, name: true },
+        where: {
+          id: parsed.data.buyerUserId,
+          role: { in: ["STUDENT", "TEACHER"] },
+        },
+        select: { id: true, name: true, role: true },
       });
       const sales = await tx.sale.findMany({
         where: { id: { in: parsed.data.saleIds } },
         select: {
           buyerUserId: true,
+          buyerStudentProfileId: true,
           financialPaymentId: true,
           id: true,
           invoiceMonth: true,
@@ -2106,10 +2110,14 @@ export async function settleStaffInvoice(
 
       if (!buyer || sales.length !== parsed.data.saleIds.length) {
         throw new AdminFinanceRuleError(
-          "A fatura mudou ou a conta do professor nao esta mais disponivel.",
+          "A fatura mudou ou a conta do comprador nao esta mais disponivel.",
         );
       }
 
+      const buyerProfileIsValid =
+        buyer.role === "STUDENT"
+          ? sales.every((sale) => Boolean(sale.buyerStudentProfileId))
+          : sales.every((sale) => !sale.buyerStudentProfileId);
       const hasInvalidSale = sales.some(
         (sale) =>
           sale.buyerUserId !== buyer.id ||
@@ -2121,7 +2129,7 @@ export async function settleStaffInvoice(
           (parsed.data.isPaid ? sale.paidAt !== null : sale.paidAt === null),
       );
 
-      if (hasInvalidSale) {
+      if (!buyerProfileIsValid || hasInvalidSale) {
         throw new AdminFinanceRuleError(
           "A fatura ja foi alterada. Atualize a tela antes de confirmar.",
         );
@@ -2130,8 +2138,12 @@ export async function settleStaffInvoice(
       const update = await tx.sale.updateMany({
         where: {
           buyerUserId: buyer.id,
+          financialPaymentId: null,
           id: { in: parsed.data.saleIds },
+          invoiceMonth: parsed.data.month,
+          invoiceYear: parsed.data.year,
           paidAt: parsed.data.isPaid ? null : { not: null },
+          settlementType: "MONTHLY_INVOICE",
           status: "COMPLETED",
         },
         data: { paidAt: parsed.data.isPaid ? new Date() : null },
@@ -2147,13 +2159,18 @@ export async function settleStaffInvoice(
         (total, sale) => total + sale.totalCents,
         0,
       );
+      const isStudentInvoice = buyer.role === "STUDENT";
       await tx.financialLog.create({
         data: {
           action: parsed.data.isPaid
-            ? "STAFF_INVOICE_PAID"
-            : "STAFF_INVOICE_REOPENED",
+            ? isStudentInvoice
+              ? "STUDENT_PRODUCT_INVOICE_PAID"
+              : "STAFF_INVOICE_PAID"
+            : isStudentInvoice
+              ? "STUDENT_PRODUCT_INVOICE_REOPENED"
+              : "STAFF_INVOICE_REOPENED",
           createdByUserId: session.user.id,
-          description: `${parsed.data.isPaid ? "Fatura da equipe confirmada" : "Fatura da equipe reaberta"}: ${buyer.name}, ${parsed.data.month}/${parsed.data.year}, ${sales.length} venda(s), ${totalCents} centavos.`,
+          description: `${parsed.data.isPaid ? "Fatura de produtos confirmada" : "Fatura de produtos reaberta"}: ${buyer.name}, ${parsed.data.month}/${parsed.data.year}, ${sales.length} venda(s), ${totalCents} centavos.`,
         },
       });
     });
@@ -2163,7 +2180,7 @@ export async function settleStaffInvoice(
       message:
         error instanceof AdminFinanceRuleError
           ? error.message
-          : "Nao foi possivel atualizar a fatura da equipe.",
+          : "Nao foi possivel atualizar a fatura de produtos.",
     };
   }
 
@@ -2174,8 +2191,8 @@ export async function settleStaffInvoice(
   return {
     ok: true,
     message: parsed.data.isPaid
-      ? "Fatura da equipe marcada como paga."
-      : "Fatura da equipe reaberta como pendente.",
+      ? "Fatura de produtos marcada como paga."
+      : "Fatura de produtos reaberta como pendente.",
   };
 }
 

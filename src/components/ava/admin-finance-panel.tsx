@@ -70,7 +70,7 @@ import {
 import { suggestStudentAccess } from "@/lib/finance-student-access";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { AdminStaffInvoicesSection } from "@/components/ava/admin-staff-invoices-section";
+import { AdminProductInvoicesSection } from "@/components/ava/admin-staff-invoices-section";
 import {
   Field,
   FieldError,
@@ -175,7 +175,7 @@ export type AdminFinanceLogRow = {
   studentName: string | null;
 };
 
-export type AdminStaffInvoiceSale = StaffInvoiceSale;
+export type AdminProductInvoiceSale = StaffInvoiceSale;
 
 type FinanceMonthRow = AdminFinanceStudentRow & {
   isOverdue: boolean;
@@ -193,7 +193,7 @@ type AdminFinancePanelProps = {
   initialUnitFilter?: SecretariaUnitFilter;
   logs: AdminFinanceLogRow[];
   nowIso: string;
-  staffInvoiceSales: AdminStaffInvoiceSale[];
+  standaloneInvoiceSales: AdminProductInvoiceSale[];
   students: AdminFinanceStudentRow[];
 };
 
@@ -1826,7 +1826,7 @@ export function AdminFinancePanel({
   initialUnitFilter,
   logs,
   nowIso,
-  staffInvoiceSales,
+  standaloneInvoiceSales,
   students,
 }: AdminFinancePanelProps) {
   const router = useRouter();
@@ -2470,9 +2470,9 @@ export function AdminFinancePanel({
               />
             </div>
 
-            <AdminStaffInvoicesSection
+            <AdminProductInvoicesSection
               month={activeMonth}
-              sales={staffInvoiceSales}
+              sales={standaloneInvoiceSales}
               unitFilter={unitFilter}
             />
 
