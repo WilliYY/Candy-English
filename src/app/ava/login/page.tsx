@@ -2,19 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Home } from "lucide-react";
+import { ArrowUpRight, BookOpen, Headphones, MessageCircle, Sparkles } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { isMaintenanceModeEnabled } from "@/lib/app-settings";
 import { getDefaultAvaPath, isRole } from "@/lib/roles";
 import { LoginForm } from "@/components/ava/login-form";
+import { LoginExperience } from "@/components/ava/login-experience";
 import { BrandLogo } from "@/components/site/brand-logo";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import styles from "./login.module.css";
 
-export const metadata: Metadata = {
-  title: "Login AVA",
-};
-
+export const metadata: Metadata = { title: "Login AVA" };
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -29,92 +26,50 @@ export default async function LoginPage() {
   }
 
   return (
-    <section className="candy-deep relative isolate flex min-h-screen min-w-0 flex-col overflow-hidden px-5 py-6 text-white sm:px-8">
-      <video
-        aria-hidden="true"
-        className="absolute inset-0 z-0 h-full w-full object-cover opacity-75"
-        autoPlay
-        loop
-        muted
-        playsInline
-        preload="metadata"
-      >
-        <source src="/brand/ava-login.mp4" type="video/mp4" />
-      </video>
-      <div className="absolute inset-0 z-[1] bg-[#2c1338]/72" />
-      <div className="candy-kinetic-grid absolute inset-0 z-[2] opacity-55" />
-
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
-        <div className="rounded-full bg-white/95 px-5 py-2.5 shadow-xl shadow-black/10 ring-1 ring-white/70">
-          <BrandLogo
-            animated={false}
-            className="h-14 w-[220px] overflow-hidden rounded-full sm:h-16 sm:w-[270px]"
-            imageClassName="w-[210px] scale-100 group-hover:scale-[1.015] sm:w-[245px]"
-          />
+    <LoginExperience>
+      <header className={styles.header}>
+        <div className={styles.logo}>
+          <BrandLogo animated={false} className="h-12 w-36 overflow-hidden sm:h-14 sm:w-52" imageClassName="w-36 sm:w-52" />
         </div>
-        <Button
-          asChild
-          variant="outline"
-          className="rounded-full border-white/35 bg-white/90 text-primary shadow-lg shadow-black/10 hover:bg-white hover:text-primary"
-        >
-          <Link href="/">
-            <Home data-icon="inline-start" />
-            Home
-          </Link>
-        </Button>
-      </div>
+        <Link href="/" className={styles.homeLink}>
+          <span>Ir para o site</span><ArrowUpRight aria-hidden="true" size={18} />
+        </Link>
+      </header>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 py-8 lg:grid-cols-[0.85fr_1fr]">
-        <div className="hidden max-w-lg flex-col gap-8 lg:flex">
-          <BrandLogo
-            className="candy-logo-soft h-24 w-[360px] overflow-visible"
-            imageClassName="w-[430px] brightness-[1.32] saturate-[1.18] drop-shadow-[0_18px_34px_rgb(255_255_255_/_0.16)]"
-            variant="light"
-          />
-          <div className="flex flex-col gap-4">
-            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-white/65">
-              Candy English AVA
-            </p>
-            <h1 className="text-5xl font-semibold leading-[1.02] tracking-normal">
-              Entre e continue seus estudos.
-            </h1>
+      <div className={styles.layout}>
+        <div className={styles.welcome}>
+          <p className={styles.eyebrow}><span /> SEU ESPAÇO CANDY</p>
+          <h1 className={styles.headline}>
+            Seu próximo<br /><em lang="en">Hello!</em><br />começa aqui.
+          </h1>
+          <p className={styles.intro}>Um pouquinho de prática. Muitas novas possibilidades. Vamos continuar seu inglês?</p>
+          <div className={styles.conversation} aria-hidden="true">
+            <div className={styles.englishBubble}><MessageCircle size={21} /><span lang="en">Ready for a sweet start?</span><Sparkles size={18} /></div>
+            <div className={styles.replyBubble}>Sempre! <span lang="en">Let&apos;s go.</span><ArrowUpRight size={20} /></div>
           </div>
+          <ul className={styles.features} aria-label="No seu AVA">
+            <li><BookOpen aria-hidden="true" size={17} /> Suas aulas</li>
+            <li><Headphones aria-hidden="true" size={17} /> Sua prática</li>
+            <li><Sparkles aria-hidden="true" size={17} /> Seu progresso</li>
+          </ul>
         </div>
 
-        <div className="flex min-w-0 justify-center lg:justify-end">
-          <Card className="w-full min-w-0 max-w-md border-white/70 bg-white/96 shadow-2xl shadow-black/20">
-            <CardHeader>
-              <CardTitle className="text-2xl">Entrar no AVA</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {maintenanceMode ? (
-                <div className="mb-5 rounded-lg border border-primary/20 bg-primary/10 p-4 text-sm leading-6 text-primary">
-                  Manutencao Candy ativa: alunos entram novamente quando a
-                  manutencao terminar. Admins e teachers podem acessar
-                  normalmente.
-                </div>
-              ) : null}
-              <Suspense
-                fallback={
-                  <p className="text-sm text-muted-foreground">Carregando...</p>
-                }
-              >
-                <LoginForm maintenanceMode={maintenanceMode} />
-              </Suspense>
-              <p className="mt-5 border-t border-primary/10 pt-4 text-center text-xs leading-5 text-muted-foreground">
-                Ao acessar, consulte como protegemos seus dados em{" "}
-                <Link
-                  className="font-bold text-primary underline decoration-primary/25 underline-offset-4 hover:decoration-primary"
-                  href="/privacidade"
-                >
-                  Privacidade e cookies
-                </Link>
-                .
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        <section className={styles.panel} aria-labelledby="login-title">
+          <div className={styles.panelAccent} aria-hidden="true"><span /><span /><span /></div>
+          <div className={styles.panelBody}>
+            <p className={styles.panelEyebrow}>BOM TER VOCÊ AQUI</p>
+            <h2 id="login-title" className={styles.panelTitle}>Entrar no AVA</h2>
+            <p className={styles.panelDescription}>Entre com seu e-mail e senha para continuar.</p>
+            {maintenanceMode ? (
+              <p role="status" className={styles.maintenance}>Manutenção Candy ativa: alunos entram novamente quando a manutenção terminar. Admins e professores podem acessar normalmente.</p>
+            ) : null}
+            <Suspense fallback={<p role="status" className="py-6 text-sm text-muted-foreground">Carregando acesso...</p>}>
+              <LoginForm maintenanceMode={maintenanceMode} />
+            </Suspense>
+            <p className={styles.privacy}>Seus dados têm cuidado por aqui.<br /><Link href="/privacidade">Privacidade e cookies</Link></p>
+          </div>
+        </section>
       </div>
-    </section>
+    </LoginExperience>
   );
 }

@@ -12,6 +12,7 @@ export const loginSchema = z.object({
     .min(1, "Informe sua senha.")
     .min(8, "A senha precisa ter pelo menos 8 caracteres.")
     .max(128, "A senha precisa ter no maximo 128 caracteres."),
+  // Accepted only for compatibility with older mobile clients; login no longer uses it.
   mfaCode: z
     .string()
     .trim()

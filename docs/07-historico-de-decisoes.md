@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-08 - Login apenas com senha e nova interface Candy
+
+- Decisao: retirar o campo de codigo e a exigencia MFA do login web/mobile, inclusive de administradores ja inscritos; remover painel e actions de configuracao. Manter o schema do banco e registros cifrados legados, sem uso na autenticacao.
+- Motivo: pedido explicito do responsavel para remover o codigo de seguranca e deixar a tela mais bonita e animada.
+- Impacto: `password-auth.ts`, Credentials Provider, formulario/login, painel Admin, smoke de acesso, docs de seguranca e CSS isolado da pagina. O formulario preserva React Hook Form/Zod, visibilidade de senha, callback seguro, WhatsApp e privacidade. Movimento e decorativo, pausavel e desativado por preferencia do navegador.
+- Riscos/cuidados: segundo fator deixa de proteger senhas vazadas; validar credencial, role, conta ativa, manutencao, limitadores e sessoes segue obrigatorio. Nenhuma senha, registro MFA ou sessao existente e apagada. O smoke usa Admin temporario com MFA legado para provar que nao fica bloqueado.
+
 ### 2026-09-04 - Fatura de produtos para todo aluno ativo
 
 - Decisao: permitir que todo `StudentProfile` ativo receba compra `MONTHLY_INVOICE`; usar o `FinancialPayment` somente quando estiver ativo e nao pago e, nos demais casos, manter uma fatura separada apenas de produtos. Produtos com estoque zero permanecem editaveis, mas ganham card vermelho e nao podem entrar no carrinho.

@@ -53,9 +53,12 @@ const checks: SmokeCheck[] = [
     },
   },
   {
-    name: "ava login",
+    name: "ava login email and password only",
     path: "/ava/login",
-    expect: (response) => response.ok,
+    expect: async (response) => {
+      const html = await response.text();
+      return response.ok && html.includes('id="email"') && html.includes('id="password"') && !html.includes('id="mfaCode"') && html.includes('href="/privacidade"');
+    },
   },
   {
     name: "site sobre",

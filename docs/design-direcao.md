@@ -46,6 +46,13 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 
 Os assets de marca ficam em arquivos estaticos. Nao colocar logos dentro de codigo como string.
 
+## Login AVA (2026-09-08)
+
+- Composicao em duas colunas: frase `Seu proximo Hello! comeca aqui` e baloes de pratica de ingles a esquerda; formulario claro e contido a direita. No celular, titulo compacto e formulario em uma coluna, sem decoracoes entre os campos.
+- Paleta usa roxo profundo/principal, rosa energia, coral, fundo claro e texto auxiliar existentes. `Hello!` usa Georgia italica local como destaque; campos/textos seguem a fonte do projeto com fallback de sistema.
+- Campos email/senha com 48px, icones, foco visivel, senha revelavel, CTA forte e bloco secundario de WhatsApp. Codigo de seguranca e configuracao MFA foram retirados por pedido do responsavel; detalhes em `08-autenticacao-e-permissoes.md`.
+- CSS fica em `src/app/ava/login/login.module.css`. `LoginExperience` controla video e movimento com pausa explicita e `prefers-reduced-motion`; somente baloes decorativos flutuam. Reserva inferior permite rolar os controles para fora da area da Catty.
+
 ## Movimento
 
 Movimentos permitidos nesta fase:
@@ -56,8 +63,8 @@ Movimentos permitidos nesta fase:
 - video da home reaproveitado no bloco final de contato, com overlay claro e footer invadindo a secao; o efeito gooey do rodape deve sobrepor o video sem faixa, linha divisoria dura ou degradê de transicao;
 - segunda secao da home com video em loop e cards translucidos, sem esconder conteudo;
 - paginas informativas com video em loop no fundo e overlay roxo para leitura; o video deve ser lazy/condicional, montar apenas quando o navegador estiver ocioso, tocar apenas em telas a partir de tablet quando `prefers-reduced-motion` permitir, pausar fora da viewport e manter fallback estatico para reduzir lag;
-- video fullscreen em loop no login do AVA, mantendo overlay roxo para foco no formulario;
-- logo Candy em loop no header da home e nas paginas internas do site (`/sobre`, `/metodologia`, `/contato`), no topo do AVA, na marca principal do login, em manutencao e no footer por `BrandLogo`, usando WebM transparente, poster PNG para `prefers-reduced-motion` e dimensoes estaveis com `object-contain`; no header da home e nas paginas internas do site, a logo usa uma janela arredondada com `overflow-hidden`, altura maior e escala interna menor para a animacao da bala continuar sem escapar nem cortar na barra branca; no topo interno do AVA a logo animada usa janela arredondada mais alta com `overflow-hidden`, escala controlada e hover leve para aparecer inteira sem passar do limite da sidebar; no topo do login do AVA a logo deve ficar estatica para evitar duas animacoes simultaneas na primeira tela;
+- video fullscreen suave no login do AVA, com overlay roxo e botao `Pausar animacoes`; so monta quando movimento esta permitido;
+- logo Candy em loop no header da home e nas paginas internas do site (`/sobre`, `/metodologia`, `/contato`), no topo do AVA, em manutencao e no footer por `BrandLogo`, usando WebM transparente, poster PNG para `prefers-reduced-motion` e dimensoes estaveis com `object-contain`; no header da home e nas paginas internas do site, a logo usa uma janela arredondada com `overflow-hidden`, altura maior e escala interna menor para a animacao da bala continuar sem escapar nem cortar na barra branca; no topo interno do AVA a logo animada usa janela arredondada mais alta com `overflow-hidden`, escala controlada e hover leve para aparecer inteira sem passar do limite da sidebar; o login usa uma unica logo estatica no topo para priorizar a leitura do formulario;
 - entrada curta de headline, texto e botoes no hero;
 - grid cinetico muito leve no hero;
 - cards flutuantes com movimento lento;

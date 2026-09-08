@@ -10,15 +10,15 @@ Este documento registra o que protege o Candy English, o que depende da infraest
 |---|---|---|---|
 | 1 | Protecao contra DDoS | Externo pendente | O app fica atras do proxy Oracle, mas absorcao de ataque volumetrico exige CDN/anti-DDoS antes do servidor. Ativar Cloudflare ou equivalente sem expor o IP de origem. |
 | 2 | WAF | Externo pendente | CSP e validacao no app nao substituem WAF. Ativar regras gerenciadas OWASP no provedor de borda, primeiro em modo de observacao. |
-| 3 | Rate limiting | Parcial | Login web/mobile e reautenticacao do 2FA limitam 8 falhas por conta e 30 por origem em 15 minutos. Limite geral por rota/IP deve ser feito na borda para nao sobrecarregar o Node. |
-| 4 | Brute force e credential stuffing | Implementado no login | Resposta generica, hash ficticio para email inexistente, locks transacionais, limite por conta/origem e MFA opcional para Admin. Alertas agregados usam `LoginAttempt`. |
-| 5 | MFA/2FA de administradores | Implementado, adesao manual | Cada Admin ativa TOTP em `Seguranca e acessos`; segredo cifrado, recuperacoes em HMAC, anti-replay e reautenticacao limitada. Nao forcar antes de todos guardarem recuperacoes. |
+| 3 | Rate limiting | Parcial | Login web/mobile limita 8 falhas por conta e 30 por origem em 15 minutos. Limite geral por rota/IP deve ser feito na borda para nao sobrecarregar o Node. |
+| 4 | Brute force e credential stuffing | Implementado no login | Resposta generica, hash ficticio para email inexistente, locks transacionais e limite por conta/origem. Alertas agregados usam `LoginAttempt`. |
+| 5 | MFA/2FA de administradores | Retirado por pedido em 2026-09-08 | Todas as roles usam email e senha. Campo, verificacao TOTP e painel/actions removidos; registros antigos cifrados ficam preservados e inertes. Senha vazada nao tem mais a barreira de segundo fator. |
 | 6 | Controle de acesso e permissoes | Implementado no app | `auth()` e role sao validados nas actions/rotas, com autorizacao por dado para aluno/teacher/admin. UI escondida nunca e a unica barreira. |
 | 7 | Protecao das APIs | Parcial forte | Rotas privadas autenticam, validam payload com Zod, limitam login e evitam IDs livres. WAF/rate limit de borda e inventario periodico continuam necessarios. |
 | 8 | SQL Injection, XSS e CSRF | Implementado por padrao, revisar continuamente | Prisma parametriza consultas, React escapa texto, Auth.js protege o fluxo de credenciais e CSP reduz impacto de XSS. Toda query raw, HTML injetado e nova action exigem revisao. |
 | 9 | Sessoes e cookies | Implementado | Auth.js usa sessao assinada, cookies seguros em HTTPS e `sessionVersion` para revogacao; sessoes moveis guardam hashes e possuem rotacao/revogacao. |
 | 10 | Banco nao exposto | Implementado no Compose | PostgreSQL nao publica porta no host; somente a rede Docker acessa. O app publica em `127.0.0.1` por padrao. Firewall Oracle deve manter 5432 fechado. |
-| 11 | Senhas, chaves e `.env` | Implementado no repositorio | `.env`, `private/`, segredos e uploads sao ignorados. Senhas usam bcrypt; cofre e TOTP usam cifra autenticada; respostas/logs nao exibem valores. Segredos reais ficam apenas no servidor. |
+| 11 | Senhas, chaves e `.env` | Implementado no repositorio | `.env`, `private/`, segredos e uploads sao ignorados. Senhas usam bcrypt; cofre e registros MFA legados usam cifra autenticada; respostas/logs nao exibem valores. Segredos reais ficam apenas no servidor. |
 | 12 | Logs, monitoramento e alertas | Implementado local; notificacao configuravel | `monitor-production.sh` verifica health, containers, disco, backup e pico de falhas. Cron envia ao journal; webhook HTTPS opcional entrega alerta externo. |
 | 13 | Backup e recuperacao | Implementado local; copia externa pendente | Backup cifra banco+storage, valida checksums e possui restore drill isolado. Ainda e obrigatoria uma copia externa/imutavel com credencial e retencao proprias. |
 | 14 | Dependencias e correcoes | Automatizado | CI valida schema, testes, tipos, lint, build e bloqueia vulnerabilidade critica. Dependabot abre atualizacoes semanais. Alertas presos ao Prisma nao devem ser resolvidos por downgrade forcado. |
@@ -75,7 +75,7 @@ Alterar nameserver, firewall ou IP de origem sem acesso de recuperacao pode derr
 - A cada 5 minutos: monitor de health/containers/disco/backup/login.
 - Diariamente: backup criptografado e verificacao.
 - Semanalmente: restore drill e triagem do Dependabot/auditoria.
-- Mensalmente: revisar usuarios Admin, 2FA, portas publicas, logs e restaurabilidade externa.
+- Mensalmente: revisar usuarios Admin, acessos, portas publicas, logs e restaurabilidade externa.
 - Anualmente ou apos mudanca critica: pentest autenticado independente.
 
 ## Resposta a incidente

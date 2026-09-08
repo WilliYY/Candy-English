@@ -6,11 +6,7 @@ import {
   buildAvaCallbackUrl,
   getSafeAvaCallbackUrl,
 } from "../src/lib/ava-callback-url";
-import {
-  createTotpCode,
-  encryptMfaSecret,
-  getTotpTimeStep,
-} from "../src/lib/mfa";
+import { encryptMfaSecret } from "../src/lib/mfa";
 
 type SmokeRole = "ADMIN" | "TEACHER" | "STUDENT";
 
@@ -173,7 +169,7 @@ async function assertCattyChatAccess(
 
 async function signInWithCredentials(
   email: string,
-  mfaCode?: string,
+  password = testPassword,
   shouldAuthenticate = true,
 ) {
   const csrfResponse = await fetch(buildUrl("/api/auth/csrf"));
@@ -194,12 +190,8 @@ async function signInWithCredentials(
     csrfToken,
     email,
     json: "true",
-    password: testPassword,
+    password,
   });
-
-  if (mfaCode) {
-    body.set("mfaCode", mfaCode);
-  }
 
   const loginResponse = await fetch(buildUrl("/api/auth/callback/credentials"), {
     body,
@@ -231,7 +223,7 @@ async function signInWithCredentials(
   }
 
   if (!shouldAuthenticate && authenticatedEmail) {
-    throw new Error("Admin com 2FA entrou sem codigo de seguranca.");
+    throw new Error("Credenciais bloqueadas criaram uma sessao indevida.");
   }
 
   return cookie;
@@ -1100,16 +1092,14 @@ async function main() {
     const email = roleEmails[index];
 
     const user = await createSmokeUser(role, email);
-    if (role === "ADMIN") {
-      await signInWithCredentials(email, undefined, false);
-      console.log("OK admin MFA rejects login without code");
-    }
-    const cookie = await signInWithCredentials(
-      email,
-      role === "ADMIN"
-        ? createTotpCode(adminMfaSecret, getTotpTimeStep())
-        : undefined,
-    );
+    await signInWithCredentials(email, `${testPassword}-wrong`, false);
+    await prisma.user.update({ where: { id: user.id }, data: { isActive: false } });
+    await signInWithCredentials(email, testPassword, false);
+    await prisma.user.update({ where: { id: user.id }, data: { isActive: true } });
+    console.log(`OK invalid password and inactive account blocked ${role.toLowerCase()}`);
+    // The admin fixture deliberately keeps a legacy MFA record to catch lockouts.
+    const cookie = await signInWithCredentials(email);
+    if (role === "ADMIN") console.log("OK admin with legacy MFA logs in with password only");
     await assertRoleRedirect(role, cookie);
     await assertAreaChoiceShell(role, cookie);
     await assertTimeClockPermissions(role, cookie, user.id);

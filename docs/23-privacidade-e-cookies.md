@@ -15,7 +15,7 @@ O canal informado ao titular e `candyenglishbr@gmail.com`, com assunto recomenda
 - `src/components/site/catty-widget.tsx`: aviso contextual antes do envio de mensagens para IA.
 - `src/lib/interactive-homework-draft-storage.ts`: validade e limpeza da copia local de atividades.
 - `src/components/ava/sign-out-button.tsx`: limpeza das copias locais no logout comum.
-- `src/components/ava/admin-mfa-panel.tsx`: mesma limpeza quando a desativacao de MFA encerra a sessao.
+- O painel MFA foi retirado em 2026-09-08; a limpeza de rascunhos continua no logout normal.
 
 ## Regras que precisam ser preservadas
 

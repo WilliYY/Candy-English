@@ -14,7 +14,7 @@ Fase atual documentada: FASE 32.
 
 Ja existe:
 
-- login real com Auth.js/NextAuth v5, JWT, Credentials Provider, senha com `bcryptjs` e revogacao de sessao por versao de usuario;
+- login real com Auth.js/NextAuth v5, JWT, Credentials Provider, somente email/senha para todas as roles, senha com `bcryptjs` e revogacao de sessao por versao de usuario; tela Candy responsiva com animacoes pausaveis e movimento reduzido;
 - roles `ADMIN`, `TEACHER` e `STUDENT`;
 - protecao de rotas em servidor para `/ava/admin`, `/ava/teacher` e `/ava/student`;
 - escolha pos-login limpa para `ADMIN` e `TEACHER`, separando `AVA`, `Secretaria` e `Financeiro` antes de carregar a sidebar de trabalho; o Financeiro da Teacher mostra a situacao mensal de todos os alunos ativos sem valores e, separadamente, a propria fatura de doces com itens e total; `STUDENT` entra direto no AVA Student;

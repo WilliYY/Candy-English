@@ -38,7 +38,6 @@ import {
   AdminCredentialsPanel,
   type AdminCredentialRow,
 } from "@/components/ava/admin-credentials-panel";
-import { AdminMfaPanel } from "@/components/ava/admin-mfa-panel";
 import {
   CattyLearningCenterPanel,
   type CattyLearningFeedbackRow,
@@ -223,7 +222,6 @@ type UserInsightMetric = {
 type AdminUsersPanelProps = {
   activeTask: AdminTask;
   adminCredentials: AdminCredentialRow[];
-  adminMfaEnabledAt: string | null;
   candyXpActivities: AdminCandyXpActivityRow[];
   cattyArtifactData: CattyArtifactManagementData;
   cattyLearningFeedbacks: CattyLearningFeedbackRow[];
@@ -1527,7 +1525,6 @@ function ContractsList({ contracts }: { contracts: AdminContractRow[] }) {
 export function AdminUsersPanel({
   activeTask,
   adminCredentials,
-  adminMfaEnabledAt,
   candyXpActivities,
   cattyArtifactData,
   cattyLearningFeedbacks,
@@ -1907,10 +1904,6 @@ export function AdminUsersPanel({
 
           {activeTask === "apis-senhas" ? (
             <div className="grid gap-5">
-              <AdminMfaPanel
-                email={currentUser.email}
-                enabledAt={adminMfaEnabledAt}
-              />
               <AdminCredentialsPanel credentials={adminCredentials} />
             </div>
           ) : null}

@@ -94,9 +94,9 @@ Helpers:
 
 1. Usuario entra em `/ava/login`.
 2. O proxy reverso entrega `X-Real-IP`; o app deriva somente um HMAC irreversivel da origem usando `AUTH_SECRET` e nao grava o IP bruto.
-3. Auth.js valida email, senha, usuario ativo e manutencao. Se a conta `ADMIN` ativou 2FA, tambem exige TOTP novo ou codigo de recuperacao; a mesma resposta generica cobre credencial incorreta, 2FA incorreto ou limite atingido.
+3. Auth.js valida email, senha, usuario ativo e manutencao para todas as roles. Desde 2026-09-08, codigo de seguranca/2FA nao faz parte do login, inclusive para Admins com registro MFA antigo. A mesma resposta generica cobre credencial incorreta ou limite atingido.
 4. Em 15 minutos, 8 falhas para o mesmo email ou 30 falhas para a mesma origem bloqueiam novas tentativas; a protecao vale para login web e mobile e os registros expiram apos 24 horas.
-5. TOTP aceito grava o passo de tempo para impedir reutilizacao; codigo de recuperacao aceito e removido na mesma transaction.
+5. A tela mostra apenas email e senha, controle de visibilidade da senha, erros junto aos campos e CTA de WhatsApp. O fundo em video e os baloes decorativos podem ser pausados e respeitam `prefers-reduced-motion`; os campos permanecem estaveis.
 6. Sessao JWT recebe `id` e `role`.
 7. `ADMIN` e `TEACHER` vao para `/ava/escolha`; ambos veem `AVA`, `Secretaria` e `Financeiro`, mas a Teacher abre apenas o acompanhamento sem valores de todos os alunos ativos.
 8. `STUDENT` nao ve a escolha e entra direto em `/ava/student`.

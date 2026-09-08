@@ -51,7 +51,6 @@ const providers: NextAuthConfig["providers"] = [
     credentials: {
       email: { label: "Email", type: "email" },
       password: { label: "Senha", type: "password" },
-      mfaCode: { label: "Codigo 2FA", type: "text" },
     },
     authorize: async (credentials, request) => {
       const parsed = loginSchema.safeParse(credentials);
