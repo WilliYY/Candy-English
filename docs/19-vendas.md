@@ -96,3 +96,10 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:sales-i
 ```
 
 O smoke usa contas, produto, mensalidades e vendas temporarias exclusivas; verifica permissao, checkout real, total discriminado, idempotencia, mes pago/inativo, proxima fatura indisponivel, estorno e estoque zero, limpando somente seus proprios dados em `finally`. Nao usa produtos nem cobrancas reais.
+
+### Evidencia da correcao em 09/09/2026
+
+- Antes da correcao, o smoke HTTP reproduziu o erro no checkout da mensalidade; o rollback e a limpeza das fixtures funcionaram.
+- Commit `a535750`: `test:sales` 34/34 e `test:mobile-homework` 261/261; schema, tipos, lint e builds Windows/Docker aprovados.
+- Na imagem candidata interna do Oracle (sem porta publica), `audit:sales-invoice` passou em todos os cenarios acima, incluindo duas requisicoes simultaneas com o mesmo `operationId`. Fixtures e container foram removidos.
+- Publicacao condicionada a atualizacao de seguranca documentada em `docs/11-seguranca.md`; build aprovado nao substitui o gate de vulnerabilidades.

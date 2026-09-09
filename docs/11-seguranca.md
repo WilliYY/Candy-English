@@ -24,6 +24,16 @@ Este documento registra o que protege o Candy English, o que depende da infraest
 | 14 | Dependencias e correcoes | Automatizado | CI valida schema, testes, tipos, lint, build e bloqueia vulnerabilidade critica. Dependabot abre atualizacoes semanais. Alertas presos ao Prisma nao devem ser resolvidos por downgrade forcado. |
 | 15 | Pentest periodico | Processo externo pendente | Contratar teste autenticado ao menos anual e apos mudanca importante em auth, financeiro ou upload. Corrigir por severidade e repetir o teste das falhas encontradas. |
 
+## Atualizacao de dependencias em 09/09/2026
+
+A auditoria bloqueou a entrega de vendas por avisos criticos no Next.js 15.5.22. Foram fixadas as versoes `next`/`eslint-config-next` em `15.5.25` e `sharp` (incluindo override) em `0.35.4`, mantendo Next.js 15 e sem migration. A atualizacao cobre o processamento de imagens do framework e o uso direto do Sharp em uploads. Nao usar `npm audit fix --force` nem reduzir o gate critico para contornar o alerta.
+
+Referencias oficiais: [Next.js / AVIF](https://github.com/vercel/next.js/security/advisories/GHSA-2xp9-vwfh-vxw4), [Next.js / Windows](https://github.com/vercel/next.js/security/advisories/GHSA-p293-qw3h-jr36), [Sharp 0.35.4](https://github.com/lovell/sharp/releases/tag/v0.35.4).
+
+Validar auditoria, testes unitarios (incluindo conversao de imagens), tipos, lint e build; em Docker, validar checkout, login, avatar e health. Alertas altos remanescentes devem ser triados separadamente, sem downgrade forcado do Prisma.
+
+Auditoria local apos a atualizacao: `npm audit --audit-level=critical` retornou `0`, com zero criticos e 12 alertas altos transitivos (`brace-expansion`/ESLint, `deepmerge-ts`/Prisma e `mysql2`). Este resultado nao significa ausencia de riscos. O projeto usa PostgreSQL; atualizar Prisma por downgrade automatico para resolver a auditoria nao foi autorizado nem aplicado.
+
 ## Monitoramento no Oracle
 
 O script `scripts/monitor-production.sh` nao altera dados. Ele retorna `0` quando tudo esta normal e `1` quando encontra indisponibilidade, container parado, disco alto, backup antigo ou muitas falhas de login.
