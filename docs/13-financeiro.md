@@ -8,7 +8,7 @@ A Teacher ve todos os alunos ativos e apenas nome, polo do snapshot, situacao me
 
 Ele organiza mensalidades e parcelas de 2026 por aluno financeiro, mantendo cada mes como um snapshot proprio para que meses anteriores funcionem como historico fechado. Cada aluno financeiro pertence a uma das unidades fixas: `Unidade 1 Ivaté` ou `Unidade 2 Douradina`.
 
-Compras de produtos lancadas para pagamento mensal sao gerenciadas em `/ava/vendas` e ficam no ledger `Sale`; elas nao alteram `FinancialPayment.snapshotAmountCents` nem os snapshots historicos da mensalidade. Todo aluno ativo pode receber a compra: quando nao existe mensalidade aberta, o Financeiro mostra uma fatura separada somente de produtos, sem criar ou reabrir mensalidade.
+Compras de produtos lancadas para pagamento mensal sao gerenciadas em `/ava/vendas` e ficam no ledger `Sale`; elas nao alteram `FinancialPayment.snapshotAmountCents` nem os snapshots historicos da mensalidade. A compra entra na mensalidade aberta atual; se a atual estiver paga/inativa, entra na aberta do mes seguinte. A proxima ausente/paga/inativa bloqueia o checkout com orientacao ao Admin, sem criar/reabrir mensalidades automaticamente. Aluno sem mensalidade atual mantem a cobranca separada somente de produtos. Detalhe e historico discriminam nome completo, unidades, preco unitario e subtotal de cada produto, junto de mensalidade, produtos e total.
 
 O perfil da Teacher mostra `Fatura pendente` somente quando existem vendas pessoais `MONTHLY_INVOICE`, concluidas e sem `paidAt`. O link abre a competencia financeira; o Admin confirma ou reabre o recebimento da equipe usando as vendas esperadas e o sistema registra a acao no `FinancialLog`.
 

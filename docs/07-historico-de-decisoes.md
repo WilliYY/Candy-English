@@ -16,6 +16,13 @@ Cada decisao deve conter:
 
 ## Decisoes registradas
 
+### 2026-09-08 - Doces na mensalidade aberta ou na proxima competencia
+
+- Corrigida a coluna do lock no checkout (`FinancialPayment.studentId`) e adicionada regressao HTTP com venda real sobre fixtures temporarias.
+- Aluno com mensalidade aberta recebe os produtos nessa fatura; atual paga/inativa direciona para a proxima aberta. Se a proxima nao estiver disponivel, o Admin deve revisar o cadastro, sem inventar mensalidade ou consumir estoque.
+- Carrinho mostra competencia e vencimento automaticamente; Financeiro discrimina nome, quantidade, preco unitario e subtotal, mantendo valor-base e pagamentos antigos intactos.
+- Checkout e fechamento continuam serializados por lock, com idempotencia e estorno auditavel. Sem migration nem alteracao de dividas existentes.
+
 ### 2026-09-08 - Login apenas com senha e nova interface Candy
 
 - Decisao: retirar o campo de codigo e a exigencia MFA do login web/mobile, inclusive de administradores ja inscritos; remover painel e actions de configuracao. Manter o schema do banco e registros cifrados legados, sem uso na autenticacao.

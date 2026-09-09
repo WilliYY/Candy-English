@@ -124,3 +124,37 @@ export function getStudentInvoiceDestination(
     kind: "PRODUCT_ONLY" as const,
   };
 }
+
+export function getNextSaleInvoicePeriod(period: { month: number; year: number }) {
+  return period.month === 12
+    ? { month: 1, year: period.year + 1 }
+    : { month: period.month + 1, year: period.year };
+}
+
+export function planStudentSaleInvoice(
+  current: { month: number; year: number },
+  financialStudentId: string | null | undefined,
+  payments: { id: string; month: number; year: number; isActive: boolean; isPaid: boolean }[],
+) {
+  const currentPayment = payments.find((payment) => payment.month === current.month && payment.year === current.year);
+  const movedToNextMonth = Boolean(currentPayment && !isMonthlyInvoiceOpen(currentPayment));
+  const period = movedToNextMonth ? getNextSaleInvoicePeriod(current) : current;
+  const payment = payments.find((candidate) => candidate.month === period.month && candidate.year === period.year);
+  const destination = getStudentInvoiceDestination(financialStudentId, payment);
+
+  return {
+    ...destination,
+    ...period,
+    movedToNextMonth,
+    // Never reopen a settled invoice or invent a recurring tuition charge.
+    kind: movedToNextMonth && destination.kind !== "MONTHLY_PAYMENT"
+      ? "UNAVAILABLE" as const
+      : destination.kind,
+  };
+}
+
+export function getSaleInvoiceDateForPeriod(value: string, period: { month: number; year: number }) {
+  const day = parseSaleInvoiceDate(value)?.day ?? 1;
+  const lastDay = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
+  return `${period.year}-${String(period.month).padStart(2, "0")}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
+}

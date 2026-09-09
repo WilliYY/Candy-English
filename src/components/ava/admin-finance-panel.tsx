@@ -3225,7 +3225,7 @@ export function AdminFinancePanel({
                         {selectedRow.payment.sales.flatMap((sale) =>
                           sale.items.map((item) => (
                             <span className="flex items-center justify-between gap-3 text-xs text-cyan-950" key={item.id}>
-                              <span className="min-w-0 truncate">{item.quantity}x {item.productNameSnapshot}</span>
+                              <span className="min-w-0 break-words">{item.productNameSnapshot} · {item.quantity} {item.quantity === 1 ? "unidade" : "unidades"} · {formatCurrency(item.unitSalePriceCents)} cada</span>
                               <strong className="shrink-0 tabular-nums">{formatCurrency(item.lineTotalCents)}</strong>
                             </span>
                           )),
@@ -3370,7 +3370,7 @@ export function AdminFinancePanel({
                                 {payment.sales.flatMap((sale) =>
                                   sale.items.map((item) => (
                                     <span className="flex items-center justify-between gap-3" key={item.id}>
-                                      <span className="min-w-0 truncate">{item.quantity}x {item.productNameSnapshot}</span>
+                                      <span className="min-w-0 break-words">{item.productNameSnapshot} · {item.quantity} {item.quantity === 1 ? "unidade" : "unidades"} · {formatCurrency(item.unitSalePriceCents)} cada</span>
                                       <strong className="shrink-0 tabular-nums">{formatCurrency(item.lineTotalCents)}</strong>
                                     </span>
                                   )),

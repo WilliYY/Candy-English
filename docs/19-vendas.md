@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-`/ava/vendas` e o ponto de venda interno da Candy English. Ele controla catalogo, custo, preco de venda, estoque, comprador, forma de liquidacao e historico auditavel sem alterar o Financeiro de mensalidades.
+`/ava/vendas` e o ponto de venda interno da Candy English. Ele controla catalogo, custo, preco de venda, estoque, comprador, forma de liquidacao e historico auditavel, somando produtos a fatura sem alterar o valor-base da mensalidade.
 
 ## Acesso
 
@@ -47,7 +47,7 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 - Ao trocar ou remover a foto, o arquivo anterior e limpo depois que a atualizacao do banco termina com sucesso.
 - O runtime Docker leva os pacotes nativos `@img` da plataforma e o `sharp` so e carregado durante a conversao, preservando o health check das demais rotas.
 - `PAID_NOW` exige forma de pagamento e aceita aluno cadastrado ou nome avulso.
-- `MONTHLY_INVOICE` exige uma identidade registrada e uma `invoiceDueDate` dentro da competencia atual no fuso `America/Sao_Paulo`. Para aluno, exige apenas `StudentProfile` ativo: se houver `FinancialPayment` ativo e nao pago, a venda e vinculada a ele; sem mensalidade aberta, a venda vira uma fatura somente de produtos, sem reabrir ou alterar a mensalidade. Para professor, exige `User role=TEACHER` ativo e grava a conta pessoal sem `FinancialPayment`.
+- `MONTHLY_INVOICE` exige uma identidade registrada. Para aluno, a competencia e escolhida no servidor: mensalidade atual ativa/nao paga recebe a compra; se a atual estiver paga ou inativa, recebe a mensalidade aberta do mes seguinte. Se a proxima tambem estiver fechada ou ausente, o checkout pede revisao ao Admin e nao altera estoque. Aluno sem mensalidade atual mantem a fatura somente de produtos existente. Para professor, exige `User role=TEACHER` ativo e data na competencia atual, gravando a conta pessoal sem `FinancialPayment`.
 - Nome digitado livremente nunca cria divida mensal, pois nao existe identidade confiavel para cobrar depois.
 - Produto inativo, preco alterado ou estoque insuficiente interrompe toda a venda.
 - O cliente envia `expectedUpdatedAt` e `expectedSalePriceCents`; preco, estado, permissao e estoque sao relidos no servidor. Se a versao mudou, o checkout para e pede revisao, sem cobrar valor diferente do exibido.
@@ -56,11 +56,15 @@ Valores monetarios sao inteiros em centavos. Estoque e quantidade sao inteiros n
 
 ## Financeiro e fatura mensal
 
-A compra mensal e uma cobranca do ledger `Sale`, identificada por `invoiceYear` e `invoiceMonth`. Quando o comprador e aluno e existe mensalidade aberta, ela se vincula ao `FinancialPayment` sem modificar `snapshotAmountCents`, status ou historico. Quando a mensalidade esta paga, fechada ou ausente, `buyerStudentProfileId` e `buyerUserId` preservam o aluno e `financialPaymentId` fica nulo. Para professor, `buyerUserId` aponta para a conta pessoal e `financialPaymentId` tambem fica nulo.
+A compra mensal e uma cobranca do ledger `Sale`, identificada por `invoiceYear` e `invoiceMonth`. Aluno com mensalidade aberta recebe a compra no `FinancialPayment` atual; mensalidade atual paga/inativa encaminha ao `FinancialPayment` aberto do mes seguinte, incluindo virada dezembro/janeiro. O valor-base, status e historico da mensalidade permanecem intactos. Ausencia de mensalidade atual preserva a cobranca somente de produtos; proxima mensalidade indisponivel apos fechamento exige revisao administrativa, sem criar mensalidade automaticamente. Para professor, `buyerUserId` aponta para a conta pessoal e `financialPaymentId` fica nulo.
 
 O Financeiro do aluno apresenta `Mensalidade`, `Produtos` e total consolidado quando a compra esta vinculada a uma mensalidade aberta. Faturas separadas aparecem no bloco `Produtos de alunos e professores`, identificadas por role, com itens, pendencia e acao de confirmar/reabrir. A Teacher ve apenas a propria conta; o Admin confirma ou reabre essas cobrancas usando os IDs esperados e registra a acao no `FinancialLog`. O perfil da Teacher mostra um indicador clicavel enquanto existir valor pessoal pendente.
 
-`invoiceDueDate` registra o dia combinado para cobrar a compra dentro da fatura atual. Escolher outro dia nao move nem recria a mensalidade: a venda continua ligada ao mesmo `FinancialPayment` do mes. Datas fora do mes financeiro corrente sao recusadas no servidor.
+Para alunos, `invoiceDueDate` vem do vencimento da mensalidade de destino e o carrinho mostra mes/ano antes da confirmacao. O servidor reavalia a competencia sob lock; se houver fechamento concorrente, pode encaminhar ao proximo mes preservando o dia e ajustando dias inexistentes (31 para 28/29 em fevereiro). Para professores, permanece a data combinada dentro do mes atual. Nenhuma data arbitraria cria/reabre mensalidade.
+
+Em 08/09/2026 foi corrigida a consulta de checkout que usava a coluna inexistente `FinancialPayment.financialStudentId`; o campo real e `studentId`. A consulta agora bloqueia as duas competencias por esse campo e a venda completa e coberta por smoke HTTP autenticado. A falha anterior era transacional e nao consumia estoque.
+
+O detalhe e o historico do Financeiro mostram cada produto sem truncar: `Kit Kat · 1 unidade · R$ 3,00 cada`, com total da linha ao lado, subtotal de produtos, mensalidade e total consolidado.
 
 Nao ha gateway nem cobranca online: a forma de pagamento informa apenas como a venda interna foi liquidada.
 
@@ -83,10 +87,12 @@ Venda concluida nao e apagada. O estorno exige motivo e confirmacao explicita, r
 
 ```bash
 npm run test:sales
+npm run audit:sales-invoice
 npm run prisma:validate
 npm run lint
 npm run typecheck
 npm run build
-docker compose --profile tools run --rm migrate
-docker compose --profile tools run --rm auth-smoke
+docker compose --profile tools run --rm audit-server-smoke npm run audit:sales-invoice
 ```
+
+O smoke usa contas, produto, mensalidades e vendas temporarias exclusivas; verifica permissao, checkout real, total discriminado, idempotencia, mes pago/inativo, proxima fatura indisponivel, estorno e estoque zero, limpando somente seus proprios dados em `finally`. Nao usa produtos nem cobrancas reais.

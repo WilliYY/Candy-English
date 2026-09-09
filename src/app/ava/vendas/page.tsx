@@ -7,7 +7,9 @@ import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 import {
   getSaoPauloDateKey,
   getSaoPauloYearMonth,
-  isMonthlyInvoiceOpen,
+  getNextSaleInvoicePeriod,
+  getSaleInvoiceDateForPeriod,
+  planStudentSaleInvoice,
 } from "@/lib/sales-domain";
 
 export const metadata: Metadata = {
@@ -21,6 +23,7 @@ export default async function SalesPage() {
   const session = await requireAvaRole(["ADMIN", "TEACHER"], "/ava/vendas");
   const prisma = getPrisma();
   const period = getSaoPauloYearMonth();
+  const nextPeriod = getNextSaleInvoicePeriod(period);
   const [products, students, teachers, recentSales] = await Promise.all([
     prisma.saleProduct.findMany({
       orderBy: [{ isActive: "desc" }, { name: "asc" }],
@@ -44,11 +47,9 @@ export default async function SalesPage() {
             id: true,
             payments: {
               where: {
-                month: period.month,
-                year: period.year,
+                OR: [period, nextPeriod],
               },
-              select: { id: true, isActive: true, isPaid: true },
-              take: 1,
+              select: { id: true, month: true, year: true, isActive: true, isPaid: true, snapshotPaymentDay: true },
             },
           },
         },
@@ -130,16 +131,25 @@ export default async function SalesPage() {
           paidAt: sale.paidAt?.toISOString() ?? null,
           sellerName: sale.soldByUser?.name ?? "Usuario removido",
         }))}
-        students={students.map((student) => ({
-          hasOpenMonthlyPayment: Boolean(
-            student.financialStudent?.id &&
-              isMonthlyInvoiceOpen(student.financialStudent.payments[0]),
-          ),
-          email: student.user.email,
-          id: student.id,
-          name: student.user.name,
-          unit: student.unit,
-        }))}
+        students={students.map((student) => {
+          const plan = planStudentSaleInvoice(period, student.financialStudent?.id, student.financialStudent?.payments ?? []);
+          const payment = student.financialStudent?.payments.find((row) => row.id === plan.financialPaymentId);
+          return {
+            invoice: {
+              kind: plan.kind,
+              month: plan.month,
+              year: plan.year,
+              movedToNextMonth: plan.movedToNextMonth,
+              dueDate: getSaleInvoiceDateForPeriod(
+                payment ? `2000-01-${String(payment.snapshotPaymentDay).padStart(2, "0")}` : getSaoPauloDateKey(), plan,
+              ),
+            },
+            email: student.user.email,
+            id: student.id,
+            name: student.user.name,
+            unit: student.unit,
+          };
+        })}
         teachers={teachers}
       />
     </AvaWorkspaceShell>

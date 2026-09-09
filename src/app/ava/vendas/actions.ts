@@ -10,7 +10,9 @@ import {
   areSaleAmountsDatabaseSafe,
   calculateSaleTotals,
   getSaoPauloYearMonth,
-  getStudentInvoiceDestination,
+  getNextSaleInvoicePeriod,
+  getSaleInvoiceDateForPeriod,
+  planStudentSaleInvoice,
   isMonthlyInvoiceOpen,
   normalizeSaleProductName,
   parseSaleInvoiceDate,
@@ -337,15 +339,15 @@ export async function createSale(
       ? parseSaleInvoiceDate(parsed.data.invoiceDueDate ?? "")
       : null;
   const currentPeriod = getSaoPauloYearMonth();
-  const invoicePeriod = invoiceDate
+  let invoicePeriod = invoiceDate
     ? { month: invoiceDate.month, year: invoiceDate.year }
     : null;
 
   if (
     parsed.data.settlementType === "MONTHLY_INVOICE" &&
-    (!invoiceDate ||
-      invoiceDate.month !== currentPeriod.month ||
-      invoiceDate.year !== currentPeriod.year)
+    (!invoiceDate || (!parsed.data.studentProfileId &&
+      (invoiceDate.month !== currentPeriod.month ||
+      invoiceDate.year !== currentPeriod.year)))
   ) {
     return {
       errors: {
@@ -359,7 +361,6 @@ export async function createSale(
     | {
         financialStudent: {
           id: string;
-          payments: { id: string; isActive: boolean; isPaid: boolean }[];
         } | null;
         id: string;
         unit: "IVATE" | "DOURADINA";
@@ -375,16 +376,6 @@ export async function createSale(
         financialStudent: {
           select: {
             id: true,
-            payments: {
-              where: invoicePeriod
-                ? {
-                    month: invoicePeriod.month,
-                    year: invoicePeriod.year,
-                  }
-                : { id: "__not_used__" },
-              select: { id: true, isActive: true, isPaid: true },
-              take: 1,
-            },
           },
         },
         id: true,
@@ -422,12 +413,11 @@ export async function createSale(
     }
   }
 
-  const invoicePayment = student?.financialStudent?.payments[0] ?? null;
-
   const buyerName =
     student?.user.name ?? staffBuyer?.name ?? parsed.data.buyerName.trim();
   const operationId = parsed.data.operationId ?? randomUUID();
   let replayed = false;
+  let effectiveInvoiceDate = invoiceDate?.date ?? null;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -463,49 +453,37 @@ export async function createSale(
         }
       }
 
-      let lockedInvoicePayment:
-        | {
-            financialStudentId: string;
-            id: string;
-            isActive: boolean;
-            isPaid: boolean;
-          }
-        | null = null;
-
-      if (invoicePeriod && invoicePayment) {
-        const paymentRows = await tx.$queryRaw<
-          {
-            financialStudentId: string;
-            id: string;
-            isActive: boolean;
-            isPaid: boolean;
-          }[]
-        >`
-          SELECT "id", "financialStudentId", "isActive", "isPaid"
+      let financialPaymentId: string | null = null;
+      if (invoicePeriod && student) {
+        const activeStudent = await tx.studentProfile.findFirst({
+          where: getActiveStudentProfileWhere(student.id),
+          select: { financialStudent: { select: { id: true } } },
+        });
+        if (!activeStudent || activeStudent.financialStudent?.id !== student.financialStudent?.id) {
+          throw new SaleRuleError("O cadastro do aluno mudou. Atualize a tela antes de continuar.");
+        }
+        const nextPeriod = getNextSaleInvoicePeriod(currentPeriod);
+        const paymentRows = student.financialStudent ? await tx.$queryRaw<{
+          id: string; studentId: string; month: number; year: number; isActive: boolean; isPaid: boolean;
+        }[]>`
+          SELECT "id", "studentId", "month", "year", "isActive", "isPaid"
           FROM "FinancialPayment"
-          WHERE "id" = ${invoicePayment.id}
+          WHERE "studentId" = ${student.financialStudent.id}
+            AND (("year" = ${currentPeriod.year} AND "month" = ${currentPeriod.month})
+              OR ("year" = ${nextPeriod.year} AND "month" = ${nextPeriod.month}))
+          ORDER BY "year", "month"
           FOR UPDATE
-        `;
-        lockedInvoicePayment = paymentRows[0] ?? null;
-
-        const invoiceDestination = getStudentInvoiceDestination(
-          student?.financialStudent?.id,
-          lockedInvoicePayment,
-        );
-
-        if (
-          invoiceDestination.kind === "MONTHLY_PAYMENT" &&
-          lockedInvoicePayment?.financialStudentId !==
-            student?.financialStudent?.id
-        ) {
-          throw new SaleRuleError(
-            "A fatura foi paga, fechada ou alterada. Atualize a tela antes de continuar.",
-          );
+        ` : [];
+        const plan = planStudentSaleInvoice(currentPeriod, student.financialStudent?.id, paymentRows);
+        if (plan.kind === "UNAVAILABLE") {
+          throw new SaleRuleError("A fatura atual está fechada e a do próximo mês não está aberta. Peça ao administrador para revisar a próxima mensalidade.");
         }
-
-        if (invoiceDestination.kind === "PRODUCT_ONLY") {
-          lockedInvoicePayment = null;
+        if (invoiceDate && ![currentPeriod, plan].some((period) => period.month === invoiceDate.month && period.year === invoiceDate.year)) {
+          throw new SaleRuleError("A competência da fatura mudou. Atualize a tela e revise o carrinho.");
         }
+        invoicePeriod = { month: plan.month, year: plan.year };
+        effectiveInvoiceDate = parseSaleInvoiceDate(getSaleInvoiceDateForPeriod(parsed.data.invoiceDueDate!, plan))!.date;
+        financialPaymentId = plan.financialPaymentId;
       }
 
       const productIds = parsed.data.items.map((item) => item.productId);
@@ -591,10 +569,10 @@ export async function createSale(
           buyerStudentProfileId: student?.id ?? null,
           buyerUserId: staffBuyer?.id ?? student?.user.id ?? null,
           costTotalCents: totals.costTotalCents,
-          financialPaymentId: lockedInvoicePayment?.id ?? null,
+          financialPaymentId,
           financialStudentId: student?.financialStudent?.id ?? null,
           invoiceMonth: invoicePeriod?.month ?? null,
-          invoiceDueDate: invoiceDate?.date ?? null,
+          invoiceDueDate: effectiveInvoiceDate,
           invoiceYear: invoicePeriod?.year ?? null,
           items: {
             create: saleItems.map((item) => ({
@@ -649,6 +627,9 @@ export async function createSale(
         };
       }
     } else {
+      console.error("Sale checkout failed", {
+        code: typeof error === "object" && error !== null && "code" in error ? String(error.code) : "UNKNOWN",
+      });
       return {
         message: "Nao foi possivel concluir a venda. Nenhum estoque foi alterado.",
         ok: false,
@@ -665,7 +646,7 @@ export async function createSale(
       ? "Esta venda ja havia sido registrada. Nenhum estoque foi duplicado."
       :
       parsed.data.settlementType === "MONTHLY_INVOICE"
-        ? "Venda adicionada a fatura do mes."
+        ? `Venda adicionada à fatura de ${String(invoicePeriod?.month).padStart(2, "0")}/${invoicePeriod?.year}.`
         : "Venda concluida e pagamento registrado.",
     ok: true,
   };
