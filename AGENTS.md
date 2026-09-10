@@ -128,8 +128,8 @@ Leitura minima recomendada:
 O financeiro administrativo completo fica em `/ava/admin?task=financeiro`. A Teacher usa `/ava/teacher?task=financeiro` para acompanhar pago/pendente/atrasado de todos os alunos ativos sem valores e, em bloco separado, consultar somente valores e itens da propria fatura pessoal de doces.
 
 - Nao tratar como pagamento online sem pedido explicito.
-- Toda escrita, gasto, exportacao e relatorio financeiro continua `ADMIN` only. A consulta Teacher pode listar todos os alunos ativos sem valores e ler apenas vendas `MONTHLY_INVOICE` cujo `Sale.buyerUserId` seja o proprio usuario autenticado.
-- O Admin confirma ou reabre o pagamento da fatura pessoal da equipe; a alteracao deve usar IDs esperados das vendas, validar a conta `TEACHER` no servidor e registrar `FinancialLog`.
+- `TEACHER` pode confirmar/cancelar apenas o status de mensalidades existentes ativas de alunos ativos e compras separadas `MONTHLY_INVOICE` de alunos/professores ativos. Action dedicada valida sessao, conta atual, ID, versao esperada e confirmacao; usa lock e registra autor/data em `FinancialLog`, acionando o aviso interno do Financeiro Admin. Edicao de valores, gastos, exportacoes e relatorios continuam `ADMIN` only.
+- A projecao Teacher mostra status e nome/quantidade dos doces sem valores de outros compradores; valores e totais sao permitidos somente na propria fatura pessoal. Doces vinculados a `FinancialPayment` herdam o status da mensalidade; compras separadas sao agrupadas por comprador/competencia e confirmadas/canceladas atomicamente pelo conjunto esperado. Cancelar pagamento nao estorna venda nem altera estoque. Ver `docs/13-financeiro.md`.
 - `FinancialStudent` guarda dados recorrentes.
 - `FinancialPayment` guarda o snapshot mensal do aluno, status, data paga, observacao e se a linha segue ativa naquele mes.
 - `FinancialLog` registra acoes simples.

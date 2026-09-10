@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { TeacherPaymentButton } from "@/components/ava/teacher-payment-button";
+import { TeacherProductPayments } from "@/components/ava/teacher-product-payments";
+import type { TeacherProductPaymentRow } from "@/lib/teacher-finance-payment";
 import {
   CalendarDays,
   CheckCircle2,
@@ -36,6 +39,7 @@ type TeacherFinanceStatusPanelProps = {
   month: number;
   personalSales: StaffInvoiceSale[];
   rows: TeacherFinanceRow[];
+  productPayments: TeacherProductPaymentRow[];
   unitFilter: SecretariaUnitFilter;
 };
 
@@ -141,6 +145,7 @@ export function TeacherFinanceStatusPanel({
   month,
   personalSales,
   rows,
+  productPayments,
   unitFilter,
 }: TeacherFinanceStatusPanelProps) {
   const counts = rows.reduce(
@@ -242,7 +247,7 @@ export function TeacherFinanceStatusPanel({
             <strong className="mt-1 block text-lg tabular-nums text-amber-950">
               {currencyFormatter.format((personalInvoice?.pendingTotalCents ?? 0) / 100)}
             </strong>
-            <span className="text-xs text-amber-700">Confirmacao feita pelo Admin</span>
+            <span className="text-xs text-amber-700">Confirmação identificada no histórico</span>
           </div>
         </div>
 
@@ -274,9 +279,10 @@ export function TeacherFinanceStatusPanel({
         <span className="flex items-start gap-2">
           <Info aria-hidden="true" className="mt-1 size-4 shrink-0" />
           <span>
-            Os dados dos alunos continuam sem valores, vendas, contatos ou
-            observacoes. Os valores acima pertencem somente a sua fatura pessoal;
-            alteracoes financeiras continuam exclusivas do Admin.
+            Você pode marcar como pago ou cancelar uma confirmação feita por engano.
+            Seu nome e horário ficam no histórico, com aviso interno ao administrador.
+            Valores dos alunos e de outros professores continuam protegidos. Os valores
+            acima são somente da sua fatura pessoal. Cancelar pagamento não estorna a venda.
           </span>
         </span>
       </div>
@@ -375,6 +381,8 @@ export function TeacherFinanceStatusPanel({
         </div>
       </section>
 
+      <TeacherProductPayments rows={productPayments} month={month} unitFilter={unitFilter} />
+
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-cyan-200 bg-cyan-50/55 px-5 py-10 text-center">
           <UserRound aria-hidden="true" className="mx-auto size-7 text-cyan-700" />
@@ -422,14 +430,22 @@ export function TeacherFinanceStatusPanel({
                             {row.name.slice(0, 1).toUpperCase()}
                           </span>
                           <div className="min-w-0">
-                            <h4 className="truncate font-bold text-primary">{row.name}</h4>
+                            <h4 className="break-words font-bold text-primary">{row.name}</h4>
                             <p className="mt-0.5 text-xs text-muted-foreground">{getTimeline(row)}</p>
+                            <p className="mt-1 text-xs font-semibold text-primary">Mensalidade{row.products.length ? " + doces" : ""}</p>
+                            {row.products.map((item, index) => <p key={index} className="break-words text-xs text-muted-foreground">{item.name} · {item.quantity} unidade(s)</p>)}
                           </div>
                         </div>
+                        <div className="grid gap-2">
                         <span className={cn("inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold", metaStatus.badge)}>
                           <StatusIcon aria-hidden="true" className="size-3.5" />
                           {metaStatus.label}
                         </span>
+                        {row.paymentId && row.updatedAt && !["INACTIVE", "INCOMPLETE"].includes(row.status) ? <TeacherPaymentButton
+                          command={{ kind: "TUITION", id: row.paymentId, expectedUpdatedAt: row.updatedAt, isPaid: row.status !== "PAID", confirm: true }}
+                          label={`${row.name} · ${TEACHER_FINANCE_MONTHS[month - 1]} de ${TEACHER_FINANCE_YEAR}`}
+                        /> : null}
+                        </div>
                       </article>
                     );
                   })}

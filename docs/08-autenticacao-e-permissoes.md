@@ -1,5 +1,7 @@
 # 08 - Autenticacao e Permissoes
 
+Atualizacao de 10/09/2026: `TEACHER` pode confirmar/cancelar status de mensalidades ativas existentes e compras mensais separadas de contas ativas no Financeiro, sem valores de terceiros. Action dedicada com auth, role/conta relidas, ID/versao/confirmacao estritos, lock e `FinancialLog` com autor/data. Substitui descricoes anteriores de consulta somente leitura apenas para esse status; editar valores/gastos/exportacoes continua Admin. Ver `13-financeiro.md`.
+
 ## O que esta parte do sistema faz
 
 Este documento descreve login, sessao, roles e regras de autorizacao do AVA.

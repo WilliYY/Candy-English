@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { projectTeacherProductPayment } from "@/lib/teacher-finance-payment";
 import {
   normalizeTeacherTask,
   type TeacherTask,
@@ -221,6 +222,12 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
             payments: {
               orderBy: { createdAt: "desc" },
               select: {
+                id: true,
+                updatedAt: true,
+                sales: {
+                  where: { status: "COMPLETED", settlementType: "MONTHLY_INVOICE" },
+                  select: { items: { select: { productNameSnapshot: true, quantity: true } } },
+                },
                 isActive: true,
                 isPaid: true,
                 month: true,
@@ -744,6 +751,19 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       ),
     ),
   ]);
+  const productPayments = activeTask === "financeiro" ? await prisma.sale.findMany({
+    where: {
+      financialPaymentId: null, invoiceMonth: financeMonth, invoiceYear: TEACHER_FINANCE_YEAR,
+      settlementType: "MONTHLY_INVOICE", status: "COMPLETED",
+      buyerUser: { isActive: true, deletedAt: null, role: { in: ["STUDENT", "TEACHER"] } },
+    },
+    orderBy: [{ buyerNameSnapshot: "asc" }, { createdAt: "desc" }],
+    select: {
+      id: true, buyerUserId: true, buyerNameSnapshot: true, buyerUser: { select: { role: true } },
+      unit: true, paidAt: true, updatedAt: true, createdAt: true,
+      items: { select: { productNameSnapshot: true, quantity: true } },
+    },
+  }) : [];
   const personalInvoiceSales =
     session.user.role === "TEACHER"
       ? await prisma.sale.findMany({
@@ -922,6 +942,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       })}
       secretariaUnitFilter={unitFilter}
       teacherFinanceMonth={financeMonth}
+      teacherProductPayments={productPayments.map(projectTeacherProductPayment)}
       teacherFinanceRows={students.map((student) =>
         projectTeacherFinanceRow(student, now),
       )}

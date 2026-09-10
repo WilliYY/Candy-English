@@ -1,5 +1,7 @@
 # 03 - Fluxos do Sistema
 
+Atualizacao 10/09/2026: no Financeiro Teacher, `Marcar como pago` e `Cancelar pagamento` confirmam/desfazem recebimentos de mensalidades e doces, sem valores de terceiros. A confirmacao identifica comprador/competencia, grava autor/horario e aviso interno Admin. Cancelar nao estorna venda nem altera estoque. Esta excecao de escrita substitui descricoes anteriores de consulta somente leitura; regras em `13-financeiro.md`.
+
 ## O que esta parte do sistema faz
 
 Este documento registra os fluxos principais de uso do Candy English. Ele deve ser atualizado quando uma jornada de usuario, permissao, modulo interno ou comportamento importante mudar.

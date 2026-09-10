@@ -25,6 +25,9 @@ export type TeacherFinanceStatus =
   | "INACTIVE";
 
 export type TeacherFinanceRow = {
+  paymentId: string | null;
+  updatedAt: string | null;
+  products: { name: string; quantity: number }[];
   id: string;
   name: string;
   paidAt: string | null;
@@ -34,6 +37,9 @@ export type TeacherFinanceRow = {
 };
 
 type TeacherFinancePaymentSource = {
+  id: string;
+  updatedAt: Date;
+  sales: { items: { productNameSnapshot: string; quantity: number }[] }[];
   isActive: boolean;
   isPaid: boolean;
   month: number;
@@ -137,6 +143,9 @@ export function projectTeacherFinanceRow(
 
   if (!payment) {
     return {
+      paymentId: null,
+      updatedAt: null,
+      products: [],
       id: student.id,
       name: student.user.name,
       paidAt: null,
@@ -147,6 +156,9 @@ export function projectTeacherFinanceRow(
   }
 
   return {
+    paymentId: payment.id,
+    updatedAt: payment.updatedAt.toISOString(),
+    products: payment.sales.flatMap((sale) => sale.items.map((item) => ({ name: item.productNameSnapshot, quantity: item.quantity }))),
     id: student.id,
     name: payment.snapshotName,
     paidAt: payment.paidAt?.toISOString() ?? null,

@@ -51,6 +51,7 @@ npm run lint
 npm run typecheck
 npm run build
 npm run test:sales
+npm run audit:teacher-finance
 npm run test:ponto
 npm run audit:student-links
 npm run audit:server-smoke

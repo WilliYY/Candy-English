@@ -13,6 +13,9 @@ function buildStudent(
     financialStudent: {
       payments: [
         {
+          id: "payment-1",
+          updatedAt: new Date("2026-08-10T12:00:00.000Z"),
+          sales: [],
           isActive: true,
           isPaid: false,
           month: 8,
@@ -44,8 +47,11 @@ test("projeta apenas dados permitidos e preserva o polo do snapshot", () => {
     "name",
     "paidAt",
     "paymentDay",
+    "paymentId",
+    "products",
     "status",
     "unit",
+    "updatedAt",
   ]);
   assert.equal(row.name, "Ana Snapshot");
   assert.equal(row.unit, "DOURADINA");

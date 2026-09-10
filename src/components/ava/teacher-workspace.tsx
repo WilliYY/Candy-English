@@ -67,6 +67,7 @@ import { LIVE_CLASS_MAINTENANCE_ENABLED } from "@/lib/live-class";
 import type { Role } from "@/lib/roles";
 import type { SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 import type { TeacherFinanceRow } from "@/lib/teacher-finance";
+import type { TeacherProductPaymentRow } from "@/lib/teacher-finance-payment";
 import type { StaffInvoiceSale } from "@/lib/staff-invoices";
 
 export const teacherTaskIds = [
@@ -264,6 +265,7 @@ type TeacherWorkspaceProps = {
   submissions: TeacherSubmission[];
   teacherFinanceMonth: number;
   teacherFinanceRows: TeacherFinanceRow[];
+  teacherProductPayments: TeacherProductPaymentRow[];
   teacherPersonalInvoiceSales: StaffInvoiceSale[];
   teachers: Option[];
 };
@@ -392,6 +394,7 @@ export function TeacherWorkspace({
   submissions,
   teacherFinanceMonth,
   teacherFinanceRows,
+  teacherProductPayments,
   teacherPersonalInvoiceSales,
   teachers,
 }: TeacherWorkspaceProps) {
@@ -747,6 +750,7 @@ export function TeacherWorkspace({
               month={teacherFinanceMonth}
               personalSales={teacherPersonalInvoiceSales}
               rows={teacherFinanceRows}
+              productPayments={teacherProductPayments}
               unitFilter={secretariaUnitFilter}
             />
           ) : null}

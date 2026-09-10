@@ -21,6 +21,7 @@
     "test:mobile-homework": "tsx --test src/lib/__tests__/*.test.ts",
     "test:sales": "tsx --test src/lib/__tests__/sales-*.test.ts",
     "audit:sales-invoice": "tsx scripts/sales-invoice-smoke.ts",
+    "audit:teacher-finance": "tsx scripts/teacher-finance-smoke.ts",
     "test:ponto": "tsx --test src/lib/__tests__/time-clock-*.test.ts",
     "verify:mobile-teacher": "npm run test:mobile-homework && npm run test:mobile-auth && npm run typecheck && npm run lint && npm run prisma:validate && npm run build",
     "audit:avatar-smoke": "tsx scripts/avatar-smoke.ts",

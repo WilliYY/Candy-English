@@ -1,5 +1,7 @@
 # 99 - Contexto Rapido para Codex
 
+Atualizacao 10/09/2026: Financeiro Teacher permite `Marcar como pago` e `Cancelar pagamento` com autor/data no `FinancialLog` e aviso interno Admin, sem valores de terceiros. Mensalidade inclui doces vinculados; compras separadas sao confirmadas por fatura mensal do comprador, atomicamente pelo conjunto esperado. Nao libera edicao de valores/gastos/relatorios nem cria/reabre linha inativa. Ver `docs/13-financeiro.md`; smoke `npm run audit:teacher-finance` usa somente fixtures temporarias.
+
 ## Para que serve
 
 Este documento existe para reduzir o prompt necessario ao continuar o projeto Candy English em outro chat. Ele nao substitui `AGENTS.md`, `README.md` nem os docs oficiais; ele aponta o caminho rapido e registra o estado operacional recente.

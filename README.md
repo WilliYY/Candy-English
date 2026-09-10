@@ -2,6 +2,8 @@
 
 Site institucional e AVA da Candy English.
 
+Financeiro Teacher (10/09/2026): professores podem marcar `Pago` e `Cancelar pagamento` de mensalidades e doces, com confirmacao, autor/horario no `FinancialLog` e aviso interno ao Admin. Valores dos alunos e de outros professores continuam ocultos; somente a propria fatura pessoal exibe valores. Edicao de valores, gastos e relatorios continua administrativa. Regras e validacao: `docs/13-financeiro.md`.
+
 ## Objetivo
 
 O projeto entrega uma aplicacao propria, fora de WordPress, para a Candy English. Ele combina site institucional, AVA, PDV interno de vendas e ponto da equipe com areas separadas para `ADMIN`, `TEACHER` e `STUDENT`.
