@@ -811,10 +811,11 @@ Cada decisao deve conter:
 ### 2026-09-10 - Confirmacao de pagamento identificada pela Teacher
 
 - Pedido explicito permite `Pago` e `Cancelar pagamento` no Financeiro Teacher, para mensalidades e doces, sem valores de outros compradores. Substitui a exclusividade Admin apenas para essas duas transicoes.
-- Action estreita separada das actions financeiras administrativas; nao reutilizar payloads que aceitam valor/cadastro. Conta ativa e role relidas, transacao com lock/versao esperada e log atomico. Nao exige migration.
+- Action estreita separada das actions financeiras administrativas; nao reutilizar payloads que aceitam valor/cadastro. Conta ativa e role relidas, transacao com lock/versao esperada e log atomico. Inicialmente prevista sem migration; smoke real identificou a necessidade da correcao abaixo.
 - Mensalidade inclui doces vinculados; compras sem mensalidade sao agrupadas por comprador/competencia e liquidadas atomicamente pelo conjunto esperado de IDs/versoes. Cancelamento desfaz somente a confirmacao, preserva historico e estoque. Fatura pessoal da Teacher continua mostrando seus proprios valores.
 - Aviso interno usa `FinancialLog` e assinatura existente do atalho Admin; nao introduzir servico externo, email ou push. Autor e horario ficam no historico do Financeiro.
 - Regras/testes em `13-financeiro.md` e `scripts/teacher-finance-smoke.ts`; nenhum teste deve alterar clientes ou cobrancas reais.
+- Continuacao autorizada: migration `20260910150000_allow_monthly_invoice_settlement` expande apenas `Sale_settlement_check`, permitindo data de quitacao mensal. Sem reescrita de dados, compativel com o app anterior, backup antes da aplicacao e smoke da candidata antes de publicar. Down guardado/testado recusa qualquer fatura mensal paga; preferir rollback apenas da imagem.
 
 - Apagar historico reduz capacidade de futuras conversas entenderem o motivo das escolhas.
 - Registrar decisao sem arquivos impactados dificulta manutencao futura.

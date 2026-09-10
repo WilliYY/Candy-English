@@ -304,6 +304,13 @@ Enums:
 - Habilitar `LISTENING` em `CandyXpActivityInteractiveField` sem rotas proprias de audio/OCR pode quebrar envio ou revisao, pois o suporte atual de listening e especifico de homework/aula interativa.
 - Converter `StudentPreRegistration` fora da transaction linkada pode deixar aluno criado sem financeiro/agenda ou financeiro/agenda sem login.
 
+## Quitacao de faturas de produtos (10/09/2026)
+
+- Migration `20260910150000_allow_monthly_invoice_settlement` corrige `Sale_settlement_check`: `MONTHLY_INVOICE` aceita `paidAt` nulo ou preenchido. Mantem metodo nulo e competencia obrigatoria; `PAID_NOW` continua exigindo metodo/data e competencia nula. Nenhuma coluna/modelo, venda, valor, estoque ou pagamento e reescrito.
+- DDL em transacao com `lock_timeout=5s` e `statement_timeout=30s`; timeout aborta tudo. Fazer backup verificado, conferir migrations pendentes e aplicar antes do novo app. Nao usar `migrate resolve` cegamente se ocorrer falha.
+- `npm run audit:sales-settlement -- --candidate-only` testa up/down e protecao de rollback somente em tabela temporaria da sessao. Sem a flag, tambem exige que a constraint instalada permita pagamento mensal. Le somente metadados e tipos de `Sale`, sem ler dados de clientes.
+- Preferir rollback da imagem do app, mantendo esta expansao compativel. `scripts/sql/rollback-monthly-invoice-settlement.sql` e um down manual de emergencia: valida a regra antiga antes de substituir a atual e aborta se houver fatura mensal paga. Nunca apagar `paidAt` para forcar rollback. Reconciliar historico Prisma explicitamente apos qualquer down manual; nao executa automaticamente no deploy.
+
 ## Pendencias
 
 - Falta configurar a copia externa dos backups criptografados; backup local, verificacao e restore drill estao documentados em `docs/10-backup-e-recuperacao.md`.
