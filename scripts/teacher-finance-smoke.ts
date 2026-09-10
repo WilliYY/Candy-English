@@ -132,10 +132,12 @@ async function main() {
   for (const sales of [[separate, separate2], [staffSale]]) {
     const input = { kind: "PRODUCT", id: sales[0].buyerUserId, ...period, sales: sales.map((sale) => ({ id: sale.id, updatedAt: sale.updatedAt.toISOString() })), isPaid: true, confirm: true };
     if (sales.length > 1) assert.equal((await invoke(cookie, action, { ...input, sales: input.sales.slice(0, 1) })).ok, false);
-    assert.equal((await invoke(cookie, action, input)).ok, true);
+    const confirmation = await invoke(cookie, action, input);
+    assert.equal(confirmation.ok, true, `Candy confirmation: ${confirmation.message}`);
     const paidSales = await prisma.sale.findMany({ where: { id: { in: sales.map((sale) => sale.id) } } });
     assert.ok(paidSales.every((sale) => sale.paidAt));
-    assert.equal((await invoke(cookie, action, { ...input, isPaid: false, sales: paidSales.map((sale) => ({ id: sale.id, updatedAt: sale.updatedAt.toISOString() })) })).ok, true);
+    const cancellation = await invoke(cookie, action, { ...input, isPaid: false, sales: paidSales.map((sale) => ({ id: sale.id, updatedAt: sale.updatedAt.toISOString() })) });
+    assert.equal(cancellation.ok, true, `Candy cancellation: ${cancellation.message}`);
     assert.equal(await prisma.sale.count({ where: { id: { in: sales.map((sale) => sale.id) }, paidAt: { not: null } } }), 0);
   }
   assert.equal((await invoke(cookie, action, { kind: "PRODUCT", id: student.id, ...period, sales: [{ id: linked.id, updatedAt: linked.updatedAt.toISOString() }], isPaid: true, confirm: true })).ok, false);
