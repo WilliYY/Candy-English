@@ -2,6 +2,8 @@
 
 Atualizacao 10/09/2026: Financeiro Teacher permite `Marcar como pago` e `Cancelar pagamento` com autor/data no `FinancialLog` e aviso interno Admin, sem valores de terceiros. Mensalidade inclui doces vinculados; compras separadas sao confirmadas por fatura mensal do comprador, atomicamente pelo conjunto esperado. Nao libera edicao de valores/gastos/relatorios nem cria/reabre linha inativa. Ver `docs/13-financeiro.md`; smoke `npm run audit:teacher-finance` usa somente fixtures temporarias.
 
+Publicacao confirmada em 11/09/2026: `4420c60` no Oracle, migration `20260910150000_allow_monthly_invoice_settlement` aplicada apos backup verificado, sem reescrever vendas/pagamentos. Restore isolado, 266 testes, 40 verificacoes de constraint, build/CI e smokes autenticados financeiro/vendas/auth/avatar/mobile aprovados. HTTP 200 e app healthy. Conferencia visual pendente por timeout do Chrome; detalhes e limites em `docs/13-financeiro.md`.
+
 ## Para que serve
 
 Este documento existe para reduzir o prompt necessario ao continuar o projeto Candy English em outro chat. Ele nao substitui `AGENTS.md`, `README.md` nem os docs oficiais; ele aponta o caminho rapido e registra o estado operacional recente.

@@ -23,6 +23,7 @@ Os filtros de permissao sao repetidos no servidor. Esconder o card ou o menu nao
 - `src/lib/validations/sales.ts`: contratos Zod.
 - `prisma/migrations/20260823233000_add_sales_pos/migration.sql`: tabelas, indices, FKs e checks.
 - `prisma/migrations/20260831120000_add_teacher_personal_invoices/migration.sql`: vinculo opcional entre `Sale` e a conta compradora.
+- `prisma/migrations/20260910150000_allow_monthly_invoice_settlement/migration.sql`: permite confirmar/cancelar `paidAt` de fatura mensal preservando os demais checks de liquidacao.
 
 O cadastro de produto abre em um painel expansivel dentro do fluxo da pagina. O formulario ocupa a largura disponivel, empilha os campos no mobile e nao usa sobreposicao absoluta, evitando que nome, custo, valor de venda, estoque ou botao de salvar sejam cortados pelo card do catalogo.
 
@@ -98,6 +99,8 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:sales-i
 O smoke usa contas, produto, mensalidades e vendas temporarias exclusivas; verifica permissao, checkout real, total discriminado, idempotencia, mes pago/inativo, proxima fatura indisponivel, estorno e estoque zero, limpando somente seus proprios dados em `finally`. Nao usa produtos nem cobrancas reais.
 
 ### Evidencia da correcao em 09/09/2026
+
+Atualizacao posterior em 11/09/2026: `4420c60` publicado com a correcao de `Sale_settlement_check`. `audit:teacher-finance` e `audit:sales-invoice` passaram na versao publicada; a confirmacao/cancelamento dos doces registra autor e preserva estoque. Migration sem reescrita de registros, backup/restauracao e 40 verificacoes PostgreSQL aprovados. Evidencias completas em `13-financeiro.md`; os itens abaixo preservam o historico de 09/09.
 
 - Antes da correcao, o smoke HTTP reproduziu o erro no checkout da mensalidade; o rollback e a limpeza das fixtures funcionaram.
 - Commit `a535750`: `test:sales` 34/34 e `test:mobile-homework` 261/261; schema, tipos, lint e builds Windows/Docker aprovados.
