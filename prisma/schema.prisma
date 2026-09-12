@@ -7,6 +7,75 @@ datasource db {
   provider = "postgresql"
 }
 
+enum CattyWhatsappMessageStatus {
+  QUEUED
+  PROCESSING
+  SENDING
+  SENT
+  FAILED
+  UNCERTAIN
+  CANCELED
+}
+
+model CattyWhatsappChannel {
+  id                String    @id @default("main")
+  paused            Boolean   @default(true)
+  workerToken       String?
+  workerLeaseUntil  DateTime?
+  lastWorkerAt      DateTime?
+  updatedAt         DateTime  @updatedAt
+}
+
+model CattyWhatsappContact {
+  id               String                 @id @default(cuid())
+  name             String                 @db.VarChar(100)
+  phoneHash        String                 @unique @db.Char(64)
+  phoneCiphertext  String                 @db.Text
+  phoneMask        String                 @db.VarChar(30)
+  authorized       Boolean                @default(false)
+  consentAt        DateTime
+  optedOutAt       DateTime?
+  createdByUserId  String
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  messages         CattyWhatsappMessage[]
+}
+
+model CattyWhatsappMessage {
+  id                String                     @id @default(cuid())
+  eventKey          String                     @unique @db.VarChar(100)
+  contactId         String
+  contact           CattyWhatsappContact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  manual            Boolean                    @default(false)
+  status            CattyWhatsappMessageStatus @default(QUEUED)
+  inputCiphertext   String?                    @db.Text
+  replyCiphertext   String?                    @db.Text
+  providerIdHash    String?                    @db.Char(64)
+  createdByUserId   String?
+  attempts          Int                        @default(0)
+  errorCode         String?                    @db.VarChar(40)
+  expiresAt         DateTime
+  contentExpiresAt  DateTime
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  @@index([status, createdAt])
+  @@index([contactId, createdAt])
+  @@index([contentExpiresAt])
+  @@index([createdAt])
+}
+
+model CattyWhatsappAudit {
+  id          String   @id @default(cuid())
+  action      String   @db.VarChar(40)
+  actorUserId String?
+  contactId   String?
+  messageId   String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 enum Role {
   ADMIN
   TEACHER

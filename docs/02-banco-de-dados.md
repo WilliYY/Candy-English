@@ -1,5 +1,19 @@
 # 02 - Banco de Dados
 
+## Canal Catty WhatsApp — migration aditiva
+
+`20260911140000_catty_whatsapp` cria, em transação, somente o enum de status e
+quatro tabelas novas: `CattyWhatsappChannel` (singleton inicialmente pausado e
+lease do worker), `CattyWhatsappContact` (autorização, telefone cifrado/hash),
+`CattyWhatsappMessage` (fila, ciphertext, deduplicação e prazos) e
+`CattyWhatsappAudit` (ação/autor/data, sem conteúdo). Não altera linhas do AVA.
+IDs de autores são referências históricas simples, sem cascata para usuários.
+Remover contato apaga suas mensagens por cascata; a auditoria mínima expira em
+30 dias. Conteúdo expira em 24 horas; limpeza roda no worker, inclusive pausado.
+Rollback operacional: voltar o app e manter essas tabelas aditivas; não executar
+DROP em produção para desfazer a interface. Nunca reativar antes de limpar
+conteúdo expirado após restauração. Ver `docs/24-catty-whatsapp.md`.
+
 ## O que esta parte do sistema faz
 
 Este documento descreve o banco PostgreSQL e o schema Prisma atual. Deve ser atualizado sempre que `prisma/schema.prisma` ou `prisma/migrations/` mudar.
