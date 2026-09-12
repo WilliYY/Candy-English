@@ -1,5 +1,117 @@
 # Catty no WhatsApp — especificação da primeira versão
 
+## Proposta: liberação por pessoa, boas-vindas e grupo Interno (12/09/2026)
+
+**Status: especificação para aprovação; não implementada.** A alteração aditiva
+de banco e a publicação desta etapa dependem de aprovação do responsável.
+Não confundir esta proposta com a versão GPT-5.4 já publicada abaixo.
+
+### Objetivo e limites
+
+- O ADMIN escolhe, em `/ava/whatsapp`, uma conta ativa do AVA e libera a Catty
+  para aquele telefone. Nome, perfil e telefone mascarado aparecem juntos.
+  Selecionar alguém não envia mensagem nem ativa o canal automaticamente.
+- Separar a liberação geral das preferências **Avisos de aula** e **Avisos de
+  pagamento**. Ambas começam desligadas; a tela informa que são preferências
+  preparadas, enquanto os disparos ainda não estiverem implementados.
+- ADMIN e TEACHER vinculados e liberados podem conversar com a Catty.
+  STUDENT pode receber os avisos escolhidos, mas suas mensagens não acionam IA,
+  ferramentas ou consultas. `SAIR` continua funcionando para todos.
+- Somente ADMIN administra permissões. Receber avisos ou ser integrante de um
+  grupo não concede acesso ao Financeiro, à Agenda ou à administração do AVA.
+- O vínculo dos dois contatos administrativos já autorizados foi confirmado
+  pelo responsável nesta conversa. Aplicá-lo por identidade exata e estado
+  esperado, com auditoria, sem publicar emails/telefones ou embuti-los em migration.
+
+### Persistência e autorização propostas
+
+- Adicionar vínculo opcional e único `CattyWhatsappContact.userId` com `User`;
+  flags de aula/pagamento inicialmente falsas e marcador duradouro de primeira
+  tentativa de boas-vindas. Manter telefone cifrado e hash único existentes.
+- Contatos antigos não ganham vínculo/role automaticamente por nome. Contatos
+  sem vínculo válido ficam impedidos de conversar, mesmo se antes autorizados.
+- Conferir conta ativa, não excluída, telefone atual, consentimento e role tanto
+  na entrada quanto imediatamente antes do envio. Revogação, troca de telefone
+  ou desativação devem invalidar itens pendentes; não basta ocultar o botão.
+- Sem telefone válido não é possível liberar. Aceitar formato brasileiro com
+  DDD e normalizar para E.164, rejeitando formato inválido, números fictícios
+  evidentes, telefone compartilhado/ambíguo ou já vinculado a outra conta.
+  Formato válido não comprova posse nem existência de uma conta WhatsApp.
+- Alteração do telefone exige nova liberação; nunca transferir autorização para
+  o novo número silenciosamente. Não modificar o telefone de uma conta apenas
+  porque outra pessoa o informou em uma conversa com a Catty.
+- A liberação da equipe registra quem autorizou e quando, mas não deve inventar
+  consentimento do destinatário. Exibir confirmação de autorização para contato,
+  permitir retirada imediata e manter a orientação `SAIR` nas mensagens.
+
+### Boas-vindas e personalidade
+
+- Incluir apresentação no primeiro envio individual, manual ou automático.
+  Não depender do histórico de conversa, que expira em 24 horas.
+- Reservar a primeira tentativa na mesma transação que marca o envio, sob o
+  lock/lease existentes. Timeout ou entrega incerta não geram repetição
+  automática; o sistema não pode prometer entrega exatamente uma vez.
+- Pausar, reiniciar ou revogar/liberar o mesmo contato preserva o marcador.
+  Exclusão definitiva dos dados, solicitada separadamente, pode reiniciar essa
+  apresentação numa futura autorização; não reter conteúdo só para evitá-la.
+- Reusar a identidade oficial de `catty-personality.ts`: calorosa, direta,
+  levemente felina, com humor discreto e inglês curto quando fizer sentido.
+  Nada de abertura genérica em toda resposta, excesso de emojis ou cobrança
+  constrangedora. A Catty se identifica como assistente com IA.
+- Exemplo de primeira apresentação: “Miau! 🐾 Sou a Catty, a assistente com IA
+  da Candy English. Vou trazer os avisos que a equipe liberar por aqui.
+  Para parar de receber mensagens, envie SAIR.” Para a equipe autorizada,
+  pode acrescentar convite curto para conversar, sem prometer consultas ainda
+  inexistentes. Não acrescentar esse convite para alunos nesta fase.
+
+### Grupo Interno
+
+- Consulta somente leitura no transporte retornou HTTP 200 e um único grupo
+  chamado `Interno`, com 5 participantes no momento da verificação.
+  Não foram lidas mensagens nem enviados avisos; não versionar JID ou membros.
+- Preparar cadastro de destino de grupo separado dos contatos individuais,
+  com JID cifrado/hash único, nome, autor/data da autorização e envio desativado.
+  A seleção deve usar o identificador exato conferido no servidor, nunca apenas
+  nome informado pelo cliente. Se houver nomes duplicados, exigir escolha.
+- Nesta etapa, grupos continuam sem conversa automática e sem disparos. Os
+  lembretes, horários e conteúdo serão escolhidos pelo responsável depois.
+  Nenhum detalhe de inadimplência individual ou dado financeiro será publicado
+  em grupo por inferência; isso exige regra própria de privacidade e escopo.
+- Referência do transporte: [endpoint oficial Fetch All Groups](https://github.com/evolution-foundation/docs-evolution/blob/main/v2/api-reference/group-controller/fetch-all-groups.mdx).
+
+### Estrutura, padrões e validação
+
+- Stack existente: Next.js 15, TypeScript, PostgreSQL 17, Prisma 7, Zod e
+  React Hook Form. Sem nova dependência, provedor, serviço ou compartilhamento
+  com Miauby. Preservar o chat pedagógico web/mobile e seu modelo atual.
+- Domínio e guardas: `src/lib/catty-whatsapp/`; validação:
+  `src/lib/validations/catty-whatsapp.ts`; ações/página:
+  `src/app/ava/whatsapp/`; UI: componentes `catty-whatsapp-*` em
+  `src/components/ava/`; dados: schema e migration em `prisma/`.
+- Exemplo do padrão existente a preservar: `await requireWhatsappAdmin();`
+  antes de leitura administrativa e `getPrisma()` para persistência. Nunca
+  confiar em role, nome, destinatário ou flags recebidos da UI sem revalidação.
+- Testes com `node:test` em `src/lib/__tests__/catty-whatsapp-*.test.ts`,
+  transporte/IA falsos e smoke isolado: telefone ausente/inválido/duplicado,
+  estudante inbound bloqueado, STAFF ativo permitido, conta excluída/troca de
+  role/telefone durante fila, `SAIR`, preferências, dois workers, reinício,
+  expiração do histórico e entrega incerta sem duplicar boas-vindas.
+- Comandos previstos: `npx tsx --test src/lib/__tests__/catty-whatsapp-*.test.ts`,
+  `npm run prisma:validate`, `npm run typecheck`, `npm run lint`, `npm run build`
+  e `npx tsx scripts/catty-whatsapp-smoke.ts --isolated-schema` no ambiente de
+  teste configurado, com rede de envio bloqueada e remoção das fixtures.
+- Sempre: testes antes da entrega, auditoria sem conteúdo/segredos, nomes
+  legíveis e UI responsiva. Pedir aprovação antes da migration; não adicionar
+  dependências ou modificar CI sem necessidade aprovada. Nunca testar com
+  contatos reais, ligar o canal ou conceder acesso amplo ao banco para a IA.
+- Antes de produção: backup verificável, validar migration isolada, manter
+  `docker-compose.whatsapp.yml`, migrar antes de recriar o app, executar smokes
+  servidor/auth/avatar e confirmar canal pausado. Rollback preserva tabelas e
+  histórico; nenhuma migration destrutiva para voltar à versão anterior.
+- Evidência desta análise: worker recente, canal pausado e apenas uma mensagem
+  `SENT` (teste anterior), sem itens pendentes. Nenhuma alteração de dados,
+  schema ou aplicação foi feita nesta etapa de especificação.
+
 ## GPT-5.4 no canal (12/09/2026)
 
 - Pedido explícito do responsável: usar `gpt-5.4` no WhatsApp. O modelo é
