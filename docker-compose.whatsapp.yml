@@ -1,0 +1,112 @@
+# Optional overlay. Does not start or modify Wimifarma services.
+services:
+  app:
+    networks: [default, catty-channel]
+
+  catty-worker:
+    image: node:24-bookworm-slim
+    container_name: candy-catty-worker
+    user: "1000:1000"
+    read_only: true
+    init: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp:size=1m,mode=1777]
+    volumes:
+      - ./scripts/catty-whatsapp-worker.mjs:/worker.mjs:ro
+    command: [node, /worker.mjs]
+    environment:
+      CATTY_WHATSAPP_WORKER_SECRET: ${CATTY_WHATSAPP_WORKER_SECRET:?Configure o segredo exclusivo do worker}
+    depends_on:
+      app: {condition: service_healthy}
+    networks: [catty-channel]
+    mem_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "const fs=require('fs');try{process.exit(Date.now()-Number(fs.readFileSync('/tmp/catty-worker-health','utf8'))<120000?0:1)}catch{process.exit(1)}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: 2m, max-file: "2"}
+
+  catty-evolution:
+    image: evoapicloud/evolution-api:v2.3.0@sha256:83d0833a44a08a4121c887c7d9472563a06084269739a70248058808c09c065a
+    container_name: candy-catty-evolution
+    depends_on:
+      catty-evolution-db: {condition: service_healthy}
+    environment:
+      SERVER_TYPE: http
+      SERVER_PORT: "8080"
+      SERVER_URL: http://catty-evolution:8080
+      AUTHENTICATION_TYPE: apikey
+      AUTHENTICATION_API_KEY: ${CATTY_EVOLUTION_API_KEY:?Configure a chave exclusiva da Evolution Candy}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "false"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://catty:${CATTY_EVOLUTION_DB_PASSWORD:?Configure senha hexadecimal exclusiva}@catty-evolution-db:5432/catty_evolution?schema=public
+      DATABASE_CONNECTION_CLIENT_NAME: candy-catty
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "false"
+      DATABASE_SAVE_MESSAGE_UPDATE: "false"
+      DATABASE_SAVE_DATA_CONTACTS: "false"
+      DATABASE_SAVE_DATA_CHATS: "false"
+      DATABASE_SAVE_DATA_HISTORIC: "false"
+      DATABASE_SAVE_DATA_LABELS: "false"
+      CACHE_REDIS_ENABLED: "false"
+      CACHE_LOCAL_ENABLED: "true"
+      CONFIG_SESSION_PHONE_CLIENT: Candy English
+      CONFIG_SESSION_PHONE_NAME: Chrome
+      CONFIG_SESSION_PHONE_VERSION: 2.3000.1043857760
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      WEBHOOK_REQUEST_TIMEOUT_MS: "10000"
+      WEBHOOK_RETRY_MAX_ATTEMPTS: "3"
+      LOG_LEVEL: ERROR,WARN
+      LOG_BAILEYS: error
+      TELEMETRY_ENABLED: "false"
+      SENTRY_DSN: ""
+      DEL_INSTANCE: "false"
+    volumes:
+      - catty-evolution-instances:/evolution/instances
+    networks: [catty-channel, catty-database]
+    mem_limit: 768m
+    cpus: 1
+    pids_limit: 256
+    restart: unless-stopped
+    # Upstream can print pairing codes even with quiet logs. Never persist them.
+    logging: {driver: none}
+
+  catty-evolution-db:
+    image: postgres:17-alpine
+    container_name: candy-catty-evolution-db
+    environment:
+      POSTGRES_USER: catty
+      POSTGRES_DB: catty_evolution
+      POSTGRES_PASSWORD: ${CATTY_EVOLUTION_DB_PASSWORD:?Configure senha exclusiva do banco do transporte}
+    volumes:
+      - catty-evolution-data:/var/lib/postgresql/data
+    networks: [catty-database]
+    mem_limit: 256m
+    cpus: 0.5
+    pids_limit: 128
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U catty -d catty_evolution"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging:
+      driver: json-file
+      options: {max-size: 2m, max-file: "2"}
+
+networks:
+  catty-channel:
+  catty-database:
+    internal: true
+
+volumes:
+  catty-evolution-instances:
+  catty-evolution-data:
