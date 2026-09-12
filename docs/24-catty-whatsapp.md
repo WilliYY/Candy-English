@@ -170,8 +170,9 @@ Referências técnicas consultadas:
 
 ## Implementação e operação (12/09/2026)
 
-Estado: código implementado e em validação; publicação e pareamento ainda não
-comprovados nesta seção. Não interpretar existência do painel como canal ativo.
+Estado: publicado no Oracle em 12/09/2026, com canal pausado, worker saudável,
+zero contatos/mensagens e Evolution sem instâncias. Pareamento ainda não feito.
+Não interpretar existência do painel como canal ativo.
 O usuário esclareceu que a base Miauby foi obtida de um repositório GitHub e
 funcionou; a referência concreta verificada é o clone local e o transporte
 Evolution existente, não um novo repositório presumido.
@@ -248,17 +249,49 @@ docker compose -f docker-compose.yml -f docker-compose.whatsapp.yml ps
   Evolution separados não fazem parte desse backup; perda deles requer novo
   pareamento. Não copiar sessão do Miauby como forma de recuperação.
 
-### Evidências parciais
+### Evidências da publicação (12/09/2026)
 
-- 16 testes unitários aprovados em 11/09; domínio, criptografia, limites de body,
-  configuração, permissão e transporte com fetch fake.
+- 19 testes unitários aprovados; domínio, criptografia, limites de body,
+  configuração, provisionamento, permissão e transporte com fetch fake.
 - 14 verificações integradas aprovadas em schema temporário no PostgreSQL do
   Oracle: concorrência, deduplicação, pausa, opt-out, expiração, retenção, envio
   incerto, operação manual e lease. Schema removido no finally; zero mensagens
   reais. Admin desativado também é impedido de enviar operação manual pendente.
-- 282 testes gerais, 9 testes de autenticação mobile, typecheck e lint aprovados
+- 285 testes gerais (incluem os 19 da Catty), 9 testes de autenticação mobile,
+  Prisma validate, typecheck, lint e build aprovados
   em 12/09. Audit npm: zero críticas e 12 altas preexistentes; nenhuma dependência
-  npm foi adicionada ou atualizada neste trabalho. Build/publicação ainda pendentes.
+  npm foi adicionada ou atualizada neste trabalho.
 - Revisão independente encontrou 3 bugs, reproduzidos com testes: opt-out antigo
   após nova autorização, erro HTTP400 pós-envio e falha tardia de worker sem lease.
-  Corrigidos antes da publicação. Revalidar resultados ao concluir a entrega.
+  Corrigidos antes da publicação; revisão final não encontrou novos bloqueios.
+- Backup cifrado `candy-20260912T115824Z.tar.gz.enc` verificado e restaurado em
+  container isolado: 63 tabelas antes da migration. Migration
+  `20260911140000_catty_whatsapp` aplicada sem alterações em vendas/mensalidades.
+- Builds Docker de app/migrate/audit aprovados. Smokes de servidor, auth, avatar,
+  vendas/fatura, financeiro Teacher e autenticação mobile passaram tanto na
+  candidata quanto no app publicado; fixtures dos smokes foram removidas.
+- A primeira candidata falhou no health porque o storage foi montado somente
+  leitura; banco estava saudável. Com a mesma montagem gravável da produção,
+  health e upload passaram. Não foi necessário alterar código do health.
+- Na inicialização do worker, o YAML separou a vírgula de `tmpfs` em duas entradas.
+  Corrigido em `05f5e94` usando string entre aspas; Compose resolvido conferido e
+  worker iniciado saudável. Não houve liberação de mensagens durante a correção.
+- HTTP público `/api/health`: banco/storage OK. App, worker e bancos saudáveis;
+  Evolution respondeu HTTP 200 com zero instâncias. Nenhuma nova porta pública.
+  Novos serviços com zero reinícios; Miauby/Evolution Wimifarma conservaram seus
+  horários de início de agosto e não foram reiniciados.
+- Commits de implementação: `faa2fee`, `2a09d19`, `a1a8c8d`, `c49af61`,
+  correção operacional `05f5e94`; todos enviados ao GitHub e integrados no Oracle.
+  Imagem anterior preservada em `candy-english-app:pre-catty-20260912`.
+- Verificação visual autenticada e pareamento pendentes: navegador disponível
+  abriu `/ava/login?callbackUrl=%2Fava%2Fwhatsapp`, sem sessão ADMIN. Testes HTTP
+  autenticados confirmaram acesso ADMIN e bloqueio de Teacher/Student/anônimo.
+  Nenhum QR foi solicitado nem mensagem real enviada.
+
+### Próxima ação do responsável
+
+Entrar como ADMIN em `/ava/whatsapp`, usar `Gerar QR Code`, escanear o QR com
+o número escolhido e confirmar os contatos autorizados. Ativar respostas é uma
+ação separada; conectar não despausa o canal. Comandos de negócio continuam fora
+do escopo desta versão. Validar o primeiro envio somente com destinatário que
+autorize o teste e verificar no celular antes de repetir qualquer envio incerto.
