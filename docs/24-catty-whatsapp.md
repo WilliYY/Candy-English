@@ -1,5 +1,41 @@
 # Catty no WhatsApp — especificação da primeira versão
 
+## GPT-5.4 no canal (12/09/2026)
+
+- Pedido explícito do responsável: usar `gpt-5.4` no WhatsApp. O modelo é
+  configurável por `CATTY_WHATSAPP_OPENAI_MODEL`, independente de
+  `OPENAI_CATTY_MODEL`. Não altera o modelo nem o custo contratado do chat
+  pedagógico web/mobile automaticamente.
+- Toda conversa autorizada usa OpenAI, sem exigir chamar "Catty" pelo nome.
+  Uma chamada por geração, até 280 tokens de saída, `reasoning.effort=none`,
+  timeout de 12 segundos e `store=false`. Sem chave, erro ou resposta inválida,
+  usa repertório local; não faz uma segunda chamada paga ao Gemini.
+- Mantidos os limites existentes de 100 mensagens/24h no canal, 10 por contato/h,
+  20 pendentes, histórico curto, autorização, opt-out e pausa. Esses limites não
+  são um teto financeiro mensal nem uma quota diária individual de tokens.
+- A troca do modelo não concede permissões administrativas aos telefones.
+  Consulta financeira, agenda e grupos continuam pendentes de implementação
+  própria, com vínculo de identidade validado, permissões e testes. Não liberar
+  grupos antes de o responsável indicar quais e quais tipos de aviso podem receber.
+- Próxima etapa pedagógica proposta, ainda não ativada: quota persistente por
+  usuário, orçamento global com bloqueio, medição de entrada/saída e histórico
+  resumido. Não usar apenas o rate limit em memória como controle de gasto.
+- Testes `catty-whatsapp-reply.test.ts` usam fetch falso; nenhum teste envia
+  WhatsApp, acessa dados de alunos ou consome API paga.
+- Validação local: 6 testes novos, 291 gerais, 9 de autenticação mobile,
+  TypeScript, lint e build aprovados. Audit: 0 críticas e 12 altas preexistentes;
+  nenhuma dependência modificada. Sem migration ou alterações em roles.
+- Estado operacional conferido nesta etapa: número pareado anteriormente,
+  primeiro teste recebido pelo responsável, dois contatos explicitamente
+  autorizados cadastrados via serviço administrativo auditado, fila vazia e
+  canal ainda pausado. Não registrar telefones completos em Git. Identidade
+  administrativa da segunda pessoa aguarda confirmação; não existe vínculo de
+  permissão por telefone nesta versão.
+
+Referência de modelo e preços: [OpenAI GPT-5.4](https://developers.openai.com/api/docs/models/gpt-5.4).
+Valores dependem do consumo total de tokens, inclusive instruções e contexto;
+áudio e ferramentas, se adicionados no futuro, têm custos separados.
+
 Status em 11/09/2026: implementação autorizada pelo usuário ao pedir continuidade
 após a apresentação desta proposta. Tabelas e serviços exclusivos aprovados;
 pareamento e ativação permanecem separados da instalação.
