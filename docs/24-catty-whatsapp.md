@@ -31,6 +31,21 @@
   canal ainda pausado. Não registrar telefones completos em Git. Identidade
   administrativa da segunda pessoa aguarda confirmação; não existe vínculo de
   permissão por telefone nesta versão.
+- Publicação confirmada: commit `e9f8984` enviado ao GitHub e integrado no
+  Oracle, preservando os merges operacionais existentes. Imagem anterior mantida
+  em `candy-english-app:pre-gpt54-e9f8984`. Apenas o app Candy foi recriado;
+  overlay e sessão Evolution preservados, sem migração.
+- 14 verificações isoladas da fila passaram e o schema temporário foi removido.
+  No app publicado, smokes de servidor, autenticação e avatar passaram; imagem
+  em execução corresponde à recém-construída, app saudável, worker recente,
+  Evolution `open`, dois contatos autorizados e nenhuma nova mensagem WhatsApp.
+- Uma consulta pontual paga de validação, sem dados pessoais e sem envio ao
+  WhatsApp, retornou HTTP 200, `gpt-5.4-2026-03-05`, status `completed`, 2.357
+  tokens de entrada e 55 de saída. Custo estimado sem desconto de cache:
+  US$ 0,0067175 com entrada a US$ 2,50/milhão e saída a US$ 15/milhão.
+  Isso não mede o custo médio dos alunos: histórico e personalização mudam a
+  entrada. Com 2.357 tokens de entrada e o teto de 280 de saída, o exemplo seria
+  US$ 10,09/1.000 respostas, sem áudio, ferramentas, impostos ou câmbio.
 
 Referência de modelo e preços: [OpenAI GPT-5.4](https://developers.openai.com/api/docs/models/gpt-5.4).
 Valores dependem do consumo total de tokens, inclusive instruções e contexto;
