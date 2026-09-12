@@ -11,7 +11,7 @@ services:
     init: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
-    tmpfs: [/tmp:size=1m,mode=1777]
+    tmpfs: ["/tmp:size=1m,mode=1777"]
     volumes:
       - ./scripts/catty-whatsapp-worker.mjs:/worker.mjs:ro
     command: [node, /worker.mjs]
