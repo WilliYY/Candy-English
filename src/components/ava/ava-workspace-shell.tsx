@@ -95,6 +95,12 @@ const navGroups = [
         section: "Catty",
       },
       {
+        href: "/ava/whatsapp",
+        icon: MessageSquareText,
+        label: "Catty no WhatsApp",
+        section: "Catty",
+      },
+      {
         href: "/ava/admin?task=catty-artifacts",
         icon: Palette,
         label: "Catty dos alunos",

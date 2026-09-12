@@ -151,7 +151,7 @@ export default function PrivacyPage() {
             ))}
           </nav>
           <div className="mt-4 border-t border-primary/10 px-2 pt-4 text-xs leading-5 text-muted-foreground">
-            Última atualização: 3 de setembro de 2026.
+            Última atualização: 12 de setembro de 2026.
           </div>
         </aside>
 
@@ -253,6 +253,22 @@ export default function PrivacyPage() {
               plataformas. Alguns fornecedores podem processar dados fora do
               Brasil; nesses casos, a Candy English aplica os controles e
               salvaguardas cabíveis à relação com o fornecedor.
+            </p>
+            <p>
+              No canal opcional da Catty pelo WhatsApp, somente contatos previamente
+              autorizados recebem respostas. O nome de cadastro, o telefone, a
+              autorização e os registros operacionais são tratados para manter a
+              conversa e controlar os envios. Esse canal não acessa dados da conta
+              no AVA. Para interromper mensagens, envie SAIR ou solicite à equipe.
+            </p>
+            <p>
+              Na base operacional da Candy, telefones e conteúdo das conversas
+              desse canal são cifrados. O processador elimina o conteúdo expirado
+              após 24 horas e os metadados de envio após 30 dias; se o serviço
+              estiver indisponível, a limpeza é retomada quando ele volta. Cópias
+              de segurança seguem sua própria retenção e os provedores externos,
+              incluindo WhatsApp e IA, seguem suas políticas. Não envie documentos,
+              senhas ou informações confidenciais à Catty.
             </p>
           </LegalSection>
 

@@ -178,6 +178,17 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 - IA/OCR para sugerir campos e opcional/futuro e nao deve criar campos automaticamente sem pedido explicito.
 - Mudancas neste modulo devem atualizar `docs/15-homework-interativo.md`.
 
+## Catty no WhatsApp
+
+- Canal opcional `/ava/whatsapp`, exclusivamente ADMIN ativo, conforme `docs/24-catty-whatsapp.md`.
+- `src/lib/catty-whatsapp/` concentra transporte, fila, autorização e resposta do canal.
+- Não compartilhar sessão, segredos, banco ou serviços com Miauby/Wimifarma.
+- Ativação da infraestrutura não despausa envios; pareamento e ativação são ações explícitas.
+- Telefone autorizado não confere role nem acesso aos dados do AVA. Não adicionar comandos administrativos sem novo pedido.
+- Nunca testar enviando para contatos reais. Usar `scripts/catty-whatsapp-smoke.ts --isolated-schema` com rede bloqueada e fixtures removidas.
+- Depois de instalado no Oracle, preservar `COMPOSE_FILE`/overlay `docker-compose.whatsapp.yml` ao recriar o app; o worker exige a rede Catty.
+- A tela administrativa é exceção autorizada à ausência do botão comercial WhatsApp nos painéis.
+
 ## Banco e migrations
 
 - Toda alteracao em `prisma/schema.prisma` precisa de migration.

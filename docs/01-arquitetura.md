@@ -1,5 +1,16 @@
 # 01 - Arquitetura
 
+## Catty WhatsApp (12/09/2026)
+
+Canal opcional em `/ava/whatsapp`, somente ADMIN, com webhook autenticado e
+worker em `src/lib/catty-whatsapp/`. Reutiliza o repertório seguro da Catty,
+sem vincular telefone a role/StudentProfile ou acessar dados privados do AVA.
+`docker-compose.whatsapp.yml` adiciona transporte Evolution, banco e volumes
+exclusivos; nunca compartilha sessão/segredos com Miauby. Desligado no ambiente
+por padrão e pausado no banco mesmo após habilitar a infraestrutura. A nova
+tela administrativa é uma exceção explícita à ausência do botão comercial de
+WhatsApp nos painéis; esse botão continua ausente. Ver `docs/24-catty-whatsapp.md`.
+
 ## O que esta parte do sistema faz
 
 Este documento descreve a arquitetura tecnica atual do Candy English. Ele deve ser atualizado quando houver mudanca em rotas, camadas, padroes de autorizacao, Docker, storage, APIs ou layout principal.

@@ -1,5 +1,9 @@
 # Candy English
 
+Catty WhatsApp opcional: painel `/ava/whatsapp` exclusivo ADMIN, contatos
+autorizados, conexão QR e fila inicialmente pausada. Usa infraestrutura isolada
+da Miauby. Instalação, limites, testes e cuidados em `docs/24-catty-whatsapp.md`.
+
 Site institucional e AVA da Candy English.
 
 Financeiro Teacher (10/09/2026): professores podem marcar `Pago` e `Cancelar pagamento` de mensalidades e doces, com confirmacao, autor/horario no `FinancialLog` e aviso interno ao Admin. Valores dos alunos e de outros professores continuam ocultos; somente a propria fatura pessoal exibe valores. Edicao de valores, gastos e relatorios continua administrativa. Regras e validacao: `docs/13-financeiro.md`.

@@ -1,5 +1,19 @@
 # 05 - Comandos
 
+## Catty WhatsApp (opcional)
+
+```bash
+npx tsx --test src/lib/__tests__/catty-whatsapp-*.test.ts
+npx tsx scripts/catty-whatsapp-smoke.ts --isolated-schema
+docker compose -f docker-compose.yml -f docker-compose.whatsapp.yml config --quiet
+docker compose -f docker-compose.yml -f docker-compose.whatsapp.yml up -d catty-evolution-db catty-evolution catty-worker
+```
+
+O smoke usa schema exclusivo temporário e bloqueia rede; requer permissão CREATE
+SCHEMA, remove fixtures no finally e não envia WhatsApp. Antes de subir o worker,
+aplicar a migration e publicar o app com a rede do overlay. A instância permanece
+desconectada e a fila pausada. Procedimento completo em `docs/24-catty-whatsapp.md`.
+
 ## O que esta parte do sistema faz
 
 Este documento centraliza comandos de desenvolvimento, validacao, Docker e deploy.

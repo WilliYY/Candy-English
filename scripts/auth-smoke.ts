@@ -632,6 +632,7 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
   }
 
   const paths = [
+    "/ava/whatsapp",
     "/ava/admin?task=usuarios",
     "/ava/admin?task=aceitar-alunos",
     "/ava/admin?task=financeiro",
@@ -916,6 +917,7 @@ async function assertAnonymousProtectedRoutes() {
     "/ava/secretaria",
     "/ava/vendas",
     "/ava/ponto",
+    "/ava/whatsapp",
   ];
 
   for (const path of protectedPaths) {
@@ -999,6 +1001,7 @@ async function assertAdminOnlySecretariaTasks(role: SmokeRole, cookie: string) {
   }
 
   const protectedPaths = [
+    "/ava/whatsapp",
     "/ava/admin?task=financeiro",
     "/ava/admin?task=agenda",
     "/ava/admin?task=apis-senhas",
@@ -1086,6 +1089,18 @@ async function cleanup() {
 
 async function main() {
   await assertAnonymousProtectedRoutes();
+  for (const endpoint of ["webhook", "worker"]) {
+    const response = await fetch(buildUrl(`/api/catty/whatsapp/${endpoint}`), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+      redirect: "manual",
+    });
+    if (response.status !== 401) {
+      throw new Error(`Catty ${endpoint} sem chave recebeu ${response.status}, esperado 401`);
+    }
+  }
+  console.log("OK Catty WhatsApp APIs recusam chamadas sem chave");
   await cleanup();
 
   for (const [index, role] of roles.entries()) {

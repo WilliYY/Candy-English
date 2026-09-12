@@ -1,5 +1,17 @@
 # 07 - Historico de Decisoes
 
+## 12/09/2026 — Catty WhatsApp isolada do Miauby
+
+O usuário autorizou reutilizar a estrutura que funcionou no projeto Miauby e
+implementar no Candy, para uso interno e poucos contatos externos. Reutilização
+de padrões e do transporte Evolution 2.3.0 fixado por digest; sem copiar domínio
+de farmácia ou compartilhar instalação/sessão. ADMIN autoriza destinatários,
+pareia número e ativa envios separadamente. Nenhum comando de negócio nesta etapa.
+Erros HTTP 400 também podem ocorrer após envio na Evolution, por isso são
+entrega incerta e não autorizam retry. Lease/lock serializam processamento;
+worker antigo não pode sobrescrever estado de nova lease. Especificação e
+evidências em `docs/24-catty-whatsapp.md`.
+
 ## O que esta parte do sistema faz
 
 Este documento registra decisoes tecnicas importantes. Sempre que uma decisao for tomada, alterada ou substituida, adicione uma nova entrada.
