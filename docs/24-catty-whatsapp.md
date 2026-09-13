@@ -44,6 +44,12 @@
 - Validação local do incremento: 313 testes gerais/mobile/JSX (9 novos),
   Prisma validate, TypeScript, lint e build aprovados. Prévia fictícia encerrada
   e helper temporário removido; nenhuma fixture visual gravada no banco.
+- Primeiro smoke publicado detectou HTTP 200 anônimo com redirecionamento em
+  streaming causado por `loading.tsx`; a resposta não continha dados internos.
+  O skeleton passa a ficar em `Suspense` explícito, abaixo dos dois guards,
+  preservando o redirecionamento HTTP e o callback antes de iniciar streaming.
+  O smoke existente é o teste de regressão; não aceitar 200 no teste para
+  contornar a falha. Repetir validação/publicação antes de fechar a entrega.
 
 ## Proposta: liberação por pessoa, boas-vindas e grupo Interno (12/09/2026)
 
