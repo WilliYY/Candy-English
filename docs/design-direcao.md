@@ -30,6 +30,15 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 
 ## Assets
 
+### Atualização mobile — 13/09/2026
+
+A abertura usa agora texto HTML visível e um único carrossel sobre moldura estática
+criada no Canva, substituindo o enquadramento de altura mínima que cortava em
+tablet. `docs/26-site-mobile.md` registra arte, fontes, regras responsivas e
+validação. O antigo vídeo de moldura continua preservado em `public/brand/`.
+No site público, ferramentas mobile ficam compactas e não exibem balões
+espontâneos sobre o conteúdo; durante o foco em campos, saem da frente do formulário.
+
 - Favicon: `public/favicon.svg`, usando a bala original da Candy centralizada sobre fundo branco circular para evitar caixa branca quadrada na aba do navegador.
 - Logo animada principal: `public/brand/candy-logo-animated.webm`, em loop mudo, com fundo transparente, recorte otimizado e poster `public/brand/candy-logo-animated-poster.png`.
 - Logos estaticas legadas/fallback: `public/brand/logo-2.svg`, `public/brand/logo-1.svg` e `public/brand/logo-3.svg`.

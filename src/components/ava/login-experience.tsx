@@ -18,7 +18,7 @@ export function LoginExperience({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <section className={styles.page} data-motion={motionEnabled ? "on" : "off"}>
+    <section className={styles.page} data-login-page data-motion={motionEnabled ? "on" : "off"}>
       {motionEnabled ? (
         <video aria-hidden="true" className={styles.video} autoPlay loop muted playsInline preload="metadata" disablePictureInPicture>
           <source src="/brand/ava-login.mp4" type="video/mp4" />

@@ -42,7 +42,7 @@ const slides: HomeBannerSlide[] = [
     id: "intro-1",
     label: "Intro Candy English 1",
     src: "/brand/intro-1.mp4",
-    title: "Intro 1",
+    title: "O jeito Candy",
     type: "video",
   },
   {
@@ -66,16 +66,16 @@ const slides: HomeBannerSlide[] = [
     id: "intro-2",
     label: "Intro Candy English 2",
     src: "/brand/intro-2.mp4",
-    title: "Intro 2",
+    title: "Conheça a teacher",
     type: "video",
   },
 ];
 
 const arrowButtonClass =
-  "absolute top-1/2 z-20 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/75 bg-white/90 text-primary shadow-[0_0.75rem_1.5rem_rgba(44,19,56,0.22)] outline-none transition hover:-translate-y-[52%] hover:bg-white focus-visible:ring-2 focus-visible:ring-primary sm:size-12";
+  "absolute top-1/2 z-20 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/75 bg-white/90 text-primary shadow-[0_0.75rem_1.5rem_rgba(44,19,56,0.22)] outline-none transition hover:bg-white focus-visible:ring-2 focus-visible:ring-primary sm:size-12";
 
 const videoButtonClass =
-  "inline-flex size-10 items-center justify-center rounded-full border border-white/75 bg-white/92 text-primary shadow-[0_0.6rem_1.25rem_rgba(44,19,56,0.22)] outline-none transition hover:-translate-y-0.5 hover:bg-white focus-visible:ring-2 focus-visible:ring-primary";
+  "inline-flex size-11 items-center justify-center rounded-full border border-white/75 bg-white/92 text-primary shadow-[0_0.6rem_1.25rem_rgba(44,19,56,0.22)] outline-none transition hover:bg-white focus-visible:ring-2 focus-visible:ring-primary";
 
 export function HomeBannerCarousel({ className }: { className?: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -147,6 +147,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
   }, [activeSlide.id]);
 
   function showSlide(index: number) {
+    setIsAutoPaused(true);
     setActiveIndex((index + slides.length) % slides.length);
   }
 
@@ -294,10 +295,14 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-[1.35rem] border border-white/85 bg-white/92 p-1.5 shadow-2xl shadow-primary/18 backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:shadow-primary/24 sm:rounded-[1.65rem]",
+        "group relative overflow-hidden rounded-[1.35rem] border border-white/85 bg-white p-1.5 shadow-xl sm:rounded-[1.65rem]",
         className,
       )}
       aria-label="Banners Candy English"
+      aria-roledescription="carrossel"
+      onFocusCapture={(event) => {
+        if (!event.target.closest("[data-carousel-rotation]")) setIsAutoPaused(true);
+      }}
     >
       <div
         ref={stageRef}
@@ -343,7 +348,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
                   alt={slide.label}
                   fill
                   draggable={false}
-                  sizes="(max-width: 767px) 23rem, 64rem"
+                  sizes="(max-width: 1023px) 90vw, 680px"
                   className="relative z-10 object-contain object-center"
                 />
               ) : (
@@ -460,7 +465,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
         ) : null}
       </div>
 
-      <div className="flex flex-col gap-3 px-3 pb-3 pt-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+      <div className="flex flex-col gap-2 px-3 pb-2 pt-3 sm:px-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-black leading-tight text-primary sm:text-lg">
@@ -476,7 +481,7 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
         </div>
 
         <div
-          className="flex shrink-0 items-center justify-center gap-2"
+          className="flex flex-wrap items-center justify-center"
           aria-label="Indicadores do banner"
         >
           {slides.map((slide, index) => (
@@ -485,15 +490,25 @@ export function HomeBannerCarousel({ className }: { className?: string }) {
               type="button"
               aria-label={`Mostrar banner ${index + 1}`}
               aria-current={index === activeIndex ? "true" : undefined}
-              className={cn(
-                "size-2.5 rounded-full border border-primary/20 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                index === activeIndex
-                  ? "w-7 bg-primary"
-                  : "bg-primary/18 hover:bg-primary/35",
-              )}
+              className="inline-flex size-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => showSlide(index)}
-            />
+            >
+              <span aria-hidden="true" className={cn("h-2.5 rounded-full transition-all", index === activeIndex ? "w-6 bg-primary" : "w-2.5 bg-primary/30")} />
+            </button>
           ))}
+          {!prefersReducedMotion ? (
+            <button type="button" data-carousel-rotation="true" className="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label={isAutoPaused ? "Ativar troca automática" : "Pausar troca automática"}
+              onClick={() => {
+                if (isAutoPaused) {
+                  Object.values(videoRefs.current).forEach(video => video?.pause());
+                }
+                setIsAutoPaused(current => !current);
+              }}>
+              {isAutoPaused ? <Play aria-hidden="true" size={14} /> : <Pause aria-hidden="true" size={14} />}
+              {isAutoPaused ? "Automático" : "Pausar"}
+            </button>
+          ) : null}
         </div>
       </div>
     </article>

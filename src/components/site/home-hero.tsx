@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowDown, ArrowRight, Sparkles } from "lucide-react";
 import { HomeBannerCarousel } from "@/components/site/home-banner-carousel";
-import { HomeHeroLoopVideo } from "@/components/site/home-hero-loop-video";
 import { Button } from "@/components/ui/button";
+import styles from "./home-hero.module.css";
 
-export const homeMethodVideoUrl =
-  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4";
+export const homeMethodVideoUrl = "/brand/informacoes.mp4";
 
 export const homeLoopVideoUrl = "/brand/home.mp4";
 export const homeHeroVideoUrl = "/brand/home-candy-2.mp4";
@@ -26,46 +25,20 @@ export function HomeHero({ content }: HomeHeroProps) {
     "Aulas personalizadas com materiais, vocabulario, homework online e devolutivas em um AVA proprio para acompanhar cada passo.";
 
   return (
-    <section className="candy-home-clean relative isolate flex min-h-screen overflow-hidden text-primary">
-      <div className="candy-home-clean-field absolute inset-0 z-0" />
-      <div className="absolute inset-x-0 top-0 z-[1] h-44 bg-gradient-to-b from-[#fce5d8]/60 to-transparent" />
-
-      <div className="relative z-10 mx-auto flex w-full max-w-[98rem] flex-col justify-center px-3 pb-20 pt-28 sm:px-5 sm:pb-24 sm:pt-32 lg:px-8">
-        <h1 className="sr-only">{title}</h1>
-        <p className="sr-only">{description}</p>
-
-        <div className="mx-auto w-full max-w-[23rem] md:hidden">
-          <HomeBannerCarousel className="animate-fade-rise" />
-        </div>
-
-        <div className="mx-auto hidden w-full max-w-[82rem] md:block">
-          <div className="animate-fade-rise relative isolate aspect-[4/5] min-h-[34rem] overflow-hidden rounded-[2rem] border border-white/80 bg-white p-1.5 shadow-2xl shadow-primary/14 backdrop-blur-sm sm:aspect-[16/11] sm:min-h-[43rem] lg:aspect-[16/9] lg:min-h-0">
-            <div className="absolute inset-2 overflow-hidden rounded-[1.5rem] bg-white">
-              <HomeHeroLoopVideo
-                label="Home Candy English"
-                media="(min-width: 768px)"
-                src={homeHeroVideoUrl}
-                className="absolute inset-0 rounded-[1.5rem] object-top scale-[1.01] sm:scale-[1.025] lg:scale-[1.035]"
-              />
-            </div>
-
-            <div className="pointer-events-none absolute inset-2 z-[1] rounded-[1.5rem] bg-[linear-gradient(90deg,rgba(255,255,255,0.14),transparent_35%,rgba(255,255,255,0.18))]" />
-
-            <div className="animate-fade-rise-delay relative z-10 min-h-[32rem] p-3 pt-44 sm:min-h-[41rem] sm:p-5 sm:pt-56 lg:absolute lg:bottom-[6.5%] lg:left-[6%] lg:min-h-0 lg:w-[70%] lg:max-w-[64rem] lg:p-0 xl:bottom-[7%] xl:left-[6%] xl:w-[69%]">
-              <HomeBannerCarousel />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex justify-center sm:mt-5">
-          <div className="animate-fade-rise-delay-2 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+    <section className={styles.hero} aria-labelledby="home-title">
+      <div className={styles.layout}>
+        <div className={styles.copy}>
+          <p className={styles.eyebrow}><Sparkles aria-hidden="true" size={16} /> SEU INGLÊS. SEU JEITO.</p>
+          <h1 id="home-title" className={styles.title}>{title}</h1>
+          <p className={styles.description}>{description}</p>
+          <div className={styles.actions}>
             <Button
               asChild
               size="lg"
-              className="w-full rounded-full bg-white px-10 py-5 text-base font-semibold text-primary shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-white/90 sm:w-auto sm:px-14"
+              className={styles.primary}
             >
               <Link href="/contato">
-                {content?.ctaLabel ?? "Comecar conversa"}
+                {content?.ctaLabel ?? "Começar conversa"}
                 <ArrowRight data-icon="inline-end" />
               </Link>
             </Button>
@@ -73,13 +46,23 @@ export function HomeHero({ content }: HomeHeroProps) {
               asChild
               size="lg"
               variant="outline"
-              className="w-full rounded-full border-white/70 bg-[#14071b] px-10 py-5 text-base font-semibold text-white shadow-2xl shadow-black/20 transition-transform hover:scale-[1.03] hover:bg-[#21102a] hover:text-white sm:w-auto"
+              className={styles.secondary}
             >
               <Link href="/ava">Entrar no AVA</Link>
             </Button>
           </div>
+          <p className={styles.locations}>Ivaté · Douradina <span aria-hidden="true">/</span> Aulas com a sua cara</p>
+        </div>
+        <div className={styles.studio}>
+          <div className={styles.studioHeading}>
+            <span className={styles.sticker}>Hello, Candy!</span>
+            <span className={styles.studioLabel}>DÊ O PLAY. CONHEÇA A CANDY.</span>
+          </div>
+          <HomeBannerCarousel className={styles.carousel} />
+          <p className={styles.studioNote}>Um pouco das nossas aulas. Muito do nosso jeito.</p>
         </div>
       </div>
+      <a className={styles.explore} href="#jeito-candy">Conheça nosso jeito de ensinar <ArrowDown aria-hidden="true" size={16} /></a>
     </section>
   );
 }

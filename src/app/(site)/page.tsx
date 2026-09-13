@@ -15,6 +15,7 @@ import {
   homeMethodVideoUrl,
 } from "@/components/site/home-hero";
 import { WhatsAppIcon } from "@/components/site/whatsapp-icon";
+import { InstitutionalBackgroundVideo } from "@/components/site/institutional-background-video";
 import { Button } from "@/components/ui/button";
 import { getSitePageContent } from "@/lib/site-content";
 import {
@@ -107,20 +108,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <HomeHero content={content} />
 
-      <section className="home-method-video-section relative isolate flex overflow-hidden border-b text-white">
-        <video
-          aria-label="Fundo em video para metodologia Candy English"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          className="home-method-video absolute inset-0 -z-20 h-full w-full object-cover"
-        >
-          <source src={homeMethodVideoUrl} type="video/mp4" />
-        </video>
+      <section id="jeito-candy" className="relative isolate flex scroll-mt-28 overflow-hidden border-b bg-primary text-white">
+        <InstitutionalBackgroundVideo src={homeMethodVideoUrl} />
         <div className="absolute inset-0 -z-10 bg-[linear-gradient(90deg,rgba(43,18,55,0.68),rgba(43,18,55,0.34)_50%,rgba(43,18,55,0.58))]" />
-        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-28 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.78fr_1.22fr] lg:items-center lg:px-8 lg:py-24">
           <div className="flex flex-col gap-5">
             <span className="text-sm font-semibold uppercase tracking-[0.28em] text-white/80">
               Metodologia
@@ -157,21 +148,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       <section className="relative isolate overflow-hidden bg-[#fef7f3] pb-44 lg:pb-52">
-        <video
-          aria-label="Fundo em video para contato Candy English"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          className="home-final-video absolute inset-0 z-0 h-full w-full object-cover"
-        >
-          <source
-            src={homeLoopVideoUrl}
-            type="video/mp4"
-            media="(prefers-reduced-motion: no-preference)"
-          />
-        </video>
+        <InstitutionalBackgroundVideo src={homeLoopVideoUrl} />
         <div className="absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(254,247,243,0.88),rgba(254,247,243,0.68)_48%,rgba(254,247,243,0.9))]" />
         <div className="relative z-10 mx-auto grid w-full max-w-7xl gap-10 px-6 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:items-stretch lg:px-8 lg:py-24">
           <div className="flex flex-col justify-center gap-6">

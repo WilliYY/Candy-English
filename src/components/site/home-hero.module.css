@@ -1,0 +1,39 @@
+.hero { color: var(--primary); background: #fefbfa; padding: 8rem 1rem 3rem; }
+.layout { max-width: 80rem; margin: auto; display: grid; gap: 2.5rem; align-items: center; }
+.copy, .studio { min-width: 0; }
+.eyebrow { display: flex; align-items: center; gap: .5rem; font-size: .7rem; letter-spacing: .12em; font-weight: 700; }
+.title { margin: 1rem 0; max-width: 16ch; font-size: clamp(2.25rem, 5vw, 4.25rem); line-height: 1.08; letter-spacing: -.045em; font-weight: 750; text-wrap: balance; overflow-wrap: anywhere; }
+.description { max-width: 42ch; font-size: 1rem; line-height: 1.8; color: var(--muted-foreground); }
+.actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+.primary, .secondary { height: auto; min-height: 3.25rem; border-radius: 1rem; padding: .85rem 1.25rem; font-size: .9375rem; white-space: normal; text-align: center; }
+.primary { box-shadow: 0 8px 0 #eac9e9; }
+.secondary { background: transparent; border-color: #b5a6bc; }
+.locations { margin-top: 1.75rem; display: flex; flex-wrap: wrap; gap: .6rem; color: var(--muted-foreground); font-size: .75rem; }
+.studio { position: relative; border-radius: 1.75rem; padding: 1rem; background: #e9acd0 url('/brand/candy-video-frame-canva.webp') center / cover; }
+.studioHeading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: .25rem .25rem 1rem; }
+.sticker { display: inline-block; border: 1px solid #412a4c; border-radius: 50%; background: #fff4dd; padding: .7rem 1rem; transform: rotate(-6deg); font: italic 1.25rem Georgia, serif; box-shadow: 3px 3px 0 #412a4c; }
+.studioLabel { max-width: 12rem; font-size: .65rem; line-height: 1.6; letter-spacing: .1em; font-weight: 800; }
+.carousel { min-width: 0; box-shadow: 0 16px 36px #412a4c26; }
+.studioNote { padding: 1rem .25rem .25rem; font-size: .75rem; line-height: 1.6; font-weight: 600; }
+.explore { display: flex; align-items: center; justify-content: center; gap: .65rem; min-height: 44px; width: fit-content; margin: 2rem auto 0; font-size: .8rem; text-align: center; }
+.explore:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: .5rem; }
+@media (max-width: 374px) {
+  .actions > * { width: 100%; }
+  .studio { padding: .65rem; }
+}
+@media (min-width: 640px) {
+  .hero { padding: 9rem 2rem 3rem; }
+  .layout { gap: 3rem; }
+  .studio { padding: 1.5rem; }
+}
+@media (min-width: 1024px) {
+  .hero { padding-top: 10rem; }
+  .layout { grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 3rem; }
+  .studio { transform: rotate(1deg); }
+  .explore { margin-top: 3rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .copy, .studio { animation: reveal .5s ease-out both; }
+  .studio { animation-delay: .1s; }
+  @keyframes reveal { from { opacity: 0; translate: 0 12px; } to { opacity: 1; translate: 0 0; } }
+}

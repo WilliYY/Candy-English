@@ -1090,6 +1090,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
   return (
     <div
+      data-public-notice={publicNoticeVisible ? "true" : undefined}
       className={`catty-widget pointer-events-none fixed right-2.5 z-50 flex max-w-[calc(100vw-1rem)] flex-col items-end sm:right-5 sm:max-w-none ${
         hasWhatsAppWidget ? "catty-widget--with-whatsapp" : ""
       }`}

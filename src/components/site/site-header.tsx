@@ -138,6 +138,7 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
         )}
       >
         <BrandLogo
+          animated={false}
           className={cn(
             "shrink-0",
             isHome
@@ -200,7 +201,7 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
             asChild
             size="lg"
             className={cn(
-              "candy-ava-button group relative h-10 shrink-0 px-3 text-sm font-bold sm:px-5 md:px-4 lg:px-8 lg:text-base",
+              "candy-ava-button group relative h-11 shrink-0 px-3 text-sm font-bold sm:px-5 md:px-4 lg:px-8 lg:text-base",
               isHome
                 ? "shadow-lg shadow-primary/30"
                 : "shadow-md shadow-primary/20",
@@ -220,7 +221,7 @@ export function SiteHeader({ sessionUser }: SiteHeaderProps) {
             variant="ghost"
             size="icon"
             className={cn(
-              "size-10 rounded-full md:hidden",
+              "size-11 rounded-full md:hidden",
               isHome
                 ? "bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
                 : "text-foreground hover:bg-primary/5 hover:text-primary",

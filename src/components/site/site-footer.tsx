@@ -43,11 +43,11 @@ export function SiteFooter() {
         ))}
       </div>
       <div className="candy-footer-content relative z-10">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 pb-32 pt-14 md:grid-cols-[1fr_auto_1fr] md:items-end md:pb-12 md:pt-12 lg:px-8">
+        <div className="mx-auto grid w-full max-w-7xl gap-6 px-6 pb-12 pt-14 md:grid-cols-2 md:items-center lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.3fr)] lg:px-8">
           <div className="flex flex-col gap-4">
             <BrandLogo
-              className="-ml-3 h-[5.25rem] w-[320px] overflow-visible"
-              imageClassName="w-[400px]"
+              className="h-[5.25rem] w-full max-w-[280px] overflow-hidden"
+              imageClassName="w-full max-w-full"
               variant="light"
             />
           </div>
@@ -56,7 +56,7 @@ export function SiteFooter() {
           </div>
           <nav
             aria-label="Rodape"
-            className="flex flex-wrap gap-4 text-sm text-white/70 md:justify-end"
+            className="flex min-w-0 flex-wrap gap-x-5 gap-y-1 text-sm text-white/85 md:col-span-2 lg:col-span-1 lg:justify-end [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center"
           >
             <Link className="hover:text-white" href="/sobre">
               Sobre
