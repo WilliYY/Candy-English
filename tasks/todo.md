@@ -1,5 +1,15 @@
 # Catty WhatsApp — execução
 
+## Rotina ADMIN (13/09/2026)
+
+- [x] Consultar Agenda/Financeiro com leitura mínima e enviar somente o teste
+  explicitamente autorizado ao Interno, com auditoria/idempotência. HTTP 201
+  aceito; entrega/leitura ainda não confirmada. Canal mantido pausado.
+- [x] Criar domínio, projeção ADMIN, página somente leitura e atalho Rotina.
+- [x] Testar datas, statuses, privacidade da projeção e renderização.
+- [ ] Validar callback e smoke de acesso por role, visual, build e publicação.
+- [ ] Confirmar saúde publicada sem novo envio e entregar lista atualizada.
+
 ## Liberação por pessoa — rascunho pendente de aprovação
 
 - [x] Conferir código, schema, identidade informada e estado do canal.

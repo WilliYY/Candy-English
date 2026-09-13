@@ -181,6 +181,7 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 ## Catty no WhatsApp
 
 - Canal opcional `/ava/whatsapp`, exclusivamente ADMIN ativo, conforme `docs/24-catty-whatsapp.md`.
+- `/ava/rotina` é consulta somente leitura, exclusiva ADMIN ativo: estado da Catty, Agenda do dia, pendências financeiras/doces e auditoria. Não envia mensagens, não entrega esses dados à IA e não cria agendamentos implicitamente.
 - `src/lib/catty-whatsapp/` concentra transporte, fila, autorização e resposta do canal.
 - Não compartilhar sessão, segredos, banco ou serviços com Miauby/Wimifarma.
 - Ativação da infraestrutura não despausa envios; pareamento e ativação são ações explícitas.

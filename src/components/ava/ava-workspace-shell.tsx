@@ -101,6 +101,12 @@ const navGroups = [
         section: "Catty",
       },
       {
+        href: "/ava/rotina",
+        icon: CalendarCheck2,
+        label: "Rotina",
+        section: "Catty",
+      },
+      {
         href: "/ava/admin?task=catty-artifacts",
         icon: Palette,
         label: "Catty dos alunos",

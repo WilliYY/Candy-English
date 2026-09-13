@@ -1,5 +1,10 @@
 # 14 - Agenda
 
+Consulta complementar em `/ava/rotina` (13/09/2026): somente ADMIN ativo pode
+escolher o dia e consultar aluno, polo, horário e status das ocorrências ativas.
+Preserva `America/Sao_Paulo` e não registra presença nem envia lembretes.
+Detalhes em `docs/24-catty-whatsapp.md`.
+
 ## O que esta parte do sistema faz
 
 O modulo Agenda e um controle interno simples do administrador em `/ava/admin?task=agenda`. Ele substitui o uso de sheets para organizar quais alunos internos vem em quais dias e horarios, confirmar presenca, registrar falta, consultar historico, inativar rotinas sem apagar registros antigos e excluir cadastros criados por engano.

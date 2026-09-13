@@ -1,5 +1,50 @@
 # Catty no WhatsApp — especificação da primeira versão
 
+## Rotina ADMIN e teste pontual no grupo (13/09/2026)
+
+- Nova área `/ava/rotina`, com atalho **Rotina** no grupo Catty da navegação
+  ADMIN. Exige sessão ADMIN e conta atual ativa/não excluída no banco. O retorno
+  do login preserva a rota e a data; Teacher/Student não recebem esses dados.
+- Consulta somente leitura: dia da Agenda e competência do Financeiro,
+  mensalidades em aberto/vencidas, contagem de pagas e doces pendentes com
+  produto/quantidade/valor. Não soma doces duas vezes nem interpreta cadastro
+  financeiro incompleto como dívida vencida. Vencidos são relativos ao dia
+  atual em `America/Sao_Paulo`, não à data histórica selecionada.
+- `AgendaLesson` usa suas ocorrências/status reais; `SCHEDULED` não comprova
+  presença. `Sale.invoiceDueDate` é data civil e não deve ser deslocada pelo
+  fuso. Cadastros/ocorrências inativos e vendas estornadas não entram na lista.
+- Mostra estado real do canal, fila, manutenção e últimas 12 ações auditadas.
+  Avisos de aula, pagamento e grupo aparecem **Não configurada**, sem próxima
+  execução. Não há formulário de agendamento ou scheduler de lembretes nesta
+  versão: frequência, destinatários e conteúdo ainda serão escolhidos.
+- Tela sem escrita, consulta à IA ou envio WhatsApp. Nenhuma migration,
+  dependência, mudança de role, cobrança ou regra da fila é necessária.
+  A proposta de liberação individual abaixo continua pendente de implementação.
+- Teste real de grupo autorizado explicitamente nesta conversa em 12/09:
+  conferidos grupo único `Interno`, conexão aberta, ADMIN ativo e canal pausado;
+  reserva de operação única em `CattyWhatsappAudit` antes de uma única chamada.
+  Transporte retornou HTTP 201 e identificador válido, status `PENDING`.
+  Auditoria `GROUP_TEST_ACCEPTED` registra aceite, não entrega/leitura; não
+  houve retry nem ativação do canal. Texto identificava o teste, sem dados de
+  alunos ou financeiro. Não versionar JID, telefone, mensagem ou credenciais.
+- Cobertura: testes de domínio/dados/UI e callback; `scripts/auth-smoke.ts`
+  inclui rota anônima, callback com data, ADMIN e bloqueio Teacher/Student.
+  Comandos: `npx tsx --test src/lib/__tests__/catty-routine*.test.*`,
+  `npm run typecheck`, `npm run lint`, `npm run build` e smokes Docker.
+- Conferência visual isolada com dados fictícios: 320, 768, 1024 e 1440 px,
+  sem overflow horizontal ou nomes cortados; campo de data navegável por
+  teclado, preferência de movimento reduzido aplicada e console sem erros.
+  Não confundir esta prévia visual com prova de acesso autenticado em produção.
+- Audit nativo em 13/09: 0 críticas e 12 altas preexistentes, concentradas no
+  tooling ESLint/Prisma e transitivas (incluindo `mysql2`, não usado pelo banco
+  PostgreSQL do app). Nenhuma dependência/lockfile alterado. A nova tela não
+  encaminha entrada externa a configuração/globs dessas ferramentas; atualização
+  e avaliação completa das transitivas permanecem pendentes para revisão até
+  20/09/2026. Não aplicar `audit fix --force` junto desta entrega.
+- Validação local do incremento: 313 testes gerais/mobile/JSX (9 novos),
+  Prisma validate, TypeScript, lint e build aprovados. Prévia fictícia encerrada
+  e helper temporário removido; nenhuma fixture visual gravada no banco.
+
 ## Proposta: liberação por pessoa, boas-vindas e grupo Interno (12/09/2026)
 
 **Status: especificação para aprovação; não implementada.** A alteração aditiva

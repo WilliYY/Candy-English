@@ -1,5 +1,13 @@
 # Plano — Catty WhatsApp
 
+## Incremento autorizado — Rotina ADMIN (13/09/2026)
+
+Pedido atual: teste pontual no Interno, lista privada da Agenda/Financeiro e
+área ADMIN para acompanhar ações/rotina da Catty. Implementar consulta somente
+leitura em `/ava/rotina`, sem migration ou agendamentos inventados. Testar
+políticas/projeção, UI, callback de login e acesso por role; publicar após build
+e smokes. A proposta abaixo não é ativada implicitamente por esta consulta.
+
 ## Próxima etapa proposta — aguardando aprovação
 
 Especificação: seção “Proposta: liberação por pessoa, boas-vindas e grupo

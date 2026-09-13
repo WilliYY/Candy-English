@@ -3,6 +3,7 @@ const AVA_CALLBACK_PATHS = new Set([
   "/ava/admin",
   "/ava/escolha",
   "/ava/secretaria",
+  "/ava/rotina",
   "/ava/student",
   "/ava/teacher",
 ]);

@@ -1,5 +1,11 @@
 # 13 - Financeiro
 
+Consulta complementar em `/ava/rotina` (13/09/2026): somente ADMIN ativo pode
+ver pendências da competência, contagem de pagas e doces em aberto discriminados.
+Mensalidades e doces aparecem separados; não há confirmação/cancelamento de
+pagamento, cobrança automática ou envio de dados ao WhatsApp/IA nessa tela.
+Detalhes, limites e validação em `docs/24-catty-whatsapp.md`.
+
 ## O que esta parte do sistema faz
 
 O modulo Financeiro possui duas superficies protegidas. O painel administrativo completo fica em `/ava/admin?task=financeiro`; a consulta limitada da Teacher fica em `/ava/teacher?task=financeiro`. A tela Admin usa uma planilha mensal separada por polo, com Ivaté primeiro e Douradina depois. Cada linha mostra aluno, mes, valor, vencimento, situacao e acao rapida para marcar como pago; ao clicar no aluno, o painel de detalhes abre com a data de pagamento ou a pendencia daquela competencia.

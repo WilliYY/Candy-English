@@ -633,6 +633,8 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
 
   const paths = [
     "/ava/whatsapp",
+    "/ava/rotina",
+    "/ava/rotina?date=2026-09-12",
     "/ava/admin?task=usuarios",
     "/ava/admin?task=aceitar-alunos",
     "/ava/admin?task=financeiro",
@@ -656,6 +658,10 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
 
     const text = await response.text();
     assertNoServerException(path, response, text);
+
+    if (path.startsWith("/ava/rotina") && !normalizeHtmlText(text).includes("Nenhum disparo agendado")) {
+      throw new Error("Rotina admin não mostrou o estado real dos agendamentos.");
+    }
 
     if (path === "/ava/admin?task=financeiro&unit=all") {
       const normalizedText = normalizeHtmlText(text);
@@ -918,6 +924,7 @@ async function assertAnonymousProtectedRoutes() {
     "/ava/vendas",
     "/ava/ponto",
     "/ava/whatsapp",
+    "/ava/rotina",
   ];
 
   for (const path of protectedPaths) {
@@ -937,6 +944,7 @@ async function assertAnonymousProtectedRoutes() {
   }
 
   const deepLinks = [
+    "/ava/rotina?date=2026-09-12",
     "/ava/admin?task=financeiro&unit=DOURADINA",
     "/ava/teacher?task=financeiro&unit=IVATE&month=8",
     "/ava/teacher?task=aceitar-alunos&unit=IVATE&preStatus=PENDING",
@@ -1002,6 +1010,7 @@ async function assertAdminOnlySecretariaTasks(role: SmokeRole, cookie: string) {
 
   const protectedPaths = [
     "/ava/whatsapp",
+    "/ava/rotina",
     "/ava/admin?task=financeiro",
     "/ava/admin?task=agenda",
     "/ava/admin?task=apis-senhas",

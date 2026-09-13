@@ -1,5 +1,15 @@
 # 07 - Historico de Decisoes
 
+## 13/09/2026 — Rotina da Catty somente leitura e ADMIN
+
+Pedido: acompanhar o funcionamento diário/agendado da Catty e consultar Agenda
+e Financeiro. Decisão: criar `/ava/rotina` como visão administrativa do estado
+real, sem introduzir scheduler ou migration antes de definir frequência,
+destinatários e conteúdo. Guardas conferem sessão e conta atual; projeção mínima
+não vai à IA ou a grupos. Avisos ainda não configurados são identificados como
+tal, sem inventar próximas execuções. Teste real do Interno foi operação pontual
+explicitamente autorizada, auditada e sem retry; não despausou o canal.
+
 ## 12/09/2026 — Catty WhatsApp isolada do Miauby
 
 O usuário autorizou reutilizar a estrutura que funcionou no projeto Miauby e
