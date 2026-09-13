@@ -7,8 +7,10 @@
   aceito; entrega/leitura ainda não confirmada. Canal mantido pausado.
 - [x] Criar domínio, projeção ADMIN, página somente leitura e atalho Rotina.
 - [x] Testar datas, statuses, privacidade da projeção e renderização.
-- [ ] Validar callback e smoke de acesso por role, visual, build e publicação.
-- [ ] Confirmar saúde publicada sem novo envio e entregar lista atualizada.
+- [x] Validar callback e smoke de acesso por role, visual, build e publicação.
+  Corrigido streaming antes do guard; 313 testes e 46 checks publicados OK.
+- [x] Confirmar saúde publicada sem novo envio e atualizar lista da consulta
+  de 13/09 para entrega. Canal pausado; candidato e contas temporárias removidos.
 
 ## Liberação por pessoa — rascunho pendente de aprovação
 

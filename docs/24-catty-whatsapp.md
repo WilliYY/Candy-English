@@ -49,7 +49,26 @@
   O skeleton passa a ficar em `Suspense` explícito, abaixo dos dois guards,
   preservando o redirecionamento HTTP e o callback antes de iniciar streaming.
   O smoke existente é o teste de regressão; não aceitar 200 no teste para
-  contornar a falha. Repetir validação/publicação antes de fechar a entrega.
+  contornar a falha. Correção `bc9d03e` validada e publicada em 13/09/2026.
+- Publicação concluída: incremento `b6e15d3` e correção `bc9d03e` enviados ao
+  GitHub e incorporados no Oracle, preservando o overlay WhatsApp, sem migration.
+  Repetidos 313 testes, typecheck, lint e build. Auth/avatar passaram no candidato
+  e os três smokes publicados passaram (46 linhas OK). HTTP público: health 200;
+  Rotina anônima 307 com callback/data preservados e cache privado/no-store.
+  Imagem ativa igual à construída, app saudável e worker recente; canal pausado.
+  Candidato removido e zero contas temporárias desta validação remanescentes.
+  O teste de grupo permanece aceito, sem nova chamada ou confirmação de leitura.
+- Cuidado operacional: `docker compose run` dos tools pode recriar o app por
+  dependência quando a imagem mudou; isso ocorreu ao validar o candidato.
+  Usar `--no-deps` nos smokes de candidato quando app/banco já estão saudáveis,
+  para manter separadas a validação candidata e a publicação. Os três smokes
+  finais foram executados com `--no-deps` contra o app publicado.
+- Arquivos do incremento: `src/app/ava/rotina/page.tsx` e `error.tsx`, componentes
+  `catty-routine-panel.tsx`/`catty-routine-loading.tsx`, navegação
+  `ava-workspace-shell.tsx`, domínio/dados `catty-whatsapp/routine-*.ts`, validação
+  `validations/catty-routine.ts`, callback `ava-callback-url.ts`, três arquivos
+  `catty-routine*.test.*` e `scripts/auth-smoke.ts`; documentação em AGENTS,
+  decisões, Financeiro, Agenda, Catty, contexto rápido e plano/checklist.
 
 ## Proposta: liberação por pessoa, boas-vindas e grupo Interno (12/09/2026)
 

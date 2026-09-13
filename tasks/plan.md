@@ -8,6 +8,10 @@ leitura em `/ava/rotina`, sem migration ou agendamentos inventados. Testar
 políticas/projeção, UI, callback de login e acesso por role; publicar após build
 e smokes. A proposta abaixo não é ativada implicitamente por esta consulta.
 
+Concluído em 13/09/2026: commits `b6e15d3`/`bc9d03e`, publicação saudável,
+313 testes e 46 checks publicados. Consulta atualizada sem alterar Agenda,
+Financeiro ou envios. Evidências e correção do streaming em `docs/24-catty-whatsapp.md`.
+
 ## Próxima etapa proposta — aguardando aprovação
 
 Especificação: seção “Proposta: liberação por pessoa, boas-vindas e grupo

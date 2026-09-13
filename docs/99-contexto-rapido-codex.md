@@ -7,6 +7,11 @@ Teste pontual no Interno autorizado pelo usuário retornou HTTP 201 (`PENDING`):
 aceite não comprova entrega. Canal preservado pausado. Liberação por conta do
 AVA e lembretes continuam pendentes; ver estado detalhado em `docs/24-catty-whatsapp.md`.
 
+Publicação da Rotina confirmada em 13/09/2026: `b6e15d3`/`bc9d03e`, 313 testes,
+typecheck/lint/build e 46 checks publicados de servidor/auth/avatar aprovados.
+Skeleton só após autorização (Suspense interno); anônimo recebe HTTP 307,
+callback/data preservados. App saudável, canal pausado e fixtures removidas.
+
 Atualização 12/09/2026: Catty WhatsApp usa OpenAI `gpt-5.4` por `CATTY_WHATSAPP_OPENAI_MODEL`, sem gatilho nominal, até 280 tokens de saída e fallback local sem segunda chamada paga. A configuração do chat pedagógico web/mobile permanece inalterada. Trocar o modelo ou autorizar contato não dá role ADMIN ao telefone. Consulta financeira, agenda, grupos e quotas diárias individuais são etapas separadas; ver `docs/24-catty-whatsapp.md`.
 
 Publicação GPT-5.4 confirmada: `e9f8984`, 291 testes gerais, 9 mobile auth, 14 verificações isoladas, typecheck/lint/build e smokes publicados de servidor/auth/avatar aprovados. Consulta fictícia ao modelo respondeu HTTP 200 sem enviar WhatsApp. Canal conectado, pausado e com dois contatos autorizados; segundo vínculo ADMIN aguarda confirmação. O registro de instalação abaixo é histórico anterior ao pareamento.
