@@ -64,8 +64,39 @@ passou após o ajuste nas cinco larguras especificadas. Em desenvolvimento, a CS
 impede o runtime React Refresh (`unsafe-eval`), portanto a interação deve ser
 validada com `next build` / `next start`, sem relaxar a segurança.
 
-Validação local: 313 testes, lint sem erros e build aprovado. Na versão de produção
-local, menu/Escape, troca de slides, pausa, reprodução/som e movimento reduzido
-foram exercitados. Login local depende do banco, ausente nessa execução; validar
-o formulário no candidato Oracle antes de publicar. Teste em aparelho físico e
-teclado virtual iOS não equivalem à emulação do Chromium.
+Validação local: 313 testes, TypeScript, lint sem erros e build aprovado. Na versão
+de produção local, menu/Escape, troca de slides, pausa, reprodução/som e movimento
+reduzido foram exercitados. Login local depende do banco, ausente nessa execução;
+o formulário foi validado no candidato Oracle e novamente no domínio público.
+
+Publicação verificada no Oracle: implementação `d574575`, imagem
+`sha256:80e3c19905c3bd960f02432fae58aa52c8906582147f219dabcb21ae209c8892`.
+O app publicado usa a mesma imagem validada no candidato. O overlay WhatsApp foi
+preservado; app, worker Catty e bancos permaneceram saudáveis. Nenhuma migration,
+mudança de permissões ou mensagem WhatsApp foi necessária nesta tarefa.
+
+Verificação no domínio público:
+
+- Home: `scrollWidth` igual à viewport em 320, 390, 768, 1024 e 1440 px;
+  carrossel contido, título visível, controles de 44 px, pausa, slides e menu/Escape.
+- `/sobre`, `/metodologia`, `/planos`, `/contato` e `/ava/login`: HTTP 200 e
+  largura de documento de 320 px em viewport de 320 px.
+- Foco no e-mail do login oculta os dois widgets públicos; não houve envio de
+  formulário na verificação visual. Vídeos carregaram sem erro de mídia.
+- Smokes de servidor, autenticação e avatar concluídos com código de saída 0.
+
+Comandos de validação/publicação: `tsc --noEmit`,
+`eslint src scripts/site-mobile-check.cjs`, `npm run build`,
+`playwright-cli run-code` com a expressão de `scripts/site-mobile-check.cjs`,
+`docker compose up -d --no-deps --force-recreate --wait --wait-timeout 90 app` e
+`docker compose --profile tools run --rm --no-deps -T audit-server-smoke`
+(também com `npm run audit:auth-smoke` e `npm run audit:avatar-smoke`). Executar os
+smokes por comandos SSH separados; Compose interativo pode consumir o restante
+de um script recebido via stdin, criando uma falsa impressão de validação.
+
+As capturas de conferência ficam localmente em `output/playwright/`, fora do Git.
+O candidato temporário foi removido após a publicação, sem apagar volumes; o
+túnel SSH e os servidores locais de teste foram encerrados. A imagem anterior
+`candy-english-app:before-mobile-d574575` foi preservada para reversão.
+Limite: emulação Chromium não substitui teste em aparelho físico, Safari/iOS e
+teclado virtual. Essa conferência em dispositivo real continua pendente.
