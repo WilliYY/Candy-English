@@ -21,6 +21,17 @@ try {
   for (const table of ["AgendaStudent", "AgendaLesson", "AgendaLog"]) {
     await pool.query(`CREATE TABLE "${schema}"."${table}" (LIKE public."${table}" INCLUDING ALL)`);
   }
+  // LIKE preserva referências aos enums públicos; Prisma usa enums do schema isolado.
+  await pool.query(`CREATE TYPE "${schema}"."FinancialUnit" AS ENUM ('IVATE', 'DOURADINA')`);
+  await pool.query(`CREATE TYPE "${schema}"."AgendaLessonStatus" AS ENUM ('SCHEDULED', 'ATTENDED', 'MISSED', 'MAKEUP_SCHEDULED', 'MAKEUP_ATTENDED')`);
+  for (const [table, column, type, fallback] of [
+    ["AgendaStudent", "unit", "FinancialUnit", "IVATE"],
+    ["AgendaLesson", "status", "AgendaLessonStatus", "SCHEDULED"],
+  ]) {
+    await pool.query(`ALTER TABLE "${schema}"."${table}" ALTER COLUMN "${column}" DROP DEFAULT`);
+    await pool.query(`ALTER TABLE "${schema}"."${table}" ALTER COLUMN "${column}" TYPE "${schema}"."${type}" USING "${column}"::text::"${schema}"."${type}"`);
+    await pool.query(`ALTER TABLE "${schema}"."${table}" ALTER COLUMN "${column}" SET DEFAULT '${fallback}'::"${schema}"."${type}"`);
+  }
   const student = await prisma.agendaStudent.create({ data: { name: "Synthetic agenda student", unit: "IVATE", isActive: true, defaultTime: "08:00", weekdayMask: 2 } });
   const base = { studentId: student.id, year: 2026, month: 9, weekday: 1, time: "08:00" };
   const rows = await Promise.all([
