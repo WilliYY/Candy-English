@@ -1,5 +1,61 @@
 # 14 - Agenda
 
+## Planilha compacta e edição de horário — 14/09/2026
+
+- A visão diária e a `Planilha mensal` usam `AgendaCompactSheet`, com seções
+  separadas para `Polo 1 · Ivaté` e `Polo 2 · Douradina`, nomes completos e
+  observações expansíveis. A página aproveita a largura disponível da área admin.
+- As colunas se ajustam à largura do conteúdo (container query), não apenas à
+  janela: em celular, horário e nome ficam lado a lado, com presença logo abaixo;
+  em desktop, aluno, horário/rotina, situação, presença/resumo e ficha ficam na linha.
+  Não há tabela com largura mínima forçada nem cortes com reticências.
+- Clique no horário para abrir o editor na própria linha. `Salvar horário` confirma
+  explicitamente; `Cancelar` não grava. A visão diária abre em `Somente esta aula`;
+  `Rotina futura` altera as ocorrências previstas a partir do dia selecionado e o
+  horário padrão, sem mudar os dias da semana. Na visão mensal, aplica-se a partir
+  do primeiro dia do mês selecionado ou de hoje, o que for posterior.
+- Edição rápida só aceita ADMIN com conta atualmente ativa. O servidor valida
+  horário `HH:mm`, data de 2026, aluno ativo e versões `updatedAt`. Aulas anteriores
+  a hoje em `America/Sao_Paulo`, inativas ou com presença/falta registrada ficam
+  intactas. Reposições só podem ser editadas individualmente, nunca junto da rotina.
+- A nova operação muda somente horários, versão do cadastro e `AgendaLog`: não
+  regenera ocorrências, não altera dias/status, identidade do AVA ou Financeiro.
+  A ficha completa continua disponível para alteração de dias e demais dados;
+  suas regras anteriores de regeneração mensal permanecem separadas.
+- Lock transacional no aluno serializa edições; cada ocorrência usa comparação
+  de versão/status. Conflito ou falha reverte a operação inteira. Colisões do
+  mesmo aluno na mesma data/horário são recusadas. Auditoria registra autor,
+  horários anterior/novo, alcance e quantidade de aulas alteradas.
+- Rascunho fica preservado em erro ou refresh de presença. Enquanto o editor
+  está aberto, troca de dia/mês/visão/polo pede salvar ou cancelar primeiro;
+  busca fica desabilitada e saída da página usa aviso nativo. Foco retorna ao
+  horário depois de salvar/cancelar. Balão da Catty é recolhido durante a edição.
+
+Arquivos novos: `agenda-compact-sheet.tsx`, `agenda-time-editor.tsx`,
+`src/lib/agenda-time-change.ts`, `src/lib/agenda-time-operations.ts` e
+`src/app/ava/admin/agenda-time-actions.ts`. Sem migration, dependência nova ou
+mudança de permissão para professores/alunos.
+
+Validação local: 327 testes aprovados; `tsc --noEmit` aprovado; fixture com o
+componente real em 320, 390, 768, 1024, 1280, 1440 e 1880 px sem overflow.
+Edição individual/rotina, cancelar, erro, proteção de rascunho, presença, busca,
+polos, teclado, retorno de foco e movimento reduzido verificados no navegador.
+A fixture usa ações simuladas e não comprova escrita no banco nem tela autenticada
+de produção. Script de integração real: `scripts/agenda-time-smoke.ts --isolated-schema`;
+clona somente estrutura das três tabelas em schema temporário e remove ao terminar.
+`npm run build` e lint de `src/`/scripts da tarefa aprovados. Integração isolada e
+publicação serão registradas após execução.
+
+Pendência independente encontrada em `npm audit` (14/09/2026; revisar até
+21/09/2026): alertas herdados em `deepmerge-ts@7.1.5` via Prisma config,
+`mysql2@3.15.3` via ferramentas Prisma e `brace-expansion@2.1.3` no ESLint.
+Prisma config recebe objeto fixo local, não grafos de usuários; o projeto usa
+PostgreSQL (`@prisma/adapter-pg`), não MySQL; os globs do lint são locais.
+Busca em `src/`/`scripts/` não encontrou uso direto desses parsers em entrada
+pública. Isso não equivale a auditoria de segurança completa. Não foram alteradas
+dependências nesta entrega. A correção deve ser isolada, sem o downgrade major
+de Prisma sugerido por `audit fix --force`, com instalação/build/testes próprios.
+
 Consulta complementar em `/ava/rotina` (13/09/2026): somente ADMIN ativo pode
 escolher o dia e consultar aluno, polo, horário e status das ocorrências ativas.
 Preserva `America/Sao_Paulo` e não registra presença nem envia lembretes.

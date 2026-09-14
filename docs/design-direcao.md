@@ -1,5 +1,12 @@
 # Direcao Visual - Candy English
 
+Agenda (14/09/2026): visões diária e mensal em planilha compacta por polo, largura
+disponível sem limite central de 1280 px. Nomes completos, observação expansível,
+horário editável na linha e presença com ações de 44 px. Container queries
+reorganizam as colunas em telas menores sem rolagem horizontal. Ciano identifica
+Ivaté, rosa identifica Douradina; status também tem texto, nunca apenas cor.
+Regras de edição e evidências em `docs/14-agenda.md`.
+
 > Documento especializado de design. Use junto com `docs/01-arquitetura.md` e `docs/04-padroes-de-codigo.md`.
 
 Este documento registra a direcao visual usada a partir da FASE 7.

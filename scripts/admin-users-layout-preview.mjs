@@ -30,7 +30,7 @@ createRoot(document.getElementById('root')).render(<div className="grid min-h-sc
 
 async function buildFixture() {
   const panel = fs.readFileSync(path.join(root, "src/components/ava/admin-users-panel.tsx"), "utf8");
-  const expanded = panel.includes('activeTask === "usuarios" ? "max-w-none"');
+  const expanded = /activeTask === "usuarios"[^\n]*\? "max-w-none"/.test(panel);
   const js = await esbuild.build({
     stdin: { contents: fixture.replace("PANEL_WIDTH", expanded ? "max-w-none" : "max-w-7xl"), loader: "tsx", resolveDir: root },
     bundle: true, write: false, platform: "browser", format: "iife",

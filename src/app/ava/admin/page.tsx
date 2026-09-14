@@ -482,6 +482,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       },
       select: {
         defaultTime: true,
+        updatedAt: true,
         id: true,
         isActive: true,
         name: true,
@@ -507,6 +508,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         isActive: true,
         isMakeup: true,
         makeupForLessonId: true,
+        updatedAt: true,
         month: true,
         notes: true,
         status: true,
@@ -1047,6 +1049,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         isActive: lesson.isActive,
         isMakeup: lesson.isMakeup,
         makeupForLessonId: lesson.makeupForLessonId,
+        updatedAt: lesson.updatedAt.toISOString(),
         month: lesson.month,
         notes: lesson.notes,
         status: lesson.status,
@@ -1067,6 +1070,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       }))}
       agendaStudents={agendaStudents.map((student) => ({
         defaultTime: student.defaultTime,
+        updatedAt: student.updatedAt.toISOString(),
         id: student.id,
         isActive: student.isActive,
         name: student.name,

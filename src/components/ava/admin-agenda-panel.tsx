@@ -12,7 +12,6 @@ import {
   ListChecks,
   LoaderCircle,
   Pencil,
-  Phone,
   Plus,
   RotateCcw,
   Save,
@@ -24,7 +23,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Fragment, useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
   createAgendaSchedule,
@@ -59,7 +58,9 @@ import {
   AgendaDateRail,
   type AgendaDateRailDay,
 } from "@/components/ava/agenda-date-rail";
-import { AgendaMonthStudentCard } from "@/components/ava/agenda-month-student-card";
+import { AgendaCompactSheet, type AgendaCompactRow } from "@/components/ava/agenda-compact-sheet";
+import type { AgendaTimeEditorValues } from "@/components/ava/agenda-time-editor";
+import { updateAgendaTime } from "@/app/ava/admin/agenda-time-actions";
 
 export type AdminAgendaLessonStatus =
   | "ATTENDED"
@@ -87,6 +88,7 @@ export type AdminAgendaLessonRow = {
   time: string;
   weekday: number;
   year: number;
+  updatedAt: string;
 };
 
 export type AdminAgendaStudentRow = {
@@ -98,6 +100,7 @@ export type AdminAgendaStudentRow = {
   phone: string | null;
   unit: FinancialUnit;
   weekdayMask: number;
+  updatedAt: string;
 };
 
 export type AdminAgendaAvaStudentOption = {
@@ -189,29 +192,6 @@ const agendaSheetFilters: ReadonlyArray<{
   { label: "Inativos", value: "INACTIVE" },
 ];
 
-const agendaUnitMeta: Record<
-  FinancialUnit,
-  {
-    groupClassName: string;
-    label: string;
-    pillClassName: string;
-    rowClassName: string;
-  }
-> = {
-  DOURADINA: {
-    groupClassName: "border-rose-200 bg-rose-50 text-rose-900",
-    label: "Polo 2 - Douradina",
-    pillClassName: "border-rose-200 bg-rose-50 text-rose-800",
-    rowClassName: "bg-rose-50/35 hover:bg-rose-50/70",
-  },
-  IVATE: {
-    groupClassName: "border-cyan-200 bg-cyan-50 text-cyan-900",
-    label: "Polo 1 - Ivate",
-    pillClassName: "border-cyan-200 bg-cyan-50 text-cyan-800",
-    rowClassName: "bg-cyan-50/35 hover:bg-cyan-50/70",
-  },
-};
-
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
@@ -260,23 +240,6 @@ function formatWeekdayList(values: number[]) {
   }
 
   return values.map(getWeekdayShortLabel).join(", ");
-}
-
-function getAgendaInitials(name: string) {
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return "CE";
-  }
-
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
 }
 
 function pad(value: number) {
@@ -560,9 +523,12 @@ function AgendaMetric({
 function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState("");
 
   function submitStatus(status: AdminAgendaAttendanceInput["status"]) {
+    setError("");
     startTransition(async () => {
+      try {
       const result = await updateAgendaAttendance({
         lessonId: lesson.id,
         status,
@@ -570,17 +536,19 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
 
       if (result.ok) {
         router.refresh();
-      }
+      } else setError(result.message);
+      } catch { setError("Não foi possível salvar a presença. Atualize a agenda."); }
     });
   }
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+    <div className="flex flex-wrap items-center gap-1.5">
       <Button
         type="button"
         size="sm"
         disabled={isPending}
-        className="h-11 justify-center border border-emerald-700 bg-emerald-600 px-3 text-white hover:bg-emerald-700"
+        aria-pressed={lesson.status === "ATTENDED" || lesson.status === "MAKEUP_ATTENDED"}
+        className="h-11 justify-center border border-emerald-200 bg-emerald-50 px-2.5 text-emerald-800 hover:bg-emerald-100"
         onClick={() => submitStatus("ATTENDED")}
       >
         {isPending ? (
@@ -594,11 +562,12 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
         type="button"
         size="sm"
         disabled={isPending}
-        className="h-11 justify-center border border-red-700 bg-red-600 px-3 text-white hover:bg-red-700"
+        aria-pressed={lesson.status === "MISSED"}
+        className="h-11 justify-center border border-red-200 bg-red-50 px-2.5 text-red-800 hover:bg-red-100"
         onClick={() => submitStatus("MISSED")}
       >
         <XCircle data-icon="inline-start" />
-        Nao veio
+        Faltou
       </Button>
       {lesson.status !== "SCHEDULED" && lesson.status !== "MAKEUP_SCHEDULED" ? (
         <Button
@@ -606,13 +575,15 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
           size="sm"
           variant="outline"
           disabled={isPending}
-          className="h-11 justify-center border-primary/25 px-3 text-primary sm:col-span-2 2xl:col-span-1"
+          aria-label={`Resetar presença de ${lesson.studentName}`}
+          title="Resetar presença"
+          className="h-11 w-11 justify-center border-primary/25 p-0 text-primary"
           onClick={() => submitStatus("SCHEDULED")}
         >
           <RotateCcw data-icon="inline-start" />
-          Resetar
         </Button>
       ) : null}
+      {error && <p role="alert" className="w-full text-xs text-red-700">{error}</p>}
     </div>
   );
 }
@@ -642,6 +613,7 @@ export function AdminAgendaPanel({
   const [activeMonth, setActiveMonth] = useState(todayMonth);
   const [selectedDayKey, setSelectedDayKey] = useState(todayKey);
   const [viewMode, setViewMode] = useState<AgendaViewMode>("DAY");
+  const [hasInlineEdit, setHasInlineEdit] = useState(false);
   const [search, setSearch] = useState("");
   const [sheetFilter, setSheetFilter] = useState<AgendaSheetFilter>("ALL");
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(
@@ -877,16 +849,6 @@ export function AdminAgendaPanel({
       return matchesSearch && matchesAgendaSheetFilter(row, sheetFilter);
     });
   }, [agendaMonthRows, search, sheetFilter]);
-  const agendaSheetGroups = useMemo(
-    () =>
-      (["IVATE", "DOURADINA"] as const)
-        .map((unit) => ({
-          rows: agendaSheetRows.filter((row) => row.student.unit === unit),
-          unit,
-        }))
-        .filter((group) => group.rows.length > 0),
-    [agendaSheetRows],
-  );
   const attendedCount = monthLessons.filter(
     (lesson) =>
       lesson.status === "ATTENDED" || lesson.status === "MAKEUP_ATTENDED",
@@ -923,7 +885,45 @@ export function AdminAgendaPanel({
   const selectedStudentMissed = selectedStudentLessons.filter(
     (lesson) => lesson.status === "MISSED",
   ).length;
-  const selectedDayIsToday = selectedDayKey === todayKey;
+  const timeEditFrom = (date: string) => date > todayKey ? date : todayKey;
+  const dayCompactRows: AgendaCompactRow[] = selectedDayLessons.map(lesson => {
+    const student = students.find(item => item.id === lesson.studentId);
+    const meta = getStatusMeta(lesson.status);
+    return {
+      id: lesson.id, name: lesson.studentName, phone: lesson.studentPhone,
+      unit: lesson.studentUnit, time: lesson.time, detail: "",
+      notes: [lesson.studentNotes, lesson.notes].filter(Boolean).join(" · "),
+      statusLabel: meta.label, statusClassName: meta.pillClassName,
+      attendance: <AgendaAttendanceButtons lesson={lesson} />,
+      onOpen: () => openStudent(lesson.studentId, lesson.month),
+      edit: student?.isActive && selectedDayKey >= todayKey && todayIsAgendaYear && ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(lesson.status) ? {
+        studentId: student.id, expectedUpdatedAt: student.updatedAt,
+        lessonId: lesson.id, expectedLessonUpdatedAt: lesson.updatedAt,
+        fromDate: timeEditFrom(selectedDayKey), allowRoutine: !lesson.isMakeup,
+      } : undefined,
+    };
+  });
+  const monthCompactRows: AgendaCompactRow[] = agendaSheetRows.map(row => ({
+    id: row.student.id, name: row.student.name, phone: row.student.phone,
+    unit: row.student.unit, time: row.schedule.time,
+    detail: row.schedule.isComplete ? formatWeekdayList(row.schedule.weekdays) : "Rotina pendente",
+    statusLabel: row.nextLesson ? `${formatShortDate(row.nextLesson.date)} · ${row.nextLesson.time}` : "Sem próxima aula",
+    statusClassName: "border-primary/10 bg-primary/5 text-primary",
+    totals: { lessons: row.lessons.length, attended: row.attendedCount, missed: row.missedCount, pending: getPendingLessonCount(row.lessons) },
+    onOpen: () => openAgendaSheetRow(row),
+    edit: row.student.isActive && row.schedule.isComplete && row.nextLesson && todayIsAgendaYear && activeMonth >= todayMonth ? {
+      studentId: row.student.id, expectedUpdatedAt: row.student.updatedAt,
+      fromDate: timeEditFrom(getDayKey(AGENDA_YEAR, activeMonth, 1)), allowRoutine: true,
+    } : undefined,
+  }));
+  async function saveInlineTime(row: AgendaCompactRow, values: AgendaTimeEditorValues) {
+    if (!row.edit) return { ok: false, message: "Atualize a agenda para editar." };
+    const { studentId, expectedUpdatedAt, lessonId, expectedLessonUpdatedAt, fromDate } = row.edit;
+    const target = { studentId, expectedUpdatedAt, lessonId, expectedLessonUpdatedAt, fromDate };
+    const result = await updateAgendaTime({ ...target, ...values, confirmChange: true });
+    if (result.ok) router.refresh();
+    return result;
+  }
 
   function updateSelectedDay(nextMonth: number) {
     const nextKey =
@@ -936,6 +936,7 @@ export function AdminAgendaPanel({
   }
 
   function changeMonth(month: number) {
+    if (!canLeaveInlineEdit()) return;
     if (
       selectedStudentId &&
       editForm.formState.isDirty &&
@@ -951,6 +952,7 @@ export function AdminAgendaPanel({
   }
 
   function selectAgendaDay(dayKey: string) {
+    if (!canLeaveInlineEdit()) return;
     setSelectedDayKey(dayKey);
     setViewMode("DAY");
     window.setTimeout(() => {
@@ -991,6 +993,7 @@ export function AdminAgendaPanel({
     studentId: string,
     targetMonth = activeMonth,
   ) {
+    if (!canLeaveInlineEdit()) return;
     const student = students.find((item) => item.id === studentId);
 
     if (!student) {
@@ -1029,9 +1032,21 @@ export function AdminAgendaPanel({
   }
 
   function changeUnitFilter(filter: SecretariaUnitFilter) {
+    if (!canLeaveInlineEdit()) return;
     const unitParam = filter === "all" ? "" : `&unit=${filter}`;
 
     router.push(`/ava/admin?task=agenda${unitParam}`);
+  }
+
+  function canLeaveInlineEdit() {
+    if (!hasInlineEdit) return true;
+    setListMessage("Salve ou cancele a edição de horário antes de trocar a visualização.");
+    return false;
+  }
+
+  function handleInlineEditingChange(editing: boolean) {
+    setHasInlineEdit(editing);
+    setListMessage(null);
   }
 
   const onSubmit = form.handleSubmit((values) => {
@@ -1162,7 +1177,7 @@ export function AdminAgendaPanel({
   }
 
   return (
-    <div className="flex flex-col gap-4 pb-28">
+    <div className="admin-agenda-panel flex min-w-0 flex-col gap-4 pb-28">
       <section className="relative overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-white via-[#fff8fc] to-[#eef9ff] shadow-[0_22px_60px_rgba(65,42,76,0.11)] ring-1 ring-white/70">
         <span
           aria-hidden="true"
@@ -1234,7 +1249,7 @@ export function AdminAgendaPanel({
               </Button>
             </div>
           </div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-2 xl:grid-cols-4">
             <AgendaMetric
               helper="Aguardando confirmacao"
               icon={CalendarDays}
@@ -1279,6 +1294,7 @@ export function AdminAgendaPanel({
                 <span className="sr-only">Buscar aluno na agenda</span>
                 <input
                   value={search}
+                  disabled={hasInlineEdit}
                   onChange={(event) => setSearch(event.target.value)}
                   autoComplete="off"
                   className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
@@ -1302,7 +1318,7 @@ export function AdminAgendaPanel({
                       ? "bg-white text-primary shadow-sm hover:bg-white"
                       : "text-primary/65 hover:bg-white/70 hover:text-primary",
                   )}
-                  onClick={() => setViewMode("DAY")}
+                  onClick={() => { if (canLeaveInlineEdit()) setViewMode("DAY"); }}
                 >
                   <Clock data-icon="inline-start" />
                   Agenda do dia
@@ -1318,10 +1334,10 @@ export function AdminAgendaPanel({
                       ? "bg-white text-primary shadow-sm hover:bg-white"
                       : "text-primary/65 hover:bg-white/70 hover:text-primary",
                   )}
-                  onClick={() => setViewMode("MONTH")}
+                  onClick={() => { if (canLeaveInlineEdit()) setViewMode("MONTH"); }}
                 >
                   <ListChecks data-icon="inline-start" />
-                  Visao mensal
+                  Planilha mensal
                 </Button>
               </div>
             </div>
@@ -1377,7 +1393,7 @@ export function AdminAgendaPanel({
                         ? "bg-primary text-primary-foreground"
                         : "border-primary/15 bg-white text-primary",
                     )}
-                    onClick={() => setSheetFilter(filter.value)}
+                    onClick={() => { if (canLeaveInlineEdit()) setSheetFilter(filter.value); }}
                   >
                     {filter.label}
                   </Button>
@@ -1441,225 +1457,9 @@ export function AdminAgendaPanel({
               </span>
             </div>
 
-            {agendaSheetRows.length === 0 ? (
-              <div className="m-4 rounded-lg border border-dashed border-primary/20 bg-primary/5 px-4 py-10 text-center">
-                <Users aria-hidden="true" className="mx-auto size-6 text-primary/45" />
-                <p className="mt-2 text-sm font-semibold text-primary">
-                  Nenhum aluno encontrado neste filtro.
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Ajuste a busca, o status ou o polo para ver outros registros.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="grid gap-3 p-3 md:hidden">
-                  {agendaSheetGroups.map((group) => {
-                    const unitMeta = agendaUnitMeta[group.unit];
-
-                    return (
-                      <section key={group.unit} className="grid gap-2">
-                        <div
-                          className={cn(
-                            "flex items-center justify-between rounded-lg border px-3 py-2",
-                            unitMeta.groupClassName,
-                          )}
-                        >
-                          <h4 className="text-sm font-bold">{unitMeta.label}</h4>
-                          <span className="text-xs font-semibold opacity-75">
-                            {group.rows.length} aluno(s)
-                          </span>
-                        </div>
-                        {group.rows.map((row) => {
-                          const isSelected = selectedStudentId === row.student.id;
-                          const pendingCount = getPendingLessonCount(row.lessons);
-
-                          return (
-                            <AgendaMonthStudentCard
-                              key={row.student.id}
-                              attendedCount={row.attendedCount}
-                              initials={getAgendaInitials(row.student.name)}
-                              isSelected={isSelected}
-                              missedCount={row.missedCount}
-                              nextLessonLabel={
-                                row.todayLesson
-                                  ? `Hoje as ${row.todayLesson.time}`
-                                  : row.nextLesson
-                                    ? `Proxima: ${formatShortDate(row.nextLesson.date)} as ${row.nextLesson.time}`
-                                    : "Sem proxima aula"
-                              }
-                              onOpen={() => openAgendaSheetRow(row)}
-                              pendingCount={pendingCount}
-                              phone={row.student.phone}
-                              scheduleLabel={
-                                row.schedule.isComplete
-                                  ? `${formatWeekdayList(row.schedule.weekdays)} as ${row.schedule.time}`
-                                  : "Rotina pendente"
-                              }
-                              studentName={row.student.name}
-                              unitLabel={group.unit === "IVATE" ? "Polo 1" : "Polo 2"}
-                              unitToneClassName={unitMeta.pillClassName}
-                            />
-                          );
-                        })}
-                      </section>
-                    );
-                  })}
-                </div>
-
-                <div className="hidden overflow-x-auto md:block">
-                <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
-                  <thead className="bg-[#f8f4fa] text-[0.65rem] font-bold uppercase tracking-[0.11em] text-primary/60">
-                    <tr>
-                      <th className="w-[23%] px-4 py-3">Aluno</th>
-                      <th className="w-[16%] px-3 py-3">Rotina</th>
-                      <th className="px-3 py-3">Polo</th>
-                      <th className="px-3 py-3 text-center">Aulas</th>
-                      <th className="px-3 py-3 text-center">Vieram</th>
-                      <th className="px-3 py-3 text-center">Faltas</th>
-                      <th className="px-3 py-3 text-center">A confirmar</th>
-                      <th className="w-[17%] px-3 py-3">Proxima aula</th>
-                      <th className="px-4 py-3 text-right">Acao</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {agendaSheetGroups.map((group) => {
-                      const unitMeta = agendaUnitMeta[group.unit];
-
-                      if (group.rows.length === 0) {
-                        return null;
-                      }
-
-                      return (
-                        <Fragment key={group.unit}>
-                          <tr className={unitMeta.groupClassName}>
-                            <td colSpan={9} className="border-y px-4 py-2.5">
-                              <span className="font-bold">{unitMeta.label}</span>
-                              <span className="ml-2 text-xs font-medium opacity-70">
-                                {group.rows.length} aluno(s)
-                              </span>
-                            </td>
-                          </tr>
-                          {group.rows.map((row) => {
-                            const isSelected = selectedStudentId === row.student.id;
-                            const pendingCount = getPendingLessonCount(row.lessons);
-
-                            return (
-                              <tr
-                                key={row.student.id}
-                                className={cn(
-                                  "border-b border-primary/10 transition-colors hover:bg-primary/[0.035]",
-                                  unitMeta.rowClassName,
-                                  isSelected && "bg-primary/[0.08] ring-1 ring-inset ring-primary/25",
-                                )}
-                              >
-                                <td className="px-4 py-3">
-                                  <button
-                                    type="button"
-                                    className="flex min-w-0 items-center gap-2.5 text-left focus-visible:rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                                    onClick={() => openAgendaSheetRow(row)}
-                                  >
-                                    <span className="grid size-9 shrink-0 place-items-center rounded-md bg-primary text-xs font-bold text-primary-foreground">
-                                      {getAgendaInitials(row.student.name)}
-                                    </span>
-                                    <span className="min-w-0">
-                                      <strong className="block truncate text-sm text-primary">
-                                        {row.student.name}
-                                      </strong>
-                                      <span className="block truncate text-xs text-muted-foreground">
-                                        {row.student.phone || "Sem telefone"}
-                                      </span>
-                                    </span>
-                                  </button>
-                                </td>
-                                <td className="px-3 py-3">
-                                  {row.schedule.isComplete ? (
-                                    <>
-                                      <strong className="block text-xs text-primary">
-                                        {formatWeekdayList(row.schedule.weekdays)}
-                                      </strong>
-                                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                                        {row.schedule.time}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">
-                                      Completar rotina
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-3 py-3">
-                                  <span className={cn("inline-flex rounded-full border px-2 py-1 text-xs font-bold", unitMeta.pillClassName)}>
-                                    {group.unit === "IVATE" ? "Polo 1" : "Polo 2"}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3 text-center font-bold text-primary">
-                                  <span className="tabular-nums">{row.lessons.length}</span>
-                                </td>
-                                <td className="px-3 py-3 text-center">
-                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-emerald-100 px-2 py-1 font-bold text-emerald-800 tabular-nums">
-                                    {row.attendedCount}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3 text-center">
-                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-red-100 px-2 py-1 font-bold text-red-800 tabular-nums">
-                                    {row.missedCount}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3 text-center">
-                                  <span className="inline-flex min-w-8 justify-center rounded-md bg-amber-100 px-2 py-1 font-bold text-amber-900 tabular-nums">
-                                    {pendingCount}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3">
-                                  {row.todayLesson ? (
-                                    <span className="inline-flex items-center gap-1.5 font-bold text-violet-800">
-                                      <Clock aria-hidden="true" className="size-3.5" />
-                                      Hoje as {row.todayLesson.time}
-                                    </span>
-                                  ) : row.nextLesson ? (
-                                    <>
-                                      <strong className="block text-xs text-primary">
-                                        {formatShortDate(row.nextLesson.date)}
-                                      </strong>
-                                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                                        as {row.nextLesson.time}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">
-                                      Sem proxima aula
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={isSelected ? "default" : "outline"}
-                                    className={cn(
-                                      "h-9",
-                                      isSelected
-                                        ? "bg-primary text-primary-foreground"
-                                        : "border-primary/20 bg-white text-primary",
-                                    )}
-                                    onClick={() => openAgendaSheetRow(row)}
-                                  >
-                                    {isSelected ? "Aberto" : "Abrir"}
-                                    <ChevronRight data-icon="inline-end" />
-                                  </Button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </Fragment>
-                      );
-                    })}
-                  </tbody>
-                  </table>
-                </div>
-              </>
-            )}
+            <div className="p-3">
+              <AgendaCompactSheet key={`month-${activeMonth}`} rows={monthCompactRows} mode="MONTH" onSave={saveInlineTime} onEditingChange={handleInlineEditingChange} />
+            </div>
             </div>
           ) : (
 
@@ -1717,105 +1517,7 @@ export function AdminAgendaPanel({
               </div>
             </div>
 
-            <div className="grid gap-2">
-              {selectedDayLessons.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/70 p-4 text-sm font-medium text-emerald-800">
-                  {selectedDayIsToday
-                    ? "Nenhum aluno agendado para hoje."
-                    : "Nenhum aluno agendado para este dia."}
-                </div>
-              ) : (
-                selectedDayLessons.map((lesson) => {
-                  const meta = getStatusMeta(lesson.status);
-
-                  return (
-                    <article
-                      key={lesson.id}
-                      className={cn(
-                        "relative overflow-hidden rounded-lg border p-3.5 pt-5 shadow-[0_10px_24px_rgba(58,29,75,0.08)] transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(58,29,75,0.12)] motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-                        meta.cardClassName,
-                      )}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn("absolute inset-x-0 top-0 h-1", meta.accentClassName)}
-                      />
-                      <div className="flex items-start justify-between gap-3">
-                        <button
-                          type="button"
-                          className="flex min-w-0 flex-1 items-start gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                          onClick={() =>
-                            openStudent(
-                              lesson.studentId,
-                              lesson.month,
-                            )
-                          }
-                        >
-                          <span
-                            className={cn(
-                              "grid size-11 shrink-0 place-items-center rounded-lg text-xs font-bold uppercase shadow-sm",
-                              meta.iconClassName,
-                            )}
-                          >
-                            {getAgendaInitials(lesson.studentName)}
-                          </span>
-                          <span className="min-w-0">
-                            <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
-                              <span
-                                className={cn(
-                                  "size-2 rounded-full",
-                                  meta.dotClassName,
-                                )}
-                              />
-                              {lesson.isMakeup ? "Reposicao" : "Aula prevista"}
-                            </span>
-                            <strong className="mt-1 block break-words text-lg leading-6 text-primary">
-                              {lesson.studentName}
-                            </strong>
-                            <span className="mt-1 inline-flex rounded-full border border-primary/10 bg-white px-2 py-0.5 text-[0.68rem] font-bold uppercase tracking-[0.08em] text-primary/65">
-                              {unitLabels[lesson.studentUnit]}
-                            </span>
-                            <span className="mt-2 grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                              <span
-                                className={cn(
-                                  "inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5",
-                                  meta.softClassName,
-                                )}
-                              >
-                                <Clock aria-hidden="true" className="size-4" />
-                                {lesson.time}
-                              </span>
-                              <span className="inline-flex min-w-0 items-center gap-2 rounded-lg border border-primary/10 bg-white px-2.5 py-1.5 text-primary/75">
-                                <Phone aria-hidden="true" className="size-4 shrink-0" />
-                                <span className="truncate">
-                                  {lesson.studentPhone || "Sem telefone"}
-                                </span>
-                              </span>
-                            </span>
-                            {lesson.studentNotes ? (
-                              <span className="mt-2 line-clamp-2 block rounded-lg border border-primary/10 bg-[#fbf7ff] px-2.5 py-2 text-sm text-primary/75">
-                                {lesson.studentNotes}
-                              </span>
-                            ) : null}
-                          </span>
-                        </button>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm",
-                            meta.pillClassName,
-                          )}
-                        >
-                          {meta.label}
-                        </span>
-                      </div>
-                      <div className="mt-3 border-t border-primary/10 pt-3">
-                        <AgendaAttendanceButtons lesson={lesson} />
-                      </div>
-                    </article>
-                  );
-                })
-              )}
-            </div>
+            <AgendaCompactSheet key={`day-${selectedDayKey}`} rows={dayCompactRows} mode="DAY" onSave={saveInlineTime} onEditingChange={handleInlineEditingChange} />
             </div>
           )}
         </div>

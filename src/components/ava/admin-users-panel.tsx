@@ -1711,7 +1711,7 @@ export function AdminUsersPanel({
     <section
       className={cn(
         "mx-auto flex w-full flex-col gap-6 px-4 py-8 sm:gap-8 sm:px-6 sm:py-10 lg:px-8",
-        activeTask === "usuarios" ? "max-w-none" : activeTask === "financeiro" ? "max-w-[100rem]" : "max-w-7xl",
+        activeTask === "usuarios" || activeTask === "agenda" ? "max-w-none" : activeTask === "financeiro" ? "max-w-[100rem]" : "max-w-7xl",
       )}
     >
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(460px,560px)]">

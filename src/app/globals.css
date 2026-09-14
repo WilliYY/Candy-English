@@ -1,6 +1,28 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Planilha operacional: responde à largura real, inclusive com a sidebar aberta. */
+.agenda-compact-sheet { container-type: inline-size; min-width: 0; }
+.agenda-sheet-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .5rem .75rem; padding: .625rem .75rem; border-bottom: 1px solid var(--border); align-items: center; }
+.agenda-sheet-row > * { min-width: 0; }
+.agenda-sheet-heading { display: none; }
+.agenda-sheet-name { grid-column: 1; }
+.agenda-sheet-time { grid-column: 2; grid-row: 1; }
+.agenda-sheet-status { grid-column: 1; }
+.agenda-sheet-open { grid-column: 2; grid-row: 2; text-align: right; }
+.agenda-sheet-attendance { grid-column: 1 / -1; }
+.agenda-time-editor { display: grid; gap: .75rem; padding: 1rem; border-block: 1px solid var(--border); background: var(--muted); }
+.agenda-time-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: .75rem; }
+@container (min-width: 38rem) {
+  .agenda-time-fields { grid-template-columns: 9rem minmax(0, 1fr) auto; align-items: end; }
+}
+@container (min-width: 50rem) {
+  .agenda-sheet-heading { display: block; background: var(--muted); color: var(--muted-foreground); font-size: .6875rem; font-weight: 600; }
+  .agenda-sheet-row { grid-template-columns: minmax(11rem, 1.4fr) minmax(8rem, .7fr) minmax(6rem, .65fr) minmax(15rem, 1.3fr) 4.5rem; }
+  .agenda-sheet-row > * { grid-column: auto; grid-row: auto; }
+}
+body:has(.agenda-compact-sheet[data-editing="true"]) .catty-widget:not([data-public-notice="true"]) .catty-speech { display: none; }
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
