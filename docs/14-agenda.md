@@ -43,8 +43,26 @@ polos, teclado, retorno de foco e movimento reduzido verificados no navegador.
 A fixture usa ações simuladas e não comprova escrita no banco nem tela autenticada
 de produção. Script de integração real: `scripts/agenda-time-smoke.ts --isolated-schema`;
 clona somente estrutura das três tabelas em schema temporário e remove ao terminar.
-`npm run build` e lint de `src/`/scripts da tarefa aprovados. Integração isolada e
-publicação serão registradas após execução.
+`npm run build` e lint de `src/`/scripts da tarefa aprovados.
+
+Publicação Oracle concluída em 14/09/2026: implementação `eb5c8de` + `3cb4e36`,
+smokes ajustados em `2365af3` e `4c61e97`. Imagem anterior preservada como
+`candy-english-app:before-agenda-3cb4e36`. Build Docker aprovado; app recriado
+com `--no-deps --wait`, preservando overlay/rede e serviços Catty/WhatsApp.
+App, PostgreSQL e workers com healthcheck saudáveis.
+
+- Integração PostgreSQL: 7 verificações em schema isolado, incluindo gravação,
+  histórico intacto, auditoria, repetição desatualizada, edição individual,
+  concorrência e rollback. Schema temporário removido. A primeira execução
+  identificou enum ausente somente na fixture; o clone de enums foi corrigido
+  e a execução completa passou, sem mudança no schema público.
+- `audit:server-smoke`: 11 verificações aprovadas.
+- `audit:auth-smoke`: 34 verificações aprovadas. Expectativa de rótulo atualizada
+  de `Visao mensal` para `Planilha mensal`, com presença do componente compacto
+  confirmada no HTML autenticado de ADMIN. Guards teacher/student preservados.
+- `audit:avatar-smoke`: aprovado, inclusive limpeza das fixtures.
+- Não houve edição de horários reais para teste. Inspeção visual foi na fixture
+  com componente real, não em navegador autenticado de produção ou celular físico.
 
 Pendência independente encontrada em `npm audit` (14/09/2026; revisar até
 21/09/2026): alertas herdados em `deepmerge-ts@7.1.5` via Prisma config,
@@ -116,17 +134,17 @@ Rota:
 - Ao editar a rotina, o sistema desativa ocorrencias recorrentes futuras do mes selecionado em diante e cria/reativa as novas ocorrencias, preservando historico antigo.
 - Inativar aluno marca `AgendaStudent.isActive=false`, limpa horario/dias padrao e inativa ocorrencias recorrentes do mes selecionado em diante; registros antigos permanecem no historico.
 - Excluir aluno da agenda e uma acao definitiva de `ADMIN`: remove o `AgendaStudent` e suas ocorrencias por cascade, mantendo um log textual da exclusao. Para preservar historico, usar `Inativar`.
-- A visao mensal mostra uma linha por aluno no desktop e um card operacional por aluno no mobile, sempre com rotina, polo, totais de aulas, presencas, faltas, pendencias e proxima aula. A `Agenda do dia` mostra separadamente as ocorrencias do dia selecionado, ordenadas por horario.
+- A planilha mensal mostra uma linha por aluno, reorganizada no mobile sem tabela larga, com rotina, polo, totais de aulas, presencas, faltas, pendencias e proxima aula. A `Agenda do dia` separa as ocorrencias por polo e ordena cada grupo por horario.
 - Status padrao e `SCHEDULED`.
 - Presenca confirmada vira `ATTENDED`.
 - Falta vira `MISSED`.
 - Reposicao cria uma nova `AgendaLesson` com `isMakeup=true` e status `MAKEUP_SCHEDULED`.
 - Reposicao confirmada vira `MAKEUP_ATTENDED`.
-- Cada card do dia mostra nome, horario, telefone, observacao curta, status e botoes `Veio`, `Nao veio` e `Resetar`.
+- Cada linha do dia mostra nome completo, horario editavel quando permitido, telefone, observacao expansivel, status e botoes `Veio`, `Faltou` e `Resetar`.
 - Cores de status: verde para veio, vermelho para nao veio, roxo para previsto e ambar para reposicao.
 - A busca por nome/telefone e os filtros `Todos`, `Aulas de hoje`, `A confirmar`, `Com faltas` e `Inativos` atuam sobre a planilha mensal.
 - O botao `Adicionar neste dia` preseleciona o dia da semana do dia selecionado no formulario.
-- Clicar em `Abrir` na linha do aluno destaca a linha e abre a ficha com dados, edicao de rotina, presencas, faltas, historico de ocorrencias ativas/inativas e acoes `Inativar`/`Excluir`.
+- Clicar em `Ficha` na linha do aluno abre dados, edicao completa de rotina, presencas, faltas, historico de ocorrencias ativas/inativas e acoes `Inativar`/`Excluir`.
 - O log da agenda fica recolhido por padrao em um card abaixo da agenda.
 - `AgendaLog` registra criacao, edicao, presenca, falta, reposicao e inativacao.
 
@@ -146,7 +164,7 @@ Rota:
 - No mobile, busca, polos e filtros ficam rolaveis em linha; a faixa de dias centraliza automaticamente a data selecionada e usa alvos de toque amplos. A visao mensal troca a tabela larga por cards compactos, sem rolagem horizontal da planilha.
 - A faixa de dias informa quantidade de aulas e usa marcadores verde, vermelho e amarelo para presencas, faltas e pendencias; o texto explicativo e os totais evitam depender apenas de cor.
 - As colunas de presenca, falta e pendencia usam verde, vermelho e ambar; as faixas de polo usam ciano para Ivaté e rosa para Douradina sem transformar a tela em um conjunto de cards.
-- Os cards do dia selecionado permanecem responsivos para facilitar o toque em `Veio`, `Nao veio` e `Resetar`; formularios de cadastro/edicao usam campos altos, borda visivel e foco reforcado.
+- As linhas do dia selecionado mantem alvos de toque de 44 px em `Veio`, `Faltou` e `Resetar`; formularios de cadastro/edicao usam campos altos, borda visivel e foco reforcado.
 - A busca operacional continua baseada em `AgendaStudent`, mas o cadastro e as edicoes resolvem a identidade pelo `StudentProfile` vinculado e sincronizam nome, telefone e polo com `User` e `FinancialStudent`.
 - A migration `20260714170000_linked_pre_registration_conversion` adiciona `AgendaStudent.unit` e o vinculo de conversao entre `StudentPreRegistration` e `AgendaStudent`.
 - A migration `20260826160000_link_agenda_to_student_profile` adiciona o vinculo 1:1 com `StudentProfile`; o backfill liga somente correspondencias legadas exatas e nao ambiguas.
