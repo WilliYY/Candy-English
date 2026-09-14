@@ -76,6 +76,107 @@ a {
   text-underline-offset: 4px;
 }
 
+/* User management responds to its usable area, including the AVA sidebar. */
+.admin-users-sheet {
+  container: admin-users / inline-size;
+}
+
+.admin-users-sheet-heading {
+  display: none;
+}
+
+.admin-users-sheet-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0;
+  padding-block: 0.75rem;
+}
+
+.admin-users-sheet-row > span,
+.admin-users-sheet-detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-users-sheet-identity,
+.admin-users-sheet-contact,
+.admin-users-sheet-profile,
+.admin-users-sheet-manage {
+  grid-column: 1 / -1;
+}
+
+.admin-users-sheet-mobile-label {
+  display: block;
+}
+
+.admin-users-sheet-manage {
+  margin: 0.25rem 0.75rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+}
+
+.admin-users-sheet-facts {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container admin-users (min-width: 36rem) {
+  .admin-users-sheet-filters {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+  }
+  .admin-users-sheet-filters > label {
+    grid-column: 1 / -1;
+  }
+  .admin-users-sheet-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-users-sheet-contact,
+  .admin-users-sheet-profile {
+    grid-column: auto;
+  }
+}
+
+@container admin-users (min-width: 56rem) {
+  .admin-users-sheet-heading,
+  .admin-users-sheet-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2.1fr) 6rem minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 1.4fr) 8rem;
+  }
+  .admin-users-sheet-row {
+    gap: 0;
+    padding-block: 0.25rem;
+  }
+  .admin-users-sheet-row > span {
+    grid-column: auto;
+  }
+  .admin-users-sheet-mobile-label {
+    display: none;
+  }
+  .admin-users-sheet-manage {
+    margin: 0 0.5rem;
+  }
+  .admin-users-sheet-filters {
+    grid-template-columns: minmax(0, 1fr) auto minmax(12rem, 0.55fr);
+  }
+  .admin-users-sheet-filters > label {
+    grid-column: auto;
+  }
+}
+
+@container admin-users (min-width: 64rem) {
+  .admin-users-sheet-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .admin-users-sheet-actions-with-contact {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}
+
+body:has(.admin-users-sheet details[open]) .catty-widget:not([data-public-notice="true"]) .catty-speech {
+  display: none;
+}
+
 .candy-deep {
   background:
     linear-gradient(135deg, rgb(44 19 56) 0%, rgb(65 42 76) 54%, rgb(44 19 56) 100%),

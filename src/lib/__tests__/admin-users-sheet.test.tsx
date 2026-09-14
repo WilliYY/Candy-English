@@ -53,8 +53,7 @@ const rows: AdminUsersSheetRow[] = [
 test("renders the user sheet in role order with expandable access actions", () => {
   const markup = renderToStaticMarkup(<AdminUsersSheet rows={rows} />);
 
-  assert.match(markup, /Planilha de usuarios/);
-  assert.match(markup, /Planilha de usuarios com rolagem horizontal/);
+  assert.match(markup, /Planilha de usuários/);
   assert.ok(markup.indexOf("Admin Teste") < markup.indexOf("Aluno Teste"));
   assert.match(markup, />Admin</);
   assert.match(markup, />Aluno</);
@@ -66,15 +65,25 @@ test("renders the user sheet in role order with expandable access actions", () =
   assert.match(markup, /Histórico rápido/);
   assert.match(markup, /Painel de gestão/);
   assert.match(markup, /data-user-detail-viewport="true"/);
-  assert.match(markup, /w-\[100cqw\]/);
-  assert.match(markup, /xl:pr-\[17rem\]/);
-  assert.doesNotMatch(markup, /min-w-\[1520px\]/);
-  assert.match(markup, /O painel aberto acompanha a área visível/);
+  assert.doesNotMatch(markup, /(?:max-)?w-\[100cqw\]|xl:pr-\[17rem\]/);
+  assert.doesNotMatch(markup, /min-w-\[(?:1320|1520)px\]/);
   assert.doesNotMatch(markup, /line-clamp-2/);
   assert.match(markup, /admin@example.com/);
   assert.match(markup, /aria-label="Gerenciar Admin Teste/);
   assert.match(markup, /Excluir conta/);
   assert.match(markup, /Redefinir senha/);
+});
+
+test("keeps every user field in a full-width management panel", () => {
+  const markup = renderToStaticMarkup(<AdminUsersSheet rows={rows} />);
+  assert.match(markup, /admin-users-sheet/);
+  assert.match(markup, /Nome e e-mail/);
+  assert.match(markup, /Perfil e pendências/);
+  assert.match(markup, /Cadastrado em/);
+  assert.match(markup, /10\/08\/2026/);
+  assert.match(markup, /Administracao/);
+  assert.match(markup, /\(44\) 99999-0000/);
+  assert.doesNotMatch(markup, /sticky right-0/);
 });
 
 test("filters the sheet by accent-insensitive search, role and polo", () => {

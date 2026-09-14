@@ -187,9 +187,9 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
   return (
     <section
       aria-labelledby="admin-users-sheet-title"
-      className="min-w-0 overflow-hidden rounded-lg border border-primary/15 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.08)]"
+      className="admin-users-sheet min-w-0 rounded-lg border border-primary/15 bg-white shadow-[0_18px_46px_rgba(65,42,76,0.08)]"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-primary/15 bg-primary px-4 py-3 text-primary-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-t-lg border-b border-primary/15 bg-primary px-4 py-3 text-primary-foreground">
         <div>
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.16em] text-primary-foreground/65">
             Base operacional
@@ -198,7 +198,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
             className="mt-0.5 text-base font-semibold"
             id="admin-users-sheet-title"
           >
-            Planilha de usuarios
+            Planilha de usuários
           </h2>
         </div>
         <span
@@ -209,7 +209,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
         </span>
       </div>
 
-      <div className="grid gap-3 border-b border-primary/10 bg-[#fcfafc] p-3 lg:grid-cols-[minmax(16rem,1fr)_auto_auto] lg:items-end">
+      <div className="admin-users-sheet-filters grid gap-3 border-b border-primary/10 bg-[#fcfafc] p-3">
         <label className="grid gap-1.5 text-xs font-semibold text-primary/70">
           Buscar na base
           <span className="relative block">
@@ -218,7 +218,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary/45"
             />
             <input
-              className="h-10 w-full rounded-md border border-primary/15 bg-white pl-9 pr-3 text-sm font-normal text-foreground outline-none transition focus:border-primary/35 focus:ring-2 focus:ring-primary/10"
+              className="h-11 min-w-0 w-full rounded-md border border-primary/15 bg-white pl-9 pr-3 text-sm font-normal text-foreground outline-none transition focus:border-primary/35 focus:ring-2 focus:ring-primary/10"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar nome, e-mail ou telefone"
               type="search"
@@ -229,7 +229,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
 
         <fieldset className="min-w-0">
           <legend className="mb-1.5 text-xs font-semibold text-primary/70">
-            Role
+            Tipo de acesso
           </legend>
           <div className="inline-flex min-h-10 flex-wrap rounded-md border border-primary/15 bg-white p-1">
             {(
@@ -243,7 +243,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
               <button
                 aria-pressed={roleFilter === value}
                 className={cn(
-                  "rounded px-2.5 py-1 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
+                  "min-h-11 rounded px-2.5 py-1 text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
                   roleFilter === value
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-primary/65 hover:bg-primary/5 hover:text-primary",
@@ -259,10 +259,10 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
         </fieldset>
 
         <div className="flex min-w-0 items-end gap-2">
-          <label className="grid min-w-52 flex-1 gap-1.5 text-xs font-semibold text-primary/70">
+          <label className="grid min-w-0 flex-1 gap-1.5 text-xs font-semibold text-primary/70">
             Polo
             <select
-              className="h-10 rounded-md border border-primary/15 bg-white px-3 text-sm font-normal text-foreground outline-none transition focus:border-primary/35 focus:ring-2 focus:ring-primary/10"
+              className="h-11 min-w-0 w-full rounded-md border border-primary/15 bg-white px-3 text-sm font-normal text-foreground outline-none transition focus:border-primary/35 focus:ring-2 focus:ring-primary/10"
               onChange={(event) =>
                 setPoloFilter(event.target.value as PoloFilter)
               }
@@ -276,7 +276,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
           </label>
           {hasActiveFilters ? (
             <button
-              className="inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-white text-primary/65 transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+              className="inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-primary/15 bg-white text-primary/65 transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
               onClick={clearFilters}
               title="Limpar filtros"
               type="button"
@@ -289,23 +289,18 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
       </div>
 
       <div
-        aria-label="Planilha de usuarios com rolagem horizontal"
-        className="overflow-x-auto overscroll-x-contain [container-type:inline-size]"
+        aria-label="Lista de usuários"
+        className="min-w-0"
         role="region"
-        tabIndex={0}
       >
-        <div className="min-w-[1320px]">
-          <div className="grid grid-cols-[3rem_minmax(15rem,1.25fr)_6rem_5.5rem_9rem_minmax(12rem,1fr)_minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_6.5rem_6.5rem] border-b border-primary/10 bg-[#f7f1f8] text-[0.65rem] font-bold uppercase tracking-[0.12em] text-primary/55">
-            <span className="px-3 py-2.5 text-center">#</span>
-            <span className="px-3 py-2.5">Nome completo</span>
-            <span className="px-3 py-2.5">Role</span>
-            <span className="px-3 py-2.5">Status</span>
+        <div className="min-w-0">
+          <div aria-hidden="true" className="admin-users-sheet-heading border-b border-primary/10 bg-[#f7f1f8] text-[0.65rem] font-bold uppercase tracking-[0.08em] text-primary/70">
+            <span className="px-3 py-2.5">Nome e e-mail</span>
+            <span className="px-3 py-2.5">Acesso</span>
             <span className="px-3 py-2.5">Polo</span>
-            <span className="px-3 py-2.5">Contato</span>
-            <span className="px-3 py-2.5">Perfil</span>
-            <span className="px-3 py-2.5">Sinal</span>
-            <span className="px-3 py-2.5">Cadastro</span>
-            <span className="sticky right-0 bg-[#f7f1f8] px-3 py-2.5 text-center shadow-[-10px_0_16px_-16px_rgba(65,42,76,0.5)]">
+            <span className="px-3 py-2.5">Telefone</span>
+            <span className="px-3 py-2.5">Perfil e pendências</span>
+            <span className="px-3 py-2.5 text-center">
               Ações
             </span>
           </div>
@@ -340,12 +335,12 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                 >
                   <summary
                     aria-label={`Gerenciar ${row.name}, ${roleLabels[row.role]}, ${row.isActive ? "ativo" : "inativo"}, ${row.poloLabel}, ${row.attentionLabel}`}
-                    className="grid min-h-16 cursor-pointer list-none grid-cols-[3rem_minmax(15rem,1.25fr)_6rem_5.5rem_9rem_minmax(12rem,1fr)_minmax(9rem,0.75fr)_minmax(10rem,0.8fr)_6.5rem_6.5rem] items-center text-sm transition-colors hover:bg-primary/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/25 [&::-webkit-details-marker]:hidden"
+                    className="admin-users-sheet-row min-h-16 cursor-pointer list-none items-center text-sm transition-colors hover:bg-primary/[0.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 [&::-webkit-details-marker]:hidden"
                   >
-                    <span className="px-3 text-center font-mono text-xs text-primary/45">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
-                    <span className="flex min-w-0 items-center gap-2.5 px-3">
+                    <span className="admin-users-sheet-identity flex min-w-0 items-center gap-2.5 px-3">
+                      <span className="hidden shrink-0 font-mono text-xs text-primary/50 sm:block">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
                       <span
                         className={cn(
                           "flex size-9 shrink-0 items-center justify-center rounded-md border text-xs font-semibold",
@@ -363,7 +358,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                         </span>
                       </span>
                     </span>
-                    <span className="px-3">
+                    <span className="grid justify-items-start gap-1.5 px-3 py-2">
                       <span
                         className={cn(
                           "inline-flex rounded-md border px-2 py-1 text-xs font-semibold",
@@ -372,8 +367,6 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       >
                         {roleLabels[row.role]}
                       </span>
-                    </span>
-                    <span className="px-3">
                       <span
                         className={cn(
                           "inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold",
@@ -409,10 +402,8 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                         </span>
                       </span>
                     </span>
-                    <span className="min-w-0 px-3 text-xs text-muted-foreground">
-                      <span className="block break-all leading-4" title={row.email}>
-                        {row.email}
-                      </span>
+                    <span className="admin-users-sheet-contact min-w-0 px-3 py-2 text-xs text-muted-foreground">
+                      <span className="admin-users-sheet-mobile-label mb-1 font-semibold text-primary/70">Telefone</span>
                       <span
                         className="mt-1 block whitespace-normal break-words leading-4"
                         title={row.phone ?? ""}
@@ -420,10 +411,10 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                         {row.phone ?? "Sem telefone"}
                       </span>
                     </span>
-                    <span className="whitespace-normal break-words px-3 py-2 text-xs font-medium leading-4 text-foreground/80">
-                      {row.profileSummary}
-                    </span>
-                    <span className="px-3">
+                    <span className="admin-users-sheet-profile grid justify-items-start gap-1.5 px-3 py-2">
+                      <span className="whitespace-normal break-words text-xs font-medium leading-4 text-foreground/80">
+                        {row.profileSummary}
+                      </span>
                       <span
                         className={cn(
                           "inline-flex max-w-full items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-semibold",
@@ -439,21 +430,18 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                         </span>
                       </span>
                     </span>
-                    <span className="px-3 text-xs text-muted-foreground">
-                      {row.createdAtLabel}
-                    </span>
-                    <span className="sticky right-0 flex self-stretch items-center justify-center gap-1 bg-white px-3 text-xs font-semibold text-primary shadow-[-10px_0_16px_-16px_rgba(65,42,76,0.5)] group-open/sheet-row:bg-[#fcfafc]">
+                    <span className="admin-users-sheet-manage flex min-h-11 items-center justify-center gap-1 whitespace-nowrap px-2 text-xs font-semibold text-primary">
                       Gerenciar
                       <ChevronDown
                         aria-hidden="true"
-                        className="size-4 transition-transform group-open/sheet-row:rotate-180 motion-reduce:transition-none"
+                        className="size-4 shrink-0 transition-transform group-open/sheet-row:rotate-180 motion-reduce:transition-none"
                       />
                     </span>
                   </summary>
 
                   <section
                     aria-label={`Painel de gestão de ${row.name}`}
-                    className="sticky left-0 box-border w-[100cqw] max-w-[100cqw] border-t border-primary/10 bg-[#fcfafc] p-3 sm:p-4 xl:pr-[17rem]"
+                    className="admin-users-sheet-detail box-border w-full min-w-0 border-t border-primary/10 bg-[#fcfafc] p-3 sm:p-4"
                     data-user-detail-viewport="true"
                   >
                     <div
@@ -509,7 +497,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       </div>
                     </div>
 
-                    <div className="grid min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13.5rem),1fr))]">
+                    <div className="admin-users-sheet-facts grid min-w-0 gap-3">
                       <div className="min-w-0 rounded-lg border border-primary/15 bg-white p-3 shadow-sm">
                         <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
                           Identificação
@@ -522,6 +510,9 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                         </p>
                         <p className="mt-1 text-xs leading-4 text-muted-foreground">
                           {row.phone ?? "Sem telefone"}
+                        </p>
+                        <p className="mt-2 text-xs leading-4 text-muted-foreground">
+                          Cadastrado em {row.createdAtLabel}
                         </p>
                       </div>
                       <div
@@ -575,7 +566,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       <p className="text-[0.68rem] font-bold uppercase tracking-[0.14em] text-primary/55">
                         Histórico rápido
                       </p>
-                      <ul className="mt-2 grid min-w-0 gap-2 text-sm leading-5 text-foreground/85 sm:grid-cols-2 xl:grid-cols-3">
+                      <ul className="mt-2 grid min-w-0 gap-2 text-sm leading-5 text-foreground/85 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
                         {row.history.map((item) => (
                           <li
                             className="flex min-w-0 items-start gap-2 rounded-md bg-white/65 px-2.5 py-2"
@@ -591,7 +582,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       </ul>
                     </div>
 
-                    <div className="mt-3 grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)]">
+                    <div className={cn("admin-users-sheet-actions mt-3 grid min-w-0 items-start gap-3", row.contactActions ? "admin-users-sheet-actions-with-contact" : null)}>
                       {row.contactActions ? (
                         <div className="min-w-0 self-start">
                           {row.contactActions}
@@ -600,8 +591,7 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
                       <div
                         aria-label={`Acoes de acesso de ${row.name}`}
                         className={cn(
-                          "grid min-w-0 content-start gap-3 overflow-hidden rounded-xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4",
-                          !row.contactActions ? "lg:col-span-2" : null,
+                          "grid min-w-0 content-start gap-3 rounded-xl border border-primary/10 bg-white p-3 shadow-sm sm:p-4",
                         )}
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
@@ -641,8 +631,8 @@ export function AdminUsersSheet({ rows }: { rows: AdminUsersSheetRow[] }) {
         </div>
       </div>
       <p className="border-t border-primary/10 bg-primary/[0.025] px-4 py-2.5 text-xs text-muted-foreground">
-        Deslize a planilha para consultar as colunas. O painel aberto acompanha a
-        área visível, sem cortar os dados ou as ações.
+        Selecione Gerenciar para ver o cadastro completo, o histórico e as ações
+        de acesso. Em telas menores, cada linha se adapta ao espaço disponível.
       </p>
     </section>
   );
