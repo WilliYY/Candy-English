@@ -30,6 +30,13 @@ Essas cores ficam centralizadas em `src/app/globals.css` usando tokens do Tailwi
 
 ## Assets
 
+### Gestão de usuários — 14/09/2026
+
+`/ava/admin?task=usuarios` aproveita toda a largura disponível. A planilha agrupa
+informações relacionadas em seis colunas e se reorganiza por largura do próprio
+painel em telas menores. Detalhes sem reserva lateral, nomes e contatos completos,
+ações sem sobrepor colunas. Regras e teste isolado em `docs/27-usuarios-layout.md`.
+
 ### Atualização mobile — 13/09/2026
 
 A abertura usa agora texto HTML visível e um único carrossel sobre moldura estática
@@ -38,6 +45,11 @@ tablet. `docs/26-site-mobile.md` registra arte, fontes, regras responsivas e
 validação. O antigo vídeo de moldura continua preservado em `public/brand/`.
 No site público, ferramentas mobile ficam compactas e não exibem balões
 espontâneos sobre o conteúdo; durante o foco em campos, saem da frente do formulário.
+
+Correção do rodapé em 14/09/2026: a caixa de 84 px cortava a mídia de 122,5 px.
+A marca do rodapé usa agora o poster completo, estático e com proporção 720/315,
+sem zoom no hover. Esta regra substitui a orientação legada de logo animada no
+rodapé; os outros usos do componente `BrandLogo` não mudam.
 
 - Favicon: `public/favicon.svg`, usando a bala original da Candy centralizada sobre fundo branco circular para evitar caixa branca quadrada na aba do navegador.
 - Logo animada principal: `public/brand/candy-logo-animated.webm`, em loop mudo, com fundo transparente, recorte otimizado e poster `public/brand/candy-logo-animated-poster.png`.

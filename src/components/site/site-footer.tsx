@@ -46,8 +46,9 @@ export function SiteFooter() {
         <div className="mx-auto grid w-full max-w-7xl gap-6 px-6 pb-12 pt-14 md:grid-cols-2 md:items-center lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.3fr)] lg:px-8">
           <div className="flex flex-col gap-4">
             <BrandLogo
-              className="h-[5.25rem] w-full max-w-[280px] overflow-hidden"
-              imageClassName="w-full max-w-full"
+              animated={false}
+              className="aspect-[720/315] h-auto w-full max-w-[280px]"
+              imageClassName="left-0 top-0 h-full w-full max-w-full translate-x-0 translate-y-0 group-hover:scale-100"
               variant="light"
             />
           </div>
