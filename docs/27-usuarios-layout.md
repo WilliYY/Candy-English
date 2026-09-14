@@ -55,3 +55,23 @@ fictício de aluno nas sete larguras. Não substitui teste em celular físico.
 Não testar exclusão nem redefinir senhas de usuários reais para validar aparência.
 Encerrar o servidor local e o navegador de teste ao finalizar. Em deploy, preservar
 o overlay WhatsApp e executar os smokes de acesso. Não há migration nesta mudança.
+
+## Entrega verificada — 14/09/2026
+
+Commits `7bbc509` (usuários) e `e7d7a56` (logo do rodapé) enviados ao GitHub e
+publicados no Oracle. `npm run build` local e `docker compose build app
+audit-server-smoke` no servidor concluíram com sucesso. Publicação com
+`docker compose up -d --no-deps --force-recreate --wait --wait-timeout 90 app`,
+preservando o overlay e sem recriar banco ou worker.
+
+Depois do deploy: smoke servidor (11 verificações), autenticação (34) e avatar
+(1), todos com saída 0. Usados comandos SSH separados com
+`docker compose --profile tools run --rm --no-deps -T audit-server-smoke`,
+acrescentando `npm run audit:auth-smoke` e `npm run audit:avatar-smoke` nos dois
+últimos. A verificação visual administrativa usa somente fixtures locais, não
+contas reais; o smoke de acesso usa o fluxo isolado existente de teste.
+
+O roteiro `scripts/site-footer-layout-check.cjs` confirmou no domínio publicado
+a marca estática completa e contida em 320, 390, 768, 1024, 1440 e 1880 px,
+incluindo hover. O corte anterior de 122,5 px em caixa de 84 px foi eliminado.
+Imagem de rollback preservada como `candy-english-app:before-users-e7d7a56`.
