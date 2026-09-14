@@ -689,7 +689,7 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
         "Nao vieram",
         "Alunos ativos",
         "Agenda do dia",
-        "Visao mensal",
+        "Planilha mensal",
         "Navegue pelo mes",
         "Escolha um dia da agenda",
       ];
@@ -700,6 +700,9 @@ async function assertAdminAvaTaskRoutes(role: SmokeRole, cookie: string) {
             `Agenda admin sem visao inicial esperada: ${expectedText}`,
           );
         }
+      }
+      if (!text.includes("agenda-compact-sheet")) {
+        throw new Error("Agenda admin sem planilha compacta por polo.");
       }
     }
   }
