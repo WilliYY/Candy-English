@@ -1,5 +1,10 @@
 # 99 - Contexto Rapido para Codex
 
+Atualização 17/09/2026: bom-dia da Catty no grupo Interno possui rotina diária
+às 08:00 São Paulo e controles próprios em `/ava/rotina`; não confundir com a
+pausa das conversas privadas. Migration autorizada e exceção tardia de hoje
+em `docs/28-catty-bom-dia.md`. Não repetir um envio real para testar.
+
 Atualização 13/09/2026: `/ava/rotina`, atalho **Rotina** no grupo Catty do ADMIN,
 consulta Agenda por dia, Financeiro da competência, doces e ações auditadas.
 Não cadastra agendamentos, não envia dados à IA/WhatsApp e não muda o banco.

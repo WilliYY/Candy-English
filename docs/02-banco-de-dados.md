@@ -1,5 +1,16 @@
 # 02 - Banco de Dados
 
+## Bom-dia no grupo — 17/09/2026
+
+Migration aditiva `20260917130000_catty_morning`, aprovada pelo responsável:
+`CattyMorningRoutine` guarda autorização, grupo cifrado/hash, início e exceção
+tardia com validade; `CattyMorningRun` reserva uma execução por rotina/data,
+estado, versão da autorização, conteúdo gerado cifrado e hash de aceite.
+Sem destinatários, ativação, senhas ou alteração de tabelas existentes na migration.
+Reutiliza o enum de status. Histórico desta rotina sem dados pessoais: 45 dias.
+Rollback: pausar a rotina, voltar a imagem e preservar as tabelas; não usar DROP
+em produção. Spec e operação: `28-catty-bom-dia.md`.
+
 ## Canal Catty WhatsApp — migration aditiva
 
 `20260911140000_catty_whatsapp` cria, em transação, somente o enum de status e

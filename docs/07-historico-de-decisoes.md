@@ -1,5 +1,16 @@
 # 07 - Historico de Decisoes
 
+### 2026-09-17 - Bom-dia autorizado separado das conversas privadas
+
+- Decisão: reutilizar o worker servidor com duas tabelas aditivas para uma rotina
+  fixa no grupo Interno; não criar cron no PC nem liberar conversas privadas.
+- Motivo: o responsável aprovou somente este envio diário e uma exceção tardia
+  hoje. Reutilizar a pausa individual liberaria respostas que seguem pausadas.
+- Proteções: grupo exato cifrado, ADMIN atual validado na alteração e no envio,
+  versão esperada, reserva única por data, expiração, entrega incerta sem retry,
+  IA limitada a texto gerado previamente e data, sem dados do AVA.
+- Operação, limites, rollback e testes em `28-catty-bom-dia.md`.
+
 ## 13/09/2026 — Rotina da Catty somente leitura e ADMIN
 
 Pedido: acompanhar o funcionamento diário/agendado da Catty e consultar Agenda

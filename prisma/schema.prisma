@@ -26,6 +26,39 @@ model CattyWhatsappChannel {
   updatedAt         DateTime  @updatedAt
 }
 
+model CattyMorningRoutine {
+  id                 String            @id
+  enabled            Boolean           @default(false)
+  groupName          String            @db.VarChar(100)
+  groupHash          String            @db.Char(64)
+  groupCiphertext    String            @db.Text
+  authorizedByUserId String
+  startsAt           DateTime
+  lateDate           String?           @db.VarChar(10)
+  lateUntil          DateTime?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  runs               CattyMorningRun[]
+}
+
+model CattyMorningRun {
+  id                String                     @id
+  routineId         String
+  routine           CattyMorningRoutine        @relation(fields: [routineId], references: [id], onDelete: Restrict)
+  dateKey           String                     @db.VarChar(10)
+  status            CattyWhatsappMessageStatus  @default(PROCESSING)
+  routineVersion    DateTime
+  replyCiphertext   String?                    @db.Text
+  providerIdHash    String?                    @db.Char(64)
+  errorCode         String?                    @db.VarChar(40)
+  expiresAt         DateTime
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  @@unique([routineId, dateKey])
+  @@index([createdAt])
+}
+
 model CattyWhatsappContact {
   id               String                 @id @default(cuid())
   name             String                 @db.VarChar(100)

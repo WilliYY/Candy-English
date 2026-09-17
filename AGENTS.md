@@ -181,7 +181,8 @@ O homework interativo usa upload de PDF/imagem exportado do Canva na area teache
 ## Catty no WhatsApp
 
 - Canal opcional `/ava/whatsapp`, exclusivamente ADMIN ativo, conforme `docs/24-catty-whatsapp.md`.
-- `/ava/rotina` é consulta somente leitura, exclusiva ADMIN ativo: estado da Catty, Agenda do dia, pendências financeiras/doces e auditoria. Não envia mensagens, não entrega esses dados à IA e não cria agendamentos implicitamente.
+- `/ava/rotina` é exclusiva ADMIN ativo: consultar estado, Agenda, financeiro e auditoria não envia mensagens nem entrega esses dados à IA. Exceção de escrita explícita: ativar/pausar o bom-dia no grupo Interno, conforme `docs/28-catty-bom-dia.md`.
+- O bom-dia possui autorização separada das conversas privadas: todos os dias às 08:00 em `America/Sao_Paulo`, inglês simples, reserva única por data e nenhum retry de entrega incerta. Não despausar conversas individuais ao ativá-lo. Envios atrasados exigem autorização explícita e validade curta.
 - `src/lib/catty-whatsapp/` concentra transporte, fila, autorização e resposta do canal.
 - Não compartilhar sessão, segredos, banco ou serviços com Miauby/Wimifarma.
 - Ativação da infraestrutura não despausa envios; pareamento e ativação são ações explícitas.

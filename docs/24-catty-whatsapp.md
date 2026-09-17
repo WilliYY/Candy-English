@@ -1,5 +1,15 @@
 # Catty no WhatsApp — especificação da primeira versão
 
+## Atualização: bom-dia diário — 17/09/2026
+
+O responsável aprovou a implementação, migration e ativação de uma única rotina
+no grupo Interno, às 08:00 em São Paulo, e um envio atrasado nesta data.
+`docs/28-catty-bom-dia.md` é a referência atual para esta exceção. Substitui apenas
+as afirmações históricas abaixo de que nenhum agendamento de grupo existe.
+Conversas privadas continuam sob a pausa original; a rotina tem ativação/pausa
+próprias e explícitas em Rotina. Avisos de aula/pagamento, leitura de grupos,
+vínculo por pessoa e outros comandos continuam fora desta entrega.
+
 ## Rotina ADMIN e teste pontual no grupo (13/09/2026)
 
 - Nova área `/ava/rotina`, com atalho **Rotina** no grupo Catty da navegação

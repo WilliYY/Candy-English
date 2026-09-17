@@ -30,7 +30,7 @@ export function getRoutineActivities(state: { configured: boolean; paused: boole
       status: ready ? "ACTIVE" : state.configured ? "BLOCKED" : "NOT_CONFIGURED" },
     { id: "lessons", title: "Avisos de aula", description: "Ainda depende da escolha de horário, antecedência e destinatários. A agenda abaixo é somente consulta.", cadence: "Sem horário definido", audience: "A definir pelo admin", status: "NOT_CONFIGURED", nextRunAt: null },
     { id: "payments", title: "Avisos de pagamento", description: "Nenhuma cobrança automática cadastrada. Consultar pendências não envia mensagens.", cadence: "Sem horário definido", audience: "A definir pelo admin", status: "NOT_CONFIGURED", nextRunAt: null },
-    { id: "group", title: "Lembretes no grupo Interno", description: "O teste pontual não ativa uma rotina. Conteúdo e frequência ainda serão escolhidos.", cadence: "Sem horário definido", audience: "Grupo Interno", status: "NOT_CONFIGURED", nextRunAt: null },
+    { id: "group", title: "Outros lembretes no grupo Interno", description: "Além do bom-dia, nenhum aviso de agenda ou financeiro foi autorizado para o grupo.", cadence: "Sem horário definido", audience: "Grupo Interno", status: "NOT_CONFIGURED", nextRunAt: null },
   ];
 }
 
@@ -49,6 +49,14 @@ export function getRoutinePaymentStatus(payment: RoutinePayment, now = new Date(
 
 export function routineAuditLabel(action: string) {
   const labels: Record<string, string> = {
+    MORNING_ENABLED: "Ativou o bom-dia no grupo Interno",
+    MORNING_PAUSED: "Pausou o bom-dia",
+    MORNING_LATE_AUTHORIZED: "Autorizou um bom-dia atrasado hoje",
+    MORNING_RESERVED: "Bom-dia em preparação",
+    MORNING_BLOCKED: "Bom-dia bloqueado por permissão",
+    MORNING_ACCEPTED: "Bom-dia aceito pelo WhatsApp",
+    MORNING_FAILED: "Bom-dia falhou; sem reenvio automático",
+    MORNING_UNCERTAIN: "Bom-dia com entrega incerta; conferir no grupo",
     GROUP_TEST_STARTED: "Teste no grupo iniciado",
     GROUP_TEST_ACCEPTED: "Teste no grupo aceito pelo WhatsApp",
     GROUP_TEST_FAILED: "Teste no grupo rejeitado",

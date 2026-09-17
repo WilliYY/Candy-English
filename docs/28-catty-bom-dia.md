@@ -37,3 +37,21 @@ pausadas. Esta autorização não libera cobranças, agenda ou respostas no grup
 Em implementação. Registrar validações e publicação nesta seção antes de
 considerar a rotina ativa. Regras locais testadas: fuso, mudança de ano,
 janela, exceção tardia, formato, conteúdo repetido e limites de geração.
+
+## Operação e rollback
+
+- Pausar em `/ava/rotina` antes de rollback ou restauração de backup. Voltar a
+  imagem anterior preservando as tabelas aditivas. Não executar migration de
+  remoção em produção. Reativação é explícita e não repõe dias perdidos.
+- A implantação não cadastra/ativa destinatário automaticamente. O operador
+  usa `scripts/catty-morning-admin.ts --enable --actor-email <ADMIN> --confirm`.
+  `--send-today` é uma exceção operacional que exige pedido explícito; a mesma
+  data não é reenviada mesmo que o comando seja repetido. Sem JIDs no Git.
+- Validar migration e concorrência com `npx tsx scripts/catty-morning-smoke.ts
+  --isolated-schema`; rede real bloqueada e fixtures removidas em `finally`.
+- Antes de publicar: backup, build, migration, recriar somente o app preservando
+  overlay WhatsApp e executar smokes de servidor/auth/avatar. Só então ativar.
+- Auditoria de dependências em 17/09: 0 críticas, 12 altas preexistentes em
+  tooling ESLint/Prisma e transitivas. Este incremento não altera dependências
+  nem passa entrada externa a glob/configuração ou MySQL; usa PostgreSQL.
+  Manter revisão das transitivas até 20/09, sem `audit fix --force` nesta tarefa.

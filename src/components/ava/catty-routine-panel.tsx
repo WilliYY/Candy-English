@@ -22,7 +22,7 @@ function Section({ id, title, detail, children }: { id: string; title: string; d
   </section>;
 }
 
-export function CattyRoutinePanel({ data }: { data: RoutineOverview }) {
+export function CattyRoutinePanel({ data, morning }: { data: RoutineOverview; morning?: React.ReactNode }) {
   const open = data.payments.filter(p => p.status !== "PAID");
   const overdue = open.filter(p => p.status === "OVERDUE").length;
   const paid = data.payments.filter(p => p.status === "PAID").length;
@@ -40,9 +40,10 @@ export function CattyRoutinePanel({ data }: { data: RoutineOverview }) {
     </header>
 
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950">
-      <strong>{data.paused ? "Envios automáticos pausados." : "Canal individual liberado."}</strong>{" "}
-      Nenhum disparo agendado de aula, pagamento ou grupo. Consultar esta página não envia mensagens. Envios já em andamento podem terminar.
+      <strong>{data.paused ? "Conversas e envios individuais pausados." : "Canal individual liberado."}</strong>{" "}
+      O bom-dia no grupo tem autorização própria abaixo. Nenhum disparo agendado de aula ou pagamento. Consultar esta página não envia mensagens. Envios já em andamento podem terminar.
     </div>
+    {morning}
     <nav aria-label="Seções da rotina" className="flex flex-wrap gap-2">
       {[['#programacao', 'Ações da Catty'], ['#agenda', 'Agenda do dia'], ['#financeiro', 'Financeiro'], ['#historico', 'Histórico']].map(([href, label]) => <Button key={href} variant="outline" size="sm" asChild><a href={href}>{label}</a></Button>)}
     </nav>
@@ -55,7 +56,7 @@ export function CattyRoutinePanel({ data }: { data: RoutineOverview }) {
       ].map(card => <div key={card.title} className="min-w-0 rounded-xl border bg-card p-4"><p className="text-xs font-semibold text-muted-foreground">{card.title}</p><p className="my-2 text-2xl font-bold tabular-nums text-primary">{card.value}</p><p className="text-xs leading-relaxed text-muted-foreground">{card.hint}</p></div>)}
     </div>
 
-    <Section id="programacao" title="Ações da Catty" detail="A frequência abaixo descreve o funcionamento real. Não há próximos disparos definidos para avisos automáticos.">
+    <Section id="programacao" title="Outras ações da Catty" detail="O bom-dia tem seu controle acima. Avisos de aula e pagamento continuam sem agendamento.">
       <ul className="divide-y">
         {data.activities.map(activity => <li key={activity.id} className="grid min-w-0 gap-3 py-4 first:pt-0 last:pb-0 lg:grid-cols-[1fr_15rem]">
           <div className="min-w-0"><h3 className="font-semibold text-primary">{activity.title}</h3><p className="mt-1 text-sm leading-relaxed text-muted-foreground">{activity.description}</p><p className="mt-2 text-xs text-muted-foreground">Destino: {activity.audience}</p></div>

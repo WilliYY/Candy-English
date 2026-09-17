@@ -10,6 +10,8 @@ export class TransportError extends Error {
 const stateSchema = z.object({ instance: z.object({ state: z.enum(["open", "close", "connecting"]) }) });
 const sentSchema = z.object({ key: z.object({ id: z.string().min(1).max(200) }) });
 const qrSchema = z.object({ base64: z.string().max(300_000).regex(/^data:image\/png;base64,[A-Za-z0-9+/=]+$/) });
+const groupJid = z.string().regex(/^[0-9-]{5,50}@g\.us$/);
+const groupsSchema = z.array(z.object({ id: groupJid, subject: z.string().max(100) })).max(500);
 
 export class EvolutionTransport {
   constructor(private config: Config, private request: typeof fetch = fetch) {}
@@ -60,6 +62,17 @@ export class EvolutionTransport {
   async send(phone: string, text: string) {
     if (!/^[1-9]\d{9,14}$/.test(phone) || !text.trim() || text.length > 1800) throw new TransportError("TRANSPORT_INVALID");
     const parsed = sentSchema.safeParse(await this.call(`/message/sendText/${this.config.instance}`, { number: phone, text, linkPreview: false }, true));
+    if (!parsed.success) throw new TransportError("TRANSPORT_INVALID", true);
+    return parsed.data.key.id;
+  }
+  async groups() {
+    const parsed = groupsSchema.safeParse(await this.call(`/group/fetchAllGroups/${this.config.instance}?getParticipants=false`));
+    if (!parsed.success) throw new TransportError("TRANSPORT_INVALID");
+    return parsed.data;
+  }
+  async sendGroup(jid: string, text: string) {
+    if (!groupJid.safeParse(jid).success || !text.trim() || text.length > 1000) throw new TransportError("TRANSPORT_INVALID");
+    const parsed = sentSchema.safeParse(await this.call(`/message/sendText/${this.config.instance}`, { number: jid, text, linkPreview: false }, true));
     if (!parsed.success) throw new TransportError("TRANSPORT_INVALID", true);
     return parsed.data.key.id;
   }

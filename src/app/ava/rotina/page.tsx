@@ -10,14 +10,17 @@ import { buildAvaCallbackUrl } from "@/lib/ava-callback-url";
 import { requireWhatsappAdmin } from "@/lib/catty-whatsapp/admin";
 import { getAdminRoutineOverview } from "@/lib/catty-whatsapp/routine-data";
 import { routineDateSchema } from "@/lib/validations/catty-routine";
+import { getMorningOverview } from "@/lib/catty-whatsapp/morning-data";
+import { CattyMorningPanel } from "@/components/ava/catty-morning-panel";
+import { CattyMorningControls } from "@/components/ava/catty-morning-controls";
 
 export const metadata: Metadata = { title: "Rotina da Catty" };
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 async function RoutineContent({ actor, date }: { actor: Awaited<ReturnType<typeof requireWhatsappAdmin>>; date?: string }) {
-  const data = await getAdminRoutineOverview(actor, date);
-  return <CattyRoutinePanel data={data} />;
+  const [data, morning] = await Promise.all([getAdminRoutineOverview(actor, date), getMorningOverview(actor)]);
+  return <CattyRoutinePanel data={data} morning={<CattyMorningPanel data={morning} controls={<CattyMorningControls enabled={morning.enabled} version={morning.version} configured={morning.configured} />} />} />;
 }
 
 export default async function RoutinePage({ searchParams }: { searchParams?: Promise<{ date?: string }> }) {
