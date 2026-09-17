@@ -32,11 +32,40 @@ pausadas. Esta autorização não libera cobranças, agenda ou respostas no grup
   IA/transporte falsos e limpeza das fixtures. O envio real atrasado é uma
   ação explicitamente autorizada, somente depois das validações.
 
-## Entrega
+## Entrega verificada — 17/09/2026
 
-Em implementação. Registrar validações e publicação nesta seção antes de
-considerar a rotina ativa. Regras locais testadas: fuso, mudança de ano,
-janela, exceção tardia, formato, conteúdo repetido e limites de geração.
+Implementação publicada no Oracle (`175e2d4`, precedido por `2c7fee3`). Backup
+cifrado conferido antes da migration aditiva `20260917130000_catty_morning`;
+imagem anterior preservada como `candy-english-app:before-morning-175e2d4`.
+Build das imagens app/migrate/tools concluído, app saudável e overlay WhatsApp
+preservado. A rotina está ativa no grupo Interno; conversas privadas continuam
+pausadas. A ativação não alterou destinatários nem dados financeiros/agenda.
+
+- Envio atrasado autorizado de 17/09: uma única reserva, `SENT`, aceite do
+  transporte registrado, sem erro. Registro criado às 18:29:44 de São Paulo.
+  Isso não confirma entrega ou leitura. Não executar novo envio de teste.
+- Próxima execução configurada para 18/09/2026 às 08:00, `America/Sao_Paulo`
+  (`2026-09-18T11:00:00.000Z`), seguindo diariamente inclusive fins de semana.
+- Validações locais: Prisma generate/validate, `tsc --noEmit`, ESLint em `src`
+  e scripts novos aprovados; 336 testes gerais/mobile e um teste adicional de
+  transporte aprovados. Build Next.js aprovado na imagem Docker.
+- Integração isolada: 12 verificações novas e 14 verificações da fila existente
+  aprovadas. Cobrem concorrência, duplicação, versão, roles, revogação durante
+  geração, troca de identidade do grupo, entrega incerta, falha da IA, prazo
+  tardio, recuperação e retenção. Rede real bloqueada; zero schemas temporários
+  restantes após limpeza.
+- Smokes de produção: servidor 11 OK, autenticação 34 OK e avatar OK. Google
+  OAuth não configurado, portanto o cenário correspondente foi ignorado.
+- QA visual com dados sintéticos e ações sem acesso real: 320, 768, 1024 e
+  1440 px, sem overflow horizontal ou cortes de texto; confirmação/cancelamento
+  por teclado e movimento reduzido conferidos, sem erros de página. Navegador
+  e servidor temporários encerrados; nenhum controle real foi acionado no QA.
+
+Arquivos principais: `src/lib/catty-whatsapp/morning-*.ts`, validação e testes
+`catty-morning*`, transporte e worker existentes, controles/painel de bom-dia e
+actions/página de `/ava/rotina`, schema/migration Prisma e os scripts
+`catty-morning-admin.ts` e `catty-morning-smoke.ts`. Documentação atualizada em
+`AGENTS.md`, `README.md` e `docs/02`, `07`, `24`, `28` e `99`.
 
 ## Operação e rollback
 
@@ -47,6 +76,12 @@ janela, exceção tardia, formato, conteúdo repetido e limites de geração.
   usa `scripts/catty-morning-admin.ts --enable --actor-email <ADMIN> --confirm`.
   `--send-today` é uma exceção operacional que exige pedido explícito; a mesma
   data não é reenviada mesmo que o comando seja repetido. Sem JIDs no Git.
+- Para controles posteriores, preferir `/ava/rotina`. A execução do script
+  exige acesso ao banco e à rede `candy-english_catty-channel`. O serviço
+  `audit-server-smoke` isoladamente não tem a segunda rede: retorna
+  `TRANSPORT_UNAVAILABLE` antes de ativar/enviar. Na publicação foi usado um
+  container operacional temporário conectado às duas redes e removido ao fim;
+  não expor o transporte nem alterar a pausa privada para contornar esse erro.
 - Validar migration e concorrência com `npx tsx scripts/catty-morning-smoke.ts
   --isolated-schema`; rede real bloqueada e fixtures removidas em `finally`.
 - Antes de publicar: backup, build, migration, recriar somente o app preservando
