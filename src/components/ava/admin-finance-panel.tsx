@@ -1324,6 +1324,7 @@ function FinancePaymentDetailForm({
     }),
     defaultValues: {
       amount: formatAmountInput(payment.snapshotAmountCents),
+      expectedUpdatedAt: payment.updatedAt,
       month: payment.month,
       note: payment.note ?? "",
       paidAt: toInputDate(payment.paidAt),
@@ -1353,6 +1354,9 @@ function FinancePaymentDetailForm({
         return;
       }
 
+      if (result.updatedAt) {
+        form.setValue("expectedUpdatedAt", result.updatedAt);
+      }
       setMessage(result.message);
       router.refresh();
     });

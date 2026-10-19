@@ -72,6 +72,7 @@ test("returns safe expenses and recent global logs", async () => {
       now: () => new Date("2026-08-15T15:00:00.000Z"),
       store: {
         financialExpense: {
+          aggregate: async () => ({ _count: 1, _sum: { amountCents: 12_500 } }),
           findMany: async () => [
             {
               actorName: "Williany",
@@ -106,6 +107,47 @@ test("returns safe expenses and recent global logs", async () => {
   assert.equal(activity.logs[0]?.studentName, "Ana Candy");
   assert.equal(activity.logsScope, "GLOBAL_RECENT");
   assert.equal("createdByUserId" in activity.expenses[0]!, false);
+});
+
+test("expense summary includes the full period beyond the recent 50 rows", async () => {
+  const allExpenses = Array.from({ length: 51 }, (_, index) => ({
+    actorName: "Admin Candy",
+    amountCents: 100,
+    createdAt: new Date("2026-08-10T12:00:00.000Z"),
+    id: `expense-${index}`,
+    itemName: "Material escolar",
+    note: null,
+    purchasedAt: new Date("2026-08-10T00:00:00.000Z"),
+    unit: "IVATE" as const,
+    updatedAt: new Date("2026-08-10T12:00:00.000Z"),
+  }));
+  const filters: unknown[] = [];
+  const activity = await getMobileAdminFinanceActivity(
+    admin,
+    { month: 8, unit: "IVATE", year: 2026 },
+    {
+      store: {
+        financialExpense: {
+          aggregate: async (query: { where: unknown }) => {
+            filters.push(query.where);
+            return { _count: 51, _sum: { amountCents: 5_100 } };
+          },
+          findMany: async (query: { take: number; where: unknown }) => {
+            filters.push(query.where);
+            return allExpenses.slice(0, query.take);
+          },
+        },
+        financialLog: { findMany: async () => [] },
+      } as never,
+    },
+  );
+
+  assert.equal(activity.expenses.length, 50);
+  assert.deepEqual(activity.expenseSummary, { count: 51, totalCents: 5_100 });
+  assert.deepEqual(filters, [
+    { month: 8, year: 2026, unit: "IVATE" },
+    { month: 8, year: 2026, unit: "IVATE" },
+  ]);
 });
 
 test("replays a completed payment operation before checking stale updatedAt", async () => {

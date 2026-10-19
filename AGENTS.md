@@ -101,6 +101,11 @@ Leitura minima recomendada:
 
 ## Padroes de implementacao
 
+- Site e aplicativo Candy English devem usar o mesmo backend e banco. Ao mudar
+  dados, tela ou funcionalidade do site, verificar e ajustar o correspondente
+  nativo em `candy english app`, preservando a API para versões já instaladas.
+  Dados são compartilhados; layout web não atualiza o frontend nativo sozinho.
+
 - Preferir Server Components para leitura e server actions para escrita.
 - Formularios devem usar React Hook Form + Zod quando forem client-side.
 - Validacoes ficam em `src/lib/validations/`.

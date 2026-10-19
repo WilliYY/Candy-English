@@ -120,6 +120,8 @@ Rota:
 - `FinancialLog` registra criacao, edicao, status, exclusao e exportacao.
 - O log financeiro fica recolhido por padrao em um card separado abaixo da lista para nao alongar a tela de cobranca.
 - Valor, data paga e observacao podem ser ajustados por mes no historico do aluno, sem alterar automaticamente os outros meses.
+- A edicao mensal no site envia o `updatedAt` carregado ao abrir o formulario. A action valida a versao e grava com condicao atomica por ID e `updatedAt`, como o app. Se o pagamento mudar durante a edicao, o site rejeita o envio sem sobrescrever dados nem registrar uma edicao financeira; o Admin deve atualizar a pagina e reabrir o pagamento. A edicao nao recria registros ausentes.
+- Apos salvar, a action devolve a versao confirmada dentro da mesma transacao. O formulario atualiza somente essa versao, permitindo salvar novamente; atualizacoes externas das props nao substituem o rascunho nem a versao carregada durante a edicao.
 - `FinancialExpense` guarda gastos internos por ano/mes/unidade, com insumo, data da compra, valor, pessoa responsavel e observacao opcional.
 - A data do gasto precisa pertencer ao mes selecionado, para o relatorio mensal nao misturar compras de outro mes.
 - Quando a Secretaria abre o financeiro com `unit=IVATE` ou `unit=DOURADINA`, a leitura server-side carrega alunos que possuem pagamentos ativos em 2026 com aquele `FinancialPayment.snapshotUnit`, e nao apenas pela unidade atual do cadastro. Isso preserva meses antigos se o aluno trocar de unidade depois.

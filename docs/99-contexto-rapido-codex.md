@@ -1,5 +1,11 @@
 # 99 - Contexto Rapido para Codex
 
+Atualização 19/10/2026: o responsável reafirmou que alterações no site também
+devem aparecer no app. Dados usam o mesmo backend/banco; mudanças de interface
+e funcionalidades exigem verificar ambos os frontends. A preparação Android
+está em `candy english app/docs/publicacao-android.md`; não declarar publicação
+sem AAB/build, acesso à Play Console e verificação na loja.
+
 Atualização 17/09/2026: bom-dia da Catty no grupo Interno possui rotina diária
 às 08:00 São Paulo e controles próprios em `/ava/rotina`; não confundir com a
 pausa das conversas privadas. Migration autorizada e exceção tardia de hoje

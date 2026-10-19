@@ -443,6 +443,7 @@ export const adminFinanceStudentUpdateSchema = financialStudentBaseSchema.extend
 
 export const adminFinancePaymentUpdateSchema = z.object({
   amount: optionalMoneySchema,
+  expectedUpdatedAt: z.string().datetime("Reabra o pagamento antes de salvar."),
   month: financeMonthSchema,
   note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
   paidAt: optionalDateSchema,

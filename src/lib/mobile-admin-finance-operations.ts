@@ -175,16 +175,22 @@ export async function getMobileAdminFinanceActivity(
   const month = parsed.data.month ?? today.month;
   const year = parsed.data.year ?? today.year;
   const store = options.store ?? getPrisma();
-  const [expenses, logs] = await Promise.all([
+  const expenseWhere = {
+    month,
+    year,
+    ...(parsed.data.unit === "ALL" ? {} : { unit: parsed.data.unit }),
+  } satisfies Prisma.FinancialExpenseWhereInput;
+  const [expenses, expenseTotals, logs] = await Promise.all([
     store.financialExpense.findMany({
       orderBy: [{ purchasedAt: "desc" }, { createdAt: "desc" }],
       select: expenseSelect,
       take: 50,
-      where: {
-        month,
-        year,
-        ...(parsed.data.unit === "ALL" ? {} : { unit: parsed.data.unit }),
-      },
+      where: expenseWhere,
+    }),
+    store.financialExpense.aggregate({
+      _count: true,
+      _sum: { amountCents: true },
+      where: expenseWhere,
     }),
     store.financialLog.findMany({
       orderBy: { createdAt: "desc" },
@@ -195,11 +201,8 @@ export async function getMobileAdminFinanceActivity(
   const safeExpenses = expenses.map(serializeExpense);
   return {
     expenseSummary: {
-      count: safeExpenses.length,
-      totalCents: safeExpenses.reduce(
-        (total, expense) => total + expense.amountCents,
-        0,
-      ),
+      count: expenseTotals._count,
+      totalCents: expenseTotals._sum.amountCents ?? 0,
     },
     expenses: safeExpenses,
     generatedAt: now.toISOString(),

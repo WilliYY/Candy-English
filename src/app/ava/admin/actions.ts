@@ -1656,7 +1656,7 @@ export async function updateFinancialStudent(
 
 export async function updateFinancialPaymentDetails(
   input: AdminFinancePaymentUpdateInput,
-): Promise<AdminActionResult<AdminFinancePaymentUpdateInput>> {
+): Promise<AdminActionResult<AdminFinancePaymentUpdateInput> & { updatedAt?: string }> {
   const session = await requireAdmin();
 
   if (!session) {
@@ -1731,7 +1731,7 @@ export async function updateFinancialPaymentDetails(
     };
   }
 
-  await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
     const currentPayment = await tx.financialPayment.findUnique({
       where: {
         studentId_year_month: {
@@ -1740,39 +1740,15 @@ export async function updateFinancialPaymentDetails(
           year: parsed.data.year,
         },
       },
-      select: { isPaid: true, snapshotAmountCents: true },
+      select: { id: true, isPaid: true, snapshotAmountCents: true, updatedAt: true },
     });
-    const snapshotSource = {
-      ...student,
-      amountCents: parsed.data.amount ?? currentPayment?.snapshotAmountCents ?? student.amountCents,
-    };
-    const payment = await tx.financialPayment.upsert({
-      where: {
-        studentId_year_month: {
-          month: parsed.data.month,
-          studentId: student.id,
-          year: parsed.data.year,
-        },
-      },
-      create: {
-        ...buildFinancialPaymentSnapshot(
-          snapshotSource,
-          getFinancialInstallmentNumber(
-            parsed.data.month,
-            parsed.data.month,
-            student.installmentsTotal,
-          ),
-        ),
-        isActive: true,
-        isPaid: Boolean(parsed.data.paidAt),
-        month: parsed.data.month,
-        note: parsed.data.note ?? null,
-        paidAt: parsed.data.paidAt ?? null,
-        studentId: student.id,
-        year: parsed.data.year,
-      },
-      update: {
-        isPaid: parsed.data.paidAt ? true : currentPayment?.isPaid ?? false,
+    if (!currentPayment || currentPayment.updatedAt.toISOString() !== parsed.data.expectedUpdatedAt) {
+      return false;
+    }
+    const write = await tx.financialPayment.updateMany({
+      where: { id: currentPayment.id, updatedAt: currentPayment.updatedAt },
+      data: {
+        isPaid: parsed.data.paidAt ? true : currentPayment.isPaid,
         note: parsed.data.note ?? null,
         paidAt: parsed.data.paidAt ?? null,
         ...(parsed.data.amount
@@ -1780,23 +1756,39 @@ export async function updateFinancialPaymentDetails(
           : {}),
       },
     });
+    if (write.count !== 1) {
+      return false;
+    }
 
     await tx.financialLog.create({
       data: {
         action: "UPDATE_PAYMENT",
         createdByUserId: session.user.id,
         description: `Pagamento mensal atualizado: ${student.name}.`,
-        paymentId: payment.id,
+        paymentId: currentPayment.id,
         studentId: student.id,
       },
     });
+    const savedPayment = await tx.financialPayment.findUniqueOrThrow({
+      where: { id: currentPayment.id },
+      select: { updatedAt: true },
+    });
+    return savedPayment.updatedAt.toISOString();
   });
+
+  if (!updated) {
+    return {
+      ok: false,
+      message: "Este pagamento foi alterado. Atualize a pagina e reabra o pagamento antes de salvar.",
+    };
+  }
 
   revalidatePath("/ava/admin");
 
   return {
     ok: true,
     message: "Pagamento mensal atualizado.",
+    updatedAt: updated,
   };
 }
 

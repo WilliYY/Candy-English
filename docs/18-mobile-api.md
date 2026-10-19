@@ -1,5 +1,24 @@
 # 18 - API móvel
 
+## Integração site/app e preparação Android — 19/10/2026
+
+Site e aplicativo mantêm o mesmo backend e banco. Alterações de dados devem
+aparecer nos dois clientes após reconsulta; o financeiro nativo atualiza a tela
+ativa a cada 15 segundos. Uma alteração de interface ou funcionalidade no site
+também exige verificar e ajustar o recurso correspondente no app nativo,
+preservando compatibilidade com versões já instaladas. Não criar um banco
+financeiro paralelo nem presumir que mudanças de layout web alterem o app.
+
+O resumo de gastos do endpoint `/admin/finance/activity` agrega a quantidade e
+o valor de **todo o período/unidade**, independentemente da lista limitada aos
+50 gastos mais recentes. O contrato JSON permanece compatível; o app identifica
+quando mostra apenas o recorte recente. Regressão cobre 51 registros, garantindo
+que o 51º também faça parte da contagem e da soma.
+
+Os perfis Android preview/produção usam explicitamente o backend público HTTPS
+e ignoram `.env` local. Configuração, requisitos de conta, passos de publicação e
+evidências ficam no projeto móvel em `docs/publicacao-android.md`.
+
 ## Objetivo
 
 O aplicativo Candy English para Android e iOS usa o mesmo backend Next.js,
