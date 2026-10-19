@@ -19,6 +19,15 @@ Os perfis Android preview/produção usam explicitamente o backend público HTTP
 e ignoram `.env` local. Configuração, requisitos de conta, passos de publicação e
 evidências ficam no projeto móvel em `docs/publicacao-android.md`.
 
+Publicação do backend em 19/10/2026: código `03abe15`, sem migration. Prisma,
+TypeScript, lint e build local aprovados; 336 testes gerais e regressões
+direcionadas de versão/gastos aprovados. As imagens Docker foram construídas
+no Oracle e somente o app foi recriado, preservando o overlay WhatsApp. App
+saudável e smokes de servidor, autenticação, avatar e sessões móveis aprovados
+no ambiente publicado. Google OAuth foi ignorado por não estar configurado;
+o app usa as credenciais existentes de email/senha. Imagem anterior preservada
+em `candy-english-app:before-mobile-publication-20261019` para rollback.
+
 ## Objetivo
 
 O aplicativo Candy English para Android e iOS usa o mesmo backend Next.js,
