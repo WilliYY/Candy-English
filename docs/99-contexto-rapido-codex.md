@@ -1,5 +1,31 @@
 # 99 - Contexto Rapido para Codex
 
+Atualização 05/11/2026: encerrada a correção conjunta de quatro falhas web/app.
+O financeiro web rejeita alterações de status com versão desatualizada; salvar
+dados financeiros no app preserva o status até uma ação explícita de pagamento;
+manutenção bloqueia operações de alunos já autenticados (HTTP 503 no mobile,
+sem revogar a sessão); revogação de sessão limpa autenticação, consultas e
+arquivos protegidos do app. Referências: `docs/08-autenticacao-e-permissoes.md`,
+`docs/13-financeiro.md`, `docs/18-mobile-api.md` e os testes de regressão.
+
+Código web `a3d26ea` publicado no Oracle, com merge operacional `d8977dc`,
+imagem saudável e Next.js `15.5.28`. Também atualizados `eslint-config-next`
+para `15.5.28` e Sharp para `0.35.5` devido ao alerta crítico descrito em
+`docs/11-seguranca.md`. Sem alteração de schema/migration. Backup cifrado novo
+e imagem anterior preservados; PostgreSQL e serviços da Catty não foram
+recriados. Houve 359 testes web e 128 testes nativos aprovados, typecheck/lint,
+builds Docker e seis smokes tanto isolados quanto publicados: servidor,
+autenticação, avatar, mobile-auth, financeiro Teacher e venda/fatura.
+
+App: código-fonte `32a73c9`; workflow `7e9b9c1` validou o novo APK em emulador
+Android 35. AAB `0.1.0`, código `3`, enviado pelo EAS e confirmado como
+`completed` na faixa interna da Google Play por leitura posterior da API em
+05/11/2026. Outras faixas não mudaram e nenhuma alteração de testadores foi
+enviada. Não confundir com produção pública nem com teste físico no S23 Ultra,
+ainda não confirmado. Builds, hashes e recibos em
+`candy english app/docs/publicacao-android.md` e fora do Git em
+`D:\Codex-outputs\candy-english\2026-11-05-correcoes\`.
+
 Atualização 19/10/2026: o responsável reafirmou que alterações no site também
 devem aparecer no app. Dados usam o mesmo backend/banco; mudanças de interface
 e funcionalidades exigem verificar ambos os frontends. A preparação Android
