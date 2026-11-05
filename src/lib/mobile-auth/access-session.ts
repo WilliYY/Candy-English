@@ -1,6 +1,7 @@
 import {
   MOBILE_LAST_USED_WRITE_INTERVAL_MS,
 } from "@/lib/mobile-auth/config";
+import { isStudentMaintenanceBlocked } from "@/lib/app-settings";
 import type { MobileAuthFailure, MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { getAccessSessionProblem } from "@/lib/mobile-auth/session-policy";
 import {
@@ -69,6 +70,10 @@ export async function authorizeMobileAccess(
     }
 
     return { code: problem, ok: false };
+  }
+
+  if (await isStudentMaintenanceBlocked(session.user.role)) {
+    return { code: "MANUTENCAO", ok: false };
   }
 
   if (

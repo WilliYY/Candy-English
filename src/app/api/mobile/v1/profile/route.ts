@@ -1,6 +1,7 @@
 import { authorizeMobileAccess } from "@/lib/mobile-auth/access-session";
 import {
   getMobileRequestId,
+  mobileSessionError,
   mobileError,
   mobileJson,
 } from "@/lib/mobile-auth/api-response";
@@ -20,14 +21,18 @@ async function authenticateStudent(request: Request) {
   const token = parseBearerToken(request.headers.get("authorization"));
   const session = token ? await authorizeMobileAccess(token) : null;
 
-  return session?.ok ? session : null;
+  return session;
 }
 
 export async function GET(request: Request) {
   const requestId = getMobileRequestId(request);
   const session = await authenticateStudent(request);
 
-  if (!session) {
+  if (session?.ok === false && session.code === "MANUTENCAO") {
+    return mobileSessionError(session, requestId);
+  }
+
+  if (!session?.ok) {
     return mobileError(
       "SESSION_INVALID",
       "Entre novamente para continuar.",
@@ -73,7 +78,11 @@ export async function PATCH(request: Request) {
   const requestId = getMobileRequestId(request);
   const session = await authenticateStudent(request);
 
-  if (!session) {
+  if (session?.ok === false && session.code === "MANUTENCAO") {
+    return mobileSessionError(session, requestId);
+  }
+
+  if (!session?.ok) {
     return mobileError(
       "SESSION_INVALID",
       "Entre novamente para continuar.",

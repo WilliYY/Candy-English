@@ -4,6 +4,7 @@ import { getMobileStudentCandyXpAsset } from "@/lib/candy-xp-submission-service"
 import { authorizeMobileAccess } from "@/lib/mobile-auth/access-session";
 import {
   getMobileRequestId,
+  mobileSessionError,
   mobileError,
 } from "@/lib/mobile-auth/api-response";
 import { parseBearerToken } from "@/lib/mobile-auth/tokens";
@@ -50,6 +51,10 @@ export async function GET(request: Request, context: RouteContext) {
   try {
     const token = parseBearerToken(request.headers.get("authorization"));
     const session = token ? await authorizeMobileAccess(token) : null;
+
+    if (session?.ok === false && session.code === "MANUTENCAO") {
+      return mobileSessionError(session, requestId);
+    }
 
     if (!session?.ok) {
       return mobileError(

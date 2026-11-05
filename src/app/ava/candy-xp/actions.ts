@@ -2,7 +2,7 @@
 
 import { unlink } from "node:fs/promises";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { authForAvaOperation as auth } from "@/lib/authorization";
 import { Prisma } from "@/generated/prisma/client";
 import {
   saveStudentCandyXpDraft,

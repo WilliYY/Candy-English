@@ -5,6 +5,7 @@ import {
 import { authorizeMobileAccess } from "@/lib/mobile-auth/access-session";
 import {
   getMobileRequestId,
+  mobileSessionError,
   mobileError,
 } from "@/lib/mobile-auth/api-response";
 import { parseBearerToken } from "@/lib/mobile-auth/tokens";
@@ -20,7 +21,7 @@ async function authenticate(request: Request) {
   }
 
   const session = await authorizeMobileAccess(token);
-  return session.ok ? session : null;
+  return session;
 }
 
 function withMobileHeaders(response: Response, requestId: string) {
@@ -39,7 +40,11 @@ async function handle(
   try {
     const session = await authenticate(request);
 
-    if (!session) {
+    if (session?.ok === false && session.code === "MANUTENCAO") {
+      return mobileSessionError(session, requestId);
+    }
+
+    if (!session?.ok) {
       return mobileError(
         "SESSION_INVALID",
         "Entre novamente para conversar com a Catty.",

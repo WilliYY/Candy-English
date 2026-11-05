@@ -1,5 +1,18 @@
 # 18 - API móvel
 
+## Manutenção com access token anterior — 01/11/2026
+
+`authorizeMobileAccess` consulta o estado atual da manutenção antes de autorizar
+operações de `STUDENT`. A resposta é HTTP 503 com `error.code=MANUTENCAO`, inclusive
+em leitura, escrita, chat, perfil e downloads. O token não é revogado nem recebe
+nova versão por esse bloqueio; pode voltar a funcionar após a manutenção, se
+ainda estiver válido. `ADMIN` e `TEACHER` continuam autorizados sem consultar
+essa configuração. Login, rotação do refresh e logout mantêm seus fluxos.
+
+As rotas preservam os erros de autenticação existentes para tokens inválidos ou
+expirados. Clientes instalados recebem o código de manutenção já utilizado no
+login, sem exigir mudança no formato JSON ou migração de dados.
+
 ## Integração site/app e preparação Android — 19/10/2026
 
 Site e aplicativo mantêm o mesmo backend e banco. Alterações de dados devem

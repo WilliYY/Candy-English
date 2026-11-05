@@ -2,7 +2,7 @@
 
 import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { authForAvaOperation as auth } from "@/lib/authorization";
 import { sendAuthorizedChatMessage } from "@/lib/chat-service";
 import { getContractDocumentDeletionScope } from "@/lib/contract-documents";
 import {

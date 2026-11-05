@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { isStudentMaintenanceBlocked } from "@/lib/app-settings";
 import {
   getListeningSpeedMode,
   synthesizeListeningSpeech,
@@ -18,6 +19,13 @@ export async function GET(
 
   if (!session?.user?.id || !isRole(session.user.role)) {
     return new NextResponse("Nao autorizado.", { status: 401 });
+  }
+
+  if (await isStudentMaintenanceBlocked(session.user.role)) {
+    return new NextResponse("O AVA esta em manutencao.", {
+      headers: { "Cache-Control": "no-store" },
+      status: 503,
+    });
   }
 
   const { fieldId } = await params;

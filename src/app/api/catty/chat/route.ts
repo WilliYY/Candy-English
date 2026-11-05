@@ -5,7 +5,7 @@ import {
   handleCattyChatRequest,
   handleCattyHistoryRequest,
 } from "@/lib/catty-chat-handler";
-import { auth } from "@/lib/auth";
+import { authForAvaOperation as auth } from "@/lib/authorization";
 import { isRole } from "@/lib/roles";
 
 export const runtime = "nodejs";

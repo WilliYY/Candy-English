@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { replaceUserAvatar } from "@/lib/avatar-service";
-import { auth } from "@/lib/auth";
+import { authForAvaOperation as auth } from "@/lib/authorization";
 import { isRole } from "@/lib/roles";
 import { StorageValidationError } from "@/lib/storage";
 

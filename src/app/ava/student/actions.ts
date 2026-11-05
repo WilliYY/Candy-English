@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
+import { authForAvaOperation as auth } from "@/lib/authorization";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";

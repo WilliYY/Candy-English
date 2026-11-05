@@ -1,5 +1,6 @@
 import {
   getMobileRequestId,
+  mobileSessionError,
   mobileError,
   mobileJson,
 } from "@/lib/mobile-auth/api-response";
@@ -24,7 +25,11 @@ export async function GET(request: Request) {
 
   const session = await authorizeMobileAccess(accessToken);
 
-  if (!session.ok) {
+  if (session?.ok === false && session.code === "MANUTENCAO") {
+    return mobileSessionError(session, requestId);
+  }
+
+  if (!session?.ok) {
     return mobileError(
       "SESSION_INVALID",
       "Entre novamente para continuar.",

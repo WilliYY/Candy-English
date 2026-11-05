@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authForAvaOperation as auth } from "@/lib/authorization";
 import { getPrisma } from "@/lib/prisma";
 import { isRole } from "@/lib/roles";
 import {

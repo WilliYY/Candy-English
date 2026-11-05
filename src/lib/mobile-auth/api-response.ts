@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
+import type { MobileAuthFailure } from "@/lib/mobile-auth/contracts";
 
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9._:-]{8,128}$/;
 
@@ -56,4 +57,10 @@ export function mobileNoContent(requestId: string) {
     headers: mobileHeaders(requestId),
     status: 204,
   });
+}
+
+export function mobileSessionError(session: MobileAuthFailure | null, requestId: string) {
+  return session?.code === "MANUTENCAO"
+    ? mobileError("MANUTENCAO", "O AVA está em manutenção. Tente novamente em breve.", 503, requestId)
+    : mobileError("SESSION_INVALID", "Entre novamente para continuar.", 401, requestId);
 }

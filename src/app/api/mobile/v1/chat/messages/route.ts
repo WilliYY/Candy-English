@@ -7,6 +7,7 @@ import {
 import { authorizeMobileAccess } from "@/lib/mobile-auth/access-session";
 import {
   getMobileRequestId,
+  mobileSessionError,
   mobileError,
   mobileJson,
 } from "@/lib/mobile-auth/api-response";
@@ -29,14 +30,18 @@ async function authenticate(request: Request) {
   }
 
   const session = await authorizeMobileAccess(token);
-  return session.ok ? session : null;
+  return session;
 }
 
 export async function GET(request: Request) {
   const requestId = getMobileRequestId(request);
   const session = await authenticate(request);
 
-  if (!session) {
+  if (session?.ok === false && session.code === "MANUTENCAO") {
+    return mobileSessionError(session, requestId);
+  }
+
+  if (!session?.ok) {
     return mobileError(
       "SESSION_INVALID",
       "Entre novamente para continuar.",
@@ -81,7 +86,11 @@ export async function POST(request: Request) {
   const requestId = getMobileRequestId(request);
   const session = await authenticate(request);
 
-  if (!session) {
+  if (session?.ok === false && session.code === "MANUTENCAO") {
+    return mobileSessionError(session, requestId);
+  }
+
+  if (!session?.ok) {
     return mobileError(
       "SESSION_INVALID",
       "Entre novamente para continuar.",

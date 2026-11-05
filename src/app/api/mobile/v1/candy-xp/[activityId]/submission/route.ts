@@ -5,6 +5,7 @@ import {
 import { authorizeMobileAccess } from "@/lib/mobile-auth/access-session";
 import {
   getMobileRequestId,
+  mobileSessionError,
   mobileError,
   mobileJson,
 } from "@/lib/mobile-auth/api-response";
@@ -32,6 +33,10 @@ async function handle(
   try {
     const token = parseBearerToken(request.headers.get("authorization"));
     const session = token ? await authorizeMobileAccess(token) : null;
+
+    if (session?.ok === false && session.code === "MANUTENCAO") {
+      return mobileSessionError(session, requestId);
+    }
 
     if (!session?.ok) {
       return mobileError(

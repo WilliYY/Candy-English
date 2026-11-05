@@ -32,6 +32,7 @@ export type MobileAuthFailure = {
     | "ACCESS_EXPIRED"
     | "DEVICE_MISMATCH"
     | "INVALID_TOKEN"
+    | "MANUTENCAO"
     | "REFRESH_EXPIRED"
     | "REFRESH_REPLAYED"
     | "SESSION_CHANGED"

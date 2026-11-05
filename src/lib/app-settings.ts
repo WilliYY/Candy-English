@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/prisma";
+import type { Role } from "@/lib/roles";
 
 export const MAINTENANCE_SETTING_KEY = "maintenanceMode";
 
@@ -10,6 +11,10 @@ export async function isMaintenanceModeEnabled() {
   });
 
   return setting?.value === "on";
+}
+
+export async function isStudentMaintenanceBlocked(role: Role) {
+  return role === "STUDENT" && await isMaintenanceModeEnabled();
 }
 
 export async function setMaintenanceMode(enabled: boolean) {

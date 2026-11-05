@@ -1,5 +1,21 @@
 # 08 - Autenticacao e Permissoes
 
+## Manutenção com sessões já abertas — 01/11/2026
+
+A manutenção suspende operações de `STUDENT` também no servidor, mesmo quando a
+sessão foi criada antes da ativação. `authForAvaOperation` protege as server
+actions do aluno e compartilhadas, Catty e avatar. Downloads de contratos,
+homework, listening e Candy XP consultam o mesmo guard de manutenção e devolvem
+HTTP 503 antes de acessar dados ou arquivos. O login e a tela de manutenção continuam usando
+a sessão original; a manutenção não a revoga. `ADMIN` e `TEACHER` mantêm seus
+acessos e não consultam a configuração de manutenção nesse guard.
+
+O guard móvel compartilhado aplica a mesma regra a cada access token. As rotas
+de aluno preservam o erro temporário `MANUTENCAO` com HTTP 503, sem converter o
+bloqueio em sessão inválida. Desativar a manutenção libera novamente a sessão
+ainda válida. Login, refresh, logout e regras de expiração/revogação permanecem
+com seus contratos próprios. Regressão isolada: `maintenance-access.test.ts`.
+
 Atualizacao de 10/09/2026: `TEACHER` pode confirmar/cancelar status de mensalidades ativas existentes e compras mensais separadas de contas ativas no Financeiro, sem valores de terceiros. Action dedicada com auth, role/conta relidas, ID/versao/confirmacao estritos, lock e `FinancialLog` com autor/data. Substitui descricoes anteriores de consulta somente leitura apenas para esse status; editar valores/gastos/exportacoes continua Admin. Ver `13-financeiro.md`.
 
 ## O que esta parte do sistema faz
