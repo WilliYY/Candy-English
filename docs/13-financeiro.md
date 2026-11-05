@@ -1,5 +1,15 @@
 # 13 - Financeiro
 
+## Proteção contra tela desatualizada — 01/11/2026
+
+Os botões administrativos `Pago hoje` e `Desfazer` enviam a versão `updatedAt`
+exibida. A action bloqueia a mensalidade na transação e exige registro ativo,
+versão atual e mudança efetiva de status; a escrita também compara a versão.
+Uma tela antiga não pode cancelar um recebimento posterior, recriar mensalidade
+retirada ou duplicar o histórico. Em conflito, nada é gravado e a equipe deve
+atualizar a página. Valores, produtos e demais dados do snapshot são preservados.
+Regressões: `src/lib/__tests__/web-finance-status-conflict.test.ts`.
+
 Consulta complementar em `/ava/rotina` (13/09/2026): somente ADMIN ativo pode
 ver pendências da competência, contagem de pagas e doces em aberto discriminados.
 Mensalidades e doces aparecem separados; não há confirmação/cancelamento de

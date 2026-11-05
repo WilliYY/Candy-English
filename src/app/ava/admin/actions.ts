@@ -1869,7 +1869,13 @@ export async function toggleFinancialPaymentStatus(
     };
   }
 
-  await prisma.$transaction(async (tx) => {
+  const updated = await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`
+      SELECT "id" FROM "FinancialPayment"
+      WHERE "studentId" = ${student.id}
+        AND "year" = ${parsed.data.year} AND "month" = ${parsed.data.month}
+      FOR UPDATE
+    `;
     const currentPayment = await tx.financialPayment.findUnique({
       where: {
         studentId_year_month: {
@@ -1878,39 +1884,28 @@ export async function toggleFinancialPaymentStatus(
           year: parsed.data.year,
         },
       },
-      select: { paidAt: true },
+      select: { id: true, isActive: true, isPaid: true, updatedAt: true },
     });
-    const payment = await tx.financialPayment.upsert({
+    if (
+      !currentPayment?.isActive ||
+      currentPayment.updatedAt.toISOString() !== parsed.data.expectedUpdatedAt ||
+      currentPayment.isPaid === parsed.data.isPaid
+    ) {
+      return false;
+    }
+    const write = await tx.financialPayment.updateMany({
       where: {
-        studentId_year_month: {
-          month: parsed.data.month,
-          studentId: student.id,
-          year: parsed.data.year,
-        },
-      },
-      create: {
-        ...buildFinancialPaymentSnapshot(
-          student,
-          getFinancialInstallmentNumber(
-            parsed.data.month,
-            parsed.data.month,
-            student.installmentsTotal,
-          ),
-        ),
+        id: currentPayment.id,
         isActive: true,
-        isPaid: parsed.data.isPaid,
-        month: parsed.data.month,
-        paidAt: parsed.data.isPaid ? new Date() : null,
-        studentId: student.id,
-        year: parsed.data.year,
+        isPaid: currentPayment.isPaid,
+        updatedAt: currentPayment.updatedAt,
       },
-      update: {
+      data: {
         isPaid: parsed.data.isPaid,
-        paidAt: parsed.data.isPaid
-          ? currentPayment?.paidAt ?? new Date()
-          : null,
+        paidAt: parsed.data.isPaid ? new Date() : null,
       },
     });
+    if (write.count !== 1) return false;
 
     await tx.financialLog.create({
       data: {
@@ -1919,11 +1914,19 @@ export async function toggleFinancialPaymentStatus(
         description: parsed.data.isPaid
           ? `Status marcado como pago: ${student.name}.`
           : `Status marcado como pendente: ${student.name}.`,
-        paymentId: payment.id,
+        paymentId: currentPayment.id,
         studentId: student.id,
       },
     });
+    return true;
   });
+
+  if (!updated) {
+    return {
+      ok: false,
+      message: "Este pagamento mudou ou foi retirado. Atualize a pagina antes de confirmar.",
+    };
+  }
 
   revalidatePath("/ava/admin");
 

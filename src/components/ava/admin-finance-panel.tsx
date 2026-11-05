@@ -1142,6 +1142,7 @@ function FinanceStudentSheetRow({
           </Button>
         ) : (
           <FinanceStatusButton
+            expectedUpdatedAt={row.payment.updatedAt}
             isPaid={row.isPaid}
             month={activeMonth}
             size="sm"
@@ -1240,11 +1241,13 @@ function FinanceUnitSheet({
 }
 
 function FinanceStatusButton({
+  expectedUpdatedAt,
   isPaid,
   month,
   size = "default",
   studentId,
 }: {
+  expectedUpdatedAt: string;
   isPaid: boolean;
   month: number;
   size?: "default" | "sm";
@@ -1259,6 +1262,7 @@ function FinanceStatusButton({
 
     startTransition(async () => {
       const result = await toggleFinancialPaymentStatus({
+        expectedUpdatedAt,
         isPaid: !isPaid,
         month,
         studentId,
@@ -3390,6 +3394,7 @@ export function AdminFinancePanel({
                               ) : (
                                 <div className="grid gap-3">
                                   <FinanceStatusButton
+                                    expectedUpdatedAt={payment.updatedAt}
                                     isPaid={payment.isPaid}
                                     month={payment.month}
                                     size="sm"
