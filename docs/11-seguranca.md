@@ -1,5 +1,26 @@
 # Seguranca e defesa em camadas
 
+## Correção de dependência crítica — 04/11/2026
+
+Antes de publicar as correções de financeiro/sessão/manutenção, `npm audit`
+identificou GHSA-2464-fhr4-w9xw (CVE-2026-96889), execução remota de código na
+otimização de imagens SVG do Next.js. A faixa afetada inclui 15.5.25; a primeira
+versão corrigida é 15.5.28. O projeto permanece na série 15.5 e alinha
+`next`/`eslint-config-next` em 15.5.28 e `sharp`/`overrides.sharp` em 0.35.5.
+Não há alteração de schema, autenticação ou permissões por essa atualização.
+O lock deve ser regenerado e audit, testes, typecheck, lint e build precisam
+ser verificados novamente antes do deploy. Isso não implica ausência de outros
+avisos de dependências.
+
+Referências: [advisory oficial](https://github.com/vercel/next.js/security/advisories/GHSA-2464-fhr4-w9xw)
+e [boletim Next.js](https://nextjs.org/blog/nextjs-security-update-october-14-2026).
+
+Validação local após o patch: 359 testes aprovados, TypeScript e lint aprovados;
+`npm audit --audit-level=critical` aprovado, com zero críticos. A consulta ainda
+apontou 15 avisos altos e 5 moderados; devem ser triados separadamente. O lock
+alterou somente Next.js/ESLint correspondente e Sharp/libvips para as plataformas
+suportadas. Build e verificações HTTP da imagem candidata antecedem o deploy.
+
 ## Objetivo
 
 Este documento registra o que protege o Candy English, o que depende da infraestrutura externa e como verificar cada controle. Nenhuma camada isolada impede todo ataque; o objetivo e reduzir superficie, limitar abuso, detectar incidente e recuperar o servico sem perder dados.
