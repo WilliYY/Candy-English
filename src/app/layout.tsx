@@ -43,7 +43,7 @@ export default async function RootLayout({
         <Providers>
           {children}
           <WhatsAppWidget />
-          <CattyWidget sessionUser={cattySessionUser} />
+          <CattyWidget key={session?.user?.id ?? "public"} sessionUser={cattySessionUser} />
         </Providers>
       </body>
     </html>

@@ -1,4 +1,5 @@
 import type { Role } from "@/lib/roles";
+import { redactCattyMemoryInTransaction } from "@/lib/catty-memory-redaction";
 import type { CattyResponsePlan } from "@/lib/catty";
 import {
   applyCattyArtifactToReply,
@@ -928,32 +929,9 @@ export async function removeSensitiveCattyUserMemoryValue(input: {
     };
   }
 
-  const note = "Dado sensivel removido por revisao humana.";
-  const updated = await prisma.cattyUserMemory.update({
-    data: {
-      confidence: 0,
-      flaggedReason: note,
-      status: "ARCHIVED",
-      value: "[dado sensivel removido]",
-    },
-    where: {
-      id: memory.id,
-    },
-  });
-
-  await createMemoryEvent({
-    action: "SENSITIVE_REMOVED",
-    category: memory.category,
-    createdByUserId: input.actorUserId,
-    key: memory.key,
-    memoryId: memory.id,
-    nextValue: "[dado sensivel removido]",
-    note,
-    previousValue: null,
-    source: memory.source,
-    status: "ARCHIVED",
-    userId: memory.userId,
-  });
+  const updated = await prisma.$transaction((tx) =>
+    redactCattyMemoryInTransaction(tx, memory, input.actorUserId),
+  );
 
   return {
     memoryId: updated.id,

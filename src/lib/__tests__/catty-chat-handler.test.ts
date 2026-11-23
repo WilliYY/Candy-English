@@ -7,6 +7,19 @@ import {
   handleCattyHistoryRequest,
 } from "@/lib/catty-chat-handler";
 
+test("distinguishes unavailable Catty history from an empty conversation", async () => {
+  const request = new Request("https://candy.example/api/catty/chat?area=student");
+  const user: AuthenticatedCattyUser = { id: "fixture", name: "Teste", role: "STUDENT" };
+  const success = await handleCattyHistoryRequest(request, user, async () => []);
+  assert.equal(success.status, 200);
+  assert.deepEqual(await success.json(), { messages: [], ok: true });
+  const unavailable = await handleCattyHistoryRequest(request, user, async () => {
+    throw new Error("simulated database outage");
+  });
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.json()).ok, false);
+});
+
 test("requires an authenticated user before reading Catty history", async () => {
   const response = await handleCattyHistoryRequest(
     new Request("https://candy.example/api/catty/chat?area=student"),

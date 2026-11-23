@@ -6,6 +6,7 @@ export type StaffInvoiceSale = {
   buyerRole: "STUDENT" | "TEACHER";
   buyerUserId: string;
   createdAt: string;
+  updatedAt: string;
   invoiceDueDate: string | null;
   invoiceMonth: number;
   invoiceYear: number;
@@ -34,6 +35,7 @@ export type StaffInvoiceSummary = {
   buyerRole: "STUDENT" | "TEACHER";
   buyerUserId: string;
   dueDate: string | null;
+  saleVersions: Record<string, string>;
   items: StaffInvoiceItem[];
   paidSaleIds: string[];
   paidTotalCents: number;
@@ -61,6 +63,7 @@ export function groupStaffInvoices(
       buyerRole: sale.buyerRole,
       buyerUserId: sale.buyerUserId,
       dueDate: null,
+      saleVersions: {},
       items: [],
       paidSaleIds: [],
       paidTotalCents: 0,
@@ -70,6 +73,7 @@ export function groupStaffInvoices(
       units: [],
     };
 
+    current.saleVersions[sale.saleId] = sale.updatedAt;
     current.totalCents += sale.totalCents;
     current.items.push(
       ...sale.items.map((item) => ({

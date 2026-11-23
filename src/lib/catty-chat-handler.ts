@@ -747,6 +747,7 @@ async function maybeCreateCattyUserMemoryFromMessageSafely(input: {
 export async function handleCattyHistoryRequest(
   request: Request,
   user: AuthenticatedCattyUser | null,
+  loadHistory = getCattyConversationMessages,
 ) {
   if (!user) {
     return NextResponse.json(
@@ -777,7 +778,7 @@ export async function handleCattyHistoryRequest(
   }
 
   try {
-    const messages = await getCattyConversationMessages({
+    const messages = await loadHistory({
       context: parsed.data,
       userId: user.id,
     });
@@ -789,10 +790,10 @@ export async function handleCattyHistoryRequest(
   } catch {
     console.warn("Catty history GET failed.");
 
-    return NextResponse.json({
-      messages: [],
-      ok: true,
-    });
+    return NextResponse.json(
+      { ok: false, error: "Histórico indisponível. Tente novamente." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 }
 

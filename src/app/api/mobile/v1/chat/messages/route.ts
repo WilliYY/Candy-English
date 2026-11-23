@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mobileChatHistoryResponse, parseChatHistoryCursor } from "@/lib/chat-history-page";
 
 import {
   listAuthorizedChatMessages,
@@ -51,6 +52,11 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
+  const rawCursor = url.searchParams.get("before");
+  const before = rawCursor === null ? null : parseChatHistoryCursor(rawCursor);
+  if (rawCursor !== null && !before) {
+    return mobileError("INVALID_REQUEST", "Página de mensagens inválida.", 400, requestId);
+  }
   const parsed = chatPairSchema.safeParse({
     studentProfileId: url.searchParams.get("studentProfileId"),
     teacherProfileId: url.searchParams.get("teacherProfileId"),
@@ -65,12 +71,13 @@ export async function GET(request: Request) {
     );
   }
 
-  const messages = await listAuthorizedChatMessages(
+  const page = await listAuthorizedChatMessages(
     { role: session.user.role, userId: session.user.id },
     parsed.data,
+    before ?? undefined,
   );
 
-  if (!messages) {
+  if (!page) {
     return mobileError(
       "CHAT_FORBIDDEN",
       "Você não tem acesso a esta conversa.",
@@ -79,7 +86,7 @@ export async function GET(request: Request) {
     );
   }
 
-  return mobileJson({ messages, ok: true }, 200, requestId);
+  return mobileJson(mobileChatHistoryResponse(page, url.searchParams), 200, requestId);
 }
 
 export async function POST(request: Request) {

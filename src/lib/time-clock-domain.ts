@@ -140,7 +140,10 @@ export function formatSaoPauloDateTimeInput(date: Date) {
   return `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}`;
 }
 
-export function summarizeTimeClockEntries(entries: TimeClockEntryLike[]) {
+export function summarizeTimeClockEntries(
+  entries: TimeClockEntryLike[],
+  period?: { start: Date; end: Date },
+) {
   const orderedEntries = [...entries].sort(
     (left, right) => left.occurredAt.getTime() - right.occurredAt.getTime(),
   );
@@ -150,8 +153,11 @@ export function summarizeTimeClockEntries(entries: TimeClockEntryLike[]) {
   let workedMilliseconds = 0;
 
   for (const entry of orderedEntries) {
+    const inPeriod = !period ||
+      (entry.occurredAt >= period.start && entry.occurredAt < period.end);
     if (entry.type === "ENTRY") {
-      if (openEntryAt) {
+      if (period && entry.occurredAt >= period.end) continue;
+      if (openEntryAt && inPeriod) {
         inconsistentEntries += 1;
       }
 
@@ -160,19 +166,23 @@ export function summarizeTimeClockEntries(entries: TimeClockEntryLike[]) {
     }
 
     if (!openEntryAt || entry.occurredAt < openEntryAt) {
-      inconsistentEntries += 1;
+      if (inPeriod) inconsistentEntries += 1;
       continue;
     }
 
-    workedMilliseconds += entry.occurredAt.getTime() - openEntryAt.getTime();
-    completedPairs += 1;
+    const start = Math.max(openEntryAt.getTime(), period?.start.getTime() ?? -Infinity);
+    const end = Math.min(entry.occurredAt.getTime(), period?.end.getTime() ?? Infinity);
+    if (end > start || (!period && end === start)) {
+      workedMilliseconds += end - start;
+      completedPairs += 1;
+    }
     openEntryAt = null;
   }
 
   return {
     completedPairs,
     inconsistentEntries,
-    openEntryAt,
+    openEntryAt: openEntryAt && (!period || openEntryAt < period.end) ? openEntryAt : null,
     workedMilliseconds,
   };
 }

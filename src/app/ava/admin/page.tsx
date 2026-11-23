@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { selectedSchoolYear } from "@/lib/school-year";
+import { getTeacherFinanceDateParts } from "@/lib/teacher-finance";
 import {
   AdminUsersPanel,
   type AdminTask,
@@ -43,6 +45,7 @@ export const runtime = "nodejs";
 type AdminPageProps = {
   searchParams?: Promise<{
     preStatus?: string | string[];
+    year?: string | string[];
     task?: string | string[];
     unit?: string | string[];
   }>;
@@ -59,12 +62,15 @@ const secretariaAdminTasks = new Set<AdminTask>([
 
 export default async function AdminPage({ searchParams }: AdminPageProps) {
   const params = searchParams ? await searchParams : undefined;
+  const today = getTeacherFinanceDateParts(new Date());
+  const selectedYear = selectedSchoolYear(params?.year, today.year);
   const session = await requireAvaRole(
     ["ADMIN"],
     buildAvaCallbackUrl("/ava/admin", params, [
       "task",
       "unit",
       "preStatus",
+      "year",
     ]),
   );
   const prisma = getPrisma();
@@ -85,25 +91,22 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     : {};
   const financeStudentWhere = selectedUnit
     ? {
-        payments: {
-          some: {
-            isActive: true,
-            snapshotUnit: selectedUnit,
-            year: 2026,
-          },
-        },
+        OR: [
+          { unit: selectedUnit },
+          { payments: { some: { isActive: true, snapshotUnit: selectedUnit, year: selectedYear } } },
+        ],
       }
     : {};
   const financePaymentWhere = selectedUnit
-    ? { snapshotUnit: selectedUnit, year: 2026 }
-    : { year: 2026 };
+    ? { snapshotUnit: selectedUnit, year: selectedYear }
+    : { year: selectedYear };
   const financeExpenseWhere = selectedUnit
-    ? { unit: selectedUnit, year: 2026 }
-    : { year: 2026 };
+    ? { unit: selectedUnit, year: selectedYear }
+    : { year: selectedYear };
   const agendaStudentWhere = selectedUnit ? { unit: selectedUnit } : {};
   const agendaLessonWhere = selectedUnit
-    ? { student: { unit: selectedUnit }, year: 2026 }
-    : { year: 2026 };
+    ? { student: { unit: selectedUnit }, year: selectedYear }
+    : { year: selectedYear };
   const requestedPreRegistrationStatus = Array.isArray(params?.preStatus)
     ? params?.preStatus[0]
     : params?.preStatus;
@@ -448,7 +451,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       where: {
         buyerUser: { role: { in: ["STUDENT", "TEACHER"] } },
         financialPaymentId: null,
-        invoiceYear: 2026,
+        invoiceYear: selectedYear,
         settlementType: "MONTHLY_INVOICE",
         status: "COMPLETED",
         ...(selectedUnit ? { unit: selectedUnit } : {}),
@@ -459,6 +462,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         createdAt: true,
         id: true,
         invoiceDueDate: true,
+        updatedAt: true,
         invoiceMonth: true,
         invoiceYear: true,
         items: {
@@ -815,9 +819,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       ),
     ),
   ]);
-  const currentDate = new Date();
   const initialFinanceMonth =
-    currentDate.getFullYear() === 2026 ? currentDate.getMonth() + 1 : 1;
+    today.year === selectedYear ? today.month : 1;
   const initialAgendaMonth = initialFinanceMonth;
   const adminXpEvents: CandyXpEventInput[] = [];
 
@@ -1183,11 +1186,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               items: sale.items,
               paidAt: sale.paidAt?.toISOString() ?? null,
               saleId: sale.id,
+              updatedAt: sale.updatedAt.toISOString(),
               totalCents: sale.totalCents,
               unit: sale.unit,
             }]
           : [],
       )}
+      selectedYear={selectedYear}
       initialAgendaMonth={initialAgendaMonth}
       initialFinanceMonth={initialFinanceMonth}
       maintenanceMode={maintenanceMode}

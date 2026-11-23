@@ -1,5 +1,6 @@
 "use client";
 
+import { SchoolYearSelect } from "@/components/ava/school-year-select";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   CalendarDays,
@@ -122,6 +123,7 @@ export type AdminAgendaLogRow = {
 
 type AdminAgendaPanelProps = {
   avaStudents: AdminAgendaAvaStudentOption[];
+  year: number;
   initialMonth: number;
   initialUnitFilter?: SecretariaUnitFilter;
   lessons: AdminAgendaLessonRow[];
@@ -148,7 +150,6 @@ type AgendaStudentMonthRow = {
   todayLesson: AdminAgendaLessonRow | null;
 };
 
-const AGENDA_YEAR = 2026;
 const SAO_PAULO_TIME_ZONE = "America/Sao_Paulo";
 
 const months = [
@@ -269,7 +270,7 @@ function toDayKey(date: Date) {
 }
 
 function parseDayKey(key: string) {
-  const [year = AGENDA_YEAR, month = 1, day = 1] = key
+  const [year, month = 1, day = 1] = key
     .split("-")
     .map(Number);
 
@@ -315,6 +316,7 @@ function decodeWeekdayMask(mask: number) {
 }
 
 function createDefaultValues(
+  year: number,
   month: number,
   weekdaysValue: number[] = [],
   unit: FinancialUnit = "IVATE",
@@ -328,7 +330,7 @@ function createDefaultValues(
     time: "08:00",
     unit,
     weekdays: weekdaysValue,
-    year: AGENDA_YEAR,
+    year,
   };
 }
 
@@ -448,6 +450,7 @@ function getPendingLessonCount(lessons: AdminAgendaLessonRow[]) {
 }
 
 function buildEditValues(
+  year: number,
   student: AdminAgendaStudentRow,
   lessons: AdminAgendaLessonRow[],
   month: number,
@@ -464,7 +467,7 @@ function buildEditValues(
     time: schedule.isComplete ? schedule.time : "",
     unit: student.unit,
     weekdays: schedule.isComplete ? schedule.weekdays : [],
-    year: AGENDA_YEAR,
+    year,
   };
 }
 
@@ -587,8 +590,8 @@ function AgendaAttendanceButtons({ lesson }: { lesson: AdminAgendaLessonRow }) {
     </div>
   );
 }
-
 export function AdminAgendaPanel({
+  year,
   avaStudents,
   initialMonth,
   initialUnitFilter,
@@ -603,13 +606,14 @@ export function AdminAgendaPanel({
     () => getSaoPauloDateParts(new Date(nowIso)),
     [nowIso],
   );
-  const todayIsAgendaYear = today.year === AGENDA_YEAR;
+  const todayIsAgendaYear = today.year === year;
+  const actualTodayKey = getDayKey(today.year, today.month, today.day);
   const todayMonth = todayIsAgendaYear
     ? today.month
     : clampMonth(initialMonth);
   const todayKey = todayIsAgendaYear
     ? getDayKey(today.year, today.month, today.day)
-    : getDayKey(AGENDA_YEAR, todayMonth, 1);
+    : getDayKey(year, todayMonth, 1);
   const [activeMonth, setActiveMonth] = useState(todayMonth);
   const [selectedDayKey, setSelectedDayKey] = useState(todayKey);
   const [viewMode, setViewMode] = useState<AgendaViewMode>("DAY");
@@ -630,6 +634,7 @@ export function AdminAgendaPanel({
 
   const form = useForm<AdminAgendaScheduleCreateInput>({
     defaultValues: createDefaultValues(
+      year,
       activeMonth,
       [selectedWeekday],
       initialFormUnit,
@@ -639,7 +644,7 @@ export function AdminAgendaPanel({
   const editForm = useForm<AdminAgendaStudentUpdateInput>({
     defaultValues:
       students[0] !== undefined
-        ? buildEditValues(students[0], lessons, activeMonth)
+        ? buildEditValues(year, students[0], lessons, activeMonth)
         : {
             isActive: true,
             month: activeMonth,
@@ -650,7 +655,7 @@ export function AdminAgendaPanel({
             time: "08:00",
             unit: initialFormUnit,
             weekdays: [selectedWeekday],
-            year: AGENDA_YEAR,
+            year,
           },
     resolver: zodResolver(adminAgendaStudentUpdateSchema),
   });
@@ -698,12 +703,12 @@ export function AdminAgendaPanel({
       lessons
         .filter(
           (lesson) =>
-            lesson.year === AGENDA_YEAR &&
+            lesson.year === year &&
             lesson.month === activeMonth &&
             lesson.isActive,
         )
         .sort(sortLessons),
-    [activeMonth, lessons],
+    [year, activeMonth, lessons],
   );
   const monthLessonsByDay = useMemo(() => {
     return monthLessons.reduce<Map<string, AdminAgendaLessonRow[]>>(
@@ -721,13 +726,13 @@ export function AdminAgendaPanel({
   }, [monthLessons]);
   const agendaRailDays = useMemo<AgendaDateRailDay[]>(() => {
     const daysInMonth = new Date(
-      Date.UTC(AGENDA_YEAR, activeMonth, 0),
+      Date.UTC(year, activeMonth, 0),
     ).getUTCDate();
 
     return Array.from({ length: daysInMonth }, (_, index) => {
       const day = index + 1;
-      const key = getDayKey(AGENDA_YEAR, activeMonth, day);
-      const date = new Date(Date.UTC(AGENDA_YEAR, activeMonth - 1, day, 12));
+      const key = getDayKey(year, activeMonth, day);
+      const date = new Date(Date.UTC(year, activeMonth - 1, day, 12));
       const dayLessons = monthLessonsByDay.get(key) ?? [];
       const attendedCount = dayLessons.filter(
         (lesson) =>
@@ -755,7 +760,7 @@ export function AdminAgendaPanel({
         weekdayLongLabel: getWeekdayLabel(date.getUTCDay()),
       };
     });
-  }, [activeMonth, monthLessonsByDay]);
+  }, [year, activeMonth, monthLessonsByDay]);
   const selectedDayAllLessons = monthLessonsByDay.get(selectedDayKey) ?? [];
   const selectedDayLessons = selectedDayAllLessons.filter((lesson) => {
     const query = search.trim().toLocaleLowerCase("pt-BR");
@@ -781,7 +786,7 @@ export function AdminAgendaPanel({
       lesson.status === "SCHEDULED" || lesson.status === "MAKEUP_SCHEDULED",
   ).length;
   const agendaMonthRows = useMemo<AgendaStudentMonthRow[]>(() => {
-    const monthStartKey = getDayKey(AGENDA_YEAR, activeMonth, 1);
+    const monthStartKey = getDayKey(year, activeMonth, 1);
     const referenceKey = activeMonth === todayMonth ? todayKey : monthStartKey;
     const canHaveNextLesson = !todayIsAgendaYear || activeMonth >= todayMonth;
 
@@ -836,7 +841,7 @@ export function AdminAgendaPanel({
 
         return left.student.name.localeCompare(right.student.name, "pt-BR");
       });
-  }, [activeMonth, lessons, monthLessons, students, todayIsAgendaYear, todayKey, todayMonth]);
+  }, [year, activeMonth, lessons, monthLessons, students, todayIsAgendaYear, todayKey, todayMonth]);
   const agendaSheetRows = useMemo(() => {
     const query = search.trim().toLocaleLowerCase("pt-BR");
 
@@ -885,7 +890,7 @@ export function AdminAgendaPanel({
   const selectedStudentMissed = selectedStudentLessons.filter(
     (lesson) => lesson.status === "MISSED",
   ).length;
-  const timeEditFrom = (date: string) => date > todayKey ? date : todayKey;
+  const timeEditFrom = (date: string) => date > actualTodayKey ? date : actualTodayKey;
   const dayCompactRows: AgendaCompactRow[] = selectedDayLessons.map(lesson => {
     const student = students.find(item => item.id === lesson.studentId);
     const meta = getStatusMeta(lesson.status);
@@ -896,7 +901,7 @@ export function AdminAgendaPanel({
       statusLabel: meta.label, statusClassName: meta.pillClassName,
       attendance: <AgendaAttendanceButtons lesson={lesson} />,
       onOpen: () => openStudent(lesson.studentId, lesson.month),
-      edit: student?.isActive && selectedDayKey >= todayKey && todayIsAgendaYear && ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(lesson.status) ? {
+      edit: student?.isActive && selectedDayKey >= actualTodayKey && ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(lesson.status) ? {
         studentId: student.id, expectedUpdatedAt: student.updatedAt,
         lessonId: lesson.id, expectedLessonUpdatedAt: lesson.updatedAt,
         fromDate: timeEditFrom(selectedDayKey), allowRoutine: !lesson.isMakeup,
@@ -911,9 +916,9 @@ export function AdminAgendaPanel({
     statusClassName: "border-primary/10 bg-primary/5 text-primary",
     totals: { lessons: row.lessons.length, attended: row.attendedCount, missed: row.missedCount, pending: getPendingLessonCount(row.lessons) },
     onOpen: () => openAgendaSheetRow(row),
-    edit: row.student.isActive && row.schedule.isComplete && row.nextLesson && todayIsAgendaYear && activeMonth >= todayMonth ? {
+    edit: row.student.isActive && row.schedule.isComplete && row.nextLesson && (year > today.year || (todayIsAgendaYear && activeMonth >= todayMonth)) ? {
       studentId: row.student.id, expectedUpdatedAt: row.student.updatedAt,
-      fromDate: timeEditFrom(getDayKey(AGENDA_YEAR, activeMonth, 1)), allowRoutine: true,
+      fromDate: timeEditFrom(getDayKey(year, activeMonth, 1)), allowRoutine: true,
     } : undefined,
   }));
   async function saveInlineTime(row: AgendaCompactRow, values: AgendaTimeEditorValues) {
@@ -929,7 +934,7 @@ export function AdminAgendaPanel({
     const nextKey =
       nextMonth === todayMonth
         ? todayKey
-        : getDayKey(AGENDA_YEAR, nextMonth, 1);
+        : getDayKey(year, nextMonth, 1);
 
     setSelectedDayKey(nextKey);
     setSelectedStudentId(null);
@@ -1012,7 +1017,7 @@ export function AdminAgendaPanel({
     setEditMessage(null);
     setListMessage(null);
     editForm.reset(
-      buildEditValues(student, lessons, targetMonth),
+      buildEditValues(year, student, lessons, targetMonth),
     );
   }
 
@@ -1056,7 +1061,7 @@ export function AdminAgendaPanel({
       const result = await createAgendaSchedule({
         ...values,
         month: activeMonth,
-        year: AGENDA_YEAR,
+        year,
       });
 
       if (!result.ok) {
@@ -1074,7 +1079,7 @@ export function AdminAgendaPanel({
         return;
       }
 
-      form.reset(createDefaultValues(activeMonth, [selectedWeekday], values.unit));
+      form.reset(createDefaultValues(year, activeMonth, [selectedWeekday], values.unit));
       setMessage(result.message);
       router.refresh();
     });
@@ -1085,7 +1090,7 @@ export function AdminAgendaPanel({
     const submittedValues: AdminAgendaStudentUpdateInput = {
       ...values,
       month: activeMonth,
-      year: AGENDA_YEAR,
+      year,
     };
 
     startEditTransition(async () => {
@@ -1131,7 +1136,7 @@ export function AdminAgendaPanel({
         ...values,
         isActive: false,
         month: activeMonth,
-        year: AGENDA_YEAR,
+        year,
       };
 
       startEditTransition(async () => {
@@ -1194,7 +1199,7 @@ export function AdminAgendaPanel({
                   Agenda interna
                 </span>
                 <h2 className="mt-1 text-xl font-semibold text-primary">
-                  {activeMonthLabel} {AGENDA_YEAR}
+                  {activeMonthLabel} {year}
                 </h2>
                 <p className="mt-1 max-w-xl text-sm text-muted-foreground">
                   Organize a rotina, acompanhe o dia e confirme presencas em um
@@ -1203,6 +1208,7 @@ export function AdminAgendaPanel({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+                <SchoolYearSelect year={year} />
               <NativeSelect
                 aria-label="Selecionar mes da agenda"
                 className="h-11 min-w-36 border-primary/20 bg-white font-semibold text-primary shadow-sm"

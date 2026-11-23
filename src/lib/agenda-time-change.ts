@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { isSchoolYear } from "@/lib/school-year";
 
 export const agendaTimeChangeSchema = z.object({
   studentId: z.string().trim().min(1).max(200),
   expectedUpdatedAt: z.string().datetime(),
   lessonId: z.string().trim().min(1).max(200).optional(),
   expectedLessonUpdatedAt: z.string().datetime().optional(),
-  fromDate: z.string().date().startsWith("2026-"),
+  fromDate: z.string().date().refine((value) => isSchoolYear(Number(value.slice(0, 4)))),
   scope: z.enum(["LESSON", "ROUTINE"]),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido."),
   confirmChange: z.literal(true),
@@ -43,7 +44,7 @@ export function planAgendaTimeChange<T extends AgendaTimeLesson>(student: Studen
   const active = allLessons.filter(row => row.isActive && row.studentId === student.id);
   const canChange = (row: AgendaTimeLesson) => {
     const day = agendaDateKey(row.date);
-    return day.startsWith("2026-") && day >= fromDate && ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(row.status);
+    return day.slice(0, 4) === input.fromDate.slice(0, 4) && day >= fromDate && ["SCHEDULED", "MAKEUP_SCHEDULED"].includes(row.status);
   };
   const targets = input.scope === "LESSON"
     ? active.filter(row => row.id === input.lessonId)

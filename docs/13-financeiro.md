@@ -194,3 +194,23 @@ Rota:
 - Criar relatorio anual por aluno.
 - Manter testes de regressao para impedir que valores ou atalhos Admin aparecam na consulta Teacher.
 - Integrar pagamento online apenas se houver decisao explicita e revisao de seguranca.
+
+## Faturas separadas e telas antigas — 22/11/2026
+
+A confirmação administrativa envia a versão updatedAt de cada venda exibida. A action compara todas as versões e condiciona a escrita ao mesmo conjunto de IDs/versões dentro da transação. Uma tela anterior à sequência pago, reaberto e pago não pode cancelar o recebimento recente. O conflito reverte o lote inteiro e não grava auditoria parcial.
+
+## Abertura explícita de competência ausente — 22/11/2026
+
+O Admin pode selecionar aluno financeiro ativo e competência e confirmar a criação de somente uma mensalidade ausente, com os dados recorrentes atuais. A ação não cria outro aluno, não altera dezembro, não reabre registro retirado e não cobra automaticamente. A leitura do painel e o deploy não geram mensalidades. Aluno inativo ou vínculo financeiro encerrado permanece preservado e não recebe novo débito.
+
+A operação bloqueia o FinancialStudent, consulta a chave única aluno/ano/mês e mantém uma única mensalidade e um log em reenvios concorrentes. Uma competência já existente permanece intacta, inclusive se paga. Plano finito continua a numeração da parcela anterior, sem superar o total nem repetir número já registrado; planos inconsistentes ou encerrados exigem revisão administrativa. Janeiro de 2027 pode ser preparado pelo mesmo fluxo, com dezembro pago ou pendente.
+
+Arquivos: financial-period-operations.ts, validations/financial-period.ts, finance-period-actions.ts e admin-finance-open-period.tsx. Regressões em financial-period-operations.test.ts usam fixtures locais, sem dados da escola.
+
+### Aplicativo e API de abertura
+
+GET /api/mobile/v1/admin/finance/periods recebe year, month, unit opcional (ALL, IVATE ou DOURADINA), limit de 1 a 100 e cursor opcional; retorna somente students com id financeiro, name, unit e nextCursor. A consulta não cria registros. POST no mesmo caminho recebe studentId, year, month e confirmCreate=true e reutiliza o serviço transacional da web. A sessão mobile e o ADMIN ativo são validados; respostas preservam o envelope mobile e não expõem CPF, endereço ou valores dos candidatos.
+
+### Preparar janeiro sem cobrança automática
+
+Selecione o ano de 2027 e o mês de janeiro, escolha o cadastro financeiro vigente em Abrir mensalidade ausente e confirme somente a competência selecionada. Dezembro permanece pago ou pendente como estava; nenhuma cobrança externa é enviada. Planos concluídos ou retirados exigem revisão administrativa antes de nova competência. As consultas e exportações respeitam o ano selecionado e mantêm o histórico de 2026. A migration de defaults documentada em 02-banco-de-dados.md não cria débitos.

@@ -861,3 +861,9 @@ Cada decisao deve conter:
 
 - Separar ADRs individuais se o historico ficar grande.
 - Linkar cada decisao a commits ou PRs quando houver fluxo formal de PR.
+
+## 22/11/2026 — Competências entre anos sem débitos automáticos
+
+Financeiro e Agenda passam a permitir ano selecionado, preservando 2026 como histórico consultável. A abertura de uma mensalidade ausente é uma escrita ADMIN explícita por aluno e competência, compartilhada entre web e aplicativo. Leitura, deploy e migration não geram débitos. Janeiro pode ser preparado com dezembro pago ou pendente sem alterar dezembro; planos finitos preservam numeração e exigem revisão quando encerrados/inconsistentes.
+
+Os defaults fixos 2026 de FinancialPayment, FinancialExpense e AgendaLesson foram substituídos pelo ano corrente em America/Sao_Paulo no PostgreSQL. Motivo: impedir que um escritor que omita year continue criando linhas de 2026 após a virada. Os fluxos de negócio continuam enviando o ano selecionado explicitamente, e clientes antigos preservam o mesmo contrato. Migration apenas de defaults, sem UPDATE de dados existentes.

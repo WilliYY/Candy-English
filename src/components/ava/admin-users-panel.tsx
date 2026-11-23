@@ -246,6 +246,7 @@ type AdminUsersPanelProps = {
   financeExpenses: AdminFinanceExpenseRow[];
   financeStudents: AdminFinanceStudentRow[];
   standaloneInvoiceSales: AdminProductInvoiceSale[];
+  selectedYear: number;
   initialAgendaMonth: number;
   initialFinanceMonth: number;
   maintenanceMode: boolean;
@@ -406,11 +407,11 @@ const taskMeta = {
   },
   financeiro: {
     icon: WalletCards,
-    title: "Financeiro 2026",
+    title: "Financeiro",
   },
   agenda: {
     icon: CalendarCheck2,
-    title: "Agenda 2026",
+    title: "Agenda",
   },
   "apis-senhas": {
     icon: KeyRound,
@@ -1543,6 +1544,7 @@ export function AdminUsersPanel({
   financeExpenses,
   financeStudents,
   standaloneInvoiceSales,
+  selectedYear,
   initialAgendaMonth,
   initialFinanceMonth,
   maintenanceMode,
@@ -1560,9 +1562,9 @@ export function AdminUsersPanel({
   const nowIso = now.toISOString();
   const saoPauloNow = getSaoPauloYearMonth(now);
   const initialAgendaPanelMonth =
-    saoPauloNow.year === 2026 ? saoPauloNow.month : initialAgendaMonth;
+    saoPauloNow.year === selectedYear ? saoPauloNow.month : initialAgendaMonth;
   const initialFinancePanelMonth =
-    saoPauloNow.year === 2026 ? saoPauloNow.month : initialFinanceMonth;
+    saoPauloNow.year === selectedYear ? saoPauloNow.month : initialFinanceMonth;
   const totals = users.reduce(
     (accumulator, user) => {
       accumulator.total += 1;
@@ -1650,7 +1652,7 @@ export function AdminUsersPanel({
         (payment) =>
           payment.isActive &&
           !payment.isPaid &&
-          payment.year === 2026 &&
+          payment.year === selectedYear &&
           payment.month === initialFinanceMonth,
       ).length,
     0,
@@ -1879,6 +1881,8 @@ export function AdminUsersPanel({
 
           {activeTask === "financeiro" ? (
             <AdminFinancePanel
+              key={selectedYear}
+              year={selectedYear}
               avaStudents={financeAvaStudents}
               expenses={financeExpenses}
               initialUnitFilter={secretariaUnitFilter}
@@ -1892,6 +1896,8 @@ export function AdminUsersPanel({
 
           {activeTask === "agenda" ? (
             <AdminAgendaPanel
+              key={selectedYear}
+              year={selectedYear}
               avaStudents={financeAvaStudents}
               initialMonth={initialAgendaPanelMonth}
               initialUnitFilter={secretariaUnitFilter}

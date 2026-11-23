@@ -1,5 +1,6 @@
 "use server";
 
+import { getTeacherFinanceDateParts } from "@/lib/teacher-finance";
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -43,7 +44,6 @@ type ReviewerContext = {
   teacherProfileId: string | null;
 };
 
-const CONVERSION_YEAR = 2026;
 const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
 const agendaTimePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -196,9 +196,6 @@ function decodeWeekdayMask(mask: number) {
   );
 }
 
-function getConversionStartMonth(date = new Date()) {
-  return date.getFullYear() === CONVERSION_YEAR ? date.getMonth() + 1 : 1;
-}
 
 function getFinanceMonthsFrom(month: number) {
   return FINANCE_YEAR_MONTHS.filter((candidateMonth) => candidateMonth >= month);
@@ -259,15 +256,15 @@ function getAgendaDateParts(date: Date) {
   };
 }
 
-function getAgendaRecurringDates(startMonth: number, weekdays: number[]) {
+function getAgendaRecurringDates(year: number, startMonth: number, weekdays: number[]) {
   const selectedWeekdays = new Set(weekdays);
   const dates: Date[] = [];
 
   for (let month = startMonth; month <= 12; month += 1) {
-    const lastDay = new Date(Date.UTC(CONVERSION_YEAR, month, 0)).getUTCDate();
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
     for (let day = 1; day <= lastDay; day += 1) {
-      const date = new Date(Date.UTC(CONVERSION_YEAR, month - 1, day, 12));
+      const date = new Date(Date.UTC(year, month - 1, day, 12));
 
       if (selectedWeekdays.has(date.getUTCDay())) {
         dates.push(date);
@@ -337,6 +334,7 @@ async function createLinkedStudentFromRequest({
   teacherProfileIdForConversion?: string;
   tx: Prisma.TransactionClient;
 }) {
+  const { year: conversionYear, month: conversionMonth } = getTeacherFinanceDateParts(new Date());
   const financialRegistration = resolveFinancialRegistration({
     amountCents: request.tuitionCents,
     paymentDay: request.paymentDay,
@@ -440,7 +438,7 @@ async function createLinkedStudentFromRequest({
             isMakeup: false,
             time: intendedTime,
             weekday: { in: agendaWeekdays },
-            year: CONVERSION_YEAR,
+            year: conversionYear,
             student: {
               name: { equals: request.fullName, mode: "insensitive" },
             },
@@ -505,7 +503,6 @@ async function createLinkedStudentFromRequest({
       unit: request.unit,
     },
   });
-  const conversionMonth = getConversionStartMonth();
   const financeMonths = getFinanceMonthsForPlan(
     conversionMonth,
     financialStudent.installmentsTotal,
@@ -532,7 +529,7 @@ async function createLinkedStudentFromRequest({
           : null,
       paidAt: null,
       studentId: financialStudent.id,
-      year: CONVERSION_YEAR,
+      year: conversionYear,
     })),
   });
 
@@ -541,7 +538,7 @@ async function createLinkedStudentFromRequest({
       studentId_year_month: {
         month: conversionMonth,
         studentId: financialStudent.id,
-        year: CONVERSION_YEAR,
+        year: conversionYear,
       },
     },
     select: { id: true },
@@ -561,7 +558,7 @@ async function createLinkedStudentFromRequest({
 
   const agendaDates =
     hasCompleteAgendaData && intendedTime
-      ? getAgendaRecurringDates(conversionMonth, agendaWeekdays)
+      ? getAgendaRecurringDates(conversionYear, conversionMonth, agendaWeekdays)
       : [];
   const agendaPendingNote = hasCompleteAgendaData
     ? null

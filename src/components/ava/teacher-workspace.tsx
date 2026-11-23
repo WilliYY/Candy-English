@@ -263,6 +263,7 @@ type TeacherWorkspaceProps = {
   students: Option[];
   studentPreRegistrations: StudentPreRegistrationReviewRow[];
   submissions: TeacherSubmission[];
+  teacherFinanceYear: number;
   teacherFinanceMonth: number;
   teacherFinanceRows: TeacherFinanceRow[];
   teacherProductPayments: TeacherProductPaymentRow[];
@@ -392,6 +393,7 @@ export function TeacherWorkspace({
   students,
   studentPreRegistrations,
   submissions,
+  teacherFinanceYear,
   teacherFinanceMonth,
   teacherFinanceRows,
   teacherProductPayments,
@@ -747,6 +749,7 @@ export function TeacherWorkspace({
 
           {activeTask === "financeiro" ? (
             <TeacherFinanceStatusPanel
+            year={teacherFinanceYear}
               month={teacherFinanceMonth}
               personalSales={teacherPersonalInvoiceSales}
               rows={teacherFinanceRows}

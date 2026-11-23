@@ -9,6 +9,10 @@ if [[ $# -ne 1 ]]; then
 fi
 
 script_dir="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+command -v python3 >/dev/null || {
+  echo "Comando obrigatorio ausente: python3" >&2
+  exit 1
+}
 key_file="${CANDY_BACKUP_KEY_FILE:-/home/ubuntu/.config/candy-english/backup.key}"
 backup_dir="${CANDY_BACKUP_DIR:-/home/ubuntu/backups/candy-english}"
 container_name="candy-backup-drill-$$"
@@ -70,5 +74,34 @@ if [[ ! "$table_count" =~ ^[1-9][0-9]*$ ]]; then
   echo "Restore drill nao encontrou tabelas da aplicacao." >&2
   exit 1
 fi
+
+# Read only the restored disposable database; never query the running AVA.
+docker exec -i "$container_name" psql \
+  --username=restore --dbname=candy_restore --tuples-only --no-align --quiet \
+  --set=ON_ERROR_STOP=1 > "$temporary_dir/storage-references.json" <<'SQL'
+CREATE TEMP TABLE restore_storage_references(path text);
+DO $$
+DECLARE reference_column record;
+BEGIN
+  FOR reference_column IN
+    SELECT table_name, column_name FROM information_schema.columns
+    WHERE table_schema = 'public' AND (table_name, column_name) IN (
+      ('User', 'avatarPath'), ('Homework', 'assetStoragePath'),
+      ('ContractDocument', 'storagePath'), ('SaleProduct', 'imagePath'),
+      ('CandyXpActivity', 'assetStoragePath')
+    )
+  LOOP
+    EXECUTE format(
+      'INSERT INTO restore_storage_references(path) SELECT %I FROM public.%I WHERE %I IS NOT NULL AND %I <> %L',
+      reference_column.column_name, reference_column.table_name,
+      reference_column.column_name, reference_column.column_name, ''
+    );
+  END LOOP;
+END $$;
+SELECT COALESCE(json_agg(DISTINCT path), '[]'::json) FROM restore_storage_references;
+SQL
+
+python3 "$script_dir/verify-backup-storage.py" \
+  "$temporary_dir/storage.tar.gz" "$temporary_dir/storage-references.json" "$temporary_dir"
 
 echo "Restore drill concluido em container isolado: $table_count tabela(s)."

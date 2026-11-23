@@ -671,7 +671,7 @@ export function buildCandyAdminXpSnapshot(
         input.financeStudentsCount * CANDY_XP_REWARDS.admin.financialStudent,
     },
     {
-      description: "Pagamentos marcados como pagos em 2026.",
+      description: "Mensalidades marcadas como pagas.",
       label: "Pagamentos",
       value: input.paidPaymentsCount,
       xp: input.paidPaymentsCount * CANDY_XP_REWARDS.admin.paidPayment,

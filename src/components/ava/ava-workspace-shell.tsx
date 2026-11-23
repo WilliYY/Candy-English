@@ -443,7 +443,7 @@ export async function AvaWorkspaceShell({
             where: {
               buyerUserId: userId,
               financialPaymentId: null,
-              invoiceYear: 2026,
+              invoiceYear: { not: null },
               paidAt: null,
               settlementType: "MONTHLY_INVOICE",
               status: "COMPLETED",
@@ -455,22 +455,24 @@ export async function AvaWorkspaceShell({
             where: {
               buyerUserId: userId,
               financialPaymentId: null,
-              invoiceYear: 2026,
+              invoiceYear: { not: null },
               paidAt: null,
               settlementType: "MONTHLY_INVOICE",
               status: "COMPLETED",
             },
-            orderBy: [{ invoiceMonth: "asc" }, { createdAt: "asc" }],
-            select: { invoiceMonth: true },
+            orderBy: [{ invoiceYear: "asc" }, { invoiceMonth: "asc" }, { createdAt: "asc" }],
+            select: { invoiceMonth: true, invoiceYear: true },
           }),
         ]).then(([summary, oldestPending]) => ({
           ...summary,
           invoiceMonth: oldestPending?.invoiceMonth ?? null,
+          invoiceYear: oldestPending?.invoiceYear ?? null,
         }))
       : Promise.resolve({
           _count: { _all: 0 },
           _sum: { totalCents: null },
           invoiceMonth: null,
+          invoiceYear: null,
         }),
   ]);
   const canAccessTimeClock =
@@ -528,7 +530,7 @@ export async function AvaWorkspaceShell({
               </div>
               {role === "TEACHER" && pendingStaffInvoice._count._all > 0 ? (
                 <Link
-                  href={`/ava/teacher?task=financeiro&month=${pendingStaffInvoice.invoiceMonth ?? new Date().getMonth() + 1}`}
+                  href={`/ava/teacher?task=financeiro&year=${pendingStaffInvoice.invoiceYear}&month=${pendingStaffInvoice.invoiceMonth ?? new Date().getMonth() + 1}`}
                   className="relative z-10 mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-amber-950 shadow-sm transition hover:-translate-y-0.5 hover:border-amber-400 hover:bg-amber-100"
                 >
                   <span className="flex min-w-0 items-center gap-2">

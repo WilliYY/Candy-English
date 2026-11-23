@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import type { MobileAuthUser } from "@/lib/mobile-auth/contracts";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
+import { ADMIN_USER_ACCESS_LOCK } from "@/lib/admin-user-access";
 import { getPrisma } from "@/lib/prisma";
 import { ensureStudentAdministrativeRecords } from "@/lib/student-administrative-linkage";
 
@@ -306,7 +307,7 @@ export async function changeMobileAdminUserStatus(
       : (transaction: Prisma.TransactionClient) =>
           acquireTransactionAdvisoryLock(
             transaction,
-            "mobile-admin-active-users",
+            ADMIN_USER_ACCESS_LOCK,
           ));
 
   return store.$transaction(async (transaction) => {
@@ -335,7 +336,7 @@ export async function changeMobileAdminUserStatus(
     }
     if (user.role === "ADMIN" && !parsed.data.isActive) {
       const activeAdmins = await transaction.user.count({
-        where: { isActive: true, role: "ADMIN" },
+        where: { deletedAt: null, isActive: true, role: "ADMIN" },
       });
       if (activeAdmins <= 1) {
         throw new MobileAdminUserMutationError("LAST_ACTIVE_ADMIN");

@@ -62,3 +62,29 @@ test("keeps an unmatched entry open and reports inconsistent sequences", () => {
   assert.equal(summary.openEntryAt?.toISOString(), openAt.toISOString());
   assert.equal(summary.workedMilliseconds, 0);
 });
+
+test("splits a completed shift across Sao Paulo month boundaries", () => {
+  const entries = [
+    { occurredAt: new Date("2026-12-01T02:00:00Z"), type: "ENTRY" as const },
+    { occurredAt: new Date("2026-12-01T04:00:00Z"), type: "EXIT" as const },
+  ];
+  for (const month of [11, 12]) {
+    const summary = summarizeTimeClockEntries(entries, getSaoPauloMonthRange(2026, month));
+    assert.equal(summary.workedMilliseconds, 3_600_000);
+    assert.equal(summary.completedPairs, 1);
+    assert.equal(summary.inconsistentEntries, 0);
+  }
+});
+
+test("clips a shift covering the whole month and excludes outside pairs", () => {
+  const period = getSaoPauloMonthRange(2026, 11);
+  const summary = summarizeTimeClockEntries([
+    { occurredAt: new Date("2026-10-30T12:00:00Z"), type: "ENTRY" },
+    { occurredAt: new Date("2026-12-02T12:00:00Z"), type: "EXIT" },
+  ], period);
+  assert.equal(summary.workedMilliseconds, period.end.getTime() - period.start.getTime());
+  assert.equal(summarizeTimeClockEntries([
+    { occurredAt: new Date("2026-10-29T12:00:00Z"), type: "ENTRY" },
+    { occurredAt: new Date("2026-10-30T12:00:00Z"), type: "EXIT" },
+  ], period).workedMilliseconds, 0);
+});

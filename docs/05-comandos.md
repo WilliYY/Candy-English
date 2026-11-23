@@ -60,6 +60,10 @@ npm run dev
 
 ## Validacao local
 
+As três dependências do Prisma devem usar a mesma versão. Nesta revisão, `@prisma/config@7.10.1` fixa uma versão de Effect afetada por um alerta. O override específico seleciona `effect@3.22.5`, ainda na série 3. Ao atualizar o Prisma, revisar o override e validar geração do cliente, migrations e build. [Aviso do mantenedor](https://github.com/advisories/GHSA-7589-6fvf-x4pw).
+
+`npm run test:mobile-homework` inclui arquivos `.test.ts` e `.test.tsx`, com as regressões de componentes. A ação de qualidade do GitHub também executa `bash scripts/test-monitor-production.sh`, que simula falha e recuperação na entrega de alertas, sem acesso a contêineres ou webhooks reais.
+
 ```bash
 npm run lint
 npm run typecheck
@@ -214,3 +218,12 @@ docker compose --profile tools run --rm audit-server-smoke npm run audit:avatar-
 
 - Adicionar checklist de rollback.
 - Criar CI com lint/typecheck/build e smokes essenciais.
+
+## Ensaio de restauração dos arquivos AVA — 22/11/2026
+
+O restore-production-backup-drill.sh requer python3 (biblioteca padrão) e, após restaurar o PostgreSQL descartável, extrai referências de avatar, contrato, homework, Candy XP e imagem de produto somente desse banco. O helper verify-backup-storage.py verifica CRC/truncamento do gzip, rejeita caminhos que escapem da pasta e links, extrai o storage em subdiretório temporário próprio e lê integralmente os arquivos referenciados. A saída contém somente contagens; referências privadas não são impressas. A pasta de extração é removida também em falha. Colunas ausentes em backups antigos são ignoradas pela consulta de metadados, sem exigir que todo backup histórico tenha o schema mais recente.
+
+Teste local sem Docker, backup real, banco ou rede: python -B -m unittest discover -s scripts/tests -p test_backup_storage.py. As fixtures cobrem extração/leitura e limpeza, referência ausente, tar com traversal/caminho absoluto/link e gzip truncado. O verificador original já confere allowlist do tar externo, hashes, listagem do storage e estrutura do dump; a nova verificação complementa a leitura dos arquivos após restauração.
+
+Limites: não testa login nem navegação autenticada no AVA, não busca links externos de materiais, não valida pareamento ou entrega WhatsApp. Os volumes da Evolution permanecem fora do backup do AVA; perda deles exige novo pareamento explícito, com o canal pausado, conforme docs/24-catty-whatsapp.md. Esta entrega não executou ensaio sobre backup ou serviços reais.
+O serviço `audit-server-smoke` usa o mesmo usuário do AVA (UID/GID 1001) para criar arquivos no volume compartilhado. Isso permite ao site substituir e excluir o avatar criado pelo teste em um volume recém-inicializado.

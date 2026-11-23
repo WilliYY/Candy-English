@@ -120,7 +120,22 @@ export default async function TimeClockPage({
         })
       : Promise.resolve(null),
   ]);
-  const summary = summarizeTimeClockEntries(entries);
+  const boundaryEntries = selectedProfile?.id ? await Promise.all([
+    prisma.timeClockEntry.findFirst({
+      where: { profileId: selectedProfile?.id, occurredAt: { lt: range.start } },
+      orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+      select: { occurredAt: true, type: true },
+    }),
+    prisma.timeClockEntry.findFirst({
+      where: { profileId: selectedProfile?.id, occurredAt: { gte: range.end } },
+      orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
+      select: { occurredAt: true, type: true },
+    }),
+  ]) : [];
+  const summary = summarizeTimeClockEntries([
+    ...entries,
+    ...boundaryEntries.flatMap((entry) => entry ? [entry] : []),
+  ], range);
 
   return (
     <AvaWorkspaceShell area="PONTO">

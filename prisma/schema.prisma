@@ -769,7 +769,7 @@ model FinancialStudent {
 
 model FinancialPayment {
   id                        String           @id @default(cuid())
-  year                      Int              @default(2026)
+  year                      Int              @default(dbgenerated("(EXTRACT(year FROM (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')))::integer"))
   month                     Int
   studentId                 String
   student                   FinancialStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -819,7 +819,7 @@ model FinancialLog {
 
 model FinancialExpense {
   id                         String        @id @default(cuid())
-  year                       Int           @default(2026)
+  year                       Int           @default(dbgenerated("(EXTRACT(year FROM (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')))::integer"))
   month                      Int
   itemName                   String
   unit                       FinancialUnit @default(IVATE)
@@ -1002,7 +1002,7 @@ model AgendaStudent {
 
 model AgendaLesson {
   id                         String             @id @default(cuid())
-  year                       Int                @default(2026)
+  year                       Int                @default(dbgenerated("(EXTRACT(year FROM (CURRENT_TIMESTAMP AT TIME ZONE 'America/Sao_Paulo')))::integer"))
   month                      Int
   date                       DateTime
   weekday                    Int

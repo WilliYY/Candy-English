@@ -1,12 +1,12 @@
 import { TeacherPaymentButton } from "@/components/ava/teacher-payment-button";
 import { groupTeacherProductPayments, type TeacherProductPaymentRow } from "@/lib/teacher-finance-payment";
-import { TEACHER_FINANCE_MONTHS, TEACHER_FINANCE_YEAR } from "@/lib/teacher-finance";
+import { TEACHER_FINANCE_MONTHS } from "@/lib/teacher-finance";
 import { getSecretariaSelectedUnit, type SecretariaUnitFilter } from "@/lib/secretaria-unit-filter";
 
-export function TeacherProductPayments({ rows, month, unitFilter }: {
-  rows: TeacherProductPaymentRow[]; month: number; unitFilter: SecretariaUnitFilter;
+export function TeacherProductPayments({ rows, year, month, unitFilter }: {
+  rows: TeacherProductPaymentRow[]; month: number; year: number; unitFilter: SecretariaUnitFilter;
 }) {
-  const period = `${TEACHER_FINANCE_MONTHS[month - 1]} de ${TEACHER_FINANCE_YEAR}`;
+  const period = `${TEACHER_FINANCE_MONTHS[month - 1]} de ${year}`;
   const unit = getSecretariaSelectedUnit(unitFilter);
   const invoices = groupTeacherProductPayments(rows).filter((invoice) => !unit || invoice.units.includes(unit));
   return <section className="rounded-lg border border-fuchsia-200 bg-white p-4 shadow-sm sm:p-5">
@@ -20,8 +20,8 @@ export function TeacherProductPayments({ rows, month, unitFilter }: {
           <ul className="mt-2 space-y-1 text-sm text-primary">{invoice.items.map((item, index) => <li key={index} className="break-words">{item.name} · {item.quantity} unidade(s) · <strong className={item.isPaid ? "text-emerald-800" : "text-amber-800"}>{item.isPaid ? "Pago" : "Pendente"}</strong></li>)}</ul>
         </div>
         <div className="grid gap-2">
-          {invoice.pendingSales.length > 0 ? <TeacherPaymentButton command={{ kind: "PRODUCT", id: invoice.id, month, year: TEACHER_FINANCE_YEAR, sales: invoice.pendingSales, isPaid: true, confirm: true }} label={`${invoice.name} · doces · ${period}`} /> : null}
-          {invoice.paidSales.length > 0 ? <TeacherPaymentButton command={{ kind: "PRODUCT", id: invoice.id, month, year: TEACHER_FINANCE_YEAR, sales: invoice.paidSales, isPaid: false, confirm: true }} label={`${invoice.name} · doces · ${period}`} /> : null}
+          {invoice.pendingSales.length > 0 ? <TeacherPaymentButton command={{ kind: "PRODUCT", id: invoice.id, month, year, sales: invoice.pendingSales, isPaid: true, confirm: true }} label={`${invoice.name} · doces · ${period}`} /> : null}
+          {invoice.paidSales.length > 0 ? <TeacherPaymentButton command={{ kind: "PRODUCT", id: invoice.id, month, year, sales: invoice.paidSales, isPaid: false, confirm: true }} label={`${invoice.name} · doces · ${period}`} /> : null}
         </div>
       </article>) : <p className="py-5 text-sm text-muted-foreground">Nenhuma fatura separada nesta seleção.</p>}
     </div>

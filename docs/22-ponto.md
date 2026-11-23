@@ -110,3 +110,7 @@ atualizado desde 2022 e exige mais logica manual para paginacao de tabelas.
 - Relatorio mensal soma somente pares concluidos e sinaliza periodo aberto.
 - PDF abre, possui cabecalho `%PDF-` e e protegido por autorizacao server-side.
 - Prisma validate, testes, typecheck, lint e build passam.
+
+## Turnos na virada do mês — 22/11/2026
+
+O painel e o PDF consultam também a batida imediatamente anterior e posterior ao mês. O resumo pareia esses eventos, mas soma somente a interseção do turno com o período em America/Sao_Paulo. As linhas exibidas continuam restritas ao mês escolhido; uma entrada sem saída continua sem horas concluídas. Nenhum registro é criado ou alterado por essa consulta.

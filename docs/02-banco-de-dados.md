@@ -353,3 +353,9 @@ Enums:
 - Integrar o backup criptografado com armazenamento externo versionado e imutavel.
 - Adicionar logs/auditoria para areas administrativas sensiveis.
 - Avaliar indices novos conforme volume real de aulas, mensagens e financeiro.
+
+## Ano padrão de novas competências — 22/11/2026
+
+A migration 20261122230000_local_period_year_defaults altera somente o DEFAULT de year em FinancialPayment, FinancialExpense e AgendaLesson. Novos INSERTs sem year usam o ano de CURRENT_TIMESTAMP convertido para America/Sao_Paulo, independentemente do fuso da sessão PostgreSQL. Valores explícitos enviados por clientes existentes continuam prevalecendo. Não há UPDATE, criação de mensalidades ou alteração de registros históricos; anos, pagamentos e saldos de 2026 permanecem intactos.
+
+O Prisma representa a expressão com dbgenerated; não muda tipos, chaves, API ou campos obrigatórios. Aplicar pelo procedimento normal de migrations antes de recriar o app. Esta tarefa não aplica migration em produção. A troca de DEFAULT pode exigir brevemente lock de catálogo/tabela; não reescreve as linhas existentes. Para recuar código, preserve o schema e os dados; não remova registros nem reverta o ano de linhas já criadas.

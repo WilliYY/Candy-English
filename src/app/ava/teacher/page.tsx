@@ -1,3 +1,4 @@
+import { selectedSchoolYear } from "@/lib/school-year";
 import type { Metadata } from "next";
 import { projectTeacherProductPayment } from "@/lib/teacher-finance-payment";
 import {
@@ -35,7 +36,6 @@ import {
   getTeacherFinanceDateParts,
   normalizeTeacherFinanceMonth,
   projectTeacherFinanceRow,
-  TEACHER_FINANCE_YEAR,
 } from "@/lib/teacher-finance";
 
 export const metadata: Metadata = {
@@ -48,6 +48,7 @@ export const runtime = "nodejs";
 type TeacherPageProps = {
   searchParams?: Promise<{
     month?: string | string[];
+    year?: string | string[];
     preStatus?: string | string[];
     task?: string | string[];
     unit?: string | string[];
@@ -68,6 +69,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
       "unit",
       "preStatus",
       "month",
+      "year",
     ]),
   );
   const prisma = getPrisma();
@@ -83,9 +85,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         : "AVA";
   const now = new Date();
   const today = getTeacherFinanceDateParts(now);
+  const year = selectedSchoolYear(params?.year, today.year);
   const financeMonth = normalizeTeacherFinanceMonth(
     params?.month,
-    today.year === TEACHER_FINANCE_YEAR ? today.month : 1,
+    today.year === year ? today.month : 1,
   );
   const unitFilter = normalizeSecretariaUnitFilter(params?.unit);
   const selectedUnit = getSecretariaSelectedUnit(unitFilter);
@@ -242,7 +245,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
               take: 1,
               where: {
                 month: financeMonth,
-                year: TEACHER_FINANCE_YEAR,
+                year: year,
               },
             },
           },
@@ -753,7 +756,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
   ]);
   const productPayments = activeTask === "financeiro" ? await prisma.sale.findMany({
     where: {
-      financialPaymentId: null, invoiceMonth: financeMonth, invoiceYear: TEACHER_FINANCE_YEAR,
+      financialPaymentId: null, invoiceMonth: financeMonth, invoiceYear: year,
       settlementType: "MONTHLY_INVOICE", status: "COMPLETED",
       buyerUser: { isActive: true, deletedAt: null, role: { in: ["STUDENT", "TEACHER"] } },
     },
@@ -771,13 +774,14 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
             buyerUserId: session.user.id,
             financialPaymentId: null,
             invoiceMonth: financeMonth,
-            invoiceYear: TEACHER_FINANCE_YEAR,
+            invoiceYear: year,
             settlementType: "MONTHLY_INVOICE",
             status: "COMPLETED",
           },
           orderBy: { createdAt: "desc" },
           select: {
             createdAt: true,
+            updatedAt: true,
             id: true,
             invoiceDueDate: true,
             invoiceMonth: true,
@@ -941,6 +945,7 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         };
       })}
       secretariaUnitFilter={unitFilter}
+      teacherFinanceYear={year}
       teacherFinanceMonth={financeMonth}
       teacherProductPayments={productPayments.map(projectTeacherProductPayment)}
       teacherFinanceRows={students.map((student) =>
@@ -952,9 +957,10 @@ export default async function TeacherPage({ searchParams }: TeacherPageProps) {
         buyerRole: "TEACHER",
         buyerUserId: session.user.id,
         createdAt: sale.createdAt.toISOString(),
+        updatedAt: sale.updatedAt.toISOString(),
         invoiceDueDate: sale.invoiceDueDate?.toISOString().slice(0, 10) ?? null,
         invoiceMonth: sale.invoiceMonth ?? financeMonth,
-        invoiceYear: sale.invoiceYear ?? TEACHER_FINANCE_YEAR,
+        invoiceYear: sale.invoiceYear ?? year,
         items: sale.items,
         paidAt: sale.paidAt?.toISOString() ?? null,
         saleId: sale.id,

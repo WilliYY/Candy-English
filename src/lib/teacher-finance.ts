@@ -1,7 +1,5 @@
 import { hasCompleteFinancialRegistration } from "@/lib/financial-completeness";
 
-export const TEACHER_FINANCE_YEAR = 2026;
-
 export const TEACHER_FINANCE_MONTHS = [
   "Janeiro",
   "Fevereiro",

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { TeacherPaymentButton } from "@/components/ava/teacher-payment-button";
+import { SchoolYearSelect } from "@/components/ava/school-year-select";
+import { FIRST_SCHOOL_YEAR, LAST_SCHOOL_YEAR } from "@/lib/school-year";
 import { TeacherProductPayments } from "@/components/ava/teacher-product-payments";
 import type { TeacherProductPaymentRow } from "@/lib/teacher-finance-payment";
 import {
@@ -23,7 +25,6 @@ import type {
 } from "@/lib/teacher-finance";
 import {
   TEACHER_FINANCE_MONTHS,
-  TEACHER_FINANCE_YEAR,
 } from "@/lib/teacher-finance";
 import {
   SECRETARIA_UNIT_FILTER_OPTIONS,
@@ -36,6 +37,7 @@ import {
 } from "@/lib/staff-invoices";
 
 type TeacherFinanceStatusPanelProps = {
+  year: number;
   month: number;
   personalSales: StaffInvoiceSale[];
   rows: TeacherFinanceRow[];
@@ -99,8 +101,9 @@ const unitMeta = {
   },
 } as const;
 
-function buildHref(month: number, unitFilter: SecretariaUnitFilter) {
+function buildHref(year: number, month: number, unitFilter: SecretariaUnitFilter) {
   const params = new URLSearchParams({
+    year: String(year),
     month: String(month),
     task: "financeiro",
   });
@@ -142,6 +145,7 @@ function getTimeline(row: TeacherFinanceRow) {
 }
 
 export function TeacherFinanceStatusPanel({
+  year,
   month,
   personalSales,
   rows,
@@ -165,7 +169,7 @@ export function TeacherFinanceStatusPanel({
   const nextMonth = month === 12 ? 1 : month + 1;
   const personalInvoice = groupStaffInvoices(
     personalSales,
-    TEACHER_FINANCE_YEAR,
+    year,
     month,
   )[0] ?? null;
   const currencyFormatter = new Intl.NumberFormat("pt-BR", {
@@ -295,19 +299,20 @@ export function TeacherFinanceStatusPanel({
               Competencia
             </span>
             <strong className="mt-1 block text-lg text-primary">
-              {TEACHER_FINANCE_MONTHS[month - 1]} de {TEACHER_FINANCE_YEAR}
+              {TEACHER_FINANCE_MONTHS[month - 1]} de {year}
             </strong>
           </div>
           <div className="flex items-center gap-2">
+            <SchoolYearSelect year={year} />
             <Link
-              href={buildHref(previousMonth, unitFilter)}
+              href={buildHref(month === 1 ? Math.max(year - 1, FIRST_SCHOOL_YEAR) : year, month === 1 && year === FIRST_SCHOOL_YEAR ? 1 : previousMonth, unitFilter)}
               aria-label="Mes anterior"
               className="flex size-10 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary shadow-sm transition-colors hover:bg-primary/5"
             >
               <ChevronLeft aria-hidden="true" className="size-4" />
             </Link>
             <Link
-              href={buildHref(nextMonth, unitFilter)}
+              href={buildHref(month === 12 ? Math.min(year + 1, LAST_SCHOOL_YEAR) : year, month === 12 && year === LAST_SCHOOL_YEAR ? 12 : nextMonth, unitFilter)}
               aria-label="Proximo mes"
               className="flex size-10 items-center justify-center rounded-lg border border-primary/15 bg-white text-primary shadow-sm transition-colors hover:bg-primary/5"
             >
@@ -324,7 +329,7 @@ export function TeacherFinanceStatusPanel({
             return (
               <Link
                 key={label}
-                href={buildHref(itemMonth, unitFilter)}
+                href={buildHref(year, itemMonth, unitFilter)}
                 className={cn(
                   "flex min-w-24 shrink-0 flex-col items-center rounded-lg border px-3 py-2 text-center text-xs font-bold transition-colors",
                   active
@@ -334,7 +339,7 @@ export function TeacherFinanceStatusPanel({
               >
                 {label.slice(0, 3)}
                 <span className={cn("mt-0.5 text-[0.65rem]", active ? "text-white/75" : "text-muted-foreground")}>
-                  {TEACHER_FINANCE_YEAR}
+                  {year}
                 </span>
               </Link>
             );
@@ -366,7 +371,7 @@ export function TeacherFinanceStatusPanel({
             {SECRETARIA_UNIT_FILTER_OPTIONS.map((option) => (
               <Link
                 key={option.value}
-                href={buildHref(month, option.value)}
+                href={buildHref(year, month, option.value)}
                 className={cn(
                   "shrink-0 rounded-lg border px-3 py-2 text-xs font-bold transition-colors",
                   unitFilter === option.value
@@ -381,7 +386,7 @@ export function TeacherFinanceStatusPanel({
         </div>
       </section>
 
-      <TeacherProductPayments rows={productPayments} month={month} unitFilter={unitFilter} />
+      <TeacherProductPayments rows={productPayments} year={year} month={month} unitFilter={unitFilter} />
 
       {rows.length === 0 ? (
         <div className="rounded-lg border border-dashed border-cyan-200 bg-cyan-50/55 px-5 py-10 text-center">
@@ -443,7 +448,7 @@ export function TeacherFinanceStatusPanel({
                         </span>
                         {row.paymentId && row.updatedAt && !["INACTIVE", "INCOMPLETE"].includes(row.status) ? <TeacherPaymentButton
                           command={{ kind: "TUITION", id: row.paymentId, expectedUpdatedAt: row.updatedAt, isPaid: row.status !== "PAID", confirm: true }}
-                          label={`${row.name} · ${TEACHER_FINANCE_MONTHS[month - 1]} de ${TEACHER_FINANCE_YEAR}`}
+                          label={`${row.name} · ${TEACHER_FINANCE_MONTHS[month - 1]} de ${year}`}
                         /> : null}
                         </div>
                       </article>

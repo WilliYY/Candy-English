@@ -121,7 +121,7 @@ function formHarness(action: ReturnType<typeof fixture>["action"]) {
   runInNewContext(ts.transpileModule(body, { compilerOptions: { target: ts.ScriptTarget.ES2022 } }).outputText, context);
   const render = (updatedAt: string) => (context as unknown as {
     FinancePaymentDetailForm: (props: unknown) => () => void;
-  }).FinancePaymentDetailForm({ studentId: input.studentId, payment: { updatedAt, month: input.month, note: "original" } });
+  }).FinancePaymentDetailForm({ studentId: input.studentId, payment: { updatedAt, year: input.year, month: input.month, note: "original" } });
   return {
     render,
     edit: (note: string) => { values!.note = note; },

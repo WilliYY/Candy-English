@@ -159,16 +159,16 @@ if [[ "${alert_hash}" != "${last_hash}" || $(( now_epoch - last_epoch )) -ge rep
         'import json, sys; print(json.dumps({"text": sys.stdin.read()}))'
     )"
 
-    if ! curl --fail --silent --show-error --max-time 15 \
+    if ! http_status="$(curl --fail --silent --show-error --max-time 15 \
       --header 'Content-Type: application/json' \
       --data-binary "${payload}" \
       --url "${CANDY_ALERT_WEBHOOK_URL}" \
-      --output /dev/null; then
+      --output /dev/null --write-out '%{http_code}')" || [[ ! "${http_status}" =~ ^2[0-9][0-9]$ ]]; then
       echo "${timestamp} ALERTA monitor: webhook nao recebeu a notificacao." >&2
+      exit 1
     fi
+    printf '%s %s\n' "${alert_hash}" "${now_epoch}" > "${STATE_DIR}/last-alert"
   fi
-
-  printf '%s %s\n' "${alert_hash}" "${now_epoch}" > "${STATE_DIR}/last-alert"
 fi
 
 exit 1

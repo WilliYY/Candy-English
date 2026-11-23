@@ -53,6 +53,12 @@ jobs:
       - name: Run mobile authentication tests
         run: npm run test:mobile-auth
 
+      - name: Verify monitoring alert delivery and retry
+        run: bash scripts/test-monitor-production.sh
+
+      - name: Verify backup storage recovery with fixtures
+        run: python3 -B -m unittest discover -s scripts/tests -p test_backup_storage.py
+
       - name: Type-check
         run: npm run typecheck
 

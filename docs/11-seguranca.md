@@ -1,5 +1,16 @@
 # Seguranca e defesa em camadas
 
+## Último administrador ativo — 22/11/2026
+
+Ativação/desativação web, exclusão web e alteração de status mobile compartilham
+o advisory lock transacional `admin-user-access`. A conta e a contagem de ADMIN
+ativos não excluídos são lidas após o lock, na mesma transação da alteração.
+Desativação e exclusão concorrentes não podem remover o último ADMIN ativo.
+Excluir uma conta ADMIN já inativa não consome o acesso do ADMIN remanescente.
+O teste `admin-user-access.test.ts` cobre duas desativações concorrentes com
+contas fictícias e bloqueio transacional simulado; a validação PostgreSQL deve
+usar banco isolado, nunca contas reais.
+
 ## Correção de dependência crítica — 04/11/2026
 
 Antes de publicar as correções de financeiro/sessão/manutenção, `npm audit`
@@ -40,7 +51,7 @@ Este documento registra o que protege o Candy English, o que depende da infraest
 | 9 | Sessoes e cookies | Implementado | Auth.js usa sessao assinada, cookies seguros em HTTPS e `sessionVersion` para revogacao; sessoes moveis guardam hashes e possuem rotacao/revogacao. |
 | 10 | Banco nao exposto | Implementado no Compose | PostgreSQL nao publica porta no host; somente a rede Docker acessa. O app publica em `127.0.0.1` por padrao. Firewall Oracle deve manter 5432 fechado. |
 | 11 | Senhas, chaves e `.env` | Implementado no repositorio | `.env`, `private/`, segredos e uploads sao ignorados. Senhas usam bcrypt; cofre e registros MFA legados usam cifra autenticada; respostas/logs nao exibem valores. Segredos reais ficam apenas no servidor. |
-| 12 | Logs, monitoramento e alertas | Implementado local; notificacao configuravel | `monitor-production.sh` verifica health, containers, disco, backup e pico de falhas. Cron envia ao journal; webhook HTTPS opcional entrega alerta externo. |
+| 12 | Logs, monitoramento e alertas | Notificação configurável | `monitor-production.sh` verifica saúde, contêineres, disco, backup e falhas de login. O cron registra incidentes no journal. Quando houver webhook, somente uma resposta HTTP 2xx inicia o intervalo de supressão de alertas repetidos. Em caso de falha, a próxima execução tenta entregar o alerta novamente. |
 | 13 | Backup e recuperacao | Implementado local; copia externa pendente | Backup cifra banco+storage, valida checksums e possui restore drill isolado. Ainda e obrigatoria uma copia externa/imutavel com credencial e retencao proprias. |
 | 14 | Dependencias e correcoes | Automatizado | CI valida schema, testes, tipos, lint, build e bloqueia vulnerabilidade critica. Dependabot abre atualizacoes semanais. Alertas presos ao Prisma nao devem ser resolvidos por downgrade forcado. |
 | 15 | Pentest periodico | Processo externo pendente | Contratar teste autenticado ao menos anual e apos mudanca importante em auth, financeiro ou upload. Corrigir por severidade e repetir o teste das falhas encontradas. |

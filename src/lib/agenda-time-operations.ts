@@ -17,7 +17,7 @@ export async function changeAgendaTime(actor: Actor, input: unknown, options: { 
     const student = await tx.agendaStudent.findUnique({ where: { id: data.studentId } });
     if (!student) throw new AgendaTimeChangeError("Aluno não encontrado na agenda.");
     const lessons = await tx.agendaLesson.findMany({
-      where: { studentId: student.id, year: 2026, isActive: true },
+      where: { studentId: student.id, year: Number(data.fromDate.slice(0, 4)), isActive: true },
       orderBy: [{ date: "asc" }, { id: "asc" }],
       select: { id: true, studentId: true, date: true, time: true, status: true, isActive: true, isMakeup: true, updatedAt: true },
     });

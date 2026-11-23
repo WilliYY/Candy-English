@@ -75,7 +75,8 @@ Controles:
 - `GET /api/mobile/v1/overview` devolve indicadores e próximo item autorizados.
 - `GET /api/mobile/v1/modules/[module]` devolve listas nativas normalizadas.
 - `GET /api/mobile/v1/chat/threads` lista somente vínculos autorizados.
-- `GET /api/mobile/v1/chat/messages` carrega a conversa do vínculo.
+- `GET /api/mobile/v1/admin/finance/periods` lista os cadastros financeiros elegíveis para o mês e ano selecionados. `POST` abre uma mensalidade ausente após a confirmação explícita de um administrador ativo. A abertura de competência e os filtros estão documentados em `docs/13-financeiro.md`.
+- `GET /api/mobile/v1/chat/messages` carrega as últimas 200 mensagens do vínculo autorizado em ordem cronológica. A resposta padrão contém exatamente `ok` e `messages`, conforme o contrato dos apps já instalados. Com `pagination=1`, o servidor também retorna `nextBefore`, que vale `null` ao chegar ao início da conversa. Para buscar a página anterior, o app mantém `pagination=1` e os dois IDs do vínculo e envia o cursor em `before`. Um cursor inválido recebe HTTP 400.
 - `POST /api/mobile/v1/chat/messages` envia mensagem pelo serviço de domínio
   compartilhado com o site.
 - `GET /api/mobile/v1/homeworks/[homeworkId]` carrega detalhe, entrega e
@@ -180,6 +181,7 @@ Controles:
   inclui somente teachers e a resposta remove `userId`, caminhos de avatar,
   respostas corretas, atividades privadas de alunos e campos de storage. Cada
   fonte é limitada; o servidor recusa excesso em vez de truncar XP.
+- A consulta de histórico da Catty devolve HTTP 503 quando a leitura falha. HTTP 200 com `messages: []` indica uma conversa vazia. O cliente pode repetir a consulta mantendo as mensagens já exibidas.
 - `GET /api/mobile/v1/catty/chat` entrega o histórico privado da Catty para o
   usuário do bearer token e `POST /api/mobile/v1/catty/chat` continua a conversa.
   Site e app usam o mesmo handler, histórico, memória pedagógica, limites,

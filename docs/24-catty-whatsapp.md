@@ -538,3 +538,7 @@ o número escolhido e confirmar os contatos autorizados. Ativar respostas é uma
 ação separada; conectar não despausa o canal. Comandos de negócio continuam fora
 do escopo desta versão. Validar o primeiro envio somente com destinatário que
 autorize o teste e verificar no celular antes de repetir qualquer envio incerto.
+
+### Limite do ensaio de arquivos AVA — 22/11/2026
+
+O ensaio descrito em docs/05-comandos.md passa a extrair e ler referências privadas do storage contra o PostgreSQL restaurado descartável. Essa evidência continua exclusiva do AVA. Não restaura volumes Evolution, não confere QR/sessão, pareamento, recebimento ou entrega WhatsApp. A recuperação do canal exige autorização operacional própria e novo pareamento quando necessário, preservando pausa e evitando qualquer envio real como teste.

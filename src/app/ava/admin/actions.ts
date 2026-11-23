@@ -18,6 +18,7 @@ import type { Role } from "@/lib/roles";
 import { deleteAvatarImage } from "@/lib/storage";
 import { ensureStudentAdministrativeRecords } from "@/lib/student-administrative-linkage";
 import { getUserAnonymizationDate } from "@/lib/user-retention";
+import { ADMIN_USER_ACCESS_LOCK, changeAvaUserStatusInTransaction } from "@/lib/admin-user-access";
 import {
   productInvoiceSettlementSchema,
   type ProductInvoiceSettlementInput,
@@ -94,7 +95,6 @@ export type AdminRevealCredentialResult = {
 };
 
 const FINANCE_YEAR_MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
-const AGENDA_YEAR = 2026;
 
 class AdminFinanceRuleError extends Error {}
 
@@ -170,15 +170,15 @@ function getAgendaDateParts(date: Date) {
   };
 }
 
-function getAgendaRecurringDates(startMonth: number, weekdays: number[]) {
+function getAgendaRecurringDates(year: number, startMonth: number, weekdays: number[]) {
   const selectedWeekdays = new Set(weekdays);
   const dates: Date[] = [];
 
   for (let month = startMonth; month <= 12; month += 1) {
-    const lastDay = new Date(Date.UTC(AGENDA_YEAR, month, 0)).getUTCDate();
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
     for (let day = 1; day <= lastDay; day += 1) {
-      const date = new Date(Date.UTC(AGENDA_YEAR, month - 1, day, 12));
+      const date = new Date(Date.UTC(year, month - 1, day, 12));
 
       if (selectedWeekdays.has(date.getUTCDay())) {
         dates.push(date);
@@ -655,18 +655,18 @@ export async function deleteAvaUser(
   const deletedAt = new Date();
   const scheduledAnonymizationAt = getUserAnonymizationDate(deletedAt);
   const updateResult = await prisma.$transaction(async (tx) => {
-    await acquireTransactionAdvisoryLock(tx, "admin-user-deletion");
+    await acquireTransactionAdvisoryLock(tx, ADMIN_USER_ACCESS_LOCK);
 
     const lockedUser = await tx.user.findUnique({
       where: { id: user.id },
-      select: { deletedAt: true, role: true },
+      select: { deletedAt: true, isActive: true, role: true },
     });
 
     if (!lockedUser || lockedUser.deletedAt) {
       return { code: "NOT_AVAILABLE" as const, count: 0 };
     }
 
-    if (lockedUser.role === "ADMIN") {
+    if (lockedUser.role === "ADMIN" && lockedUser.isActive) {
       const activeAdmins = await tx.user.count({
         where: {
           deletedAt: null,
@@ -773,47 +773,17 @@ export async function toggleAvaUserStatus(
   }
 
   const prisma = getPrisma();
-  const user = await prisma.user.findUnique({
-    where: { id: parsed.data.userId },
-    select: {
-      deletedAt: true,
-      id: true,
-      role: true,
-    },
-  });
-
-  if (!user || user.deletedAt) {
+  const result = await prisma.$transaction((tx) =>
+    changeAvaUserStatusInTransaction(tx, parsed.data.userId, parsed.data.isActive),
+  );
+  if (result !== "UPDATED") {
     return {
       ok: false,
-      message: user ? "Uma conta excluida nao pode ser reativada." : "Usuario nao encontrado.",
+      message: result === "LAST_ADMIN"
+        ? "Mantenha pelo menos um admin ativo."
+        : "Usuario indisponivel. Atualize e tente novamente.",
     };
   }
-
-  if (user.role === "ADMIN" && !parsed.data.isActive) {
-    const activeAdmins = await prisma.user.count({
-      where: {
-        isActive: true,
-        role: "ADMIN",
-      },
-    });
-
-    if (activeAdmins <= 1) {
-      return {
-        ok: false,
-        message: "Mantenha pelo menos um admin ativo.",
-      };
-    }
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      isActive: parsed.data.isActive,
-      sessionVersion: {
-        increment: 1,
-      },
-    },
-  });
 
   revalidatePath("/ava/admin");
 
@@ -2100,6 +2070,7 @@ export async function settleProductInvoice(
           settlementType: true,
           status: true,
           totalCents: true,
+          updatedAt: true,
         },
       });
 
@@ -2115,6 +2086,7 @@ export async function settleProductInvoice(
           : sales.every((sale) => !sale.buyerStudentProfileId);
       const hasInvalidSale = sales.some(
         (sale) =>
+          sale.updatedAt.toISOString() !== parsed.data.expectedVersions[sale.id] ||
           sale.buyerUserId !== buyer.id ||
           sale.financialPaymentId !== null ||
           sale.invoiceMonth !== parsed.data.month ||
@@ -2134,7 +2106,7 @@ export async function settleProductInvoice(
         where: {
           buyerUserId: buyer.id,
           financialPaymentId: null,
-          id: { in: parsed.data.saleIds },
+          OR: sales.map((sale) => ({ id: sale.id, updatedAt: sale.updatedAt })),
           invoiceMonth: parsed.data.month,
           invoiceYear: parsed.data.year,
           paidAt: parsed.data.isPaid ? null : { not: null },
@@ -2270,6 +2242,7 @@ export async function createAgendaSchedule(
   }
 
   const dates = getAgendaRecurringDates(
+    parsed.data.year,
     parsed.data.month,
     parsed.data.weekdays,
   );
@@ -2421,7 +2394,7 @@ export async function updateAgendaStudentSchedule(
   }
 
   const dates = parsed.data.isActive
-    ? getAgendaRecurringDates(parsed.data.month, parsed.data.weekdays)
+    ? getAgendaRecurringDates(parsed.data.year, parsed.data.month, parsed.data.weekdays)
     : [];
 
   if (parsed.data.isActive && dates.length === 0) {
@@ -2814,63 +2787,49 @@ export async function createAgendaMakeup(
   }
 
   const prisma = getPrisma();
-  const lesson = await prisma.agendaLesson.findUnique({
-    where: { id: parsed.data.lessonId },
-    select: {
-      id: true,
-      student: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-
-  if (!lesson) {
-    return {
-      ok: false,
-      message: "Aula original nao encontrada.",
-    };
-  }
-
   const dateParts = getAgendaDateParts(parsed.data.date);
-
-  await prisma.$transaction(async (tx) => {
-    await tx.agendaLesson.update({
-      where: { id: lesson.id },
-      data: {
-        notes: parsed.data.notes ?? null,
-        status: "MISSED",
-      },
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "AgendaLesson" WHERE "id" = ${parsed.data.lessonId} FOR UPDATE`;
+      const lesson = await tx.agendaLesson.findUnique({
+        where: { id: parsed.data.lessonId },
+        select: { id: true, isActive: true, isMakeup: true, student: { select: { id: true, name: true, isActive: true } } },
+      });
+      if (!lesson || !lesson.isActive || lesson.isMakeup || !lesson.student.isActive) {
+        throw new AdminFinanceRuleError("Aula original indisponivel para reposicao.");
+      }
+      const existing = await tx.agendaLesson.findFirst({
+        where: { makeupForLessonId: lesson.id, isActive: true },
+        select: { date: true, time: true },
+      });
+      if (existing) {
+        if (existing.date.getTime() === parsed.data.date.getTime() && existing.time === parsed.data.time) return;
+        throw new AdminFinanceRuleError("Ja existe reposicao ativa para esta aula. Cancele a anterior antes de remarcar.");
+      }
+      await tx.agendaLesson.update({
+        where: { id: lesson.id },
+        data: { notes: parsed.data.notes ?? null, status: "MISSED" },
+      });
+      const makeupLesson = await tx.agendaLesson.create({
+        data: {
+          date: parsed.data.date, isActive: true, isMakeup: true,
+          makeupForLessonId: lesson.id, month: dateParts.month,
+          notes: parsed.data.notes ?? null, status: "MAKEUP_SCHEDULED",
+          studentId: lesson.student.id, time: parsed.data.time,
+          weekday: dateParts.weekday, year: dateParts.year,
+        },
+      });
+      await tx.agendaLog.create({
+        data: {
+          action: "MAKEUP", createdByUserId: session.user.id,
+          description: `Reposicao criada para ${lesson.student.name}.`,
+          lessonId: makeupLesson.id, studentId: lesson.student.id,
+        },
+      });
     });
-
-    const makeupLesson = await tx.agendaLesson.create({
-      data: {
-        date: parsed.data.date,
-        isActive: true,
-        isMakeup: true,
-        makeupForLessonId: lesson.id,
-        month: dateParts.month,
-        notes: parsed.data.notes ?? null,
-        status: "MAKEUP_SCHEDULED",
-        studentId: lesson.student.id,
-        time: parsed.data.time,
-        weekday: dateParts.weekday,
-        year: dateParts.year,
-      },
-    });
-
-    await tx.agendaLog.create({
-      data: {
-        action: "MAKEUP",
-        createdByUserId: session.user.id,
-        description: `Reposicao criada para ${lesson.student.name}.`,
-        lessonId: makeupLesson.id,
-        studentId: lesson.student.id,
-      },
-    });
-  });
+  } catch (error) {
+    return { ok: false, message: error instanceof AdminFinanceRuleError ? error.message : "Nao foi possivel criar a reposicao." };
+  }
 
   revalidatePath("/ava/admin");
 

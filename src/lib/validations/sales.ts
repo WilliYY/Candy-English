@@ -134,9 +134,14 @@ export const productInvoiceSettlementSchema = z
     isPaid: z.boolean(),
     month: z.number().int().min(1).max(12),
     saleIds: z.array(z.string().trim().min(1)).min(1).max(100),
+    expectedVersions: z.record(z.string(), z.string().datetime()),
     year: z.number().int().min(2026).max(2100),
   })
   .superRefine((value, context) => {
+    if (Object.keys(value.expectedVersions).length !== value.saleIds.length ||
+        value.saleIds.some((id) => !Object.hasOwn(value.expectedVersions, id))) {
+      context.addIssue({ code: "custom", message: "Atualize as versoes de todas as vendas.", path: ["expectedVersions"] });
+    }
     if (new Set(value.saleIds).size !== value.saleIds.length) {
       context.addIssue({
         code: "custom",

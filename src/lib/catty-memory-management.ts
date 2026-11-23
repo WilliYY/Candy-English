@@ -5,6 +5,7 @@ import {
   estimateCattyConversationBytes,
 } from "@/lib/catty-history";
 import { getPrisma } from "@/lib/prisma";
+import { redactRemovedCattyMemoryEvent } from "@/lib/catty-memory-redaction";
 import type { Role } from "@/lib/roles";
 import {
   hasSensitiveCattyUserMemoryText,
@@ -395,7 +396,7 @@ export async function getCattyMemoryManagementData(input: {
     id: memory.id,
     key: memory.key,
     lastUsedAt: toIso(memory.lastUsedAt),
-    recentEvents: memory.events.map((event) => ({
+    recentEvents: memory.events.map((event) => redactRemovedCattyMemoryEvent(memory.value, {
       action: event.action,
       createdAt: event.createdAt.toISOString(),
       createdByName: event.createdByUser?.name ?? null,

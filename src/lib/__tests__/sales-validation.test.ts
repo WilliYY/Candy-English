@@ -147,6 +147,7 @@ test("accepts an explicit set of product sales for admin settlement", () => {
     isPaid: true,
     month: 8,
     saleIds: ["sale-1", "sale-2"],
+    expectedVersions: { "sale-1": "2026-08-20T14:00:00.000Z", "sale-2": "2026-08-20T14:00:00.000Z" },
     year: 2026,
   });
 
@@ -159,6 +160,7 @@ test("rejects duplicate sale ids in product invoice settlement", () => {
     isPaid: true,
     month: 8,
     saleIds: ["sale-1", "sale-1"],
+    expectedVersions: { "sale-1": "2026-08-20T14:00:00.000Z" },
     year: 2026,
   });
 

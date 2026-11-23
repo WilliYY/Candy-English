@@ -235,3 +235,12 @@ npm run verify:catty-behavior
 - Adicionar exemplos novos sempre que uma resposta real da Catty parecer generica demais.
 - Ampliar traducoes curtas de perguntas novas conforme surgirem temas de aula reais.
 - Evoluir o smoke para comparar respostas reais de IA em ambiente controlado, sem rodar isso no build comum para nao gastar token.
+
+## Remoção de dado sensível — 22/11/2026
+
+A remoção humana arquiva a memória e substitui seu valor por um marcador.
+Na mesma transação, limpa chave, valor anterior, valor seguinte e observação
+dos eventos associados. Ação, data e autor continuam auditáveis. A chave atual
+recebe um identificador técnico para não conservar texto sensível.
+O painel também mascara valores/observações de eventos de memórias com o
+marcador de remoção legado. Teste focal: `catty-memory-redaction.test.ts`.

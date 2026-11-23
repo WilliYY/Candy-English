@@ -74,7 +74,7 @@ const secretariaCards: SecretariaCard[] = [
     accentClassName: "from-amber-50 via-white to-orange-50",
     barClassName: "from-amber-500 via-orange-400 to-rose-400",
     badgeClassName: "border-amber-200 bg-amber-50 text-amber-900",
-    description: "Agenda interna de 2026, presenca, faltas e reposicoes.",
+    description: "Agenda por ano e polo, com presenças, faltas e reposições.",
     feature: "agenda",
     icon: CalendarCheck2,
     iconClassName: "bg-amber-500 text-white shadow-amber-900/20",

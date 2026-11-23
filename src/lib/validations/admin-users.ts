@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSchoolYear } from "@/lib/school-year";
 import { ROLES } from "@/lib/roles";
 import { hasSensitiveCattyUserMemoryText } from "@/lib/validations/catty-user-memory";
 
@@ -111,10 +112,10 @@ const financeExpenseDateSchema = z
   .transform((value, ctx) => {
     const date = new Date(`${value}T00:00:00.000Z`);
 
-    if (Number.isNaN(date.getTime()) || date.getUTCFullYear() !== 2026) {
+    if (Number.isNaN(date.getTime()) || !isSchoolYear(date.getUTCFullYear()) || date.toISOString().slice(0, 10) !== value) {
       ctx.addIssue({
         code: "custom",
-        message: "Informe uma data valida em 2026.",
+        message: "Informe uma data válida no período letivo.",
       });
       return z.NEVER;
     }
@@ -147,7 +148,7 @@ const financialUnitSchema = z.enum(FINANCIAL_UNITS, {
   error: "Selecione uma unidade valida.",
 });
 
-const year2026Schema = z.literal(2026);
+const schoolYearSchema = z.number().int().refine(isSchoolYear, "Ano letivo inválido.");
 
 const financeMonthSchema = z
   .number()
@@ -411,7 +412,7 @@ export const adminFinanceStudentCreateSchema = financialStudentBaseSchema
     note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
     paidAt: optionalDateSchema,
     studentProfileId: optionalText(128, "Selecione um aluno valido do AVA."),
-    year: year2026Schema,
+    year: schoolYearSchema,
   })
   .superRefine((data, ctx) => {
     if (data.studentProfileId) {
@@ -438,7 +439,7 @@ export const adminFinanceStudentCreateSchema = financialStudentBaseSchema
 export const adminFinanceStudentUpdateSchema = financialStudentBaseSchema.extend({
   month: financeMonthSchema,
   studentId: z.string().min(1, "Aluno financeiro invalido."),
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export const adminFinancePaymentUpdateSchema = z.object({
@@ -448,7 +449,7 @@ export const adminFinancePaymentUpdateSchema = z.object({
   note: optionalText(1000, "A observacao pode ter no maximo 1000 caracteres."),
   paidAt: optionalDateSchema,
   studentId: z.string().min(1, "Aluno financeiro invalido."),
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export const adminFinanceStatusSchema = z.object({
@@ -456,20 +457,20 @@ export const adminFinanceStatusSchema = z.object({
   isPaid: z.boolean(),
   month: financeMonthSchema,
   studentId: z.string().min(1, "Aluno financeiro invalido."),
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export const adminFinanceStudentDeleteSchema = z.object({
   month: financeMonthSchema,
   mode: z.enum(["MONTH", "FROM_MONTH"]).default("MONTH"),
   studentId: z.string().min(1, "Aluno financeiro invalido."),
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export const adminFinanceExportLogSchema = z.object({
   format: z.enum(["PDF", "EXCEL"]),
   month: financeMonthSchema,
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export const adminFinanceExpenseCreateSchema = z
@@ -489,10 +490,10 @@ export const adminFinanceExpenseCreateSchema = z
     note: optionalText(600, "A observacao pode ter no maximo 600 caracteres."),
     purchasedAt: financeExpenseDateSchema,
     unit: financialUnitSchema,
-    year: year2026Schema,
+    year: schoolYearSchema,
   })
   .superRefine((data, ctx) => {
-    if (data.purchasedAt.getUTCMonth() + 1 !== data.month) {
+    if (data.purchasedAt.getUTCFullYear() !== data.year || data.purchasedAt.getUTCMonth() + 1 !== data.month) {
       ctx.addIssue({
         code: "custom",
         message: "A data precisa estar no mes selecionado.",
@@ -516,7 +517,7 @@ const adminAgendaScheduleBaseSchema = z.object({
     .array(agendaWeekdaySchema)
     .min(1, "Selecione pelo menos um dia da semana.")
     .max(7, "Selecione dias validos."),
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export const adminAgendaScheduleCreateSchema =
@@ -545,10 +546,10 @@ export const adminAgendaMakeupSchema = z.object({
     .transform((value, ctx) => {
       const date = new Date(`${value}T12:00:00.000Z`);
 
-      if (Number.isNaN(date.getTime()) || date.getUTCFullYear() !== 2026) {
+      if (Number.isNaN(date.getTime()) || !isSchoolYear(date.getUTCFullYear()) || date.toISOString().slice(0, 10) !== value) {
         ctx.addIssue({
           code: "custom",
-          message: "Informe uma data valida em 2026.",
+          message: "Informe uma data válida no período letivo.",
         });
         return z.NEVER;
       }
@@ -563,7 +564,7 @@ export const adminAgendaMakeupSchema = z.object({
 export const adminAgendaRemoveStudentSchema = z.object({
   month: financeMonthSchema,
   studentId: z.string().min(1, "Aluno da agenda invalido."),
-  year: year2026Schema,
+  year: schoolYearSchema,
 });
 
 export type AdminToggleUserStatusInput = z.input<

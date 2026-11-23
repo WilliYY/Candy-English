@@ -180,17 +180,6 @@ function readMessages(payload: unknown): CattyMessage[] {
     .slice(-50);
 }
 
-function isInitialCattyMessageList(messages: CattyMessage[]) {
-  return (
-    messages.length === initialCattyMessages.length &&
-    messages.every(
-      (message, index) =>
-        message.from === initialCattyMessages[index]?.from &&
-        message.text === initialCattyMessages[index]?.text,
-    )
-  );
-}
-
 function getCurrentPageContext(role?: Role): CattyPageContext {
   if (typeof window === "undefined") {
     return {
@@ -580,6 +569,10 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     initialCattyMessages,
   );
   const [draft, setDraft] = useState("");
+  const [historyUnavailable, setHistoryUnavailable] = useState(false);
+  const [historyAttempt, setHistoryAttempt] = useState(0);
+  const historyScopeRef = useRef("");
+  const messageRevision = useRef(0);
   const [isThinking, setIsThinking] = useState(false);
   const [loggedInBalloon, setLoggedInBalloon] = useState("");
   const [publicBalloon, setPublicBalloon] = useState("");
@@ -655,6 +648,14 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
 
     const area = context.area ?? "unknown";
     const task = context.task;
+    const scope = JSON.stringify([area, task]);
+    if (scope !== historyScopeRef.current) {
+      historyScopeRef.current = scope;
+      setHistoryUnavailable(false);
+      setMessages(initialCattyMessages);
+    }
+    const revisionAtRequest = messageRevision.current;
+    const canReplaceMessages = !requestInFlightRef.current;
     let cancelled = false;
 
     async function loadHistory() {
@@ -673,27 +674,28 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
         });
 
         if (!response.ok) {
+          if (!cancelled) setHistoryUnavailable(true);
           return;
         }
 
         const payload = (await response.json().catch(() => null)) as unknown;
+        if (!payload || typeof payload !== "object" || !("ok" in payload) || payload.ok !== true ||
+            !("messages" in payload) || !Array.isArray(payload.messages)) {
+          if (!cancelled) setHistoryUnavailable(true);
+          return;
+        }
         const storedMessages = readMessages(payload);
 
         if (cancelled) {
           return;
         }
 
-        setMessages((current) => {
-          if (!isInitialCattyMessageList(current)) {
-            return current;
-          }
-
-          return storedMessages.length > 0
-            ? storedMessages
-            : initialCattyMessages;
-        });
+        setHistoryUnavailable(false);
+        if (canReplaceMessages && messageRevision.current === revisionAtRequest && !requestInFlightRef.current) {
+          setMessages(storedMessages.length ? storedMessages : initialCattyMessages);
+        }
       } catch {
-        // History is a convenience layer; the chat must keep working without it.
+        if (!cancelled) setHistoryUnavailable(true);
       }
     }
 
@@ -702,7 +704,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     return () => {
       cancelled = true;
     };
-  }, [canUseCattyChat, context.area, context.task, open]);
+  }, [canUseCattyChat, context.area, context.task, historyAttempt, open]);
 
   useEffect(() => {
     function refreshContext() {
@@ -967,7 +969,6 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
       return;
     }
 
-    setMessages(initialCattyMessages);
     setOpen(true);
   }
 
@@ -1005,6 +1006,7 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
     const userMessage: CattyMessage = { from: "user", text: clean };
     const outgoingHistory = [...messages, userMessage].slice(-8);
 
+    messageRevision.current += 1;
     setContext(currentContext);
     setMessages((current) => [...current, userMessage]);
     setDraft("");
@@ -1136,6 +1138,14 @@ export function CattyWidget({ sessionUser = null }: CattyWidgetProps) {
             aria-busy={isThinking}
             aria-live="polite"
           >
+            {historyUnavailable && (
+              <div role="status" className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span>Histórico indisponível.</span>
+                <Button type="button" size="sm" variant="outline" onClick={() => setHistoryAttempt((n) => n + 1)}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
             {canUseCattyChat ? (
               messages.map((message, index) => {
                 const canFeedback = message.from === "catty" && Boolean(message.id);

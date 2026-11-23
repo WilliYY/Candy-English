@@ -1,4 +1,5 @@
 import { getPrisma } from "@/lib/prisma";
+import { chatHistoryPage, chatHistoryQuery } from "@/lib/chat-history-page";
 import type { Role } from "@/lib/roles";
 import { getStaffStudentSelectionWhere } from "@/lib/staff-student-access";
 
@@ -236,6 +237,7 @@ export async function listAuthorizedChatThreads(actor: ChatActor) {
 export async function listAuthorizedChatMessages(
   actor: ChatActor,
   pair: ChatPair,
+  before?: { createdAt: Date; id: string },
 ) {
   if (!(await actorCanUsePair(actor, pair))) {
     return null;
@@ -246,8 +248,7 @@ export async function listAuthorizedChatMessages(
     where: { teacherProfileId_studentProfileId: pair },
     select: {
       messages: {
-        orderBy: { createdAt: "asc" },
-        take: 200,
+        ...chatHistoryQuery(before),
         select: {
           body: true,
           createdAt: true,
@@ -259,11 +260,15 @@ export async function listAuthorizedChatMessages(
     },
   });
 
-  return (thread?.messages ?? []).map((message) => ({
-    body: message.body,
-    createdAt: message.createdAt.toISOString(),
-    id: message.id,
-    isMine: message.senderUserId === actor.userId,
-    senderName: message.senderUser.name,
-  }));
+  const { messages, nextBefore } = chatHistoryPage(thread?.messages ?? []);
+  return {
+    nextBefore,
+    messages: messages.map((message) => ({
+      body: message.body,
+      createdAt: message.createdAt.toISOString(),
+      id: message.id,
+      isMine: message.senderUserId === actor.userId,
+      senderName: message.senderUser.name,
+    })),
+  };
 }

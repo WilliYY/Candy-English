@@ -8,6 +8,7 @@ const baseSale = {
   buyerRole: "TEACHER" as const,
   buyerUserId: "teacher-1",
   createdAt: "2026-08-20T14:00:00.000Z",
+  updatedAt: "2026-08-20T14:00:00.000Z",
   invoiceDueDate: "2026-08-29",
   invoiceMonth: 8,
   invoiceYear: 2026,

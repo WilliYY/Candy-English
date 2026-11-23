@@ -118,6 +118,7 @@ services:
   audit-server-smoke:
     profiles:
       - tools
+    user: "1001:1001"
     build:
       context: .
       dockerfile: Dockerfile
@@ -130,6 +131,7 @@ services:
     environment:
       AUDIT_BASE_URL: http://app:3000
       AVA_STORAGE_DIR: /app/storage
+      HOME: /tmp
     mem_limit: ${TOOLS_MEM_LIMIT:-768m}
     mem_reservation: ${TOOLS_MEM_RESERVATION:-256m}
     command: npm run audit:server-smoke

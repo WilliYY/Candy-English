@@ -38,6 +38,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { SchoolYearSelect } from "@/components/ava/school-year-select";
+import { AdminFinanceOpenPeriod } from "@/components/ava/admin-finance-open-period";
 import { useMemo, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -187,6 +189,7 @@ type FinanceMonthRow = AdminFinanceStudentRow & {
 };
 
 type AdminFinancePanelProps = {
+  year: number;
   avaStudents: AdminFinanceAvaStudentOption[];
   expenses: AdminFinanceExpenseRow[];
   initialMonth: number;
@@ -397,6 +400,7 @@ function getDefaultUnitForFilter(filter: UnitFilter): FinancialUnit {
 }
 
 const createDefaultValues = (
+  year: number,
   month: number,
   unit: FinancialUnit = "IVATE",
 ): AdminFinanceStudentCreateInput => ({
@@ -415,7 +419,7 @@ const createDefaultValues = (
   phone: "",
   studentProfileId: "",
   unit,
-  year: 2026,
+  year,
 });
 
 function normalizeFinanceSearch(value: string) {
@@ -442,8 +446,8 @@ function getSaoPauloDateParts(date: Date): SaoPauloDateParts {
   };
 }
 
-function getDefaultExpenseDate(month: number, today: SaoPauloDateParts) {
-  if (today.year === 2026 && today.month === month) {
+function getDefaultExpenseDate(year: number, month: number, today: SaoPauloDateParts) {
+  if (today.year === year && today.month === month) {
     return [
       today.year,
       padDatePart(today.month),
@@ -451,10 +455,11 @@ function getDefaultExpenseDate(month: number, today: SaoPauloDateParts) {
     ].join("-");
   }
 
-  return `2026-${padDatePart(month)}-01`;
+  return `${year}-${padDatePart(month)}-01`;
 }
 
 const createExpenseDefaultValues = (
+  year: number,
   month: number,
   unit: FinancialUnit = "IVATE",
   today: SaoPauloDateParts,
@@ -464,9 +469,9 @@ const createExpenseDefaultValues = (
   itemName: "",
   month,
   note: "",
-  purchasedAt: getDefaultExpenseDate(month, today),
+  purchasedAt: getDefaultExpenseDate(year, month, today),
   unit,
-  year: 2026,
+  year,
 });
 
 function formatCurrency(cents: number) {
@@ -640,18 +645,19 @@ function toComparableDate(year: number, month: number, day: number) {
 }
 
 function isOverduePayment(
+  year: number,
   paymentDay: number,
   isPaid: boolean,
   month: number,
   today: SaoPauloDateParts,
 ) {
-  const lastDayOfMonth = new Date(Date.UTC(2026, month, 0)).getUTCDate();
+  const lastDayOfMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const safeDay = Math.min(paymentDay, lastDayOfMonth);
 
   return (
     !isPaid &&
     toComparableDate(today.year, today.month, today.day) >
-      toComparableDate(2026, month, safeDay)
+      toComparableDate(year, month, safeDay)
   );
 }
 
@@ -678,6 +684,7 @@ function getPaymentStatus(
   }
 
   return isOverduePayment(
+    payment.year,
     payment.snapshotPaymentDay,
     payment.isPaid,
     payment.month,
@@ -797,6 +804,7 @@ function getStatusClasses(status: FinanceStatus) {
 }
 
 function buildFinanceMonthRows(
+  year: number,
   students: AdminFinanceStudentRow[],
   activeMonth: number,
   today: SaoPauloDateParts,
@@ -805,7 +813,7 @@ function buildFinanceMonthRows(
     .map((student) => {
       const payment =
         student.payments.find(
-          (item) => item.year === 2026 && item.month === activeMonth,
+          (item) => item.year === year && item.month === activeMonth,
         ) ?? null;
 
       if (!payment || !payment.isActive) {
@@ -848,9 +856,9 @@ function buildFinanceMonthRows(
     });
 }
 
-function buildHistoryRows(row: AdminFinanceStudentRow) {
+function buildHistoryRows(row: AdminFinanceStudentRow, year: number) {
   return [...row.payments]
-    .filter((payment) => payment.year === 2026)
+    .filter((payment) => payment.year === year)
     .sort((left, right) => left.month - right.month);
 }
 
@@ -946,30 +954,30 @@ function buildFinanceTableHtml(rows: FinanceMonthRow[], title: string) {
     </html>`;
 }
 
-function exportExcel(rows: FinanceMonthRow[], activeMonthLabel: string) {
+function exportExcel(rows: FinanceMonthRow[], activeMonthLabel: string, year: number) {
   const html = buildFinanceTableHtml(
     rows,
-    `Financeiro Candy English 2026 - ${activeMonthLabel}`,
+    `Financeiro Candy English ${year} - ${activeMonthLabel}`,
   );
 
   downloadBlob(
     html,
-    `financeiro-candy-2026-${activeMonthLabel.toLowerCase()}.xls`,
+    `financeiro-candy-${year}-${activeMonthLabel.toLowerCase()}.xls`,
     "application/vnd.ms-excel;charset=utf-8",
   );
 }
 
-function exportPdf(rows: FinanceMonthRow[], activeMonthLabel: string) {
+function exportPdf(rows: FinanceMonthRow[], activeMonthLabel: string, year: number) {
   const html = buildFinanceTableHtml(
     rows,
-    `Financeiro Candy English 2026 - ${activeMonthLabel}`,
+    `Financeiro Candy English ${year} - ${activeMonthLabel}`,
   );
   const printWindow = window.open("", "_blank");
 
   if (!printWindow) {
     downloadBlob(
       html,
-      `financeiro-candy-2026-${activeMonthLabel.toLowerCase()}.html`,
+      `financeiro-candy-${year}-${activeMonthLabel.toLowerCase()}.html`,
       "text/html;charset=utf-8",
     );
     return;
@@ -1086,7 +1094,7 @@ function FinanceStudentSheetRow({
         <strong className="block truncate text-sm font-extrabold text-primary">
           {activeMonthLabel}
         </strong>
-        <span className="mt-0.5 block text-xs text-muted-foreground">2026</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">{row.payment.year}</span>
       </span>
 
       <span className="min-w-0">
@@ -1142,6 +1150,7 @@ function FinanceStudentSheetRow({
           </Button>
         ) : (
           <FinanceStatusButton
+            year={row.payment.year}
             expectedUpdatedAt={row.payment.updatedAt}
             isPaid={row.isPaid}
             month={activeMonth}
@@ -1241,12 +1250,14 @@ function FinanceUnitSheet({
 }
 
 function FinanceStatusButton({
+  year,
   expectedUpdatedAt,
   isPaid,
   month,
   size = "default",
   studentId,
 }: {
+  year: number;
   expectedUpdatedAt: string;
   isPaid: boolean;
   month: number;
@@ -1266,7 +1277,7 @@ function FinanceStatusButton({
         isPaid: !isPaid,
         month,
         studentId,
-        year: 2026,
+        year,
       });
 
       setMessage(result.message);
@@ -1333,7 +1344,7 @@ function FinancePaymentDetailForm({
       note: payment.note ?? "",
       paidAt: toInputDate(payment.paidAt),
       studentId,
-      year: 2026,
+      year: payment.year,
     },
   });
 
@@ -1474,7 +1485,7 @@ function FinanceStudentEditForm({
       phone: row.phone ?? "",
       studentId: row.id,
       unit: row.unit,
-      year: 2026,
+      year: row.payment.year,
     },
   });
 
@@ -1718,7 +1729,7 @@ function FinanceInactivateButtons({
         mode,
         month,
         studentId: row.id,
-        year: 2026,
+        year: row.payment.year,
       });
 
       setMessage(result.message);
@@ -1770,10 +1781,12 @@ function FinanceInactivateButtons({
 }
 
 function FinanceExportButtons({
+  year,
   activeMonth,
   activeMonthLabel,
   rows,
 }: {
+  year: number;
   activeMonth: number;
   activeMonthLabel: string;
   rows: FinanceMonthRow[];
@@ -1783,16 +1796,16 @@ function FinanceExportButtons({
 
   function handleExport(format: AdminFinanceExportLogInput["format"]) {
     if (format === "PDF") {
-      exportPdf(rows, activeMonthLabel);
+      exportPdf(rows, activeMonthLabel, year);
     } else {
-      exportExcel(rows, activeMonthLabel);
+      exportExcel(rows, activeMonthLabel, year);
     }
 
     startTransition(async () => {
       const result = await recordFinancialExport({
         format,
         month: activeMonth,
-        year: 2026,
+        year,
       });
 
       if (result.ok) {
@@ -1828,6 +1841,7 @@ function FinanceExportButtons({
 }
 
 export function AdminFinancePanel({
+  year,
   avaStudents,
   expenses,
   initialMonth,
@@ -1868,13 +1882,14 @@ export function AdminFinancePanel({
     resolver: zodResolver(adminFinanceStudentCreateSchema, undefined, {
       raw: true,
     }),
-    defaultValues: createDefaultValues(initialMonth, initialFormUnit),
+    defaultValues: createDefaultValues(year, initialMonth, initialFormUnit),
   });
   const expenseForm = useForm<AdminFinanceExpenseCreateInput>({
     resolver: zodResolver(adminFinanceExpenseCreateSchema, undefined, {
       raw: true,
     }),
     defaultValues: createExpenseDefaultValues(
+      year,
       initialMonth,
       initialFormUnit,
       today,
@@ -1913,8 +1928,8 @@ export function AdminFinancePanel({
   );
 
   const monthRows = useMemo(
-    () => buildFinanceMonthRows(students, activeMonth, today),
-    [activeMonth, students, today],
+    () => buildFinanceMonthRows(year, students, activeMonth, today),
+    [year, activeMonth, students, today],
   );
 
   const unitMonthRows = useMemo(
@@ -1969,7 +1984,7 @@ export function AdminFinancePanel({
     () =>
       expenses
         .filter(
-          (expense) => expense.year === 2026 && expense.month === activeMonth,
+          (expense) => expense.year === year && expense.month === activeMonth,
         )
         .sort(
           (left, right) =>
@@ -1978,7 +1993,7 @@ export function AdminFinancePanel({
             new Date(right.createdAt).getTime() -
               new Date(left.createdAt).getTime(),
         ),
-    [activeMonth, expenses],
+    [year, activeMonth, expenses],
   );
 
   const visibleMonthExpenses = useMemo(
@@ -2169,7 +2184,7 @@ export function AdminFinancePanel({
     setSelectedStudentId(null);
     form.setValue("month", month);
     expenseForm.setValue("month", month);
-    expenseForm.setValue("purchasedAt", getDefaultExpenseDate(month, today));
+    expenseForm.setValue("purchasedAt", getDefaultExpenseDate(year, month, today));
     form.setValue("unit", unitFilter === "ALL" ? "IVATE" : unitFilter);
     expenseForm.setValue(
       "unit",
@@ -2185,7 +2200,7 @@ export function AdminFinancePanel({
       const result = await createFinancialStudent({
         ...values,
         month: activeMonth,
-        year: 2026,
+        year,
       });
 
       if (!result.ok) {
@@ -2211,7 +2226,7 @@ export function AdminFinancePanel({
       }
 
       form.reset({
-        ...createDefaultValues(activeMonth),
+        ...createDefaultValues(year, activeMonth),
         unit: unitFilter === "ALL" ? "IVATE" : unitFilter,
       });
       setAvaStudentSearch("");
@@ -2232,7 +2247,7 @@ export function AdminFinancePanel({
       const result = await createFinancialExpense({
         ...values,
         month: activeMonth,
-        year: 2026,
+        year,
       });
 
       if (!result.ok) {
@@ -2254,7 +2269,7 @@ export function AdminFinancePanel({
       }
 
       expenseForm.reset({
-        ...createExpenseDefaultValues(activeMonth, "IVATE", today),
+        ...createExpenseDefaultValues(year, activeMonth, "IVATE", today),
         unit: expenseUnitFilter === "ALL" ? "IVATE" : expenseUnitFilter,
       });
       setExpenseMessage(result.message);
@@ -2264,6 +2279,17 @@ export function AdminFinancePanel({
 
   return (
     <div className="flex flex-col gap-5 pb-28 lg:pr-20">
+      {financeView === "STUDENTS" && (
+        <AdminFinanceOpenPeriod
+          students={students.filter((student) =>
+            (unitFilter === "ALL" || student.unit === unitFilter) &&
+            !student.payments.some((p) => p.year === year && p.month === activeMonth) &&
+            avaStudents.some((account) => account.isActive && account.financialStudentId === student.id)
+          ).map(({ id, name }) => ({ id, name }))}
+          year={year}
+          month={activeMonth}
+        />
+      )}
       <section className="overflow-hidden rounded-lg border border-primary/20 bg-white shadow-[0_22px_64px_rgba(65,42,76,0.11)] ring-1 ring-white/80">
         <div className="relative flex flex-col gap-4 overflow-hidden border-b border-primary/10 bg-gradient-to-r from-[#f8efff] via-white to-[#eaf8fb] p-4 sm:p-5 xl:flex-row xl:items-center xl:justify-between">
           <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-[#1d9bb6] via-[#74409a] to-[#ee6b8d]" />
@@ -2279,7 +2305,7 @@ export function AdminFinancePanel({
               </span>
               <strong className="mt-1 block text-xl font-extrabold text-primary sm:text-2xl">
                 {financeView === "STUDENTS"
-                  ? `${activeMonthLabel} de 2026`
+                  ? `${activeMonthLabel} de ${year}`
                   : `Pagamentos da loja - ${activeMonthLabel}`}
               </strong>
               <span className="mt-1 block text-sm text-muted-foreground">
@@ -2289,9 +2315,11 @@ export function AdminFinancePanel({
               </span>
             </span>
           </span>
+          <SchoolYearSelect year={year} />
           {financeView === "STUDENTS" ? (
             <div className="grid gap-2 sm:grid-cols-2 xl:min-w-[19rem]">
               <FinanceExportButtons
+                year={year}
                 activeMonth={activeMonth}
                 activeMonthLabel={activeMonthLabel}
                 rows={unitMonthRows}
@@ -2479,6 +2507,7 @@ export function AdminFinancePanel({
             </div>
 
             <AdminProductInvoicesSection
+              year={year}
               month={activeMonth}
               sales={standaloneInvoiceSales}
               unitFilter={unitFilter}
@@ -3329,12 +3358,12 @@ export function AdminFinancePanel({
                       Meses e parcelas
                     </span>
                     <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                      {buildHistoryRows(selectedRow).length} registro(s)
+                      {buildHistoryRows(selectedRow, year).length} registro(s)
                     </span>
                   </div>
 
                   <div className="grid gap-2">
-                    {buildHistoryRows(selectedRow).map((payment) => {
+                    {buildHistoryRows(selectedRow, year).map((payment) => {
                       const status = getPaymentStatus(payment, today);
                       const statusClasses = getStatusClasses(status);
 
@@ -3394,6 +3423,7 @@ export function AdminFinancePanel({
                               ) : (
                                 <div className="grid gap-3">
                                   <FinanceStatusButton
+                                    year={payment.year}
                                     expectedUpdatedAt={payment.updatedAt}
                                     isPaid={payment.isPaid}
                                     month={payment.month}

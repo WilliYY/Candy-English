@@ -65,3 +65,18 @@ test("validacao rejeita horario invalido, dados extras e falta de confirmacao ou
     assert.equal(agendaTimeChangeSchema.safeParse(invalid).success, false);
   }
 });
+
+for (const year of [2027, 2028]) {
+  test(`rotina de ${year} preserva ocorrencias de dezembro/janeiro de outros anos`, () => {
+    const values = { ...input, fromDate: `${year}-01-01` };
+    assert.equal(agendaTimeChangeSchema.safeParse(values).success, true);
+    const rows = [
+      lesson("previous", 14, { date: new Date(`${year - 1}-12-31T12:00:00Z`) }),
+      lesson("january", 14, { date: new Date(`${year}-01-01T12:00:00Z`) }),
+      lesson("december", 14, { date: new Date(`${year}-12-31T12:00:00Z`) }),
+      lesson("next", 14, { date: new Date(`${year + 1}-01-01T12:00:00Z`) }),
+    ];
+    const plan = planAgendaTimeChange(student, rows, values, new Date("2026-12-01T12:00:00Z"));
+    assert.deepEqual(plan.lessons.map((row) => row.id), ["january", "december"]);
+  });
+}

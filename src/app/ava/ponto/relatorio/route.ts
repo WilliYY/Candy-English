@@ -78,7 +78,22 @@ export async function GET(request: Request) {
       type: true,
     },
   });
-  const summary = summarizeTimeClockEntries(entries);
+  const boundaryEntries = profile.id ? await Promise.all([
+    prisma.timeClockEntry.findFirst({
+      where: { profileId: profile.id, occurredAt: { lt: range.start } },
+      orderBy: [{ occurredAt: "desc" }, { createdAt: "desc" }],
+      select: { occurredAt: true, type: true },
+    }),
+    prisma.timeClockEntry.findFirst({
+      where: { profileId: profile.id, occurredAt: { gte: range.end } },
+      orderBy: [{ occurredAt: "asc" }, { createdAt: "asc" }],
+      select: { occurredAt: true, type: true },
+    }),
+  ]) : [];
+  const summary = summarizeTimeClockEntries([
+    ...entries,
+    ...boundaryEntries.flatMap((entry) => entry ? [entry] : []),
+  ], range);
   const pdf = await buildTimeClockPdf({
     entries,
     period: parsed.data,

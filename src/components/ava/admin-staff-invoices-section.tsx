@@ -25,9 +25,11 @@ function formatCurrency(cents: number) {
 function StaffInvoicePaymentButton({
   invoice,
   month,
+  year,
 }: {
   invoice: StaffInvoiceSummary;
   month: number;
+  year: number;
 }) {
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
@@ -51,7 +53,8 @@ function StaffInvoicePaymentButton({
         isPaid: willMarkPaid,
         month,
         saleIds,
-        year: 2026,
+        expectedVersions: Object.fromEntries(saleIds.map((id) => [id, invoice.saleVersions[id]])),
+        year,
       });
       setMessage(result.message);
       if (result.ok) router.refresh();
@@ -89,10 +92,12 @@ function StaffInvoicePaymentButton({
 
 export function AdminProductInvoicesSection({
   month,
+  year,
   sales,
   unitFilter,
 }: {
   month: number;
+  year: number;
   sales: StaffInvoiceSale[];
   unitFilter: StaffInvoiceUnitFilter;
 }) {
@@ -100,7 +105,7 @@ export function AdminProductInvoicesSection({
     unitFilter === "ALL"
       ? sales
       : sales.filter((sale) => sale.unit === unitFilter),
-    2026,
+    year,
     month,
   );
   const pendingTotal = invoices.reduce(
@@ -221,7 +226,7 @@ export function AdminProductInvoicesSection({
               </div>
 
               <div className="border-t border-fuchsia-100 bg-white p-3">
-                <StaffInvoicePaymentButton invoice={invoice} month={month} />
+                <StaffInvoicePaymentButton invoice={invoice} month={month} year={year} />
               </div>
             </article>
           ))}

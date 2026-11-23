@@ -203,3 +203,13 @@ Rota:
 - Permitir importacao CSV/Excel.
 - Criar relatorio de presenca e faltas por aluno.
 - Integrar com calendario externo apenas se houver decisao explicita.
+
+## Reposição única por origem — 22/11/2026
+
+A criação web bloqueia a aula de origem na transação, relê seu estado e procura reposição ativa antes de gravar. Repetir a mesma data/horário retorna sucesso sem duplicar ocorrência ou log; outra marcação exige cancelar a anterior. Aulas inativas, reposições e alunos inativos não são origens válidas. O controle otimista do mobile continua protegendo concorrência entre canais. Nenhuma ocorrência histórica é alterada no deploy.
+
+## Consulta e criação entre anos — 22/11/2026
+
+O ano selecionado delimita a consulta e a criação administrativa da rotina; ocorrências de 2026 continuam preservadas. Selecionar janeiro de 2027 não converte nem duplica aulas históricas. A geração de nova rotina depende do envio administrativo explícito e usa o ano escolhido. A migration de defaults descrita em 02-banco-de-dados.md não cria ocorrências nem altera presenças.
+
+Na planilha, o administrador pode editar o horário de uma aula prevista para hoje ou para uma data futura, inclusive de outro ano. A alteração de rotina considera o ano escolhido e preserva presenças e reposições registradas.

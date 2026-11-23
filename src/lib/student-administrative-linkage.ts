@@ -1,8 +1,8 @@
+import { currentSchoolYear } from "@/lib/school-year";
 import type { Prisma } from "@/generated/prisma/client";
 import { resolveFinancialRegistration } from "@/lib/financial-completeness";
 import { acquireTransactionAdvisoryLock } from "@/lib/postgres-advisory-lock";
 
-export const STUDENT_ADMINISTRATIVE_YEAR = 2026;
 
 type FinancialUnit = "DOURADINA" | "IVATE";
 
@@ -22,7 +22,7 @@ const saoPauloYearMonthFormatter = new Intl.DateTimeFormat("en-US", {
 
 export function getStudentAdministrativeStartMonth(
   date = new Date(),
-  year = STUDENT_ADMINISTRATIVE_YEAR,
+  year = currentSchoolYear(date),
 ) {
   const parts = saoPauloYearMonthFormatter.formatToParts(date);
   const currentYear = Number(
@@ -97,10 +97,10 @@ export async function ensureStudentAdministrativeRecords(
   }
 
   const phone = profile.studentPhone ?? profile.user.phone;
-  const year = input.year ?? STUDENT_ADMINISTRATIVE_YEAR;
+  const year = input.year ?? currentSchoolYear();
   const startMonth = Math.min(
     12,
-    Math.max(1, input.startMonth ?? getStudentAdministrativeStartMonth()),
+    Math.max(1, input.startMonth ?? getStudentAdministrativeStartMonth(new Date(), year)),
   );
   let financialStudentId = profile.financialStudent?.id ?? null;
   let agendaStudentId = profile.agendaStudent?.id ?? null;

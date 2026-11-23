@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { hash } from "bcryptjs";
+import type { Prisma } from "@/generated/prisma/client";
 
+import { anonymizeUserHistoricalReferences } from "@/lib/user-retention-history";
 import { getPrisma } from "@/lib/prisma";
 import { deleteAvatarImage } from "@/lib/storage";
 import {
@@ -9,26 +11,16 @@ import {
   isUserReadyForAnonymization,
 } from "@/lib/user-retention";
 
-type AnonymizeExpiredUsersOptions = {
-  apply?: boolean;
-  now?: Date;
-};
-
-export async function anonymizeExpiredUsers({
-  apply = false,
-  now = new Date(),
-}: AnonymizeExpiredUsersOptions = {}) {
-  const prisma = getPrisma();
-  const candidates = await prisma.user.findMany({
-    orderBy: { scheduledAnonymizationAt: "asc" },
-    select: {
+const userRetentionSelect = {
       anonymizedAt: true,
       avatarPath: true,
       deletedAt: true,
       email: true,
       id: true,
+      isActive: true,
       studentProfile: {
         select: {
+          agendaStudent: { select: { id: true } },
           convertedStudentPreRegistration: {
             select: {
               convertedAgendaStudentId: true,
@@ -40,10 +32,29 @@ export async function anonymizeExpiredUsers({
         },
       },
       scheduledAnonymizationAt: true,
-    },
+    } satisfies Prisma.UserSelect;
+
+class AvatarCleanupError extends Error {}
+
+type AnonymizeExpiredUsersOptions = {
+  apply?: boolean;
+  repairAnonymized?: boolean;
+  now?: Date;
+};
+
+export async function anonymizeExpiredUsers({
+  apply = false,
+  repairAnonymized = false,
+  now = new Date(),
+}: AnonymizeExpiredUsersOptions = {}) {
+  const prisma = getPrisma();
+  const candidates = await prisma.user.findMany({
+    orderBy: { scheduledAnonymizationAt: "asc" },
+    select: userRetentionSelect,
     where: {
-      anonymizedAt: null,
+      ...(repairAnonymized ? {} : { anonymizedAt: null }),
       deletedAt: { not: null },
+      isActive: false,
       scheduledAnonymizationAt: { lte: now },
     },
   });
@@ -57,32 +68,76 @@ export async function anonymizeExpiredUsers({
   }
 
   let anonymized = 0;
+  let repaired = 0;
   let avatarCleanupFailures = 0;
 
   for (const candidate of candidates) {
-    if (!isUserReadyForAnonymization(candidate, now)) {
-      continue;
-    }
-
+    const replacementPasswordHash = candidate.anonymizedAt
+      ? null
+      : await hash(randomUUID(), 12);
     try {
-      await deleteAvatarImage(candidate.avatarPath);
-    } catch {
-      avatarCleanupFailures += 1;
-      continue;
-    }
+      const result = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT "id" FROM "User" WHERE "id" = ${candidate.id} FOR UPDATE`;
+        const current = await tx.user.findUnique({
+          where: { id: candidate.id },
+          select: userRetentionSelect,
+        });
+        if (
+          !current || current.isActive ||
+          !isUserReadyForAnonymization({ ...current, anonymizedAt: null }, now)
+        ) return "SKIPPED";
+        const isRepair = Boolean(current.anonymizedAt);
+        if (isRepair && !repairAnonymized) return "SKIPPED";
 
-    const replacementPasswordHash = await hash(randomUUID(), 12);
-    const result = await prisma.$transaction(async (tx) => {
-      await tx.mobileDevice.deleteMany({ where: { userId: candidate.id } });
-      await tx.cattyConversation.deleteMany({ where: { userId: candidate.id } });
-      await tx.cattyMemoryEvent.deleteMany({ where: { userId: candidate.id } });
-      await tx.cattyUserMemory.deleteMany({ where: { userId: candidate.id } });
+        const reservation = await tx.user.updateMany({
+          data: isRepair ? {
+            avatarMimeType: null,
+            avatarPath: null,
+          } : {
+            address: null,
+            anonymizedAt: now,
+            avatarMimeType: null,
+            avatarPath: null,
+            deletedByName: null,
+            deletionReason: null,
+            email: buildAnonymizedUserEmail(current.id),
+            isActive: false,
+            name: ANONYMIZED_USER_NAME,
+            passwordHash: replacementPasswordHash ?? await hash(randomUUID(), 12),
+            phone: null,
+            sessionVersion: { increment: 1 },
+          },
+          where: {
+            anonymizedAt: current.anonymizedAt,
+            deletedAt: { not: null },
+            id: current.id,
+            isActive: false,
+            scheduledAnonymizationAt: { lte: now },
+          },
+        });
+        if (reservation.count !== 1) return "SKIPPED";
+
+        // Keep the avatar pointer and eligibility recoverable if file removal fails.
+        try {
+          await deleteAvatarImage(current.avatarPath);
+        } catch {
+          throw new AvatarCleanupError();
+        }
+        if (isRepair) {
+          await anonymizeUserHistoricalReferences(tx, current);
+          return "REPAIRED";
+        }
+
+      await tx.mobileDevice.deleteMany({ where: { userId: current.id } });
+      await tx.cattyConversation.deleteMany({ where: { userId: current.id } });
+      await tx.cattyMemoryEvent.deleteMany({ where: { userId: current.id } });
+      await tx.cattyUserMemory.deleteMany({ where: { userId: current.id } });
       await tx.cattyArtifactEnrichment.deleteMany({
-        where: { targetUserId: candidate.id },
+        where: { targetUserId: current.id },
       });
-      await tx.cattyUserArtifact.deleteMany({ where: { userId: candidate.id } });
-      await tx.loginAttempt.deleteMany({ where: { email: candidate.email } });
-      await tx.userMfa.deleteMany({ where: { userId: candidate.id } });
+      await tx.cattyUserArtifact.deleteMany({ where: { userId: current.id } });
+      await tx.loginAttempt.deleteMany({ where: { email: current.email } });
+      await tx.userMfa.deleteMany({ where: { userId: current.id } });
 
       await tx.studentProfile.updateMany({
         data: {
@@ -95,12 +150,12 @@ export async function anonymizeExpiredUsers({
           studentPhone: null,
           studentPhoneAlt: null,
         },
-        where: { userId: candidate.id },
+        where: { userId: current.id },
       });
 
       await tx.teacherProfile.updateMany({
         data: { bio: null },
-        where: { userId: candidate.id },
+        where: { userId: current.id },
       });
 
       await tx.studentPreRegistration.updateMany({
@@ -122,102 +177,25 @@ export async function anonymizeExpiredUsers({
           statusNote: null,
           studentPhone: null,
         },
-        where: { convertedUserId: candidate.id },
+        where: { convertedUserId: current.id },
       });
 
-      const financialStudentId =
-        candidate.studentProfile?.financialStudent?.id ??
-        candidate.studentProfile?.convertedStudentPreRegistration
-          ?.convertedFinancialStudentId;
+      await anonymizeUserHistoricalReferences(tx, current);
 
-      if (financialStudentId) {
-        await tx.financialStudent.update({
-          data: {
-            address: null,
-            cpf: null,
-            email: null,
-            name: ANONYMIZED_USER_NAME,
-            phone: null,
-          },
-          where: { id: financialStudentId },
-        });
-        await tx.financialPayment.updateMany({
-          data: {
-            note: null,
-            snapshotAddress: null,
-            snapshotCpf: null,
-            snapshotEmail: null,
-            snapshotName: ANONYMIZED_USER_NAME,
-            snapshotPhone: null,
-          },
-          where: { studentId: financialStudentId },
-        });
-      }
-
-      const agendaStudentId =
-        candidate.studentProfile?.convertedStudentPreRegistration
-          ?.convertedAgendaStudentId;
-
-      if (agendaStudentId) {
-        await tx.agendaStudent.update({
-          data: {
-            isActive: false,
-            name: ANONYMIZED_USER_NAME,
-            notes: null,
-            phone: null,
-          },
-          where: { id: agendaStudentId },
-        });
-        await tx.agendaLesson.updateMany({
-          data: { notes: null },
-          where: { studentId: agendaStudentId },
-        });
-      }
-
-      if (candidate.studentProfile) {
-        await tx.sale.updateMany({
-          data: {
-            buyerNameSnapshot: ANONYMIZED_USER_NAME,
-            note: null,
-          },
-          where: { buyerStudentProfileId: candidate.studentProfile.id },
-        });
-      }
-
-      return tx.user.updateMany({
-        data: {
-          address: null,
-          anonymizedAt: now,
-          avatarMimeType: null,
-          avatarPath: null,
-          deletedByName: null,
-          deletionReason: null,
-          email: buildAnonymizedUserEmail(candidate.id),
-          isActive: false,
-          name: ANONYMIZED_USER_NAME,
-          passwordHash: replacementPasswordHash,
-          phone: null,
-          sessionVersion: { increment: 1 },
-        },
-        where: {
-          anonymizedAt: null,
-          deletedAt: { not: null },
-          id: candidate.id,
-          scheduledAnonymizationAt: { lte: now },
-        },
+        return "ANONYMIZED";
       });
-    });
-
-    if (result.count !== 1) {
-      continue;
+      if (result === "ANONYMIZED") anonymized += 1;
+      if (result === "REPAIRED") repaired += 1;
+    } catch (error) {
+      if (!(error instanceof AvatarCleanupError)) throw error;
+      avatarCleanupFailures += 1;
     }
-
-    anonymized += 1;
   }
 
   return {
     anonymized,
     avatarCleanupFailures,
+    repaired,
     candidates: candidates.length,
     dryRun: false,
   };
